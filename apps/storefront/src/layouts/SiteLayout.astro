@@ -1,0 +1,142 @@
+---
+import '@market/ui/styles.css';
+import { seo, type StorefrontContext } from '@market/storefront-core';
+import { themeStyle, platformTheme } from '@market/theme';
+import '../styles/vendor.css';
+import '../styles/market.css';
+import '../styles/checkout.css';
+import { MarketCartLink } from '../components/MarketCartLink';
+interface Props {
+  context?: StorefrontContext;
+  path?: string;
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+}
+const {
+  context,
+  path = '/',
+  title,
+  description,
+  noindex = false,
+} = Astro.props;
+const metadata = context ? seo(context, path) : undefined;
+const pageTitle = title
+  ? context
+    ? `${title} | ${context.name}`
+    : title
+  : (metadata?.title ?? 'Storefront unavailable');
+const pageDescription =
+  description ?? metadata?.description ?? 'Storefront service unavailable.';
+---
+
+<!doctype html>
+<html lang="en" style={themeStyle(context?.theme ?? platformTheme)}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <meta
+      name="robots"
+      content={
+        noindex ? 'noindex,nofollow' : (metadata?.robots ?? 'noindex,nofollow')
+      }
+    />
+    {metadata && <link rel="canonical" href={metadata.canonical} />}
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:type" content="website" />
+    {metadata && <meta property="og:url" content={metadata.canonical} />}
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href={metadata?.favicon ?? platformTheme.favicon}
+    />
+    <slot name="structured-data" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    {context?.source === 'fixture' && (
+      <aside class="fixture-notice" aria-label="Development preview">
+        Development fixture · Placeholder branding and content
+      </aside>
+    )}
+    <div class="container">
+      {context && (
+        <header class="site-header">
+          <a class="brand" href="/">
+            {context.theme.logo && (
+              <img src={context.theme.logo} alt="" width="38" height="38" />
+            )}
+            {context.name}
+          </a>
+          <nav aria-label="Main navigation">
+            <a href="/account">Account</a>
+            {context.kind === 'MARKET' ? (
+              <>
+                <a href="/#occurrences">Occurrences</a>
+                {context.source === 'backend' && (
+                  <MarketCartLink
+                    storefrontId={context.storefrontId ?? ''}
+                    client:load
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                <a href="/products">Products</a>
+                <a href="/cart">Cart</a>
+              </>
+            )}
+          </nav>
+        </header>
+      )}
+      <main id="main" tabindex="-1">
+        <slot />
+      </main>
+      <footer class="site-footer">
+        <p>{context?.name ?? 'Market platform'}</p>
+        <p>
+          {context?.source === 'fixture'
+            ? 'Local development preview.'
+            : 'Powered by Market platform'}
+        </p>
+      </footer>
+    </div>
+  </body>
+  <script>
+    function missingImage(image: HTMLImageElement) {
+      if (!image.classList.contains('product-media')) return;
+      const fallback = document.createElement('div');
+      fallback.className = 'product-media product-placeholder';
+      fallback.textContent = 'Image unavailable';
+      fallback.setAttribute('role', 'img');
+      fallback.setAttribute(
+        'aria-label',
+        image.alt
+          ? `${image.alt}: image unavailable`
+          : 'Product image unavailable',
+      );
+      image.replaceWith(fallback);
+    }
+    document.addEventListener(
+      'error',
+      (event) => {
+        if (event.target instanceof HTMLImageElement)
+          missingImage(event.target);
+      },
+      true,
+    );
+    for (const image of document.querySelectorAll<HTMLImageElement>(
+      'img.product-media',
+    )) {
+      if (image.complete && image.naturalWidth === 0) missingImage(image);
+    }
+  </script>
+</html>

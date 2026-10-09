@@ -1,0 +1,48 @@
+{
+  "phase": "13B.5",
+  "baseline": "Captured before all Phase 13B.5 code edits. Existing dirty files and untracked files are preserved.",
+  "backend": {
+    "files": [
+      "src/plugins/platform-identity/tenant-access-policy.ts",
+      "src/plugins/platform-identity/entitlement-port.ts",
+      "src/plugins/platform-identity/api.ts",
+      "src/plugins/marketplace-commerce/owned-admin-reads.ts",
+      "src/plugins/marketplace-commerce/catalog-publishing.service.ts",
+      "src/plugins/marketplace-commerce/commerce/topology.api.ts",
+      "src/plugins/marketplace-commerce/marketplace-commerce.plugin.ts",
+      "src/plugins/farmers-market/api/admin-api.ts",
+      "src/plugins/farmers-market/services/market-read.service.ts",
+      "src/plugins/farmers-market/farmers-market.plugin.ts",
+      "src/plugins/billing-entitlements/api.ts",
+      "src/plugins/billing-entitlements/authority.service.ts",
+      "src/plugins/analytics/api.ts",
+      "package.json",
+      "src/gql/graphql-env.d.ts",
+      "docs/frontend-api-gap-closure-phase13b5.md"
+    ],
+    "directories": ["test/frontend-integration/", "test/analytics/.runtime/"]
+  },
+  "frontend": {
+    "files": [
+      "package.json", "package-lock.json", "scripts/extract-schema.ts", "scripts/verify-backend.ts",
+      "scripts/test-live.ts", "playwright.live.config.ts", "tests/e2e/vendor-live.spec.ts",
+      "scripts/check-bundles.ts", "tests/e2e/foundation.spec.ts",
+      "playwright.vendor.config.ts",
+      "tests/vendor.test.tsx", "tests/admin.test.tsx", "tests/e2e/vendor-live-mock.spec.ts", "tests/e2e/vendor.spec.ts", "playwright.config.ts", "vitest.config.ts",
+      "packages/api/src/vendor.ts", "packages/api/src/index.ts", "packages/api/operations/admin.graphql",
+      "packages/api/schema/admin.graphql", "packages/api/schema/shop.graphql", "packages/api/schema/provenance.json",
+      "packages/api/src/generated/admin.ts", "packages/api/src/generated/shop.ts",
+      "packages/admin-core/src/index.ts", "apps/admin/src/AdminApp.tsx",
+      "packages/auth/src/index.ts",
+      "apps/admin/src/vendor/service.ts", "apps/admin/src/vendor/catalog.tsx", "apps/admin/src/vendor/inventory.tsx",
+      "apps/admin/src/vendor/orders.tsx", "apps/admin/src/vendor/markets.tsx", "apps/admin/src/vendor/fixture.ts",
+      "apps/admin/src/vendor/overview.tsx", "apps/admin/src/vendor/analytics.tsx",
+      "docs/frontend-phase13b5-integration-implementation.md", "docs/backend-contract.md",
+      "docs/frontend-architecture.md", "docs/frontend-phase13b-capabilities.md",
+      "docs/frontend-phase13b-vendor-admin-implementation.md", "docs/frontend-phase13a-implementation.md"
+      ,"docs/evidence/unit-results.json"
+    ],
+    "directories": ["docs/evidence/phase13b5/"]
+  },
+  "purpose": "Narrow tenant projections, named generated adapters, live vendor workflows, Market bootstrap, guarded local HTTP/database harness, regression and exhaustive acceptance evidence. No migration, new business truth, provider configuration, deployment, or remote Git operation."
+}

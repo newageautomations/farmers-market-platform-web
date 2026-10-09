@@ -1,0 +1,659 @@
+{
+  "scope": "Frontend source, generated contracts and deterministic unit/browser mocks. Actual live backend integration remains INCONCLUSIVE.",
+  "totals": {
+    "PASS": 95,
+    "FAIL": 0,
+    "INCONCLUSIVE": 13,
+    "total": 108
+  },
+  "gates": [
+    {
+      "code": "A",
+      "requirement": "Backend repo unchanged",
+      "status": "PASS",
+      "evidence": "Exact original Git status plus 356 SHA-256 hashes and tracked/dirty/untracked manifest verified."
+    },
+    {
+      "code": "B",
+      "requirement": "Frontend architecture preserved",
+      "status": "PASS",
+      "evidence": "Two apps, seven shared packages and nine-workspace boundary check preserved."
+    },
+    {
+      "code": "C",
+      "requirement": "Backend capability discovery completed",
+      "status": "PASS",
+      "evidence": "Pre-implementation capability matrix plus backend source and generated SDL characterization."
+    },
+    {
+      "code": "D",
+      "requirement": "Vendor identity uses guarded projection",
+      "status": "PASS",
+      "evidence": "Fresh me grants, guarded ownVendorIdentity and current membership; unit and production HTTP-mock test."
+    },
+    {
+      "code": "E",
+      "requirement": "No tenant inference from Channel/URL/email",
+      "status": "PASS",
+      "evidence": "Channel/URL/email names never establish Vendor identity. Channel token is selected only from me."
+    },
+    {
+      "code": "F",
+      "requirement": "Vendor bootstrap loading state",
+      "status": "PASS",
+      "evidence": "Initial loading and key-based read loading tests."
+    },
+    {
+      "code": "G",
+      "requirement": "Vendor bootstrap unauthenticated state",
+      "status": "PASS",
+      "evidence": "Existing anonymous session and mocked production sign-in browser regression."
+    },
+    {
+      "code": "H",
+      "requirement": "Vendor bootstrap forbidden/no-scope state",
+      "status": "PASS",
+      "evidence": "Inactive/mismatched/missing/revoked scope tests fail closed."
+    },
+    {
+      "code": "I",
+      "requirement": "Vendor navigation permission-aware",
+      "status": "PASS",
+      "evidence": "Owner, Operations and Catalog grant presets plus staff membership browser coverage."
+    },
+    {
+      "code": "J",
+      "requirement": "Direct forbidden route safe",
+      "status": "PASS",
+      "evidence": "Direct routes recheck module grants and owner-only create route."
+    },
+    {
+      "code": "K",
+      "requirement": "Products list safe owned projection",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B1: no owned catalog list projection. Development read port passes; production stays unavailable."
+    },
+    {
+      "code": "L",
+      "requirement": "Product create",
+      "status": "PASS",
+      "evidence": "Generated product create command confirms backend ID; development scenario rereads normalized values. Live read remains VENDOR-B1."
+    },
+    {
+      "code": "M",
+      "requirement": "Product update",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B1: metadata command is generated and mock-tested, but production cannot load or reread an owned product."
+    },
+    {
+      "code": "N",
+      "requirement": "Variant create",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B1: initial price, canonical currency and compatible option selector need safe owned reads. Mock workflow passes."
+    },
+    {
+      "code": "O",
+      "requirement": "Variant update",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B1: generated metadata command passes mocks; production owned variant detail is unavailable."
+    },
+    {
+      "code": "P",
+      "requirement": "Exact price update",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B1: exact parser and generated price command pass; production canonical currency/detail read is unavailable."
+    },
+    {
+      "code": "Q",
+      "requirement": "No stock field in catalog forms",
+      "status": "PASS",
+      "evidence": "Catalog inputs contain no stock/allocated/stock-location field."
+    },
+    {
+      "code": "R",
+      "requirement": "No arbitrary Channel field",
+      "status": "PASS",
+      "evidence": "Only native session workspace selector exists; no catalog/publication Channel target."
+    },
+    {
+      "code": "S",
+      "requirement": "No Product delete/duplicate/import bypass",
+      "status": "PASS",
+      "evidence": "No delete, duplicate, import or native product bypass."
+    },
+    {
+      "code": "T",
+      "requirement": "Inventory current projection",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B2/VENDOR-B6: current inventory DTO is characterized and mock-tested; independent core read and boundary availability are absent."
+    },
+    {
+      "code": "U",
+      "requirement": "physicalFree semantics preserved",
+      "status": "PASS",
+      "evidence": "Backend physicalFree displayed verbatim; mock holds make it differ from onHand minus allocated."
+    },
+    {
+      "code": "V",
+      "requirement": "Inventory adjustment",
+      "status": "PASS",
+      "evidence": "Signed command, confirmation for adjustment, one intent key and authoritative read refresh."
+    },
+    {
+      "code": "W",
+      "requirement": "Inventory restock",
+      "status": "PASS",
+      "evidence": "Positive restock command and post-command read; also works from owned order without analytics."
+    },
+    {
+      "code": "X",
+      "requirement": "No raw StockLevel mutation",
+      "status": "PASS",
+      "evidence": "Only owned inventory commands, no raw stock level or native stock mutation."
+    },
+    {
+      "code": "Y",
+      "requirement": "Inventory requery after mutation",
+      "status": "PASS",
+      "evidence": "Confirmed command invalidates current inventory; no optimistic counters. Optional-blocked state refreshes owned selection without inventing counters."
+    },
+    {
+      "code": "Z",
+      "requirement": "Orders safe own-Vendor projection",
+      "status": "PASS",
+      "evidence": "ownCommercePortion source checks owned Vendor order; no native order graph."
+    },
+    {
+      "code": "AA",
+      "requirement": "Order list safe or blocker documented",
+      "status": "PASS",
+      "evidence": "VENDOR-B3 documents absent paginated owned list. Live list is unavailable; safe owned lookup is offered."
+    },
+    {
+      "code": "AB",
+      "requirement": "Order detail safe",
+      "status": "PASS",
+      "evidence": "Generated detail fields, guarded lookup and mixed quantity browser scenario."
+    },
+    {
+      "code": "AC",
+      "requirement": "Direct vs Market context displayed",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B3: mock order and approved CRM history show kind/Market/occurrence. Live portion detail lacks that enrichment."
+    },
+    {
+      "code": "AD",
+      "requirement": "Operational/financial state separation",
+      "status": "PASS",
+      "evidence": "Native/pickup status, financial status and attributed/refund/remaining amounts separated."
+    },
+    {
+      "code": "AE",
+      "requirement": "Fulfillment command",
+      "status": "PASS",
+      "evidence": "Generated fulfill command with bounded positive quantity and current order requery."
+    },
+    {
+      "code": "AF",
+      "requirement": "Unfulfilled cancellation command",
+      "status": "PASS",
+      "evidence": "Generated unfulfilled cancel command and confirmation. Mixed fulfilled-line cancellation unavailable by backend rule."
+    },
+    {
+      "code": "AG",
+      "requirement": "Fulfillment cancellation command",
+      "status": "PASS",
+      "evidence": "Existing single-line fulfillment cancellation command and confirmation; no general fulfillment mutation."
+    },
+    {
+      "code": "AH",
+      "requirement": "Cancellation not called refund",
+      "status": "PASS",
+      "evidence": "Cancellation explicitly described as operational; settled refund stays unchanged in tests."
+    },
+    {
+      "code": "AI",
+      "requirement": "No raw native fulfillment mutation",
+      "status": "PASS",
+      "evidence": "No native fulfillment mutation."
+    },
+    {
+      "code": "AJ",
+      "requirement": "No broad raw refund UI",
+      "status": "PASS",
+      "evidence": "No raw refund/payment administration UI."
+    },
+    {
+      "code": "AK",
+      "requirement": "Customers list safe relationship projection",
+      "status": "PASS",
+      "evidence": "Generated ownCustomers approved fields only."
+    },
+    {
+      "code": "AL",
+      "requirement": "Customer search/pagination",
+      "status": "PASS",
+      "evidence": "Server search and skip/take20, max search200, fixed last-activity descending indicator; browser paging/search."
+    },
+    {
+      "code": "AM",
+      "requirement": "Customer detail",
+      "status": "PASS",
+      "evidence": "Guarded relationship detail, approved name/email/activity/purpose/status and per-currency attribution."
+    },
+    {
+      "code": "AN",
+      "requirement": "Vendor-specific purchase history",
+      "status": "PASS",
+      "evidence": "Generated Vendor-specific purchase history, bounded paging and direct/Market context."
+    },
+    {
+      "code": "AO",
+      "requirement": "No global Customer mutation",
+      "status": "PASS",
+      "evidence": "No Customer create/update or other global mutation."
+    },
+    {
+      "code": "AP",
+      "requirement": "No phone/address leakage",
+      "status": "PASS",
+      "evidence": "No phone/address query selection or UI."
+    },
+    {
+      "code": "AQ",
+      "requirement": "No cross-Vendor customer history",
+      "status": "PASS",
+      "evidence": "Foreign relationship/history rejection and same-browser Vendor switch checks."
+    },
+    {
+      "code": "AR",
+      "requirement": "Markets own membership projection",
+      "status": "PASS",
+      "evidence": "Generated owned business memberships and selected membership state; no organizer graph."
+    },
+    {
+      "code": "AS",
+      "requirement": "Vendor participation management",
+      "status": "PASS",
+      "evidence": "Versioned attendance/default commands, safe current reads and deliberate cancellation confirmation."
+    },
+    {
+      "code": "AT",
+      "requirement": "Vendor cannot self-approve",
+      "status": "PASS",
+      "evidence": "No approval command or self-approval control; requested listing remains pending."
+    },
+    {
+      "code": "AU",
+      "requirement": "Listing request",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B1: generated listing request passes mocks; live new-variant selector needs owned catalog read."
+    },
+    {
+      "code": "AV",
+      "requirement": "Offering configuration",
+      "status": "PASS",
+      "evidence": "Approved listing and current participation selectors; expectedVersion updates and requery."
+    },
+    {
+      "code": "AW",
+      "requirement": "salesCap distinct from physical stock",
+      "status": "PASS",
+      "evidence": "Nullable/positive cap separate from physical stock. Stock unchanged in cap simulation."
+    },
+    {
+      "code": "AX",
+      "requirement": "Catalog publication",
+      "status": "PASS",
+      "evidence": "Generated publish/unpublish approved-listing commands and confirmation. VENDOR-B5 current status stays unavailable; only receipt is displayed."
+    },
+    {
+      "code": "AY",
+      "requirement": "No raw Channel target selection",
+      "status": "PASS",
+      "evidence": "Publication selects an owned listing, never an arbitrary Channel."
+    },
+    {
+      "code": "AZ",
+      "requirement": "Analytics summary",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B6: generated totals and currency-separated UI pass mocks; live optional boundary availability is missing."
+    },
+    {
+      "code": "BA",
+      "requirement": "Analytics trend",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B6: generated trend and generation-cursor UI pass mocks; live optional availability is missing."
+    },
+    {
+      "code": "BB",
+      "requirement": "Product analytics",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B6: generated product analytics UI passes mocks; live optional availability is missing."
+    },
+    {
+      "code": "BC",
+      "requirement": "Market/occurrence analytics",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B6: generated Market/occurrence views pass mocks; live optional availability is missing."
+    },
+    {
+      "code": "BD",
+      "requirement": "Analytics entitlement allowed state",
+      "status": "INCONCLUSIVE",
+      "evidence": "VENDOR-B6: allowed state is proven by explicit development capability; feature evaluations alone cannot grant a live boundary."
+    },
+    {
+      "code": "BE",
+      "requirement": "Analytics entitlement denied state",
+      "status": "PASS",
+      "evidence": "Explicit denied capability and missing native analytics grant states."
+    },
+    {
+      "code": "BF",
+      "requirement": "Analytics unknown/unconfigured state",
+      "status": "PASS",
+      "evidence": "Unknown/unconfigured UI proven; live feature evaluation names do not infer gateway bindings."
+    },
+    {
+      "code": "BG",
+      "requirement": "Analytics stale/rebuilding metadata",
+      "status": "PASS",
+      "evidence": "Actual ACTIVE/STALE/BUILDING/RECONCILIATION_REQUIRED/FAILED/UNBUILT metadata and source checkpoints shown."
+    },
+    {
+      "code": "BH",
+      "requirement": "Financial vocabulary preserved",
+      "status": "PASS",
+      "evidence": "Vendor attributed, settled refund and remaining attributed vocabulary retained."
+    },
+    {
+      "code": "BI",
+      "requirement": "Multi-currency not combined",
+      "status": "PASS",
+      "evidence": "Currency-separated rows; no cross-currency arithmetic."
+    },
+    {
+      "code": "BJ",
+      "requirement": "Exact minor-unit formatting",
+      "status": "PASS",
+      "evidence": "BigInt exact formatting, small/large/negative values, unsafe number rejection and multi-currency tests."
+    },
+    {
+      "code": "BK",
+      "requirement": "Exact decimal price parser",
+      "status": "PASS",
+      "evidence": "Exact currency-aware decimal parser with precision, invalid syntax and GraphQL Int bounds tests."
+    },
+    {
+      "code": "BL",
+      "requirement": "No floating-point money arithmetic",
+      "status": "PASS",
+      "evidence": "BigInt string parsing, bounded final Int conversion; no floating-point financial arithmetic."
+    },
+    {
+      "code": "BM",
+      "requirement": "Mutation pending/success/failure states",
+      "status": "PASS",
+      "evidence": "Busy/double-submit guard, confirmed read refresh, safe refusal and uncertain-outcome no-retry tests."
+    },
+    {
+      "code": "BN",
+      "requirement": "Conflict/version error handling",
+      "status": "PASS",
+      "evidence": "Versioned inputs retained; validation/conflict refusals require refresh. Generic BAD_USER_INPUT cannot expose precise domain cause and is sanitized."
+    },
+    {
+      "code": "BO",
+      "requirement": "Backend unavailable state",
+      "status": "PASS",
+      "evidence": "Safe service unavailable state, HTTP/GraphQL error handling and fixture-disabled regression."
+    },
+    {
+      "code": "BP",
+      "requirement": "No fake production fallback",
+      "status": "PASS",
+      "evidence": "Production missing ports reject; fixture bundle and credential marker scan passes."
+    },
+    {
+      "code": "BQ",
+      "requirement": "Permission revocation handling",
+      "status": "PASS",
+      "evidence": "Fresh workspace checks and backend authority failure invalidate workspace; production browser revocation test."
+    },
+    {
+      "code": "BR",
+      "requirement": "Cross-Vendor cache/state isolation",
+      "status": "PASS",
+      "evidence": "A to B lifecycle covers products, inventory, orders, customers, Markets, analytics; foreign detail rejected."
+    },
+    {
+      "code": "BS",
+      "requirement": "Tenant cache invalidation on scope change",
+      "status": "PASS",
+      "evidence": "Channel, endpoint, logout and authority refresh clear old service/read state; late-response unit test."
+    },
+    {
+      "code": "BT",
+      "requirement": "Bounded pagination",
+      "status": "PASS",
+      "evidence": "CRM skip/take20, inventory/currency analytics cursors20, generation reset and bounded occurrence dates. Capped Market arrays honestly disclosed."
+    },
+    {
+      "code": "BU",
+      "requirement": "Accessible forms",
+      "status": "PASS",
+      "evidence": "Native labels, unique IDs, required inputs and form error description; axe on modules and representative forms."
+    },
+    {
+      "code": "BV",
+      "requirement": "Accessible tables",
+      "status": "PASS",
+      "evidence": "Captions, scoped headers, fixed sort metadata and uniquely named focusable scroll regions."
+    },
+    {
+      "code": "BW",
+      "requirement": "Accessible dialogs",
+      "status": "PASS",
+      "evidence": "Native dialogs, pending close/Escape guard and nested confirmation behavior."
+    },
+    {
+      "code": "BX",
+      "requirement": "Keyboard navigation",
+      "status": "PASS",
+      "evidence": "Enter/Escape/focus return and keyboard-scroll checks; existing tabs/Storefront dialog regression."
+    },
+    {
+      "code": "BY",
+      "requirement": "390px responsive Vendor Admin",
+      "status": "PASS",
+      "evidence": "All seven modules: 390px screenshots, no page overflow, zero axe violations in checked views."
+    },
+    {
+      "code": "BZ",
+      "requirement": "768px responsive Vendor Admin",
+      "status": "PASS",
+      "evidence": "All seven modules: 768px screenshots, no page overflow, zero axe violations in checked views."
+    },
+    {
+      "code": "CA",
+      "requirement": "1280px responsive Vendor Admin",
+      "status": "PASS",
+      "evidence": "All seven modules: 1280px screenshots, no page overflow, zero axe violations in checked views."
+    },
+    {
+      "code": "CB",
+      "requirement": "Overview usable without analytics entitlement",
+      "status": "PASS",
+      "evidence": "Core CRM, Market links and owned stock commands remain independent of optional analytics."
+    },
+    {
+      "code": "CC",
+      "requirement": "No marketing consent inference",
+      "status": "PASS",
+      "evidence": "Relationship purpose is not consent; no marketing controls."
+    },
+    {
+      "code": "CD",
+      "requirement": "No POS configuration UI",
+      "status": "PASS",
+      "evidence": "No POS configuration/provider UI."
+    },
+    {
+      "code": "CE",
+      "requirement": "No SaaS billing UI",
+      "status": "PASS",
+      "evidence": "No SaaS billing/subscription UI in Vendor workspace."
+    },
+    {
+      "code": "CF",
+      "requirement": "No exports",
+      "status": "PASS",
+      "evidence": "No exports."
+    },
+    {
+      "code": "CG",
+      "requirement": "No Storefront scope creep",
+      "status": "PASS",
+      "evidence": "No Storefront products, cart, checkout or account feature changes; original config retained."
+    },
+    {
+      "code": "CH",
+      "requirement": "Bulverde Market Day remains MARKET",
+      "status": "PASS",
+      "evidence": "Existing Bulverde fixture remains MARKET; browser host composition regression."
+    },
+    {
+      "code": "CI",
+      "requirement": "Storefront regressions pass",
+      "status": "PASS",
+      "evidence": "Storefront host/canonical/unknown-host/dialog/unavailable regressions pass."
+    },
+    {
+      "code": "CJ",
+      "requirement": "Market Admin shell regression passes",
+      "status": "PASS",
+      "evidence": "Shared Market shell/navigation regression passes."
+    },
+    {
+      "code": "CK",
+      "requirement": "Platform Admin shell regression passes",
+      "status": "PASS",
+      "evidence": "Shared Platform shell/navigation regression passes."
+    },
+    {
+      "code": "CL",
+      "requirement": "GraphQL schema regeneration reproducible",
+      "status": "PASS",
+      "evidence": "Offline schema extraction repeats identically; hash evidence includes schema/provenance."
+    },
+    {
+      "code": "CM",
+      "requirement": "GraphQL codegen reproducible",
+      "status": "PASS",
+      "evidence": "Generated Shop/Admin types repeat identically; no handwritten generated edits."
+    },
+    {
+      "code": "CN",
+      "requirement": "Typecheck",
+      "status": "PASS",
+      "evidence": "Root strict TypeScript and Astro diagnostics pass."
+    },
+    {
+      "code": "CO",
+      "requirement": "Lint",
+      "status": "PASS",
+      "evidence": "ESLint, boundary checks and Prettier pass; narrow keyboard-scroll lint exception verified by axe."
+    },
+    {
+      "code": "CP",
+      "requirement": "Unit/component tests",
+      "status": "PASS",
+      "evidence": "79 unit/component tests, including 43 new Vendor cases and 36 regressions."
+    },
+    {
+      "code": "CQ",
+      "requirement": "Browser tests",
+      "status": "PASS",
+      "evidence": "21 Chromium browser tests, including production HTTP-mocked Vendor contract. No real backend claim."
+    },
+    {
+      "code": "CR",
+      "requirement": "Accessibility tests",
+      "status": "PASS",
+      "evidence": "Zero axe violations in checked module, dialog, CRM, Market and production states."
+    },
+    {
+      "code": "CS",
+      "requirement": "Admin production build",
+      "status": "PASS",
+      "evidence": "Fixture-disabled Vite Admin build passes."
+    },
+    {
+      "code": "CT",
+      "requirement": "Storefront production build",
+      "status": "PASS",
+      "evidence": "Astro Node SSR Storefront build passes."
+    },
+    {
+      "code": "CU",
+      "requirement": "Root build",
+      "status": "PASS",
+      "evidence": "Root build completes both apps."
+    },
+    {
+      "code": "CV",
+      "requirement": "Development startup",
+      "status": "PASS",
+      "evidence": "Fresh Admin fixture and production preview servers start in browser harness; existing verified Storefront development fixture reused to preserve user session."
+    },
+    {
+      "code": "CW",
+      "requirement": "Backend verification hashes/status unchanged",
+      "status": "PASS",
+      "evidence": "Phase13B baseline and final manifest/status/hash proof passes for all356 nonignored files."
+    },
+    {
+      "code": "CX",
+      "requirement": "Backend blockers documented",
+      "status": "PASS",
+      "evidence": "VENDOR-B1 through VENDOR-B6 linked without removing prior B1-B4."
+    },
+    {
+      "code": "CY",
+      "requirement": "Phase 13B report complete",
+      "status": "PASS",
+      "evidence": "This report preserves all108 required gates and explicit live limitation."
+    },
+    {
+      "code": "CZ",
+      "requirement": "README/docs updated",
+      "status": "PASS",
+      "evidence": "README, architecture, backend contract and capability matrix updated."
+    },
+    {
+      "code": "DA",
+      "requirement": "No deployment",
+      "status": "PASS",
+      "evidence": "No deployment, hosting, DNS, push or PR."
+    },
+    {
+      "code": "DB",
+      "requirement": "No production provider calls",
+      "status": "PASS",
+      "evidence": "No provider/service calls or real messages. Browser requests limited to local fixtures, preview and mocked Admin."
+    },
+    {
+      "code": "DC",
+      "requirement": "No protected vendure DB use",
+      "status": "PASS",
+      "evidence": "No database connection/startup/migration/seed/test or protected vendure use."
+    },
+    {
+      "code": "DD",
+      "requirement": "No Phase 13C+ implementation creep",
+      "status": "PASS",
+      "evidence": "No Market Admin operational features or Phase13C+ work."
+    }
+  ]
+}

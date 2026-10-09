@@ -1,0 +1,144 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { ProductPurchase } from '../../components/ProductPurchase';
+import { requestShop } from '../../lib/shop';
+import { AppError, safeError, type PublicProduct } from '@market/api';
+import { ErrorState } from '@market/ui';
+import {
+  plainDescription,
+  safeAsset,
+  priceLabel,
+  seo,
+} from '@market/storefront-core';
+const { storefront, storefrontError } = Astro.locals;
+let product: PublicProduct | null = null,
+  error = storefrontError,
+  signedIn = false;
+try {
+  if (storefront?.kind === 'MARKET') throw new AppError('not-found');
+  if (storefront) {
+    if (import.meta.env.DEV && storefront.source === 'fixture') {
+      const { fixtureProduct } =
+        await import('@market/storefront-core/fixtures');
+      product = fixtureProduct(Astro.params.slug ?? '');
+    } else {
+      const api = requestShop(Astro);
+      product = (await api.product(Astro.params.slug ?? '')).product;
+      // A session outage does not erase an otherwise valid public Product.
+      try {
+        signedIn = (await api.bootstrap()).signedIn;
+      } catch {
+        signedIn = false;
+      }
+    }
+    if (!product) throw new AppError('not-found');
+  }
+} catch (e) {
+  error = safeError(e);
+}
+if (error) Astro.response.status = error.kind === 'not-found' ? 404 : 503;
+const path = product
+  ? `/products/${encodeURIComponent(product.slug)}`
+  : Astro.url.pathname;
+const structured =
+  product && storefront && !error
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: product.name,
+        description: plainDescription(product.description),
+        url: seo(storefront, path).canonical,
+        ...(safeAsset(product.featuredAsset?.preview)
+          ? { image: safeAsset(product.featuredAsset?.preview) }
+          : {}),
+      }
+    : undefined;
+---
+
+<SiteLayout
+  context={storefront}
+  path={path}
+  title={
+    error
+      ? error.kind === 'not-found'
+        ? 'Product not found'
+        : 'Product unavailable'
+      : product?.name
+  }
+  description={
+    product ? plainDescription(product.description).slice(0, 200) : undefined
+  }
+  noindex={!!error}
+>
+  {structured && (
+    <script
+      slot="structured-data"
+      type="application/ld+json"
+      set:html={JSON.stringify(structured).replace(/</g, '\\u003c')}
+    />
+  )}
+  <section class="py-12">
+    {error || !product ? (
+      <>
+        <h1>
+          {error?.kind === 'not-found'
+            ? 'Product not found'
+            : 'Product unavailable'}
+        </h1>
+        <ErrorState error={error} />
+        <a href="/products">Browse products</a>
+      </>
+    ) : (
+      <div class="product-detail" data-composition="vendor">
+        <div class="product-gallery">
+          {product.assets.length ? (
+            product.assets.map(
+              (asset) =>
+                safeAsset(asset.preview) && (
+                  <img
+                    class="product-media"
+                    src={safeAsset(asset.preview)}
+                    alt={product.name}
+                    width={asset.width || 640}
+                    height={asset.height || 480}
+                    loading="lazy"
+                  />
+                ),
+            )
+          ) : safeAsset(product.featuredAsset?.preview) ? (
+            <img
+              class="product-media"
+              src={safeAsset(product.featuredAsset?.preview)}
+              alt={product.name}
+              width="640"
+              height="480"
+            />
+          ) : (
+            <div class="product-media product-placeholder" aria-hidden="true">
+              No image
+            </div>
+          )}
+        </div>
+        <div>
+          <h1>{product.name}</h1>
+          <p class="product-description">
+            {plainDescription(product.description)}
+          </p>
+          <p>{priceLabel(product.variants)}</p>
+          {!!product.facetValues.length && (
+            <p class="facet-tags">
+              {product.facetValues.map((f) => f.name).join(' · ')}
+            </p>
+          )}
+          <ProductPurchase
+            storefrontId={storefront?.storefrontId ?? ''}
+            variants={product.variants}
+            signedIn={signedIn}
+            fixture={storefront?.source === 'fixture'}
+            client:load
+          />
+        </div>
+      </div>
+    )}
+  </section>
+</SiteLayout>

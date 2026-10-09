@@ -1,0 +1,17 @@
+{
+  "billing": {
+    "command": "npm run test:billing",
+    "success": true,
+    "groups": 19,
+    "recursivePriorPhases": true,
+    "log": "E:/coding/farmers-market-platform/test/frontend-integration/.runtime/regression-billing.log",
+    "priorLog": "E:/coding/farmers-market-platform/test/billing-entitlements/.runtime/prior-phases.log"
+  },
+  "analytics": {
+    "command": "npm run test:analytics",
+    "success": true,
+    "groups": 17,
+    "log": "E:/coding/farmers-market-platform/test/analytics/.runtime/phase13b5-regression.log"
+  },
+  "scope": "Full established Phase1-12 permanent chain, not optional external-provider or every standalone stress command."
+}

@@ -1,0 +1,93 @@
+.checkout-shell,
+.account-panel {
+  max-width: 48rem;
+  margin: 1.5rem auto;
+}
+.checkout-progress {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0;
+}
+.checkout-progress li {
+  padding: 0.4rem 0.7rem;
+  border-bottom: 2px solid transparent;
+}
+.checkout-progress [aria-current='step'] {
+  border-color: currentColor;
+  font-weight: 600;
+}
+.checkout-shell .field,
+.account-panel .field {
+  margin: 1rem 0;
+}
+.checkout-shell input:not([type='radio']),
+.account-panel input:not([type='hidden']) {
+  width: 100%;
+  box-sizing: border-box;
+}
+.checkout-shell fieldset {
+  margin: 1rem 0;
+  padding: 1rem;
+}
+.pickup-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0.75rem 0;
+}
+.checkout-summary section {
+  padding: 1rem 0;
+  border-bottom: 1px solid #d4d8d0;
+}
+.checkout-summary ul,
+.purchase-list {
+  padding-left: 1.25rem;
+}
+.checkout-summary li,
+.purchase-list li {
+  margin: 0.8rem 0;
+  overflow-wrap: anywhere;
+}
+.checkout-totals {
+  margin: 1.5rem 0;
+}
+.checkout-totals div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.6rem 0;
+}
+.checkout-totals dd {
+  margin: 0;
+  white-space: nowrap;
+}
+.checkout-shell button,
+.account-panel button {
+  margin: 0.5rem 0.5rem 0.5rem 0;
+  max-width: 100%;
+  white-space: normal;
+}
+.checkout-summary p,
+.account-panel p {
+  overflow-wrap: anywhere;
+}
+.checkout-shell h2:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+@media (max-width: 480px) {
+  .checkout-progress {
+    gap: 0.25rem;
+  }
+  .checkout-progress li {
+    padding: 0.3rem;
+  }
+  .checkout-totals div {
+    font-size: 0.95rem;
+  }
+  .checkout-shell fieldset {
+    padding: 0.6rem;
+  }
+}

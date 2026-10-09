@@ -1,0 +1,429 @@
+query PlatformScope {
+  platformAdminScope {
+    permissions
+  }
+}
+fragment TenantSummary on PlatformTenantSummary {
+  kind
+  id
+  name
+  slug
+  status
+  createdAt
+  storefrontStatus
+}
+query PlatformDirectory($options: PlatformTenantOptions) {
+  platformTenants(options: $options) {
+    items {
+      ...TenantSummary
+    }
+    totalItems
+  }
+}
+fragment ModuleReadiness on IntegrationModuleStatus {
+  code
+  state
+  qualification
+  detail
+  asOf
+}
+fragment ManagementEntitlement on OwnEntitlement {
+  featureCode
+  allowed
+  reason
+  valueKind
+  enabled
+  limit
+  unlimited
+  planVersionId
+  subscriptionStatus
+  accessPolicyVersion
+  overrideId
+  currentCount
+  committed
+  reserved
+  remaining
+  overLimit
+  metricCode
+  windowPolicy
+  windowStart
+  windowEnd
+}
+query PlatformTenantDetail($kind: PlatformTenantKind!, $id: ID!) {
+  platformTenant(kind: $kind, id: $id) {
+    identity {
+      ...TenantSummary
+    }
+    billingAccountId
+    subscription {
+      id
+      source
+      status
+      planVersionId
+      offerId
+      version
+      accessAllowed
+      accessConfigured
+      accessPolicyVersion
+    }
+    entitlements {
+      ...ManagementEntitlement
+    }
+    integrations {
+      ...ModuleReadiness
+    }
+  }
+}
+query PlatformReadiness {
+  platformIntegrationReadiness {
+    ...ModuleReadiness
+  }
+}
+query PaymentManagement($mode: PlatformPaymentMode!) {
+  ownPaymentConfiguration(mode: $mode) {
+    state
+    providerIOAllowed
+    qualification
+    fundsFlowPolicy
+  }
+  ownPaymentAccount: ownPaymentAdminAccount(mode: $mode) {
+    id
+    mode
+    provider
+    accountReference
+    connectionStatus
+    detailsSubmitted
+    chargesEnabled
+    payoutsEnabled
+    cardPayments
+    transfers
+    legacyPayments
+    currentlyDueCount
+    pastDueCount
+    disabledReason
+    lastSyncAt
+    readiness {
+      purpose
+      ready
+      reasons
+    }
+  }
+}
+mutation ManagementConnectStripe($mode: StripeAccountMode!) {
+  beginOwnStripeConnect(mode: $mode) {
+    authorizationUrl
+    expiresAt
+  }
+}
+mutation ManagementRefreshStripe($mode: StripeAccountMode!) {
+  refreshOwnPaymentAccount(mode: $mode) {
+    id
+    connectionStatus
+  }
+}
+mutation ManagementDisconnectStripe($mode: StripeAccountMode!) {
+  disconnectOwnPaymentAccount(mode: $mode) {
+    id
+    connectionStatus
+  }
+}
+query PosManagement {
+  ownPosProviders
+  ownPosConnections
+  ownPosRuntime {
+    allowedRedirectUris
+    providers {
+      providerCode
+      state
+      providerIOAllowed
+      localDeterministic
+    }
+    approvedPhysicalPolicyId
+    approvedPhysicalPolicyVersion
+    approvedPhysicalMaxAgeSeconds
+    approvedPhysicalProviderCodes
+  }
+}
+query ManagementMappingSource($id: ID!) {
+  ownResourceIdentity(type: variant, id: $id) {
+    id
+    canonicalSourceId
+  }
+}
+query PosConnectionDetail($id: ID!) {
+  ownPosConnections
+  ownPosHealth(connectionId: $id)
+  ownPosMappings(connectionId: $id)
+}
+mutation ManagementBeginPos($input: BeginPosAuthorizationInput!) {
+  beginOwnPosAuthorization(input: $input)
+}
+mutation ManagementCompletePos($input: CompletePosAuthorizationInput!) {
+  completeOwnPosAuthorization(input: $input)
+}
+mutation ManagementConnectPos(
+  $providerCode: String!
+  $mode: PosMode!
+  $accountId: String!
+) {
+  connectOwnPosPartner(
+    providerCode: $providerCode
+    mode: $mode
+    accountId: $accountId
+  )
+}
+mutation ManagementRevokePos($id: ID!) {
+  revokeOwnPosConnection(connectionId: $id)
+}
+mutation ManagementMapPos($input: ConfirmPosMappingInput!) {
+  confirmOwnPosMapping(input: $input)
+}
+mutation ManagementPosPolicies(
+  $id: ID!
+  $expectedVersion: Int!
+  $policies: JSON!
+) {
+  configureOwnPosPolicies(
+    connectionId: $id
+    expectedVersion: $expectedVersion
+    policies: $policies
+  )
+}
+mutation ManagementPosLocations($id: ID!) {
+  discoverOwnPosLocations(connectionId: $id)
+}
+mutation ManagementPosCatalog($id: ID!, $cursor: String) {
+  discoverOwnPosCatalog(connectionId: $id, cursor: $cursor)
+}
+mutation ManagementPosSync($id: ID!, $stream: PosStream!, $key: String!) {
+  syncOwnPos(connectionId: $id, stream: $stream, operationKey: $key)
+}
+query TenantBilling($subject: BillingSubjectInput!) {
+  ownBillingConfiguration(subject: $subject) {
+    state
+    externalActionsAllowed
+    subscriptionSource
+  }
+  ownSubscription(subject: $subject) {
+    id
+    status
+    planVersionId
+    offerId
+    periodStart
+    periodEnd
+    cancelAtPeriodEnd
+    version
+    pendingChange {
+      id
+      changeType
+      timing
+      state
+      toPlanVersionId
+      toOfferId
+      effectiveAt
+    }
+  }
+  ownEntitlements(subject: $subject) {
+    ...ManagementEntitlement
+  }
+  ownUsage(subject: $subject) {
+    ...ManagementEntitlement
+  }
+  availableBillingOffers(subject: $subject) {
+    id
+    code
+    planVersionId
+    currency
+    amount
+    cadenceInterval
+    cadenceCount
+  }
+}
+query PlatformCatalog(
+  $section: PlatformCatalogSection!
+  $options: PlatformCatalogOptions
+) {
+  platformBillingCatalog(section: $section, options: $options) {
+    totalItems
+    registeredFeatures {
+      featureCode
+      valueKind
+      semantics
+      subjects
+    }
+    items {
+      id
+      code
+      displayName
+      status
+      defaultPublishedVersionId
+      planId
+      versionNumber
+      policyVersion
+      publishedAt
+      retiredAt
+      planVersionId
+      featureId
+      featureCode
+      valueKind
+      semantics
+      vendorSupported
+      marketSupported
+      enabled
+      limitValue
+      unlimited
+      metricId
+      allowanceAmount
+      windowPolicy
+      currency
+      amount
+      cadenceKind
+      cadenceInterval
+      cadenceCount
+      billingModel
+      metricCode
+      aggregationKind
+      unit
+      sourceType
+      version
+      stateAccess
+      timing
+      proration
+      offerId
+      providerCode
+      mode
+      validatedAt
+      billingAccountId
+      startsAt
+      endsAt
+      reasonCode
+      source
+      revokedAt
+    }
+  }
+}
+mutation ManagementProvisionVendor($input: PlatformProvisionVendorInput!) {
+  platformProvisionVendor(input: $input) {
+    ...TenantSummary
+  }
+}
+mutation ManagementProvisionMarket($input: PlatformProvisionMarketInput!) {
+  platformProvisionMarket(input: $input) {
+    ...TenantSummary
+  }
+}
+mutation ManagementCreatePlan(
+  $code: String!
+  $displayName: String!
+  $description: String
+) {
+  createSaasPlan(
+    code: $code
+    displayName: $displayName
+    description: $description
+  ) {
+    id
+  }
+}
+mutation ManagementEditPlan($id: ID!, $displayName: String!, $status: String!) {
+  editSaasPlan(id: $id, displayName: $displayName, status: $status) {
+    id
+  }
+}
+mutation ManagementCreateVersion(
+  $planId: ID!
+  $versionNumber: Int!
+  $policyVersion: String!
+) {
+  createSaasPlanVersion(
+    planId: $planId
+    versionNumber: $versionNumber
+    policyVersion: $policyVersion
+  ) {
+    id
+  }
+}
+mutation ManagementSetRule($input: SaasRuleInput!) {
+  setDraftSaasRule(input: $input) {
+    id
+  }
+}
+mutation ManagementPublishVersion($id: ID!) {
+  publishSaasPlanVersion(id: $id) {
+    id
+  }
+}
+mutation ManagementRetireVersion($id: ID!) {
+  retireSaasPlanVersion(id: $id) {
+    id
+  }
+}
+mutation ManagementDefaultVersion($planId: ID!, $versionId: ID!) {
+  setDefaultSaasPlanVersion(planId: $planId, versionId: $versionId) {
+    id
+  }
+}
+mutation ManagementCreateOffer($input: SaasOfferInput!) {
+  createSaasBillingOffer(input: $input) {
+    id
+  }
+}
+mutation ManagementRegisterFeature($code: String!) {
+  registerSaasFeature(code: $code) {
+    id
+  }
+}
+mutation ManagementCreateMetric($input: SaasMetricInput!) {
+  createSaasUsageMetric(input: $input) {
+    id
+  }
+}
+mutation ManagementAccessPolicy(
+  $code: String!
+  $version: String!
+  $stateAccess: JSON!
+) {
+  createSaasAccessPolicy(
+    code: $code
+    version: $version
+    stateAccess: $stateAccess
+  ) {
+    id
+  }
+}
+mutation ManagementChangePolicy($input: SaasChangePolicyInput!) {
+  createSaasChangePolicy(input: $input) {
+    id
+  }
+}
+mutation ManagementAssignInternal(
+  $subject: BillingSubjectInput!
+  $offerId: ID!
+) {
+  assignInternalSaasSubscription(subject: $subject, offerId: $offerId) {
+    id
+  }
+}
+mutation ManagementMigrateInternal(
+  $subscriptionId: ID!
+  $offerId: ID!
+  $key: String!
+) {
+  migrateInternalSaasSubscription(
+    subscriptionId: $subscriptionId
+    offerId: $offerId
+    key: $key
+  ) {
+    id
+  }
+}
+mutation ManagementGrantOverride($input: SaasOverrideInput!) {
+  grantSaasEntitlementOverride(input: $input) {
+    id
+  }
+}
+mutation ManagementRevokeOverride($id: ID!) {
+  revokeSaasEntitlementOverride(id: $id) {
+    id
+  }
+}

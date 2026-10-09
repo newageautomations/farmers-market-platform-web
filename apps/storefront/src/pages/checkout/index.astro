@@ -1,0 +1,35 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { Checkout } from '../../components/ResilientSurfaces';
+import { requestCheckout } from '../../lib/shop';
+import { safeError } from '@market/api';
+const { storefront } = Astro.locals;
+let view, error;
+try {
+  view = await requestCheckout(Astro, Astro.response.headers).status();
+} catch (e) {
+  error = safeError(e);
+  Astro.response.status = error.kind === 'forbidden' ? 403 : 503;
+}
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+---
+
+<SiteLayout context={storefront} path="/checkout" title="Checkout" noindex>
+  <section class="py-12">
+    <h1>Checkout</h1>
+    {error ? (
+      <p>Checkout is temporarily unavailable. Please try again later.</p>
+    ) : view && view.groups.length ? (
+      <Checkout
+        initial={view}
+        storefrontId={storefront?.storefrontId ?? ''}
+        client:load
+      />
+    ) : (
+      <p>
+        Your checkout is unavailable or your cart is empty.{' '}
+        <a href="/cart">Review your cart</a>
+      </p>
+    )}
+  </section>
+</SiteLayout>

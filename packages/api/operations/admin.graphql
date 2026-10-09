@@ -1,0 +1,642 @@
+query AdminSession {
+  me {
+    id
+    identifier
+    channels {
+      id
+      code
+      token
+      permissions
+    }
+  }
+}
+mutation AdminLogin(
+  $username: String!
+  $password: String!
+  $rememberMe: Boolean!
+) {
+  login(username: $username, password: $password, rememberMe: $rememberMe) {
+    __typename
+    ... on CurrentUser {
+      id
+      identifier
+      channels {
+        id
+        code
+        token
+        permissions
+      }
+    }
+    ... on ErrorResult {
+      errorCode
+    }
+  }
+}
+mutation AdminLogout {
+  logout {
+    success
+  }
+}
+query VendorIdentity {
+  ownVendorIdentity {
+    id
+    name
+    slug
+    status
+    channelId
+    permissions
+    memberships {
+      id
+      principalId
+      role
+      status
+    }
+  }
+}
+
+fragment CommandReceipt on InventoryCommandReceipt {
+  id
+  operationKey
+  kind
+  status
+  movementIds
+  orderId
+  orderLineId
+  fulfillmentId
+}
+fragment Pickup on CommercePickupPromise {
+  mode
+  venue
+  instructions
+  startsAt
+  endsAt
+}
+fragment Portion on CommercePortion {
+  operationalOrderId
+  vendorId
+  kind
+  marketId
+  marketName
+  occurrenceId
+  occurrenceStartsAt
+  placedAt
+  lineCount
+  quantity
+  fulfilledQuantity
+  cancelledQuantity
+  remainingQuantity
+  nativeState
+  pickupStatus
+  lines {
+    customerLineId
+    operationalLineId
+    variantId
+    variantName
+    sku
+    quantity
+    fulfilledQuantity
+    cancelledQuantity
+    remainingQuantity
+  }
+  fulfillments {
+    id
+    state
+    lines {
+      operationalLineId
+      quantity
+    }
+  }
+  pickupPromise {
+    ...Pickup
+  }
+}
+query VendorPortion($orderId: ID!) {
+  ownCommercePortion(orderId: $orderId) {
+    ...Portion
+  }
+}
+mutation VendorCreateProduct($input: OwnCatalogProductInput!) {
+  createOwnCatalogProduct(input: $input) {
+    id
+  }
+}
+mutation VendorUpdateProduct($id: ID!, $input: OwnCatalogProductInput!) {
+  updateOwnCatalogProduct(id: $id, input: $input) {
+    id
+  }
+}
+mutation VendorCreateVariant($input: OwnCatalogVariantInput!) {
+  createOwnCatalogVariant(input: $input) {
+    id
+  }
+}
+mutation VendorUpdateVariant(
+  $id: ID!
+  $input: OwnCatalogVariantMetadataInput!
+) {
+  updateOwnCatalogVariant(id: $id, input: $input) {
+    id
+  }
+}
+mutation VendorPrice($id: ID!, $price: Int!) {
+  updateOwnVariantPrice(id: $id, price: $price) {
+    id
+  }
+}
+mutation VendorRestock($input: OwnInventoryAdjustmentInput!) {
+  restockOwnPhysicalInventory(input: $input) {
+    ...CommandReceipt
+  }
+}
+mutation VendorAdjustStock($input: OwnInventoryAdjustmentInput!) {
+  adjustOwnPhysicalInventory(input: $input) {
+    ...CommandReceipt
+  }
+}
+mutation VendorFulfill($input: OwnOperationalInventoryInput!) {
+  fulfillOwnExistingOrder(input: $input) {
+    ...CommandReceipt
+  }
+}
+mutation VendorCancelQuantity($input: OwnOperationalInventoryInput!) {
+  cancelOwnUnfulfilledQuantity(input: $input) {
+    ...CommandReceipt
+  }
+}
+mutation VendorCancelFulfillment($input: OwnOperationalInventoryInput!) {
+  cancelOwnExistingFulfillment(input: $input) {
+    ...CommandReceipt
+  }
+}
+
+fragment CustomerRelationship on VendorCustomerProjection {
+  id
+  customerId
+  firstName
+  lastName
+  emailAddress
+  status
+  purpose
+  firstActivityAt
+  lastActivityAt
+  purchaseCount
+  attribution {
+    currency
+    original
+    refunded
+    remaining
+  }
+}
+query VendorCustomers($options: RelationshipPageOptions) {
+  ownCustomers(options: $options) {
+    totalItems
+    items {
+      ...CustomerRelationship
+    }
+  }
+}
+query VendorCustomer($id: ID!) {
+  ownCustomerRelationship(id: $id) {
+    ...CustomerRelationship
+  }
+}
+query VendorCustomerHistory(
+  $customerId: ID!
+  $options: RelationshipPageOptions
+) {
+  ownCustomerPurchaseHistory(customerId: $customerId, options: $options) {
+    totalItems
+    items {
+      operationalOrderId
+      purchasedAt
+      kind
+      marketId
+      occurrenceId
+      currency
+      original
+      refunded
+      remaining
+      financialStatus
+      nativeState
+      pickupStatus
+      lines {
+        customerLineId
+        operationalLineId
+        variantId
+        quantity
+        fulfilledQuantity
+        cancelledQuantity
+      }
+      pickupPromise {
+        ...Pickup
+      }
+    }
+  }
+}
+fragment PreorderRule on MarketPreorderRule {
+  opensDaysBefore
+  opensTime
+  closesDaysBefore
+  closesTime
+}
+fragment BusinessMembership on MarketBusinessMembership {
+  market {
+    id
+    name
+    slug
+  }
+  id
+  marketId
+  vendorId
+  status
+  version
+  preorderDefault {
+    ...PreorderRule
+  }
+}
+fragment Attendance on MarketAttendance {
+  id
+  occurrenceId
+  membershipId
+  status
+  pickupInstructions
+  version
+  preorderOverride {
+    ...PreorderRule
+  }
+}
+fragment Listing on MarketVariantListing {
+  id
+  membershipId
+  variantId
+  status
+  version
+}
+fragment Offering on MarketVariantOffering {
+  id
+  participationId
+  listingId
+  variantId
+  enabled
+  preorderEnabled
+  salesCap
+  effectivePreorderOpensAt
+  effectivePreorderClosesAt
+  version
+  windowProvenance {
+    source
+    timezone
+    marketVersion
+    occurrenceVersion
+    membershipVersion
+    participationVersion
+    policyVersion
+    rule {
+      ...PreorderRule
+    }
+  }
+}
+fragment Occurrence on MarketSession {
+  id
+  marketId
+  scheduleDate
+  startsAt
+  endsAt
+  timezone
+  venue
+  pickupInstructions
+  status
+  version
+}
+query VendorMemberships {
+  ownMarketBusinessMemberships {
+    ...BusinessMembership
+  }
+}
+query VendorMembership($membershipId: ID!) {
+  marketMembershipState(membershipId: $membershipId) {
+    membership {
+      ...BusinessMembership
+    }
+    occurrences {
+      ...Occurrence
+    }
+    participations {
+      ...Attendance
+    }
+    listings {
+      ...Listing
+    }
+    offerings {
+      ...Offering
+    }
+  }
+}
+query VendorOccurrences(
+  $membershipId: ID!
+  $from: DateTime!
+  $through: DateTime!
+) {
+  ownMarketMembershipOccurrences(
+    membershipId: $membershipId
+    from: $from
+    through: $through
+  ) {
+    ...Occurrence
+  }
+}
+mutation VendorMarketDefault(
+  $id: ID!
+  $expectedVersion: Int!
+  $rule: MarketPreorderRuleInput
+) {
+  configureOwnMarketMembershipDefault(
+    id: $id
+    expectedVersion: $expectedVersion
+    rule: $rule
+  ) {
+    ...BusinessMembership
+  }
+}
+mutation VendorAttendance($input: MarketAttendanceInput!) {
+  configureMarketParticipation(input: $input) {
+    ...Attendance
+  }
+}
+mutation VendorListing($membershipId: ID!, $variantId: ID!) {
+  requestOwnMarketListing(membershipId: $membershipId, variantId: $variantId) {
+    ...Listing
+  }
+}
+mutation VendorOffering($input: MarketOfferingInput!) {
+  configureMarketOffering(input: $input) {
+    ...Offering
+  }
+}
+mutation VendorPublish($listingId: ID!) {
+  publishMarketListing(listingId: $listingId) {
+    listingId
+    productId
+    variantId
+    marketId
+    published
+  }
+}
+mutation VendorUnpublish($listingId: ID!) {
+  unpublishMarketListing(listingId: $listingId) {
+    listingId
+    productId
+    variantId
+    marketId
+    published
+  }
+}
+
+fragment AnalyticsMeta on AnalyticsMetadata {
+  projectionCode
+  schemaVersion
+  status
+  generationId
+  activeGenerationId
+  sourceAsOf
+  asOf
+  completeness
+  lastSuccessfulAt
+  lastReconciledAt
+  errorCode
+  technicalBucket
+  marketFinancialPolicy
+}
+fragment VendorMetrics on VendorAnalyticsBucket {
+  day
+  currency
+  variantId
+  marketId
+  occurrenceId
+  vendorPurchaseCount
+  directPurchaseCount
+  marketPurchaseCount
+  vendorAttributed
+  settledRefund
+  cohortSettledRefund
+  vendorRemainingAttributed
+  gross
+  discount
+  itemTax
+  shippingNet
+  shippingTax
+  originalUnits
+  refundedOriginalUnits
+  distinctPurchasingCustomers
+  fulfilledUnits
+  cancelledUnits
+  awaitingPortions
+  completedPortions
+  cancelledPortions
+  externalPosUnitsObserved
+  externalPosOperations
+}
+query VendorInventory($take: Int, $after: ID) {
+  ownOperationalInventory(take: $take, after: $after) {
+    totalItems
+    asOf
+    items {
+      variantId
+      productId
+      productName
+      variantName
+      sku
+      stockOnHand
+      stockAllocated
+      physicalFree
+    }
+    nextCursor
+  }
+}
+query VendorTotals($vendorId: ID!, $range: AnalyticsRangeInput!) {
+  ownVendorAnalyticsTotals(vendorId: $vendorId, range: $range) {
+    metadata {
+      ...AnalyticsMeta
+    }
+    items {
+      currency
+      vendorPurchaseCount
+      directPurchaseCount
+      marketPurchaseCount
+      vendorAttributed
+      settledRefund
+      cohortSettledRefund
+      vendorRemainingAttributed
+      gross
+      discount
+      itemTax
+      shippingNet
+      shippingTax
+      originalUnits
+      refundedOriginalUnits
+      distinctPurchasingCustomers
+      fulfilledUnits
+      cancelledUnits
+      awaitingPortions
+      completedPortions
+      cancelledPortions
+      externalPosUnitsObserved
+      externalPosOperations
+    }
+  }
+}
+query VendorTrend($vendorId: ID!, $range: AnalyticsRangeInput!) {
+  ownVendorAnalyticsTrend(vendorId: $vendorId, range: $range) {
+    metadata {
+      ...AnalyticsMeta
+    }
+    items {
+      ...VendorMetrics
+    }
+    nextCursor
+  }
+}
+query VendorProductAnalytics(
+  $vendorId: ID!
+  $range: AnalyticsRangeInput!
+  $variantId: ID
+) {
+  ownVendorProductAnalytics(
+    vendorId: $vendorId
+    range: $range
+    variantId: $variantId
+  ) {
+    metadata {
+      ...AnalyticsMeta
+    }
+    items {
+      ...VendorMetrics
+    }
+    nextCursor
+  }
+}
+query VendorMarketAnalytics($vendorId: ID!, $range: AnalyticsRangeInput!) {
+  ownVendorMarketAnalytics(vendorId: $vendorId, range: $range) {
+    metadata {
+      ...AnalyticsMeta
+    }
+    items {
+      ...VendorMetrics
+    }
+    nextCursor
+  }
+}
+query VendorOccurrenceAnalytics(
+  $vendorId: ID!
+  $range: AnalyticsRangeInput!
+  $occurrenceId: ID
+) {
+  ownVendorOccurrenceAnalytics(
+    vendorId: $vendorId
+    range: $range
+    occurrenceId: $occurrenceId
+  ) {
+    metadata {
+      ...AnalyticsMeta
+    }
+    items {
+      ...VendorMetrics
+    }
+    nextCursor
+  }
+}
+query MarketIdentity {
+  ownMarketIdentity {
+    id
+    name
+    slug
+    status
+    version
+    channelId
+    permissions
+    membership {
+      id
+      marketId
+      principalId
+      role
+      status
+    }
+  }
+}
+
+fragment OwnedCatalogProduct on OwnCatalogProduct {
+  id
+  name
+  slug
+  description
+  enabled
+  currency
+  variants {
+    id
+    name
+    sku
+    enabled
+    price
+    currency
+    optionIds
+  }
+  optionGroups {
+    id
+    name
+    options {
+      id
+      name
+      groupId
+    }
+  }
+}
+query VendorCatalog($options: OwnCatalogOptions) {
+  ownVendorCatalog(options: $options) {
+    items {
+      ...OwnedCatalogProduct
+    }
+    totalItems
+  }
+}
+query VendorProduct($productId: ID!) {
+  ownVendorProduct(productId: $productId) {
+    ...OwnedCatalogProduct
+  }
+}
+query VendorOrders($options: OwnOperationalOrderOptions) {
+  ownCommercePortions(options: $options) {
+    items {
+      ...Portion
+    }
+    totalItems
+  }
+}
+query VendorPublication($listingId: ID!) {
+  ownListingPublication(listingId: $listingId) {
+    listingId
+    variantId
+    productId
+    marketId
+    state
+  }
+}
+query FeatureAvailability($boundary: String!) {
+  ownFeatureAvailability(boundary: $boundary) {
+    boundary
+    state
+    reason
+    featureCode
+  }
+}
+query TenantEntitlements($subject: BillingSubjectInput!) {
+  ownEntitlements(subject: $subject) {
+    featureCode
+    allowed
+    reason
+    valueKind
+    enabled
+    unlimited
+    remaining
+    overLimit
+  }
+}

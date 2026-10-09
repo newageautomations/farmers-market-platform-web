@@ -1,0 +1,143 @@
+---
+import SiteLayout from '../../../../layouts/SiteLayout.astro';
+import { MarketPurchase } from '../../../../components/MarketPurchase';
+import { requestMarketShop } from '../../../../lib/shop';
+import {
+  AppError,
+  safeError,
+  type PublicMarketOccurrence,
+  type MarketItem,
+  type MarketBootstrap,
+} from '@market/api';
+import {
+  occurrenceLabel,
+  plainDescription,
+  safeAsset,
+  seo,
+} from '@market/storefront-core';
+import { formatMoney } from '@market/config';
+import { ErrorState } from '@market/ui';
+const { storefront, storefrontError } = Astro.locals;
+const occurrenceId = Astro.params.occurrenceId ?? '',
+  variantId = Astro.params.variantId ?? '';
+let occurrence: PublicMarketOccurrence | null = null,
+  item: MarketItem | null = null,
+  error = storefrontError;
+let bootstrap: MarketBootstrap = { signedIn: false, cart: null };
+try {
+  if (
+    storefront?.kind !== 'MARKET' ||
+    storefront.source !== 'backend' ||
+    ![occurrenceId, variantId].every((id) => /^[1-9][0-9]{0,9}$/.test(id))
+  )
+    throw new AppError('not-found');
+  const api = requestMarketShop(Astro);
+  occurrence = await api.occurrence(occurrenceId);
+  if (!occurrence) throw new AppError('not-found');
+  item = await api.item(occurrenceId, variantId);
+  if (!item) throw new AppError('not-found');
+  try {
+    bootstrap = await api.bootstrap();
+  } catch {
+    bootstrap = { signedIn: false, cart: null };
+  }
+} catch (e) {
+  error = safeError(e);
+}
+if (error)
+  Astro.response.status = ['not-found', 'forbidden'].includes(error.kind)
+    ? 404
+    : 503;
+const path = `/occurrences/${encodeURIComponent(occurrenceId)}/products/${encodeURIComponent(variantId)}`;
+const structured =
+  item && storefront && !error
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: item.productName,
+        description: plainDescription(item.description),
+        url: seo(storefront, path).canonical,
+        ...(safeAsset(item.featuredAsset?.preview)
+          ? { image: safeAsset(item.featuredAsset?.preview) }
+          : {}),
+      }
+    : undefined;
+---
+
+<SiteLayout
+  context={storefront}
+  path={path}
+  title={item?.productName ?? 'Product unavailable'}
+  description={
+    item ? plainDescription(item.description).slice(0, 200) : undefined
+  }
+  noindex={!!error}
+>
+  {structured && (
+    <script
+      slot="structured-data"
+      type="application/ld+json"
+      set:html={JSON.stringify(structured).replace(/</g, '\\u003c')}
+    />
+  )}
+  <section class="py-12" data-composition="market">
+    {error || !item || !occurrence ? (
+      <>
+        <h1>Product unavailable</h1>
+        <p>
+          This item is no longer eligible for this occurrence, or cannot be
+          browsed here.
+        </p>
+        <ErrorState error={error} />
+        <a href="/#occurrences">Choose an occurrence</a>
+      </>
+    ) : (
+      <div class="product-detail">
+        <div class="product-gallery">
+          {safeAsset(item.featuredAsset?.preview) ? (
+            <img
+              class="product-media"
+              src={safeAsset(item.featuredAsset?.preview)}
+              alt={item.productName}
+              width={item.featuredAsset?.width || 640}
+              height={item.featuredAsset?.height || 480}
+            />
+          ) : (
+            <div
+              class="product-media product-placeholder"
+              role="img"
+              aria-label={`${item.productName}: image unavailable`}
+            >
+              Image unavailable
+            </div>
+          )}
+        </div>
+        <div>
+          <h1>{item.productName}</h1>
+          <p>{item.name}</p>
+          <p>From {item.vendorName}</p>
+          <p class="occurrence-summary">{occurrenceLabel(occurrence)}</p>
+          <p class="product-description">
+            {plainDescription(item.description)}
+          </p>
+          <p class="product-price">
+            {formatMoney(item.price, item.currencyCode)}
+          </p>
+          <p>
+            Catalog eligibility: DOMAIN_TIME_ONLY. Quantity and current price
+            are validated when you edit the cart.
+          </p>
+          <MarketPurchase
+            storefrontId={storefront?.storefrontId ?? ''}
+            occurrenceId={occurrence.id}
+            variantId={item.variantId}
+            signedIn={bootstrap.signedIn}
+            initialCart={bootstrap.cart}
+            client:load
+          />
+          <a href={`/occurrences/${occurrence.id}`}>Browse this occurrence</a>
+        </div>
+      </div>
+    )}
+  </section>
+</SiteLayout>

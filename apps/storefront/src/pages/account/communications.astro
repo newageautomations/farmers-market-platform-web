@@ -1,0 +1,67 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { requestCheckout, requestPreferences } from '../../lib/shop';
+import CommunicationPreferences from '../../components/ResilientSurfaces';
+import { safeError } from '@market/api';
+let profile, preferences, error;
+try {
+  profile = await requestCheckout(Astro, Astro.response.headers).profile();
+  if (profile)
+    preferences = await requestPreferences(
+      Astro,
+      Astro.response.headers,
+    ).read();
+} catch (e) {
+  error = safeError(e);
+}
+if (!profile) return Astro.redirect('/account/sign-in');
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+---
+
+<SiteLayout
+  context={Astro.locals.storefront}
+  path="/account/communications"
+  title="Communication preferences"
+  noindex
+>
+  <section class="py-12 account-panel">
+    <h1>Communication preferences</h1>
+    {preferences && Astro.locals.storefront?.storefrontId ? (
+      <CommunicationPreferences
+        client:load
+        storefrontId={Astro.locals.storefront.storefrontId}
+        initial={preferences}
+      />
+    ) : (
+      <p role="alert">
+        {error?.kind === 'forbidden'
+          ? 'These preferences are unavailable for the current account context.'
+          : 'Communication settings are temporarily unavailable. Refresh to try again.'}
+      </p>
+    )}
+    <p>
+      <a href="/account">Return to your account</a>
+    </p>
+  </section>
+</SiteLayout>
+<style is:global>
+  .preference-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .preference-grid fieldset {
+    border: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .preference-grid label {
+    display: block;
+    margin: 1rem 0;
+  }
+  .preference-grid button {
+    margin-top: 1rem;
+  }
+</style>

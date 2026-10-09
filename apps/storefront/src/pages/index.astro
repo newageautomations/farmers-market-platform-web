@@ -1,0 +1,81 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import MarketHome from '../components/MarketHome.astro';
+import MarketPublicHome from '../components/MarketPublicHome.astro';
+import VendorHome from '../components/VendorHome.astro';
+import { composition } from '@market/storefront-core';
+import { ErrorState } from '@market/ui';
+import {
+  safeError,
+  type PublicCatalog,
+  type PublicMarketOccurrence,
+} from '@market/api';
+import { requestShop, requestMarketShop } from '../lib/shop';
+const { storefront, storefrontError } = Astro.locals;
+let catalog: PublicCatalog | undefined, catalogError;
+let occurrences: readonly PublicMarketOccurrence[] = [],
+  totalOccurrences = 0;
+const rawPage = Number(Astro.url.searchParams.get('occurrencePage') ?? 1);
+const occurrencePage =
+  Number.isSafeInteger(rawPage) && rawPage > 0 && rawPage <= 1250 ? rawPage : 1;
+if (storefront?.kind === 'MARKET' && storefront.source === 'backend') {
+  try {
+    const result = await requestMarketShop(Astro).occurrences({
+      options: { skip: (occurrencePage - 1) * 8, take: 8 },
+    });
+    occurrences = result.marketStorefrontOccurrences.items;
+    totalOccurrences = result.marketStorefrontOccurrences.totalItems;
+  } catch (error) {
+    catalogError = safeError(error);
+    Astro.response.status = 503;
+  }
+}
+if (storefront?.kind === 'VENDOR') {
+  try {
+    if (import.meta.env.DEV && storefront.source === 'fixture') {
+      const { fixtureCatalog } =
+        await import('@market/storefront-core/fixtures');
+      catalog = fixtureCatalog({ skip: 0, take: 3, search: '', sort: 'asc' });
+    } else
+      catalog = (
+        await requestShop(Astro).catalog({
+          options: { skip: 0, take: 3, sort: { name: 'ASC' } },
+        })
+      ).products;
+  } catch (error) {
+    catalogError = safeError(error);
+  }
+}
+if (storefrontError)
+  Astro.response.status =
+    storefrontError.kind === 'not-found'
+      ? 404
+      : storefrontError.kind === 'forbidden'
+        ? 403
+        : 503;
+---
+
+<SiteLayout context={storefront} noindex={!!storefrontError || !!catalogError}>
+  {storefront ? (
+    composition(storefront) === 'market' ? (
+      storefront.source === 'backend' ? (
+        <MarketPublicHome
+          context={storefront}
+          occurrences={occurrences}
+          totalItems={totalOccurrences}
+          page={occurrencePage}
+          error={catalogError}
+        />
+      ) : (
+        <MarketHome context={storefront} />
+      )
+    ) : (
+      <VendorHome context={storefront} catalog={catalog} error={catalogError} />
+    )
+  ) : (
+    <div class="py-12">
+      <h1>Storefront unavailable</h1>
+      <ErrorState error={storefrontError} />
+    </div>
+  )}
+</SiteLayout>

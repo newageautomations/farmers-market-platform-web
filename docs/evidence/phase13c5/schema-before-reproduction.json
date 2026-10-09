@@ -1,0 +1,22 @@
+[
+  {
+    "path": "packages/api/schema/admin.graphql",
+    "sha256": "8c4a63c74de72f7e61f89b07bde83ae6ee84ca173655a36fe3dfd609f962ba07"
+  },
+  {
+    "path": "packages/api/schema/shop.graphql",
+    "sha256": "af2fff8b05b5ff3d804d2b02012cbdbcf8a7b85eac449eb8648abb58d52d977f"
+  },
+  {
+    "path": "packages/api/schema/provenance.json",
+    "sha256": "12fe5f60cdc4c5dd6127c532fd877bbd144a25bfd9ac3adc274c794afe4e99b8"
+  },
+  {
+    "path": "packages/api/src/generated/admin.ts",
+    "sha256": "7e541b94ee933ebada91a8666f2e75ec20a496c45c3444b01979ff19304a95f7"
+  },
+  {
+    "path": "packages/api/src/generated/shop.ts",
+    "sha256": "adb7b5d98f204c969e1884dc3d6d3011ca951ad4297a6ba83f332f8ad3c12749"
+  }
+]

@@ -1,0 +1,22 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { isCentral } from '../../lib/account';
+if (!isCentral(Astro.url)) return new Response('Not found', { status: 404 });
+---
+
+<SiteLayout title="Sign out" noindex>
+  <section class="py-12 account-panel">
+    <h1>Sign out</h1>
+    <p>
+      End the central account session to prevent automatic sign-in on another
+      Storefront.
+    </p>
+    <form method="post" action="/api/account">
+      <input type="hidden" name="action" value="logout" />
+      <button class="button">Sign out of the central account</button>
+      <button name="everywhere" value="true">
+        Sign out everywhere
+      </button>
+    </form>
+  </section>
+</SiteLayout>

@@ -1,0 +1,100 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import OccurrencePreview from './OccurrencePreview';
+import { requestPublicMarketOperations } from '../lib/shop';
+interface Props {
+  context: StorefrontContext;
+}
+const { context } = Astro.props;
+let hasApplication = false;
+if (context.source === 'backend')
+  try {
+    await requestPublicMarketOperations(Astro).application();
+    hasApplication = true;
+  } catch {
+    /* No public application advertised. */
+  }
+---
+
+<div data-composition="market" data-template={context.template}>
+  <section
+    class:list={['hero', context.template === 'minimal' && 'minimal']}
+    aria-labelledby="market-title"
+  >
+    <div>
+      <h1 id="market-title">{context.name}</h1>
+      <p>
+        {context.source === 'fixture'
+          ? 'A place for community, local Vendors, and your next Market visit. This is a development Market fixture.'
+          : 'Explore this Market and its participating Vendors.'}
+      </p>
+      <div class="actions">
+        {hasApplication && (
+          <a class="button" href="/apply">
+            Apply as a Vendor
+          </a>
+        )}
+        <a class="button" href="#occurrences">
+          Explore the Market
+        </a>
+      </div>
+    </div>
+    <div class="market-art" aria-hidden="true">
+      <svg viewBox="0 0 320 260" fill="none">
+        <path
+          d="M45 126h230v112H45z"
+          fill="#F8F5EB"
+          stroke="#315947"
+          stroke-width="3"
+        />
+        <path
+          d="M30 126 65 62h190l35 64H30Z"
+          fill="#F8F5EB"
+          stroke="#315947"
+          stroke-width="3"
+        />
+        <path
+          d="m96 62-15 64m54-64-5 64m55-64 5 64m35-64 15 64"
+          stroke="#315947"
+          stroke-width="3"
+        />
+        <path
+          d="M81 152h158v60H81z"
+          fill="#D4DDC3"
+          stroke="#315947"
+          stroke-width="3"
+        />
+        <path
+          d="M59 238h204M160 62V30m0 0c-28-16-38-3-25 12 15 5 25-12 25-12Zm0 0c25-19 42-10 31 8-15 9-31-8-31-8Z"
+          stroke="#315947"
+          stroke-width="3"
+          stroke-linecap="round"
+        />
+        <path d="M45 126h230" stroke="#C38B46" stroke-width="6" />
+      </svg>
+    </div>
+  </section>
+  <div class="foundation-regions">
+    <section id="occurrences" aria-labelledby="occurrences-title">
+      <h2 id="occurrences-title">Upcoming occurrences</h2>
+      <div class="empty-state">
+        <h3>Occurrence details are coming</h3>
+        <p>
+          Upcoming occurrence data will load from the Market API. No event dates
+          are configured in this preview.
+        </p>
+      </div>
+      <OccurrencePreview client:load />
+    </section>
+    <section id="vendors" aria-labelledby="vendors-title">
+      <h2 id="vendors-title">Meet the Vendors</h2>
+      <div class="empty-state">
+        <h3>The directory will appear here</h3>
+        <p>
+          Participating Vendors and their occurrence-specific catalogs will come
+          from approved Market data.
+        </p>
+      </div>
+    </section>
+  </div>
+</div>

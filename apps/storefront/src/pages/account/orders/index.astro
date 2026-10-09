@@ -1,0 +1,65 @@
+---
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import { requestCheckout } from '../../../lib/shop';
+import { formatMoney, temporaryUnavailableResponse } from '@market/config';
+import { safeError } from '@market/api';
+const skipValue = Number(Astro.url.searchParams.get('skip') ?? 0),
+  skip =
+    Number.isSafeInteger(skipValue) && skipValue >= 0 && skipValue <= 10000
+      ? skipValue
+      : 0;
+let purchases;
+try {
+  purchases = await requestCheckout(Astro, Astro.response.headers).purchases(
+    skip,
+    10,
+  );
+} catch (error) {
+  const kind = safeError(error).kind;
+  return kind === 'authentication' || kind === 'forbidden'
+    ? Astro.redirect('/account/sign-in')
+    : temporaryUnavailableResponse();
+}
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+---
+
+<SiteLayout
+  context={Astro.locals.storefront}
+  path="/account/orders"
+  title="Your orders"
+  noindex
+>
+  <section class="py-12">
+    <h1>Your orders</h1>
+    <p>Purchases from all your Storefronts appear here.</p>
+    {purchases.items.length ? (
+      <ul class="purchase-list">
+        {purchases.items.map((p) => (
+          <li>
+            <a href={`/account/orders/${p.orderId}`}>
+              {p.storefront.displayName} ·{' '}
+              {new Date(p.purchasedAt).toLocaleDateString()}
+            </a>
+            <p>
+              {p.kind === 'DIRECT_VENDOR'
+                ? 'Direct Vendor purchase'
+                : 'Market purchase'}{' '}
+              · {formatMoney(p.financial.originalPaid, p.financial.currency)}
+            </p>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p>No purchases are available yet.</p>
+    )}
+    <nav aria-label="Orders pages">
+      {skip > 0 && <a href={`?skip=${Math.max(0, skip - 10)}`}>Previous</a>}
+      {skip + 10 < purchases.totalItems && (
+        <a href={`?skip=${skip + 10}`}>Next</a>
+      )}
+    </nav>
+    <p>
+      <a href="/account">Your account</a>
+    </p>
+  </section>
+</SiteLayout>

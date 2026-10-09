@@ -1,0 +1,27 @@
+{
+  "files": [
+    "README.md",
+    "package.json",
+    "src/gql/graphql-env.d.ts",
+    "src/plugins/farmers-market/api/admin-api.ts",
+    "src/plugins/farmers-market/farmers-market.plugin.ts",
+    "src/plugins/farmers-market/services/market-organizer-read.service.ts",
+    "src/plugins/farmers-market/services/occurrence-generation-worker.service.ts",
+    "src/plugins/marketplace-commerce/catalog-publishing.service.ts",
+    "src/plugins/marketplace-commerce/owned-admin-reads.ts",
+    "src/plugins/marketplace-commerce/marketplace-commerce.plugin.ts",
+    "test/frontend-integration/harness.ts",
+    "test/frontend-integration/run.ts",
+    "test/frontend-integration/cookie-client.ts",
+    "test/frontend-integration/market-fixture.ts",
+    "test/frontend-integration/market-large-fixture.ts",
+    "test/frontend-integration/market-run.ts",
+    "docs/frontend-api-gap-closure-phase13c5.md"
+  ],
+  "generatedPrefixes": [
+    "dist/",
+    ".vendure/",
+    "test/frontend-integration/.runtime/"
+  ],
+  "generatedTestRuntime": true
+}

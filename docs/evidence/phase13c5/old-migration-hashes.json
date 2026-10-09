@@ -1,0 +1,84 @@
+{
+  "migrations": [
+    {
+      "path": "src/migrations/1790829659203-NativeVendure373.ts",
+      "beforeSha256": "221358b3fc1b489a0c6bfa276a30e1c3b4c3383c8186e9f86511d5037e8bfc69",
+      "afterSha256": "221358b3fc1b489a0c6bfa276a30e1c3b4c3383c8186e9f86511d5037e8bfc69",
+      "unchanged": true
+    },
+    {
+      "path": "src/migrations/1790829694968-PlatformIdentityPhase1.ts",
+      "beforeSha256": "94512b994ac61121839f1bddf9c506c6e4f04a353c49250c32086167ca232f40",
+      "afterSha256": "94512b994ac61121839f1bddf9c506c6e4f04a353c49250c32086167ca232f40",
+      "unchanged": true
+    },
+    {
+      "path": "src/migrations/1790901000000-FarmersMarketPhase2.ts",
+      "beforeSha256": "efba78ba1f7f9d487c4d4840814b2a9b6ff69dc9de7f73708453fc56cf00f644",
+      "afterSha256": "efba78ba1f7f9d487c4d4840814b2a9b6ff69dc9de7f73708453fc56cf00f644",
+      "unchanged": true
+    },
+    {
+      "path": "src/migrations/1790910000000-CatalogPublicationPhase3.ts",
+      "beforeSha256": "0d529746d05b563145555c546f32d0d9eaf9babe53ec4e2c7287223024bf91d2",
+      "afterSha256": "0d529746d05b563145555c546f32d0d9eaf9babe53ec4e2c7287223024bf91d2",
+      "unchanged": true
+    },
+    {
+      "path": "src/migrations/1790920000000-InventoryCheckoutCapacityPhase4.ts",
+      "beforeSha256": "b0661ff83743061e1d0fc63657356ae927cc879a4186b3cf796c6138e601e699",
+      "afterSha256": "b0661ff83743061e1d0fc63657356ae927cc879a4186b3cf796c6138e601e699",
+      "unchanged": true
+    },
+    {
+      "path": "src/migrations/1790930000000-MarketplaceNativeCommercePhase5.ts",
+      "beforeSha256": "2e537db542bb553b8024d1f50758630ea783fa605e64b715294af82e651cc8da",
+      "afterSha256": "2e537db542bb553b8024d1f50758630ea783fa605e64b715294af82e651cc8da",
+      "unchanged": true
+    },
+    {
+      "path": "src/migrations/1790940000000-PaidAttributionRefundPhase6.ts",
+      "beforeSha256": "b9bd4ec498829385a17aa40f182bdcd4c388db98fb569ed061d01656539c5cc0",
+      "afterSha256": "b9bd4ec498829385a17aa40f182bdcd4c388db98fb569ed061d01656539c5cc0",
+      "unchanged": true
+    },
+    {
+      "path": "src/migrations/1790950000000-CustomerRelationshipsPhase7.ts",
+      "beforeSha256": "476bd71e0e9f3ed88c74b5eebe4ddd8d757b6e835027547e566f3d88d358b10b",
+      "afterSha256": "476bd71e0e9f3ed88c74b5eebe4ddd8d757b6e835027547e566f3d88d358b10b",
+      "unchanged": true
+    },
+    {
+      "path": "src/migrations/1790960000000-StripeConnectPhase8.ts",
+      "beforeSha256": "f310af7fa09cb0f0a04261cb3f5c749282db6fc17d108f358dbac2fe52c83638",
+      "afterSha256": "f310af7fa09cb0f0a04261cb3f5c749282db6fc17d108f358dbac2fe52c83638",
+      "unchanged": true
+    },
+    {
+      "path": "src/migrations/1790970000000-PosIntegrationsPhase9.ts",
+      "beforeSha256": "0b5c213a495d8d8e84d013eaafe732899ae31ee680ab0c28ad0ed798ef24beda",
+      "afterSha256": "0b5c213a495d8d8e84d013eaafe732899ae31ee680ab0c28ad0ed798ef24beda",
+      "unchanged": true
+    },
+    {
+      "path": "src/migrations/1790980000000-CommunicationsPhase10.ts",
+      "beforeSha256": "555a3c7381f61d6d0cc39fe8e524c9ad4d4eee96ffa7c2ff234c83f63643b340",
+      "afterSha256": "555a3c7381f61d6d0cc39fe8e524c9ad4d4eee96ffa7c2ff234c83f63643b340",
+      "unchanged": true
+    },
+    {
+      "path": "src/migrations/1790990000000-BillingEntitlementsPhase11.ts",
+      "beforeSha256": "7a425f5478401e35956f9669390a7c24dd6c5e01c00f50234c1737a16b195cbd",
+      "afterSha256": "7a425f5478401e35956f9669390a7c24dd6c5e01c00f50234c1737a16b195cbd",
+      "unchanged": true
+    },
+    {
+      "path": "src/migrations/1791000000000-AnalyticsPhase12.ts",
+      "beforeSha256": "6bec944e223bd65abb033b3c7e3e875d2b6a5b422cea24edaaf443262658844b",
+      "afterSha256": "6bec944e223bd65abb033b3c7e3e875d2b6a5b422cea24edaaf443262658844b",
+      "unchanged": true
+    }
+  ],
+  "newMigrations": [],
+  "allUnchanged": true
+}

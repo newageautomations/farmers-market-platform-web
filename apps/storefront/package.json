@@ -1,0 +1,26 @@
+{
+  "name": "@market/storefront",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1 --port 4321",
+    "build": "astro build",
+    "typecheck": "astro check",
+    "preview": "node dist/server/entry.mjs"
+  },
+  "dependencies": {
+    "astro": "7.3.5",
+    "@astrojs/react": "7.0.0",
+    "@astrojs/node": "11.1.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwindcss": "4.3.3",
+    "@tailwindcss/vite": "4.3.3",
+    "@market/api": "0.1.0",
+    "@market/config": "0.1.0",
+    "@market/storefront-core": "0.1.0",
+    "@market/theme": "0.1.0",
+    "@market/ui": "0.1.0"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "classification": "REAL FULL-STACK PASS",
+  "profile": "bound",
+  "fixtureMode": false,
+  "transport": "Real HTTP with native login cookies",
+  "providerMode": "Local test adapters only",
+  "backendResults": {
+    "checks": [
+      {
+        "name": "Catalog ownership before count, search, sort and pagination",
+        "status": "PASS"
+      },
+      {
+        "name": "Operational inventory uses canonical capacity and safe labels",
+        "status": "PASS"
+      },
+      {
+        "name": "Operational orders expose only Direct and owned Market Seller portions",
+        "status": "PASS"
+      },
+      {
+        "name": "Exact canonical 10 on hand, 2 allocated, 3 live held; expiry and bounded inventory paging",
+        "status": "PASS"
+      },
+      {
+        "name": "Market relationship names and publication rereads",
+        "status": "PASS"
+      },
+      {
+        "name": "Market display rename reads current domain identity without Channel or Seller fields",
+        "status": "PASS"
+      },
+      {
+        "name": "Actual boundary availability and analytics-denied inventory/restock",
+        "status": "PASS"
+      },
+      {
+        "name": "Boundary availability rereads plan-version migration and active overrides",
+        "status": "PASS"
+      },
+      {
+        "name": "Market bootstrap exact channel and same-cookie membership/role revocation",
+        "status": "PASS"
+      },
+      {
+        "name": "Fresh Vendor membership and native-role authority on every projection",
+        "status": "PASS"
+      }
+    ],
+    "cookieTransport": true,
+    "productionConfigurationImported": false,
+    "database": "vendure_test_frontend_1791225799115_968a70",
+    "cleanup": "dropped"
+  },
+  "backendExit": 0,
+  "browserPass": true
+}

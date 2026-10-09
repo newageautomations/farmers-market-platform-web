@@ -1,0 +1,34 @@
+fragment ScopedPreferences on StorefrontCommunicationPreferences {
+  subjectKind
+  displayName
+  noticeVersion
+  preferences {
+    medium
+    purpose
+    status
+    version
+    renewalRequired
+    grantAvailable
+    unavailableReason
+  }
+}
+query CommunicationSettings {
+  myStorefrontCommunicationPreferences {
+    ...ScopedPreferences
+  }
+}
+mutation ChangeCommunicationSetting(
+  $medium: CommunicationMedium!
+  $purpose: CommunicationPurpose!
+  $subscribed: Boolean!
+  $noticeVersion: String!
+) {
+  setMyStorefrontCommunicationPreference(
+    medium: $medium
+    purpose: $purpose
+    subscribed: $subscribed
+    noticeVersion: $noticeVersion
+  ) {
+    ...ScopedPreferences
+  }
+}

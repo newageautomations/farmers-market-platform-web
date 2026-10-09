@@ -1,0 +1,109 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import ProductCards from '../../components/ProductCards.astro';
+import { requestShop } from '../../lib/shop';
+import { AppError, safeError, type PublicCatalog } from '@market/api';
+import { ErrorState } from '@market/ui';
+import { catalogInputs } from '@market/storefront-core';
+const { storefront, storefrontError } = Astro.locals;
+let error = storefrontError,
+  catalog: PublicCatalog | undefined,
+  inputs = { page: 1, search: '', sort: 'asc', skip: 0, take: 12 };
+try {
+  if (storefront?.kind === 'MARKET') throw new AppError('not-found');
+  if (storefront) {
+    inputs = catalogInputs(Astro.url.searchParams);
+    if (import.meta.env.DEV && storefront.source === 'fixture') {
+      const { fixtureCatalog } =
+        await import('@market/storefront-core/fixtures');
+      catalog = fixtureCatalog(inputs);
+    } else
+      catalog = (
+        await requestShop(Astro).catalog({
+          options: {
+            skip: inputs.skip,
+            take: inputs.take,
+            sort: { name: inputs.sort === 'desc' ? 'DESC' : 'ASC' },
+            ...(inputs.search
+              ? { filter: { name: { contains: inputs.search } } }
+              : {}),
+          },
+        })
+      ).products;
+  }
+} catch (e) {
+  error = safeError(e);
+}
+if (error)
+  Astro.response.status =
+    error.kind === 'not-found' ? 404 : error.kind === 'validation' ? 400 : 503;
+const pageLink = (page: number) =>
+  '/products?' +
+  new URLSearchParams({
+    page: String(page),
+    q: inputs.search,
+    sort: inputs.sort,
+  });
+---
+
+<SiteLayout
+  context={storefront}
+  path="/products"
+  title={error ? 'Catalog unavailable' : 'Products'}
+  noindex={!!error || !catalog?.items.length}
+>
+  <section
+    class="py-12"
+    data-composition={storefront?.kind === 'VENDOR' ? 'vendor' : undefined}
+  >
+    <h1>{error ? 'Catalog unavailable' : 'Products'}</h1>
+    {error ? (
+      <ErrorState error={error} />
+    ) : (
+      <>
+        <form class="catalog-filters" method="get">
+          <div class="field">
+            <label for="catalog-search">Search products</label>
+            <input
+              id="catalog-search"
+              name="q"
+              type="search"
+              value={inputs.search}
+              maxlength="200"
+            />
+          </div>
+          <div class="field">
+            <label for="catalog-sort">Sort products</label>
+            <select id="catalog-sort" name="sort">
+              <option value="asc" selected={inputs.sort === 'asc'}>
+                Name A to Z
+              </option>
+              <option value="desc" selected={inputs.sort === 'desc'}>
+                Name Z to A
+              </option>
+            </select>
+          </div>
+          <button class="button">Apply</button>
+        </form>
+        {catalog?.items.length ? (
+          <ProductCards items={catalog.items} />
+        ) : (
+          <div class="empty-state">
+            <h2>No products found</h2>
+            <p>Try another search or return to the first page.</p>
+            <a href="/products">View all products</a>
+          </div>
+        )}
+        <nav class="pagination" aria-label="Catalog pages">
+          {inputs.page > 1 && (
+            <a href={pageLink(inputs.page - 1)}>Previous page</a>
+          )}
+          <span>Page {inputs.page}</span>
+          {catalog && inputs.skip + inputs.take < catalog.totalItems && (
+            <a href={pageLink(inputs.page + 1)}>Next page</a>
+          )}
+        </nav>
+      </>
+    )}
+  </section>
+</SiteLayout>

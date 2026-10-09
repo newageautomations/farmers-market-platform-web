@@ -1,0 +1,26 @@
+{
+  "unchanged": true,
+  "before": {
+    "packages/api/schema/admin.graphql": "038c7956103ae18a8d7bfc431d2828a6e5e15c191cfd6e0d5301b10a8f632975",
+    "packages/api/schema/shop.graphql": "af2fff8b05b5ff3d804d2b02012cbdbcf8a7b85eac449eb8648abb58d52d977f",
+    "packages/api/schema/provenance.json": "468b567f3f41cf18b4c6ad5d6214c4d395bf6d431110d0f15e90e33f47fc973c",
+    "packages/api/src/generated/admin.ts": "ee139b295cb5494f0a90a6158e0b198fe9e84117136a3ba37e2f031996748ae4",
+    "packages/api/src/generated/shop.ts": "adb7b5d98f204c969e1884dc3d6d3011ca951ad4297a6ba83f332f8ad3c12749"
+  },
+  "first": {
+    "packages/api/schema/admin.graphql": "038c7956103ae18a8d7bfc431d2828a6e5e15c191cfd6e0d5301b10a8f632975",
+    "packages/api/schema/shop.graphql": "af2fff8b05b5ff3d804d2b02012cbdbcf8a7b85eac449eb8648abb58d52d977f",
+    "packages/api/schema/provenance.json": "468b567f3f41cf18b4c6ad5d6214c4d395bf6d431110d0f15e90e33f47fc973c",
+    "packages/api/src/generated/admin.ts": "ee139b295cb5494f0a90a6158e0b198fe9e84117136a3ba37e2f031996748ae4",
+    "packages/api/src/generated/shop.ts": "adb7b5d98f204c969e1884dc3d6d3011ca951ad4297a6ba83f332f8ad3c12749"
+  },
+  "second": {
+    "packages/api/schema/admin.graphql": "038c7956103ae18a8d7bfc431d2828a6e5e15c191cfd6e0d5301b10a8f632975",
+    "packages/api/schema/shop.graphql": "af2fff8b05b5ff3d804d2b02012cbdbcf8a7b85eac449eb8648abb58d52d977f",
+    "packages/api/schema/provenance.json": "468b567f3f41cf18b4c6ad5d6214c4d395bf6d431110d0f15e90e33f47fc973c",
+    "packages/api/src/generated/admin.ts": "ee139b295cb5494f0a90a6158e0b198fe9e84117136a3ba37e2f031996748ae4",
+    "packages/api/src/generated/shop.ts": "adb7b5d98f204c969e1884dc3d6d3011ca951ad4297a6ba83f332f8ad3c12749"
+  },
+  "backendBootstrap": false,
+  "databaseUse": false
+}

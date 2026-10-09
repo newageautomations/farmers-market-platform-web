@@ -1,0 +1,10 @@
+{
+  "command": "npm run dev:fixtures",
+  "storefrontStatus": 200,
+  "marketFixturePresent": true,
+  "adminStatus": 200,
+  "ports": [
+    4321,
+    4322
+  ]
+}

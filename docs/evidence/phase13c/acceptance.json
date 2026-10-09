@@ -1,0 +1,781 @@
+{
+  "phase": "13C",
+  "date": "2026-10-05",
+  "total": 128,
+  "totals": {
+    "PASS": 127,
+    "INCONCLUSIVE": 1,
+    "FAIL": 0
+  },
+  "scope": "Frontend fixture/mock/schema/build verification. No new backend integration or database use.",
+  "gates": [
+    {
+      "id": "A",
+      "gate": "Backend repo strictly read-only",
+      "status": "PASS",
+      "evidence": "[Backend verification](evidence/phase13c/backend-verification.json): 6,393 bytes/hash records and exact HEAD/status unchanged."
+    },
+    {
+      "id": "B",
+      "gate": "Backend status/hash unchanged",
+      "status": "PASS",
+      "evidence": "[Backend verification](evidence/phase13c/backend-verification.json): 6,393 bytes/hash records and exact HEAD/status unchanged."
+    },
+    {
+      "id": "C",
+      "gate": "No protected vendure DB use",
+      "status": "PASS",
+      "evidence": "No backend startup, database connection, test database or protected vendure operation; read-only command scope."
+    },
+    {
+      "id": "D",
+      "gate": "Frontend architecture preserved",
+      "status": "PASS",
+      "evidence": "[Architecture](frontend-architecture.md), shared shell and package-boundary check."
+    },
+    {
+      "id": "E",
+      "gate": "Market capability characterization complete",
+      "status": "PASS",
+      "evidence": "[Pre-implementation capability matrix](frontend-phase13c-capabilities.md), current source and extracted schema."
+    },
+    {
+      "id": "F",
+      "gate": "ownMarketIdentity bootstrap",
+      "status": "PASS",
+      "evidence": "Market authority unit tests and fixture-disabled HTTP browser bootstrap/revocation; exact Channel/principal/membership/grants."
+    },
+    {
+      "id": "G",
+      "gate": "No Market inference from URL/Channel alone",
+      "status": "PASS",
+      "evidence": "Market authority unit tests and fixture-disabled HTTP browser bootstrap/revocation; exact Channel/principal/membership/grants."
+    },
+    {
+      "id": "H",
+      "gate": "Multiple Market context selection",
+      "status": "PASS",
+      "evidence": "Market authority unit tests and fixture-disabled HTTP browser bootstrap/revocation; exact Channel/principal/membership/grants."
+    },
+    {
+      "id": "I",
+      "gate": "Bootstrap loading state",
+      "status": "PASS",
+      "evidence": "Market authority unit tests and fixture-disabled HTTP browser bootstrap/revocation; exact Channel/principal/membership/grants."
+    },
+    {
+      "id": "J",
+      "gate": "Bootstrap anonymous state",
+      "status": "PASS",
+      "evidence": "Market authority unit tests and fixture-disabled HTTP browser bootstrap/revocation; exact Channel/principal/membership/grants."
+    },
+    {
+      "id": "K",
+      "gate": "Bootstrap forbidden state",
+      "status": "PASS",
+      "evidence": "Market authority unit tests and fixture-disabled HTTP browser bootstrap/revocation; exact Channel/principal/membership/grants."
+    },
+    {
+      "id": "L",
+      "gate": "Suspended Market policy preserved",
+      "status": "PASS",
+      "evidence": "Market authority unit tests and fixture-disabled HTTP browser bootstrap/revocation; exact Channel/principal/membership/grants."
+    },
+    {
+      "id": "M",
+      "gate": "Membership revocation clears content",
+      "status": "PASS",
+      "evidence": "Market authority unit tests and fixture-disabled HTTP browser bootstrap/revocation; exact Channel/principal/membership/grants."
+    },
+    {
+      "id": "N",
+      "gate": "Market navigation permission-aware",
+      "status": "PASS",
+      "evidence": "Exact grant presets, route/service guards and browser hidden-module/direct-forbidden tests."
+    },
+    {
+      "id": "O",
+      "gate": "Partial Market roles supported",
+      "status": "PASS",
+      "evidence": "Exact grant presets, route/service guards and browser hidden-module/direct-forbidden tests."
+    },
+    {
+      "id": "P",
+      "gate": "Direct forbidden routes safe",
+      "status": "PASS",
+      "evidence": "Exact grant presets, route/service guards and browser hidden-module/direct-forbidden tests."
+    },
+    {
+      "id": "Q",
+      "gate": "Market Overview implemented",
+      "status": "PASS",
+      "evidence": "Mandatory 2/3/2 Overview fixture; bounded labels and all four optional states; no finance."
+    },
+    {
+      "id": "R",
+      "gate": "Overview works without analytics",
+      "status": "PASS",
+      "evidence": "Mandatory 2/3/2 Overview fixture; bounded labels and all four optional states; no finance."
+    },
+    {
+      "id": "S",
+      "gate": "No financial metrics on Overview",
+      "status": "PASS",
+      "evidence": "Mandatory 2/3/2 Overview fixture; bounded labels and all four optional states; no finance."
+    },
+    {
+      "id": "T",
+      "gate": "ownMarket settings read",
+      "status": "PASS",
+      "evidence": "Settings/recurrence unit and browser flows, IANA local inputs, authoritative reread and actual-shaped stale refusal."
+    },
+    {
+      "id": "U",
+      "gate": "Market settings update",
+      "status": "PASS",
+      "evidence": "Settings/recurrence unit and browser flows, IANA local inputs, authoritative reread and actual-shaped stale refusal."
+    },
+    {
+      "id": "V",
+      "gate": "IANA timezone preserved",
+      "status": "PASS",
+      "evidence": "Settings/recurrence unit and browser flows, IANA local inputs, authoritative reread and actual-shaped stale refusal."
+    },
+    {
+      "id": "W",
+      "gate": "Recurrence update",
+      "status": "PASS",
+      "evidence": "Settings/recurrence unit and browser flows, IANA local inputs, authoritative reread and actual-shaped stale refusal."
+    },
+    {
+      "id": "X",
+      "gate": "Recurrence stale-version handling",
+      "status": "PASS",
+      "evidence": "Settings/recurrence unit and browser flows, IANA local inputs, authoritative reread and actual-shaped stale refusal."
+    },
+    {
+      "id": "Y",
+      "gate": "Occurrence list",
+      "status": "PASS",
+      "evidence": "Generated/manual list, source/lifecycle/local/UTC fields and explicit bounded date view."
+    },
+    {
+      "id": "Z",
+      "gate": "Occurrence paging/date bounds",
+      "status": "INCONCLUSIVE",
+      "evidence": "Date bounds PASS; complete paging unavailable because marketOccurrences caps 1,000 without total/cursor (MARKET-B4)."
+    },
+    {
+      "id": "AA",
+      "gate": "Generate occurrences",
+      "status": "PASS",
+      "evidence": "Generation/manual/revise/cancel unit and browser flows; queue accepted only (MARKET-B6); confirmation excludes refund/restock/contact; no delete."
+    },
+    {
+      "id": "AB",
+      "gate": "Queued generation handled if exposed",
+      "status": "PASS",
+      "evidence": "Generation/manual/revise/cancel unit and browser flows; queue accepted only (MARKET-B6); confirmation excludes refund/restock/contact; no delete."
+    },
+    {
+      "id": "AC",
+      "gate": "Manual occurrence creation",
+      "status": "PASS",
+      "evidence": "Generation/manual/revise/cancel unit and browser flows; queue accepted only (MARKET-B6); confirmation excludes refund/restock/contact; no delete."
+    },
+    {
+      "id": "AD",
+      "gate": "Occurrence revision",
+      "status": "PASS",
+      "evidence": "Generation/manual/revise/cancel unit and browser flows; queue accepted only (MARKET-B6); confirmation excludes refund/restock/contact; no delete."
+    },
+    {
+      "id": "AE",
+      "gate": "Occurrence cancellation",
+      "status": "PASS",
+      "evidence": "Generation/manual/revise/cancel unit and browser flows; queue accepted only (MARKET-B6); confirmation excludes refund/restock/contact; no delete."
+    },
+    {
+      "id": "AF",
+      "gate": "Cancellation not called refund",
+      "status": "PASS",
+      "evidence": "Generation/manual/revise/cancel unit and browser flows; queue accepted only (MARKET-B6); confirmation excludes refund/restock/contact; no delete."
+    },
+    {
+      "id": "AG",
+      "gate": "Cancellation not called restock",
+      "status": "PASS",
+      "evidence": "Generation/manual/revise/cancel unit and browser flows; queue accepted only (MARKET-B6); confirmation excludes refund/restock/contact; no delete."
+    },
+    {
+      "id": "AH",
+      "gate": "Cancellation not called communication",
+      "status": "PASS",
+      "evidence": "Generation/manual/revise/cancel unit and browser flows; queue accepted only (MARKET-B6); confirmation excludes refund/restock/contact; no delete."
+    },
+    {
+      "id": "AI",
+      "gate": "No occurrence delete",
+      "status": "PASS",
+      "evidence": "Generation/manual/revise/cancel unit and browser flows; queue accepted only (MARKET-B6); confirmation excludes refund/restock/contact; no delete."
+    },
+    {
+      "id": "AJ",
+      "gate": "Vendor membership list",
+      "status": "PASS",
+      "evidence": "Existing relationship list/status/version tests, tenant guards and private-field absence; safe Vendor references (MARKET-B1)."
+    },
+    {
+      "id": "AK",
+      "gate": "Vendor membership state management",
+      "status": "PASS",
+      "evidence": "Existing relationship list/status/version tests, tenant guards and private-field absence; safe Vendor references (MARKET-B1)."
+    },
+    {
+      "id": "AL",
+      "gate": "Vendor relationship tenant isolation",
+      "status": "PASS",
+      "evidence": "Existing relationship list/status/version tests, tenant guards and private-field absence; safe Vendor references (MARKET-B1)."
+    },
+    {
+      "id": "AM",
+      "gate": "No Seller exposure",
+      "status": "PASS",
+      "evidence": "Existing relationship list/status/version tests, tenant guards and private-field absence; safe Vendor references (MARKET-B1)."
+    },
+    {
+      "id": "AN",
+      "gate": "No Vendor private finance",
+      "status": "PASS",
+      "evidence": "Existing relationship list/status/version tests, tenant guards and private-field absence; safe Vendor references (MARKET-B1)."
+    },
+    {
+      "id": "AO",
+      "gate": "No Vendor customer data",
+      "status": "PASS",
+      "evidence": "Existing relationship list/status/version tests, tenant guards and private-field absence; safe Vendor references (MARKET-B1)."
+    },
+    {
+      "id": "AP",
+      "gate": "Listing states displayed",
+      "status": "PASS",
+      "evidence": "Listing approve/withdraw/reread tests; no Product edit; publication unavailable (MARKET-B3), separate approval/offering."
+    },
+    {
+      "id": "AQ",
+      "gate": "Listing approval",
+      "status": "PASS",
+      "evidence": "Listing approve/withdraw/reread tests; no Product edit; publication unavailable (MARKET-B3), separate approval/offering."
+    },
+    {
+      "id": "AR",
+      "gate": "Vendor cannot gain Product edit authority",
+      "status": "PASS",
+      "evidence": "Listing approve/withdraw/reread tests; no Product edit; publication unavailable (MARKET-B3), separate approval/offering."
+    },
+    {
+      "id": "AS",
+      "gate": "Listing approval distinct from publication",
+      "status": "PASS",
+      "evidence": "Listing approve/withdraw/reread tests; no Product edit; publication unavailable (MARKET-B3), separate approval/offering."
+    },
+    {
+      "id": "AT",
+      "gate": "Listing approval distinct from offering",
+      "status": "PASS",
+      "evidence": "Listing approve/withdraw/reread tests; no Product edit; publication unavailable (MARKET-B3), separate approval/offering."
+    },
+    {
+      "id": "AU",
+      "gate": "Participation states",
+      "status": "PASS",
+      "evidence": "Exact planned/confirmed/cancelled states and organizer permission tests; no invented attendance states."
+    },
+    {
+      "id": "AV",
+      "gate": "Participation management where authorized",
+      "status": "PASS",
+      "evidence": "Exact planned/confirmed/cancelled states and organizer permission tests; no invented attendance states."
+    },
+    {
+      "id": "AW",
+      "gate": "No fake attendance/check-in states",
+      "status": "PASS",
+      "evidence": "Exact planned/confirmed/cancelled states and organizer permission tests; no invented attendance states."
+    },
+    {
+      "id": "AX",
+      "gate": "Offering state",
+      "status": "PASS",
+      "evidence": "Offering configuration/rematerialization/version tests; backend windows/provenance; cap separate from stock and authorization."
+    },
+    {
+      "id": "AY",
+      "gate": "Offering configuration",
+      "status": "PASS",
+      "evidence": "Offering configuration/rematerialization/version tests; backend windows/provenance; cap separate from stock and authorization."
+    },
+    {
+      "id": "AZ",
+      "gate": "salesCap distinct from physical inventory",
+      "status": "PASS",
+      "evidence": "Offering configuration/rematerialization/version tests; backend windows/provenance; cap separate from stock and authorization."
+    },
+    {
+      "id": "BA",
+      "gate": "Effective preorder window authoritative",
+      "status": "PASS",
+      "evidence": "Offering configuration/rematerialization/version tests; backend windows/provenance; cap separate from stock and authorization."
+    },
+    {
+      "id": "BB",
+      "gate": "Domain-time eligibility labeled correctly",
+      "status": "PASS",
+      "evidence": "Offering configuration/rematerialization/version tests; backend windows/provenance; cap separate from stock and authorization."
+    },
+    {
+      "id": "BC",
+      "gate": "Window rematerialization where supported",
+      "status": "PASS",
+      "evidence": "Offering configuration/rematerialization/version tests; backend windows/provenance; cap separate from stock and authorization."
+    },
+    {
+      "id": "BD",
+      "gate": "Occurrence operations view",
+      "status": "PASS",
+      "evidence": "23-purchase server paging, explicit private-extra absence and operational quantity tests; named read-only factory, no Vendor order/refund actions."
+    },
+    {
+      "id": "BE",
+      "gate": "Bounded complete operations paging",
+      "status": "PASS",
+      "evidence": "23-purchase server paging, explicit private-extra absence and operational quantity tests; named read-only factory, no Vendor order/refund actions."
+    },
+    {
+      "id": "BF",
+      "gate": "Vendor portions displayed safely",
+      "status": "PASS",
+      "evidence": "23-purchase server paging, explicit private-extra absence and operational quantity tests; named read-only factory, no Vendor order/refund actions."
+    },
+    {
+      "id": "BG",
+      "gate": "Customer contact absent",
+      "status": "PASS",
+      "evidence": "23-purchase server paging, explicit private-extra absence and operational quantity tests; named read-only factory, no Vendor order/refund actions."
+    },
+    {
+      "id": "BH",
+      "gate": "Addresses absent",
+      "status": "PASS",
+      "evidence": "23-purchase server paging, explicit private-extra absence and operational quantity tests; named read-only factory, no Vendor order/refund actions."
+    },
+    {
+      "id": "BI",
+      "gate": "Payment/provider data absent",
+      "status": "PASS",
+      "evidence": "23-purchase server paging, explicit private-extra absence and operational quantity tests; named read-only factory, no Vendor order/refund actions."
+    },
+    {
+      "id": "BJ",
+      "gate": "Vendor finance absent",
+      "status": "PASS",
+      "evidence": "23-purchase server paging, explicit private-extra absence and operational quantity tests; named read-only factory, no Vendor order/refund actions."
+    },
+    {
+      "id": "BK",
+      "gate": "Operational vs financial semantics preserved",
+      "status": "PASS",
+      "evidence": "23-purchase server paging, explicit private-extra absence and operational quantity tests; named read-only factory, no Vendor order/refund actions."
+    },
+    {
+      "id": "BL",
+      "gate": "Market cannot use Vendor fulfillment commands",
+      "status": "PASS",
+      "evidence": "23-purchase server paging, explicit private-extra absence and operational quantity tests; named read-only factory, no Vendor order/refund actions."
+    },
+    {
+      "id": "BM",
+      "gate": "No refund controls",
+      "status": "PASS",
+      "evidence": "23-purchase server paging, explicit private-extra absence and operational quantity tests; named read-only factory, no Vendor order/refund actions."
+    },
+    {
+      "id": "BN",
+      "gate": "Market Analytics implemented",
+      "status": "PASS",
+      "evidence": "Analytics permission, neutral boundary, four availability states, six freshness states and cursor-reset tests; core reads independent."
+    },
+    {
+      "id": "BO",
+      "gate": "ReadOwnMarketAnalytics respected",
+      "status": "PASS",
+      "evidence": "Analytics permission, neutral boundary, four availability states, six freshness states and cursor-reset tests; core reads independent."
+    },
+    {
+      "id": "BP",
+      "gate": "analytics.market.read capability used",
+      "status": "PASS",
+      "evidence": "Analytics permission, neutral boundary, four availability states, six freshness states and cursor-reset tests; core reads independent."
+    },
+    {
+      "id": "BQ",
+      "gate": "Analytics ALLOWED",
+      "status": "PASS",
+      "evidence": "Analytics permission, neutral boundary, four availability states, six freshness states and cursor-reset tests; core reads independent."
+    },
+    {
+      "id": "BR",
+      "gate": "Analytics DENIED",
+      "status": "PASS",
+      "evidence": "Analytics permission, neutral boundary, four availability states, six freshness states and cursor-reset tests; core reads independent."
+    },
+    {
+      "id": "BS",
+      "gate": "Analytics UNKNOWN",
+      "status": "PASS",
+      "evidence": "Analytics permission, neutral boundary, four availability states, six freshness states and cursor-reset tests; core reads independent."
+    },
+    {
+      "id": "BT",
+      "gate": "Analytics UNCONFIGURED",
+      "status": "PASS",
+      "evidence": "Analytics permission, neutral boundary, four availability states, six freshness states and cursor-reset tests; core reads independent."
+    },
+    {
+      "id": "BU",
+      "gate": "Core Admin independent of analytics",
+      "status": "PASS",
+      "evidence": "Analytics permission, neutral boundary, four availability states, six freshness states and cursor-reset tests; core reads independent."
+    },
+    {
+      "id": "BV",
+      "gate": "Projection freshness displayed",
+      "status": "PASS",
+      "evidence": "Analytics permission, neutral boundary, four availability states, six freshness states and cursor-reset tests; core reads independent."
+    },
+    {
+      "id": "BW",
+      "gate": "No GMV",
+      "status": "PASS",
+      "evidence": "Generated selections and rendered metric tests: 13 count fields, no money, financial rankings or Customer identity/profile."
+    },
+    {
+      "id": "BX",
+      "gate": "No Vendor attributed money",
+      "status": "PASS",
+      "evidence": "Generated selections and rendered metric tests: 13 count fields, no money, financial rankings or Customer identity/profile."
+    },
+    {
+      "id": "BY",
+      "gate": "No refund-dollar metrics",
+      "status": "PASS",
+      "evidence": "Generated selections and rendered metric tests: 13 count fields, no money, financial rankings or Customer identity/profile."
+    },
+    {
+      "id": "BZ",
+      "gate": "No Vendor financial ranking",
+      "status": "PASS",
+      "evidence": "Generated selections and rendered metric tests: 13 count fields, no money, financial rankings or Customer identity/profile."
+    },
+    {
+      "id": "CA",
+      "gate": "No Customer identities/count profiling beyond safe DTO",
+      "status": "PASS",
+      "evidence": "Generated selections and rendered metric tests: 13 count fields, no money, financial rankings or Customer identity/profile."
+    },
+    {
+      "id": "CB",
+      "gate": "No payout/profit metrics",
+      "status": "PASS",
+      "evidence": "Generated selections and rendered metric tests: 13 count fields, no money, financial rankings or Customer identity/profile."
+    },
+    {
+      "id": "CC",
+      "gate": "Market A/B state isolation",
+      "status": "PASS",
+      "evidence": "Single browser lifecycle all modules, delayed production Market A HTTP response and Market B revocation; pending service reads discarded."
+    },
+    {
+      "id": "CD",
+      "gate": "Tenant switch clears prior state",
+      "status": "PASS",
+      "evidence": "Single browser lifecycle all modules, delayed production Market A HTTP response and Market B revocation; pending service reads discarded."
+    },
+    {
+      "id": "CE",
+      "gate": "Late response cannot repopulate old Market",
+      "status": "PASS",
+      "evidence": "Single browser lifecycle all modules, delayed production Market A HTTP response and Market B revocation; pending service reads discarded."
+    },
+    {
+      "id": "CF",
+      "gate": "Permission loss safe",
+      "status": "PASS",
+      "evidence": "Single browser lifecycle all modules, delayed production Market A HTTP response and Market B revocation; pending service reads discarded."
+    },
+    {
+      "id": "CG",
+      "gate": "No communications UI",
+      "status": "PASS",
+      "evidence": "Six-module navigation, route/factory boundary tests and no excluded domain controls."
+    },
+    {
+      "id": "CH",
+      "gate": "No Market CRM/Customers module",
+      "status": "PASS",
+      "evidence": "Six-module navigation, route/factory boundary tests and no excluded domain controls."
+    },
+    {
+      "id": "CI",
+      "gate": "No Product management",
+      "status": "PASS",
+      "evidence": "Six-module navigation, route/factory boundary tests and no excluded domain controls."
+    },
+    {
+      "id": "CJ",
+      "gate": "No Inventory management",
+      "status": "PASS",
+      "evidence": "Six-module navigation, route/factory boundary tests and no excluded domain controls."
+    },
+    {
+      "id": "CK",
+      "gate": "No Channel management",
+      "status": "PASS",
+      "evidence": "Six-module navigation, route/factory boundary tests and no excluded domain controls."
+    },
+    {
+      "id": "CL",
+      "gate": "No Seller management",
+      "status": "PASS",
+      "evidence": "Six-module navigation, route/factory boundary tests and no excluded domain controls."
+    },
+    {
+      "id": "CM",
+      "gate": "No POS configuration",
+      "status": "PASS",
+      "evidence": "Six-module navigation, route/factory boundary tests and no excluded domain controls."
+    },
+    {
+      "id": "CN",
+      "gate": "No billing UI",
+      "status": "PASS",
+      "evidence": "Six-module navigation, route/factory boundary tests and no excluded domain controls."
+    },
+    {
+      "id": "CO",
+      "gate": "No exports",
+      "status": "PASS",
+      "evidence": "Six-module navigation, route/factory boundary tests and no excluded domain controls."
+    },
+    {
+      "id": "CP",
+      "gate": "Accessible Overview",
+      "status": "PASS",
+      "evidence": "Axe and document-overflow assertions for all six Market modules at 390/768/1280; 18 screenshots."
+    },
+    {
+      "id": "CQ",
+      "gate": "Accessible Occurrences",
+      "status": "PASS",
+      "evidence": "Axe and document-overflow assertions for all six Market modules at 390/768/1280; 18 screenshots."
+    },
+    {
+      "id": "CR",
+      "gate": "Accessible Vendors",
+      "status": "PASS",
+      "evidence": "Axe and document-overflow assertions for all six Market modules at 390/768/1280; 18 screenshots."
+    },
+    {
+      "id": "CS",
+      "gate": "Accessible Operations",
+      "status": "PASS",
+      "evidence": "Axe and document-overflow assertions for all six Market modules at 390/768/1280; 18 screenshots."
+    },
+    {
+      "id": "CT",
+      "gate": "Accessible Analytics",
+      "status": "PASS",
+      "evidence": "Axe and document-overflow assertions for all six Market modules at 390/768/1280; 18 screenshots."
+    },
+    {
+      "id": "CU",
+      "gate": "Accessible Settings",
+      "status": "PASS",
+      "evidence": "Axe and document-overflow assertions for all six Market modules at 390/768/1280; 18 screenshots."
+    },
+    {
+      "id": "CV",
+      "gate": "Keyboard navigation",
+      "status": "PASS",
+      "evidence": "Mobile disclosure, keyboard actions and native dialog Escape/focus-return browser checks."
+    },
+    {
+      "id": "CW",
+      "gate": "Dialog focus management",
+      "status": "PASS",
+      "evidence": "Mobile disclosure, keyboard actions and native dialog Escape/focus-return browser checks."
+    },
+    {
+      "id": "CX",
+      "gate": "390px responsive",
+      "status": "PASS",
+      "evidence": "Axe and document-overflow assertions for all six Market modules at 390/768/1280; 18 screenshots."
+    },
+    {
+      "id": "CY",
+      "gate": "768px responsive",
+      "status": "PASS",
+      "evidence": "Axe and document-overflow assertions for all six Market modules at 390/768/1280; 18 screenshots."
+    },
+    {
+      "id": "CZ",
+      "gate": "1280px responsive",
+      "status": "PASS",
+      "evidence": "Axe and document-overflow assertions for all six Market modules at 390/768/1280; 18 screenshots."
+    },
+    {
+      "id": "DA",
+      "gate": "GraphQL schema generation reproducible",
+      "status": "PASS",
+      "evidence": "[Repeatability hashes](evidence/phase13c/contract-reproducibility.json): two runs reproduce schemas, provenance and generated Admin/Shop output."
+    },
+    {
+      "id": "DB",
+      "gate": "GraphQL codegen reproducible",
+      "status": "PASS",
+      "evidence": "[Repeatability hashes](evidence/phase13c/contract-reproducibility.json): two runs reproduce schemas, provenance and generated Admin/Shop output."
+    },
+    {
+      "id": "DC",
+      "gate": "Typecheck",
+      "status": "PASS",
+      "evidence": "[Typecheck log](evidence/phase13c/typecheck.log), zero errors/warnings/hints."
+    },
+    {
+      "id": "DD",
+      "gate": "Lint",
+      "status": "PASS",
+      "evidence": "[Lint log](evidence/phase13c/lint.log), ESLint/boundaries/Prettier."
+    },
+    {
+      "id": "DE",
+      "gate": "Unit/component tests",
+      "status": "PASS",
+      "evidence": "[Unit results](evidence/phase13c/unit-results.json): 154 passed including 74 Market."
+    },
+    {
+      "id": "DF",
+      "gate": "Browser tests",
+      "status": "PASS",
+      "evidence": "[Browser results](evidence/phase13c/browser-results.json): 33 passed, zero axe violations."
+    },
+    {
+      "id": "DG",
+      "gate": "Accessibility checks",
+      "status": "PASS",
+      "evidence": "[Browser results](evidence/phase13c/browser-results.json): 33 passed, zero axe violations."
+    },
+    {
+      "id": "DH",
+      "gate": "Admin production build",
+      "status": "PASS",
+      "evidence": "[Build log](evidence/phase13c/build.log): fixture-disabled Admin, Storefront and root build pass."
+    },
+    {
+      "id": "DI",
+      "gate": "Storefront production build",
+      "status": "PASS",
+      "evidence": "[Build log](evidence/phase13c/build.log): fixture-disabled Admin, Storefront and root build pass."
+    },
+    {
+      "id": "DJ",
+      "gate": "Root build",
+      "status": "PASS",
+      "evidence": "[Build log](evidence/phase13c/build.log): fixture-disabled Admin, Storefront and root build pass."
+    },
+    {
+      "id": "DK",
+      "gate": "Vendor Admin regressions",
+      "status": "PASS",
+      "evidence": "43 Vendor unit tests and existing browser regressions; public Bulverde fixture remains MARKET; Platform shell unchanged."
+    },
+    {
+      "id": "DL",
+      "gate": "Storefront regressions",
+      "status": "PASS",
+      "evidence": "43 Vendor unit tests and existing browser regressions; public Bulverde fixture remains MARKET; Platform shell unchanged."
+    },
+    {
+      "id": "DM",
+      "gate": "Bulverde Market Day remains MARKET",
+      "status": "PASS",
+      "evidence": "43 Vendor unit tests and existing browser regressions; public Bulverde fixture remains MARKET; Platform shell unchanged."
+    },
+    {
+      "id": "DN",
+      "gate": "Platform shell regression",
+      "status": "PASS",
+      "evidence": "43 Vendor unit tests and existing browser regressions; public Bulverde fixture remains MARKET; Platform shell unchanged."
+    },
+    {
+      "id": "DO",
+      "gate": "No fake production fallback",
+      "status": "PASS",
+      "evidence": "Fixture-disabled unavailable/anonymous/live HTTP adapter tests and production bundle marker check; no fallback."
+    },
+    {
+      "id": "DP",
+      "gate": "Missing backend contract becomes MARKET-B blocker",
+      "status": "PASS",
+      "evidence": "[MARKET-B1..B6](frontend-phase13c-capabilities.md) documented; no native global or Vendor-owner workarounds."
+    },
+    {
+      "id": "DQ",
+      "gate": "No backend workaround through native global APIs",
+      "status": "PASS",
+      "evidence": "[MARKET-B1..B6](frontend-phase13c-capabilities.md) documented; no native global or Vendor-owner workarounds."
+    },
+    {
+      "id": "DR",
+      "gate": "README/docs updated",
+      "status": "PASS",
+      "evidence": "README, architecture, backend contract and this complete implementation report."
+    },
+    {
+      "id": "DS",
+      "gate": "Phase 13C capability report complete",
+      "status": "PASS",
+      "evidence": "[Pre-implementation capability matrix](frontend-phase13c-capabilities.md), current source and extracted schema."
+    },
+    {
+      "id": "DT",
+      "gate": "Phase 13C implementation report complete",
+      "status": "PASS",
+      "evidence": "README, architecture, backend contract and this complete implementation report."
+    },
+    {
+      "id": "DU",
+      "gate": "No backend changes",
+      "status": "PASS",
+      "evidence": "[Backend verification](evidence/phase13c/backend-verification.json): 6,393 bytes/hash records and exact HEAD/status unchanged."
+    },
+    {
+      "id": "DV",
+      "gate": "No deployment",
+      "status": "PASS",
+      "evidence": "All implementation/evidence local frontend only; no deployment/provider call or Phase 13D work."
+    },
+    {
+      "id": "DW",
+      "gate": "No provider calls",
+      "status": "PASS",
+      "evidence": "All implementation/evidence local frontend only; no deployment/provider call or Phase 13D work."
+    },
+    {
+      "id": "DX",
+      "gate": "No Phase 13D+ scope creep",
+      "status": "PASS",
+      "evidence": "All implementation/evidence local frontend only; no deployment/provider call or Phase 13D work."
+    }
+  ]
+}

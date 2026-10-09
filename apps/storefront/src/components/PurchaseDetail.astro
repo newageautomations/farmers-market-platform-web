@@ -1,0 +1,81 @@
+---
+import { formatMoney } from '@market/config';
+import type { CustomerPurchase } from '@market/api';
+interface Props {
+  purchase: CustomerPurchase;
+}
+const { purchase } = Astro.props;
+const financialNames: Record<string, string> = {
+  PAID: 'Paid',
+  PARTIALLY_REFUNDED: 'Partially refunded',
+  REFUNDED: 'Refunded',
+  REFUND_REQUIRED: 'Refund required',
+  REFUND_FAILED: 'Refund failed',
+};
+const pickupNames: Record<string, string> = {
+  PENDING: 'Pickup pending',
+  COLLECTED: 'Picked up',
+  PARTIAL: 'Partially picked up',
+  CANCELLED: 'Cancelled',
+};
+---
+
+<p>
+  {purchase.storefront.displayName} ·{' '}
+  {new Date(purchase.purchasedAt).toLocaleDateString()}
+</p>
+<p>
+  {purchase.kind === 'DIRECT_VENDOR'
+    ? 'Direct Vendor purchase'
+    : 'Market purchase'}
+</p>
+<p>
+  {financialNames[purchase.financial.financialStatus] ??
+    'Payment status pending'}
+</p>
+<dl class="checkout-totals">
+  <div>
+    <dt>Original paid</dt>
+    <dd>
+      {formatMoney(
+        purchase.financial.originalPaid,
+        purchase.financial.currency,
+      )}
+    </dd>
+  </div>
+  <div>
+    <dt>Refunded</dt>
+    <dd>
+      {formatMoney(purchase.financial.refunded, purchase.financial.currency)}
+    </dd>
+  </div>
+  <div>
+    <dt>Remaining paid</dt>
+    <dd>
+      {formatMoney(purchase.financial.remaining, purchase.financial.currency)}
+    </dd>
+  </div>
+</dl>
+{purchase.portions.map((portion) => (
+  <section aria-label={`Vendor ${portion.vendorId}`}>
+    <h2>{portion.vendorName}</h2>
+    <p>{pickupNames[portion.pickupStatus] ?? 'Pickup status pending'}</p>
+    <p>
+      {portion.pickupPromise.venue} {portion.pickupPromise.instructions}
+    </p>
+    {portion.occurrenceStartsAt && (
+      <p>{new Date(portion.occurrenceStartsAt).toLocaleString()}</p>
+    )}
+    <ul>
+      {portion.lines.map((line) => (
+        <li>
+          {line.variantName} × {line.quantity}
+          <p>
+            Picked up: {line.fulfilledQuantity} · Cancelled:{' '}
+            {line.cancelledQuantity} · Remaining: {line.remainingQuantity}
+          </p>
+        </li>
+      ))}
+    </ul>
+  </section>
+))}

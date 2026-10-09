@@ -1,0 +1,1426 @@
+[
+  {
+    "path": "scripts/adopt-native-baseline.ts",
+    "sha256": "97637FC62B4021BB5CFE2335FF007E5D815D5AC8CB994F4472B5F76D0D165FDD"
+  },
+  {
+    "path": "src/database-migrations.ts",
+    "sha256": "4F34D3CD4A436731B2A1885B909A332EEC92AD43AE9799075908AD0181DA7FF5"
+  },
+  {
+    "path": "test/database-startup/run.ts",
+    "sha256": "27E0388F635447C23583D7A4646D8EAC86C8FCDA35A7C58B53FC449DA684EE75"
+  },
+  {
+    "path": "test/database-startup/tsconfig.json",
+    "sha256": "AB1B6500413F72BDB7AEC125CB427905BEED0F0CE55D8125E5ED86A250FCB0CA"
+  },
+  {
+    "path": ".env",
+    "sha256": "35B949951521F83AC085337E0F8CFCFF22FEF0188D304E4731A399236B4D2701"
+  },
+  {
+    "path": ".gitignore",
+    "sha256": "05CCF434A1783D44DB3CD27C0E7594E06B00170B24B33860165268DDEBEC28B9"
+  },
+  {
+    "path": "AGENTS.md",
+    "sha256": "062A4C067B4F7D771F93726498594A111AA75312AF93397E444D1AAC73528807"
+  },
+  {
+    "path": "Dockerfile",
+    "sha256": "3AE0AE2FFDCB82BC3A6ED0D2DC1D57C80A228AA505A163FDF26DBAFDA75AA0B2"
+  },
+  {
+    "path": "README.md",
+    "sha256": "320B062236E8F364BFE8622D31F0BE4D82859EBA6C4FFD3B7DBC42293CF33870"
+  },
+  {
+    "path": "docker-compose.yml",
+    "sha256": "C780DCCBAD4B0FBCB817E8C5279D55D3D27FBA3D86AD457F9C4AF2865B8A01AF"
+  },
+  {
+    "path": "docs/analytics-phase12-implementation.md",
+    "sha256": "03ACD06E9EF8B095783969202791F2A445701DD9392285E9391603CFC22C8D4C"
+  },
+  {
+    "path": "docs/backend-architecture-proposal.md",
+    "sha256": "1B72312796ED0E20261BE702776D7E18368B4CEFEF03529B2F98680B86EF4BF1"
+  },
+  {
+    "path": "docs/billing-entitlements-phase11-implementation.md",
+    "sha256": "28A1CF307EA3F7F6701CD3ED02291C7F9F978B90D35A92F389C57953A330A92E"
+  },
+  {
+    "path": "docs/catalog-publication-phase3-implementation.md",
+    "sha256": "2D4544245EF32D810FAE28A3988E0ED24471A839D69255C48FCEE43A1282E5BB"
+  },
+  {
+    "path": "docs/communications-phase10-implementation.md",
+    "sha256": "B2E7AFF480222CED018818A6AFDAAD441F6308375B0993D4A073656ED762F312"
+  },
+  {
+    "path": "docs/customer-relationships-phase7-implementation.md",
+    "sha256": "1B7DE2F4AC7283927DA8979E0E20789D6E4472640982F434493335DA424C5AD5"
+  },
+  {
+    "path": "docs/farmers-market-phase2-implementation.md",
+    "sha256": "07EE87B7D697CFB8783EF420708DC02E7ACFCB766669E827C644B5ADEC745408"
+  },
+  {
+    "path": "docs/inventory-checkout-capacity-phase4-implementation.md",
+    "sha256": "A90377494EED4CFB23499EC1DB3941AE874918EE0879E4E50B4CB62721A750BB"
+  },
+  {
+    "path": "docs/marketplace-native-commerce-phase5-implementation.md",
+    "sha256": "4433B2D8D0C59FAACADA8127CEE10A42170518C649200A2DFFB962B88D7DB838"
+  },
+  {
+    "path": "docs/paid-attribution-refund-phase6-implementation.md",
+    "sha256": "75ACE0880FE5D28EFA6DF4CF580D9C5F309888985C91C126C230EAAF142ECEB1"
+  },
+  {
+    "path": "docs/platform-identity-phase1-implementation.md",
+    "sha256": "4E9682AF7653B33E647E134AFA8361A742C01FD5DC3A70CDBE6F6B6CC19F77C4"
+  },
+  {
+    "path": "docs/pos-integrations-phase9-implementation.md",
+    "sha256": "65F3127945E1A76511C8B4FC9A02A06DBE9CCECB020593E5D64647F3B09F69B1"
+  },
+  {
+    "path": "docs/stripe-connect-phase8-implementation.md",
+    "sha256": "04E13B8FD7A86F6952F66997DF4B88EB64C729C5A33F850DAED56F0D969547E5"
+  },
+  {
+    "path": "docs/vendure-3.7.3-checkout-hold-proof.md",
+    "sha256": "10313C9550C9DFDEF366D9BDA9EC60C2C6E18D5F212FA027AF3C36072A84E788"
+  },
+  {
+    "path": "docs/vendure-3.7.3-financial-attribution-proof.md",
+    "sha256": "9185E58EDB9B60C032657EC60AF559ACD967D3BBE7E6D2A9CE9CA4D92F2C4905"
+  },
+  {
+    "path": "docs/vendure-3.7.3-inventory-writer-proof.md",
+    "sha256": "10E734AADE8EEEC47ADA26FE2F3DFB06D8D7EC1D6EAC331F10DD135B967A0FAD"
+  },
+  {
+    "path": "docs/vendure-3.7.3-marketplace-proof.md",
+    "sha256": "E57F1914F2479C95A3F31644E19560781521A1CFDF3617E7A74DE6ED2CB09954"
+  },
+  {
+    "path": "farmers-market-platform-abstract.md",
+    "sha256": "815EF8F70173ADF54A56DDCEEC70E29ED7FE09500F77E7E36B0DF05E3587872B"
+  },
+  {
+    "path": "package-lock.json",
+    "sha256": "C159B730799A425134F00AD56AE226A187748F5C61E2117BBC418F9A925A0882"
+  },
+  {
+    "path": "package.json",
+    "sha256": "17ECBF3576CE4504D0AC88AC2802C2D9D365FB987D8DC500E6A0486B3D2CEB57"
+  },
+  {
+    "path": "src/billing-composition.ts",
+    "sha256": "C801FA55867F21677313D74570E96FC48357C213C2A46A86697F293AE99217A7"
+  },
+  {
+    "path": "src/communication-projections.ts",
+    "sha256": "F3379EFF2D478C13DACA0F0D7F60B4C2372D03D164D21DB272D550CD5C60A542"
+  },
+  {
+    "path": "src/environment.d.ts",
+    "sha256": "13285C452F49CF80F5DBE3F1242421189FE351AA45D55C80011646C89D91AD8F"
+  },
+  {
+    "path": "src/gql/graphql-env.d.ts",
+    "sha256": "A2B0829E7EC314D43DB818453FECD4FDBC8B3935E467EEF84371D51BAEE02CA2"
+  },
+  {
+    "path": "src/gql/graphql.ts",
+    "sha256": "299AD35E9E2185EE0298D95155AA8EA2739BCAA6736C4F5DD76B944CCA4FEC65"
+  },
+  {
+    "path": "src/index-worker.ts",
+    "sha256": "5CA8B09DDA2729D83DCF6D999A4F5069E11CF18CE3AE32A1F67B3147B2567B57"
+  },
+  {
+    "path": "src/index.ts",
+    "sha256": "0406E2E22B3AE23EC4C85DF3F2B6C490A598EE9A89AA6D55D0F7648CF4801B35"
+  },
+  {
+    "path": "src/migrations/1790829659203-NativeVendure373.ts",
+    "sha256": "221358B3FC1B489A0C6BFA276A30E1C3B4C3383C8186E9F86511D5037E8BFC69"
+  },
+  {
+    "path": "src/migrations/1790829694968-PlatformIdentityPhase1.ts",
+    "sha256": "94512B994AC61121839F1BDDF9C506C6E4F04A353C49250C32086167CA232F40"
+  },
+  {
+    "path": "src/migrations/1790901000000-FarmersMarketPhase2.ts",
+    "sha256": "EFBA78BA1F7F9D487C4D4840814B2A9B6FF69DC9DE7F73708453FC56CF00F644"
+  },
+  {
+    "path": "src/migrations/1790910000000-CatalogPublicationPhase3.ts",
+    "sha256": "0D529746D05B563145555C546F32D0D9EAF9BABE53EC4E2C7287223024BF91D2"
+  },
+  {
+    "path": "src/migrations/1790920000000-InventoryCheckoutCapacityPhase4.ts",
+    "sha256": "B0661FF83743061E1D0FC63657356AE927CC879A4186B3CF796C6138E601E699"
+  },
+  {
+    "path": "src/migrations/1790930000000-MarketplaceNativeCommercePhase5.ts",
+    "sha256": "2E537DB542BB553B8024D1F50758630EA783FA605E64B715294AF82E651CC8DA"
+  },
+  {
+    "path": "src/migrations/1790940000000-PaidAttributionRefundPhase6.ts",
+    "sha256": "B9BD4EC498829385A17AA40F182BDCD4C388DB98FB569ED061D01656539C5CC0"
+  },
+  {
+    "path": "src/migrations/1790950000000-CustomerRelationshipsPhase7.ts",
+    "sha256": "476BD71E0E9F3ED88C74B5EEBE4DDD8D757B6E835027547E566F3D88D358B10B"
+  },
+  {
+    "path": "src/migrations/1790960000000-StripeConnectPhase8.ts",
+    "sha256": "F310AF7FA09CB0F0A04261CB3F5C749282DB6FC17D108F358DBAC2FE52C83638"
+  },
+  {
+    "path": "src/migrations/1790970000000-PosIntegrationsPhase9.ts",
+    "sha256": "0B5C213A495D8D8E84D013EAAFE732899AE31EE680AB0C28AD0ED798EF24BEDA"
+  },
+  {
+    "path": "src/migrations/1790980000000-CommunicationsPhase10.ts",
+    "sha256": "555A3C7381F61D6D0CC39FE8E524C9AD4D4EEE96FFA7C2FF234C83F63643B340"
+  },
+  {
+    "path": "src/migrations/1790990000000-BillingEntitlementsPhase11.ts",
+    "sha256": "7A425F5478401E35956F9669390A7C24DD6C5E01C00F50234C1737A16B195CBD"
+  },
+  {
+    "path": "src/migrations/1791000000000-AnalyticsPhase12.ts",
+    "sha256": "6BEC944E223BD65ABB033B3C7E3E875D2B6A5B422CEA24EDAAF443262658844B"
+  },
+  {
+    "path": "src/plugins/analytics/analytics.plugin.ts",
+    "sha256": "0D7DD0A9FD73732613150BE00FB23742C8FD789A5BA4B7779E6F49D63AC4CEEA"
+  },
+  {
+    "path": "src/plugins/analytics/api.ts",
+    "sha256": "70F6D4E86AF71A7D9CB8A37FF01CC402849A6ECE54BD38F9CA92F84E45983F91"
+  },
+  {
+    "path": "src/plugins/analytics/constants.ts",
+    "sha256": "6EA3D57CC856CD01938E7F46A561ED58EAA9EB9B80A1CDB31D21C59D572C79D2"
+  },
+  {
+    "path": "src/plugins/analytics/projection.service.ts",
+    "sha256": "C466C9C1FEE86873EBF99A3B9E5A09EF10914698C6050AE6770B3B3733C7309E"
+  },
+  {
+    "path": "src/plugins/analytics/registry.ts",
+    "sha256": "75E902476D129B45E507775D7EAD0799885E486B0D1A135E7EC09E3B6F88C2B3"
+  },
+  {
+    "path": "src/plugins/analytics/source.service.ts",
+    "sha256": "3D2DC2E5B876E7258B6B3ECB320E60D7583FE51A90B40F4CF60025778D0576EA"
+  },
+  {
+    "path": "src/plugins/analytics/types.ts",
+    "sha256": "832BD190C9197CBE9D7BBA5152D6BA67BD64F32F43230CFE4A300191D1384BD2"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/api.ts",
+    "sha256": "03D18F2035FDFD42B7C71BF1B0C583AE3276D41305F695DFBBEFE2F6E608D158"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/authority.service.ts",
+    "sha256": "E8DEB8EED760D5B7AD96BC406E6EB8D724278CADA37E05A0077AE5C303C2D819"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/billing-entitlements.plugin.ts",
+    "sha256": "61E3F33031405B38710EE49AB713AA94030BF24CFD8EF97D0F9160DDF7588F85"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/boundary-locks.ts",
+    "sha256": "BDC844CE116B288341FEFCAC9E7E75E41B5223AFF8A7B4629DD2E460ADE34E69"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/catalog.service.ts",
+    "sha256": "621CBE46595A798FAAE62F41F555DE3194DABF5E1F4F7BAE5C5F977C6B6544E2"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/entities.ts",
+    "sha256": "D61FDBA008947F954D3046B683439153D73F0FD001BBA012C9B008C66531C2D5"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/entitlement.service.ts",
+    "sha256": "83C53D59F51BBCEE31398C9FACA3908DA499D02420BD97B3050CB8461B2D8EF7"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/http.ts",
+    "sha256": "B7AD38D4B5916B8FCF137055D51877077847C22E1F4BF99B2C98E81CB4DF0ED8"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/provider-boundary.ts",
+    "sha256": "2D161497D06753E69C135252173A2DB85879B49D685D16A9A01B2863A151A241"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/provider.service.ts",
+    "sha256": "A3AB80473561FFB9AB34471BD61247305D0D62FC9F23C5D033FDF30766DB5F46"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/reconciliation.service.ts",
+    "sha256": "883BD7A3D664BE5277BC591D1EB761CB84E93312F77CB77274486095B1393F66"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/registry.ts",
+    "sha256": "AC38B02700870BEF789D19581AAC9774F138FACD20CA6980C08C9E8CCECB3904"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/stripe-billing.adapter.ts",
+    "sha256": "01E6C7DAFAECDC7A6EC81DE7F8A2A660B2E1DFC661BC6A53E2DA2A6365CEC1CF"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/subscription.service.ts",
+    "sha256": "C17F505EA38CDD09714684205EDC562205B3F12356B0FDF025B3B64840D15B5B"
+  },
+  {
+    "path": "src/plugins/billing-entitlements/types.ts",
+    "sha256": "228A1947C2BBA2F20EB137F35340BB45663CAF446EA324BC5BC6FD405199061A"
+  },
+  {
+    "path": "src/plugins/communications/account-email-sender.ts",
+    "sha256": "0111A26E7819226607F552C2CE9F0C44926073E667F9CEFDE754E337AC09AFC5"
+  },
+  {
+    "path": "src/plugins/communications/api.ts",
+    "sha256": "1ABEF2FD10A104B2AF251479E188C677797A3D2922859745256E9B440CB96CBA"
+  },
+  {
+    "path": "src/plugins/communications/batching.service.ts",
+    "sha256": "A9F6E48A74974B5CCEED3709CCC11C69FBD1E9C21A6E472D98B8DD7A14A81ED3"
+  },
+  {
+    "path": "src/plugins/communications/boundary-locks.ts",
+    "sha256": "2C2CBF2FFEC9C84E3540099EB34505BADDA3A505D5263DD6A140766B1DC54227"
+  },
+  {
+    "path": "src/plugins/communications/communications.plugin.ts",
+    "sha256": "D5A75BCB47F5477EA897B3E21705AB30F450C78C968935C00F7CE3C12FFBAACC"
+  },
+  {
+    "path": "src/plugins/communications/consent.service.ts",
+    "sha256": "FA9F78D7B02D03FDC7A538FA1E5689AA0C897C503C94EEBAB6BE0E15A34B56D2"
+  },
+  {
+    "path": "src/plugins/communications/delivery.service.ts",
+    "sha256": "77BACA82EF1100D2895D44A45CA4C6AEEFB8D94B310FCBE231A473FFAA091502"
+  },
+  {
+    "path": "src/plugins/communications/eligibility.service.ts",
+    "sha256": "8D4EED4CA16CAEDF80E2D440EFF8921B2C26381274895A29147200BC8E7D5DCE"
+  },
+  {
+    "path": "src/plugins/communications/entities.ts",
+    "sha256": "E8F7A556C88152D666127AD5F87400C09F3A2445D03693B4649B526C0E09996E"
+  },
+  {
+    "path": "src/plugins/communications/entitlement-usage.ts",
+    "sha256": "DFDEA9EFA4F6245D0C8D4B2218C6DB0518C12D44F57BAB68F17F7C24A01499B6"
+  },
+  {
+    "path": "src/plugins/communications/http.ts",
+    "sha256": "D0D67BA4C34C28825F47B90536FB4AB16DD756F15E27B1DB5B77737CE5A71BAD"
+  },
+  {
+    "path": "src/plugins/communications/intent.service.ts",
+    "sha256": "7163A226C9471D1EA61850CF056C882DBD4E6997775A16E2167E20037ECE9D34"
+  },
+  {
+    "path": "src/plugins/communications/provider-boundary.ts",
+    "sha256": "3E8F8EE50DD1552BE6A2B39736CA6C76B13512C57C483B2ED51FF84926A7F41F"
+  },
+  {
+    "path": "src/plugins/communications/providers.ts",
+    "sha256": "A19637FCD5DA46D3FC49859742E376CF3821B3506BA7BDFF3CFC454DF6EF3B8E"
+  },
+  {
+    "path": "src/plugins/communications/receipts.service.ts",
+    "sha256": "0211586F83D6C6E02877A7119B7C713B3DA35CE0234131AD609FED49000D8B30"
+  },
+  {
+    "path": "src/plugins/communications/recovery.service.ts",
+    "sha256": "B91BC0D1A0CFDDABF7623FDB42628862DFD7F2B1C1934BADD8636610DD72FF5C"
+  },
+  {
+    "path": "src/plugins/communications/templates.ts",
+    "sha256": "7DF987E3B1EB21CA0BF16EE1CD6CF3C6F5DAE619F754474D39756FE6D639C61B"
+  },
+  {
+    "path": "src/plugins/communications/types.ts",
+    "sha256": "92A4C21EB9DBF2006400E968BCC5FE29347EB72B6E49525D0F1295F1E13B733E"
+  },
+  {
+    "path": "src/plugins/farmers-market/api/admin-api.ts",
+    "sha256": "7767A2AB2197D6F3B48A248A2E4108CDBB8F66E512BB7A5A306DD944D05161E8"
+  },
+  {
+    "path": "src/plugins/farmers-market/constants.ts",
+    "sha256": "6A27A36F8EBBB0049472B5C46399C15D1D49889B42DADE899AAB6F790A6FA5E5"
+  },
+  {
+    "path": "src/plugins/farmers-market/entities/market.entities.ts",
+    "sha256": "182BE2FC15A13F3049D2E607511800A47F39EC844A2A44EFC7B3980AA10B5188"
+  },
+  {
+    "path": "src/plugins/farmers-market/farmers-market.plugin.ts",
+    "sha256": "90DDB6364C651313D95D8106D0CFDECA488A218788AC6ABFEF273C3BDD2DED05"
+  },
+  {
+    "path": "src/plugins/farmers-market/recurrence/local-time.ts",
+    "sha256": "FB8C84A115AE5D1F1B2DFCF426E8191A8FFA3C084ED0DD6A32D8FB123FAE01A7"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/market-domain.service.ts",
+    "sha256": "6E3DBB006DAA7657B15518B58CD0A7652DD78269DBE5FA3423B24B3B290258BC"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/market-listing.service.ts",
+    "sha256": "49D47B7D07EEADA6C70FCBB6631A72691391AA4C1FB02027F548F796505B4647"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/market-provisioning.service.ts",
+    "sha256": "65150E52C97C6FA0E0CAD9B3A33A2F82E8E78DD6B47F57C9E6F65CEBC30CEBDA"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/market-read.service.ts",
+    "sha256": "0F9A8DC2D153A790316E48D852EF88416AF54363421A4F334C90AB61CDC416D6"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/market-vendor-membership.service.ts",
+    "sha256": "BD8B01BF369468863374C85CFFA662A909A967D28536E696A8F6A81228D0B2EE"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/market.service.ts",
+    "sha256": "D58565FC8DEB6D8A7CB8456A46C5286945DE3AB6ECD00B5D3AF735451D992FA7"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/occurrence-generation-worker.service.ts",
+    "sha256": "A9DD44F7859A40B74DD67D8A03FF4CCC4982689BF7C53D8379B2B93FB44A6EBE"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/occurrence-generation.service.ts",
+    "sha256": "9563BB09E8B3CADDD82C7429371A265596A19C05B93DD694E4DB33FF7E50B53E"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/occurrence-offering.service.ts",
+    "sha256": "9287A2BE10173CE37FFD8264326B38F549D9C290CFA6D64E7CEC572F69981BC7"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/occurrence.service.ts",
+    "sha256": "77B740BAA2B341759108565F38905AC366420D23FF9CBB3558320AD57D82795A"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/offering-eligibility.service.ts",
+    "sha256": "174ED6ADB89190083AA438A93AEBB014EA47A352B0294D796D14DFAD894127E4"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/participation.service.ts",
+    "sha256": "2D363E8AD7DFA5705CA265AAA1290305FFD6DA2406401877A0BFFF8F1FE968E0"
+  },
+  {
+    "path": "src/plugins/farmers-market/services/preorder-window-resolver.ts",
+    "sha256": "402A91B4C7579834DD89BD10F5D95BD51F910B526724A09EFAE449EB9F6A332F"
+  },
+  {
+    "path": "src/plugins/farmers-market/types.ts",
+    "sha256": "C40FF7901158BAD9ACC9498DDDEBA029922B5D3BE499E79FBDAB40AE3B7D34A1"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/api.ts",
+    "sha256": "E2CFE7448C25A0B26B74F0FC3E85B0A2671A94CAD46D65564EC8165122D8E797"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/catalog-command.service.ts",
+    "sha256": "BFAAF40DE7DE4641919782482759D834DE86607102DD0E2A0AC683C1F6F99CB1"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/catalog-publishing.service.ts",
+    "sha256": "9A745C5D604D77E2B5A680BD93247B5ADB8775F6F976D370C6A9AD0DC9CD7E29"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/commerce/capability.ts",
+    "sha256": "F4CA061350A2D9137610BD27388F7898B056FF132256AC0FC2999FBBB762363D"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/commerce/checkout-coordinator.ts",
+    "sha256": "0DABA5503FCCDF9E75B151E30BA577CADFCA3AC6069B72A20CDDE1A9891EB91F"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/commerce/contracts.ts",
+    "sha256": "F0ECC1CB5A34E196DC7B2A459F092B876FAF6A3767C6D50204E141C48FA2DB22"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/commerce/entities.ts",
+    "sha256": "E55D5E45A74B7A0A752034C9268441DA52B56984C8EF31DFE9E342859125AF50"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/commerce/local-verified-payment.adapter.ts",
+    "sha256": "79DDA99F392563465C4BF9630E0FF345BF1D6B7609C5AF0D5ABCDC23F753F11A"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/commerce/native-commerce.adapter.ts",
+    "sha256": "B6F0270D8F61966F4F4C16A3BD84F56D60BCC1FD6974F447549250551D7F260C"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/commerce/native-merge.guard.ts",
+    "sha256": "B3E25E2C09242F4578DBFC06BB918ECF0072D0259ACC45634E38E71CB02DE474"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/commerce/order-context.service.ts",
+    "sha256": "6D37BA16F85229741E0553A80D3D72A84669C8DC48EF829E9098C27B15F34B75"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/commerce/strategies.ts",
+    "sha256": "67F89397BEECE8B5D8A69C15107525B58D0FE750701AA47C45C4B3EC049D2796"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/commerce/topology.api.ts",
+    "sha256": "17CB0AD50D97239A3CA44FB0C9FDA9B135580DB2AECB6BE4BABA8F59C6911CA6"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/constants.ts",
+    "sha256": "2C80B5D019DBE2B0D425DC9331013D242B9FF93BE92372F881113B9106937950"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/customer-relationships/api.ts",
+    "sha256": "2EA681ADED90274BEACCFF8C04E66A2831CBB1C60571B7255379F6F46DB15A13"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/customer-relationships/projections.ts",
+    "sha256": "0D82568137B365B4B6DA43790E6A825C8665999FDD7A3D02B4A489AB0323004D"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/customer-relationships/purchase-relationship-consumer.ts",
+    "sha256": "F2A3885BF40F183E60CA4D58AD582A7527BF388D244768B8AD03E91D8C4C80DF"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/entities/vendor-promotion.entity.ts",
+    "sha256": "651673D83D02EEF303A8681F5B64413DC68248D88F3F2BF1D9DBC12159091853"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/external-commerce-port.ts",
+    "sha256": "4C2DCB6C60028F7C478B5CB5E8336362237B525D5B1288F4DF8880EDC64888C6"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/contracts.ts",
+    "sha256": "BFCAEAF81D859679843D1D72035DFB2E6B95F16C4C72581FAF45F880F51ACD32"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/entities.ts",
+    "sha256": "CA1F43C1DBB23809ECA4BE215B4A4C29C893E8BFBCCB66F232B323F577824629"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/financial-attribution.service.ts",
+    "sha256": "10676C8F37233C5A29FE292C2627D626DC33A1881A1CE436DECEB6DFAE44F030"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/financial-audit.service.ts",
+    "sha256": "9C3FDFCB2698E56E7EEC18FF0F3EF9D7922A629E5D91354644AF0476C9C6BE45"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/financial.api.ts",
+    "sha256": "550B3B606AACA6E5DE64C67B25BFB50398DDFE02A55E22D7A1AD021A72D89BDD"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/money-allocator.ts",
+    "sha256": "971AD54F3D2FA803E792DD58F641FAE84F52E794A939FDA7FE0BF5E585D37817"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/provider-facts.service.ts",
+    "sha256": "6CD95F4EE0D5960C45C201A5359B38C02EFB7F9085646A83172DD0D00EFD108B"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/provider-port.ts",
+    "sha256": "69747F31E52782AE323D41D41356E4BAAA4007493D033EA0B09EBF7F11729E5D"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/refund-capability.ts",
+    "sha256": "AC45A56768941D6EF799032A7A0E32083DC7DD690CED44928DFE7550D5D5D393"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/refund-coordinator.ts",
+    "sha256": "A7D132CA11756F1DC8C742BBAB4D02AFEA806CF3DDD86258A7E041FDCC61A2F5"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/refund-recovery.service.ts",
+    "sha256": "F146527F96CB284A76819D56FDA91BBC8DBA146466E28BD2B8178304896FB3B3"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/refund-writer.service.ts",
+    "sha256": "3A170C46814775E05500D0BD3DB2034D93E8A43E8DDE3064C7249D66419CD96B"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/financial/vendor-promotion.service.ts",
+    "sha256": "0FFE354336A0BA3058F4F97C26368158370F0E968E7509478B454A0DE5A965AF"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/capacity.service.ts",
+    "sha256": "40FA46F83F971DB41300DBF792142B5EA4567D203713576A19238389825F9E98"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/clock.ts",
+    "sha256": "BD5D7495F4FFB0D1264E376AB25B611F0E7A23FDD2E34A0ED45A107B52E7110F"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/contracts.ts",
+    "sha256": "110D4770B03C9B6F2FB7A97F332941E097238352FBEEAF777A634B36B01274E0"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/entities.ts",
+    "sha256": "029F58CE032B65B98AEE7CE723D876F08A19F0A41A90790B37A14FA22EBD5B90"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/hold.service.ts",
+    "sha256": "76317F5655C7754B6350C308F4CB8F35A9E10AA35CF49971C5D3170AC1C93083"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/identity.ts",
+    "sha256": "FCBE412760673D9C67D1FFB1D5C961B828D01502A4626A99E5FC63686716EEC8"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/inventory-coordinator.ts",
+    "sha256": "4DC98BC8A27272049F32408F8471EC04D4DF5DC57F9A12D54A33A2B21114A7F3"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/inventory-operation.service.ts",
+    "sha256": "CB3C5D36B27F6111DE73AEC8DAED4B66A1B89D660C9FE776ECA152C70D035C85"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/inventory-worker.service.ts",
+    "sha256": "51BF83E1A94F8C36ABE5D56CFB9E09D754F7F95936BA8DA1D141F84A8CFECA6D"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/lock-order.ts",
+    "sha256": "6016A0BE9C93868DC4C2324360081D7CDB94714A4512B039EBB7310417E764D9"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/native-writer.guard.ts",
+    "sha256": "0C69B603DB72CF9ABB1B23EFE7DD291F371968EB495D2C13B56F41287EBABEED"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/operational-inventory.service.ts",
+    "sha256": "558CA0E6D33431CE300B629CA19FC43A1462320AE2878A4A7BF5341419152399"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/inventory/physical-inventory.service.ts",
+    "sha256": "5FF87509D9C031D86BE1CCDECE3EA97345A7D4586025A61EEA30AC011495BA28"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/market-browse.interceptor.ts",
+    "sha256": "3B8D8BA4A0B03F2EEE1E05AFDE7DD445D801657AA3A32B133D064947C688821C"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/market-storefront.service.ts",
+    "sha256": "A0BE6EF8F44462266B85E0F77BC761068B38C4DCA70E05AC70A8DFB315529592"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/marketplace-commerce.plugin.ts",
+    "sha256": "D2E6A36AC3130C88D1F9EDD6E2FAA8C0567D079727DFA58A52BBF2FC048CAE15"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/occurrence-catalog.service.ts",
+    "sha256": "4120C7E6875C553FDAB32235623DC70B1D972CDD0DD1A44645D54CD2BA75AFB6"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/types.ts",
+    "sha256": "9F7143F0D80AF9958CEE3BDCDD2ABB262B188D47F8E7BBDE6DD038B4CF577CAC"
+  },
+  {
+    "path": "src/plugins/marketplace-commerce/vendor-catalog.service.ts",
+    "sha256": "F2EE448638AA765886E0EE7B21018DBD5EFE5B73151C48ACDF8973E438AA5A7B"
+  },
+  {
+    "path": "src/plugins/payments/account.service.ts",
+    "sha256": "818C1EC9367BDD87E8F14646663F7B91637FDFBF959DA83018AF7C0880CF410E"
+  },
+  {
+    "path": "src/plugins/payments/api.ts",
+    "sha256": "4B171FF8AC621167EE8D30248980DDC81A29FAA1B7F70E229CB0442ABBB1C765"
+  },
+  {
+    "path": "src/plugins/payments/contracts.ts",
+    "sha256": "03E411D5FFED8B3E4AF22B3298C2567FCD64126943F8693F117DE0F10185AD57"
+  },
+  {
+    "path": "src/plugins/payments/entities.ts",
+    "sha256": "B1D90B3FC72D3F723D2A79118F9CB6F244F2BEDB1985AEA60E4D2E8E3353474E"
+  },
+  {
+    "path": "src/plugins/payments/payments.plugin.ts",
+    "sha256": "6DBB63270839E063CD9E93CF9A18EF927C584AC9B111A40A06690034BF26DD9B"
+  },
+  {
+    "path": "src/plugins/payments/provider-executor.service.ts",
+    "sha256": "B90597587F2AFAD0CE403A7B60202B667A8F1C89C99F5614D6935EA1B841D932"
+  },
+  {
+    "path": "src/plugins/payments/reconciliation.service.ts",
+    "sha256": "E9248BCADA3A8FF4CF975602810A234AB1831ED86488D164167EA058B7894729"
+  },
+  {
+    "path": "src/plugins/payments/recovery.service.ts",
+    "sha256": "46A79370C89388C9C4CD0E3C1DA8DFBB66D2C2729B2ACC499BFFA0E9B8C48078"
+  },
+  {
+    "path": "src/plugins/payments/stripe-transport.ts",
+    "sha256": "6C35478442ABC52F8D45FDC8D19630BAA61D51BD86E8D161E07B474C05C9306B"
+  },
+  {
+    "path": "src/plugins/payments/transfer.service.ts",
+    "sha256": "7086D8A75C91B9D7EC67FBD1ACC985723F748CA92C96D6B9F86C2E4D3076D4C8"
+  },
+  {
+    "path": "src/plugins/payments/verified-checkout.service.ts",
+    "sha256": "0BC53BB8E1CE57F98472CFE45B07AEDF1C85BB81951645C2917179ADC08D3ADC"
+  },
+  {
+    "path": "src/plugins/payments/webhook.service.ts",
+    "sha256": "2356F568F0C42E4FC6E0EA032CC053DBF77FA4533B12522997CAB1B7FCABFAC9"
+  },
+  {
+    "path": "src/plugins/platform-identity/api.ts",
+    "sha256": "B5E4E40B874357B5D65C81FBF5B6C53D708410C3AD9CDD8B1E127673FD47109F"
+  },
+  {
+    "path": "src/plugins/platform-identity/constants.ts",
+    "sha256": "185D18F32AB465BB90C11493A1528D94CF425C838CB14F40CB74477F0D4A4176"
+  },
+  {
+    "path": "src/plugins/platform-identity/custom-fields.ts",
+    "sha256": "92070DAEA19D1DFFC06E7ED1C6ECF82160E84DCC969A9EF06746AE31D51BEE27"
+  },
+  {
+    "path": "src/plugins/platform-identity/customer-privacy.ts",
+    "sha256": "D11781CC9087C5DB7A681A9874DA99FD3AA732C93B650D30F9269275C3E89093"
+  },
+  {
+    "path": "src/plugins/platform-identity/customer-relationships.service.ts",
+    "sha256": "E652D0D9C7252DE4926EA7FAC640517A6B3EBAA08F271A10DE5E509E4D114D89"
+  },
+  {
+    "path": "src/plugins/platform-identity/durable-work.service.ts",
+    "sha256": "84779DD2F071A2F04BA9E15079B9E88D1F7821BCC00527026419E7E485E97F32"
+  },
+  {
+    "path": "src/plugins/platform-identity/entities.ts",
+    "sha256": "9B704C83A5A337AA88C3FB3A85B1038FF42A8BB075EA6A24B26A6409CC4CA853"
+  },
+  {
+    "path": "src/plugins/platform-identity/entities/customer-relationship.entity.ts",
+    "sha256": "30FA09CF7EAE501666D0DD82C8B13138BFC276C8724054037944E65E924CB4D7"
+  },
+  {
+    "path": "src/plugins/platform-identity/entitlement-port.ts",
+    "sha256": "37A63DD189E665A46A9AB0477756D4F2AE93576D6BDAEF40C604188019007127"
+  },
+  {
+    "path": "src/plugins/platform-identity/identity.service.ts",
+    "sha256": "C6510502C047C80C9DA9511F113F76541A633C1B6ED3D1B05AAD351C7113F2B2"
+  },
+  {
+    "path": "src/plugins/platform-identity/ownership-directory.ts",
+    "sha256": "D420CC6EA5E93D0035230E33FA2E3027342D4628AC3A20E9B1DB28FD6469E22E"
+  },
+  {
+    "path": "src/plugins/platform-identity/permissions.ts",
+    "sha256": "F4BAF0A22279CEF5702BFB993DE82AF09250DE2A1E2BC41C485A3F2B7CA3DAD7"
+  },
+  {
+    "path": "src/plugins/platform-identity/platform-identity.plugin.ts",
+    "sha256": "906A6D5A9DAEFB58B23E93D3D0A6F7D9CB00C3442488743F6B72927FCD710E51"
+  },
+  {
+    "path": "src/plugins/platform-identity/protected-ownership.service.ts",
+    "sha256": "C64B89EC41A07CC219409C6C65C2009C24D6799D41577122EC2897EDB3736AEC"
+  },
+  {
+    "path": "src/plugins/platform-identity/shop-context.middleware.ts",
+    "sha256": "4DF2095F7A21E3D8D919307E928C03F0B7A60922869D9F7A7480FCC45AC20B18"
+  },
+  {
+    "path": "src/plugins/platform-identity/tenant-access-policy.ts",
+    "sha256": "EEB1D2BA16CCD17168AA39363309C73470757850B8C8EEBF0035154F7F767EAF"
+  },
+  {
+    "path": "src/plugins/platform-identity/types.ts",
+    "sha256": "F2432D5F6AFE7B1BFB1CD1B65F77A319D9A522BCE544ABE4F1E3A01F9729ACA3"
+  },
+  {
+    "path": "src/plugins/platform-identity/vendor-provisioning.service.ts",
+    "sha256": "604F8AC75CAF1FC44EB2BE60B9B55644F453B1F58A80513A54750A58829E4170"
+  },
+  {
+    "path": "src/plugins/pos-integration/api.ts",
+    "sha256": "CE51509BDC97E3CAD83D722A9F22B14707E2A4D6A585B2689A66CF9359C492F8"
+  },
+  {
+    "path": "src/plugins/pos-integration/connection.service.ts",
+    "sha256": "DC7BFB213AFE17A9212B5D0462BE518250DFF1BB47A384E0637DBD003659AFD0"
+  },
+  {
+    "path": "src/plugins/pos-integration/constants.ts",
+    "sha256": "F9F0121CC947B34DE4420E763E538296A5CC358B2AA23049D32EEF6F4A424630"
+  },
+  {
+    "path": "src/plugins/pos-integration/credential-cipher.ts",
+    "sha256": "BE228307DBB33613F468734A58C10B0D8390B326A5582D8E1B9E05AE3746CB07"
+  },
+  {
+    "path": "src/plugins/pos-integration/entities.ts",
+    "sha256": "E97D1C7E9569394F56318947045B0B4DEA85A330C0D2F08CB55917E4BA12B6CA"
+  },
+  {
+    "path": "src/plugins/pos-integration/inbox.service.ts",
+    "sha256": "41BDC2A332BA5CA59E1E67F48450AB0BDDDD00FE119B9157827E64071B8A2A87"
+  },
+  {
+    "path": "src/plugins/pos-integration/mapping.service.ts",
+    "sha256": "A21E6CBE876B2AD4303862C282D985DE7445DEFE5653ABA83571E6C0164A327D"
+  },
+  {
+    "path": "src/plugins/pos-integration/policies.ts",
+    "sha256": "FE566EFA008E5B2C6E1028CBAE7D747336D44B2915AFC928C1F6E0ECFAB0A5E6"
+  },
+  {
+    "path": "src/plugins/pos-integration/pos-integration.plugin.ts",
+    "sha256": "8FBE2110BE4AE2E405B32228373C55B0F91D82E9F45173D785B3CE43638F8B3D"
+  },
+  {
+    "path": "src/plugins/pos-integration/providers/clover.ts",
+    "sha256": "C6EBEA636FD40E571F2BC6DD519810D92FCE8FAD37266CAD958F40D4671CFF41"
+  },
+  {
+    "path": "src/plugins/pos-integration/providers/http.ts",
+    "sha256": "CD6A5375B53582AD6B0C12296C05694B26B807D15653C243296A4EED7C77435A"
+  },
+  {
+    "path": "src/plugins/pos-integration/providers/lightspeed-x.ts",
+    "sha256": "D3EA2E610CB4AA16DF4CD5B38BB0BD2BE2A83C7D53B0C632CD109247AAE9164F"
+  },
+  {
+    "path": "src/plugins/pos-integration/providers/shopify.ts",
+    "sha256": "3578131132B433CA644517E9C84A8FDC3E38816B4FA029597CA6C90BA3D81F99"
+  },
+  {
+    "path": "src/plugins/pos-integration/providers/signatures.ts",
+    "sha256": "A9827A0E5F07AF60BF95F6FD86462DC153988414137305EEEF425746301F088A"
+  },
+  {
+    "path": "src/plugins/pos-integration/providers/square.ts",
+    "sha256": "765C10F8C5B1AA39110F1DBF4DFA1206816A4E1B3F84174ECC97D2D19DCC6180"
+  },
+  {
+    "path": "src/plugins/pos-integration/providers/toast.ts",
+    "sha256": "FC5FC92D9821DD55BA50006579725CF850805EAB7E8AFC69FEAE85887143AF43"
+  },
+  {
+    "path": "src/plugins/pos-integration/recovery.service.ts",
+    "sha256": "DBE0898D6F37A0D3CC2709A0650FFD0502A9664819B06F2C3EE1DE9C5FE1B2D1"
+  },
+  {
+    "path": "src/plugins/pos-integration/registry.ts",
+    "sha256": "2729720F1C27DF51D38AE96501ADA1387F4BD4BF1E2B4D95E759311529976F8D"
+  },
+  {
+    "path": "src/plugins/pos-integration/sync-operation.service.ts",
+    "sha256": "29282963040714BDC10CB907CC9AD23991321AE3DDDB9E036772372EDF9361DD"
+  },
+  {
+    "path": "src/plugins/pos-integration/sync-services.ts",
+    "sha256": "6D7B062C10722F139597E88B561D993DE30604A75B1AB543CC4E7582DF1DDE9A"
+  },
+  {
+    "path": "src/plugins/pos-integration/types.ts",
+    "sha256": "46974234B08712BC6F1787EFF7F9E5346A316C11F11F72C45B5F6B0C6FFDF3E7"
+  },
+  {
+    "path": "src/vendure-config.ts",
+    "sha256": "3C11B6E6B800A1FC7C3EAF69BB38D0087581F8D539E40A2517F0B465C4EAC12B"
+  },
+  {
+    "path": "static/email/templates/email-address-change/body.hbs",
+    "sha256": "3AA7A7F8469EB2D35DC05A3CC2760F7D15F1434162E71FA71B983628F687DB25"
+  },
+  {
+    "path": "static/email/templates/email-verification/body.hbs",
+    "sha256": "109438580B8C7AD526D0A9943AC28B9F1C681E8257760C33DB1B22DB9D3B8EF4"
+  },
+  {
+    "path": "static/email/templates/order-confirmation/body.hbs",
+    "sha256": "0B0E15FC4BD585A2256D8220BEA6EC946B9EDE59E04959B6F5D8299AEBEACBD3"
+  },
+  {
+    "path": "static/email/templates/partials/footer.hbs",
+    "sha256": "D6E7B424E7248D1280191480B50D816EEABDA412404F9494D05A071D11A5096F"
+  },
+  {
+    "path": "static/email/templates/partials/header.hbs",
+    "sha256": "D6315DFE64DAAFCA4A87A591FD023B70E785DF87BAC01B311CF8446D2EBC61D4"
+  },
+  {
+    "path": "static/email/templates/password-reset/body.hbs",
+    "sha256": "4AF564ED24ED2651069E56BBDC6A1F6C31B9418BB33C24B07F66ED3B42D5300F"
+  },
+  {
+    "path": "test/analytics/.runtime/build.log",
+    "sha256": "91B884D57DB9596C8E04F444A6EE6847BEDEAA75BB6B7376DB0B69385B5EDDA5"
+  },
+  {
+    "path": "test/analytics/.runtime/phase1-11-regressions.log",
+    "sha256": "721C0D705F72C40ACCE69A080ECA66D6FE47AC5888FB1D8E9DFDB69E68D462EB"
+  },
+  {
+    "path": "test/analytics/.runtime/results-full.json",
+    "sha256": "0012834FE7B14641B30A7BBB8854313F424E49E017443EE3044EC36CB02FCEB2"
+  },
+  {
+    "path": "test/analytics/.runtime/results-migrations.json",
+    "sha256": "3C706FA266398FBE4C431E9165F3874D7160E1ACF8530940B8416B10F1796DB5"
+  },
+  {
+    "path": "test/analytics/.runtime/results-rebuild.json",
+    "sha256": "B28B3F9A53A780DFBB68D012B5C580F50D3186CE1B364E2097776DB750F54DFB"
+  },
+  {
+    "path": "test/analytics/.runtime/results-workers.json",
+    "sha256": "29C9A6CD391CF2456D7C2AEBAEF4754520365643DDADBA6A7C9DFD42F202AAC9"
+  },
+  {
+    "path": "test/analytics/.runtime/test-architecture-proof.log",
+    "sha256": "E79DC4152158A38318C869B63D33F5EBEE0E2BDC23FCEFCEEF8E9F04E15B980F"
+  },
+  {
+    "path": "test/analytics/.runtime/test-checkout-hold-proof.log",
+    "sha256": "04070C3DCD7F03FDEB4E8C405E0F559059D6FFE1EAAEDE5FA4CB97D4A287E794"
+  },
+  {
+    "path": "test/analytics/.runtime/test-financial-attribution-proof.log",
+    "sha256": "4208E9B5872D6071BA9AD8E616CB8A5B79A4EAE10A3B6F591A84E822065030C5"
+  },
+  {
+    "path": "test/analytics/.runtime/test-inventory-writer-proof.log",
+    "sha256": "27A49B5F0DE724BCE77E7373AC9291CBB3E71764F984C7E10DE49238A40AF61B"
+  },
+  {
+    "path": "test/analytics/.runtime/vendure_test_analytics_1791079412905_ff2cff-messages.jsonl",
+    "sha256": "BDFECC0A3055819B4BFB0E93E5C9C14C7C00335D1BB5742DB56374D4156CC3A4"
+  },
+  {
+    "path": "test/analytics/.runtime/vendure_test_analytics_1791080722078_3566ad-messages.jsonl",
+    "sha256": "7B35B10E2BF3B92617362F2CA6BE60D4496226E9BEE607C8C2A700FB868DE683"
+  },
+  {
+    "path": "test/analytics/.runtime/vendure_test_analytics_1791081135079_59a22c-messages.jsonl",
+    "sha256": "8BDA4CDB7E7C2341813ADF0EC895C3AB664BE9DAF43E0D8A786A5F7BC96C81B5"
+  },
+  {
+    "path": "test/analytics/.runtime/vendure_test_analytics_1791081692901_002c05-messages.jsonl",
+    "sha256": "8BF4776AA124DDB93B356B095F2B7F5C1D1215AB8EC54D3B619DA8F00D39D963"
+  },
+  {
+    "path": "test/analytics/.runtime/vendure_test_analytics_1791082211910_b33fe9-messages.jsonl",
+    "sha256": "35C71E23FDBE5398FAF658931CB194215514D7E08B5049AC58FC3A6BE8336722"
+  },
+  {
+    "path": "test/analytics/fixture.ts",
+    "sha256": "9D9271EB10DF31578F5FBEC1D88C2E4A40F7E8135BECCCDC7B3EF7F8806B8A40"
+  },
+  {
+    "path": "test/analytics/run.ts",
+    "sha256": "707042BAA88858056EC43331E4F5175A75E16AAC287E2CA2EF3B5E7407996F1F"
+  },
+  {
+    "path": "test/analytics/tsconfig.json",
+    "sha256": "48FE1331DAE3AF3EC8F99B7EAC84ECBA0FF42144DFAF72E09CA2FAE33BE9DEE9"
+  },
+  {
+    "path": "test/analytics/worker.ts",
+    "sha256": "DB56B539204EF448E961F3623A4544575AAEB25736A06AAC99512FC90A417536"
+  },
+  {
+    "path": "test/architecture-proof/README.md",
+    "sha256": "5BFF80255FA2006D40159224F2E5B37C307B34CFC5252195CA52513F0FB466A0"
+  },
+  {
+    "path": "test/architecture-proof/client.ts",
+    "sha256": "27E59F88ED993909774BD45E1076CF1C7A1896831C55BC79A2CE00060AD85269"
+  },
+  {
+    "path": "test/architecture-proof/database.ts",
+    "sha256": "03426B5D935DD335528D48D543B2EB74EE1B337CCFB62C3055F7C2D3BF767A35"
+  },
+  {
+    "path": "test/architecture-proof/fixture.ts",
+    "sha256": "2A6C7C24BDA768E26B1B5612E8145687750640605B17400A73E18883F6073577"
+  },
+  {
+    "path": "test/architecture-proof/run.ts",
+    "sha256": "1C2FCA2BC4613F6E61A8591D22BCC4C46A1B35C767D6D432D8B31F5B8154E6C5"
+  },
+  {
+    "path": "test/architecture-proof/strategies.ts",
+    "sha256": "9B14FF4DD1379600EFF2D2820D01961490EC0EBB23C1B9EE6394558792DF1BBB"
+  },
+  {
+    "path": "test/architecture-proof/tsconfig.json",
+    "sha256": "73E7089235A7442B29A4E43E48884A5C865D068C78C8F5CAA836B323DD5BBCA7"
+  },
+  {
+    "path": "test/billing-entitlements/controlled-stripe.ts",
+    "sha256": "2459E8DFC72C46893E0987DFF1F29830EC5812DDB11E54EFA6695BCA73B5A257"
+  },
+  {
+    "path": "test/billing-entitlements/fixture.ts",
+    "sha256": "1C3135D189DF6A5F7C7C05844F0534B865770B07392E075563FCDCBA542A8537"
+  },
+  {
+    "path": "test/billing-entitlements/run.ts",
+    "sha256": "C98C609FB6469B16474B2BD79165B4A406DB72F908E46CEDA66581A13EDEDA78"
+  },
+  {
+    "path": "test/billing-entitlements/sandbox.ts",
+    "sha256": "B3E0F3FD483739F66CECB54472735C80DF5A1D0B25A7810B7708D40E85402DA9"
+  },
+  {
+    "path": "test/billing-entitlements/tsconfig.json",
+    "sha256": "3AE2D31702B7ED2375854FFA1A7ADBD9D46933CB6ABCAE50C0E7E08018F323C2"
+  },
+  {
+    "path": "test/billing-entitlements/worker.ts",
+    "sha256": "436DC1A837ACAF782D5362C59AB21847AA03B64D6FAA924BC89C73B1891671B0"
+  },
+  {
+    "path": "test/catalog-publication/database-lifecycle.ts",
+    "sha256": "A179E356BB6BA824F7249785D2AAD8B86B0FED7659BD550BD600E7774D06A2ED"
+  },
+  {
+    "path": "test/catalog-publication/migrations.ts",
+    "sha256": "C6820F37D9913DB61011635ACC042B882A40E616B3EBFE75872EA378C3EA4FD8"
+  },
+  {
+    "path": "test/catalog-publication/run.ts",
+    "sha256": "2C99744F20F261A176D67AE490F1CCBEA74A84A2C26FD06E3B173BAF0BFA93E3"
+  },
+  {
+    "path": "test/catalog-publication/tsconfig.json",
+    "sha256": "25AA8591078B211CAB4309233F2FB7C157020A790EA6532C82FB75A883104D59"
+  },
+  {
+    "path": "test/checkout-hold-proof/README.md",
+    "sha256": "F5B64117D236993C35514544DD771B29970FCEE591B37F21DE7F335C3023B76A"
+  },
+  {
+    "path": "test/checkout-hold-proof/audit.ts",
+    "sha256": "F508471142D568452A328FBA5EBE4FA13524F79FE38ED17931CCA05C6A9D7721"
+  },
+  {
+    "path": "test/checkout-hold-proof/coordinator.ts",
+    "sha256": "ADEA7F3B60799C1EDAD447D203D1E395CBF2CC39B3C979A8E39C6C72E29C8524"
+  },
+  {
+    "path": "test/checkout-hold-proof/database.ts",
+    "sha256": "871DB52284D860099AC6ACA953EB84AEC0AC3B45A539F9F0CF0AE6DBD072AAFF"
+  },
+  {
+    "path": "test/checkout-hold-proof/run.ts",
+    "sha256": "CDE6125797A36CBA186FE5C582AAFECF6FD90E5CED47151F5626FE2690DF8E3C"
+  },
+  {
+    "path": "test/checkout-hold-proof/schema.ts",
+    "sha256": "05EBC93D96322CFBB70C48DCA4E93FB49643DF4CD9E0140D06E6E6E364B7B0B4"
+  },
+  {
+    "path": "test/checkout-hold-proof/tsconfig.json",
+    "sha256": "73E7089235A7442B29A4E43E48884A5C865D068C78C8F5CAA836B323DD5BBCA7"
+  },
+  {
+    "path": "test/communications/acceptance.ts",
+    "sha256": "0222D1B8EC770DB763BB9B5ED93B721AAAC13EB568189BAF0C9A99F521C3D3C3"
+  },
+  {
+    "path": "test/communications/external.ts",
+    "sha256": "10B478BA88A4F20BA4FC93655AC7EC5080ACB54A2521B56B7DAA3F72A9597916"
+  },
+  {
+    "path": "test/communications/fake-provider.ts",
+    "sha256": "FD154993C16E0E92244FFEF7A39738C1157AD31823B51A044F582FBE6E50ED68"
+  },
+  {
+    "path": "test/communications/fixture.ts",
+    "sha256": "D5B9FC8F69DD8695075F5B936145786ED4ACBBE7F088485165293C38C5CDB630"
+  },
+  {
+    "path": "test/communications/migrations.ts",
+    "sha256": "50AE2CA9BEC9C5B6B6DC7504A82FD41672C1FD2D93403A7EAC286F1A64586E4A"
+  },
+  {
+    "path": "test/communications/provider-contracts.ts",
+    "sha256": "2F594C9DCAE6DE3FA505B44EA512A470A8820A2A39EAF6B6B384C63E3E29EC1F"
+  },
+  {
+    "path": "test/communications/run.ts",
+    "sha256": "9735C41B285B24A4D249DAB95534C7A0B067F355370AC1C73F6390E97C769DF0"
+  },
+  {
+    "path": "test/communications/tsconfig.json",
+    "sha256": "2CC8E2247B33F2EAD565309E2A3AC273E6240178E5A6CB9A3D13F796F0ECDB32"
+  },
+  {
+    "path": "test/communications/worker.ts",
+    "sha256": "EC7625DD4BE931AFFBDB7453C26CB480588253D69A3B7D6ADF6912965D0255DF"
+  },
+  {
+    "path": "test/customer-relationships/acceptance.ts",
+    "sha256": "D3FC0C26DF15B8A87F1B9299FFE98C499E2AC3D816E02FB1B98748CA339272F2"
+  },
+  {
+    "path": "test/customer-relationships/fixture.ts",
+    "sha256": "FFE63BB3C00D173FE8E091B05B233BA30BD1A6D31E9A2EBB55688C7CA808CC18"
+  },
+  {
+    "path": "test/customer-relationships/migration-seed.ts",
+    "sha256": "E01CB1FF0D92CDE623C664CEDC677DF7E4B99921271C9392AA56FBC07E52D845"
+  },
+  {
+    "path": "test/customer-relationships/migrations.ts",
+    "sha256": "04A9922EA778A378B87769EBA28D0BD9D959F64B69BDBDD5FCECC74BBEA23B18"
+  },
+  {
+    "path": "test/customer-relationships/run.ts",
+    "sha256": "908345A0A53AEE5FE23B695459BD2794FDE50DE18E32E1E5FDA573F17412D523"
+  },
+  {
+    "path": "test/customer-relationships/tsconfig.json",
+    "sha256": "F653A95525BDDA620CE6B8A05869E6B33418183A72E41E402C60D54F8441F036"
+  },
+  {
+    "path": "test/customer-relationships/worker.ts",
+    "sha256": "4B224F9998BD23935DFB7F60935B9116E71BE4EDBC98A299EA13E8C1E9DFB681"
+  },
+  {
+    "path": "test/farmers-market/README.md",
+    "sha256": "C95DEEA97E5676F878B7A99EAAB448458F19F69BBE2759669E91FA6674E61B01"
+  },
+  {
+    "path": "test/farmers-market/config.ts",
+    "sha256": "EB7EE94C66F3A4D1C768A9F0E6D9743B91B9D5F6352DF18A3E80028E33202243"
+  },
+  {
+    "path": "test/farmers-market/database.ts",
+    "sha256": "23C6E6127E3098011F682EE9FEDB18ECD0946C59E5AD841C33989C4E47B1F206"
+  },
+  {
+    "path": "test/farmers-market/fixture.ts",
+    "sha256": "E6700DB4E1880743EBD5AF7E18190DCCC3CE7D007D8CB048A1E844AC1A81AD3C"
+  },
+  {
+    "path": "test/farmers-market/migrations.ts",
+    "sha256": "0998B473EF46CB459C9FFFC6B66911D9B7377C3994AA30561EDB617BE83E899A"
+  },
+  {
+    "path": "test/farmers-market/run.ts",
+    "sha256": "C9D36229394D711D4450C45FB448BC87EE07A5A4CB7DE5B249A430F2489A180D"
+  },
+  {
+    "path": "test/farmers-market/tsconfig.json",
+    "sha256": "27F11E44E9F14B96930D4C7E1119BE3A84D172AAFE56F6E1A63FBDAAEA53F7C3"
+  },
+  {
+    "path": "test/farmers-market/worker.ts",
+    "sha256": "8418B451826D55DEA46573F7F41B98A0AEA0E9DB0AAC64D3A885207218283627"
+  },
+  {
+    "path": "test/financial-attribution-proof/README.md",
+    "sha256": "966041B3253F01ED19C17560D6971AE01AE607691C20DCE7B0FF6B50A059DE39"
+  },
+  {
+    "path": "test/financial-attribution-proof/audit.ts",
+    "sha256": "6585D836C6763F52FB4464F01CF37D555C7187F64236A6DFCD3510450CE8F72B"
+  },
+  {
+    "path": "test/financial-attribution-proof/build-report.cjs",
+    "sha256": "F184774CD9D3290ED9B3ACAC3BDE5599FF6FEABC96A87618DF8952ABDFCAE129"
+  },
+  {
+    "path": "test/financial-attribution-proof/coordinator.ts",
+    "sha256": "7090AF256DADE8AFEBF58E019CD0F8B7C284268C5A4C73D952AF518A96CE42C0"
+  },
+  {
+    "path": "test/financial-attribution-proof/database.ts",
+    "sha256": "92E60A8A4A0F73E991C08602C4C01F952B4D20831BFE14447E44057D5189F5F7"
+  },
+  {
+    "path": "test/financial-attribution-proof/money.ts",
+    "sha256": "FEEC83F4FFC508B827C4D2DA665FF9BE64C96C330CA4C1861ED12C2F28C3F3E0"
+  },
+  {
+    "path": "test/financial-attribution-proof/plugin.ts",
+    "sha256": "E5FAB11226B9D2ACAD4224CB80938475EE0EC4B8D3751E43D8DF127A9E480F24"
+  },
+  {
+    "path": "test/financial-attribution-proof/promotions.ts",
+    "sha256": "9ED2623204A992E86EEDB5EFC7BDC193C330D8B7C513E3166F0CDA7D7D255BAB"
+  },
+  {
+    "path": "test/financial-attribution-proof/run.ts",
+    "sha256": "8249E678141909C96DEA1DE019EBCC77659019A6E452ED427B81FD1F24D91C14"
+  },
+  {
+    "path": "test/financial-attribution-proof/schema.ts",
+    "sha256": "AF36A61F7150D786C9A1DBD627624DF9ADDE9950FC292E63BB911B26A9670671"
+  },
+  {
+    "path": "test/financial-attribution-proof/tsconfig.json",
+    "sha256": "ABC5616DD4EC41E86D8F4689C2F067837F4150AFF78473A03D10BFE431C8EBE8"
+  },
+  {
+    "path": "test/inventory-capacity/fixture.ts",
+    "sha256": "2C663FF1A2C7DC93D1F3C7CAF35D9811BBD09246DDF0A09A4F78827BAA8728F6"
+  },
+  {
+    "path": "test/inventory-capacity/process-race.ts",
+    "sha256": "E19F4FBEA8FB3C492BB940F84ECE140598567F5BE37D8750F56CE8DDD689D29D"
+  },
+  {
+    "path": "test/inventory-capacity/process-worker.ts",
+    "sha256": "214E22E1D6946C708F0AE2CFEFCE4F9D9F41DF267C67C3FBC24A650B4D7840BB"
+  },
+  {
+    "path": "test/inventory-capacity/run.ts",
+    "sha256": "FC159A3690A74D313E0BB1D30A67232E6193CCA2375A06238A9790B66736900F"
+  },
+  {
+    "path": "test/inventory-capacity/stress.ts",
+    "sha256": "6D9C57EE0D7040DF098B9572B851E3FD89C8A75251CC450E2063D5C00561793D"
+  },
+  {
+    "path": "test/inventory-capacity/tsconfig.json",
+    "sha256": "4BCD6211E638C1D4048D427524F40959AEB83DD3442C33039178402322E716B6"
+  },
+  {
+    "path": "test/inventory-writer-proof/README.md",
+    "sha256": "E112A29826C88334384FFCB2DEE310C5AA7E1A14658C2B710AE8B1F3F4A6CAE6"
+  },
+  {
+    "path": "test/inventory-writer-proof/audit.ts",
+    "sha256": "E3264D8E7169CC2DF4F6E18C74D5199A04DA197C9F06EF2C73C96748768B9060"
+  },
+  {
+    "path": "test/inventory-writer-proof/build-report.cjs",
+    "sha256": "5F5F3AC087B036120EDB4D85DFB33CABB9427D5E9EA62911698638CAC22F1988"
+  },
+  {
+    "path": "test/inventory-writer-proof/coordinator.ts",
+    "sha256": "5AA8B093A7071B8E13F055E80B1A9BB46631792F2D70F65140FFE94ACCAF4693"
+  },
+  {
+    "path": "test/inventory-writer-proof/database.ts",
+    "sha256": "199B8127CA538183CBD3BEB25C893F1E99ADF988960815E82F658F154804B69D"
+  },
+  {
+    "path": "test/inventory-writer-proof/plugin.ts",
+    "sha256": "5DA4684DBDE75566889AB900A4EC5A23F92542613EBA06A0D224B35FCAE2B7E2"
+  },
+  {
+    "path": "test/inventory-writer-proof/run.ts",
+    "sha256": "AA3838331E68F5A0384706065603EF932B28357B2F71E2306ED6AFFD961C4188"
+  },
+  {
+    "path": "test/inventory-writer-proof/tsconfig.json",
+    "sha256": "CD47CCB5C7784082D1D61780579A4DA216FC4A4C54C24089706FBC143F8BDE95"
+  },
+  {
+    "path": "test/inventory-writer-proof/worker.ts",
+    "sha256": "93215C855C3108FF7D78428319B5EF6C648B265942F59E1BBA6CFAFFFFB17B4D"
+  },
+  {
+    "path": "test/inventory-writer-proof/writer-audit.md",
+    "sha256": "939FBD827805DF06F9A9EADC73EC7D64642F7878D7EABE273A302A2B52D7BBCD"
+  },
+  {
+    "path": "test/marketplace-commerce/acceptance.ts",
+    "sha256": "829724535BC033AEB4C4F0095E4BDB8D199A87D2ECD93E334FE91F968CCD2CCC"
+  },
+  {
+    "path": "test/marketplace-commerce/fixture.ts",
+    "sha256": "5EAC30358859235595AB6A6C595C73766C2CFD72F234418ACCA9FB82FA12008D"
+  },
+  {
+    "path": "test/marketplace-commerce/migrations.ts",
+    "sha256": "EEE9216DCE4F430B565EBAFA3B142D8DF6ED3D7532D891A223AF09CB0EC2683B"
+  },
+  {
+    "path": "test/marketplace-commerce/run.ts",
+    "sha256": "587EC086C5FE32FC74E382AD4542585C8A0E728B473EF6C742C3EB688CDF134F"
+  },
+  {
+    "path": "test/marketplace-commerce/stress.ts",
+    "sha256": "F5BF8324118B33A93ADC12D9D7FD9109D706CE7536DC157C17C8999E997BC32B"
+  },
+  {
+    "path": "test/marketplace-commerce/tsconfig.json",
+    "sha256": "48FEFBE4EBF44851FA8F33D8ECD2091FBA32521BF8EDF0BBC17DDF83144C71C2"
+  },
+  {
+    "path": "test/paid-attribution-refund/README.md",
+    "sha256": "A05A3B5E73C1FFFB9B067862F5816362C4DCBB8EB18BE2AA5EA858E1164D3DBE"
+  },
+  {
+    "path": "test/paid-attribution-refund/acceptance.ts",
+    "sha256": "0A92FC71325BEBCEAD21F45FE36E147BDE8D6BC8C21473DC9D5F42FE4D731CED"
+  },
+  {
+    "path": "test/paid-attribution-refund/fixture.ts",
+    "sha256": "5969480530FFEA8A43B523EC00A53C16E0AF6230594D84743E604B0425A2FD2E"
+  },
+  {
+    "path": "test/paid-attribution-refund/guards.ts",
+    "sha256": "A01DE607E03CBB0842663321E49F573A9C1C68F44BE18C1AB463C4AA7A4F3356"
+  },
+  {
+    "path": "test/paid-attribution-refund/migrations.ts",
+    "sha256": "CC811CA013AAAD8F915D7E2552FCEF46E4A1E92DF98400BE0DCD823473BB5A3E"
+  },
+  {
+    "path": "test/paid-attribution-refund/recover.ts",
+    "sha256": "2942C5EEF2D0AC4FD8E8DDA053194B9DACA7E6842EA7F084F650FB88F789199F"
+  },
+  {
+    "path": "test/paid-attribution-refund/run.ts",
+    "sha256": "203D2611F8AF46B145E3A1D1F059FF46ED74A9749CB76E5C32658756C475C8DE"
+  },
+  {
+    "path": "test/paid-attribution-refund/stress.ts",
+    "sha256": "0057184C6BEF1DD304FAF48DDACA59C106A547F7A43EB7AB53D1570C583A0D6F"
+  },
+  {
+    "path": "test/paid-attribution-refund/tsconfig.json",
+    "sha256": "CB6F78D336DC43950DFED79B6033E254AF76EA179481AAD1B9CC00637CF18E20"
+  },
+  {
+    "path": "test/payments-stripe/acceptance.ts",
+    "sha256": "F419BDD4D693A0015DDF3A102FBC59169DFDFAA3FD645715F68DBE07779C0FE4"
+  },
+  {
+    "path": "test/payments-stripe/controlled-transport.ts",
+    "sha256": "46889906CFC80ED650B1F47A6038B109B41FBE6564FC98F62DD96BD3629CCED7"
+  },
+  {
+    "path": "test/payments-stripe/fixture.ts",
+    "sha256": "5759951CB7B6D74E4909B5CA327E415027B6878CCB04B9BBB4596775C832F7F6"
+  },
+  {
+    "path": "test/payments-stripe/migrations.ts",
+    "sha256": "1426A91A1C2F06191D559AD675E7F9158A494D917D543F866488EC9FC498639A"
+  },
+  {
+    "path": "test/payments-stripe/recover.ts",
+    "sha256": "F6ACCD923B7253541D46937B0870A415A44E5CEA47989336C756933350B61F05"
+  },
+  {
+    "path": "test/payments-stripe/run.ts",
+    "sha256": "CA4C733748E696D0D1674F95C13EFD823FABB1B7C43705FCC0F0C3C94DF00FC7"
+  },
+  {
+    "path": "test/payments-stripe/sandbox.ts",
+    "sha256": "19D5E4666456E9AD3CBE60FC13953E5F4FBBBAF8B78D1885C161BCAC4315F690"
+  },
+  {
+    "path": "test/payments-stripe/tsconfig.json",
+    "sha256": "6B565D08EBDB6361333D68D4F77BC0A117C3896B2AAE1DD9A66C2CA1E100D0AF"
+  },
+  {
+    "path": "test/platform-identity/README.md",
+    "sha256": "8E054FC580078736A74292D91E5ACE24A8FECBC456A5853B124647656FE79151"
+  },
+  {
+    "path": "test/platform-identity/client.ts",
+    "sha256": "E7FE44A6E51631B2A9EACD10A48A587FD7EE895DB1F0D1D3C8F3F9AEA00799CD"
+  },
+  {
+    "path": "test/platform-identity/config.ts",
+    "sha256": "ADAA6FB8E3EFFB5AFC06D8234E4DFF776CA75F05B0BB6B295CE6E4DE88F53D08"
+  },
+  {
+    "path": "test/platform-identity/database.ts",
+    "sha256": "91EE151EB303247E04A489D0540114C42C43FB709D1D78655DB253EA779CB3BB"
+  },
+  {
+    "path": "test/platform-identity/fixture.ts",
+    "sha256": "9407790439DEF58DD9B79DCD2D3ED576F5E509AC0D659C733A0C742F24E27A00"
+  },
+  {
+    "path": "test/platform-identity/generate-migrations.ts",
+    "sha256": "BC067886355F57DC2F9904AFD5DD84BE80E3985BF74A685E8BE2383A4E7635DA"
+  },
+  {
+    "path": "test/platform-identity/run.ts",
+    "sha256": "1C362DCCC807CC4665D7670FD87606A5B9F673F0F046C18A0A74FB7E315E01ED"
+  },
+  {
+    "path": "test/platform-identity/tsconfig.json",
+    "sha256": "5B99BF330E8C3BCED39EA6161834F25087EC9291B9895414F7B25A702CA5BA97"
+  },
+  {
+    "path": "test/platform-identity/worker.ts",
+    "sha256": "07BD91831DDC0A272E23C2E754049EA3CA4FE2B185F27B0E0EC47BB55C7888D3"
+  },
+  {
+    "path": "test/pos-integrations/advanced.ts",
+    "sha256": "48B1774DB8C7ADA0BEF35BF0A408FAA5C22D6D37676D492E1A8736777DCC00DB"
+  },
+  {
+    "path": "test/pos-integrations/cross-provider.ts",
+    "sha256": "FFD5EFF2FB37A33ECC2BF3B48D53410183619F373E4036577A8D1F2AA57089AE"
+  },
+  {
+    "path": "test/pos-integrations/fake-sixth.ts",
+    "sha256": "6077BEB7410B55310BEEC05BBE07816C2B305AF3EB7BB3301B28D3CF8ADD1ABC"
+  },
+  {
+    "path": "test/pos-integrations/fixture.ts",
+    "sha256": "C654AF4E8E8D27348E6894A1A913F3CF7A0CD5938E08958351CBC41D080A99C5"
+  },
+  {
+    "path": "test/pos-integrations/provider-contracts.ts",
+    "sha256": "6EE2CF7ABD34CA730D929FE1D5AEB3A6A040DAB9E26DA5A869B60E6B9D41B8D1"
+  },
+  {
+    "path": "test/pos-integrations/recover.ts",
+    "sha256": "C2802E71E57148291C436A08151EBD8E24903E0182B870043F01B1269CF6EB85"
+  },
+  {
+    "path": "test/pos-integrations/run.ts",
+    "sha256": "74B4D17186475FDDCD287405A7A0C114FF6A243F4BDC77E0DA991A338E601BDB"
+  },
+  {
+    "path": "test/pos-integrations/tsconfig.json",
+    "sha256": "1ABB3230E4EC0FB44105D794524B3ED8D147C67056302CE4F06F0D36F3384813"
+  },
+  {
+    "path": "test/test-database.ts",
+    "sha256": "829DCD5E1339B824163A6EFAA37205FA8BBAF9F6F998D765595728F4489EF789"
+  },
+  {
+    "path": "tsconfig.dashboard.json",
+    "sha256": "165A3FF36371B7D91E1A2B8A50D2A54BFAF58B20128005AB1208DC5936D88342"
+  },
+  {
+    "path": "tsconfig.json",
+    "sha256": "9FB6FAFD05CB9B27D4752B1A30FEC16DB30AE905222DAF8C703A9F124A4F8F4E"
+  },
+  {
+    "path": "vite.config.mts",
+    "sha256": "115BE7D3A9100A845F2E8F5B87C715EF3F80B695A6F390E2C7A7D0ABEB9CBDB4"
+  }
+]

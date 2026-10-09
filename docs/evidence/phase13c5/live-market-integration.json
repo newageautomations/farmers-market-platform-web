@@ -1,0 +1,102 @@
+{
+  "classification": "REAL FULL-STACK PASS",
+  "profile": "market",
+  "fixtureMode": false,
+  "transport": "Real HTTP with native login cookies",
+  "providerMode": "Local test adapters only",
+  "backendResults": {
+    "database": "vendure_test_frontend_1791226076017_dd4131",
+    "tests": [
+      {
+        "name": "Real Market HTTP-only cookie login",
+        "status": "PASS"
+      },
+      {
+        "name": "B1 relationship safe identity, stable pages and scoped safe search",
+        "status": "PASS"
+      },
+      {
+        "name": "B1 eligible directory paging, safe search and existing exclusion",
+        "status": "PASS"
+      },
+      {
+        "name": "B1 existing mutation creates relationship then authoritative reread, no duplicates",
+        "status": "PASS"
+      },
+      {
+        "name": "B2 current safe labels and canonical rename reread",
+        "status": "PASS"
+      },
+      {
+        "name": "B3 UNPUBLISHED/PUBLISHED/drift read-only/repair/unpublish truth",
+        "status": "PASS"
+      },
+      {
+        "name": "B4 more than 1000 occurrences traversed, deterministic ties, no duplicate/skip or foreign count",
+        "status": "PASS"
+      },
+      {
+        "name": "B4 every membership subcollection has real pages, dense attendance/offering/history beyond 1000",
+        "status": "PASS"
+      },
+      {
+        "name": "B4 invalid paging/search/date inputs fail safely",
+        "status": "PASS"
+      },
+      {
+        "name": "B4 authoritative operational overview independent of analytics",
+        "status": "PASS"
+      },
+      {
+        "name": "B5 own future, historical and cancelled direct detail; unknown/foreign uniformly denied",
+        "status": "PASS"
+      },
+      {
+        "name": "B6 durable pending and running/retrying mapping; wrong queue/tenant/unknown denied",
+        "status": "PASS"
+      },
+      {
+        "name": "B6 actual worker COMPLETED status and authoritative generated occurrence reread",
+        "status": "PASS"
+      },
+      {
+        "name": "B6 actual failed worker sanitized error classification",
+        "status": "PASS"
+      },
+      {
+        "name": "Schema DTO privacy excludes credentials, finance, stock and broad native graphs",
+        "status": "PASS"
+      },
+      {
+        "name": "All new protected roots deny same-cookie human revocation and native grant loss",
+        "status": "PASS"
+      },
+      {
+        "name": "Wrong selected Channel and cross-Market relationship/listing attacks denied",
+        "status": "PASS"
+      },
+      {
+        "name": "Suspended Market remains administratively readable; active-only generation still blocked",
+        "status": "PASS"
+      },
+      {
+        "name": "B4 more than 1000 canonical Vendor relationships, scoped totals and complete stable traversal",
+        "status": "PASS"
+      }
+    ],
+    "transitions": [
+      "PENDING",
+      "COMPLETED",
+      "PENDING",
+      "PENDING",
+      "PENDING",
+      "PENDING",
+      "PENDING",
+      "PENDING",
+      "FAILED"
+    ],
+    "cleanup": "dropped"
+  },
+  "backendExit": 0,
+  "browserPass": true
+}

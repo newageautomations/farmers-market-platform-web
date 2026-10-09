@@ -1,0 +1,47 @@
+.market-occurrences {
+  margin-block: 2rem 4rem;
+}
+.occurrence-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2rem;
+  list-style: none;
+  padding: 0;
+}
+.occurrence-list li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.occurrence-summary {
+  font-size: 1.15rem;
+  max-width: 65ch;
+}
+.vendor-cart-group {
+  margin-block: 2rem;
+  border-top: 2px solid var(--brand-primary);
+  padding-top: 1.5rem;
+}
+.cart-boundary {
+  margin-top: 1.5rem;
+}
+.market-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.market-filter-options label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.market-filter-options input {
+  width: auto;
+}
+.market-catalog-note {
+  max-width: 70ch;
+}
+@media (max-width: 580px) {
+  .occurrence-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

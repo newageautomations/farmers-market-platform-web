@@ -1,0 +1,111 @@
+.vendor-workspace {
+  min-width: 0;
+}
+.vendor-workspace small {
+  display: block;
+  color: var(--brand-muted);
+  margin-top: 0.25rem;
+}
+.vendor-workspace .filter-bar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.vendor-workspace .filter-bar .field {
+  flex: 1 1 180px;
+  margin: 0;
+}
+.vendor-workspace .filter-bar button {
+  margin-bottom: 0;
+}
+.vendor-workspace .command-section {
+  margin: 1.5rem 0;
+  max-width: 680px;
+}
+.vendor-workspace fieldset {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+.vendor-workspace .form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.vendor-workspace .facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+.vendor-workspace .facts div {
+  flex: 1 1 180px;
+}
+.vendor-workspace dt {
+  color: var(--muted);
+}
+.vendor-workspace dd {
+  margin: 0.35rem 0 0;
+  font-weight: 600;
+}
+.vendor-workspace .capability-note {
+  border-left: 3px solid var(--border);
+  padding: 0.25rem 1rem;
+  margin: 1rem 0;
+}
+.vendor-workspace .projection-status {
+  padding: 0.5rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+.vendor-workspace .record-details {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.vendor-workspace .overview-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  padding: 1rem 0;
+}
+.vendor-workspace td {
+  overflow-wrap: anywhere;
+  max-width: 320px;
+}
+.vendor-workspace .table-scroll {
+  max-width: 100%;
+}
+.vendor-workspace table {
+  min-width: 640px;
+}
+.admin-topbar .fixture-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.fixture-controls select {
+  width: auto;
+  max-width: 100%;
+}
+.fixture-controls label {
+  font-size: 0.875rem;
+}
+@media (max-width: 767px) {
+  .vendor-workspace .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .vendor-workspace .filter-bar {
+    align-items: stretch;
+  }
+  .vendor-workspace .filter-bar button {
+    width: 100%;
+  }
+  .vendor-workspace .facts {
+    gap: 1rem;
+  }
+}

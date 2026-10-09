@@ -1,0 +1,36 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { PurchaseSuccess } from '../../components/ResilientSurfaces';
+import { requestCheckout } from '../../lib/shop';
+const { storefront } = Astro.locals,
+  order = Astro.url.searchParams.get('order');
+let view;
+try {
+  if (order && /^[1-9]\d*$/.test(order))
+    view = await requestCheckout(Astro, Astro.response.headers).status(order);
+} catch {}
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+---
+
+<SiteLayout
+  context={storefront}
+  path="/checkout/success"
+  title="Order confirmation"
+  noindex
+>
+  <section class="py-12">
+    <h1>Order confirmation</h1>
+    {view?.committed ? (
+      <PurchaseSuccess
+        view={view}
+        storefrontId={storefront?.storefrontId ?? ''}
+        client:load
+      />
+    ) : (
+      <p>
+        Your purchase has not been confirmed.{' '}
+        <a href="/checkout">Check checkout status</a>
+      </p>
+    )}
+  </section>
+</SiteLayout>

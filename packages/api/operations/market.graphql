@@ -1,0 +1,443 @@
+fragment MarketConfiguration on MarketDomain {
+  id
+  name
+  slug
+  status
+  timezone
+  venue
+  pickupInstructions
+  version
+  recurrenceVersion
+  policyVersion
+  recurrence {
+    frequency
+    weekInterval
+    monthWeeks
+    weekdays
+    startTime
+    endTime
+    endDayOffset
+    effectiveFrom
+    effectiveUntil
+  }
+  defaultPreorderRule {
+    ...PreorderRule
+  }
+  overridePolicy {
+    membershipAllowed
+    participationAllowed
+    vendorWindowMode
+    closeMinutesBeforeStart
+  }
+}
+fragment MarketOccurrenceFields on MarketSession {
+  ...Occurrence
+  source
+  localStartsAt
+  localEndsAt
+  originalLocalStart
+  originalLocalEnd
+  recurrenceVersion
+  configurationVersion
+  policyVersion
+  preorderOverride {
+    ...PreorderRule
+  }
+}
+query MarketConfiguration($id: ID!) {
+  ownMarket(id: $id) {
+    ...MarketConfiguration
+  }
+}
+query MarketOccurrences($marketId: ID!, $from: DateTime!, $through: DateTime!) {
+  marketOccurrences(marketId: $marketId, from: $from, through: $through) {
+    ...MarketOccurrenceFields
+  }
+}
+query MarketRelationships($marketId: ID!) {
+  marketVendorMemberships(marketId: $marketId) {
+    ...BusinessMembership
+  }
+}
+query MarketRelationshipState($membershipId: ID!) {
+  marketMembershipState(membershipId: $membershipId) {
+    membership {
+      ...BusinessMembership
+    }
+    occurrences {
+      ...MarketOccurrenceFields
+    }
+    participations {
+      ...Attendance
+    }
+    listings {
+      ...Listing
+    }
+    offerings {
+      ...Offering
+    }
+  }
+}
+mutation MarketConfigure($input: ConfigureMarketInput!) {
+  configureOwnMarket(input: $input) {
+    id
+    version
+  }
+}
+mutation MarketRecurrence(
+  $marketId: ID!
+  $expectedVersion: Int!
+  $recurrence: WeeklyRecurrenceInput
+) {
+  reviseMarketRecurrence(
+    marketId: $marketId
+    expectedVersion: $expectedVersion
+    recurrence: $recurrence
+  ) {
+    id
+    version
+    recurrenceVersion
+  }
+}
+mutation MarketGenerate($marketId: ID!, $from: String!, $through: String!) {
+  generateMarketOccurrences(
+    marketId: $marketId
+    from: $from
+    through: $through
+  ) {
+    id
+    version
+  }
+}
+mutation MarketEnqueue($marketId: ID!, $from: String!, $through: String!) {
+  enqueueMarketOccurrenceGeneration(
+    marketId: $marketId
+    from: $from
+    through: $through
+  ) {
+    id
+  }
+}
+mutation MarketManual(
+  $marketId: ID!
+  $scheduleDate: String!
+  $generationKey: String!
+  $input: MarketSessionInput!
+) {
+  createManualMarketOccurrence(
+    marketId: $marketId
+    scheduleDate: $scheduleDate
+    generationKey: $generationKey
+    input: $input
+  ) {
+    id
+    version
+  }
+}
+mutation MarketReviseOccurrence(
+  $id: ID!
+  $expectedVersion: Int!
+  $input: MarketSessionInput!
+) {
+  reviseMarketOccurrence(
+    id: $id
+    expectedVersion: $expectedVersion
+    input: $input
+  ) {
+    id
+    version
+  }
+}
+mutation MarketCancelOccurrence($id: ID!, $expectedVersion: Int!) {
+  cancelMarketOccurrence(id: $id, expectedVersion: $expectedVersion) {
+    id
+    version
+  }
+}
+mutation MarketMembershipStatus(
+  $marketId: ID!
+  $vendorId: ID!
+  $status: MarketBusinessMembershipStatus!
+  $expectedVersion: Int
+) {
+  setMarketVendorMembership(
+    marketId: $marketId
+    vendorId: $vendorId
+    status: $status
+    expectedVersion: $expectedVersion
+  ) {
+    id
+    version
+  }
+}
+mutation MarketApproveListing(
+  $id: ID!
+  $expectedVersion: Int!
+  $status: MarketListingApprovalStatus!
+) {
+  approveMarketListing(
+    id: $id
+    expectedVersion: $expectedVersion
+    status: $status
+  ) {
+    id
+    version
+  }
+}
+mutation MarketParticipation($input: MarketAttendanceInput!) {
+  configureMarketParticipation(input: $input) {
+    id
+    version
+  }
+}
+mutation MarketConfigureOffering($input: MarketOfferingInput!) {
+  configureMarketOffering(input: $input) {
+    id
+    version
+  }
+}
+mutation MarketRematerialize($id: ID!, $expectedVersion: Int!) {
+  rematerializeMarketOfferingWindow(
+    id: $id
+    expectedVersion: $expectedVersion
+  ) {
+    id
+    version
+  }
+}
+query MarketOperations($occurrenceId: ID!, $options: OwnMarketPageOptions) {
+  ownOccurrenceCustomerOperations(
+    occurrenceId: $occurrenceId
+    options: $options
+  ) {
+    totalItems
+    items {
+      customerOrderId
+      occurrenceId
+      portions {
+        operationalOrderId
+        vendorId
+        nativeState
+        pickupStatus
+        lines {
+          operationalLineId
+          variantId
+          variantName
+          sku
+          quantity
+          fulfilledQuantity
+          cancelledQuantity
+          remainingQuantity
+        }
+        fulfillments {
+          id
+          state
+          lines {
+            operationalLineId
+            quantity
+          }
+        }
+        pickupPromise {
+          ...Pickup
+        }
+      }
+    }
+  }
+}
+fragment MarketOperationalMetrics on MarketAnalyticsBucket {
+  day
+  occurrenceId
+  purchaseCount
+  marketPurchaseCount
+  purchasingVendors
+  participatingVendors
+  originalUnits
+  fulfilledUnits
+  cancelledUnits
+  awaitingPortions
+  completedPortions
+  cancelledPortions
+  plannedParticipations
+  confirmedParticipations
+  cancelledParticipations
+}
+query MarketAnalytics($marketId: ID!, $range: AnalyticsRangeInput!) {
+  ownMarketAnalytics(marketId: $marketId, range: $range) {
+    metadata {
+      ...AnalyticsMeta
+    }
+    items {
+      ...MarketOperationalMetrics
+    }
+    nextCursor
+  }
+}
+query MarketOccurrenceAnalytics(
+  $marketId: ID!
+  $range: AnalyticsRangeInput!
+  $occurrenceId: ID
+) {
+  ownMarketOccurrenceAnalytics(
+    marketId: $marketId
+    range: $range
+    occurrenceId: $occurrenceId
+  ) {
+    metadata {
+      ...AnalyticsMeta
+    }
+    items {
+      ...MarketOperationalMetrics
+    }
+    nextCursor
+  }
+}
+
+fragment MarketVendorDisplayFields on MarketVendorDisplay {
+  id
+  name
+  slug
+  status
+}
+fragment MarketOrganizerMembershipFields on MarketOrganizerMembership {
+  id
+  marketId
+  vendorId
+  vendor {
+    ...MarketVendorDisplayFields
+  }
+  status
+  version
+  preorderDefault {
+    ...PreorderRule
+  }
+}
+fragment MarketOrganizerListingFields on MarketOrganizerListing {
+  id
+  membershipId
+  variantId
+  status
+  version
+  variant {
+    id
+    name
+    sku
+    product {
+      id
+      name
+    }
+  }
+  publication {
+    listingId
+    variantId
+    productId
+    marketId
+    state
+  }
+}
+query MarketEligibleVendors($options: OwnMarketVendorDirectoryOptions) {
+  ownMarketEligibleVendors(options: $options) {
+    totalItems
+    items {
+      ...MarketVendorDisplayFields
+    }
+  }
+}
+query MarketVendorPage($options: OwnMarketVendorOptions) {
+  ownMarketVendorMemberships(options: $options) {
+    totalItems
+    items {
+      ...MarketOrganizerMembershipFields
+    }
+  }
+}
+query MarketOccurrencePage($options: OwnMarketOccurrenceOptions) {
+  ownMarketOccurrences(options: $options) {
+    totalItems
+    items {
+      ...MarketOccurrenceFields
+    }
+  }
+}
+query MarketOccurrenceDetail($id: ID!) {
+  ownMarketOccurrence(id: $id) {
+    ...MarketOccurrenceFields
+  }
+}
+query MarketRelationshipDetail(
+  $id: ID!
+  $occurrences: OwnMarketOccurrenceOptions
+  $participations: OwnMarketPageOptions
+  $listings: OwnMarketPageOptions
+  $offerings: OwnMarketPageOptions
+) {
+  membership: ownMarketMembership(id: $id) {
+    ...MarketOrganizerMembershipFields
+  }
+  occurrences: ownMarketMembershipOccurrencePage(
+    membershipId: $id
+    options: $occurrences
+  ) {
+    totalItems
+    items {
+      ...MarketOccurrenceFields
+    }
+  }
+  participations: ownMarketMembershipParticipations(
+    membershipId: $id
+    options: $participations
+  ) {
+    totalItems
+    items {
+      ...Attendance
+    }
+  }
+  listings: ownMarketMembershipListings(membershipId: $id, options: $listings) {
+    totalItems
+    items {
+      ...MarketOrganizerListingFields
+    }
+  }
+  offerings: ownMarketMembershipOfferings(
+    membershipId: $id
+    options: $offerings
+  ) {
+    totalItems
+    items {
+      ...Offering
+    }
+  }
+}
+query MarketOverviewSummary($options: OwnMarketOverviewOptions) {
+  ownMarketOverviewSummary(options: $options) {
+    asOf
+    totalVendorRelationships
+    approvedVendorRelationships
+    pendingVendorRelationships
+    suspendedVendorRelationships
+    withdrawnVendorRelationships
+    upcomingScheduledOccurrences
+    nextOccurrence {
+      ...MarketOccurrenceFields
+    }
+  }
+}
+query MarketListingPublication($listingId: ID!) {
+  ownMarketListingPublication(listingId: $listingId) {
+    listingId
+    variantId
+    productId
+    marketId
+    state
+  }
+}
+query MarketGenerationStatus($jobId: ID!) {
+  ownMarketOccurrenceGenerationStatus(jobId: $jobId) {
+    jobId
+    status
+    submittedAt
+    startedAt
+    settledAt
+    errorCode
+    matchedOccurrences
+  }
+}

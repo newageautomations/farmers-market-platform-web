@@ -1,0 +1,16 @@
+{
+  "name": "@market/storefront-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fixtures": "./src/fixtures.ts",
+    "./market": "./src/market.ts"
+  },
+  "dependencies": {
+    "@market/api": "0.1.0",
+    "@market/theme": "0.1.0",
+    "@market/config": "0.1.0"
+  }
+}

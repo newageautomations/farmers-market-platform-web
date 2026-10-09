@@ -1,0 +1,2295 @@
+{
+  "phase": "13B.5",
+  "backend": {
+    "root": "E:\\coding\\farmers-market-platform",
+    "beforeFiles": 356,
+    "afterFiles": 370,
+    "headUnchanged": true,
+    "existingMigrationsVerified": 13,
+    "changes": [
+      {
+        "path": "docs/frontend-api-gap-closure-phase13b5.md",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/frontend-api-gap-closure-phase13b5.md",
+          "sha256": "8163a32703f6453fafb231d551ca98aafd6fa7eb4aa844a6eb48ee294b93d12c",
+          "bytes": 14955
+        }
+      },
+      {
+        "path": "package.json",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "package.json",
+          "sha256": "17ecbf3576ce4504d0ac88ac2802c2d9d365fb987d8dc500e6a0486b3d2ceb57",
+          "bytes": 9430
+        },
+        "after": {
+          "path": "package.json",
+          "sha256": "c906327835ea9df5e9aa5a9730cc77cd591ead86837d308312b64b316cefc722",
+          "bytes": 9800
+        }
+      },
+      {
+        "path": "src/gql/graphql-env.d.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/gql/graphql-env.d.ts",
+          "sha256": "a2b0829e7ec314d43db818453fecd4fdbc8b3935e467eef84371d51baee02ca2",
+          "bytes": 558011
+        },
+        "after": {
+          "path": "src/gql/graphql-env.d.ts",
+          "sha256": "877d0d7d5916a9878aafc75fc9e586e33dadf4790ed709013a8035ee9747fec8",
+          "bytes": 572053
+        }
+      },
+      {
+        "path": "src/plugins/analytics/api.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/plugins/analytics/api.ts",
+          "sha256": "70f6d4e86af71a7d9cb8a37ff01cc402849a6ece54bd38f9ca92f84e45983f91",
+          "bytes": 24745
+        },
+        "after": {
+          "path": "src/plugins/analytics/api.ts",
+          "sha256": "167b32888999beea1c20b280499201ac6f9be6c9dee78bcf52725bfe614d2862",
+          "bytes": 25196
+        }
+      },
+      {
+        "path": "src/plugins/billing-entitlements/api.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/plugins/billing-entitlements/api.ts",
+          "sha256": "03d18f2035fdfd42b7c71bf1b0c583ae3276d41305f695dfbbefe2f6e608d158",
+          "bytes": 11858
+        },
+        "after": {
+          "path": "src/plugins/billing-entitlements/api.ts",
+          "sha256": "7f0de4c2e49e74cc1ea2f0ca9832f5fa3fb1f9335a5cbead5784d767dcddf6bc",
+          "bytes": 12608
+        }
+      },
+      {
+        "path": "src/plugins/billing-entitlements/authority.service.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/plugins/billing-entitlements/authority.service.ts",
+          "sha256": "e8deb8eed760d5b7ad96bc406e6eb8d724278cada37e05a0077ae5c303c2d819",
+          "bytes": 3401
+        },
+        "after": {
+          "path": "src/plugins/billing-entitlements/authority.service.ts",
+          "sha256": "78debca5881c8e9c110d6d1c4f927cd5bdd634151549d6c7e07d13e13116b839",
+          "bytes": 4122
+        }
+      },
+      {
+        "path": "src/plugins/farmers-market/api/admin-api.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/plugins/farmers-market/api/admin-api.ts",
+          "sha256": "7767a2ab2197d6f3b48a248a2e4108cdbb8f66e512bb7a5a306dd944d05161e8",
+          "bytes": 17427
+        },
+        "after": {
+          "path": "src/plugins/farmers-market/api/admin-api.ts",
+          "sha256": "862bcbb74a98d58e1775ab3ba976d105c50b6aa31c7b23c3150b4ccee1cfa6f4",
+          "bytes": 18241
+        }
+      },
+      {
+        "path": "src/plugins/farmers-market/farmers-market.plugin.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/plugins/farmers-market/farmers-market.plugin.ts",
+          "sha256": "90ddb6364c651313d95d8106d0cfdeca488a218788ac6abfef273c3bdd2ded05",
+          "bytes": 2578
+        },
+        "after": {
+          "path": "src/plugins/farmers-market/farmers-market.plugin.ts",
+          "sha256": "652699c81597d52f661e8c0292c5fd52457cdd09c8460bb3b8be22fb1aded806",
+          "bytes": 2643
+        }
+      },
+      {
+        "path": "src/plugins/farmers-market/services/market-read.service.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/plugins/farmers-market/services/market-read.service.ts",
+          "sha256": "0f9a8dc2d153a790316e48d852ef88416af54363421a4f334c90ab61cdc416d6",
+          "bytes": 2090
+        },
+        "after": {
+          "path": "src/plugins/farmers-market/services/market-read.service.ts",
+          "sha256": "17dda942230cb1831f19387e135b8a8f41b574a3871e1df9b60728e0f466df16",
+          "bytes": 3731
+        }
+      },
+      {
+        "path": "src/plugins/marketplace-commerce/catalog-publishing.service.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/plugins/marketplace-commerce/catalog-publishing.service.ts",
+          "sha256": "9a745c5d604d77e2b5a680bd93247b5adb8775f6f976d370c6a9ad0dc9cd7e29",
+          "bytes": 8235
+        },
+        "after": {
+          "path": "src/plugins/marketplace-commerce/catalog-publishing.service.ts",
+          "sha256": "59934c562027f21383da1e8236324fe8954c0aa0f6c97d41cd5359955b2bbd7a",
+          "bytes": 12689
+        }
+      },
+      {
+        "path": "src/plugins/marketplace-commerce/commerce/topology.api.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/plugins/marketplace-commerce/commerce/topology.api.ts",
+          "sha256": "17cb0ad50d97239a3ca44fb0c9fda9b135580db2aecb6be4baba8f59c6911ca6",
+          "bytes": 9155
+        },
+        "after": {
+          "path": "src/plugins/marketplace-commerce/commerce/topology.api.ts",
+          "sha256": "490cd20361a842572c93ee7cbe928959c98385d5d35c4579fc0658c7b231a19d",
+          "bytes": 13424
+        }
+      },
+      {
+        "path": "src/plugins/marketplace-commerce/marketplace-commerce.plugin.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/plugins/marketplace-commerce/marketplace-commerce.plugin.ts",
+          "sha256": "d2e6a36ac3130c88d1f9edd6e2faa8c0567d079727dfa58a52bbf2fc048cae15",
+          "bytes": 13953
+        },
+        "after": {
+          "path": "src/plugins/marketplace-commerce/marketplace-commerce.plugin.ts",
+          "sha256": "1a8e5c18188ecbee3c3e97730ed5bd0b67902ec68b31bf21d0b2fb3797f174fc",
+          "bytes": 14187
+        }
+      },
+      {
+        "path": "src/plugins/marketplace-commerce/owned-admin-reads.ts",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "src/plugins/marketplace-commerce/owned-admin-reads.ts",
+          "sha256": "26fc76294be97374561adc037b9a1ccb31f715ee97929172cbfe4c31995b2409",
+          "bytes": 12642
+        }
+      },
+      {
+        "path": "src/plugins/platform-identity/api.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/plugins/platform-identity/api.ts",
+          "sha256": "b5e4e40b874357b5d65c81fbf5b6c53d708410c3ad9cdd8b1e127673fd47109f",
+          "bytes": 6689
+        },
+        "after": {
+          "path": "src/plugins/platform-identity/api.ts",
+          "sha256": "96bffe0ea15a4ff81ab2ed7cd73dcd8555ad5077779887bbc95e378c477460bc",
+          "bytes": 7076
+        }
+      },
+      {
+        "path": "src/plugins/platform-identity/entitlement-port.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/plugins/platform-identity/entitlement-port.ts",
+          "sha256": "37a63dd189e665a46a9ab0477756d4f2ae93576d6bdaef40c604188019007127",
+          "bytes": 3784
+        },
+        "after": {
+          "path": "src/plugins/platform-identity/entitlement-port.ts",
+          "sha256": "b69d33899977cd9cec762718955cd148494f4c101f3d34f369a6e22098a30776",
+          "bytes": 5471
+        }
+      },
+      {
+        "path": "src/plugins/platform-identity/tenant-access-policy.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "src/plugins/platform-identity/tenant-access-policy.ts",
+          "sha256": "eeb1d2ba16ccd17168aa39363309c73470757850b8c8eebf0035154f7f767eaf",
+          "bytes": 5825
+        },
+        "after": {
+          "path": "src/plugins/platform-identity/tenant-access-policy.ts",
+          "sha256": "4b59a915a443cccd0d71cbab58395544561cdc92ac4e251e6cb8d85afe631a60",
+          "bytes": 6306
+        }
+      },
+      {
+        "path": "test/analytics/.runtime/phase13b5-regression.log",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "test/analytics/.runtime/phase13b5-regression.log",
+          "sha256": "4bdb54a95ba39d6deed9a09d6bea6c273c814622e9cadb854ce72ab59727f654",
+          "bytes": 1593
+        }
+      },
+      {
+        "path": "test/analytics/.runtime/results-full.json",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "test/analytics/.runtime/results-full.json",
+          "sha256": "0012834fe7b14641b30a7bbb8854313f424e49e017443ee3044ec36cb02fceb2",
+          "bytes": 2716
+        },
+        "after": {
+          "path": "test/analytics/.runtime/results-full.json",
+          "sha256": "61bf84cb9ec9c05237dedf0185fd77f23deeb873ba78ba51b66bc35688374628",
+          "bytes": 2716
+        }
+      },
+      {
+        "path": "test/analytics/.runtime/vendure_test_analytics_1791159987260_3b54cc-messages.jsonl",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "test/analytics/.runtime/vendure_test_analytics_1791159987260_3b54cc-messages.jsonl",
+          "sha256": "541af8d4ae9c02e439e7aba14bf782ed6bf1b12c220f1d42e4a77077a77dc295",
+          "bytes": 4190
+        }
+      },
+      {
+        "path": "test/frontend-integration/.gitignore",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "test/frontend-integration/.gitignore",
+          "sha256": "eb7c41f94bb130fc8b2ff1af4d21df76fb212fa868599b4ce2a45ff0c0d557f6",
+          "bytes": 21
+        }
+      },
+      {
+        "path": "test/frontend-integration/.runtime/build.log",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "test/frontend-integration/.runtime/build.log",
+          "sha256": "4c6f364736f535c2394c73362287af468336a398ad44e744beb3da6570fa9273",
+          "bytes": 246
+        }
+      },
+      {
+        "path": "test/frontend-integration/.runtime/contract.log",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "test/frontend-integration/.runtime/contract.log",
+          "sha256": "6c029d3d1db7b432bc9740a3b6c68f587000e208e53a19f46e901329969ebf05",
+          "bytes": 1388
+        }
+      },
+      {
+        "path": "test/frontend-integration/.runtime/contracts.log",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "test/frontend-integration/.runtime/contracts.log",
+          "sha256": "9dc93bd4f2a53c6028b88c3fe15823dee20f4d1d8168ae8809f69a496a2825ef",
+          "bytes": 1121
+        }
+      },
+      {
+        "path": "test/frontend-integration/.runtime/regression-billing.log",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "test/frontend-integration/.runtime/regression-billing.log",
+          "sha256": "6999dcbfc7335cf1dd5a4b8a3552a1ff3b1e9544ee33a08164a9ba4d732f97dc",
+          "bytes": 1504
+        }
+      },
+      {
+        "path": "test/frontend-integration/.runtime/results.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "test/frontend-integration/.runtime/results.json",
+          "sha256": "956f3e77d178339af7d21a579386052059901c30639ce7ebb8d065e78b6bc5e6",
+          "bytes": 1410
+        }
+      },
+      {
+        "path": "test/frontend-integration/.runtime/types.log",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "test/frontend-integration/.runtime/types.log",
+          "sha256": "433c71b630ac8b266c07ee92bf1eb6106c8963382501c3a8a1aa54038598206d",
+          "bytes": 157
+        }
+      },
+      {
+        "path": "test/frontend-integration/harness.ts",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "test/frontend-integration/harness.ts",
+          "sha256": "172fee32f23cd64ec93c1a324dd4dfe7cd85b0db105d0a9d9ce803f5153734d2",
+          "bytes": 13697
+        }
+      },
+      {
+        "path": "test/frontend-integration/run.ts",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "test/frontend-integration/run.ts",
+          "sha256": "23598eebdacea9fb656717116d0e3a7bf7a91a106abf7cd722b07582fdd03380",
+          "bytes": 24999
+        }
+      },
+      {
+        "path": "test/frontend-integration/tsconfig.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "test/frontend-integration/tsconfig.json",
+          "sha256": "c389ab34251db238931e0b75540dfd9ade0fb9b24a3c3263441a3433a2b9966d",
+          "bytes": 169
+        }
+      }
+    ],
+    "preExistingDirty": [
+      {
+        "status": " M",
+        "path": "README.md",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": " M",
+        "path": "package.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": " M",
+        "path": "src/index-worker.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": " M",
+        "path": "src/index.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": " M",
+        "path": "src/plugins/billing-entitlements/billing-entitlements.plugin.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": " M",
+        "path": "src/plugins/communications/communications.plugin.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": " M",
+        "path": "src/plugins/marketplace-commerce/marketplace-commerce.plugin.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": " M",
+        "path": "src/plugins/payments/payments.plugin.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": " M",
+        "path": "src/plugins/pos-integration/pos-integration.plugin.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "scripts/adopt-native-baseline.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "src/database-migrations.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "test/database-startup/run.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "test/database-startup/tsconfig.json",
+        "classification": "PRE-EXISTING"
+      }
+    ],
+    "unexpected": [],
+    "unchangedBaselineFiles": 341
+  },
+  "frontend": {
+    "root": "E:\\coding\\farmers-market-platform-web",
+    "beforeFiles": 146,
+    "afterFiles": 199,
+    "headUnchanged": true,
+    "existingMigrationsVerified": 0,
+    "changes": [
+      {
+        "path": "apps/admin/src/AdminApp.tsx",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "apps/admin/src/AdminApp.tsx",
+          "sha256": "e53e9201d1e0b9917d7c9cfb728de6613e92448d9aa91857c1cb7771012fed98",
+          "bytes": 7225
+        },
+        "after": {
+          "path": "apps/admin/src/AdminApp.tsx",
+          "sha256": "7989df04093c66b914afb9de0cf005817ea4820b770bdd55f58ea86522394be4",
+          "bytes": 7616
+        }
+      },
+      {
+        "path": "apps/admin/src/vendor/catalog.tsx",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "apps/admin/src/vendor/catalog.tsx",
+          "sha256": "71757870b85cfdf409428c5aca72e7c5ffa2692ca72979515180f76a9994b315",
+          "bytes": 10364
+        },
+        "after": {
+          "path": "apps/admin/src/vendor/catalog.tsx",
+          "sha256": "18bcfb451d270023f14c55b19b82fb360ccf3044d14190779d3e7ec1404f876a",
+          "bytes": 10263
+        }
+      },
+      {
+        "path": "apps/admin/src/vendor/fixture.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "apps/admin/src/vendor/fixture.ts",
+          "sha256": "14672436a638d81e94363b4b3015cb203555de4cdb1dc4dbed22502eaf4dd825",
+          "bytes": 27798
+        },
+        "after": {
+          "path": "apps/admin/src/vendor/fixture.ts",
+          "sha256": "6fcb7e117bf0dcc7d2fdbb6f933c3a8b677260c9c031b0c8325e08ea8a8947ae",
+          "bytes": 31852
+        }
+      },
+      {
+        "path": "apps/admin/src/vendor/inventory.tsx",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "apps/admin/src/vendor/inventory.tsx",
+          "sha256": "6269889800d42359b75c2498bd7ab678f6eab917c94f06f575e22d800eb6e7db",
+          "bytes": 8815
+        },
+        "after": {
+          "path": "apps/admin/src/vendor/inventory.tsx",
+          "sha256": "f173fbe603587d73812f37790e3a1d81b28d05540fab250c92d7fbff23fe546b",
+          "bytes": 5333
+        }
+      },
+      {
+        "path": "apps/admin/src/vendor/markets.tsx",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "apps/admin/src/vendor/markets.tsx",
+          "sha256": "3eb6c9d543558dac1768e33b76f5bca599dee509a65908733e6cadbee7bb82cb",
+          "bytes": 19467
+        },
+        "after": {
+          "path": "apps/admin/src/vendor/markets.tsx",
+          "sha256": "c5e25e813c7911630476d8a81dbdc8476581579fc5558895518f4c2f3106cc3c",
+          "bytes": 19444
+        }
+      },
+      {
+        "path": "apps/admin/src/vendor/orders.tsx",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "apps/admin/src/vendor/orders.tsx",
+          "sha256": "54aec24040dfe0deca4ce891c292a120fca5e380d8564fe0daedf7b2c8ac7959",
+          "bytes": 12131
+        },
+        "after": {
+          "path": "apps/admin/src/vendor/orders.tsx",
+          "sha256": "0141d43796ea122a9eacb430266a9aa406cddd2de019e9ebd3a2c068da66461f",
+          "bytes": 11873
+        }
+      },
+      {
+        "path": "apps/admin/src/vendor/overview.tsx",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "apps/admin/src/vendor/overview.tsx",
+          "sha256": "ab2ac5020be76aa366b189e412c89010c79397325a4db66bf8555e6abad36c37",
+          "bytes": 3014
+        },
+        "after": {
+          "path": "apps/admin/src/vendor/overview.tsx",
+          "sha256": "5778ec1c293c58271a0455177c4526be1f40fab6f272eff5d5bd0963a8fa4ce0",
+          "bytes": 3419
+        }
+      },
+      {
+        "path": "apps/admin/src/vendor/service.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "apps/admin/src/vendor/service.ts",
+          "sha256": "fce8993d732c60824ef5c8d8076b6baafc2f64867d3e00262d2680c6b137ab6c",
+          "bytes": 5914
+        },
+        "after": {
+          "path": "apps/admin/src/vendor/service.ts",
+          "sha256": "11efa5a00cf19e43379211b3d818468a320ecfdeaf76a24ed1eba7f9f993d619",
+          "bytes": 5534
+        }
+      },
+      {
+        "path": "docs/backend-contract.md",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "docs/backend-contract.md",
+          "sha256": "92dca39db93daafdb30f3ce58e8969db6222d6abd14358ed7cf14d18b4e3e118",
+          "bytes": 16166
+        },
+        "after": {
+          "path": "docs/backend-contract.md",
+          "sha256": "efbc9b9c83c2dfb1e948c4d02f20e26efc9813e39ac5a4f0a7740704de1d83f6",
+          "bytes": 17631
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/acceptance.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/acceptance.json",
+          "sha256": "7079944fa4b209950043f8bac1e1e41b661a722d1247a0236a65f30dddd721e2",
+          "bytes": 29027
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/backend-after.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": null,
+        "afterHashNote": "Audit output is intentionally excluded from its own recursive hash manifest."
+      },
+      {
+        "path": "docs/evidence/phase13b5/backend-before.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/backend-before.json",
+          "sha256": "52f9ba67bcce1ae9e1e07a8b73a97b0771592847e3e5aa3ae3428ddd1a50f5fb",
+          "bytes": 67022
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/backend-status-after.txt",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": null,
+        "afterHashNote": "Audit output is intentionally excluded from its own recursive hash manifest."
+      },
+      {
+        "path": "docs/evidence/phase13b5/backend-status-before.txt",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/backend-status-before.txt",
+          "sha256": "53be7797c5712fcf2c01d3527ade7cde6387d4cdb56204744dee7b965badf4e6",
+          "bytes": 437
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/backend-verification.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": null,
+        "afterHashNote": "Audit output is intentionally excluded from its own recursive hash manifest."
+      },
+      {
+        "path": "docs/evidence/phase13b5/browser-results.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/browser-results.json",
+          "sha256": "d2cbd3aa7902e469f4dfcc793e42002614f1697a278b498ee62d8202e6fa9451",
+          "bytes": 24322
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/bundle-validation.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/bundle-validation.json",
+          "sha256": "6f7fd85e62dd3f2ccdc0843d983fd96283d3ead154a34a6843df849c5e8b8123",
+          "bytes": 181
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/diff-classification.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": null,
+        "afterHashNote": "Audit output is intentionally excluded from its own recursive hash manifest."
+      },
+      {
+        "path": "docs/evidence/phase13b5/foundation/admin-1280.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/foundation/admin-1280.png",
+          "sha256": "eedcbfbf6cdda85a47c3ac03f63e65778d6792bb18fb34d9f2d7a12cdb057cac",
+          "bytes": 43347
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/foundation/admin-390.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/foundation/admin-390.png",
+          "sha256": "e49cfe9953402cf8f1c7385bd448aac808adbb96192eb035b191d23427155fce",
+          "bytes": 36590
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/foundation/admin-768.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/foundation/admin-768.png",
+          "sha256": "29115d9f87b14801ec3a23dc12cb8323c368e88fc092848ad04384ec3fe6c937",
+          "bytes": 42771
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/foundation/market-1280.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/foundation/market-1280.png",
+          "sha256": "1fe0ac5d36690a8e7ca57dc680502583759baef883a9390e925d3f405fda17b2",
+          "bytes": 76371
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/foundation/market-390.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/foundation/market-390.png",
+          "sha256": "562f1710dde7650e384436a7108539d682653da93579e28a6a1d53665891d199",
+          "bytes": 62811
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/foundation/market-768.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/foundation/market-768.png",
+          "sha256": "fe237b22d86b666f8f59daa5681ae70f01426960953c02464ef749ac3b8d809b",
+          "bytes": 61149
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/frontend-after.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": null,
+        "afterHashNote": "Audit output is intentionally excluded from its own recursive hash manifest."
+      },
+      {
+        "path": "docs/evidence/phase13b5/frontend-before.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/frontend-before.json",
+          "sha256": "bef3861639b78e7cdddb6f8d2e2aaf3377897f96ffb2bf15e8d63db2bcd7cab4",
+          "bytes": 32253
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/frontend-status-after.txt",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": null,
+        "afterHashNote": "Audit output is intentionally excluded from its own recursive hash manifest."
+      },
+      {
+        "path": "docs/evidence/phase13b5/frontend-status-before.txt",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/frontend-status-before.txt",
+          "sha256": "0bd33847aeab691578441436d540cc211053569052251385b58a81538bb813a8",
+          "bytes": 317
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/intended-changes.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/intended-changes.json",
+          "sha256": "fa614e2db82d10a94edf71b3a2c0e0f29a358709f4fa93e6b2ded2d30d0d28ef",
+          "bytes": 3034
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/live-browser-results.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/live-browser-results.json",
+          "sha256": "3e402443d500d22ef9066f975c4d853f6585384844708c7e531be8b2001868a9",
+          "bytes": 10429
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/live-integration.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/live-integration.json",
+          "sha256": "2bac2bf688509b973029316e6b9b09a1e625dde4ad04cd5f3aea7c0b2e788a79",
+          "bytes": 1761
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/live-unbound-browser-results.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/live-unbound-browser-results.json",
+          "sha256": "706b5e28aac26759898ca5960fb2d46f3afc0eba242d8b338308a8eb3bdf9612",
+          "bytes": 3050
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/live-unbound-integration.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/live-unbound-integration.json",
+          "sha256": "4d6a107b5ba9fddfcb9eeb5ad5217826f02ca143307a4635820921a8c3b63e32",
+          "bytes": 1763
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/regression-results.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/regression-results.json",
+          "sha256": "2cf49106c167bcee1f0bf762649ff199872e4e2911df810198ef7a5a4f57c325",
+          "bytes": 668
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/schema-codegen.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/schema-codegen.json",
+          "sha256": "1c4f6eb9ab5b87f011d2481f3573528a731ac27f438f96b27cfcd5e4e32092bf",
+          "bytes": 1025
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/unit-results.json",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/unit-results.json",
+          "sha256": "34ec13a1121e26fb1b7c0d99c6b4ba3e95928ebc93424bb6c9e69c4d254c793a",
+          "bytes": 25268
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/analytics-1280.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/analytics-1280.png",
+          "sha256": "1f95e2aeaaea826087005b77adb5103256c4cb963fff95385018b6dc10d97d16",
+          "bytes": 83019
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/analytics-390.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/analytics-390.png",
+          "sha256": "ba8c9e9c26d67424db779e70fc441d2d188b2e1eb17e7c9dc4f4d2e6aaef9c66",
+          "bytes": 66611
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/analytics-768.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/analytics-768.png",
+          "sha256": "d6863a2af6f91827540a832cccda64d3f1eb332b43bb674e1a90cb00602102e1",
+          "bytes": 78936
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/customers-1280.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/customers-1280.png",
+          "sha256": "0488a0a0e9e400d7f6ca63cefbacb0fc4d73e6e14a35c33e8cbc2fc15dcd13bd",
+          "bytes": 148181
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/customers-390.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/customers-390.png",
+          "sha256": "260fc6b005a6f2107a05a0667bc586609fa0960b5c3f0102c16ba3b6913ba31b",
+          "bytes": 115242
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/customers-768.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/customers-768.png",
+          "sha256": "949f92fb196dba4fa2673e2562a81761caadac7db9e964bf5e5cc56f72355166",
+          "bytes": 146472
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/inventory-1280.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/inventory-1280.png",
+          "sha256": "d29ad08f68fc2137a94e63f744948a4439fd4434b972d7aa78e915edf6486512",
+          "bytes": 183831
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/inventory-390.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/inventory-390.png",
+          "sha256": "a9331e1a3a3c35833dfb30eb603498020938793e4e677efe8b07e67ea41c0ce9",
+          "bytes": 120986
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/inventory-768.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/inventory-768.png",
+          "sha256": "894d558fe1e673a03a33932b2bd577f483068e51226395559283977f2541ef31",
+          "bytes": 167728
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/markets-1280.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/markets-1280.png",
+          "sha256": "07b78b15cacdeebc01f06f4c2af4fc3c2b0f284c0f41dc3f69e2cc5a2bdaa257",
+          "bytes": 56747
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/markets-390.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/markets-390.png",
+          "sha256": "0ffc2d7244942ba25cd44e67b3dd01209c77ad5e0c4003146e29dce0f7774a50",
+          "bytes": 46566
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/markets-768.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/markets-768.png",
+          "sha256": "2c972850506f3090832cdc099df9fbcccccb2ed374a1d7c04b4079f0e8106b36",
+          "bytes": 57317
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/orders-1280.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/orders-1280.png",
+          "sha256": "d2fe214e4c6da42f2d92b2e6ef05a64171bf0ca5940d113790d5316c0a75e522",
+          "bytes": 208521
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/orders-390.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/orders-390.png",
+          "sha256": "70e0d0ba713db38fd4c5ff021ca3f517fcd35f1b6b22ce8fbfa3dcb9258089d5",
+          "bytes": 140998
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/orders-768.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/orders-768.png",
+          "sha256": "ff9e0d7b5b96544b44ead3d38fd428b73d2f826b7c5df95514ddd6e91ccac2c9",
+          "bytes": 194188
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/overview-1280.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/overview-1280.png",
+          "sha256": "51f65d0bb69f1db791bd1bbf0e1579edfccc2d137819b1a17c1e98af39e3da50",
+          "bytes": 86502
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/overview-390.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/overview-390.png",
+          "sha256": "0e31c2fdd537c80f808e2ccdf1c8c1f88694d42a5494b5fb4a3f2b1cd860f7fc",
+          "bytes": 69460
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/overview-768.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/overview-768.png",
+          "sha256": "d8e72833a6f3c8cc9bd7ae96d4397e63f03bdf475b35336bb53257b96c1f946b",
+          "bytes": 81590
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/production-revocation.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/production-revocation.png",
+          "sha256": "586813985a1ab60489a4d45be36808ffc8d701b6c23b35002d73554a840604a5",
+          "bytes": 18564
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/products-1280.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/products-1280.png",
+          "sha256": "de1ce772f59edef49f849f7941e4778d5ceb2f7636c7b0a47ad46bf24b36c6ba",
+          "bytes": 109302
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/products-390.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/products-390.png",
+          "sha256": "ada405d6e0456d95a364a65c928513c704eec53e1dd7a2be543bf3735ca7c266",
+          "bytes": 76852
+        }
+      },
+      {
+        "path": "docs/evidence/phase13b5/vendor-fixture/products-768.png",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/evidence/phase13b5/vendor-fixture/products-768.png",
+          "sha256": "f4f713712b641e096b9e9245a68281769bfd7d726e060e3480202eae0fc5a1ae",
+          "bytes": 102384
+        }
+      },
+      {
+        "path": "docs/evidence/unit-results.json",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "docs/evidence/unit-results.json",
+          "sha256": "d78ec33ceca4990a085574deb36be45bf0938f96863decd32e13381243fd6bf5",
+          "bytes": 24889
+        },
+        "after": {
+          "path": "docs/evidence/unit-results.json",
+          "sha256": "672e9e5d2a80ce18bea060fd4e59790652e7490302eaad623b60e20abda21f19",
+          "bytes": 35681
+        }
+      },
+      {
+        "path": "docs/frontend-architecture.md",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "docs/frontend-architecture.md",
+          "sha256": "e9a98ff32481ee97768524a4bf27c7d692c74059c76a7d606e859c968cf9437b",
+          "bytes": 13131
+        },
+        "after": {
+          "path": "docs/frontend-architecture.md",
+          "sha256": "3147207823b54aaa25483f9010f8b20f454d09bbbdaf2921b4105325fba1e254",
+          "bytes": 14596
+        }
+      },
+      {
+        "path": "docs/frontend-phase13a-implementation.md",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "docs/frontend-phase13a-implementation.md",
+          "sha256": "c8bdf8c72b17462e05d19c5d966e8cf5262daa398672ffb17f12ec697b8ad46e",
+          "bytes": 32398
+        },
+        "after": {
+          "path": "docs/frontend-phase13a-implementation.md",
+          "sha256": "987a8181727611857d513bbe998ca7b1979071567f0153e5644a36c220d178f9",
+          "bytes": 34218
+        }
+      },
+      {
+        "path": "docs/frontend-phase13b-capabilities.md",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "docs/frontend-phase13b-capabilities.md",
+          "sha256": "d7229968022229703795ea1aa6d03d7a23f8e3cb9b3ae480a61daddf362edd3e",
+          "bytes": 13878
+        },
+        "after": {
+          "path": "docs/frontend-phase13b-capabilities.md",
+          "sha256": "47ee5f87714bfd99394ec430e70b19a5787ffed520e16ad82da5f02d59f09c35",
+          "bytes": 15343
+        }
+      },
+      {
+        "path": "docs/frontend-phase13b-vendor-admin-implementation.md",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "docs/frontend-phase13b-vendor-admin-implementation.md",
+          "sha256": "787fb738f8f2229a9d176d4375cd22b74904b025dba9e24bdf24deb21f060136",
+          "bytes": 39356
+        },
+        "after": {
+          "path": "docs/frontend-phase13b-vendor-admin-implementation.md",
+          "sha256": "051be9bb136c69c0d9863c6020bb5d7d048cef79db86ce3024480fe71e069bfb",
+          "bytes": 41354
+        }
+      },
+      {
+        "path": "docs/frontend-phase13b5-integration-implementation.md",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "docs/frontend-phase13b5-integration-implementation.md",
+          "sha256": "b0b8bcb16a8272045c4b5100fb491791fe54fc1e25723fc8e4753b4dfe898d40",
+          "bytes": 45170
+        }
+      },
+      {
+        "path": "package.json",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "package.json",
+          "sha256": "5fa7f96fc6f2bb916f5f267265040618a67674b42e9ad137f5de8c5f68963415",
+          "bytes": 2112
+        },
+        "after": {
+          "path": "package.json",
+          "sha256": "7366fbce25531ea6e340698570df7fca4a8cbebf4ef718bfe1c993f2fcc69749",
+          "bytes": 2220
+        }
+      },
+      {
+        "path": "packages/admin-core/src/index.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "packages/admin-core/src/index.ts",
+          "sha256": "a012c30957916a02d7cfcd75cc6c3a83d3e8fbac8562104f476be9ad1d5bb02b",
+          "bytes": 5901
+        },
+        "after": {
+          "path": "packages/admin-core/src/index.ts",
+          "sha256": "3447a6ee8e8f6af9dda010cad76c9e6ec501c375b34f632f8d64c767ccf31a93",
+          "bytes": 6692
+        }
+      },
+      {
+        "path": "packages/api/operations/admin.graphql",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "packages/api/operations/admin.graphql",
+          "sha256": "d477158069c5c7b412ca3e3824e1cb082d56161549c0f67e79b73ce723c6c13c",
+          "bytes": 9899
+        },
+        "after": {
+          "path": "packages/api/operations/admin.graphql",
+          "sha256": "34d74e6988756c75d83c3872f7d263f484094a1729465236545985f5b8f8c746",
+          "bytes": 11283
+        }
+      },
+      {
+        "path": "packages/api/schema/admin.graphql",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "packages/api/schema/admin.graphql",
+          "sha256": "cb56ab0526f040db9fec4c0e77349cb5dc7b410604e88052250384c8c0ad8781",
+          "bytes": 181374
+        },
+        "after": {
+          "path": "packages/api/schema/admin.graphql",
+          "sha256": "038c7956103ae18a8d7bfc431d2828a6e5e15c191cfd6e0d5301b10a8f632975",
+          "bytes": 184223
+        }
+      },
+      {
+        "path": "packages/api/schema/provenance.json",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "packages/api/schema/provenance.json",
+          "sha256": "61b1ec3d643f947c72ede2b31d66ad2b2ab5e3751c26015bcf777fbddb70c67f",
+          "bytes": 14529
+        },
+        "after": {
+          "path": "packages/api/schema/provenance.json",
+          "sha256": "468b567f3f41cf18b4c6ad5d6214c4d395bf6d431110d0f15e90e33f47fc973c",
+          "bytes": 14658
+        }
+      },
+      {
+        "path": "packages/api/schema/shop.graphql",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "packages/api/schema/shop.graphql",
+          "sha256": "98c3da6592d9110ff17a1c96decefc3434094c1f13a77f78b5a5e655beea9bf7",
+          "bytes": 89756
+        },
+        "after": {
+          "path": "packages/api/schema/shop.graphql",
+          "sha256": "af2fff8b05b5ff3d804d2b02012cbdbcf8a7b85eac449eb8648abb58d52d977f",
+          "bytes": 90056
+        }
+      },
+      {
+        "path": "packages/api/src/generated/admin.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "packages/api/src/generated/admin.ts",
+          "sha256": "cfc3c4995e20ffa18c5718905a152f30370acde5cf8b90429bc15f20da669c90",
+          "bytes": 138123
+        },
+        "after": {
+          "path": "packages/api/src/generated/admin.ts",
+          "sha256": "ba32bcb542cf6550689b6bfd3fd0f1a0b3ce57a11a5890e6893ef2881783a935",
+          "bytes": 164693
+        }
+      },
+      {
+        "path": "packages/api/src/index.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "packages/api/src/index.ts",
+          "sha256": "84673ec06bfdd67dbe4ee238725212ea265d779426d2fea9af2a6860c2ea3191",
+          "bytes": 2538
+        },
+        "after": {
+          "path": "packages/api/src/index.ts",
+          "sha256": "c1de8046e155d4b8b075c70255d0c32990d08d503b7815c4fcf76fdb2d2bbaae",
+          "bytes": 2461
+        }
+      },
+      {
+        "path": "packages/api/src/vendor.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "packages/api/src/vendor.ts",
+          "sha256": "4522f3027d5bdfcca6996218b274cfe822c7e219fd526d52f27675f1e20b26c7",
+          "bytes": 8074
+        },
+        "after": {
+          "path": "packages/api/src/vendor.ts",
+          "sha256": "b2c0fd5c9bbdd5b057704fb3d89f1343791546b460b5347d016e60b28e8bca32",
+          "bytes": 9234
+        }
+      },
+      {
+        "path": "packages/auth/src/index.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "packages/auth/src/index.ts",
+          "sha256": "1d29d399c673295d40d24a9c47fce7cc08ae2b4fa103f3900f816146e87ecd5c",
+          "bytes": 2611
+        },
+        "after": {
+          "path": "packages/auth/src/index.ts",
+          "sha256": "07772fab90a1343dadf4d7a256da002e31db4e538433d9d86325a4ed6174dbf5",
+          "bytes": 2944
+        }
+      },
+      {
+        "path": "playwright.config.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "playwright.config.ts",
+          "sha256": "b46fffdf92ba8a3a8f1ef44aea3273bcd98f0baff3f671186e300b94114d8b3b",
+          "bytes": 1377
+        },
+        "after": {
+          "path": "playwright.config.ts",
+          "sha256": "798147e7f5f37d7b6530e50fcff87cc94228864ae8bfa8845dcc5e5a3139fbe9",
+          "bytes": 1427
+        }
+      },
+      {
+        "path": "playwright.live.config.ts",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "playwright.live.config.ts",
+          "sha256": "ebd4245751bbd5a4d56f8832455302312989461aa1b4afbc9f4f388823088de6",
+          "bytes": 703
+        }
+      },
+      {
+        "path": "playwright.vendor.config.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "playwright.vendor.config.ts",
+          "sha256": "7d34378283d0e6423047e0ef359543e6cb734c1a39e943972022d9cdc0a06ff9",
+          "bytes": 696
+        },
+        "after": {
+          "path": "playwright.vendor.config.ts",
+          "sha256": "a13eb315708f9ebbc7b59599766a8039816b8a467ef1d02dceed773322f2d419",
+          "bytes": 697
+        }
+      },
+      {
+        "path": "scripts/check-bundles.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "scripts/check-bundles.ts",
+          "sha256": "33349eb8b1239f2adbb98020fa2cd32bff48e7efbceb99c80cffb8ab51ba1b86",
+          "bytes": 1379
+        },
+        "after": {
+          "path": "scripts/check-bundles.ts",
+          "sha256": "58c3b74408f17c5e95701a19c585b5eddca9be75fecbaf815ac34d3c1fe51838",
+          "bytes": 1389
+        }
+      },
+      {
+        "path": "scripts/extract-schema.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "scripts/extract-schema.ts",
+          "sha256": "3fc77284b67891dd3abc99db36baabc1e72e8b19114603b069be425e912a39b7",
+          "bytes": 8149
+        },
+        "after": {
+          "path": "scripts/extract-schema.ts",
+          "sha256": "b17f5e1945d1d1a4560b725b12d23cc3506e9e79949702eecf1f9f56eb8addba",
+          "bytes": 8271
+        }
+      },
+      {
+        "path": "scripts/test-live.ts",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "scripts/test-live.ts",
+          "sha256": "59c98f5625f7fa8d7352c3b37f1f3f30d0a4383eac2c3d718b910d42a64ca2d7",
+          "bytes": 4813
+        }
+      },
+      {
+        "path": "scripts/verify-backend.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "scripts/verify-backend.ts",
+          "sha256": "e8c738445c1bfeae7ada5070efff909d8fdfe9690190f3d1106434545d979e63",
+          "bytes": 1840
+        },
+        "after": {
+          "path": "scripts/verify-backend.ts",
+          "sha256": "7d87546445983f226d5d747ef93f295ad698ffe4bb4ac2a67df1135fda6cbf6d",
+          "bytes": 6052
+        }
+      },
+      {
+        "path": "tests/admin.test.tsx",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "tests/admin.test.tsx",
+          "sha256": "5e0cab30d43afaddd977f62b72544b60e84e248ee38c9730b2d95a7b5931f1f7",
+          "bytes": 5551
+        },
+        "after": {
+          "path": "tests/admin.test.tsx",
+          "sha256": "cd5ce22f97dd41f2a0f1373e1b969097373203b21db3f4d361bde44eba30d0cc",
+          "bytes": 7799
+        }
+      },
+      {
+        "path": "tests/e2e/foundation.spec.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "tests/e2e/foundation.spec.ts",
+          "sha256": "c0611896fa7c232d9aa169cf0b89dd66e375d2f5c70361980a1d63901f56196d",
+          "bytes": 4962
+        },
+        "after": {
+          "path": "tests/e2e/foundation.spec.ts",
+          "sha256": "d790267c694d3c05632a89542b98a4ccbece38df3ba722a2e2ba76b87daa8744",
+          "bytes": 5004
+        }
+      },
+      {
+        "path": "tests/e2e/vendor-live-mock.spec.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "tests/e2e/vendor-live-mock.spec.ts",
+          "sha256": "6e2ac47b8d5e0ef0b5205a7090188b19452073f09c7a231088073df0e7136291",
+          "bytes": 7937
+        },
+        "after": {
+          "path": "tests/e2e/vendor-live-mock.spec.ts",
+          "sha256": "fb245e5856617c44189a3ccfd3ca518d375a132f6809981114a917b8e88aa844",
+          "bytes": 8611
+        }
+      },
+      {
+        "path": "tests/e2e/vendor-live.spec.ts",
+        "classification": "INTENTIONAL",
+        "kind": "ADDED",
+        "before": null,
+        "after": {
+          "path": "tests/e2e/vendor-live.spec.ts",
+          "sha256": "ba7fb66a63f9cd5c22df376233b3612464bcd4b95b26368805956e61e8d975d7",
+          "bytes": 15815
+        }
+      },
+      {
+        "path": "tests/e2e/vendor.spec.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "tests/e2e/vendor.spec.ts",
+          "sha256": "c96390cb334720f585e4ea4f0a0f5263f2fd47334a3a1ca63ba3205de8882030",
+          "bytes": 18577
+        },
+        "after": {
+          "path": "tests/e2e/vendor.spec.ts",
+          "sha256": "7b5e40ee9965970e3b51cc54fa467dc3e77e44f838fe4ee45f67675da9f6fc67",
+          "bytes": 18806
+        }
+      },
+      {
+        "path": "tests/vendor.test.tsx",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "tests/vendor.test.tsx",
+          "sha256": "db3ab9f42a29ec6c15d83a51dd6da85e448303078666e681ecba3c74a9d84278",
+          "bytes": 23575
+        },
+        "after": {
+          "path": "tests/vendor.test.tsx",
+          "sha256": "6d070d96a05b42a998a6e9937ad9653617cf1e58419ce884f70418c453b016cb",
+          "bytes": 24387
+        }
+      },
+      {
+        "path": "vitest.config.ts",
+        "classification": "INTENTIONAL",
+        "kind": "MODIFIED",
+        "before": {
+          "path": "vitest.config.ts",
+          "sha256": "a5d8efae7c77271cf40bbf7494a140242647b73adae219295c6721d39f06923b",
+          "bytes": 516
+        },
+        "after": {
+          "path": "vitest.config.ts",
+          "sha256": "21b061d9f1a76dd510b5d6dcbbe38d50116d5f5ee6b6e4e003538bbaef6a7b78",
+          "bytes": 526
+        }
+      }
+    ],
+    "preExistingDirty": [
+      {
+        "status": " M",
+        "path": "README.md",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": ".env.example",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": ".gitignore",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": ".prettierignore",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": ".prettierrc.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/index.html",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/package.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/AdminApp.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/AdminShell.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/FeaturePanel.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/FixtureAdmin.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/env.d.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/main.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/vendor.css",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/vendor/VendorRoutes.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/vendor/analytics.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/vendor/catalog.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/vendor/common.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/vendor/customers.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/vendor/fixture.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/vendor/inventory.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/vendor/markets.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/vendor/orders.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/vendor/overview.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/src/vendor/service.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/admin/vite.config.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/astro.config.mjs",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/config.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/package.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/public/assets/market-mark.svg",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/public/assets/platform-mark.svg",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/public/assets/vendor-mark.svg",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/src/components/MarketHome.astro",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/src/components/OccurrencePreview.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/src/components/VendorHome.astro",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/src/env.d.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/src/layouts/SiteLayout.astro",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/src/middleware.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/src/pages/404.astro",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/src/pages/account/index.astro",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/src/pages/index.astro",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/src/pages/robots.txt.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/src/pages/sitemap.xml.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "apps/storefront/tsconfig.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "codegen.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/backend-contract.md",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/admin-1280.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/admin-390.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/admin-768.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/backend-files-before.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/backend-status-after.txt",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/backend-status-before.txt",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/backend-verification.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/browser-results.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/bundle-validation.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/codegen-before.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/codegen-reproducibility.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/development-startup.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/frontend-status.txt",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/market-1280.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/market-390.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/market-768.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/acceptance.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/analytics-1280.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/analytics-390.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/analytics-768.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/backend-files-before.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/backend-status-after.txt",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/backend-status-before.txt",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/backend-verification.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/browser-results.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/customers-1280.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/customers-390.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/customers-768.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/frontend-status.txt",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/graphql-regeneration.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/inventory-1280.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/inventory-390.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/inventory-768.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/markets-1280.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/markets-390.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/markets-768.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/orders-1280.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/orders-390.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/orders-768.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/overview-1280.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/overview-390.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/overview-768.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/production-revocation.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/products-1280.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/products-390.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/products-768.png",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/unit-results.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/phase13b/validation.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/evidence/unit-results.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/frontend-architecture.md",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/frontend-phase13a-implementation.md",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/frontend-phase13b-capabilities.md",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "docs/frontend-phase13b-vendor-admin-implementation.md",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "eslint.config.mjs",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "package-lock.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "package.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/admin-core/package.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/admin-core/src/index.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/api/operations/admin.graphql",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/api/operations/shop.graphql",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/api/package.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/api/schema/admin.graphql",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/api/schema/provenance.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/api/schema/shop.graphql",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/api/src/errors.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/api/src/generated/admin.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/api/src/generated/shop.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/api/src/index.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/api/src/transport.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/api/src/vendor.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/auth/package.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/auth/src/index.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/config/package.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/config/src/index.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/storefront-core/package.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/storefront-core/src/fixtures.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/storefront-core/src/index.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/theme/package.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/theme/src/index.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/ui/package.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/ui/src/index.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "packages/ui/src/styles.css",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "playwright.config.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "playwright.vendor.config.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "scripts/check-boundaries.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "scripts/check-bundles.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "scripts/dev-fixtures.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "scripts/extract-schema.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "scripts/preview-admin.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "scripts/verify-backend.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "tests/admin.test.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/foundation.spec.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/urls.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/vendor-live-mock.spec.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "tests/e2e/vendor.spec.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "tests/platform.test.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "tests/setup.ts",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "tests/vendor.test.tsx",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "tsconfig.json",
+        "classification": "PRE-EXISTING"
+      },
+      {
+        "status": "??",
+        "path": "vitest.config.ts",
+        "classification": "PRE-EXISTING"
+      }
+    ],
+    "unexpected": [],
+    "unchangedBaselineFiles": 111
+  },
+  "unexpectedCount": 0,
+  "note": "Expected local API and integration changes are authorized. Pre-existing work is preserved and classified separately. This phase does not claim that the backend is unchanged."
+}

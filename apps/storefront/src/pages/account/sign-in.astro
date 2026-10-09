@@ -1,0 +1,95 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import {
+  accountBridge,
+  centralSignIn,
+  isCentral,
+  setCentral,
+} from '../../lib/account';
+const central = isCentral(Astro.url),
+  origin = Astro.url.searchParams.get('origin') ?? '',
+  correlation = Astro.url.searchParams.get('correlation') ?? '';
+let unavailable = false;
+if (!central && Astro.url.searchParams.get('retry') === '1') {
+  unavailable = true;
+} else if (!central) {
+  try {
+    return Astro.redirect(await centralSignIn(Astro));
+  } catch {
+    unavailable = true;
+  }
+} else {
+  try {
+    await accountBridge({ action: 'target', origin });
+    const cookie = Astro.cookies.get('platform-account')?.value;
+    if (cookie && /^[A-Za-z0-9_-]{43}$/.test(correlation)) {
+      try {
+        const result = await accountBridge<{
+          central: string;
+          callback: string;
+        }>({ action: 'authorize', origin, central: cookie, correlation });
+        setCentral(Astro, result.central);
+        return Astro.redirect(result.callback);
+      } catch {
+        Astro.cookies.delete('platform-account', { path: '/' });
+      }
+    }
+  } catch {
+    unavailable = true;
+  }
+}
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+const sent = Astro.url.searchParams.get('requested') === '1';
+---
+
+<SiteLayout
+  context={Astro.locals.storefront}
+  path="/account/sign-in"
+  title="Access your orders"
+  noindex
+>
+  <section class="py-12 account-panel">
+    <h1>Access your orders</h1>
+    {unavailable ? (
+      <>
+        <p role="alert">
+          Account access could not be completed. Please try again.
+        </p>
+        <a class="button" href="/account/sign-in">
+          Try account access again
+        </a>
+      </>
+    ) : (
+      <>
+        <p>
+          Use a one-time email link to claim your account or sign in. Your
+          purchases stay on the same platform account.
+        </p>
+        {sent && (
+          <p role="status">
+            {Astro.url.searchParams.get('delivery') === 'unavailable'
+              ? 'Account email delivery is currently unavailable. Your request was accepted. Please try again later.'
+              : 'If that email can receive an account link, we accepted the request. Check your inbox. If delivery is unavailable, try again later.'}
+          </p>
+        )}
+        <form method="post" action="/api/account">
+          <input type="hidden" name="action" value="request" />
+          <input type="hidden" name="origin" value={origin} />
+          <input type="hidden" name="correlation" value={correlation} />
+          <div class="field">
+            <label for="account-email">Email</label>
+            <input
+              id="account-email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+              maxlength="254"
+            />
+          </div>
+          <button class="button">Request account link</button>
+        </form>
+      </>
+    )}
+  </section>
+</SiteLayout>

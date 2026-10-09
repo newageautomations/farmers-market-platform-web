@@ -1,0 +1,311 @@
+.admin-content button,
+.admin-content .button,
+.admin-topbar .button,
+.admin-sidebar a,
+.admin-mobile-nav a {
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+.admin-content button:hover:not(:disabled),
+.admin-content .button:hover {
+  box-shadow: 0 2px 6px #17392518;
+  filter: brightness(0.95);
+}
+.admin-topbar .button:hover {
+  background: #edf4ef;
+}
+.admin-content .ops-workspace button:hover:not(:disabled) {
+  background: #edf4ef;
+}
+.admin-content .route-button {
+  margin: 0.3rem 0.5rem 0.3rem 0;
+}
+.admin-content .ops-toolbar .route-button {
+  margin: 0;
+}
+.admin-content .ops-workspace {
+  padding: 0;
+}
+.admin-content .ops-toolbar {
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+.admin-content .ops-toolbar .ops-field {
+  margin: 0;
+}
+.admin-content .ops-record-list li > button,
+.admin-content .ops-record-list li > .button {
+  margin: 0.35rem 0.6rem 0.35rem 0;
+}
+.admin-content .ops-editor {
+  margin-block: 1.5rem;
+}
+.admin-content .command-section {
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #d5dfd8;
+  border-radius: 10px;
+  max-width: 900px;
+}
+.admin-content .command-section form > fieldset > .button {
+  margin-top: 1rem;
+}
+.admin-content .field-help {
+  color: var(--brand-muted);
+  font-size: 0.9rem;
+  margin-block: 0.6rem;
+}
+.admin-content .field-title {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.market-toggle > .market-toggle {
+  margin: 0;
+}
+.admin-content .form-grid .field,
+.admin-content .form-grid .ops-field {
+  margin-block: 0;
+}
+.admin-content .form-grid {
+  margin-block: 1rem;
+}
+.admin-content dialog {
+  margin: auto;
+  width: min(900px, calc(100vw - 2rem));
+  max-height: 85dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+.admin-content dialog .ops-editor {
+  padding: 0;
+  border: 0;
+}
+.admin-content .ops-editor > button + button {
+  margin-left: 0.75rem;
+}
+.nav-parent {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.nav-parent > a {
+  flex: 1;
+}
+.nav-parent > button {
+  width: 32px;
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 5px;
+}
+.nav-parent > button:hover {
+  background: #31594712;
+}
+.nav-subpages {
+  display: none;
+  padding: 0.25rem 0 0.5rem 0.75rem;
+  border-left: 1px solid #ccd9cf;
+  margin-left: 0.75rem;
+}
+.nav-group.expanded .nav-subpages,
+.nav-group:focus-within .nav-subpages {
+  display: grid;
+  gap: 0.25rem;
+}
+.admin-sidebar .nav-group:hover .nav-subpages {
+  display: grid;
+  gap: 0.25rem;
+}
+.admin-sidebar nav a:hover {
+  background: #31594712;
+}
+.admin-content .application-builder {
+  max-width: 960px;
+  background: #f3f5f3;
+  border: 0;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+.application-title {
+  padding: 1.3rem !important;
+  border-radius: 8px;
+  border-top: 6px solid var(--brand-primary) !important;
+  background: white;
+}
+.application-title input {
+  font-size: 1.6rem;
+  border-width: 0 0 1px;
+  border-radius: 0;
+}
+.application-cards {
+  display: grid;
+  gap: 1.5rem;
+}
+.application-section-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 1rem;
+}
+.application-section-title h3 {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-body);
+}
+.application-section-title > input {
+  flex: 1;
+  width: auto;
+  min-width: 150px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.application-section-title .ops-toolbar {
+  margin: 0;
+}
+.application-question-cards {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: grid;
+  gap: 1rem;
+}
+.application-question {
+  border: 1px solid #d5dfd8;
+  border-radius: 8px;
+  padding: 0.25rem 1.4rem 1.4rem;
+  background: white;
+  position: relative;
+}
+.application-question.editing {
+  border-left: 5px solid var(--brand-primary);
+  box-shadow: 0 2px 8px #17392510;
+}
+.admin-content .drag-handle {
+  display: block;
+  margin-inline: auto;
+  cursor: grab;
+  color: #7a877f;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0.15rem 1rem;
+  min-height: 32px;
+  border: 0;
+  background: transparent;
+  touch-action: none;
+}
+.admin-content .drag-handle:active {
+  cursor: grabbing;
+}
+.application-section-title .drag-handle {
+  margin: 0;
+}
+.question-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 0.6fr);
+  gap: 1rem;
+  align-items: end;
+}
+.question-heading input {
+  background: #f7f8f7;
+  border-width: 0 0 1px;
+  border-radius: 0;
+}
+.question-options {
+  margin-block: 1rem;
+}
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.option-row .ops-field {
+  flex: 1;
+}
+.question-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  border-top: 1px solid #e1e7e3;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+.question-preview {
+  position: relative;
+  padding-top: 0.75rem;
+}
+.question-preview .ops-section {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.question-preview .ops-section > legend {
+  display: none;
+}
+.question-preview input,
+.question-preview select,
+.question-preview textarea {
+  opacity: 1;
+}
+.admin-content .question-edit-overlay {
+  position: absolute;
+  inset: 0;
+  background: transparent !important;
+  border: 0;
+  width: 100%;
+  box-shadow: none !important;
+}
+.application-publishing {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+}
+.application-choice-group {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0;
+  border: 0;
+  margin: 0;
+}
+.application-choice-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-weight: 400;
+}
+.ops-field .application-choice-group input {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  flex: none;
+}
+@media (max-width: 767px) {
+  .question-heading {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .admin-content .application-builder {
+    padding: 0.75rem;
+  }
+  .application-question {
+    padding-inline: 1rem;
+  }
+  .admin-content .ops-toolbar > button,
+  .admin-content .ops-toolbar > .button {
+    width: auto;
+    flex: 1 1 auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-content button,
+  .admin-content .button,
+  .admin-sidebar a {
+    transition: none;
+  }
+}

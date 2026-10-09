@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "offline": true,
+  "productionConfigurationImported": false,
+  "databaseUsed": false,
+  "files": [
+    {
+      "path": "packages/api/schema/admin.graphql",
+      "sha256": "038C7956103AE18A8D7BFC431D2828A6E5E15C191CFD6E0D5301B10A8F632975",
+      "identical": true
+    },
+    {
+      "path": "packages/api/schema/shop.graphql",
+      "sha256": "AF2FFF8B05B5FF3D804D2B02012CBDBCF8A7B85EAC449EB8648ABB58D52D977F",
+      "identical": true
+    },
+    {
+      "path": "packages/api/schema/provenance.json",
+      "sha256": "468B567F3F41CF18B4C6AD5D6214C4D395BF6D431110D0F15E90E33F47FC973C",
+      "identical": true
+    },
+    {
+      "path": "packages/api/src/generated/admin.ts",
+      "sha256": "BA32BCB542CF6550689B6BFD3FD0F1A0B3CE57A11A5890E6893EF2881783A935",
+      "identical": true
+    },
+    {
+      "path": "packages/api/src/generated/shop.ts",
+      "sha256": "ADB7B5D98F204C969E1884DC3D6D3011CA951AD4297A6BA83F332F8AD3C12749",
+      "identical": true
+    }
+  ]
+}

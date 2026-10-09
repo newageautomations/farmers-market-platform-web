@@ -1,0 +1,70 @@
+.management-workspace {
+  min-width: 0;
+}
+.management-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+}
+.management-workspace .management-grid .card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.management-workspace .facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin: 1rem 0;
+}
+.management-workspace .facts div {
+  flex: 1 1 160px;
+}
+.management-workspace dd {
+  margin: 0.25rem 0 1rem;
+}
+.management-workspace .filter-bar,
+.management-workspace .overview-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin: 1.5rem 0;
+}
+.management-workspace .filter-bar .field {
+  flex: 1 1 160px;
+}
+.management-workspace fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.management-workspace .command-section {
+  margin: 1.5rem 0;
+  max-width: 640px;
+}
+.management-workspace fieldset > label {
+  display: block;
+  margin: 0.75rem 0;
+}
+.management-workspace .table-scroll {
+  max-width: 100%;
+}
+.management-workspace td,
+.management-workspace th {
+  overflow-wrap: anywhere;
+}
+.management-workspace .capability-note {
+  border-left: 3px solid var(--border);
+  padding: 0.5rem 1rem;
+  margin: 1.25rem 0;
+}
+.management-workspace select,
+.management-workspace input {
+  max-width: 100%;
+}
+@media (max-width: 600px) {
+  .management-workspace table {
+    min-width: 580px;
+  }
+}

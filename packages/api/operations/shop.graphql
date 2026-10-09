@@ -1,0 +1,348 @@
+query ShopCustomerSession {
+  me {
+    id
+    identifier
+    channels {
+      id
+      code
+      token
+      permissions
+    }
+  }
+}
+mutation ShopLogin(
+  $username: String!
+  $password: String!
+  $rememberMe: Boolean!
+) {
+  login(username: $username, password: $password, rememberMe: $rememberMe) {
+    __typename
+    ... on CurrentUser {
+      id
+      identifier
+      channels {
+        id
+        code
+        token
+        permissions
+      }
+    }
+    ... on ErrorResult {
+      errorCode
+    }
+  }
+}
+mutation ShopLogout {
+  logout {
+    success
+  }
+}
+query MarketCatalog($occurrenceId: ID!, $options: OccurrenceCatalogOptions) {
+  marketOccurrenceCatalog(occurrenceId: $occurrenceId, options: $options) {
+    occurrenceId
+    eligibility
+    totalItems
+    items {
+      variantId
+      productId
+      offeringId
+      vendorId
+      vendorName
+      name
+      productName
+      slug
+      price
+      currencyCode
+      featuredAssetId
+    }
+  }
+}
+fragment MarketPublicOccurrenceFields on MarketPublicOccurrence {
+  id
+  scheduleDate
+  startsAt
+  endsAt
+  timezone
+  venue
+}
+query MarketStorefrontOccurrences($options: MarketPublicOccurrenceOptions) {
+  marketStorefrontOccurrences(options: $options) {
+    totalItems
+    items {
+      ...MarketPublicOccurrenceFields
+    }
+  }
+}
+query MarketStorefrontOccurrence($id: ID!) {
+  marketStorefrontOccurrence(id: $id) {
+    ...MarketPublicOccurrenceFields
+  }
+}
+fragment MarketPublicItem on OccurrenceCatalogItem {
+  variantId
+  productId
+  vendorId
+  vendorName
+  name
+  productName
+  description
+  price
+  currencyCode
+  facetValueIds
+  featuredAsset {
+    id
+    preview
+    width
+    height
+  }
+}
+query MarketStorefrontCatalog(
+  $occurrenceId: ID!
+  $options: OccurrenceCatalogOptions
+) {
+  marketOccurrenceCatalog(occurrenceId: $occurrenceId, options: $options) {
+    occurrenceId
+    eligibility
+    totalItems
+    items {
+      ...MarketPublicItem
+    }
+    facets {
+      facetValueId
+      name
+      count
+    }
+    vendors {
+      vendorId
+      vendorName
+      count
+    }
+  }
+}
+query MarketActiveCartSnapshot {
+  marketActiveCart {
+    id
+    kind
+    occurrence {
+      ...MarketPublicOccurrenceFields
+    }
+    state
+    currencyCode
+    totalQuantity
+    subTotalWithTax
+    totalWithTax
+    shippingWithTax
+    couponCodes
+    discounts {
+      description
+      amountWithTax
+    }
+    taxSummary {
+      description
+      taxTotal
+    }
+    groups {
+      vendorId
+      vendorName
+      lines {
+        id
+        variantId
+        productName
+        name
+        quantity
+        unitPriceWithTax
+        discountedLinePriceWithTax
+        featuredAsset {
+          id
+          preview
+          width
+          height
+        }
+      }
+    }
+  }
+}
+mutation MarketSelectContext($occurrenceId: ID!) {
+  selectCommerceContext(occurrenceId: $occurrenceId) {
+    kind
+    marketId
+    occurrenceId
+  }
+}
+mutation MarketApplyCoupon($code: String!) {
+  applyCouponCode(couponCode: $code) {
+    __typename
+    ... on Order {
+      id
+    }
+    ... on ErrorResult {
+      errorCode
+    }
+  }
+}
+mutation MarketRemoveCoupon($code: String!) {
+  removeCouponCode(couponCode: $code) {
+    id
+  }
+}
+query VendorProducts($options: ProductListOptions) {
+  products(options: $options) {
+    totalItems
+    items {
+      id
+      name
+      slug
+      description
+      featuredAsset {
+        id
+        preview
+      }
+      facetValues {
+        id
+        name
+        facet {
+          id
+          name
+        }
+      }
+      variants {
+        id
+        name
+        priceWithTax
+        currencyCode
+      }
+    }
+  }
+}
+fragment StorefrontCart on Order {
+  id
+  code
+  state
+  currencyCode
+  subTotalWithTax
+  shippingWithTax
+  totalWithTax
+  discounts {
+    description
+    amountWithTax
+  }
+  surcharges {
+    description
+    priceWithTax
+  }
+  taxSummary {
+    description
+    taxTotal
+  }
+  lines {
+    id
+    quantity
+    discountedLinePriceWithTax
+    featuredAsset {
+      preview
+    }
+    productVariant {
+      id
+      name
+      product {
+        name
+        slug
+      }
+    }
+  }
+}
+query CartSnapshot {
+  activeOrder {
+    ...StorefrontCart
+  }
+}
+query StorefrontProduct($slug: String!) {
+  product(slug: $slug) {
+    id
+    name
+    slug
+    description
+    featuredAsset {
+      id
+      preview
+      width
+      height
+    }
+    assets {
+      id
+      preview
+      width
+      height
+    }
+    facetValues {
+      id
+      name
+      facet {
+        id
+        name
+      }
+    }
+    optionGroups {
+      id
+      name
+      options {
+        id
+        name
+      }
+    }
+    variants {
+      id
+      name
+      sku
+      priceWithTax
+      currencyCode
+      options {
+        id
+        name
+        groupId
+      }
+    }
+  }
+}
+mutation StorefrontSelectContext {
+  selectCommerceContext {
+    orderId
+    kind
+    vendorId
+    marketId
+    occurrenceId
+  }
+}
+mutation StorefrontAdd($variantId: ID!, $quantity: Int!) {
+  addItemToOrder(productVariantId: $variantId, quantity: $quantity) {
+    __typename
+    ... on Order {
+      ...StorefrontCart
+    }
+    ... on ErrorResult {
+      errorCode
+    }
+  }
+}
+mutation StorefrontAdjust($lineId: ID!, $quantity: Int!) {
+  adjustOrderLine(orderLineId: $lineId, quantity: $quantity) {
+    __typename
+    ... on Order {
+      ...StorefrontCart
+    }
+    ... on ErrorResult {
+      errorCode
+    }
+  }
+}
+mutation StorefrontRemove($lineId: ID!) {
+  removeOrderLine(orderLineId: $lineId) {
+    __typename
+    ... on Order {
+      ...StorefrontCart
+    }
+    ... on ErrorResult {
+      errorCode
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "unitPassed": 79,
+  "browserPassed": 21,
+  "acceptance": {
+    "PASS": 95,
+    "FAIL": 0,
+    "INCONCLUSIVE": 13,
+    "total": 108
+  },
+  "backend": {
+    "statusUnchanged": true,
+    "filesVerified": 356,
+    "fileHashesUnchanged": true,
+    "trackedDirtyUntrackedManifestUnchanged": true
+  },
+  "schemaReproducible": true,
+  "liveIntegration": "INCONCLUSIVE",
+  "protectedVendureDatabaseUntouched": true
+}

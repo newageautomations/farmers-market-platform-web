@@ -1,0 +1,72 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { occurrenceLabel } from '@market/storefront-core';
+import type { PublicMarketOccurrence, AppError } from '@market/api';
+import { ErrorState } from '@market/ui';
+interface Props {
+  context: StorefrontContext;
+  occurrences: readonly PublicMarketOccurrence[];
+  totalItems: number;
+  page: number;
+  error?: AppError;
+}
+const { context, occurrences, totalItems, page, error } = Astro.props;
+---
+
+<div data-composition="market">
+  <section class="hero" aria-labelledby="market-title">
+    <div>
+      <h1 id="market-title">{context.name}</h1>
+      <p>
+        Choose a Market occurrence to explore its offerings and shop by Vendor.
+      </p>
+      {occurrences[0] && page === 1 && (
+        <div class="actions">
+          <a class="button" href={`/occurrences/${occurrences[0].id}`}>
+            Browse the next occurrence
+          </a>
+        </div>
+      )}
+    </div>
+  </section>
+  <section
+    id="occurrences"
+    class="market-occurrences"
+    aria-labelledby="occurrences-title"
+  >
+    <h2 id="occurrences-title">Upcoming occurrences</h2>
+    {error ? (
+      <ErrorState error={error} />
+    ) : !occurrences.length ? (
+      <p>No upcoming occurrences are currently listed.</p>
+    ) : (
+      <ul class="occurrence-list">
+        {occurrences.map((occurrence) => (
+          <li class="card">
+            <h3>
+              <a href={`/occurrences/${occurrence.id}`}>
+                {occurrenceLabel(occurrence)}
+              </a>
+            </h3>
+            {occurrence.venue && <p>{occurrence.venue}</p>}
+            <a class="button secondary" href={`/occurrences/${occurrence.id}`}>
+              Explore this occurrence
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+    <nav class="pagination" aria-label="Occurrence pages">
+      {page > 1 && (
+        <a href={`/?occurrencePage=${page - 1}#occurrences`}>
+          Previous occurrences
+        </a>
+      )}
+      {page * 8 < totalItems && (
+        <a href={`/?occurrencePage=${page + 1}#occurrences`}>
+          More occurrences
+        </a>
+      )}
+    </nav>
+  </section>
+</div>

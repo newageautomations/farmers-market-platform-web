@@ -1,0 +1,11 @@
+{
+  "phase": "13C",
+  "unchanged": true,
+  "headUnchanged": true,
+  "statusUnchanged": true,
+  "statusAllUnchanged": true,
+  "beforeFiles": 6393,
+  "afterFiles": 6393,
+  "changed": [],
+  "coverage": "All backend files including .git and ignored env/build/runtime/evidence; excludes installed node_modules directories. No backend writes or Git index refresh."
+}

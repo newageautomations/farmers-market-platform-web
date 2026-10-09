@@ -1,0 +1,41 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import type { PublicCatalog, AppError } from '@market/api';
+import { ErrorState } from '@market/ui';
+import ProductCards from './ProductCards.astro';
+interface Props {
+  context: StorefrontContext;
+  catalog?: PublicCatalog;
+  error?: AppError;
+}
+const { context, catalog, error } = Astro.props;
+---
+
+<div data-composition="vendor" data-template={context.template}>
+  <section
+    class:list={['vendor-hero', context.template === 'minimal' && 'minimal']}
+  >
+    <h1>{context.name}</h1>
+    <p>
+      {context.source === 'fixture'
+        ? 'Development Vendor fixture. This independent storefront demonstrates Vendor composition and isolated branding.'
+        : 'Explore this Vendor storefront.'}
+    </p>
+    <a class="button" href="/products">
+      Explore the catalog
+    </a>
+  </section>
+  <section id="catalog" class="py-12">
+    <h2>Vendor catalog</h2>
+    {error ? (
+      <ErrorState error={error} />
+    ) : catalog?.items.length ? (
+      <ProductCards items={catalog.items} />
+    ) : (
+      <div class="empty-state">
+        <h3>No products listed</h3>
+        <p>Check back for this Vendor’s catalog.</p>
+      </div>
+    )}
+  </section>
+</div>

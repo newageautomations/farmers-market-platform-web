@@ -1,0 +1,103 @@
+{
+  "backendHead": "d0f2e0a97823b5bfb6f2320c96c2d7af7a2e0993",
+  "commands": [
+    {
+      "command": "npm run test:frontend-integration:types",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run test:billing",
+      "exitCode": 0,
+      "groups": 19,
+      "recursivePermanentPhases": "1 through 10"
+    },
+    {
+      "command": "npm run test:analytics",
+      "exitCode": 0,
+      "groups": 17
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "targets": [
+        "dashboard",
+        "server",
+        "worker"
+      ],
+      "dashboardSeconds": 113.3,
+      "serverWorkerSeconds": 5.6
+    },
+    {
+      "command": "frontend npm run test:live:market",
+      "exitCode": 0,
+      "backendGroups": 19,
+      "browserTests": 12
+    },
+    {
+      "command": "frontend npm run test:live",
+      "exitCode": 0,
+      "backendGroups": 10,
+      "browserTests": 8
+    },
+    {
+      "command": "frontend npm run test:live:unbound",
+      "exitCode": 0,
+      "backendGroups": 10,
+      "browserTests": 1
+    }
+  ],
+  "recursiveCommunications": {
+    "groups": 26,
+    "success": true,
+    "underlyingChain": "communications -> POS -> payments -> customer relationships -> paid attribution/inventory/commerce/catalog/farmers-market/identity, asserted by permanent suites"
+  },
+  "analyticsDatabase": {
+    "database": "vendure_test_analytics_1791224257219_acf919",
+    "cleanup": "dropped",
+    "protectedVendureUntouched": true
+  },
+  "billingDatabase": "vendure_test_billing_1791224346885_fbbce0",
+  "integrationDatabases": [
+    {
+      "profile": "market",
+      "database": "vendure_test_frontend_1791226076017_dd4131",
+      "cleanup": "dropped"
+    },
+    {
+      "profile": "bound",
+      "database": "vendure_test_frontend_1791225799115_968a70",
+      "cleanup": "dropped"
+    },
+    {
+      "profile": "unbound",
+      "database": "vendure_test_frontend_1791225947066_2bcc87",
+      "cleanup": "dropped"
+    }
+  ],
+  "disposableDatabaseNamesFromLogs": [
+    "vendure_test_billing_1791224346885_fbbce0",
+    "vendure_test_analytics_1791224257219_acf919"
+  ],
+  "protectedDatabase": "vendure",
+  "protectedDatabaseUntouched": true,
+  "externalProvidersCalled": false,
+  "runtimeLogHashes": [
+    {
+      "path": "test/frontend-integration/.runtime/phase13c5-types.log",
+      "sha256": "433c71b630ac8b266c07ee92bf1eb6106c8963382501c3a8a1aa54038598206d"
+    },
+    {
+      "path": "test/frontend-integration/.runtime/phase13c5-build.log",
+      "sha256": "d9447c81e61aa7a1d97ab80fe23b7bf72c9dc1f3ae3640965122dacfc5e996a3"
+    },
+    {
+      "path": "test/frontend-integration/.runtime/phase13c5-recursive-regressions.log",
+      "sha256": "8de88f1e31b0815cc90f661572d337fbdf086eee5612c0095daaa98f4111ea68"
+    },
+    {
+      "path": "test/frontend-integration/.runtime/phase13c5-permanent-regressions.log",
+      "sha256": "482b7539ad00e47c3435d9b287c31c16625ec2bdb5f63c61e1a926143fc5ec17"
+    }
+  ],
+  "evidencePolicy": "Only process-owned guarded vendure_test_* targets. Successful databases dropped unless KEEP_TEST_DB=1; failed/interrupted targets retained. No credentials copied here."
+}

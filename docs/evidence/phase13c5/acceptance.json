@@ -1,0 +1,2256 @@
+{
+  "phase": "13C.5",
+  "classification": "REAL FULL-STACK PASS",
+  "summary": {
+    "PASS": 176,
+    "FAIL": 0,
+    "INCONCLUSIVE": 0
+  },
+  "gates": [
+    {
+      "gate": "A",
+      "requirement": "Backend baseline captured",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/backend-before.json",
+        "docs/evidence/phase13c5/frontend-before.json",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c5/old-migration-hashes.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "B",
+      "requirement": "Frontend baseline captured",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/backend-before.json",
+        "docs/evidence/phase13c5/frontend-before.json",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c5/old-migration-hashes.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "C",
+      "requirement": "Pre-existing dirty work preserved",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/backend-before.json",
+        "docs/evidence/phase13c5/frontend-before.json",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c5/old-migration-hashes.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "D",
+      "requirement": "Protected vendure database untouched",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/backend-before.json",
+        "docs/evidence/phase13c5/frontend-before.json",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c5/old-migration-hashes.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "E",
+      "requirement": "No old migration edited",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/backend-before.json",
+        "docs/evidence/phase13c5/frontend-before.json",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c5/old-migration-hashes.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "F",
+      "requirement": "No unexpected repository changes",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/backend-before.json",
+        "docs/evidence/phase13c5/frontend-before.json",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c5/old-migration-hashes.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "G",
+      "requirement": "Existing Market relationship exposes safe Vendor identity",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "H",
+      "requirement": "Vendor display name available",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "I",
+      "requirement": "No technical Seller data",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "J",
+      "requirement": "No Channel token",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "K",
+      "requirement": "No Vendor private customer data",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "L",
+      "requirement": "No Vendor financial data",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "M",
+      "requirement": "Eligible Vendor directory implemented",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "N",
+      "requirement": "Directory bounded",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "O",
+      "requirement": "Directory stable paging",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": "Deterministic order is proven for unchanged persisted rows; skip paging has no cross-request snapshot guarantee under concurrent mutations."
+    },
+    {
+      "gate": "P",
+      "requirement": "Directory search safe if implemented",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "Q",
+      "requirement": "Existing relationship duplicate handling correct",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "R",
+      "requirement": "New relationship selection uses directory, not arbitrary ID UX",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "S",
+      "requirement": "Cross-Market relationship privacy preserved",
+      "status": "PASS",
+      "evidence": [
+        "backend:test/frontend-integration/market-run.ts B1 and DTO privacy groups",
+        "docs/evidence/phase13c5/live-market-integration.json",
+        "tests/e2e/market-live.spec.ts real B1",
+        "apps/admin/src/market/vendors.tsx"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "T",
+      "requirement": "Listing Product label available",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.listings joins protected canonical Product/Variant",
+        "backend:test/frontend-integration/market-run.ts rename/privacy/foreign groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B2",
+        "packages/api/schema/admin.graphql"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "U",
+      "requirement": "Listing Variant label available",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.listings joins protected canonical Product/Variant",
+        "backend:test/frontend-integration/market-run.ts rename/privacy/foreign groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B2",
+        "packages/api/schema/admin.graphql"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "V",
+      "requirement": "Listing SKU available",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.listings joins protected canonical Product/Variant",
+        "backend:test/frontend-integration/market-run.ts rename/privacy/foreign groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B2",
+        "packages/api/schema/admin.graphql"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "W",
+      "requirement": "Listing labels scoped through authorized relationship/listing",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.listings joins protected canonical Product/Variant",
+        "backend:test/frontend-integration/market-run.ts rename/privacy/foreign groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B2",
+        "packages/api/schema/admin.graphql"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "X",
+      "requirement": "Foreign arbitrary Variant lookup impossible",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.listings joins protected canonical Product/Variant",
+        "backend:test/frontend-integration/market-run.ts rename/privacy/foreign groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B2",
+        "packages/api/schema/admin.graphql"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "Y",
+      "requirement": "No native broad Product graph",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.listings joins protected canonical Product/Variant",
+        "backend:test/frontend-integration/market-run.ts rename/privacy/foreign groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B2",
+        "packages/api/schema/admin.graphql"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "Z",
+      "requirement": "No Market Product-edit authority",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.listings joins protected canonical Product/Variant",
+        "backend:test/frontend-integration/market-run.ts rename/privacy/foreign groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B2",
+        "packages/api/schema/admin.graphql"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AA",
+      "requirement": "No inventory leak",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.listings joins protected canonical Product/Variant",
+        "backend:test/frontend-integration/market-run.ts rename/privacy/foreign groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B2",
+        "packages/api/schema/admin.graphql"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AB",
+      "requirement": "No Vendor finance leak",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.listings joins protected canonical Product/Variant",
+        "backend:test/frontend-integration/market-run.ts rename/privacy/foreign groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B2",
+        "packages/api/schema/admin.graphql"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AC",
+      "requirement": "Vendor rename/current-label semantics documented",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.listings joins protected canonical Product/Variant",
+        "backend:test/frontend-integration/market-run.ts rename/privacy/foreign groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B2",
+        "packages/api/schema/admin.graphql"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AD",
+      "requirement": "Frontend listings display real labels",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.listings joins protected canonical Product/Variant",
+        "backend:test/frontend-integration/market-run.ts rename/privacy/foreign groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B2",
+        "packages/api/schema/admin.graphql"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AE",
+      "requirement": "Listing-label integration real full-stack",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.listings joins protected canonical Product/Variant",
+        "backend:test/frontend-integration/market-run.ts rename/privacy/foreign groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B2",
+        "packages/api/schema/admin.graphql"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AF",
+      "requirement": "Market publication read implemented",
+      "status": "PASS",
+      "evidence": [
+        "backend:CatalogPublishingService.readMarket/readState",
+        "backend:test/frontend-integration/market-run.ts B3 native price drift remains 9999 after read",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B3",
+        "apps/admin/src/market/vendors.tsx separate approval/publication/offering"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AG",
+      "requirement": "Market publication read uses Market authority",
+      "status": "PASS",
+      "evidence": [
+        "backend:CatalogPublishingService.readMarket/readState",
+        "backend:test/frontend-integration/market-run.ts B3 native price drift remains 9999 after read",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B3",
+        "apps/admin/src/market/vendors.tsx separate approval/publication/offering"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AH",
+      "requirement": "Vendor publication permission not required",
+      "status": "PASS",
+      "evidence": [
+        "backend:CatalogPublishingService.readMarket/readState",
+        "backend:test/frontend-integration/market-run.ts B3 native price drift remains 9999 after read",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B3",
+        "apps/admin/src/market/vendors.tsx separate approval/publication/offering"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AI",
+      "requirement": "Initial UNPUBLISHED correct",
+      "status": "PASS",
+      "evidence": [
+        "backend:CatalogPublishingService.readMarket/readState",
+        "backend:test/frontend-integration/market-run.ts B3 native price drift remains 9999 after read",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B3",
+        "apps/admin/src/market/vendors.tsx separate approval/publication/offering"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AJ",
+      "requirement": "PUBLISHED correct",
+      "status": "PASS",
+      "evidence": [
+        "backend:CatalogPublishingService.readMarket/readState",
+        "backend:test/frontend-integration/market-run.ts B3 native price drift remains 9999 after read",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B3",
+        "apps/admin/src/market/vendors.tsx separate approval/publication/offering"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AK",
+      "requirement": "UNPUBLISHED after removal correct",
+      "status": "PASS",
+      "evidence": [
+        "backend:CatalogPublishingService.readMarket/readState",
+        "backend:test/frontend-integration/market-run.ts B3 native price drift remains 9999 after read",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B3",
+        "apps/admin/src/market/vendors.tsx separate approval/publication/offering"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AL",
+      "requirement": "RECONCILIATION_REQUIRED supported",
+      "status": "PASS",
+      "evidence": [
+        "backend:CatalogPublishingService.readMarket/readState",
+        "backend:test/frontend-integration/market-run.ts B3 native price drift remains 9999 after read",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B3",
+        "apps/admin/src/market/vendors.tsx separate approval/publication/offering"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AM",
+      "requirement": "Publication read performs no repair",
+      "status": "PASS",
+      "evidence": [
+        "backend:CatalogPublishingService.readMarket/readState",
+        "backend:test/frontend-integration/market-run.ts B3 native price drift remains 9999 after read",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B3",
+        "apps/admin/src/market/vendors.tsx separate approval/publication/offering"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AN",
+      "requirement": "Foreign Market listing denied",
+      "status": "PASS",
+      "evidence": [
+        "backend:CatalogPublishingService.readMarket/readState",
+        "backend:test/frontend-integration/market-run.ts B3 native price drift remains 9999 after read",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B3",
+        "apps/admin/src/market/vendors.tsx separate approval/publication/offering"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AO",
+      "requirement": "Approval remains distinct from publication",
+      "status": "PASS",
+      "evidence": [
+        "backend:CatalogPublishingService.readMarket/readState",
+        "backend:test/frontend-integration/market-run.ts B3 native price drift remains 9999 after read",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B3",
+        "apps/admin/src/market/vendors.tsx separate approval/publication/offering"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AP",
+      "requirement": "Offering remains distinct from publication",
+      "status": "PASS",
+      "evidence": [
+        "backend:CatalogPublishingService.readMarket/readState",
+        "backend:test/frontend-integration/market-run.ts B3 native price drift remains 9999 after read",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B3",
+        "apps/admin/src/market/vendors.tsx separate approval/publication/offering"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AQ",
+      "requirement": "Frontend uses authoritative publication state",
+      "status": "PASS",
+      "evidence": [
+        "backend:CatalogPublishingService.readMarket/readState",
+        "backend:test/frontend-integration/market-run.ts B3 native price drift remains 9999 after read",
+        "docs/evidence/phase13c5/live-market-browser-results.json real B3",
+        "apps/admin/src/market/vendors.tsx separate approval/publication/offering"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AR",
+      "requirement": "Paged occurrence contract exists",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AS",
+      "requirement": "Occurrence totalItems authoritative",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AT",
+      "requirement": "Occurrence deterministic ordering",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": "Deterministic order is proven for unchanged persisted rows; skip paging has no cross-request snapshot guarantee under concurrent mutations."
+    },
+    {
+      "gate": "AU",
+      "requirement": "Occurrence page bounds enforced",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AV",
+      "requirement": "Occurrence >1000 proof",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AW",
+      "requirement": "No hard 1000 completeness ceiling",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AX",
+      "requirement": "Paged Market Vendor relationships",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AY",
+      "requirement": "Relationship totalItems authoritative",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "AZ",
+      "requirement": "Relationship stable ordering",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": "Deterministic order is proven for unchanged persisted rows; skip paging has no cross-request snapshot guarantee under concurrent mutations."
+    },
+    {
+      "gate": "BA",
+      "requirement": "Relationship page bounds enforced",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BB",
+      "requirement": "Vendor safe labels included without N+1",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BC",
+      "requirement": "Market-specific counts scoped before paging",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BD",
+      "requirement": "Search/filter does not leak foreign counts",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BE",
+      "requirement": "Malformed paging input rejected",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BF",
+      "requirement": "Compatibility roots preserved where needed",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BG",
+      "requirement": "Production frontend uses paged occurrence contract",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BH",
+      "requirement": "Production frontend uses paged Vendor relationship contract",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BI",
+      "requirement": "Phase13C occurrence completeness limitation removed",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService SQL scope/count/order/skip/take",
+        "backend:test/frontend-integration/market-fixture.ts 1005 occurrences/participations/offerings",
+        "backend:test/frontend-integration/market-large-fixture.ts 1005 canonical Vendor relationships",
+        "docs/evidence/phase13c5/live-market-integration.json B4 full traversal",
+        "docs/evidence/phase13c5/live-market-browser-results.json real server pages"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BJ",
+      "requirement": "Membership subcollections no longer silently cap at 1000",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.overview",
+        "packages/api/operations/market.graphql MarketRelationshipDetail/MarketOverviewSummary",
+        "apps/admin/src/market/overview.tsx",
+        "tests/market-c5.test.tsx authoritative totals",
+        "docs/evidence/phase13c5/live-market-integration.json B4 subordinate pages and overview"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BK",
+      "requirement": "Listings pageable or proven bounded",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.overview",
+        "packages/api/operations/market.graphql MarketRelationshipDetail/MarketOverviewSummary",
+        "apps/admin/src/market/overview.tsx",
+        "tests/market-c5.test.tsx authoritative totals",
+        "docs/evidence/phase13c5/live-market-integration.json B4 subordinate pages and overview"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BL",
+      "requirement": "Participations pageable or proven bounded",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.overview",
+        "packages/api/operations/market.graphql MarketRelationshipDetail/MarketOverviewSummary",
+        "apps/admin/src/market/overview.tsx",
+        "tests/market-c5.test.tsx authoritative totals",
+        "docs/evidence/phase13c5/live-market-integration.json B4 subordinate pages and overview"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BM",
+      "requirement": "Offerings pageable or proven bounded",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.overview",
+        "packages/api/operations/market.graphql MarketRelationshipDetail/MarketOverviewSummary",
+        "apps/admin/src/market/overview.tsx",
+        "tests/market-c5.test.tsx authoritative totals",
+        "docs/evidence/phase13c5/live-market-integration.json B4 subordinate pages and overview"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BN",
+      "requirement": "Occurrence relationship state pageable or proven bounded",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.overview",
+        "packages/api/operations/market.graphql MarketRelationshipDetail/MarketOverviewSummary",
+        "apps/admin/src/market/overview.tsx",
+        "tests/market-c5.test.tsx authoritative totals",
+        "docs/evidence/phase13c5/live-market-integration.json B4 subordinate pages and overview"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BO",
+      "requirement": "Overview uses authoritative core totals",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.overview",
+        "packages/api/operations/market.graphql MarketRelationshipDetail/MarketOverviewSummary",
+        "apps/admin/src/market/overview.tsx",
+        "tests/market-c5.test.tsx authoritative totals",
+        "docs/evidence/phase13c5/live-market-integration.json B4 subordinate pages and overview"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BP",
+      "requirement": "Overview does not derive whole-Market totals from loaded rows",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.overview",
+        "packages/api/operations/market.graphql MarketRelationshipDetail/MarketOverviewSummary",
+        "apps/admin/src/market/overview.tsx",
+        "tests/market-c5.test.tsx authoritative totals",
+        "docs/evidence/phase13c5/live-market-integration.json B4 subordinate pages and overview"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BQ",
+      "requirement": "Core overview remains independent of analytics entitlement",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.overview",
+        "packages/api/operations/market.graphql MarketRelationshipDetail/MarketOverviewSummary",
+        "apps/admin/src/market/overview.tsx",
+        "tests/market-c5.test.tsx authoritative totals",
+        "docs/evidence/phase13c5/live-market-integration.json B4 subordinate pages and overview"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BR",
+      "requirement": "No new financial summary metrics",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.overview",
+        "packages/api/operations/market.graphql MarketRelationshipDetail/MarketOverviewSummary",
+        "apps/admin/src/market/overview.tsx",
+        "tests/market-c5.test.tsx authoritative totals",
+        "docs/evidence/phase13c5/live-market-integration.json B4 subordinate pages and overview"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BS",
+      "requirement": "Direct own occurrence lookup implemented",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.occurrence fresh authority plus marketId/id predicate",
+        "apps/admin/src/market/occurrences.tsx direct detail",
+        "docs/evidence/phase13c5/live-market-integration.json future/history/cancelled/foreign/unknown/revocation groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json direct historical URL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BT",
+      "requirement": "Occurrence ID not authority",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.occurrence fresh authority plus marketId/id predicate",
+        "apps/admin/src/market/occurrences.tsx direct detail",
+        "docs/evidence/phase13c5/live-market-integration.json future/history/cancelled/foreign/unknown/revocation groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json direct historical URL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BU",
+      "requirement": "Own future occurrence lookup",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.occurrence fresh authority plus marketId/id predicate",
+        "apps/admin/src/market/occurrences.tsx direct detail",
+        "docs/evidence/phase13c5/live-market-integration.json future/history/cancelled/foreign/unknown/revocation groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json direct historical URL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BV",
+      "requirement": "Own historical occurrence lookup",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.occurrence fresh authority plus marketId/id predicate",
+        "apps/admin/src/market/occurrences.tsx direct detail",
+        "docs/evidence/phase13c5/live-market-integration.json future/history/cancelled/foreign/unknown/revocation groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json direct historical URL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BW",
+      "requirement": "Own cancelled occurrence lookup",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.occurrence fresh authority plus marketId/id predicate",
+        "apps/admin/src/market/occurrences.tsx direct detail",
+        "docs/evidence/phase13c5/live-market-integration.json future/history/cancelled/foreign/unknown/revocation groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json direct historical URL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BX",
+      "requirement": "Foreign Market occurrence denied",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.occurrence fresh authority plus marketId/id predicate",
+        "apps/admin/src/market/occurrences.tsx direct detail",
+        "docs/evidence/phase13c5/live-market-integration.json future/history/cancelled/foreign/unknown/revocation groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json direct historical URL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BY",
+      "requirement": "Unknown occurrence safe failure",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.occurrence fresh authority plus marketId/id predicate",
+        "apps/admin/src/market/occurrences.tsx direct detail",
+        "docs/evidence/phase13c5/live-market-integration.json future/history/cancelled/foreign/unknown/revocation groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json direct historical URL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "BZ",
+      "requirement": "Revoked membership denies same session",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.occurrence fresh authority plus marketId/id predicate",
+        "apps/admin/src/market/occurrences.tsx direct detail",
+        "docs/evidence/phase13c5/live-market-integration.json future/history/cancelled/foreign/unknown/revocation groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json direct historical URL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CA",
+      "requirement": "Direct lookup returns same safe DTO semantics as list",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.occurrence fresh authority plus marketId/id predicate",
+        "apps/admin/src/market/occurrences.tsx direct detail",
+        "docs/evidence/phase13c5/live-market-integration.json future/history/cancelled/foreign/unknown/revocation groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json direct historical URL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CB",
+      "requirement": "Direct lookup does not widen mutation eligibility",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.occurrence fresh authority plus marketId/id predicate",
+        "apps/admin/src/market/occurrences.tsx direct detail",
+        "docs/evidence/phase13c5/live-market-integration.json future/history/cancelled/foreign/unknown/revocation groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json direct historical URL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CC",
+      "requirement": "Frontend detail no longer depends on list date range",
+      "status": "PASS",
+      "evidence": [
+        "backend:MarketOrganizerReadService.occurrence fresh authority plus marketId/id predicate",
+        "apps/admin/src/market/occurrences.tsx direct detail",
+        "docs/evidence/phase13c5/live-market-integration.json future/history/cancelled/foreign/unknown/revocation groups",
+        "docs/evidence/phase13c5/live-market-browser-results.json direct historical URL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CD",
+      "requirement": "Safe generation-status root exists",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CE",
+      "requirement": "No broad native Job API exposed",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CF",
+      "requirement": "Job ownership tied to current Market",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CG",
+      "requirement": "Wrong Market job denied",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CH",
+      "requirement": "Wrong queue/type rejected",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CI",
+      "requirement": "Pending/queued status mapped",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CJ",
+      "requirement": "Running status mapped where infrastructure supports it",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": "Real short jobs can complete between polls. RUNNING and RETRYING mappings are proven with actual durable native JobRecord fixtures, not claimed as observed transient browser states."
+    },
+    {
+      "gate": "CK",
+      "requirement": "Completed status mapped",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CL",
+      "requirement": "Failed status mapped",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CM",
+      "requirement": "Safe failure information only",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CN",
+      "requirement": "No raw stack/error payload",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CO",
+      "requirement": "Revoked Market authority denies status",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CP",
+      "requirement": "Frontend queued flow uses real status",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CQ",
+      "requirement": "Polling stops on terminal status",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": "Automatic active observation is bounded to 60 reads at two-second intervals; missing/pruned jobs fail safely under installed count-based retention."
+    },
+    {
+      "gate": "CR",
+      "requirement": "Polling stops on Market switch/logout",
+      "status": "PASS",
+      "evidence": [
+        "backend:OccurrenceGenerationWorkerService.status/execute",
+        "docs/evidence/phase13c5/live-market-integration.json actual durable completion/failure/state mappings",
+        "apps/admin/src/market/generation-status.tsx",
+        "tests/market-c5.test.tsx bounded/terminal/context/error/cleanup polling"
+      ],
+      "limitation": "Automatic active observation is bounded to 60 reads at two-second intervals; missing/pruned jobs fail safely under installed count-based retention."
+    },
+    {
+      "gate": "CS",
+      "requirement": "Fresh ReadOwnMarket authority retained",
+      "status": "PASS",
+      "evidence": [
+        "backend:TenantAccessPolicy fresh authority retained; all-root same-cookie checks in market-run.ts",
+        "docs/evidence/phase13c5/live-market-integration.json all 12 new roots revoked/wrong-Channel/cross-Market denied",
+        "docs/evidence/phase13c5/live-market-browser-results.json real cross-Market and same-session revocation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CT",
+      "requirement": "New reads deny revoked human membership",
+      "status": "PASS",
+      "evidence": [
+        "backend:TenantAccessPolicy fresh authority retained; all-root same-cookie checks in market-run.ts",
+        "docs/evidence/phase13c5/live-market-integration.json all 12 new roots revoked/wrong-Channel/cross-Market denied",
+        "docs/evidence/phase13c5/live-market-browser-results.json real cross-Market and same-session revocation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CU",
+      "requirement": "New reads deny revoked native permission",
+      "status": "PASS",
+      "evidence": [
+        "backend:TenantAccessPolicy fresh authority retained; all-root same-cookie checks in market-run.ts",
+        "docs/evidence/phase13c5/live-market-integration.json all 12 new roots revoked/wrong-Channel/cross-Market denied",
+        "docs/evidence/phase13c5/live-market-browser-results.json real cross-Market and same-session revocation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CV",
+      "requirement": "Wrong selected Channel denied",
+      "status": "PASS",
+      "evidence": [
+        "backend:TenantAccessPolicy fresh authority retained; all-root same-cookie checks in market-run.ts",
+        "docs/evidence/phase13c5/live-market-integration.json all 12 new roots revoked/wrong-Channel/cross-Market denied",
+        "docs/evidence/phase13c5/live-market-browser-results.json real cross-Market and same-session revocation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CW",
+      "requirement": "Requested IDs never establish tenant authority",
+      "status": "PASS",
+      "evidence": [
+        "backend:TenantAccessPolicy fresh authority retained; all-root same-cookie checks in market-run.ts",
+        "docs/evidence/phase13c5/live-market-integration.json all 12 new roots revoked/wrong-Channel/cross-Market denied",
+        "docs/evidence/phase13c5/live-market-browser-results.json real cross-Market and same-session revocation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CX",
+      "requirement": "Cross-Market Product/listing attack denied",
+      "status": "PASS",
+      "evidence": [
+        "backend:TenantAccessPolicy fresh authority retained; all-root same-cookie checks in market-run.ts",
+        "docs/evidence/phase13c5/live-market-integration.json all 12 new roots revoked/wrong-Channel/cross-Market denied",
+        "docs/evidence/phase13c5/live-market-browser-results.json real cross-Market and same-session revocation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CY",
+      "requirement": "Cross-Market occurrence attack denied",
+      "status": "PASS",
+      "evidence": [
+        "backend:TenantAccessPolicy fresh authority retained; all-root same-cookie checks in market-run.ts",
+        "docs/evidence/phase13c5/live-market-integration.json all 12 new roots revoked/wrong-Channel/cross-Market denied",
+        "docs/evidence/phase13c5/live-market-browser-results.json real cross-Market and same-session revocation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "CZ",
+      "requirement": "Cross-Market relationship attack denied",
+      "status": "PASS",
+      "evidence": [
+        "backend:TenantAccessPolicy fresh authority retained; all-root same-cookie checks in market-run.ts",
+        "docs/evidence/phase13c5/live-market-integration.json all 12 new roots revoked/wrong-Channel/cross-Market denied",
+        "docs/evidence/phase13c5/live-market-browser-results.json real cross-Market and same-session revocation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DA",
+      "requirement": "Cross-Market generation-job attack denied",
+      "status": "PASS",
+      "evidence": [
+        "backend:TenantAccessPolicy fresh authority retained; all-root same-cookie checks in market-run.ts",
+        "docs/evidence/phase13c5/live-market-integration.json all 12 new roots revoked/wrong-Channel/cross-Market denied",
+        "docs/evidence/phase13c5/live-market-browser-results.json real cross-Market and same-session revocation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DB",
+      "requirement": "Market Vendor names replace opaque-only references",
+      "status": "PASS",
+      "evidence": [
+        "packages/api/operations/market.graphql and src/market.ts generated production adapters",
+        "apps/admin/src/market/{vendors,occurrences,overview,generation-status}.tsx",
+        "docs/evidence/phase13c5/live-market-browser-results.json",
+        "docs/evidence/phase13c5/browser-results.json fixture-disabled unavailable behavior"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DC",
+      "requirement": "Add Vendor workflow implemented",
+      "status": "PASS",
+      "evidence": [
+        "packages/api/operations/market.graphql and src/market.ts generated production adapters",
+        "apps/admin/src/market/{vendors,occurrences,overview,generation-status}.tsx",
+        "docs/evidence/phase13c5/live-market-browser-results.json",
+        "docs/evidence/phase13c5/browser-results.json fixture-disabled unavailable behavior"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DD",
+      "requirement": "No arbitrary Vendor-ID normal workflow",
+      "status": "PASS",
+      "evidence": [
+        "packages/api/operations/market.graphql and src/market.ts generated production adapters",
+        "apps/admin/src/market/{vendors,occurrences,overview,generation-status}.tsx",
+        "docs/evidence/phase13c5/live-market-browser-results.json",
+        "docs/evidence/phase13c5/browser-results.json fixture-disabled unavailable behavior"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DE",
+      "requirement": "Listing labels visible",
+      "status": "PASS",
+      "evidence": [
+        "packages/api/operations/market.graphql and src/market.ts generated production adapters",
+        "apps/admin/src/market/{vendors,occurrences,overview,generation-status}.tsx",
+        "docs/evidence/phase13c5/live-market-browser-results.json",
+        "docs/evidence/phase13c5/browser-results.json fixture-disabled unavailable behavior"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DF",
+      "requirement": "Publication state visible",
+      "status": "PASS",
+      "evidence": [
+        "packages/api/operations/market.graphql and src/market.ts generated production adapters",
+        "apps/admin/src/market/{vendors,occurrences,overview,generation-status}.tsx",
+        "docs/evidence/phase13c5/live-market-browser-results.json",
+        "docs/evidence/phase13c5/browser-results.json fixture-disabled unavailable behavior"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DG",
+      "requirement": "Publication/approval/offering visually distinct",
+      "status": "PASS",
+      "evidence": [
+        "packages/api/operations/market.graphql and src/market.ts generated production adapters",
+        "apps/admin/src/market/{vendors,occurrences,overview,generation-status}.tsx",
+        "docs/evidence/phase13c5/live-market-browser-results.json",
+        "docs/evidence/phase13c5/browser-results.json fixture-disabled unavailable behavior"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DH",
+      "requirement": "Occurrence real server paging",
+      "status": "PASS",
+      "evidence": [
+        "packages/api/operations/market.graphql and src/market.ts generated production adapters",
+        "apps/admin/src/market/{vendors,occurrences,overview,generation-status}.tsx",
+        "docs/evidence/phase13c5/live-market-browser-results.json",
+        "docs/evidence/phase13c5/browser-results.json fixture-disabled unavailable behavior"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DI",
+      "requirement": "Vendor real server paging",
+      "status": "PASS",
+      "evidence": [
+        "packages/api/operations/market.graphql and src/market.ts generated production adapters",
+        "apps/admin/src/market/{vendors,occurrences,overview,generation-status}.tsx",
+        "docs/evidence/phase13c5/live-market-browser-results.json",
+        "docs/evidence/phase13c5/browser-results.json fixture-disabled unavailable behavior"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DJ",
+      "requirement": "Overview authoritative totals",
+      "status": "PASS",
+      "evidence": [
+        "packages/api/operations/market.graphql and src/market.ts generated production adapters",
+        "apps/admin/src/market/{vendors,occurrences,overview,generation-status}.tsx",
+        "docs/evidence/phase13c5/live-market-browser-results.json",
+        "docs/evidence/phase13c5/browser-results.json fixture-disabled unavailable behavior"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DK",
+      "requirement": "Direct occurrence URL works outside list range",
+      "status": "PASS",
+      "evidence": [
+        "packages/api/operations/market.graphql and src/market.ts generated production adapters",
+        "apps/admin/src/market/{vendors,occurrences,overview,generation-status}.tsx",
+        "docs/evidence/phase13c5/live-market-browser-results.json",
+        "docs/evidence/phase13c5/browser-results.json fixture-disabled unavailable behavior"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DL",
+      "requirement": "Queued generation actual status shown",
+      "status": "PASS",
+      "evidence": [
+        "packages/api/operations/market.graphql and src/market.ts generated production adapters",
+        "apps/admin/src/market/{vendors,occurrences,overview,generation-status}.tsx",
+        "docs/evidence/phase13c5/live-market-browser-results.json",
+        "docs/evidence/phase13c5/browser-results.json fixture-disabled unavailable behavior"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DM",
+      "requirement": "No fake production fallback",
+      "status": "PASS",
+      "evidence": [
+        "packages/api/operations/market.graphql and src/market.ts generated production adapters",
+        "apps/admin/src/market/{vendors,occurrences,overview,generation-status}.tsx",
+        "docs/evidence/phase13c5/live-market-browser-results.json",
+        "docs/evidence/phase13c5/browser-results.json fixture-disabled unavailable behavior"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DN",
+      "requirement": "Market A/B state isolation",
+      "status": "PASS",
+      "evidence": [
+        "tests/market-c5.test.tsx delayed directory and job A/B response isolation",
+        "tests/e2e/market-live.spec.ts real context/revocation cleanup",
+        "docs/evidence/phase13c5/unit-results.json 164 passing",
+        "docs/evidence/phase13c5/browser-results.json 33 passing",
+        "docs/evidence/phase13c5/live-integration.json Vendor bound",
+        "docs/evidence/phase13c5/live-unbound-integration.json Vendor unbound",
+        "docs/evidence/phase13c5/audit-summary.json scope preservation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DO",
+      "requirement": "Late B1-B6 response cannot repopulate previous Market",
+      "status": "PASS",
+      "evidence": [
+        "tests/market-c5.test.tsx delayed directory and job A/B response isolation",
+        "tests/e2e/market-live.spec.ts real context/revocation cleanup",
+        "docs/evidence/phase13c5/unit-results.json 164 passing",
+        "docs/evidence/phase13c5/browser-results.json 33 passing",
+        "docs/evidence/phase13c5/live-integration.json Vendor bound",
+        "docs/evidence/phase13c5/live-unbound-integration.json Vendor unbound",
+        "docs/evidence/phase13c5/audit-summary.json scope preservation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DP",
+      "requirement": "Job polling tenant-isolated",
+      "status": "PASS",
+      "evidence": [
+        "tests/market-c5.test.tsx delayed directory and job A/B response isolation",
+        "tests/e2e/market-live.spec.ts real context/revocation cleanup",
+        "docs/evidence/phase13c5/unit-results.json 164 passing",
+        "docs/evidence/phase13c5/browser-results.json 33 passing",
+        "docs/evidence/phase13c5/live-integration.json Vendor bound",
+        "docs/evidence/phase13c5/live-unbound-integration.json Vendor unbound",
+        "docs/evidence/phase13c5/audit-summary.json scope preservation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DQ",
+      "requirement": "Permission revocation clears new data",
+      "status": "PASS",
+      "evidence": [
+        "tests/market-c5.test.tsx delayed directory and job A/B response isolation",
+        "tests/e2e/market-live.spec.ts real context/revocation cleanup",
+        "docs/evidence/phase13c5/unit-results.json 164 passing",
+        "docs/evidence/phase13c5/browser-results.json 33 passing",
+        "docs/evidence/phase13c5/live-integration.json Vendor bound",
+        "docs/evidence/phase13c5/live-unbound-integration.json Vendor unbound",
+        "docs/evidence/phase13c5/audit-summary.json scope preservation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DR",
+      "requirement": "Vendor Admin regressions pass",
+      "status": "PASS",
+      "evidence": [
+        "tests/market-c5.test.tsx delayed directory and job A/B response isolation",
+        "tests/e2e/market-live.spec.ts real context/revocation cleanup",
+        "docs/evidence/phase13c5/unit-results.json 164 passing",
+        "docs/evidence/phase13c5/browser-results.json 33 passing",
+        "docs/evidence/phase13c5/live-integration.json Vendor bound",
+        "docs/evidence/phase13c5/live-unbound-integration.json Vendor unbound",
+        "docs/evidence/phase13c5/audit-summary.json scope preservation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DS",
+      "requirement": "Platform shell regression passes",
+      "status": "PASS",
+      "evidence": [
+        "tests/market-c5.test.tsx delayed directory and job A/B response isolation",
+        "tests/e2e/market-live.spec.ts real context/revocation cleanup",
+        "docs/evidence/phase13c5/unit-results.json 164 passing",
+        "docs/evidence/phase13c5/browser-results.json 33 passing",
+        "docs/evidence/phase13c5/live-integration.json Vendor bound",
+        "docs/evidence/phase13c5/live-unbound-integration.json Vendor unbound",
+        "docs/evidence/phase13c5/audit-summary.json scope preservation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DT",
+      "requirement": "Bulverde Market Day remains MARKET",
+      "status": "PASS",
+      "evidence": [
+        "tests/market-c5.test.tsx delayed directory and job A/B response isolation",
+        "tests/e2e/market-live.spec.ts real context/revocation cleanup",
+        "docs/evidence/phase13c5/unit-results.json 164 passing",
+        "docs/evidence/phase13c5/browser-results.json 33 passing",
+        "docs/evidence/phase13c5/live-integration.json Vendor bound",
+        "docs/evidence/phase13c5/live-unbound-integration.json Vendor unbound",
+        "docs/evidence/phase13c5/audit-summary.json scope preservation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DU",
+      "requirement": "Storefront regressions pass",
+      "status": "PASS",
+      "evidence": [
+        "tests/market-c5.test.tsx delayed directory and job A/B response isolation",
+        "tests/e2e/market-live.spec.ts real context/revocation cleanup",
+        "docs/evidence/phase13c5/unit-results.json 164 passing",
+        "docs/evidence/phase13c5/browser-results.json 33 passing",
+        "docs/evidence/phase13c5/live-integration.json Vendor bound",
+        "docs/evidence/phase13c5/live-unbound-integration.json Vendor unbound",
+        "docs/evidence/phase13c5/audit-summary.json scope preservation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DV",
+      "requirement": "No communications UI",
+      "status": "PASS",
+      "evidence": [
+        "tests/market-c5.test.tsx delayed directory and job A/B response isolation",
+        "tests/e2e/market-live.spec.ts real context/revocation cleanup",
+        "docs/evidence/phase13c5/unit-results.json 164 passing",
+        "docs/evidence/phase13c5/browser-results.json 33 passing",
+        "docs/evidence/phase13c5/live-integration.json Vendor bound",
+        "docs/evidence/phase13c5/live-unbound-integration.json Vendor unbound",
+        "docs/evidence/phase13c5/audit-summary.json scope preservation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DW",
+      "requirement": "No Product management granted to Market",
+      "status": "PASS",
+      "evidence": [
+        "tests/market-c5.test.tsx delayed directory and job A/B response isolation",
+        "tests/e2e/market-live.spec.ts real context/revocation cleanup",
+        "docs/evidence/phase13c5/unit-results.json 164 passing",
+        "docs/evidence/phase13c5/browser-results.json 33 passing",
+        "docs/evidence/phase13c5/live-integration.json Vendor bound",
+        "docs/evidence/phase13c5/live-unbound-integration.json Vendor unbound",
+        "docs/evidence/phase13c5/audit-summary.json scope preservation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DX",
+      "requirement": "No Seller/Channel UI",
+      "status": "PASS",
+      "evidence": [
+        "tests/market-c5.test.tsx delayed directory and job A/B response isolation",
+        "tests/e2e/market-live.spec.ts real context/revocation cleanup",
+        "docs/evidence/phase13c5/unit-results.json 164 passing",
+        "docs/evidence/phase13c5/browser-results.json 33 passing",
+        "docs/evidence/phase13c5/live-integration.json Vendor bound",
+        "docs/evidence/phase13c5/live-unbound-integration.json Vendor unbound",
+        "docs/evidence/phase13c5/audit-summary.json scope preservation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DY",
+      "requirement": "No Phase 13D implementation",
+      "status": "PASS",
+      "evidence": [
+        "tests/market-c5.test.tsx delayed directory and job A/B response isolation",
+        "tests/e2e/market-live.spec.ts real context/revocation cleanup",
+        "docs/evidence/phase13c5/unit-results.json 164 passing",
+        "docs/evidence/phase13c5/browser-results.json 33 passing",
+        "docs/evidence/phase13c5/live-integration.json Vendor bound",
+        "docs/evidence/phase13c5/live-unbound-integration.json Vendor unbound",
+        "docs/evidence/phase13c5/audit-summary.json scope preservation"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "DZ",
+      "requirement": "Vendor directory accessible",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-browser-results.json loaded-page axe/overflow tests at 390/768/1280",
+        "docs/evidence/phase13c5/live-market-{vendors,listings,occurrences,detail}-{390,768,1280}.png",
+        "docs/evidence/phase13c5/browser-results.json keyboard/Escape/focus-return checks",
+        "packages/ui/src/index.tsx optional distinct Pagination label"
+      ],
+      "limitation": "Axe and responsive coverage applies to tested loaded pages/dialog/status states, not every possible application state."
+    },
+    {
+      "gate": "EA",
+      "requirement": "Vendor relationship table accessible",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-browser-results.json loaded-page axe/overflow tests at 390/768/1280",
+        "docs/evidence/phase13c5/live-market-{vendors,listings,occurrences,detail}-{390,768,1280}.png",
+        "docs/evidence/phase13c5/browser-results.json keyboard/Escape/focus-return checks",
+        "packages/ui/src/index.tsx optional distinct Pagination label"
+      ],
+      "limitation": "Axe and responsive coverage applies to tested loaded pages/dialog/status states, not every possible application state."
+    },
+    {
+      "gate": "EB",
+      "requirement": "Listing labels/publication controls accessible",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-browser-results.json loaded-page axe/overflow tests at 390/768/1280",
+        "docs/evidence/phase13c5/live-market-{vendors,listings,occurrences,detail}-{390,768,1280}.png",
+        "docs/evidence/phase13c5/browser-results.json keyboard/Escape/focus-return checks",
+        "packages/ui/src/index.tsx optional distinct Pagination label"
+      ],
+      "limitation": "Axe and responsive coverage applies to tested loaded pages/dialog/status states, not every possible application state."
+    },
+    {
+      "gate": "EC",
+      "requirement": "Occurrence paging accessible",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-browser-results.json loaded-page axe/overflow tests at 390/768/1280",
+        "docs/evidence/phase13c5/live-market-{vendors,listings,occurrences,detail}-{390,768,1280}.png",
+        "docs/evidence/phase13c5/browser-results.json keyboard/Escape/focus-return checks",
+        "packages/ui/src/index.tsx optional distinct Pagination label"
+      ],
+      "limitation": "Axe and responsive coverage applies to tested loaded pages/dialog/status states, not every possible application state."
+    },
+    {
+      "gate": "ED",
+      "requirement": "Occurrence detail accessible",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-browser-results.json loaded-page axe/overflow tests at 390/768/1280",
+        "docs/evidence/phase13c5/live-market-{vendors,listings,occurrences,detail}-{390,768,1280}.png",
+        "docs/evidence/phase13c5/browser-results.json keyboard/Escape/focus-return checks",
+        "packages/ui/src/index.tsx optional distinct Pagination label"
+      ],
+      "limitation": "Axe and responsive coverage applies to tested loaded pages/dialog/status states, not every possible application state."
+    },
+    {
+      "gate": "EE",
+      "requirement": "Generation status accessible",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-browser-results.json loaded-page axe/overflow tests at 390/768/1280",
+        "docs/evidence/phase13c5/live-market-{vendors,listings,occurrences,detail}-{390,768,1280}.png",
+        "docs/evidence/phase13c5/browser-results.json keyboard/Escape/focus-return checks",
+        "packages/ui/src/index.tsx optional distinct Pagination label"
+      ],
+      "limitation": "Axe and responsive coverage applies to tested loaded pages/dialog/status states, not every possible application state."
+    },
+    {
+      "gate": "EF",
+      "requirement": "Keyboard navigation",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-browser-results.json loaded-page axe/overflow tests at 390/768/1280",
+        "docs/evidence/phase13c5/live-market-{vendors,listings,occurrences,detail}-{390,768,1280}.png",
+        "docs/evidence/phase13c5/browser-results.json keyboard/Escape/focus-return checks",
+        "packages/ui/src/index.tsx optional distinct Pagination label"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EG",
+      "requirement": "Dialog focus handling",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-browser-results.json loaded-page axe/overflow tests at 390/768/1280",
+        "docs/evidence/phase13c5/live-market-{vendors,listings,occurrences,detail}-{390,768,1280}.png",
+        "docs/evidence/phase13c5/browser-results.json keyboard/Escape/focus-return checks",
+        "packages/ui/src/index.tsx optional distinct Pagination label"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EH",
+      "requirement": "390px responsive",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-browser-results.json loaded-page axe/overflow tests at 390/768/1280",
+        "docs/evidence/phase13c5/live-market-{vendors,listings,occurrences,detail}-{390,768,1280}.png",
+        "docs/evidence/phase13c5/browser-results.json keyboard/Escape/focus-return checks",
+        "packages/ui/src/index.tsx optional distinct Pagination label"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EI",
+      "requirement": "768px responsive",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-browser-results.json loaded-page axe/overflow tests at 390/768/1280",
+        "docs/evidence/phase13c5/live-market-{vendors,listings,occurrences,detail}-{390,768,1280}.png",
+        "docs/evidence/phase13c5/browser-results.json keyboard/Escape/focus-return checks",
+        "packages/ui/src/index.tsx optional distinct Pagination label"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EJ",
+      "requirement": "1280px responsive",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-browser-results.json loaded-page axe/overflow tests at 390/768/1280",
+        "docs/evidence/phase13c5/live-market-{vendors,listings,occurrences,detail}-{390,768,1280}.png",
+        "docs/evidence/phase13c5/browser-results.json keyboard/Escape/focus-return checks",
+        "packages/ui/src/index.tsx optional distinct Pagination label"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EK",
+      "requirement": "GraphQL schema extraction reproducible",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EL",
+      "requirement": "GraphQL codegen reproducible",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EM",
+      "requirement": "Backend targeted MARKET-B tests pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EN",
+      "requirement": "Backend FarmersMarket regressions pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EO",
+      "requirement": "Backend recursive permanent regressions pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EP",
+      "requirement": "Backend analytics regression pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EQ",
+      "requirement": "Backend build pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "ER",
+      "requirement": "Frontend typecheck pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "ES",
+      "requirement": "Frontend lint pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "ET",
+      "requirement": "Frontend unit/component tests pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EU",
+      "requirement": "Frontend browser regressions pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EV",
+      "requirement": "Frontend accessibility checks pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": "Axe and responsive coverage applies to tested loaded pages/dialog/status states, not every possible application state."
+    },
+    {
+      "gate": "EW",
+      "requirement": "Admin production build pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EX",
+      "requirement": "Storefront production build pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/schema-reproduction.json",
+        "docs/evidence/phase13c5/backend-validation.json",
+        "docs/evidence/phase13c5/typecheck.log",
+        "docs/evidence/phase13c5/lint.log",
+        "docs/evidence/phase13c5/unit-results.json",
+        "docs/evidence/phase13c5/browser-results.json",
+        "docs/evidence/phase13c5/build.log",
+        "docs/evidence/phase13c5/bundle-validation.json"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EY",
+      "requirement": "Disposable integration DB guard pass",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-integration.json REAL FULL-STACK PASS, fixture mode OFF, real HTTP/native cookie/Vendure/disposable PostgreSQL",
+        "docs/evidence/phase13c5/live-market-browser-results.json 12 real Chromium tests",
+        "backend:test/frontend-integration/harness.ts existing guarded disposable composition"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "EZ",
+      "requirement": "Real Market HTTP login",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-integration.json REAL FULL-STACK PASS, fixture mode OFF, real HTTP/native cookie/Vendure/disposable PostgreSQL",
+        "docs/evidence/phase13c5/live-market-browser-results.json 12 real Chromium tests",
+        "backend:test/frontend-integration/harness.ts existing guarded disposable composition"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FA",
+      "requirement": "Real MARKET-B1 integration",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-integration.json REAL FULL-STACK PASS, fixture mode OFF, real HTTP/native cookie/Vendure/disposable PostgreSQL",
+        "docs/evidence/phase13c5/live-market-browser-results.json 12 real Chromium tests",
+        "backend:test/frontend-integration/harness.ts existing guarded disposable composition"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FB",
+      "requirement": "Real MARKET-B2 integration",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-integration.json REAL FULL-STACK PASS, fixture mode OFF, real HTTP/native cookie/Vendure/disposable PostgreSQL",
+        "docs/evidence/phase13c5/live-market-browser-results.json 12 real Chromium tests",
+        "backend:test/frontend-integration/harness.ts existing guarded disposable composition"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FC",
+      "requirement": "Real MARKET-B3 integration",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-integration.json REAL FULL-STACK PASS, fixture mode OFF, real HTTP/native cookie/Vendure/disposable PostgreSQL",
+        "docs/evidence/phase13c5/live-market-browser-results.json 12 real Chromium tests",
+        "backend:test/frontend-integration/harness.ts existing guarded disposable composition"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FD",
+      "requirement": "Real MARKET-B4 paging integration",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-integration.json REAL FULL-STACK PASS, fixture mode OFF, real HTTP/native cookie/Vendure/disposable PostgreSQL",
+        "docs/evidence/phase13c5/live-market-browser-results.json 12 real Chromium tests",
+        "backend:test/frontend-integration/harness.ts existing guarded disposable composition"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FE",
+      "requirement": "Real MARKET-B5 direct occurrence integration",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-integration.json REAL FULL-STACK PASS, fixture mode OFF, real HTTP/native cookie/Vendure/disposable PostgreSQL",
+        "docs/evidence/phase13c5/live-market-browser-results.json 12 real Chromium tests",
+        "backend:test/frontend-integration/harness.ts existing guarded disposable composition"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FF",
+      "requirement": "Real MARKET-B6 job-status integration",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-integration.json REAL FULL-STACK PASS, fixture mode OFF, real HTTP/native cookie/Vendure/disposable PostgreSQL",
+        "docs/evidence/phase13c5/live-market-browser-results.json 12 real Chromium tests",
+        "backend:test/frontend-integration/harness.ts existing guarded disposable composition"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FG",
+      "requirement": "Real cross-Market attack denial",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-integration.json REAL FULL-STACK PASS, fixture mode OFF, real HTTP/native cookie/Vendure/disposable PostgreSQL",
+        "docs/evidence/phase13c5/live-market-browser-results.json 12 real Chromium tests",
+        "backend:test/frontend-integration/harness.ts existing guarded disposable composition"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FH",
+      "requirement": "Real same-session Market revocation",
+      "status": "PASS",
+      "evidence": [
+        "docs/evidence/phase13c5/live-market-integration.json REAL FULL-STACK PASS, fixture mode OFF, real HTTP/native cookie/Vendure/disposable PostgreSQL",
+        "docs/evidence/phase13c5/live-market-browser-results.json 12 real Chromium tests",
+        "backend:test/frontend-integration/harness.ts existing guarded disposable composition"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FI",
+      "requirement": "MARKET-B1 closure status accurate",
+      "status": "PASS",
+      "evidence": [
+        "docs/frontend-phase13c5-integration-implementation.md",
+        "backend:docs/frontend-api-gap-closure-phase13c5.md",
+        "docs/frontend-phase13c-capabilities.md Phase 13C.5 closure addendum",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c/acceptance.json preserved historical 127 PASS/1 INCONCLUSIVE/0 FAIL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FJ",
+      "requirement": "MARKET-B2 closure status accurate",
+      "status": "PASS",
+      "evidence": [
+        "docs/frontend-phase13c5-integration-implementation.md",
+        "backend:docs/frontend-api-gap-closure-phase13c5.md",
+        "docs/frontend-phase13c-capabilities.md Phase 13C.5 closure addendum",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c/acceptance.json preserved historical 127 PASS/1 INCONCLUSIVE/0 FAIL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FK",
+      "requirement": "MARKET-B3 closure status accurate",
+      "status": "PASS",
+      "evidence": [
+        "docs/frontend-phase13c5-integration-implementation.md",
+        "backend:docs/frontend-api-gap-closure-phase13c5.md",
+        "docs/frontend-phase13c-capabilities.md Phase 13C.5 closure addendum",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c/acceptance.json preserved historical 127 PASS/1 INCONCLUSIVE/0 FAIL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FL",
+      "requirement": "MARKET-B4 closure status accurate",
+      "status": "PASS",
+      "evidence": [
+        "docs/frontend-phase13c5-integration-implementation.md",
+        "backend:docs/frontend-api-gap-closure-phase13c5.md",
+        "docs/frontend-phase13c-capabilities.md Phase 13C.5 closure addendum",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c/acceptance.json preserved historical 127 PASS/1 INCONCLUSIVE/0 FAIL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FM",
+      "requirement": "MARKET-B5 closure status accurate",
+      "status": "PASS",
+      "evidence": [
+        "docs/frontend-phase13c5-integration-implementation.md",
+        "backend:docs/frontend-api-gap-closure-phase13c5.md",
+        "docs/frontend-phase13c-capabilities.md Phase 13C.5 closure addendum",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c/acceptance.json preserved historical 127 PASS/1 INCONCLUSIVE/0 FAIL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FN",
+      "requirement": "MARKET-B6 closure status accurate",
+      "status": "PASS",
+      "evidence": [
+        "docs/frontend-phase13c5-integration-implementation.md",
+        "backend:docs/frontend-api-gap-closure-phase13c5.md",
+        "docs/frontend-phase13c-capabilities.md Phase 13C.5 closure addendum",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c/acceptance.json preserved historical 127 PASS/1 INCONCLUSIVE/0 FAIL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FO",
+      "requirement": "Original Phase13C history preserved",
+      "status": "PASS",
+      "evidence": [
+        "docs/frontend-phase13c5-integration-implementation.md",
+        "backend:docs/frontend-api-gap-closure-phase13c5.md",
+        "docs/frontend-phase13c-capabilities.md Phase 13C.5 closure addendum",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c/acceptance.json preserved historical 127 PASS/1 INCONCLUSIVE/0 FAIL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FP",
+      "requirement": "Phase13C gate Z superseding evidence documented",
+      "status": "PASS",
+      "evidence": [
+        "docs/frontend-phase13c5-integration-implementation.md",
+        "backend:docs/frontend-api-gap-closure-phase13c5.md",
+        "docs/frontend-phase13c-capabilities.md Phase 13C.5 closure addendum",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c/acceptance.json preserved historical 127 PASS/1 INCONCLUSIVE/0 FAIL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FQ",
+      "requirement": "Phase13A-B1 remains OPEN",
+      "status": "PASS",
+      "evidence": [
+        "docs/frontend-phase13c5-integration-implementation.md",
+        "backend:docs/frontend-api-gap-closure-phase13c5.md",
+        "docs/frontend-phase13c-capabilities.md Phase 13C.5 closure addendum",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c/acceptance.json preserved historical 127 PASS/1 INCONCLUSIVE/0 FAIL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FR",
+      "requirement": "Phase13A-B3 remains OPEN",
+      "status": "PASS",
+      "evidence": [
+        "docs/frontend-phase13c5-integration-implementation.md",
+        "backend:docs/frontend-api-gap-closure-phase13c5.md",
+        "docs/frontend-phase13c-capabilities.md Phase 13C.5 closure addendum",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c/acceptance.json preserved historical 127 PASS/1 INCONCLUSIVE/0 FAIL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FS",
+      "requirement": "Phase13A-B4 remains OPEN",
+      "status": "PASS",
+      "evidence": [
+        "docs/frontend-phase13c5-integration-implementation.md",
+        "backend:docs/frontend-api-gap-closure-phase13c5.md",
+        "docs/frontend-phase13c-capabilities.md Phase 13C.5 closure addendum",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c/acceptance.json preserved historical 127 PASS/1 INCONCLUSIVE/0 FAIL"
+      ],
+      "limitation": null
+    },
+    {
+      "gate": "FT",
+      "requirement": "No deployment/provider/remote Git action",
+      "status": "PASS",
+      "evidence": [
+        "docs/frontend-phase13c5-integration-implementation.md",
+        "backend:docs/frontend-api-gap-closure-phase13c5.md",
+        "docs/frontend-phase13c-capabilities.md Phase 13C.5 closure addendum",
+        "docs/evidence/phase13c5/audit-summary.json",
+        "docs/evidence/phase13c/acceptance.json preserved historical 127 PASS/1 INCONCLUSIVE/0 FAIL"
+      ],
+      "limitation": null
+    }
+  ],
+  "blockers": {
+    "MARKET-B1": "CLOSED",
+    "MARKET-B2": "CLOSED",
+    "MARKET-B3": "CLOSED",
+    "MARKET-B4": "CLOSED",
+    "MARKET-B5": "CLOSED",
+    "MARKET-B6": "CLOSED"
+  },
+  "historicalPhase13C": {
+    "PASS": 127,
+    "INCONCLUSIVE": 1,
+    "FAIL": 0,
+    "gateZ": "Historical INCONCLUSIVE preserved; superseded by Phase 13C.5 B4 PASS evidence"
+  },
+  "deferred": {
+    "Phase13A-B1": "OPEN",
+    "Phase13A-B3": "OPEN",
+    "Phase13A-B4": "OPEN"
+  },
+  "migrationsAdded": 0
+}
+

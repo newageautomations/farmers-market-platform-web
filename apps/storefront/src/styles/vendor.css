@@ -1,0 +1,141 @@
+.site-header {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.site-header .brand {
+  overflow-wrap: anywhere;
+}
+.site-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.4rem;
+}
+.product-card {
+  min-width: 0;
+}
+.product-card h2 {
+  font-size: 1.4rem;
+}
+.product-card a {
+  text-decoration: none;
+}
+.product-media {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 5px;
+  background: var(--brand-background);
+  margin-bottom: 1.1rem;
+}
+.product-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--brand-muted);
+}
+.product-description {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.catalog-filters {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.catalog-filters .field {
+  flex: 1;
+  min-width: min(220px, 100%);
+}
+.catalog-filters button {
+  margin-bottom: 1rem;
+}
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+.product-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 3rem;
+}
+.product-price {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+.product-gallery {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+.purchase-form {
+  max-width: 420px;
+}
+.cart-signin {
+  max-width: 560px;
+  margin-block: 2rem;
+}
+.cart-lines {
+  display: grid;
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+}
+.cart-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2rem;
+}
+.cart-line h2 {
+  font-size: 1.5rem;
+  overflow-wrap: anywhere;
+}
+.cart-totals {
+  margin-block: 2rem;
+  max-width: 620px;
+  margin-left: auto;
+}
+.cart-totals dl > div {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.cart-totals dd {
+  margin: 0;
+}
+.facet-tags {
+  color: var(--brand-muted);
+  font-size: 0.9rem;
+}
+@media (max-width: 850px) {
+  .catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .product-detail {
+    gap: 1.5rem;
+  }
+}
+@media (max-width: 580px) {
+  .catalog-grid,
+  .product-detail,
+  .cart-line {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .site-header {
+    align-items: start;
+  }
+  .site-header nav {
+    width: 100%;
+  }
+  .cart-totals {
+    margin-left: 0;
+  }
+}

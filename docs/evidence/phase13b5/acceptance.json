@@ -1,0 +1,653 @@
+{
+  "phase": "13B.5",
+  "classification": "REAL FULL-STACK PASS",
+  "totals": {
+    "PASS": 107,
+    "FAIL": 0,
+    "INCONCLUSIVE": 0
+  },
+  "gates": [
+    {
+      "gate": "A",
+      "requirement": "Backend/frontend baseline captured",
+      "status": "PASS",
+      "evidence": "Before/after SHA-256 manifests, intended change manifest, diff classification and backend-verification.json; unchanged HEADs and old migrations."
+    },
+    {
+      "gate": "B",
+      "requirement": "No protected vendure DB use",
+      "status": "PASS",
+      "evidence": "Existing loopback/strict-prefix/process-owned test-database guard; bound/unbound integration JSON records successful target drops."
+    },
+    {
+      "gate": "C",
+      "requirement": "No old migration edited",
+      "status": "PASS",
+      "evidence": "Before/after SHA-256 manifests, intended change manifest, diff classification and backend-verification.json; unchanged HEADs and old migrations."
+    },
+    {
+      "gate": "D",
+      "requirement": "No unauthorized native API exposure",
+      "status": "PASS",
+      "evidence": "Purpose-specific SDL/DTOs, protected ownership queries, generated named operations and unchanged native API permissions."
+    },
+    {
+      "gate": "E",
+      "requirement": "Purpose-specific DTOs",
+      "status": "PASS",
+      "evidence": "Purpose-specific SDL/DTOs, protected ownership queries, generated named operations and unchanged native API permissions."
+    },
+    {
+      "gate": "F",
+      "requirement": "Fresh tenant authority",
+      "status": "PASS",
+      "evidence": "OwnedAdminReadService and real backend catalog HTTP checks; live Product workflow, cross-tenant attacks and same-cookie revocation."
+    },
+    {
+      "gate": "G",
+      "requirement": "Owned Product list",
+      "status": "PASS",
+      "evidence": "OwnedAdminReadService and real backend catalog HTTP checks; live Product workflow, cross-tenant attacks and same-cookie revocation."
+    },
+    {
+      "gate": "H",
+      "requirement": "Owned Product detail",
+      "status": "PASS",
+      "evidence": "OwnedAdminReadService and real backend catalog HTTP checks; live Product workflow, cross-tenant attacks and same-cookie revocation."
+    },
+    {
+      "gate": "I",
+      "requirement": "Ownership before paging",
+      "status": "PASS",
+      "evidence": "OwnedAdminReadService and real backend catalog HTTP checks; live Product workflow, cross-tenant attacks and same-cookie revocation."
+    },
+    {
+      "gate": "J",
+      "requirement": "Catalog search/paging",
+      "status": "PASS",
+      "evidence": "OwnedAdminReadService and real backend catalog HTTP checks; live Product workflow, cross-tenant attacks and same-cookie revocation."
+    },
+    {
+      "gate": "K",
+      "requirement": "Canonical Vendor currency",
+      "status": "PASS",
+      "evidence": "OwnedAdminReadService and real backend catalog HTTP checks; live Product workflow, cross-tenant attacks and same-cookie revocation."
+    },
+    {
+      "gate": "L",
+      "requirement": "Compatible Product options",
+      "status": "PASS",
+      "evidence": "OwnedAdminReadService and real backend catalog HTTP checks; live Product workflow, cross-tenant attacks and same-cookie revocation."
+    },
+    {
+      "gate": "M",
+      "requirement": "Foreign Product rejection",
+      "status": "PASS",
+      "evidence": "OwnedAdminReadService and real backend catalog HTTP checks; live Product workflow, cross-tenant attacks and same-cookie revocation."
+    },
+    {
+      "gate": "N",
+      "requirement": "Revoked catalog membership rejection",
+      "status": "PASS",
+      "evidence": "OwnedAdminReadService and real backend catalog HTTP checks; live Product workflow, cross-tenant attacks and same-cookie revocation."
+    },
+    {
+      "gate": "O",
+      "requirement": "Core own inventory list",
+      "status": "PASS",
+      "evidence": "Real capacity/inventory HTTP checks including 10/2/3=>5, due expiry=>8, labels/SKU/cursor and denied-analytics restock."
+    },
+    {
+      "gate": "P",
+      "requirement": "Inventory names/SKU",
+      "status": "PASS",
+      "evidence": "Real capacity/inventory HTTP checks including 10/2/3=>5, due expiry=>8, labels/SKU/cursor and denied-analytics restock."
+    },
+    {
+      "gate": "Q",
+      "requirement": "physicalFree reuse",
+      "status": "PASS",
+      "evidence": "Real capacity/inventory HTTP checks including 10/2/3=>5, due expiry=>8, labels/SKU/cursor and denied-analytics restock."
+    },
+    {
+      "gate": "R",
+      "requirement": "Inventory independent of analytics",
+      "status": "PASS",
+      "evidence": "Real capacity/inventory HTTP checks including 10/2/3=>5, due expiry=>8, labels/SKU/cursor and denied-analytics restock."
+    },
+    {
+      "gate": "S",
+      "requirement": "Inventory bounded paging",
+      "status": "PASS",
+      "evidence": "Real capacity/inventory HTTP checks including 10/2/3=>5, due expiry=>8, labels/SKU/cursor and denied-analytics restock."
+    },
+    {
+      "gate": "T",
+      "requirement": "Foreign Variant isolation",
+      "status": "PASS",
+      "evidence": "Real capacity/inventory HTTP checks including 10/2/3=>5, due expiry=>8, labels/SKU/cursor and denied-analytics restock."
+    },
+    {
+      "gate": "U",
+      "requirement": "Own operational Order list",
+      "status": "PASS",
+      "evidence": "Shared ownedContexts/readValidatedPortion; real 21 Direct plus 1 owned Market portion, exact occurrence/pickup/quantities/paging, foreign/revoked rejection."
+    },
+    {
+      "gate": "V",
+      "requirement": "Direct Order context",
+      "status": "PASS",
+      "evidence": "Shared ownedContexts/readValidatedPortion; real 21 Direct plus 1 owned Market portion, exact occurrence/pickup/quantities/paging, foreign/revoked rejection."
+    },
+    {
+      "gate": "W",
+      "requirement": "Market operational Order context",
+      "status": "PASS",
+      "evidence": "Shared ownedContexts/readValidatedPortion; real 21 Direct plus 1 owned Market portion, exact occurrence/pickup/quantities/paging, foreign/revoked rejection."
+    },
+    {
+      "gate": "X",
+      "requirement": "Occurrence context",
+      "status": "PASS",
+      "evidence": "Shared ownedContexts/readValidatedPortion; real 21 Direct plus 1 owned Market portion, exact occurrence/pickup/quantities/paging, foreign/revoked rejection."
+    },
+    {
+      "gate": "Y",
+      "requirement": "Pickup state",
+      "status": "PASS",
+      "evidence": "Shared ownedContexts/readValidatedPortion; real 21 Direct plus 1 owned Market portion, exact occurrence/pickup/quantities/paging, foreign/revoked rejection."
+    },
+    {
+      "gate": "Z",
+      "requirement": "Quantities exact",
+      "status": "PASS",
+      "evidence": "Shared ownedContexts/readValidatedPortion; real 21 Direct plus 1 owned Market portion, exact occurrence/pickup/quantities/paging, foreign/revoked rejection."
+    },
+    {
+      "gate": "AA",
+      "requirement": "Other Vendor Seller excluded",
+      "status": "PASS",
+      "evidence": "Shared ownedContexts/readValidatedPortion; real 21 Direct plus 1 owned Market portion, exact occurrence/pickup/quantities/paging, foreign/revoked rejection."
+    },
+    {
+      "gate": "AB",
+      "requirement": "Order paging",
+      "status": "PASS",
+      "evidence": "Shared ownedContexts/readValidatedPortion; real 21 Direct plus 1 owned Market portion, exact occurrence/pickup/quantities/paging, foreign/revoked rejection."
+    },
+    {
+      "gate": "AC",
+      "requirement": "Revoked Order authority rejection",
+      "status": "PASS",
+      "evidence": "Shared ownedContexts/readValidatedPortion; real 21 Direct plus 1 owned Market portion, exact occurrence/pickup/quantities/paging, foreign/revoked rejection."
+    },
+    {
+      "gate": "AD",
+      "requirement": "Safe Market display identity",
+      "status": "PASS",
+      "evidence": "Safe current membership.market DTO, real domain rename reread, foreign relation rejection and schema exclusion of token/Seller fields."
+    },
+    {
+      "gate": "AE",
+      "requirement": "Unrelated Market hidden",
+      "status": "PASS",
+      "evidence": "Safe current membership.market DTO, real domain rename reread, foreign relation rejection and schema exclusion of token/Seller fields."
+    },
+    {
+      "gate": "AF",
+      "requirement": "No Market Channel token leakage",
+      "status": "PASS",
+      "evidence": "Safe current membership.market DTO, real domain rename reread, foreign relation rejection and schema exclusion of token/Seller fields."
+    },
+    {
+      "gate": "AG",
+      "requirement": "No technical Seller leakage",
+      "status": "PASS",
+      "evidence": "Safe current membership.market DTO, real domain rename reread, foreign relation rejection and schema exclusion of token/Seller fields."
+    },
+    {
+      "gate": "AH",
+      "requirement": "Publication state initially correct",
+      "status": "PASS",
+      "evidence": "Real publication HTTP reads across removal/publish/retries; native price drift produces read-only reconciliation, repair command and foreign rejection."
+    },
+    {
+      "gate": "AI",
+      "requirement": "Publish → PUBLISHED",
+      "status": "PASS",
+      "evidence": "Real publication HTTP reads across removal/publish/retries; native price drift produces read-only reconciliation, repair command and foreign rejection."
+    },
+    {
+      "gate": "AJ",
+      "requirement": "Unpublish → UNPUBLISHED",
+      "status": "PASS",
+      "evidence": "Real publication HTTP reads across removal/publish/retries; native price drift produces read-only reconciliation, repair command and foreign rejection."
+    },
+    {
+      "gate": "AK",
+      "requirement": "Repeated publication idempotency",
+      "status": "PASS",
+      "evidence": "Real publication HTTP reads across removal/publish/retries; native price drift produces read-only reconciliation, repair command and foreign rejection."
+    },
+    {
+      "gate": "AL",
+      "requirement": "Foreign publication read denied",
+      "status": "PASS",
+      "evidence": "Real publication HTTP reads across removal/publish/retries; native price drift produces read-only reconciliation, repair command and foreign rejection."
+    },
+    {
+      "gate": "AM",
+      "requirement": "Capability ALLOWED",
+      "status": "PASS",
+      "evidence": "Real bound/unbound Gateway checks, disabled/unbound descriptors, unknown/critical boundaries, plan migration and active/revoked overrides; unchanged critical denylist."
+    },
+    {
+      "gate": "AN",
+      "requirement": "Capability DENIED",
+      "status": "PASS",
+      "evidence": "Real bound/unbound Gateway checks, disabled/unbound descriptors, unknown/critical boundaries, plan migration and active/revoked overrides; unchanged critical denylist."
+    },
+    {
+      "gate": "AO",
+      "requirement": "Capability UNKNOWN",
+      "status": "PASS",
+      "evidence": "Real bound/unbound Gateway checks, disabled/unbound descriptors, unknown/critical boundaries, plan migration and active/revoked overrides; unchanged critical denylist."
+    },
+    {
+      "gate": "AP",
+      "requirement": "Capability UNCONFIGURED",
+      "status": "PASS",
+      "evidence": "Real bound/unbound Gateway checks, disabled/unbound descriptors, unknown/critical boundaries, plan migration and active/revoked overrides; unchanged critical denylist."
+    },
+    {
+      "gate": "AQ",
+      "requirement": "Feature existence != boundary binding",
+      "status": "PASS",
+      "evidence": "Real bound/unbound Gateway checks, disabled/unbound descriptors, unknown/critical boundaries, plan migration and active/revoked overrides; unchanged critical denylist."
+    },
+    {
+      "gate": "AR",
+      "requirement": "Own capability tenant isolation",
+      "status": "PASS",
+      "evidence": "Real bound/unbound Gateway checks, disabled/unbound descriptors, unknown/critical boundaries, plan migration and active/revoked overrides; unchanged critical denylist."
+    },
+    {
+      "gate": "AS",
+      "requirement": "Safety-critical operations not bound",
+      "status": "PASS",
+      "evidence": "Real bound/unbound Gateway checks, disabled/unbound descriptors, unknown/critical boundaries, plan migration and active/revoked overrides; unchanged critical denylist."
+    },
+    {
+      "gate": "AT",
+      "requirement": "ownMarketIdentity success",
+      "status": "PASS",
+      "evidence": "Real ownMarketIdentity checks: exact Channel, multiple memberships, suspended policy, wrong/anonymous/revoked contexts; live Market shell and revocation browsers."
+    },
+    {
+      "gate": "AU",
+      "requirement": "ownMarketIdentity wrong context denied",
+      "status": "PASS",
+      "evidence": "Real ownMarketIdentity checks: exact Channel, multiple memberships, suspended policy, wrong/anonymous/revoked contexts; live Market shell and revocation browsers."
+    },
+    {
+      "gate": "AV",
+      "requirement": "ownMarketIdentity revocation immediate",
+      "status": "PASS",
+      "evidence": "Real ownMarketIdentity checks: exact Channel, multiple memberships, suspended policy, wrong/anonymous/revoked contexts; live Market shell and revocation browsers."
+    },
+    {
+      "gate": "AW",
+      "requirement": "Market bootstrap frontend wired",
+      "status": "PASS",
+      "evidence": "Real ownMarketIdentity checks: exact Channel, multiple memberships, suspended policy, wrong/anonymous/revoked contexts; live Market shell and revocation browsers."
+    },
+    {
+      "gate": "AX",
+      "requirement": "No Phase 13C Market screens",
+      "status": "PASS",
+      "evidence": "Shared shell only; unchanged Storefront features and no Market operations; Phase13A-B1/B3/B4 remain OPEN."
+    },
+    {
+      "gate": "AY",
+      "requirement": "Frontend Product list live contract",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "AZ",
+      "requirement": "Frontend Product detail live contract",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BA",
+      "requirement": "Frontend Variant creation live selector",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BB",
+      "requirement": "Frontend exact price edit live contract",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BC",
+      "requirement": "Frontend Market-listing Variant selector",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BD",
+      "requirement": "Frontend Inventory live core contract",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BE",
+      "requirement": "Inventory usable with analytics denied",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BF",
+      "requirement": "Frontend Order list live contract",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BG",
+      "requirement": "Direct/Market UI from authoritative context",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BH",
+      "requirement": "Frontend Order detail regression",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BI",
+      "requirement": "Frontend Market display names",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BJ",
+      "requirement": "Frontend publication state authoritative",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BK",
+      "requirement": "Frontend capability-state consumption",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BL",
+      "requirement": "Analytics allowed state live",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BM",
+      "requirement": "Analytics denied state live",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BN",
+      "requirement": "Unknown/unconfigured state live",
+      "status": "PASS",
+      "evidence": "Fixture-disabled real Vendor workflow and capability browser tests; generated production adapters; all analytics views and authoritative command rereads."
+    },
+    {
+      "gate": "BO",
+      "requirement": "No fake production fallback",
+      "status": "PASS",
+      "evidence": "Fixture-disabled unavailable-backend browser regression, explicit fixture import boundary and production bundle marker validation."
+    },
+    {
+      "gate": "BP",
+      "requirement": "No broad native Product read",
+      "status": "PASS",
+      "evidence": "Purpose-specific SDL/DTOs, protected ownership queries, generated named operations and unchanged native API permissions."
+    },
+    {
+      "gate": "BQ",
+      "requirement": "No broad native Order read",
+      "status": "PASS",
+      "evidence": "Purpose-specific SDL/DTOs, protected ownership queries, generated named operations and unchanged native API permissions."
+    },
+    {
+      "gate": "BR",
+      "requirement": "No raw StockLevel read",
+      "status": "PASS",
+      "evidence": "Purpose-specific SDL/DTOs, protected ownership queries, generated named operations and unchanged native API permissions."
+    },
+    {
+      "gate": "BS",
+      "requirement": "No Channel inference",
+      "status": "PASS",
+      "evidence": "Purpose-specific SDL/DTOs, protected ownership queries, generated named operations and unchanged native API permissions."
+    },
+    {
+      "gate": "BT",
+      "requirement": "No Seller UI",
+      "status": "PASS",
+      "evidence": "Purpose-specific SDL/DTOs, protected ownership queries, generated named operations and unchanged native API permissions."
+    },
+    {
+      "gate": "BU",
+      "requirement": "Disposable integration DB guard",
+      "status": "PASS",
+      "evidence": "Existing loopback/strict-prefix/process-owned test-database guard; bound/unbound integration JSON records successful target drops."
+    },
+    {
+      "gate": "BV",
+      "requirement": "Real HTTP Vendor login",
+      "status": "PASS",
+      "evidence": "live-integration.json + live-browser-results.json: 8 real cookie/HTTP/DB browser tests; live-unbound integration + browser JSON: 1 real test. No response mocks."
+    },
+    {
+      "gate": "BW",
+      "requirement": "Real Product integration",
+      "status": "PASS",
+      "evidence": "live-integration.json + live-browser-results.json: 8 real cookie/HTTP/DB browser tests; live-unbound integration + browser JSON: 1 real test. No response mocks."
+    },
+    {
+      "gate": "BX",
+      "requirement": "Real inventory integration",
+      "status": "PASS",
+      "evidence": "live-integration.json + live-browser-results.json: 8 real cookie/HTTP/DB browser tests; live-unbound integration + browser JSON: 1 real test. No response mocks."
+    },
+    {
+      "gate": "BY",
+      "requirement": "Real Order integration",
+      "status": "PASS",
+      "evidence": "live-integration.json + live-browser-results.json: 8 real cookie/HTTP/DB browser tests; live-unbound integration + browser JSON: 1 real test. No response mocks."
+    },
+    {
+      "gate": "BZ",
+      "requirement": "Real CRM integration",
+      "status": "PASS",
+      "evidence": "live-integration.json + live-browser-results.json: 8 real cookie/HTTP/DB browser tests; live-unbound integration + browser JSON: 1 real test. No response mocks."
+    },
+    {
+      "gate": "CA",
+      "requirement": "Real Market relationship integration",
+      "status": "PASS",
+      "evidence": "live-integration.json + live-browser-results.json: 8 real cookie/HTTP/DB browser tests; live-unbound integration + browser JSON: 1 real test. No response mocks."
+    },
+    {
+      "gate": "CB",
+      "requirement": "Real analytics integration",
+      "status": "PASS",
+      "evidence": "live-integration.json + live-browser-results.json: 8 real cookie/HTTP/DB browser tests; live-unbound integration + browser JSON: 1 real test. No response mocks."
+    },
+    {
+      "gate": "CC",
+      "requirement": "Cross-Vendor real API attack denied",
+      "status": "PASS",
+      "evidence": "live-integration.json + live-browser-results.json: 8 real cookie/HTTP/DB browser tests; live-unbound integration + browser JSON: 1 real test. No response mocks."
+    },
+    {
+      "gate": "CD",
+      "requirement": "Real Vendor membership revocation",
+      "status": "PASS",
+      "evidence": "live-integration.json + live-browser-results.json: 8 real cookie/HTTP/DB browser tests; live-unbound integration + browser JSON: 1 real test. No response mocks."
+    },
+    {
+      "gate": "CE",
+      "requirement": "Analytics-denied inventory succeeds",
+      "status": "PASS",
+      "evidence": "live-integration.json + live-browser-results.json: 8 real cookie/HTTP/DB browser tests; live-unbound integration + browser JSON: 1 real test. No response mocks."
+    },
+    {
+      "gate": "CF",
+      "requirement": "Real Market bootstrap",
+      "status": "PASS",
+      "evidence": "live-integration.json + live-browser-results.json: 8 real cookie/HTTP/DB browser tests; live-unbound integration + browser JSON: 1 real test. No response mocks."
+    },
+    {
+      "gate": "CG",
+      "requirement": "Real Market revocation",
+      "status": "PASS",
+      "evidence": "live-integration.json + live-browser-results.json: 8 real cookie/HTTP/DB browser tests; live-unbound integration + browser JSON: 1 real test. No response mocks."
+    },
+    {
+      "gate": "CH",
+      "requirement": "Backend targeted regressions",
+      "status": "PASS",
+      "evidence": "Backend full test:billing established recursive permanent Phase1-11 chain plus full test:analytics Phase12; regression-results.json."
+    },
+    {
+      "gate": "CI",
+      "requirement": "Frontend Phase 13A regressions",
+      "status": "PASS",
+      "evidence": "browser-results.json: 21 Chromium Phase13A/13B regressions; axe and responsive checks; these fixture/mocked cases are not real integration evidence."
+    },
+    {
+      "gate": "CJ",
+      "requirement": "Frontend Phase 13B regressions",
+      "status": "PASS",
+      "evidence": "browser-results.json: 21 Chromium Phase13A/13B regressions; axe and responsive checks; these fixture/mocked cases are not real integration evidence."
+    },
+    {
+      "gate": "CK",
+      "requirement": "GraphQL schema/codegen reproducible",
+      "status": "PASS",
+      "evidence": "schema-codegen.json: repeated offline SDL, provenance and generated operation hashes identical."
+    },
+    {
+      "gate": "CL",
+      "requirement": "Backend build",
+      "status": "PASS",
+      "evidence": "Backend test/frontend-integration/.runtime/build.log: native dashboard/server/worker build PASS."
+    },
+    {
+      "gate": "CM",
+      "requirement": "Frontend typecheck",
+      "status": "PASS",
+      "evidence": "typecheck.log: strict TypeScript + 14 Astro files, zero diagnostics."
+    },
+    {
+      "gate": "CN",
+      "requirement": "Frontend lint",
+      "status": "PASS",
+      "evidence": "lint.log: ESLint, nine-workspace boundaries and Prettier PASS."
+    },
+    {
+      "gate": "CO",
+      "requirement": "Frontend unit tests",
+      "status": "PASS",
+      "evidence": "unit-results.json: 80 unit/component tests PASS."
+    },
+    {
+      "gate": "CP",
+      "requirement": "Frontend browser tests",
+      "status": "PASS",
+      "evidence": "browser-results.json: 21 Chromium Phase13A/13B regressions; axe and responsive checks; these fixture/mocked cases are not real integration evidence."
+    },
+    {
+      "gate": "CQ",
+      "requirement": "Frontend accessibility",
+      "status": "PASS",
+      "evidence": "browser-results.json: 21 Chromium Phase13A/13B regressions; axe and responsive checks; these fixture/mocked cases are not real integration evidence."
+    },
+    {
+      "gate": "CR",
+      "requirement": "Frontend Admin build",
+      "status": "PASS",
+      "evidence": "build.log: root Astro Storefront + fixture-disabled Vite Admin production builds PASS; bundle-validation.json."
+    },
+    {
+      "gate": "CS",
+      "requirement": "Frontend Storefront build",
+      "status": "PASS",
+      "evidence": "build.log: root Astro Storefront + fixture-disabled Vite Admin production builds PASS; bundle-validation.json."
+    },
+    {
+      "gate": "CT",
+      "requirement": "Frontend root build",
+      "status": "PASS",
+      "evidence": "build.log: root Astro Storefront + fixture-disabled Vite Admin production builds PASS; bundle-validation.json."
+    },
+    {
+      "gate": "CU",
+      "requirement": "Expected backend diff only",
+      "status": "PASS",
+      "evidence": "Before/after SHA-256 manifests, intended change manifest, diff classification and backend-verification.json; unchanged HEADs and old migrations."
+    },
+    {
+      "gate": "CV",
+      "requirement": "Expected frontend diff only",
+      "status": "PASS",
+      "evidence": "Before/after SHA-256 manifests, intended change manifest, diff classification and backend-verification.json; unchanged HEADs and old migrations."
+    },
+    {
+      "gate": "CW",
+      "requirement": "No provider calls",
+      "status": "PASS",
+      "evidence": "Test-only local provider composition and controlled adapters; no external provider/deployment/hosting/remote Git operations."
+    },
+    {
+      "gate": "CX",
+      "requirement": "No deployment",
+      "status": "PASS",
+      "evidence": "Test-only local provider composition and controlled adapters; no external provider/deployment/hosting/remote Git operations."
+    },
+    {
+      "gate": "CY",
+      "requirement": "Docs complete",
+      "status": "PASS",
+      "evidence": "Both new Phase13B.5 reports and appended historical addendums; 7 implemented gaps CLOSED with real evidence, unrelated 13A blockers preserved OPEN."
+    },
+    {
+      "gate": "CZ",
+      "requirement": "B1-B6 closure status accurate",
+      "status": "PASS",
+      "evidence": "Both new Phase13B.5 reports and appended historical addendums; 7 implemented gaps CLOSED with real evidence, unrelated 13A blockers preserved OPEN."
+    },
+    {
+      "gate": "DA",
+      "requirement": "Phase13A-B2 closure status accurate",
+      "status": "PASS",
+      "evidence": "Both new Phase13B.5 reports and appended historical addendums; 7 implemented gaps CLOSED with real evidence, unrelated 13A blockers preserved OPEN."
+    },
+    {
+      "gate": "DB",
+      "requirement": "Unrelated Phase13A blockers still deferred",
+      "status": "PASS",
+      "evidence": "Shared shell only; unchanged Storefront features and no Market operations; Phase13A-B1/B3/B4 remain OPEN."
+    },
+    {
+      "gate": "DC",
+      "requirement": "No Phase13C implementation creep",
+      "status": "PASS",
+      "evidence": "Shared shell only; unchanged Storefront features and no Market operations; Phase13A-B1/B3/B4 remain OPEN."
+    }
+  ]
+}

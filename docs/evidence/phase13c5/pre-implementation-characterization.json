@@ -1,0 +1,74 @@
+[
+  {
+    "blocker": "MARKET-B1",
+    "existingSourceFacts": "MarketVendorMembership is unique by Market/Vendor. set() calls OwnershipDirectory.getVendor, with no active-only eligibility requirement. Existing arrays expose vendorId only.",
+    "proposedContract": "Safe Vendor name/slug/status; exclude every existing own relationship from the selection directory. Match valid native Channel/Seller ownership, including suspended Vendors, without returning technical identities.",
+    "sourceOfTruth": "Vendor domain record; existing command rechecks validity",
+    "frontendPaths": "Vendors list/detail and Add Vendor",
+    "authority": "Authenticated admin, exact selected native Channel, current own Market, fresh ReadOwnMarket grant and active marketAdmin human membership via TenantAccessPolicy. Requested IDs never authority.",
+    "paging": "take 1..100, skip 0..1000000; stable ID tie-breaker; search <=200 safe business name/slug only. Occurrence optional paired UTC interval <=366 days. Skip paging observes current committed data; concurrent insert/delete can change subsequent pages, requiring refresh.",
+    "privacy": "Explicit minimal DTOs; no native graphs, credentials, technical Seller/Channel token, finance, stock, CRM or other Market state.",
+    "migrationRequired": false,
+    "migrationReason": "All necessary facts and queue persistence already exist; existing scoped indexes and primary keys support these queries. No speculative index."
+  },
+  {
+    "blocker": "MARKET-B2",
+    "existingSourceFacts": "MarketListing permanently references membership and native variant. Product protected owner is canonical Vendor identity.",
+    "proposedContract": "Joined minimal Product/Variant labels through own-Market membership/listing; no arbitrary Variant root.",
+    "sourceOfTruth": "Canonical Product/Variant translations and SKU",
+    "frontendPaths": "Vendor relationship listings",
+    "authority": "Authenticated admin, exact selected native Channel, current own Market, fresh ReadOwnMarket grant and active marketAdmin human membership via TenantAccessPolicy. Requested IDs never authority.",
+    "paging": "take 1..100, skip 0..1000000; stable ID tie-breaker; search <=200 safe business name/slug only. Occurrence optional paired UTC interval <=366 days. Skip paging observes current committed data; concurrent insert/delete can change subsequent pages, requiring refresh.",
+    "privacy": "Explicit minimal DTOs; no native graphs, credentials, technical Seller/Channel token, finance, stock, CRM or other Market state.",
+    "migrationRequired": false,
+    "migrationReason": "All necessary facts and queue persistence already exist; existing scoped indexes and primary keys support these queries. No speculative index."
+  },
+  {
+    "blocker": "MARKET-B3",
+    "existingSourceFacts": "CatalogPublishingService.read characterizes native channel/price/dependency truth under Vendor authority.",
+    "proposedContract": "Separate Market-authorized root and shared read calculation; no repair or new publication truth.",
+    "sourceOfTruth": "Phase 3 native publication facts",
+    "frontendPaths": "Listing publication badges",
+    "authority": "Authenticated admin, exact selected native Channel, current own Market, fresh ReadOwnMarket grant and active marketAdmin human membership via TenantAccessPolicy. Requested IDs never authority.",
+    "paging": "take 1..100, skip 0..1000000; stable ID tie-breaker; search <=200 safe business name/slug only. Occurrence optional paired UTC interval <=366 days. Skip paging observes current committed data; concurrent insert/delete can change subsequent pages, requiring refresh.",
+    "privacy": "Explicit minimal DTOs; no native graphs, credentials, technical Seller/Channel token, finance, stock, CRM or other Market state.",
+    "migrationRequired": false,
+    "migrationReason": "All necessary facts and queue persistence already exist; existing scoped indexes and primary keys support these queries. No speculative index."
+  },
+  {
+    "blocker": "MARKET-B4",
+    "existingSourceFacts": "Occurrence, relationship and membership-state arrays use take(1000). Counts cannot establish completeness.",
+    "proposedContract": "Bounded skip/take pages for every collection; SQL scope before count/search/paging; precise operational summary independent of analytics.",
+    "sourceOfTruth": "Market domain rows and scoped SQL counts",
+    "frontendPaths": "Overview, Occurrences, Vendors and relationship detail",
+    "authority": "Authenticated admin, exact selected native Channel, current own Market, fresh ReadOwnMarket grant and active marketAdmin human membership via TenantAccessPolicy. Requested IDs never authority.",
+    "paging": "take 1..100, skip 0..1000000; stable ID tie-breaker; search <=200 safe business name/slug only. Occurrence optional paired UTC interval <=366 days. Skip paging observes current committed data; concurrent insert/delete can change subsequent pages, requiring refresh.",
+    "privacy": "Explicit minimal DTOs; no native graphs, credentials, technical Seller/Channel token, finance, stock, CRM or other Market state.",
+    "migrationRequired": false,
+    "migrationReason": "All necessary facts and queue persistence already exist; existing scoped indexes and primary keys support these queries. No speculative index."
+  },
+  {
+    "blocker": "MARKET-B5",
+    "existingSourceFacts": "Occurrence service can load an ID, but Admin read only exposes bounded arrays.",
+    "proposedContract": "Current own-Market direct lookup with foreign/unknown uniform denial, including persisted historical/cancelled rows.",
+    "sourceOfTruth": "MarketOccurrence",
+    "frontendPaths": "Direct occurrence detail URL",
+    "authority": "Authenticated admin, exact selected native Channel, current own Market, fresh ReadOwnMarket grant and active marketAdmin human membership via TenantAccessPolicy. Requested IDs never authority.",
+    "paging": "take 1..100, skip 0..1000000; stable ID tie-breaker; search <=200 safe business name/slug only. Occurrence optional paired UTC interval <=366 days. Skip paging observes current committed data; concurrent insert/delete can change subsequent pages, requiring refresh.",
+    "privacy": "Explicit minimal DTOs; no native graphs, credentials, technical Seller/Channel token, finance, stock, CRM or other Market state.",
+    "migrationRequired": false,
+    "migrationReason": "All necessary facts and queue persistence already exist; existing scoped indexes and primary keys support these queries. No speculative index."
+  },
+  {
+    "blocker": "MARKET-B6",
+    "existingSourceFacts": "Worker queues durable jobs and reconstructs fresh User/Channel authority at execution. Installed inspectable strategy provides findOne after settlement.",
+    "proposedContract": "Project only this queue and own Market; map native states; fixed failure code, safe existing count result, no payload/stack.",
+    "sourceOfTruth": "Installed durable Vendure JobRecord; default settled retention count 1000 globally, scheduled cleanup every two hours",
+    "frontendPaths": "Bounded active-page status observation",
+    "authority": "Authenticated admin, exact selected native Channel, current own Market, fresh ReadOwnMarket grant and active marketAdmin human membership via TenantAccessPolicy. Requested IDs never authority.",
+    "paging": "take 1..100, skip 0..1000000; stable ID tie-breaker; search <=200 safe business name/slug only. Occurrence optional paired UTC interval <=366 days. Skip paging observes current committed data; concurrent insert/delete can change subsequent pages, requiring refresh.",
+    "privacy": "Explicit minimal DTOs; no native graphs, credentials, technical Seller/Channel token, finance, stock, CRM or other Market state.",
+    "migrationRequired": false,
+    "migrationReason": "All necessary facts and queue persistence already exist; existing scoped indexes and primary keys support these queries. No speculative index."
+  }
+]

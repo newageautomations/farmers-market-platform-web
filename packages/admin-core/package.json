@@ -1,0 +1,13 @@
+{
+  "name": "@market/admin-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@market/api": "0.1.0",
+    "@market/auth": "0.1.0"
+  }
+}

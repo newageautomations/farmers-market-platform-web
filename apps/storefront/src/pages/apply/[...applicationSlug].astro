@@ -1,0 +1,32 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { MarketApplication } from '../../components/MarketApplication';
+import { requestPublicMarketOperations } from '../../lib/shop';
+import { safeError, type PublicApplication } from '@market/api';
+import { ErrorState } from '@market/ui';
+let application: PublicApplication | null = null,
+  error = null;
+try {
+  application = await requestPublicMarketOperations(Astro).application(
+    Astro.params.applicationSlug,
+  );
+} catch (e) {
+  error = safeError(e);
+  Astro.response.status = error.kind === 'forbidden' ? 404 : 503;
+}
+---
+
+<SiteLayout
+  context={Astro.locals.storefront}
+  title={application?.name ?? 'Vendor application'}
+  noindex
+>
+  <div class="ops-public">
+    <h1>{application?.name ?? 'Vendor application'}</h1>
+    {application ? (
+      <MarketApplication application={application} client:load />
+    ) : (
+      <ErrorState error={error} />
+    )}
+  </div>
+</SiteLayout>

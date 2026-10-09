@@ -1,0 +1,238 @@
+---
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import { MarketPurchase } from '../../../components/MarketPurchase';
+import { requestMarketShop } from '../../../lib/shop';
+import {
+  AppError,
+  safeError,
+  type PublicMarketOccurrence,
+  type MarketCatalog,
+  type MarketBootstrap,
+} from '@market/api';
+import {
+  occurrenceLabel,
+  marketCatalogInputs,
+  safeAsset,
+  seo,
+} from '@market/storefront-core';
+import { formatMoney } from '@market/config';
+import { ErrorState } from '@market/ui';
+const { storefront, storefrontError } = Astro.locals;
+const occurrenceId = Astro.params.occurrenceId ?? '';
+const { page, options } = marketCatalogInputs(Astro.url.searchParams);
+let occurrence: PublicMarketOccurrence | null = null,
+  catalog: MarketCatalog | null = null,
+  error = storefrontError;
+let bootstrap: MarketBootstrap = { signedIn: false, cart: null };
+try {
+  if (
+    storefront?.kind !== 'MARKET' ||
+    storefront.source !== 'backend' ||
+    !/^[1-9][0-9]{0,9}$/.test(occurrenceId)
+  )
+    throw new AppError('not-found');
+  const api = requestMarketShop(Astro);
+  occurrence = await api.occurrence(occurrenceId);
+  if (!occurrence) throw new AppError('not-found');
+  catalog = await api.catalog(occurrenceId, options);
+  try {
+    bootstrap = await api.bootstrap();
+  } catch {
+    bootstrap = { signedIn: false, cart: null };
+  }
+} catch (e) {
+  error = safeError(e);
+}
+if (error)
+  Astro.response.status = ['not-found', 'forbidden'].includes(error.kind)
+    ? 404
+    : 503;
+const path = `/occurrences/${encodeURIComponent(occurrenceId)}`;
+const pageUrl = (next: number) => {
+  const query = new URLSearchParams(Astro.url.searchParams);
+  query.set('page', String(next));
+  return `${path}?${query}`;
+};
+const structured =
+  occurrence && storefront && !error
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Event',
+        name: storefront.name,
+        startDate: occurrence.startsAt,
+        endDate: occurrence.endsAt,
+        url: seo(storefront, path).canonical,
+        ...(occurrence.venue
+          ? { location: { '@type': 'Place', name: occurrence.venue } }
+          : {}),
+      }
+    : undefined;
+---
+
+<SiteLayout
+  context={storefront}
+  path={path}
+  title={occurrence ? occurrenceLabel(occurrence) : 'Occurrence unavailable'}
+  noindex={!!error}
+>
+  {structured && (
+    <script
+      slot="structured-data"
+      type="application/ld+json"
+      set:html={JSON.stringify(structured).replace(/</g, '\\u003c')}
+    />
+  )}
+  <section class="py-12" data-composition="market">
+    {error || !occurrence || !catalog ? (
+      <>
+        <h1>Occurrence unavailable</h1>
+        <p>This occurrence cannot currently be browsed here.</p>
+        <ErrorState error={error} />
+        <a href="/#occurrences">Choose an occurrence</a>
+      </>
+    ) : (
+      <>
+        <h1>{storefront?.name}</h1>
+        <p class="occurrence-summary">
+          {occurrenceLabel(occurrence)}
+          <br />
+          {occurrence.venue}
+        </p>
+        <a href="/#occurrences">Choose another occurrence</a>
+        <MarketPurchase
+          storefrontId={storefront?.storefrontId ?? ''}
+          occurrenceId={occurrence.id}
+          signedIn={bootstrap.signedIn}
+          initialCart={bootstrap.cart}
+          client:load
+        />
+        <h2>Browse this occurrence</h2>
+        <p class="market-catalog-note">
+          Catalog eligibility: {catalog.eligibility}. Offerings satisfy current
+          domain and time rules. Cart quantities are validated separately and
+          are not reserved.
+        </p>
+        <form method="get" class="card" aria-label="Catalog filters">
+          <div class="catalog-filters">
+            <div class="field">
+              <label for="market-sort">Sort offerings</label>
+              <select id="market-sort" name="sort">
+                <option value="NAME_ASC" selected={options.sort === 'NAME_ASC'}>
+                  Name A to Z
+                </option>
+                <option
+                  value="NAME_DESC"
+                  selected={options.sort === 'NAME_DESC'}
+                >
+                  Name Z to A
+                </option>
+                <option
+                  value="PRICE_ASC"
+                  selected={options.sort === 'PRICE_ASC'}
+                >
+                  Price low to high
+                </option>
+                <option
+                  value="PRICE_DESC"
+                  selected={options.sort === 'PRICE_DESC'}
+                >
+                  Price high to low
+                </option>
+              </select>
+            </div>
+          </div>
+          <fieldset>
+            <legend>Shop by Vendor</legend>
+            <div class="market-filter-options">
+              {catalog.vendors.map((vendor) => (
+                <label>
+                  <input
+                    type="checkbox"
+                    name="vendor"
+                    value={vendor.vendorId}
+                    checked={options.vendorIds?.includes(vendor.vendorId)}
+                  />
+                  {vendor.vendorName} ({vendor.count})
+                </label>
+              ))}
+              {!catalog.vendors.length && (
+                <p>No eligible Vendors match this occurrence.</p>
+              )}
+            </div>
+          </fieldset>
+          {!!catalog.facets.length && (
+            <fieldset>
+              <legend>Filter by public category</legend>
+              <div class="market-filter-options">
+                {catalog.facets.map((facet) => (
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="facet"
+                      value={facet.facetValueId}
+                      checked={options.facetValueIds?.includes(
+                        facet.facetValueId,
+                      )}
+                    />
+                    {facet.name} ({facet.count})
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+          <div class="actions">
+            <button class="button">Apply filters</button>
+            <a href={path}>Clear filters</a>
+          </div>
+        </form>
+        <p role="status">{catalog.totalItems} eligible offerings</p>
+        {!catalog.items.length ? (
+          <div class="empty-state">
+            <h2>No eligible offerings</h2>
+            <p>Try clearing filters or choosing another occurrence.</p>
+          </div>
+        ) : (
+          <div class="catalog-grid">
+            {catalog.items.map((item) => (
+              <article class="product-card card">
+                <a href={`${path}/products/${item.variantId}`}>
+                  {safeAsset(item.featuredAsset?.preview) ? (
+                    <img
+                      class="product-media"
+                      src={safeAsset(item.featuredAsset?.preview)}
+                      alt={item.productName}
+                      width={item.featuredAsset?.width || 640}
+                      height={item.featuredAsset?.height || 480}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div
+                      class="product-media product-placeholder"
+                      role="img"
+                      aria-label={`${item.productName}: image unavailable`}
+                    >
+                      Image unavailable
+                    </div>
+                  )}
+                  <h3>{item.productName}</h3>
+                  <p>{item.name}</p>
+                </a>
+                <p>{item.vendorName}</p>
+                <p class="product-price">
+                  {formatMoney(item.price, item.currencyCode)}
+                </p>
+              </article>
+            ))}
+          </div>
+        )}
+        <nav class="pagination" aria-label="Catalog pages">
+          {page > 1 && <a href={pageUrl(page - 1)}>Previous page</a>}
+          <span>Page {page}</span>
+          {page * 12 < catalog.totalItems && (
+            <a href={pageUrl(page + 1)}>Next page</a>
+          )}
+        </nav>
+      </>
+    )}
+  </section>
+</SiteLayout>

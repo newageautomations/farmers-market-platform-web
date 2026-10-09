@@ -1,0 +1,217 @@
+fragment CheckoutView on CustomerCheckoutView {
+  orderId
+  code
+  kind
+  occurrenceId
+  currency
+  total
+  subtotal
+  shipping
+  frozen
+  committed
+  paymentStatus
+  pickupPromise {
+    mode
+    venue
+    instructions
+    startsAt
+    endsAt
+  }
+  contact {
+    firstName
+    lastName
+    emailAddress
+    phoneNumber
+  }
+  profile {
+    firstName
+    lastName
+    emailAddress
+    phoneNumber
+  }
+  availability {
+    state
+    mode
+  }
+  attempt {
+    attemptId
+    state
+    expiresAt
+  }
+  taxes {
+    name
+    total
+  }
+  discounts {
+    name
+    total
+  }
+  groups {
+    vendorId
+    vendorName
+    lines {
+      id
+      name
+      quantity
+      total
+    }
+    pickup {
+      name
+      fee
+    }
+  }
+}
+query CheckoutStatus($orderId: ID) {
+  currentCheckoutStatus(orderId: $orderId) {
+    ...CheckoutView
+  }
+}
+mutation CheckoutContact($input: CheckoutContactInput!) {
+  setCheckoutContact(input: $input) {
+    firstName
+    lastName
+    emailAddress
+    phoneNumber
+  }
+}
+query CheckoutPickup {
+  availableOwnedPickup {
+    methodId
+    vendorId
+    name
+    price
+    currencyCode
+  }
+}
+mutation CheckoutSelectPickup($methodIds: [ID!]!) {
+  selectOwnedPickup(methodIds: $methodIds) {
+    orderId
+  }
+}
+mutation CheckoutBeginLocal {
+  beginLocalCheckout {
+    attemptId
+    orderId
+    state
+  }
+}
+mutation CheckoutFinalizeLocal($attemptId: ID!) {
+  finalizeLocalCheckout(attemptId: $attemptId) {
+    attemptId
+    orderId
+    state
+  }
+}
+mutation CheckoutReleaseLocal($attemptId: ID!) {
+  releaseLocalCheckout(attemptId: $attemptId) {
+    attemptId
+    orderId
+    state
+  }
+}
+mutation CheckoutBeginProvider {
+  beginProviderCheckout {
+    attemptId
+    orderId
+    state
+  }
+}
+mutation CheckoutFinalizeProvider($attemptId: ID!) {
+  finalizeProviderCheckout(attemptId: $attemptId) {
+    attemptId
+    orderId
+    state
+  }
+}
+mutation CheckoutReleaseProvider($attemptId: ID!) {
+  releaseProviderCheckout(attemptId: $attemptId) {
+    attemptId
+    orderId
+    state
+  }
+}
+mutation PurchaseAccountLink($orderId: ID!, $origin: String!) {
+  requestPurchaseAccountLink(orderId: $orderId, origin: $origin) {
+    state
+  }
+}
+mutation CustomerHandoff(
+  $code: String!
+  $origin: String!
+  $correlation: String!
+) {
+  exchangeCustomerHandoff(
+    code: $code
+    origin: $origin
+    correlation: $correlation
+  ) {
+    success
+  }
+}
+query AccountProfile {
+  customerAccountProfile {
+    firstName
+    lastName
+    emailAddress
+    phoneNumber
+  }
+}
+mutation CustomerSignOut {
+  customerSignOut {
+    success
+  }
+}
+fragment CustomerPurchase on CustomerPurchaseProjection {
+  id
+  orderId
+  kind
+  purchasedAt
+  occurrenceId
+  nativeState
+  storefront {
+    id
+    displayName
+  }
+  financial {
+    currency
+    originalPaid
+    refunded
+    remaining
+    financialStatus
+  }
+  portions {
+    vendorId
+    vendorName
+    pickupStatus
+    nativeState
+    marketName
+    occurrenceStartsAt
+    pickupPromise {
+      venue
+      instructions
+      startsAt
+      endsAt
+    }
+    lines {
+      customerLineId
+      variantName
+      quantity
+      fulfilledQuantity
+      cancelledQuantity
+      remainingQuantity
+    }
+  }
+}
+query AccountPurchases($options: PurchasePageOptions) {
+  myPurchases(options: $options) {
+    totalItems
+    items {
+      ...CustomerPurchase
+    }
+  }
+}
+query AccountPurchase($orderId: ID!) {
+  myPurchase(orderId: $orderId) {
+    ...CustomerPurchase
+  }
+}

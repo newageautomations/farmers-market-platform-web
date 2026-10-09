@@ -1,0 +1,145 @@
+.admin-shell button,
+.admin-shell .button {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+.admin-shell .button:hover:not(:disabled) {
+  background: #244a37;
+  color: #fff;
+  border-color: #244a37;
+  box-shadow: 0 3px 9px #17392520;
+  filter: none;
+}
+.admin-shell button.secondary:hover:not(:disabled),
+.admin-shell a.secondary:hover,
+.admin-shell .ops-workspace button:hover:not(:disabled),
+.admin-shell .ops-map button:hover:not(:disabled) {
+  background: #e5efe8;
+  color: #173925;
+  border-color: #315947;
+  box-shadow: 0 3px 9px #17392520;
+}
+.admin-content button + button,
+.admin-content .button + .button,
+.admin-content button + .button,
+.admin-content .button + button {
+  margin-inline-start: 0.75rem;
+}
+.admin-content
+  :is(.actions, .ops-toolbar, .question-footer, .option-row, [role='tablist'])
+  > :is(button, .button) {
+  margin-inline: 0;
+}
+.admin-content > .button,
+.admin-content .market-workspace > .button,
+.admin-content .vendor-workspace > .button {
+  margin-block: 0.5rem;
+}
+.admin-sidebar nav a,
+.admin-mobile-nav nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.005em;
+}
+.navigation-icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  opacity: 0.85;
+  pointer-events: none;
+}
+.decorative-chevron {
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  flex: none;
+  pointer-events: none;
+}
+.nav-group.expanded .nav-parent .decorative-chevron {
+  transform: rotate(180deg);
+}
+.admin-content select,
+.admin-topbar select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23315947' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+.admin-content .dashboard-card,
+.admin-content .command-section,
+.admin-content .record-details,
+.admin-content .ops-day-card,
+.admin-content .ops-invoice,
+.admin-content .ops-record-list li,
+.admin-content .filter-card {
+  background: #fff;
+  border: 1px solid #d5dfd8;
+  border-radius: 10px;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  margin-block: 1.25rem;
+  box-shadow: 0 2px 6px #17392505;
+  min-width: 0;
+}
+.admin-content .dashboard-card > :last-child {
+  margin-bottom: 0;
+}
+.admin-content .dashboard-card .dashboard-card,
+.admin-content .ops-record-list li {
+  margin-block: 0;
+}
+.admin-content .table-scroll {
+  background: #fff;
+  border: 1px solid #d5dfd8;
+  border-radius: 10px;
+  margin-block: 1.25rem;
+}
+.admin-content .table-scroll table {
+  margin: 0;
+}
+.admin-content .dashboard-card .table-scroll {
+  border-radius: 6px;
+}
+.admin-content .market-workspace > .filter-bar,
+.admin-content .vendor-workspace > .filter-bar,
+.admin-content .management-workspace > .filter-bar {
+  background: #fff;
+  border: 1px solid #d5dfd8;
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+.admin-content .ops-workspace > .ops-controls > .ops-field {
+  max-width: 560px;
+  background: #fff;
+  border: 1px solid #d5dfd8;
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.admin-content .ops-map {
+  background: #fff;
+  border: 1px solid #d5dfd8;
+  border-radius: 10px;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  margin-block: 1.5rem;
+}
+.admin-content dialog .ops-day-card {
+  box-shadow: none;
+  margin-block: 1rem;
+}
+.booth-modal-info {
+  color: var(--brand-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell button,
+  .admin-shell .button {
+    transition: none;
+  }
+}

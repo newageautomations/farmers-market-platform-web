@@ -1,0 +1,43 @@
+---
+import type { PublicCatalog } from '@market/api';
+import {
+  safeAsset,
+  plainDescription,
+  priceLabel,
+} from '@market/storefront-core';
+interface Props {
+  items: PublicCatalog['items'];
+}
+const { items } = Astro.props;
+---
+
+<div class="catalog-grid">
+  {items.map((product) => (
+    <article class="product-card card">
+      <a href={`/products/${encodeURIComponent(product.slug)}`}>
+        {safeAsset(product.featuredAsset?.preview) ? (
+          <img
+            class="product-media"
+            src={safeAsset(product.featuredAsset?.preview)}
+            alt=""
+            width="640"
+            height="480"
+            loading="lazy"
+          />
+        ) : (
+          <div class="product-media product-placeholder" aria-hidden="true">
+            No image
+          </div>
+        )}
+        <h2>{product.name}</h2>
+      </a>
+      <p>{priceLabel(product.variants)}</p>
+      <p>{plainDescription(product.description).slice(0, 160)}</p>
+      {!!product.facetValues.length && (
+        <p class="facet-tags">
+          {product.facetValues.map((f) => f.name).join(' · ')}
+        </p>
+      )}
+    </article>
+  ))}
+</div>

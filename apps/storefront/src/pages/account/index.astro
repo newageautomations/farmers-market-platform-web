@@ -1,0 +1,61 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { requestCheckout } from '../../lib/shop';
+import { formatMoney, temporaryUnavailableResponse } from '@market/config';
+import { safeError } from '@market/api';
+const api = requestCheckout(Astro, Astro.response.headers);
+let profile, purchases;
+try {
+  profile = await api.profile();
+  if (profile) purchases = await api.purchases(0, 3);
+} catch (error) {
+  const kind = safeError(error).kind;
+  if (kind !== 'authentication' && kind !== 'forbidden')
+    return temporaryUnavailableResponse();
+}
+if (!profile) return Astro.redirect('/account/sign-in');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+---
+
+<SiteLayout
+  context={Astro.locals.storefront}
+  path="/account"
+  title="Your account"
+  noindex
+>
+  <section class="py-12 account-panel">
+    <h1>Your account</h1>
+    <p>
+      {profile.firstName} {profile.lastName}
+    </p>
+    <p>{profile.emailAddress}</p>
+    {profile.phoneNumber && <p>{profile.phoneNumber}</p>}
+    <p>Your verified email identifies your shared platform account.</p>
+    <p>
+      <a href="/account/communications">Manage communication preferences</a>
+    </p>
+    <h2>Recent purchases</h2>
+    {purchases?.items.length ? (
+      <ul>
+        {purchases.items.map((p) => (
+          <li>
+            <a href={`/account/orders/${p.orderId}`}>
+              {p.storefront.displayName} ·{' '}
+              {new Date(p.purchasedAt).toLocaleDateString()}
+            </a>{' '}
+            · {formatMoney(p.financial.originalPaid, p.financial.currency)}
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p>No purchases are available yet.</p>
+    )}
+    <p>
+      <a href="/account/orders">View all orders</a>
+    </p>
+    <form method="post" action="/api/account">
+      <input type="hidden" name="action" value="logout" />
+      <button>Sign out</button>
+    </form>
+  </section>
+</SiteLayout>

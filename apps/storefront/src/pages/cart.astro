@@ -1,0 +1,62 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { VendorCart, MarketCart } from '../components/ResilientSurfaces';
+import { ShopSignIn } from '../components/ShopSignIn';
+import { requestShop, requestMarketShop } from '../lib/shop';
+import {
+  safeError,
+  type CartBootstrap,
+  type MarketBootstrap,
+} from '@market/api';
+import { ErrorState } from '@market/ui';
+const { storefront, storefrontError } = Astro.locals;
+let error = storefrontError,
+  bootstrap: CartBootstrap = { cart: null, signedIn: false };
+let marketBootstrap: MarketBootstrap = { cart: null, signedIn: false };
+try {
+  if (storefront?.kind === 'MARKET' && storefront.source === 'backend')
+    marketBootstrap = await requestMarketShop(Astro).bootstrap();
+  else if (storefront?.source === 'backend')
+    bootstrap = await requestShop(Astro).bootstrap();
+} catch (e) {
+  error = safeError(e);
+}
+if (error) Astro.response.status = error.kind === 'not-found' ? 404 : 503;
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+---
+
+<SiteLayout context={storefront} path="/cart" title="Your cart" noindex>
+  <section class="py-12">
+    <h1>Your cart</h1>
+    {error ? (
+      <ErrorState error={error} />
+    ) : storefront?.source === 'fixture' ? (
+      <p>Fixture preview. Cart editing requires a connected Shop session.</p>
+    ) : (
+      <>
+        {storefront?.kind === 'MARKET' ? (
+          <MarketCart
+            storefrontId={storefront.storefrontId ?? ''}
+            marketName={storefront.name}
+            initialCart={marketBootstrap.cart}
+            client:load
+          />
+        ) : (
+          <VendorCart
+            storefrontId={storefront?.storefrontId ?? ''}
+            initialCart={bootstrap.cart}
+            client:load
+          />
+        )}
+        {!(storefront?.kind === 'MARKET'
+          ? marketBootstrap.signedIn
+          : bootstrap.signedIn) && (
+          <ShopSignIn
+            storefrontId={storefront?.storefrontId ?? ''}
+            client:load
+          />
+        )}
+      </>
+    )}
+  </section>
+</SiteLayout>

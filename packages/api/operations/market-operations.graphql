@@ -1,0 +1,12 @@
+query OwnMarketOperations(
+  $section: MarketOperationsSection!
+  $occurrenceId: Int
+) {
+  ownMarketOperations(section: $section, occurrenceId: $occurrenceId)
+}
+mutation MarketOperationsCommand($input: MarketOperationsCommand!) {
+  marketOperationsCommand(input: $input)
+}
+query OwnVendorBoothAssignments {
+  ownVendorBoothAssignments
+}

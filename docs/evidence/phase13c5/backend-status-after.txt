@@ -1,0 +1,34 @@
+ M README.md
+ M package.json
+ M src/gql/graphql-env.d.ts
+ M src/index-worker.ts
+ M src/index.ts
+ M src/plugins/analytics/api.ts
+ M src/plugins/billing-entitlements/api.ts
+ M src/plugins/billing-entitlements/authority.service.ts
+ M src/plugins/billing-entitlements/billing-entitlements.plugin.ts
+ M src/plugins/communications/communications.plugin.ts
+ M src/plugins/farmers-market/api/admin-api.ts
+ M src/plugins/farmers-market/farmers-market.plugin.ts
+ M src/plugins/farmers-market/services/market-read.service.ts
+ M src/plugins/farmers-market/services/occurrence-generation-worker.service.ts
+ M src/plugins/marketplace-commerce/catalog-publishing.service.ts
+ M src/plugins/marketplace-commerce/commerce/topology.api.ts
+ M src/plugins/marketplace-commerce/marketplace-commerce.plugin.ts
+ M src/plugins/payments/payments.plugin.ts
+ M src/plugins/platform-identity/api.ts
+ M src/plugins/platform-identity/entitlement-port.ts
+ M src/plugins/platform-identity/tenant-access-policy.ts
+ M src/plugins/pos-integration/pos-integration.plugin.ts
+ M test/analytics/.runtime/results-full.json
+?? docs/frontend-api-gap-closure-phase13b5.md
+?? docs/frontend-api-gap-closure-phase13c5.md
+?? scripts/
+?? src/database-migrations.ts
+?? src/plugins/farmers-market/services/market-organizer-read.service.ts
+?? src/plugins/marketplace-commerce/owned-admin-reads.ts
+?? test/analytics/.runtime/phase13b5-regression.log
+?? test/analytics/.runtime/vendure_test_analytics_1791159987260_3b54cc-messages.jsonl
+?? test/analytics/.runtime/vendure_test_analytics_1791224257219_acf919-messages.jsonl
+?? test/database-startup/
+?? test/frontend-integration/

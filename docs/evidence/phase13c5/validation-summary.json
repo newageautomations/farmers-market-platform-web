@@ -1,0 +1,38 @@
+{
+  "phase": "13C.5",
+  "acceptance": {
+    "gates": 176,
+    "first": "A",
+    "last": "FT",
+    "PASS": 176,
+    "FAIL": 0,
+    "INCONCLUSIVE": 0
+  },
+  "frontend": {
+    "unitTests": 164,
+    "browserRegressions": 33,
+    "marketRealBrowsers": 12,
+    "vendorRealBrowsers": 9,
+    "axe": "PASS on tested loaded pages at 390/768/1280",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "adminBuild": "PASS",
+    "storefrontBuild": "PASS"
+  },
+  "backend": {
+    "marketContractGroups": 19,
+    "billingGroups": 19,
+    "recursivePermanentRegressions": "PASS",
+    "analyticsGroups": 17,
+    "build": "PASS",
+    "newMigrations": 0
+  },
+  "schemaReproducible": true,
+  "originalHistoryPreserved": true,
+  "fullStack": "REAL FULL-STACK PASS",
+  "protectedVendureUntouched": true,
+  "externalProviderCalls": 0,
+  "deploymentActions": 0,
+  "remoteGitActions": 0,
+  "phase13DStarted": false
+}

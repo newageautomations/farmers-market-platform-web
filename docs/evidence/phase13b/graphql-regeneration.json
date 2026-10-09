@@ -1,0 +1,47 @@
+{
+  "after": [
+    {
+      "path": "packages/api/schema/shop.graphql",
+      "sha256": "98C3DA6592D9110FF17A1C96DECEFC3434094C1F13A77F78B5A5E655BEEA9BF7"
+    },
+    {
+      "path": "packages/api/schema/admin.graphql",
+      "sha256": "CB56AB0526F040DB9FEC4C0E77349CB5DC7B410604E88052250384C8C0AD8781"
+    },
+    {
+      "path": "packages/api/schema/provenance.json",
+      "sha256": "61B1EC3D643F947C72EDE2B31D66AD2B2AB5E3751C26015BCF777FBDDB70C67F"
+    },
+    {
+      "path": "packages/api/src/generated/shop.ts",
+      "sha256": "ADB7B5D98F204C969E1884DC3D6D3011CA951AD4297A6BA83F332F8AD3C12749"
+    },
+    {
+      "path": "packages/api/src/generated/admin.ts",
+      "sha256": "CFC3C4995E20FFA18C5718905A152F30370ACDE5CF8B90429BC15F20DA669C90"
+    }
+  ],
+  "before": [
+    {
+      "path": "packages/api/schema/shop.graphql",
+      "sha256": "98C3DA6592D9110FF17A1C96DECEFC3434094C1F13A77F78B5A5E655BEEA9BF7"
+    },
+    {
+      "path": "packages/api/schema/admin.graphql",
+      "sha256": "CB56AB0526F040DB9FEC4C0E77349CB5DC7B410604E88052250384C8C0AD8781"
+    },
+    {
+      "path": "packages/api/schema/provenance.json",
+      "sha256": "61B1EC3D643F947C72EDE2B31D66AD2B2AB5E3751C26015BCF777FBDDB70C67F"
+    },
+    {
+      "path": "packages/api/src/generated/shop.ts",
+      "sha256": "ADB7B5D98F204C969E1884DC3D6D3011CA951AD4297A6BA83F332F8AD3C12749"
+    },
+    {
+      "path": "packages/api/src/generated/admin.ts",
+      "sha256": "CFC3C4995E20FFA18C5718905A152F30370ACDE5CF8B90429BC15F20DA669C90"
+    }
+  ],
+  "reproducible": true
+}

@@ -1,0 +1,12 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+Astro.response.status = 404;
+---
+
+<SiteLayout title="Page not found">
+  <section class="py-12">
+    <h1>Page not found</h1>
+    <p>This page is unavailable.</p>
+    <a href="/">Return to the storefront</a>
+  </section>
+</SiteLayout>

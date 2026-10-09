@@ -1,0 +1,29 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { isCentral } from '../../lib/account';
+if (!isCentral(Astro.url)) return new Response('Not found', { status: 404 });
+const token = Astro.url.searchParams.get('token') ?? '',
+  valid = /^[A-Za-z0-9_-]{43}$/.test(token);
+---
+
+<SiteLayout title="Access your account" noindex>
+  <section class="py-12 account-panel">
+    <h1>Access your account</h1>
+    {valid ? (
+      <form method="post" action="/api/account">
+        <p>Continue to verify your email and access your orders.</p>
+        <input type="hidden" name="action" value="claim" />
+        <input type="hidden" name="token" value={token} />
+        <button class="button">Access my orders</button>
+      </form>
+    ) : (
+      <p role="alert">
+        This link is invalid or expired. Request a new one from your Storefront.
+      </p>
+    )}
+  </section>
+</SiteLayout>
+<script>
+  // Keep the email capability out of the visible URL and subsequent same-origin referrers.
+  history.replaceState(null, '', '/auth/claim');
+</script>

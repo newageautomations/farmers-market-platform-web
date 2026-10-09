@@ -1,0 +1,34 @@
+---
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import { MarketMap, ErrorState } from '@market/ui';
+import { safeError, type PublicOccurrenceMap } from '@market/api';
+import { requestPublicMarketOperations } from '../../../lib/shop';
+let map: PublicOccurrenceMap | null = null,
+  error = null;
+try {
+  const id = Number(Astro.params.occurrenceId);
+  if (!Number.isSafeInteger(id) || id < 1) throw new Error();
+  map = await requestPublicMarketOperations(Astro).map(id);
+} catch (e) {
+  error = safeError(e);
+  Astro.response.status = 404;
+}
+---
+
+<SiteLayout context={Astro.locals.storefront} title="Market map" noindex={!map}>
+  <div class="ops-public">
+    <h1>Market map</h1>
+    {map ? (
+      <>
+        <p>{map.publicInstructions}</p>
+        <MarketMap
+          definition={map.definition}
+          spaces={map.spaces}
+          client:load
+        />
+      </>
+    ) : (
+      <ErrorState error={error} />
+    )}
+  </div>
+</SiteLayout>

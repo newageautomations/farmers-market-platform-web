@@ -1,0 +1,9 @@
+node_modules
+**/dist
+**/.astro
+packages/api/schema
+packages/api/src/generated
+package-lock.json
+docs/evidence
+test-results
+playwright-report

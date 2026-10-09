@@ -1,0 +1,9 @@
+query PublicMarketApplication($slug: String) {
+  publicMarketApplication(slug: $slug)
+}
+query PublicMarketOccurrenceMap($occurrenceId: Int!) {
+  publicMarketOccurrenceMap(occurrenceId: $occurrenceId)
+}
+mutation SubmitMarketApplication($input: MarketApplicationSubmissionInput!) {
+  submitMarketApplication(input: $input)
+}
