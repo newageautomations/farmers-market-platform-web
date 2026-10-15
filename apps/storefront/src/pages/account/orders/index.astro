@@ -1,65 +1,62 @@
 ---
-import SiteLayout from '../../../layouts/SiteLayout.astro';
-import { requestCheckout } from '../../../lib/shop';
-import { formatMoney, temporaryUnavailableResponse } from '@market/config';
-import { safeError } from '@market/api';
-const skipValue = Number(Astro.url.searchParams.get('skip') ?? 0),
-  skip =
-    Number.isSafeInteger(skipValue) && skipValue >= 0 && skipValue <= 10000
-      ? skipValue
-      : 0;
+import { buttonClassName } from '@market/ui/presentation';
+import CustomerLayout from '../../../layouts/CustomerLayout.astro';
+import CustomerOrders from '../../../components/CustomerOrders.astro';
+import {
+  customerApi,
+  customerSkip,
+  customerAuthenticationError,
+} from '../../../lib/customer-dashboard';
+import { temporaryUnavailableResponse } from '@market/config';
+const api = customerApi(Astro),
+  skip = customerSkip(Astro.url.searchParams.get('skip'));
 let purchases;
 try {
-  purchases = await requestCheckout(Astro, Astro.response.headers).purchases(
-    skip,
-    10,
-  );
+  if (!(await api.profile())) return Astro.redirect(api.login);
+  purchases = await api.purchases(skip);
 } catch (error) {
-  const kind = safeError(error).kind;
-  return kind === 'authentication' || kind === 'forbidden'
-    ? Astro.redirect('/account/sign-in')
+  return customerAuthenticationError(error)
+    ? Astro.redirect(api.login)
     : temporaryUnavailableResponse();
 }
-Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 ---
 
-<SiteLayout
-  context={Astro.locals.storefront}
-  path="/account/orders"
-  title="Your orders"
-  noindex
->
-  <section class="py-12">
-    <h1>Your orders</h1>
-    <p>Purchases from all your Storefronts appear here.</p>
-    {purchases.items.length ? (
-      <ul class="purchase-list">
-        {purchases.items.map((p) => (
-          <li>
-            <a href={`/account/orders/${p.orderId}`}>
-              {p.storefront.displayName} ·{' '}
-              {new Date(p.purchasedAt).toLocaleDateString()}
-            </a>
-            <p>
-              {p.kind === 'DIRECT_VENDOR'
-                ? 'Direct Vendor purchase'
-                : 'Market purchase'}{' '}
-              · {formatMoney(p.financial.originalPaid, p.financial.currency)}
-            </p>
-          </li>
-        ))}
-      </ul>
-    ) : (
-      <p>No purchases are available yet.</p>
-    )}
-    <nav aria-label="Orders pages">
-      {skip > 0 && <a href={`?skip=${Math.max(0, skip - 10)}`}>Previous</a>}
-      {skip + 10 < purchases.totalItems && (
-        <a href={`?skip=${skip + 10}`}>Next</a>
-      )}
-    </nav>
+<CustomerLayout title="Order History" path="/account/orders">
+  <p class="customer-muted">
+    Purchases across all your markets and vendors, with each checkout shown
+    once.
+  </p>
+  <CustomerOrders purchases={purchases.items} />
+  <nav
+    class="customer-pagination ui-pagination"
+    aria-label="Order history pages"
+  >
     <p>
-      <a href="/account">Your account</a>
+      {purchases.totalItems} orders. Showing{' '}
+      {purchases.items.length ? skip + 1 : 0} to{' '}
+      {purchases.items.length ? skip + purchases.items.length : 0}.
     </p>
-  </section>
-</SiteLayout>
+    {skip > 0 && (
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href={`?skip=${Math.max(0, skip - 10)}`}
+      >
+        Previous orders
+      </a>
+    )}
+    {skip + 10 < purchases.totalItems && (
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href={`?skip=${skip + 10}`}
+      >
+        Next orders
+      </a>
+    )}
+  </nav>
+</CustomerLayout>

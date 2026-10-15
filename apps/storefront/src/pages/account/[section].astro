@@ -1,0 +1,206 @@
+---
+import EmptyState from '../../components/ui/EmptyState.astro';
+import { buttonClassName, inputClassName } from '@market/ui/presentation';
+import Button from '../../components/ui/Button.astro';
+import CustomerLayout from '../../layouts/CustomerLayout.astro';
+import CustomerFollows from '../../components/CustomerFollows.astro';
+import CustomerEvents from '../../components/CustomerEvents.astro';
+import {
+  customerApi,
+  customerSkip,
+  customerAuthenticationError,
+} from '../../lib/customer-dashboard';
+import { temporaryUnavailableResponse } from '@market/config';
+const section = Astro.params.section;
+if (section !== 'markets' && section !== 'vendors')
+  return new Response('Page not found.', { status: 404 });
+const market = section === 'markets',
+  kind = market ? 'MARKET' : 'VENDOR',
+  path = `/account/${section}`;
+const skip = customerSkip(Astro.url.searchParams.get('skip')),
+  eventSkip = customerSkip(Astro.url.searchParams.get('eventSkip'));
+const search = (Astro.url.searchParams.get('search') ?? '').slice(0, 100),
+  browseSkip = customerSkip(Astro.url.searchParams.get('browseSkip'));
+const api = customerApi(Astro);
+let dashboard, subjects;
+try {
+  if (!(await api.profile())) return Astro.redirect(api.login);
+  [dashboard, subjects] = await Promise.all([
+    api.read(section, skip, eventSkip),
+    api.subjects(kind, search, browseSkip),
+  ]);
+} catch (error) {
+  return customerAuthenticationError(error)
+    ? Astro.redirect(api.login)
+    : temporaryUnavailableResponse();
+}
+const pageUrl = (key: string, value: number) => {
+  const p = new URLSearchParams(Astro.url.search);
+  p.delete('followSaved');
+  p.delete('followError');
+  p.set(key, String(value));
+  return '?' + p.toString();
+};
+const items = market ? dashboard.markets : dashboard.vendors;
+---
+
+<CustomerLayout
+  title={market ? 'Followed Markets' : 'Favorite Vendors'}
+  path={path}
+>
+  <p class="customer-muted">
+    {market
+      ? 'Keep up with the markets you love and their next scheduled dates.'
+      : 'Keep up with your favorite vendors and where they are confirmed to sell next.'}
+  </p>
+  {items.length ? (
+    <CustomerFollows
+      items={items}
+      kind={kind}
+      returnTo={path + Astro.url.search}
+    />
+  ) : (
+    <div class="empty-state">
+      <h2 class="ui-section-title-consumer">
+        {market ? 'No followed markets' : 'No favorite vendors'}
+      </h2>
+      <p>
+        {market
+          ? 'Follow your favorite markets to see their upcoming events here.'
+          : "Follow vendors to keep up with where they'll be selling next."}
+      </p>
+    </div>
+  )}
+  <nav class="customer-pagination ui-pagination" aria-label="Follow pages">
+    <p>
+      {market ? dashboard.marketCount : dashboard.vendorCount} follows. Showing{' '}
+      {items.length ? skip + 1 : 0} to {items.length ? skip + items.length : 0}.
+    </p>
+    {skip > 0 && (
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href={pageUrl('skip', Math.max(0, skip - 12))}
+      >
+        Previous follows
+      </a>
+    )}
+    {dashboard.hasMore && (
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href={pageUrl('skip', skip + 12)}
+      >
+        Next follows
+      </a>
+    )}
+  </nav>
+  <section class="customer-section">
+    <h2 class="ui-section-title-consumer">
+      {market ? 'Upcoming market events' : 'Upcoming vendor appearances'}
+    </h2>
+    <CustomerEvents
+      level={3}
+      events={dashboard.events}
+      empty={
+        market
+          ? 'Your followed markets have no upcoming public dates. New scheduled dates will appear here.'
+          : 'No confirmed upcoming appearances yet. Vendors will appear when their attendance is confirmed.'
+      }
+    />
+    <nav class="customer-pagination ui-pagination" aria-label="Event pages">
+      <p>{dashboard.events.length} events on this page.</p>
+      {eventSkip > 0 && (
+        <a
+          class={buttonClassName({
+            variant: 'secondary',
+            className: 'button secondary',
+          })}
+          href={pageUrl('eventSkip', Math.max(0, eventSkip - 12))}
+        >
+          Previous events
+        </a>
+      )}
+      {dashboard.hasMoreEvents && (
+        <a
+          class={buttonClassName({
+            variant: 'secondary',
+            className: 'button secondary',
+          })}
+          href={pageUrl('eventSkip', eventSkip + 12)}
+        >
+          Next events
+        </a>
+      )}
+    </nav>
+  </section>
+  <section class="customer-section">
+    <h2 class="ui-section-title-consumer">
+      {market ? 'Find markets to follow' : 'Find vendors to follow'}
+    </h2>
+    <form
+      method="get"
+      class="customer-search ui-control-row ui-control-row-lookup"
+    >
+      <div class="field">
+        <label for="customer-discovery-search">
+          {market ? 'Search markets' : 'Search vendors'}
+        </label>
+        <input
+          id="customer-discovery-search"
+          class={inputClassName('search')}
+          type="search"
+          name="search"
+          value={search}
+          maxlength="100"
+        />
+      </div>
+      <div class="ui-field-action">
+        <Button type="submit" variant="primary">
+          Search
+        </Button>
+      </div>
+    </form>
+    {subjects.items.length ? (
+      <CustomerFollows
+        level={3}
+        items={subjects.items}
+        kind={kind}
+        returnTo={path + Astro.url.search}
+      />
+    ) : (
+      <EmptyState title="No matching storefronts" level={3}>
+        <p>No public storefronts match your search.</p>
+      </EmptyState>
+    )}
+    <nav class="customer-pagination ui-pagination" aria-label="Discover pages">
+      <p>{subjects.items.length} results on this page.</p>
+      {browseSkip > 0 && (
+        <a
+          class={buttonClassName({
+            variant: 'secondary',
+            className: 'button secondary',
+          })}
+          href={pageUrl('browseSkip', Math.max(0, browseSkip - 12))}
+        >
+          Previous results
+        </a>
+      )}
+      {subjects.hasMore && (
+        <a
+          class={buttonClassName({
+            variant: 'secondary',
+            className: 'button secondary',
+          })}
+          href={pageUrl('browseSkip', browseSkip + 12)}
+        >
+          Next results
+        </a>
+      )}
+    </nav>
+  </section>
+</CustomerLayout>

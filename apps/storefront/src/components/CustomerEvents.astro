@@ -1,0 +1,58 @@
+---
+import EmptyState from './ui/EmptyState.astro';
+import { cardClassName, statusBadgeClassName } from '@market/ui/presentation';
+import type { CustomerEvent } from '@market/api';
+import { eventDate, eventTime } from '../lib/customer-dashboard';
+const {
+  events,
+  level = 2,
+  empty = 'No upcoming scheduled events are available. Check back as markets publish new dates.',
+} = Astro.props as { events: CustomerEvent[]; empty?: string; level?: 2 | 3 };
+const Heading = level === 2 ? 'h2' : 'h3';
+---
+
+{events.length ? (
+  <div class="customer-grid">
+    {events.map((event) => (
+      <article
+        class={cardClassName({ className: 'card', spacing: 'contained' })}
+        data-event-id={event.id}
+      >
+        <Heading class="ui-section-title-consumer">
+          {event.url ? (
+            <a href={event.url}>{event.marketName}</a>
+          ) : (
+            event.marketName
+          )}
+        </Heading>
+        <p>
+          <time datetime={event.startsAt}>
+            {eventDate(event.startsAt, event.timezone)}
+          </time>
+          <br />
+          {eventTime(event.startsAt, event.endsAt, event.timezone)}
+        </p>
+        <p>{event.venue}</p>
+        {event.followedMarket && (
+          <p class="customer-muted">A market you follow</p>
+        )}
+        {event.vendors.length > 0 && (
+          <p>
+            Favorite vendors attending:{' '}
+            {event.vendors.map((v, i) => (
+              <>
+                {i > 0 ? ', ' : ''}
+                {v.url ? <a href={v.url}>{v.name}</a> : v.name}
+              </>
+            ))}
+          </p>
+        )}
+        <span class={statusBadgeClassName('info')}>Scheduled</span>
+      </article>
+    ))}
+  </div>
+) : (
+  <EmptyState title="No upcoming events" level={3}>
+    <p>{empty}</p>
+  </EmptyState>
+)}

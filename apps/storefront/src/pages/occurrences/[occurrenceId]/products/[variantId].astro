@@ -1,4 +1,5 @@
 ---
+import { buttonClassName } from '@market/ui/presentation';
 import SiteLayout from '../../../../layouts/SiteLayout.astro';
 import { MarketPurchase } from '../../../../components/MarketPurchase';
 import { requestMarketShop } from '../../../../lib/shop';
@@ -31,7 +32,7 @@ try {
     ![occurrenceId, variantId].every((id) => /^[1-9][0-9]{0,9}$/.test(id))
   )
     throw new AppError('not-found');
-  const api = requestMarketShop(Astro);
+  const api = requestMarketShop(Astro, Astro.response.headers);
   occurrence = await api.occurrence(occurrenceId);
   if (!occurrence) throw new AppError('not-found');
   item = await api.item(occurrenceId, variantId);
@@ -89,7 +90,12 @@ const structured =
           browsed here.
         </p>
         <ErrorState error={error} />
-        <a href="/#occurrences">Choose an occurrence</a>
+        <a
+          class={buttonClassName({ variant: 'secondary' })}
+          href="/#occurrences"
+        >
+          Choose an occurrence
+        </a>
       </>
     ) : (
       <div class="product-detail">
@@ -135,7 +141,12 @@ const structured =
             initialCart={bootstrap.cart}
             client:load
           />
-          <a href={`/occurrences/${occurrence.id}`}>Browse this occurrence</a>
+          <a
+            class={buttonClassName({ variant: 'secondary' })}
+            href={`/occurrences/${occurrence.id}`}
+          >
+            Browse this occurrence
+          </a>
         </div>
       </div>
     )}

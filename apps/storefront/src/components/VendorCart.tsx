@@ -1,3 +1,5 @@
+import { buttonClassName } from '@market/ui/presentation';
+import { Card, Button, Input } from '@market/ui';
 import { useRef, useState } from 'react';
 import { cartMessage, type PublicCart, type CartBootstrap } from '@market/api';
 import { formatMoney } from '@market/config';
@@ -48,30 +50,51 @@ export function VendorCart({
   }
   return (
     <div aria-busy={pending}>
-      <p role="status" aria-live="polite">
+      <p
+        className={
+          pending || message ? 'alert ui-alert ui-alert-info' : undefined
+        }
+        role="status"
+        aria-live="polite"
+      >
         {pending ? 'Updating your cart…' : message}
       </p>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p className="alert ui-alert ui-alert-error" role="alert">
+          {error}
+        </p>
+      )}
       {!cart?.lines.length ? (
         <div className="empty-state">
-          <h2>Your cart is empty</h2>
+          <h2 className="ui-section-title-consumer">Your cart is empty</h2>
           <p>Browse this Vendor’s products to get started.</p>
-          <a className="button" href="/products">
+          <a
+            className={buttonClassName({
+              variant: 'primary',
+              className: 'button',
+            })}
+            href="/products"
+          >
             Browse products
           </a>
         </div>
       ) : (
         <>
           {cart.state !== 'AddingItems' && (
-            <p role="status">
+            <p className="alert ui-alert ui-alert-info" role="status">
               This cart cannot be edited in its current state.
             </p>
           )}
           <ul className="cart-lines">
             {cart.lines.map((line) => (
-              <li key={line.id} className="cart-line card">
+              <Card
+                as="li"
+                spacing="contained"
+                key={line.id}
+                className="cart-line"
+              >
                 <div>
-                  <h2>
+                  <h2 className="ui-section-title-consumer">
                     <a
                       href={`/products/${encodeURIComponent(line.productVariant.product.slug)}`}
                     >
@@ -103,7 +126,7 @@ export function VendorCart({
                     <label htmlFor={`quantity-${line.id}`}>
                       Quantity for {line.productVariant.name}
                     </label>
-                    <input
+                    <Input
                       key={`${line.id}-${line.quantity}`}
                       id={`quantity-${line.id}`}
                       name="quantity"
@@ -118,28 +141,29 @@ export function VendorCart({
                     />
                   </div>
                   <div className="actions">
-                    <button
-                      className="button"
+                    <Button
+                      type="submit"
+                      variant="primary"
                       disabled={pending || cart.state !== 'AddingItems'}
                     >
                       Update quantity
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="destructive"
                       type="button"
-                      className="button secondary"
                       aria-label={`Remove ${line.productVariant.name}`}
                       disabled={pending || cart.state !== 'AddingItems'}
                       onClick={() => void change('remove', line.id)}
                     >
                       Remove
-                    </button>
+                    </Button>
                   </div>
                 </form>
-              </li>
+              </Card>
             ))}
           </ul>
-          <div className="cart-totals card">
-            <h2>Cart summary</h2>
+          <Card as="div" className="cart-totals">
+            <h2 className="ui-section-title-consumer">Cart summary</h2>
             <dl>
               <div>
                 <dt>Subtotal including tax</dt>
@@ -174,11 +198,25 @@ export function VendorCart({
                 </dd>
               </div>
             </dl>
-            <a className="button" href="/checkout">
+            <a
+              className={buttonClassName({
+                variant: 'primary',
+                className: 'button',
+              })}
+              href="/checkout"
+            >
               Continue to checkout
             </a>
-            <a href="/products">Continue browsing</a>
-          </div>
+            <a
+              className={buttonClassName({
+                variant: 'secondary',
+                className: 'button secondary',
+              })}
+              href="/products"
+            >
+              Continue browsing
+            </a>
+          </Card>
         </>
       )}
     </div>

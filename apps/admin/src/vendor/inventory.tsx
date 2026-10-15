@@ -1,3 +1,4 @@
+import { EmptyState } from '@market/ui';
 import { useCallback, useState } from 'react';
 import { mayCommand } from '@market/admin-core';
 import { Button, Dialog, Pagination } from '@market/ui';
@@ -87,8 +88,14 @@ export function Inventory({ service }: { service: VendorService }) {
               </tr>
             ))}
           </DataTable>
-          {!query.data.items.length && <p>No owned inventory records.</p>}
+          {!query.data.items.length && (
+            <EmptyState title="No inventory records">
+              <p>No owned inventory records.</p>
+            </EmptyState>
+          )}
           <Pagination
+            label="Inventory pages"
+            summary={<>{query.data.items.length} records on this page.</>}
             hasPrevious={previous.length > 0}
             hasNext={!!query.data.nextCursor}
             onPrevious={() => {
@@ -105,6 +112,7 @@ export function Inventory({ service }: { service: VendorService }) {
       <Dialog
         open={selected !== null}
         busy={pending}
+        showClose={false}
         onClose={() => setSelected(null)}
         title={
           mode === 'restock'
@@ -112,52 +120,64 @@ export function Inventory({ service }: { service: VendorService }) {
             : 'Adjust physical inventory'
         }
       >
-        {selected && (
-          <CommandForm
-            key={`${selected.variantId}:${mode}`}
-            title={mode === 'restock' ? 'Restock' : 'Stock adjustment'}
-            onPendingChange={setPending}
-            submitLabel={mode === 'restock' ? 'Restock' : 'Review adjustment'}
-            confirm={
-              mode === 'adjust'
-                ? 'Apply this signed stock adjustment? Allocations and checkout holds remain backend controlled.'
-                : undefined
-            }
-            validate={(data) => {
-              integer(data.get('quantity'), { signed: mode === 'adjust' });
-            }}
-            run={(data, operationKey) =>
-              service[mode]({
-                operationKey,
-                variantId: selected.variantId,
-                quantity: integer(data.get('quantity'), {
-                  signed: mode === 'adjust',
-                }),
-              })
-            }
-            onDone={() => {
-              setSelected(null);
-              query.refresh();
-            }}
-          >
-            <p>
-              {selected.productName} · {selected.variantName} · {selected.sku}
-            </p>
-            <TextField
-              name="quantity"
-              label={
-                mode === 'restock'
-                  ? 'Restock quantity'
-                  : 'Signed adjustment quantity'
+        {(dismiss) =>
+          selected && (
+            <CommandForm
+              embedded
+              key={`${selected.variantId}:${mode}`}
+              title={mode === 'restock' ? 'Restock' : 'Stock adjustment'}
+              onPendingChange={setPending}
+              secondaryAction={
+                <Button
+                  variant="secondary"
+                  disabled={pending}
+                  onClick={dismiss}
+                >
+                  Close
+                </Button>
               }
-            />
-            <p>
-              {mode === 'restock'
-                ? 'Enter a positive whole number.'
-                : 'Enter a nonzero whole number. Use a minus sign for a reduction.'}
-            </p>
-          </CommandForm>
-        )}
+              submitLabel={mode === 'restock' ? 'Restock' : 'Review adjustment'}
+              confirm={
+                mode === 'adjust'
+                  ? 'Apply this signed stock adjustment? Allocations and checkout holds remain backend controlled.'
+                  : undefined
+              }
+              validate={(data) => {
+                integer(data.get('quantity'), { signed: mode === 'adjust' });
+              }}
+              run={(data, operationKey) =>
+                service[mode]({
+                  operationKey,
+                  variantId: selected.variantId,
+                  quantity: integer(data.get('quantity'), {
+                    signed: mode === 'adjust',
+                  }),
+                })
+              }
+              onDone={() => {
+                setSelected(null);
+                query.refresh();
+              }}
+            >
+              <p>
+                {selected.productName} · {selected.variantName} · {selected.sku}
+              </p>
+              <TextField
+                name="quantity"
+                label={
+                  mode === 'restock'
+                    ? 'Restock quantity'
+                    : 'Signed adjustment quantity'
+                }
+              />
+              <p>
+                {mode === 'restock'
+                  ? 'Enter a positive whole number.'
+                  : 'Enter a nonzero whole number. Use a minus sign for a reduction.'}
+              </p>
+            </CommandForm>
+          )
+        }
       </Dialog>
     </>
   );

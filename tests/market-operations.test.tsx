@@ -82,9 +82,11 @@ test('public map has a semantic searchable Vendor alternative and selection', as
   );
   await user.type(screen.getByLabelText('Search Vendor or booth'), 'orchard');
   const booth = screen
-    .getByText('A12', { selector: 'summary span' })
+    .getByText('A12 - Local Orchard', { selector: 'summary span' })
     .closest('details')!;
-  await user.click(screen.getByText('A12', { selector: 'summary span' }));
+  await user.click(
+    screen.getByText('A12 - Local Orchard', { selector: 'summary span' }),
+  );
   expect(booth).toHaveAttribute('open');
   expect(screen.getByText('Apples')).toBeInTheDocument();
 });
@@ -147,11 +149,9 @@ test('published application offers a new version and preserves typed inspector',
       canManage
     />,
   );
-  await user.click(
-    screen.getByRole('button', { name: 'Version 1 · published' }),
-  );
+  await user.click(screen.getByRole('button', { name: 'Open Published' }));
   expect(
-    screen.getByRole('button', { name: 'Create new draft version' }),
+    screen.getByRole('button', { name: 'Create new draft' }),
   ).toBeInTheDocument();
   expect(
     screen.queryByRole('button', { name: 'Save draft' }),

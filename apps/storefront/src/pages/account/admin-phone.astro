@@ -1,0 +1,98 @@
+---
+import { inputClassName, buttonClassName } from '@market/ui/presentation';
+import Button from '../../components/ui/Button.astro';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { PhoneInput } from '@market/ui';
+import { isCentral } from '../../lib/account';
+if (!isCentral(Astro.url)) return Astro.redirect('/account/login');
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+
+<SiteLayout title="Administrator phone verification" noindex>
+  <section class="account-panel">
+    <h1>Verify an existing administrator phone</h1>
+    <p>
+      Use your existing native administrator credentials, including a username
+      that is not an email address. Verification preserves your User and
+      existing permissions.
+    </p>
+    {Astro.url.searchParams.has('verified') && (
+      <p class="alert ui-alert ui-alert-info" role="status">
+        Your personal phone is verified. Sign into your existing administrator
+        workspace.
+      </p>
+    )}
+    {Astro.url.searchParams.has('error') && (
+      <p class="alert ui-alert ui-alert-error" role="alert">
+        The code is invalid or expired. Check it and try again.
+      </p>
+    )}
+    {Astro.url.searchParams.has('sent') && (
+      <form method="post" action="/api/account">
+        <input type="hidden" name="action" value="verifyAdministratorPhone" />
+        <label class="field">
+          SMS verification code{' '}
+          <input
+            class={inputClassName('text')}
+            name="code"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            pattern="[0-9]{6}"
+            minlength="6"
+            maxlength="6"
+            required
+          />
+        </label>
+        <Button type="submit" variant="primary">
+          Verify administrator phone
+        </Button>
+      </form>
+    )}
+    <form method="post" action="/api/account">
+      <input type="hidden" name="action" value="requestAdministratorPhone" />
+      <label class="field">
+        Administrator identifier{' '}
+        <input
+          class={inputClassName('text')}
+          name="identifier"
+          autocomplete="username"
+          maxlength="254"
+          required
+        />
+      </label>
+      <label class="field">
+        Current password{' '}
+        <input
+          class={inputClassName('password')}
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          maxlength="1024"
+          required
+        />
+      </label>
+      <PhoneInput
+        name="phone"
+        label="Personal phone number"
+        required
+        client:load
+      />
+      <Button type="submit" variant="primary">
+        Send SMS verification code
+      </Button>
+    </form>
+    {process.env.ADMIN_ORIGIN && (
+      <p>
+        <a
+          class={buttonClassName({
+            variant: 'secondary',
+            className: 'button secondary',
+          })}
+          href={process.env.ADMIN_ORIGIN}
+        >
+          Open administrator sign in
+        </a>
+      </p>
+    )}
+  </section>
+</SiteLayout>

@@ -1,0 +1,491 @@
+{
+  "status": "PASS",
+  "database": "vendure_demo_market_ops",
+  "vendor": "Manna Roots",
+  "customerEmail": "demo.customer@example.test",
+  "orderCount": 24,
+  "createdOrders": 24,
+  "payment": "Simulated local settled payment; no external provider",
+  "orders": [
+    {
+      "id": "9",
+      "code": "DEMO-MANNA-ROOTS-1",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 9,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-5",
+          "name": "Pineapple Mint Juice (12 fl oz bottle)",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "code": "DEMO-MANNA-ROOTS-2",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 26,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-8",
+          "name": "Celery Apple Juice (12 fl oz bottle)",
+          "quantity": 2
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-9",
+          "name": "Pear Ginger Juice (12 fl oz bottle)",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "code": "DEMO-MANNA-ROOTS-3",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 36,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-11",
+          "name": "Cucumber Melon Juice (12 fl oz bottle)",
+          "quantity": 1
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-12",
+          "name": "Tropical Mango Juice (12 fl oz bottle)",
+          "quantity": 2
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-13",
+          "name": "Beet Carrot Citrus Juice (12 fl oz bottle)",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "code": "DEMO-MANNA-ROOTS-4",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 9,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-14",
+          "name": "Turmeric Ginger Shot (2 fl oz bottle)",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "code": "DEMO-MANNA-ROOTS-5",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 26.5,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-7",
+          "name": "Golden Turmeric Juice (12 fl oz bottle)",
+          "quantity": 1
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-8",
+          "name": "Celery Apple Juice (12 fl oz bottle)",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "14",
+      "code": "DEMO-MANNA-ROOTS-6",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 44,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-10",
+          "name": "Strawberry Lemon Juice (12 fl oz bottle)",
+          "quantity": 2
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-11",
+          "name": "Cucumber Melon Juice (12 fl oz bottle)",
+          "quantity": 1
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-12",
+          "name": "Tropical Mango Juice (12 fl oz bottle)",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "15",
+      "code": "DEMO-MANNA-ROOTS-7",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 9,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-13",
+          "name": "Beet Carrot Citrus Juice (12 fl oz bottle)",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "16",
+      "code": "DEMO-MANNA-ROOTS-8",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 25.5,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-6",
+          "name": "Watermelon Lime Juice (12 fl oz bottle)",
+          "quantity": 2
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-7",
+          "name": "Golden Turmeric Juice (12 fl oz bottle)",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "17",
+      "code": "DEMO-MANNA-ROOTS-9",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 34,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-9",
+          "name": "Pear Ginger Juice (12 fl oz bottle)",
+          "quantity": 1
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-10",
+          "name": "Strawberry Lemon Juice (12 fl oz bottle)",
+          "quantity": 2
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-11",
+          "name": "Cucumber Melon Juice (12 fl oz bottle)",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "18",
+      "code": "DEMO-MANNA-ROOTS-10",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 19,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-12",
+          "name": "Tropical Mango Juice (12 fl oz bottle)",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "19",
+      "code": "DEMO-MANNA-ROOTS-11",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 25,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-5",
+          "name": "Pineapple Mint Juice (12 fl oz bottle)",
+          "quantity": 1
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-6",
+          "name": "Watermelon Lime Juice (12 fl oz bottle)",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "20",
+      "code": "DEMO-MANNA-ROOTS-12",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 43,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-8",
+          "name": "Celery Apple Juice (12 fl oz bottle)",
+          "quantity": 2
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-9",
+          "name": "Pear Ginger Juice (12 fl oz bottle)",
+          "quantity": 1
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-10",
+          "name": "Strawberry Lemon Juice (12 fl oz bottle)",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "21",
+      "code": "DEMO-MANNA-ROOTS-13",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 8,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-11",
+          "name": "Cucumber Melon Juice (12 fl oz bottle)",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "22",
+      "code": "DEMO-MANNA-ROOTS-14",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 18,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-14",
+          "name": "Turmeric Ginger Shot (2 fl oz bottle)",
+          "quantity": 2
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-5",
+          "name": "Pineapple Mint Juice (12 fl oz bottle)",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "23",
+      "code": "DEMO-MANNA-ROOTS-15",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 35.5,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-7",
+          "name": "Golden Turmeric Juice (12 fl oz bottle)",
+          "quantity": 1
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-8",
+          "name": "Celery Apple Juice (12 fl oz bottle)",
+          "quantity": 2
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-9",
+          "name": "Pear Ginger Juice (12 fl oz bottle)",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "24",
+      "code": "DEMO-MANNA-ROOTS-16",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 17,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-10",
+          "name": "Strawberry Lemon Juice (12 fl oz bottle)",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "25",
+      "code": "DEMO-MANNA-ROOTS-17",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 18,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-13",
+          "name": "Beet Carrot Citrus Juice (12 fl oz bottle)",
+          "quantity": 1
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-14",
+          "name": "Turmeric Ginger Shot (2 fl oz bottle)",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "26",
+      "code": "DEMO-MANNA-ROOTS-18",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 42.5,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-6",
+          "name": "Watermelon Lime Juice (12 fl oz bottle)",
+          "quantity": 2
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-7",
+          "name": "Golden Turmeric Juice (12 fl oz bottle)",
+          "quantity": 1
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-8",
+          "name": "Celery Apple Juice (12 fl oz bottle)",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "27",
+      "code": "DEMO-MANNA-ROOTS-19",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 9,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-9",
+          "name": "Pear Ginger Juice (12 fl oz bottle)",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "28",
+      "code": "DEMO-MANNA-ROOTS-20",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 28,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-12",
+          "name": "Tropical Mango Juice (12 fl oz bottle)",
+          "quantity": 2
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-13",
+          "name": "Beet Carrot Citrus Juice (12 fl oz bottle)",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "29",
+      "code": "DEMO-MANNA-ROOTS-21",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 34.5,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-5",
+          "name": "Pineapple Mint Juice (12 fl oz bottle)",
+          "quantity": 1
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-6",
+          "name": "Watermelon Lime Juice (12 fl oz bottle)",
+          "quantity": 2
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-7",
+          "name": "Golden Turmeric Juice (12 fl oz bottle)",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "30",
+      "code": "DEMO-MANNA-ROOTS-22",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 17,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-8",
+          "name": "Celery Apple Juice (12 fl oz bottle)",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "31",
+      "code": "DEMO-MANNA-ROOTS-23",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 27,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-11",
+          "name": "Cucumber Melon Juice (12 fl oz bottle)",
+          "quantity": 1
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-12",
+          "name": "Tropical Mango Juice (12 fl oz bottle)",
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "id": "32",
+      "code": "DEMO-MANNA-ROOTS-24",
+      "state": "PaymentSettled",
+      "pickupStatus": "PENDING",
+      "total": 34,
+      "currency": "USD",
+      "lines": [
+        {
+          "sku": "TEST-MANNA-ROOTS-14",
+          "name": "Turmeric Ginger Shot (2 fl oz bottle)",
+          "quantity": 2
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-5",
+          "name": "Pineapple Mint Juice (12 fl oz bottle)",
+          "quantity": 1
+        },
+        {
+          "sku": "TEST-MANNA-ROOTS-6",
+          "name": "Watermelon Lime Juice (12 fl oz bottle)",
+          "quantity": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "status": "PASS",
+  "database": "vendure_demo_market_ops",
+  "market": "Bulverde Market Day Demo",
+  "vendors": [
+    {
+      "id": 7,
+      "name": "Manna Roots",
+      "slug": "manna-roots",
+      "channelId": 9,
+      "email": "manna-roots@example.test",
+      "directoryId": 3,
+      "contact": {
+        "email": "manna-roots@example.test",
+        "phone": "210-555-0100",
+        "address": "100 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:manna-roots",
+        "website": "http://manna-roots.localhost:4321",
+        "branding": {
+          "primary": { "hex": "#008080", "name": "Teal" },
+          "secondary": { "hex": "#FFFFFF", "name": "White" }
+        },
+        "category": "Coffee & Drinks, Wellness",
+        "lastName": "Brooks",
+        "firstName": "Elena",
+        "categories": ["drinks", "wellness"],
+        "description": "Small-batch fruit and vegetable juices made with bright, seasonal ingredients.",
+        "businessName": "Manna Roots"
+      },
+      "hostname": "manna-roots.localhost",
+      "products": 14,
+      "variants": 14
+    }
+  ],
+  "productCount": 14,
+  "variantCount": 14,
+  "categories": [
+    {
+      "code": "drinks",
+      "name": "Coffee & Drinks",
+      "vendors": 1,
+      "products": 14
+    },
+    { "code": "wellness", "name": "Wellness", "vendors": 1, "products": 14 }
+  ],
+  "offerings": [
+    { "occurrenceId": 2, "offerings": 14, "vendors": 1 },
+    { "occurrenceId": 3, "offerings": 14, "vendors": 1 },
+    { "occurrenceId": 4, "offerings": 14, "vendors": 1 }
+  ],
+  "createdVendors": 0,
+  "accessChecks": [
+    {
+      "vendor": "Manna Roots",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    }
+  ],
+  "loginPassword": "local-identity-regression-only-password",
+  "note": "Brand colors are stored in directory contact.branding and manager notes. The existing storefront theme contract does not render per-vendor colors. Existing preorder windows are preserved."
+}

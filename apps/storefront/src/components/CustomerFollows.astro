@@ -1,0 +1,51 @@
+---
+import { cardClassName } from '@market/ui/presentation';
+import Button from './ui/Button.astro';
+import type { CustomerFollow } from '@market/api';
+const {
+  items,
+  kind,
+  returnTo,
+  controls = true,
+  level = 2,
+} = Astro.props as {
+  items: CustomerFollow[];
+  kind: 'MARKET' | 'VENDOR';
+  returnTo: string;
+  controls?: boolean;
+  level?: 2 | 3;
+};
+const Heading = level === 2 ? 'h2' : 'h3';
+---
+
+<div class="customer-grid">
+  {items.map((item) => (
+    <article class={cardClassName({ className: 'card', spacing: 'contained' })}>
+      <Heading class="ui-section-title-consumer">
+        {item.url ? <a href={item.url}>{item.name}</a> : item.name}
+      </Heading>
+      {!item.url && (
+        <p class="customer-muted">This storefront is currently unavailable.</p>
+      )}
+      {controls && (
+        <form method="post" action="/api/customer-follow" data-follow-form>
+          <input type="hidden" name="kind" value={kind} />
+          <input type="hidden" name="id" value={item.id} />
+          <input
+            type="hidden"
+            name="following"
+            value={String(!item.following)}
+          />
+          <input type="hidden" name="returnTo" value={returnTo} />
+          <Button
+            type="submit"
+            variant="secondary"
+            aria-label={`${item.following ? 'Unfollow' : 'Follow'} ${item.name}`}
+          >
+            {item.following ? 'Unfollow' : 'Follow'}
+          </Button>
+        </form>
+      )}
+    </article>
+  ))}
+</div>

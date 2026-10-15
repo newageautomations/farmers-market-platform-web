@@ -1,3 +1,4 @@
+import { cardClassName } from '@market/ui/presentation';
 import { useCallback, useEffect, useState } from 'react';
 import type {
   MarketOperationsApi,
@@ -6,13 +7,15 @@ import type {
   OperationsSection,
 } from '@market/api';
 import { safeError } from '@market/api';
-import { ErrorState, Spinner } from '@market/ui';
+import { Select, ErrorState, Spinner } from '@market/ui';
 import { Applications } from './Applications';
 import { Directory, Rentals } from './Directory';
-import { Layouts } from './Layouts';
+import { Layouts, LayoutScreen } from './Layouts';
+import { OccurrenceLayoutScreen } from './OccurrenceLayoutActions';
 import { Assignments } from './Assignments';
 import { Billing } from './Billing';
 import { Control } from './common';
+import { date } from '../common';
 const sections: Record<string, OperationsSection> = {
   applications: 'APPLICATIONS',
   'application-submissions': 'APPLICATIONS',
@@ -35,7 +38,9 @@ export function Phase14Routes({
   const segment = path.split('/')[2] ?? '',
     section = sections[segment] ?? 'APPLICATIONS';
   const [occurrenceId, setOccurrenceId] = useState(
-      Number(path.split('/')[3]) || 0,
+      ['ASSIGNMENTS', 'DAY', 'BILLING'].includes(section)
+        ? Number(path.split('/')[3]) || 0
+        : 0,
     ),
     [error, setError] = useState<ReturnType<typeof safeError> | null>(null),
     [pending, setPending] = useState(false);
@@ -60,7 +65,11 @@ export function Phase14Routes({
       permissions.includes('ReadOwnMarketAssignments')
     ) {
       const p = await api.read('ASSIGNMENTS');
-      Object.assign(primary, { plans: p.plans, spaces: p.spaces });
+      Object.assign(primary, {
+        plans: p.plans,
+        spaces: p.spaces,
+        assignments: p.assignments,
+      });
     }
     if (
       section === 'ASSIGNMENTS' &&
@@ -126,36 +135,37 @@ export function Phase14Routes({
   return (
     <div className="ops-workspace" aria-busy={pending || read.loading}>
       {error && <ErrorState error={error} />}
-      {pending && <p role="status">Saving changes</p>}
+      {pending && <Spinner label="Saving changes" />}
       <fieldset className="ops-controls" disabled={pending || read.loading}>
         <legend className="sr-only">Market operation controls</legend>
-        <div className="actions">
-          <button type="button" onClick={read.refresh}>
-            Refresh records
-          </button>
-        </div>
-        {['DAY', 'ASSIGNMENTS', 'BILLING'].includes(section) && (
-          <Control label="Market occurrence">
-            {(id) => (
-              <select
-                id={id}
-                value={active}
-                onChange={(e) => setOccurrenceId(Number(e.target.value))}
-              >
-                {data.occurrences.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {new Date(o.startsAt).toLocaleString()} · {o.venue}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Control>
-        )}
+        {!path.endsWith('/edit-layout') &&
+          ['DAY', 'ASSIGNMENTS', 'BILLING'].includes(section) && (
+            <Control
+              label="Market occurrence"
+              className={cardClassName({ className: 'occurrence-control' })}
+            >
+              {(id) => (
+                <Select
+                  id={id}
+                  value={active}
+                  onChange={(e) => setOccurrenceId(Number(e.target.value))}
+                >
+                  {data.occurrences.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {date(o.startsAt)} · {o.venue}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Control>
+          )}
         {section === 'APPLICATIONS' && (
           <Applications
             data={data}
             run={run}
             canManage={can('ManageOwnMarketApplications')}
+            canConfirmDates={can('ManageOwnMarketAssignments')}
+            canBilling={can('ManageOwnMarketBilling')}
             view={
               segment === 'application-submissions'
                 ? 'submissions'
@@ -174,18 +184,27 @@ export function Phase14Routes({
         {section === 'DIRECTORY' && segment === 'rentals' && (
           <Rentals
             data={data}
+            api={can('ReadOwnMarketAssignments') ? api : undefined}
             run={run}
             canManage={can('ManageOwnMarketApplications')}
             view={path.endsWith('/new') ? 'add' : 'list'}
           />
         )}
-        {section === 'LAYOUTS' && (
-          <Layouts
-            data={data}
-            run={run}
-            canManage={can('ManageOwnMarketLayouts')}
-          />
-        )}
+        {section === 'LAYOUTS' &&
+          (path.endsWith('/edit') ? (
+            <LayoutScreen
+              layoutId={Number(path.split('/')[3])}
+              data={data}
+              run={run}
+              canManage={can('ManageOwnMarketLayouts')}
+            />
+          ) : (
+            <Layouts
+              data={data}
+              run={run}
+              canManage={can('ManageOwnMarketLayouts')}
+            />
+          ))}
         {section === 'BILLING' && (
           <Billing
             data={data}
@@ -193,18 +212,30 @@ export function Phase14Routes({
             canManage={can('ManageOwnMarketBilling')}
           />
         )}
-        {['DAY', 'ASSIGNMENTS'].includes(section) && (
-          <Assignments
-            data={data}
-            run={run}
-            occurrenceId={active}
-            day={section === 'DAY'}
-            canAssign={can('ManageOwnMarketAssignments')}
-            canDay={can('OperateOwnMarketDay')}
-            canBill={can('ManageOwnMarketBilling')}
-            commandError={error}
-          />
-        )}
+        {['DAY', 'ASSIGNMENTS'].includes(section) &&
+          (path.endsWith('/edit-layout') ? (
+            <OccurrenceLayoutScreen
+              data={data}
+              occurrenceId={active}
+              run={run}
+              canEdit={
+                can('ManageOwnMarketAssignments') &&
+                can('ManageOwnMarketLayouts')
+              }
+            />
+          ) : (
+            <Assignments
+              data={data}
+              run={run}
+              occurrenceId={active}
+              day={section === 'DAY'}
+              canAssign={can('ManageOwnMarketAssignments')}
+              canEditLayout={can('ManageOwnMarketLayouts')}
+              canDay={can('OperateOwnMarketDay')}
+              canBill={can('ManageOwnMarketBilling')}
+              commandError={error}
+            />
+          ))}
       </fieldset>
     </div>
   );

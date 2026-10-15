@@ -6,6 +6,9 @@ test.skip(
   !readyPath,
   'Explicit real disposable checkout/account harness required',
 );
+test.beforeEach(({ page }) => {
+  page.setDefaultTimeout(20000);
+});
 const ready = readyPath
   ? (JSON.parse(readFileSync(readyPath, 'utf8')) as {
       controlUrl: string;
@@ -17,9 +20,10 @@ const ready = readyPath
       browserEmail: string;
     })
   : undefined;
-const vendor = 'http://vendor-a.localhost:4337',
-  market = 'http://market-a.localhost:4337',
-  marketB = 'http://market-b.localhost:4337';
+const port = process.env.PHONE_TEST_STOREFRONT_PORT ?? '4337';
+const vendor = `http://vendor-a.localhost:${port}`,
+  market = `http://market-a.localhost:${port}`,
+  marketB = `http://market-b.localhost:${port}`;
 async function control(path: string, body: Record<string, unknown> = {}) {
   const response = await fetch(ready!.controlUrl + path, {
     method: 'POST',
@@ -75,7 +79,9 @@ async function checkout(page: Page, authenticated = false) {
     await page.keyboard.press('Tab');
     await page.keyboard.type(ready!.browserEmail);
     await page.keyboard.press('Tab');
-    await page.keyboard.type('555 pickup only');
+    await expect(page.locator('.phone-field[data-ready="true"]')).toBeVisible();
+    await page.keyboard.press('Tab');
+    await page.keyboard.type('2105550154');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Enter');
   }
@@ -96,7 +102,10 @@ async function checkout(page: Page, authenticated = false) {
   ).toBeVisible();
   await accessibility(page);
   await page
-    .getByRole('button', { name: 'Confirm local test payment' })
+    .getByLabel('Payment method', { exact: true })
+    .selectOption('dev-test-payment');
+  await page
+    .getByRole('button', { name: /^(Place order|Complete purchase)$/ })
     .click();
   await expect(
     page.getByText('Your order is confirmed.', { exact: true }),
@@ -114,6 +123,7 @@ test('purchase first, claim same identity later, real direct and multi-Vendor ch
   page,
   context,
 }) => {
+  test.setTimeout(180000);
   await page.goto(vendor + '/products/inventory-0');
   await page.getByRole('button', { name: 'Add to cart', exact: true }).click();
   await page.getByRole('link', { name: 'View cart', exact: true }).click();
@@ -147,13 +157,40 @@ test('purchase first, claim same identity later, real direct and multi-Vendor ch
   await page.evaluate((url) => window.location.assign(url), mail.url);
   await page.getByRole('button', { name: 'Access my orders' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Your account', exact: true }),
+    page.getByRole('heading', {
+      name: 'Verify your personal phone',
+      exact: true,
+    }),
+  ).toBeVisible();
+  await control('/assert', { purchases: 2, verified: false });
+  await expect(page.locator('.phone-field[data-ready="true"]')).toBeVisible();
+  await page
+    .getByLabel('Personal phone number (required)', { exact: true })
+    .fill('2105550153');
+  await page
+    .getByRole('button', { name: 'Send SMS verification code', exact: true })
+    .click();
+  await expect(
+    page.getByLabel('SMS verification code', { exact: true }),
+  ).toBeVisible();
+  const sms = await control('/sms', { phone: '+12105550153' });
+  await page
+    .getByLabel('SMS verification code', { exact: true })
+    .fill(sms.code);
+  await page
+    .getByLabel('New password', { exact: true })
+    .fill('Local-identity-regression-1!password');
+  await page
+    .getByRole('button', { name: 'Verify personal phone', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Overview', exact: true }),
   ).toBeVisible();
   await accessibility(page);
   await control('/assert', { purchases: 2, verified: true });
-  await page.getByRole('link', { name: 'View all orders' }).click();
+  await page.getByRole('link', { name: 'View order history' }).click();
   await accessibility(page);
-  expect(await page.locator('.purchase-list > li').count()).toBe(2);
+  expect(await page.locator('.customer-order-list > li').count()).toBe(2);
   await page.goto(market + `/account/orders/${direct}`);
   await expect(
     page.getByText('Direct Vendor purchase', { exact: true }),
@@ -167,14 +204,14 @@ test('purchase first, claim same identity later, real direct and multi-Vendor ch
   expect(await page.locator('section[aria-label^="Vendor"]').count()).toBe(2);
   await page.goto(vendor + '/account');
   await expect(
-    page.getByRole('heading', { name: 'Your account', exact: true }),
+    page.getByRole('heading', { name: 'Overview', exact: true }),
   ).toBeVisible();
   expect(
     (await control('/mail-count', { email: ready!.browserEmail })).count,
   ).toBe(0);
   await page.goto(marketB + '/account');
   await expect(
-    page.getByRole('heading', { name: 'Your account', exact: true }),
+    page.getByRole('heading', { name: 'Overview', exact: true }),
   ).toBeVisible();
   expect(
     (await control('/mail-count', { email: ready!.browserEmail })).count,
@@ -205,6 +242,9 @@ test('purchase first, claim same identity later, real direct and multi-Vendor ch
     page.getByRole('heading', { name: 'You are signed out' }),
   ).toBeVisible();
   await page.goto(vendor + '/account');
+  await page
+    .getByRole('link', { name: 'Sign in with Email Link', exact: true })
+    .click();
   await expect(
     page.getByRole('heading', { name: 'Access your orders', exact: true }),
   ).toBeVisible();
@@ -215,7 +255,7 @@ test('purchase first, claim same identity later, real direct and multi-Vendor ch
   await page.evaluate((url) => window.location.assign(url), login.url);
   await page.getByRole('button', { name: 'Access my orders' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Your account', exact: true }),
+    page.getByRole('heading', { name: 'Overview', exact: true }),
   ).toBeVisible();
   await control('/assert', { purchases: 2, verified: true });
   await page.goto(vendor + '/products/inventory-0');
@@ -224,5 +264,30 @@ test('purchase first, claim same identity later, real direct and multi-Vendor ch
   await checkout(page, true);
   await control('/assert', { purchases: 3, verified: true });
   await page.goto(vendor + '/account/orders');
-  expect(await page.locator('.purchase-list > li').count()).toBe(3);
+  expect(await page.locator('.customer-order-list > li').count()).toBe(3);
+  // The password established by the original verified claim must restore the
+  // same identity and purchase history through all three storefronts.
+  await page.goto(`http://auth.platform.localhost:${port}/auth/logout`);
+  await page
+    .getByRole('button', { name: 'Sign out everywhere', exact: true })
+    .click();
+  await page.goto(market + '/account/login');
+  await page.getByLabel('Email', { exact: true }).fill(ready!.browserEmail);
+  await page
+    .getByLabel('Password', { exact: true })
+    .fill('Local-identity-regression-1!password');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Overview', exact: true }),
+  ).toBeVisible();
+  for (const storefront of [vendor, marketB]) {
+    await page.goto(storefront + '/account');
+    await expect(
+      page.getByRole('heading', { name: 'Overview', exact: true }),
+    ).toBeVisible();
+    expect(new URL(page.url()).origin).toBe(storefront);
+    await page.goto(storefront + '/account/orders');
+    expect(await page.locator('.customer-order-list > li').count()).toBe(3);
+  }
+  await control('/assert', { purchases: 3, verified: true });
 });

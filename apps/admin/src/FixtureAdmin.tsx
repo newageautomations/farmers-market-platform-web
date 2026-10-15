@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { AdminContext, AdminScope } from '@market/admin-core';
 import { AdminShell } from './AdminShell';
-import { Button } from '@market/ui';
+import { Select, Button } from '@market/ui';
 import {
   createFixtureVendorService,
   type FixtureFault,
@@ -142,7 +142,7 @@ export default function FixtureAdmin() {
       controls={
         <div className="fixture-controls">
           <label htmlFor="fixture-scope">Preview scope</label>
-          <select
+          <Select
             id="fixture-scope"
             value={scope}
             onChange={(event) => setScope(event.target.value as AdminScope)}
@@ -150,22 +150,22 @@ export default function FixtureAdmin() {
             <option value="MARKET">Market</option>
             <option value="VENDOR">Vendor</option>
             <option value="PLATFORM">Platform</option>
-          </select>
+          </Select>
           {scope === 'MARKET' && (
             <>
               <label htmlFor="fixture-market">Market preview</label>
-              <select
+              <Select
                 id="fixture-market"
                 value={market}
                 onChange={(event) => setMarket(event.target.value)}
               >
                 <option value="1">Market A</option>
                 <option value="2">Market B</option>
-              </select>
+              </Select>
               <label htmlFor="fixture-market-grants">
                 Market permission preset
               </label>
-              <select
+              <Select
                 id="fixture-market-grants"
                 value={marketGrants}
                 onChange={(event) =>
@@ -181,11 +181,11 @@ export default function FixtureAdmin() {
                 </option>
                 <option value="operations">Operations Viewer</option>
                 <option value="analytics">Analytics Viewer</option>
-              </select>
+              </Select>
               <label htmlFor="fixture-market-analytics">
                 Market analytics availability
               </label>
-              <select
+              <Select
                 id="fixture-market-analytics"
                 value={marketAvailability}
                 onChange={(event) =>
@@ -201,11 +201,11 @@ export default function FixtureAdmin() {
                     </option>
                   ),
                 )}
-              </select>
+              </Select>
               <label htmlFor="fixture-market-fault">
                 Market response preview
               </label>
-              <select
+              <Select
                 id="fixture-market-fault"
                 value={marketFault}
                 onChange={(event) =>
@@ -217,11 +217,11 @@ export default function FixtureAdmin() {
                 <option value="conflict">Conflict</option>
                 <option value="forbidden">Forbidden</option>
                 <option value="validation">Validation</option>
-              </select>
+              </Select>
               <label htmlFor="fixture-market-projection">
                 Market projection preview
               </label>
-              <select
+              <Select
                 id="fixture-market-projection"
                 value={projection}
                 onChange={(event) => setProjection(event.target.value)}
@@ -238,22 +238,22 @@ export default function FixtureAdmin() {
                     {value}
                   </option>
                 ))}
-              </select>
+              </Select>
             </>
           )}
           {scope === 'VENDOR' && (
             <>
               <label htmlFor="fixture-vendor">Vendor preview</label>
-              <select
+              <Select
                 id="fixture-vendor"
                 value={vendor}
                 onChange={(e) => setVendor(e.target.value)}
               >
                 <option value="1">Vendor A</option>
                 <option value="2">Vendor B</option>
-              </select>
+              </Select>
               <label htmlFor="fixture-grants">Permission preset</label>
-              <select
+              <Select
                 id="fixture-grants"
                 value={grants}
                 onChange={(e) => setGrants(e.target.value)}
@@ -268,9 +268,9 @@ export default function FixtureAdmin() {
                 <option value="staff">
                   Staff membership, read only commands
                 </option>
-              </select>
+              </Select>
               <label htmlFor="fixture-analytics">Analytics availability</label>
-              <select
+              <Select
                 id="fixture-analytics"
                 value={availability}
                 onChange={(e) =>
@@ -281,9 +281,9 @@ export default function FixtureAdmin() {
                 <option value="denied">Denied</option>
                 <option value="unknown">Unknown</option>
                 <option value="unconfigured">Unconfigured</option>
-              </select>
+              </Select>
               <label htmlFor="fixture-fault">Response preview</label>
-              <select
+              <Select
                 id="fixture-fault"
                 value={fault}
                 onChange={(e) => setFault(e.target.value as FixtureFault)}
@@ -293,9 +293,9 @@ export default function FixtureAdmin() {
                 <option value="conflict">Conflict</option>
                 <option value="forbidden">Forbidden</option>
                 <option value="validation">Validation</option>
-              </select>
+              </Select>
               <label htmlFor="fixture-projection">Projection preview</label>
-              <select
+              <Select
                 id="fixture-projection"
                 value={projection}
                 onChange={(e) => setProjection(e.target.value)}
@@ -312,7 +312,7 @@ export default function FixtureAdmin() {
                     {s}
                   </option>
                 ))}
-              </select>
+              </Select>
             </>
           )}
         </div>

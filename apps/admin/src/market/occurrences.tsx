@@ -1,11 +1,13 @@
 import { useCallback, useState } from 'react';
 import { type MarketOccurrence } from '@market/api';
 import { mayMarketCommand } from '@market/admin-core';
-import { Badge, Button, EmptyState, Pagination } from '@market/ui';
+import { Card, EmptyState, Pagination } from '@market/ui';
 import { MarketGenerationStatus } from './generation-status';
 import type { MarketService } from './service';
 import { ScheduleForm } from './schedule';
 import { localParts } from './timezones';
+import { OccurrenceMap } from './OccurrenceMap';
+import { StatusBadge } from './presentation';
 import {
   calendarDate,
   Choice,
@@ -31,65 +33,36 @@ export function OccurrenceFacts({
   occurrence: MarketOccurrence;
 }) {
   return (
-    <>
-      <div className="dashboard-card">
-        <dl className="facts">
-          <div>
-            <dt>Schedule date</dt>
-            <dd>{occurrence.scheduleDate}</dd>
-          </div>
-          <div>
-            <dt>Occurrence status</dt>
-            <dd>{occurrence.status}</dd>
-          </div>
-          <div>
-            <dt>Market local start</dt>
-            <dd>{occurrence.localStartsAt}</dd>
-          </div>
-          <div>
-            <dt>Market local end</dt>
-            <dd>{occurrence.localEndsAt}</dd>
-          </div>
-          <div>
-            <dt>Timezone</dt>
-            <dd>{occurrence.timezone}</dd>
-          </div>
-          <div>
-            <dt>Source</dt>
-            <dd>{occurrence.source}</dd>
-          </div>
-          <div>
-            <dt>Start instant (UTC)</dt>
-            <dd>{occurrence.startsAt}</dd>
-          </div>
-          <div>
-            <dt>End instant (UTC)</dt>
-            <dd>{occurrence.endsAt}</dd>
-          </div>
-          <div>
-            <dt>Venue snapshot</dt>
-            <dd>{occurrence.venue || 'Not provided'}</dd>
-          </div>
-          <div>
-            <dt>Pickup snapshot</dt>
-            <dd>{occurrence.pickupInstructions || 'Not provided'}</dd>
-          </div>
-        </dl>
-      </div>
-      <p>
-        Version {occurrence.version}; recurrence {occurrence.recurrenceVersion};
-        configuration {occurrence.configurationVersion}; policy{' '}
-        {occurrence.policyVersion}.
-      </p>
+    <Card as="div" className="dashboard-card">
+      <dl className="facts">
+        <div>
+          <dt>Starts</dt>
+          <dd>{date(occurrence.startsAt, occurrence.timezone)}</dd>
+        </div>
+        <div>
+          <dt>Ends</dt>
+          <dd>{date(occurrence.endsAt, occurrence.timezone)}</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>
+            <StatusBadge>{occurrence.status}</StatusBadge>
+          </dd>
+        </div>
+        <div>
+          <dt>Venue</dt>
+          <dd>{occurrence.venue || 'Not provided'}</dd>
+        </div>
+        <div>
+          <dt>Pickup Instructions</dt>
+          <dd>{occurrence.pickupInstructions || 'Not provided'}</dd>
+        </div>
+      </dl>
       <RuleSummary rule={occurrence.preorderOverride} />
-      <p>
-        Effective offering windows are shown in the selected Vendor
-        relationship. An occurrence override alone does not establish purchase
-        authorization.
-      </p>
-    </>
+    </Card>
   );
 }
+
 export function MarketOccurrences({
   service,
   id,
@@ -165,9 +138,6 @@ export function MarketOccurrences({
       )}
       <ReadState {...active} retry={active.refresh} />
       <div className="ops-toolbar">
-        <Button className="secondary" onClick={refresh}>
-          Refresh occurrences
-        </Button>
         {!id && view === 'list' && (
           <>
             {schedule && (
@@ -192,6 +162,7 @@ export function MarketOccurrences({
           {occurrence && (
             <>
               <OccurrenceFacts occurrence={occurrence} />
+              <OccurrenceMap service={service} occurrenceId={occurrence.id} />
               <RouteLink to={`/market/operations/${occurrence.id}`}>
                 View occurrence operations
               </RouteLink>
@@ -220,7 +191,8 @@ export function MarketOccurrences({
                       />
                     </CommandForm>
                     <CommandForm
-                      title="Cancel occurrence"
+                      danger
+                      title="Cancel Occurrence"
                       onDone={refresh}
                       run={() =>
                         service.cancelOccurrence(
@@ -229,12 +201,11 @@ export function MarketOccurrences({
                         )
                       }
                       submitLabel="Cancel occurrence"
-                      confirm="Cancel this occurrence? This does not automatically refund purchases, restock inventory or notify customers. The occurrence remains in domain history."
+                      confirm="Cancel this occurrence? This does not automatically refund purchases, restock inventory or notify customers."
                     >
                       <p>
-                        Cancellation changes the occurrence lifecycle only. It
-                        does not automatically refund purchases, restock
-                        inventory or notify customers.
+                        Existing orders, inventory, and customer notifications
+                        will need to be handled separately.
                       </p>
                     </CommandForm>
                   </>
@@ -248,7 +219,7 @@ export function MarketOccurrences({
             (state.data.items.length ? (
               <DataTable
                 label="Market occurrences"
-                headings={['Start', 'Status', 'Source', 'Venue', 'Version']}
+                headings={['Start', 'Status', 'Venue']}
                 sort={{ heading: 'Start', direction: 'ascending' }}
               >
                 {state.data.items.map((row) => (
@@ -262,11 +233,9 @@ export function MarketOccurrences({
                       </small>
                     </td>
                     <td>
-                      <Badge>{row.status}</Badge>
+                      <StatusBadge>{row.status}</StatusBadge>
                     </td>
-                    <td>{row.source}</td>
                     <td>{row.venue || 'Not provided'}</td>
-                    <td>{row.version}</td>
                   </tr>
                 ))}
               </DataTable>
@@ -277,8 +246,8 @@ export function MarketOccurrences({
             <>
               <p>
                 {state.data.totalItems} occurrences in this date range. Showing{' '}
-                {skip + (state.data.items.length ? 1 : 0)} to{' '}
-                {skip + state.data.items.length}.
+                {state.data.items.length ? skip + 1 : 0} to{' '}
+                {state.data.items.length ? skip + state.data.items.length : 0}.
               </p>
               <Pagination
                 hasPrevious={skip > 0}

@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "database": "vendure_demo_market_ops",
+  "readOnly": true,
+  "existingVersionsValidated": 2,
+  "counts": {
+    "versions": "2",
+    "spaces": "8",
+    "plans": "1",
+    "assignments": "0",
+    "invoices": "0"
+  },
+  "geometryDigest": "e3e53f74b8d1886f7a2c6827936e616419b57ae2e9af1ddc13a1a55b09f53f66",
+  "workflowWrites": 0
+}

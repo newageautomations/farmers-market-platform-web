@@ -1,3 +1,4 @@
+import { Card, Input } from '@market/ui';
 import { useEffect, useRef, useState, type SubmitEvent } from 'react';
 import {
   AppError,
@@ -84,15 +85,17 @@ export default function CommunicationPreferences({
       </p>
       {error && <ErrorState error={error} />}{' '}
       {confirmed && (
-        <Alert>Current preferences confirmed by the backend.</Alert>
+        <Alert severity="success">
+          Current preferences confirmed by the backend.
+        </Alert>
       )}
       <div className="preference-grid">
         {state.preferences.map((p) => {
           const key = `${p.medium}-${p.purpose}`,
             withdraw = p.status === 'SUBSCRIBED' && !p.renewalRequired;
           return (
-            <section className="card" key={`${key}:${p.version}`}>
-              <h2>{labels[p.purpose]}</h2>
+            <Card as="section" spacing="contained" key={`${key}:${p.version}`}>
+              <h2 className="ui-section-title-consumer">{labels[p.purpose]}</h2>
               <p>
                 {p.medium === 'EMAIL' ? 'Email' : 'SMS'} ·{' '}
                 {p.renewalRequired
@@ -112,7 +115,7 @@ export default function CommunicationPreferences({
                 <fieldset disabled={pending}>
                   {!withdraw && p.grantAvailable && (
                     <label>
-                      <input type="checkbox" name="explicitConsent" required />{' '}
+                      <Input type="checkbox" name="explicitConsent" required />{' '}
                       I agree to receive {labels[p.purpose].toLowerCase()} from{' '}
                       {state.displayName} by{' '}
                       {p.medium === 'EMAIL' ? 'email' : 'SMS'} under notice{' '}
@@ -143,7 +146,7 @@ export default function CommunicationPreferences({
                   </Button>
                 </form>
               )}
-            </section>
+            </Card>
           );
         })}
       </div>

@@ -1,61 +1,121 @@
 ---
-import SiteLayout from '../../layouts/SiteLayout.astro';
-import { requestCheckout } from '../../lib/shop';
-import { formatMoney, temporaryUnavailableResponse } from '@market/config';
-import { safeError } from '@market/api';
-const api = requestCheckout(Astro, Astro.response.headers);
-let profile, purchases;
+import EmptyState from '../../components/ui/EmptyState.astro';
+import { buttonClassName } from '@market/ui/presentation';
+import CustomerLayout from '../../layouts/CustomerLayout.astro';
+import CustomerEvents from '../../components/CustomerEvents.astro';
+import CustomerFollows from '../../components/CustomerFollows.astro';
+import CustomerOrders from '../../components/CustomerOrders.astro';
+import {
+  customerApi,
+  customerAuthenticationError,
+} from '../../lib/customer-dashboard';
+import { temporaryUnavailableResponse } from '@market/config';
+const api = customerApi(Astro);
+let profile, dashboard, purchases;
 try {
   profile = await api.profile();
-  if (profile) purchases = await api.purchases(0, 3);
+  if (!profile) return Astro.redirect(api.login);
+  [dashboard, purchases] = await Promise.all([api.read(), api.purchases(0, 3)]);
 } catch (error) {
-  const kind = safeError(error).kind;
-  if (kind !== 'authentication' && kind !== 'forbidden')
-    return temporaryUnavailableResponse();
+  return customerAuthenticationError(error)
+    ? Astro.redirect(api.login)
+    : temporaryUnavailableResponse();
 }
-if (!profile) return Astro.redirect('/account/sign-in');
-Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 ---
 
-<SiteLayout
-  context={Astro.locals.storefront}
-  path="/account"
-  title="Your account"
-  noindex
->
-  <section class="py-12 account-panel">
-    <h1>Your account</h1>
-    <p>
-      {profile.firstName} {profile.lastName}
-    </p>
-    <p>{profile.emailAddress}</p>
-    {profile.phoneNumber && <p>{profile.phoneNumber}</p>}
-    <p>Your verified email identifies your shared platform account.</p>
-    <p>
-      <a href="/account/communications">Manage communication preferences</a>
-    </p>
-    <h2>Recent purchases</h2>
-    {purchases?.items.length ? (
-      <ul>
-        {purchases.items.map((p) => (
-          <li>
-            <a href={`/account/orders/${p.orderId}`}>
-              {p.storefront.displayName} ·{' '}
-              {new Date(p.purchasedAt).toLocaleDateString()}
-            </a>{' '}
-            · {formatMoney(p.financial.originalPaid, p.financial.currency)}
-          </li>
-        ))}
-      </ul>
-    ) : (
-      <p>No purchases are available yet.</p>
-    )}
-    <p>
-      <a href="/account/orders">View all orders</a>
-    </p>
-    <form method="post" action="/api/account">
-      <input type="hidden" name="action" value="logout" />
-      <button>Sign out</button>
-    </form>
+<CustomerLayout title="Overview" name={`${profile.firstName}'s account`}>
+  <p class="customer-muted">
+    Your purchases and the people and places you keep coming back to.
+  </p>
+  <div class="customer-stats ui-kpi-grid">
+    <a href="/account/orders">
+      <strong>{dashboard.orderCount}</strong>Orders
+    </a>
+    <a href="/account/markets">
+      <strong>{dashboard.marketCount}</strong>Followed markets
+    </a>
+    <a href="/account/vendors">
+      <strong>{dashboard.vendorCount}</strong>Favorite vendors
+    </a>
+  </div>
+  <section class="customer-section">
+    <header class="ui-section-heading ui-section-heading-consumer">
+      <h2 class="ui-section-title-consumer">Recent orders</h2>
+      <a
+        class={buttonClassName({ variant: 'secondary' })}
+        href="/account/orders"
+      >
+        View order history
+      </a>
+    </header>
+    <CustomerOrders level={3} purchases={purchases.items} />
   </section>
-</SiteLayout>
+  <section class="customer-section">
+    <header class="ui-section-heading ui-section-heading-consumer">
+      <h2 class="ui-section-title-consumer">Upcoming events</h2>
+      <div class="actions">
+        <a
+          class={buttonClassName({ variant: 'secondary' })}
+          href="/account/markets"
+        >
+          Events at followed markets
+        </a>
+        <a
+          class={buttonClassName({ variant: 'secondary' })}
+          href="/account/vendors"
+        >
+          Favorite vendor appearances
+        </a>
+      </div>
+    </header>
+    <CustomerEvents level={3} events={dashboard.events} />
+  </section>
+  <section class="customer-section">
+    <header class="ui-section-heading ui-section-heading-consumer">
+      <h2 class="ui-section-title-consumer">Followed markets</h2>
+      <a
+        class={buttonClassName({ variant: 'secondary' })}
+        href="/account/markets"
+      >
+        Manage markets
+      </a>
+    </header>
+    {dashboard.markets.length ? (
+      <CustomerFollows
+        level={3}
+        items={dashboard.markets}
+        kind="MARKET"
+        returnTo="/account"
+        controls={false}
+      />
+    ) : (
+      <EmptyState title="No followed markets" level={3}>
+        <p>Follow your favorite markets to see their upcoming events here.</p>
+      </EmptyState>
+    )}
+  </section>
+  <section class="customer-section">
+    <header class="ui-section-heading ui-section-heading-consumer">
+      <h2 class="ui-section-title-consumer">Favorite vendors</h2>
+      <a
+        class={buttonClassName({ variant: 'secondary' })}
+        href="/account/vendors"
+      >
+        Manage vendors
+      </a>
+    </header>
+    {dashboard.vendors.length ? (
+      <CustomerFollows
+        level={3}
+        items={dashboard.vendors}
+        kind="VENDOR"
+        returnTo="/account"
+        controls={false}
+      />
+    ) : (
+      <EmptyState title="No favorite vendors" level={3}>
+        <p>Follow vendors to keep up with where they'll be selling next.</p>
+      </EmptyState>
+    )}
+  </section>
+</CustomerLayout>

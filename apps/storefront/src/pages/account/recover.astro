@@ -1,0 +1,64 @@
+---
+import { inputClassName, buttonClassName } from '@market/ui/presentation';
+import Button from '../../components/ui/Button.astro';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { accountOrigin, isCentral } from '../../lib/account';
+if (!isCentral(Astro.url))
+  return Astro.redirect(
+    new URL('/account/recover', accountOrigin()).toString(),
+  );
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+
+<SiteLayout title="Account recovery" noindex>
+  <section class="py-12 account-panel">
+    <h1>Account recovery</h1>
+    {Astro.url.searchParams.has('requested') && (
+      <p class="alert ui-alert ui-alert-info" role="status">
+        {Astro.url.searchParams.has('delivery')
+          ? 'Your request was accepted. Account email delivery is currently unavailable.'
+          : 'Your request was accepted. If recovery is available, check your email for the next step.'}
+      </p>
+    )}
+    <form method="post" action="/api/account">
+      <input type="hidden" name="action" value="requestRecovery" />
+      <label class="field">
+        Email{' '}
+        <input
+          class={inputClassName('email')}
+          name="email"
+          type="email"
+          autocomplete="email"
+          required
+          maxlength="254"
+        />
+      </label>
+      <Button type="submit" variant="primary">
+        Send recovery email
+      </Button>
+    </form>
+    <p>
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href="/account/signup"
+      >
+        Request a new verification email
+      </a>{' '}
+      for an account that has not been verified.
+    </p>
+    <p>
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href="/account/login"
+      >
+        Return to sign in
+      </a>
+    </p>
+  </section>
+</SiteLayout>

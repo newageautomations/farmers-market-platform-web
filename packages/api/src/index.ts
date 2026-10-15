@@ -6,6 +6,7 @@ export * from './market';
 export * from './storefront';
 export * from './market-storefront';
 export * from './checkout';
+export * from './customer-dashboard';
 export * from './management';
 export * from './preferences';
 export { AppError, safeError, safeMessages } from './errors';

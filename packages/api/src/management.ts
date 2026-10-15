@@ -6,6 +6,16 @@ export type CatalogSection = g.PlatformCatalogSection;
 export type CatalogRecord =
   g.PlatformCatalogQuery['platformBillingCatalog']['items'][number];
 export type TenantKind = g.PlatformTenantKind;
+export interface RoleOnboardingRequest {
+  id: number;
+  principalId: number;
+  role: string;
+  state: string;
+  revision: number;
+  draft: Record<string, string>;
+  reviewNote: string | null;
+  evidenceReference: string | null;
+}
 export type TenantOptions = Partial<g.PlatformTenantOptions>;
 export type ManagementEntitlement = g.ManagementEntitlementFragment;
 export type ModuleReadiness = g.ModuleReadinessFragment;
@@ -155,6 +165,23 @@ function connections(v: unknown): PosConnection[] {
 export function createManagementApi(options: TransportOptions) {
   const execute = transport('admin', options);
   return {
+    roleOnboardingQueue: async () =>
+      (
+        await execute(
+          {
+            api: 'admin',
+            document: g.PlatformRoleOnboardingReviewQueueDocument,
+          },
+          {},
+        )
+      ).platformRoleOnboardingReviewQueue as RoleOnboardingRequest[],
+    reviewRoleOnboarding: (
+      variables: g.ReviewPlatformRoleOnboardingMutationVariables,
+    ) =>
+      execute(
+        { api: 'admin', document: g.ReviewPlatformRoleOnboardingDocument },
+        variables,
+      ),
     platformScope: async () =>
       (await execute({ api: 'admin', document: g.PlatformScopeDocument }, {}))
         .platformAdminScope,

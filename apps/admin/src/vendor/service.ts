@@ -36,6 +36,15 @@ export interface OrderPage {
 }
 export type Availability = 'allowed' | 'denied' | 'unknown' | 'unconfigured';
 export interface VendorService extends VendorApi {
+  linkRequests?: ReturnType<
+    typeof createMarketOperationsApi
+  >['vendorLinkRequests'];
+  respondToLink?: ReturnType<
+    typeof createMarketOperationsApi
+  >['respondToVendorLink'];
+  requestRelationship?: ReturnType<
+    typeof createMarketOperationsApi
+  >['requestRelationship'];
   boothAssignments?: () => Promise<VendorBoothAssignment[]>;
   context: AdminContext;
   vendorId: string;
@@ -135,6 +144,12 @@ export function createLiveVendorService(
   });
   return {
     ...guarded,
+    linkRequests: createMarketOperationsApi({ endpoint, channelToken })
+      .vendorLinkRequests,
+    respondToLink: createMarketOperationsApi({ endpoint, channelToken })
+      .respondToVendorLink,
+    requestRelationship: createMarketOperationsApi({ endpoint, channelToken })
+      .requestRelationship,
     boothAssignments: async () => {
       try {
         return await createMarketOperationsApi({

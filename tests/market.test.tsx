@@ -1,3 +1,4 @@
+import { friendlyLabel } from '../apps/admin/src/market/presentation';
 import { readFileSync } from 'node:fs';
 import { describe, it, expect, vi } from 'vitest';
 import { buildSchema, parse, print, validate } from 'graphql';
@@ -289,19 +290,17 @@ describe('Market overview, configuration and recurrence', () => {
   it('shows authoritative core Overview counts without financial metrics', async () => {
     const service = createFixtureMarketService(marketFixtureContext());
     render(<MarketOverview service={service} />);
-    await screen.findByText(
-      '2 upcoming scheduled occurrences in this date range.',
-    );
-    await screen.findByText(
-      '3 approved Vendor relationships out of 5 total relationships.',
-    );
-    await screen.findByText(/confirmed participations 2/);
-    await screen.findByText(
-      /23 operational purchases for the next scheduled occurrence/,
-    );
-    expect(document.body.textContent).toContain(
-      'Operational totals are current database counts',
-    );
+    await screen.findByRole('link', { name: 'View Occurrence' });
+    const table = await screen.findByRole('table', {
+      name: 'Vendor relationships',
+    });
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((h) => h.textContent),
+    ).toEqual(['Vendor', 'Status', 'Edit']);
+    expect(document.body).not.toHaveTextContent('Operational totals');
+    expect(screen.queryByLabelText('From Date')).toBeNull();
     expect(document.body.textContent).not.toMatch(
       /GMV|revenue|\$|payout|refund totals|profit/i,
     );
@@ -312,10 +311,8 @@ describe('Market overview, configuration and recurrence', () => {
       const service = createFixtureMarketService(marketFixtureContext(), value),
         analytics = vi.spyOn(service, 'analytics');
       render(<MarketOverview service={service} />);
-      await screen.findByText(
-        '3 approved Vendor relationships out of 5 total relationships.',
-      );
-      await screen.findByText(new RegExp(`Market analytics: ${value}`));
+      await screen.findByRole('table', { name: 'Vendor relationships' });
+      expect(document.body).not.toHaveTextContent(`Market analytics: ${value}`);
       expect(analytics).not.toHaveBeenCalled();
     },
   );
@@ -365,7 +362,9 @@ describe('Market overview, configuration and recurrence', () => {
   });
   it('does not silently overwrite stale recurrence, then refreshes before deliberate retry', async () => {
     const service = createFixtureMarketService(marketFixtureContext());
-    render(<MarketOccurrences service={service} view="generate" />);
+    const view = render(
+      <MarketOccurrences service={service} view="generate" />,
+    );
     await screen.findByLabelText('Market starts at');
     await service.recurrence('1', 1, null);
     fireEvent.click(screen.getByRole('button', { name: 'Save schedule' }));
@@ -377,11 +376,10 @@ describe('Market overview, configuration and recurrence', () => {
     expect(
       screen.getByRole('button', { name: 'Save schedule' }),
     ).toBeDisabled();
-    fireEvent.click(
-      form('Repeating market schedule').getByRole('button', {
-        name: 'Check current records',
-      }),
+    view.rerender(
+      <MarketOccurrences key="refreshed" service={service} view="generate" />,
     );
+    await screen.findByLabelText('Market starts at');
     await waitFor(() =>
       expect(
         screen.getByRole('button', { name: 'Save schedule' }),
@@ -423,8 +421,8 @@ describe('Market occurrences', () => {
       />,
     );
     await screen.findByRole('table', { name: 'Market occurrences' });
-    expect(screen.getAllByText('generated')).toHaveLength(1);
-    expect(screen.getAllByText('manual')).toHaveLength(1);
+    expect(screen.getAllByText('Scheduled')).toHaveLength(2);
+    expect(screen.queryByRole('columnheader', { name: 'Version' })).toBeNull();
     expect(document.body).toHaveTextContent('2 occurrences in this date range');
     expect(screen.queryByRole('button', { name: /Delete/ })).toBeNull();
   });
@@ -446,8 +444,7 @@ describe('Market occurrences', () => {
       await waitFor(() => expect(reread).toHaveBeenCalledTimes(2));
       expect(generate).toHaveBeenCalledTimes(mode === 'synchronous' ? 1 : 0);
       expect(enqueue).toHaveBeenCalledTimes(mode === 'queued' ? 1 : 0);
-      if (mode === 'queued')
-        expect(document.body).toHaveTextContent('Status: PENDING');
+      if (mode === 'queued') expect(document.body).toHaveTextContent('Pending');
     },
   );
   it('creates a manual occurrence with an explicit stable manual intent key', async () => {
@@ -494,8 +491,8 @@ describe('Market occurrences', () => {
       mutate = vi.spyOn(service, 'reviseOccurrence'),
       reread = vi.spyOn(service, 'occurrence');
     render(<MarketOccurrences service={service} id="102" />);
-    await screen.findByLabelText('Venue snapshot');
-    fireEvent.change(screen.getByLabelText('Venue snapshot'), {
+    await screen.findByLabelText('Venue');
+    fireEvent.change(screen.getByLabelText('Venue'), {
       target: { value: 'Changed synthetic venue' },
     });
     fireEvent.click(
@@ -521,12 +518,15 @@ describe('Market occurrences', () => {
       'does not automatically refund purchases, restock inventory or notify customers',
     );
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', {
-        name: 'Confirm change',
-      }),
+      within(screen.getByRole('dialog', { name: /Confirm/ })).getByRole(
+        'button',
+        {
+          name: 'Confirm change',
+        },
+      ),
     );
     await waitFor(() =>
-      expect(screen.getByText('cancelled')).toBeInTheDocument(),
+      expect(screen.getByText('Cancelled')).toBeInTheDocument(),
     );
     expect(cancel).toHaveBeenCalledWith('102', 1);
     expect(document.body.textContent).not.toMatch(
@@ -555,8 +555,8 @@ describe('Vendor relationships, listings, participation and offerings', () => {
       />,
     );
     await screen.findByRole('table');
-    expect(screen.getByText('pending')).toBeInTheDocument();
-    expect(screen.getByText('suspended')).toBeInTheDocument();
+    expect(screen.getByText('Pending')).toBeInTheDocument();
+    expect(screen.getByText('Suspended')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Synthetic Market A Vendor 1' }),
     ).toBeInTheDocument();
@@ -577,9 +577,15 @@ describe('Vendor relationships, listings, participation and offerings', () => {
       expect(update).toHaveBeenCalledWith('1', '1001', 'approved', 1),
     );
     await waitFor(() =>
-      expect(document.body).toHaveTextContent('Business membership approved'),
+      expect(screen.getByLabelText('Business membership status')).toHaveValue(
+        'approved',
+      ),
     );
     view.rerender(<MarketVendors service={service} id="11" tab="listings" />);
+    const listings = await screen.findByRole('table', {
+      name: 'Listing approvals',
+    });
+    fireEvent.click(within(listings).getAllByRole('button')[0]!);
     await screen.findByLabelText('Listing approval status');
     fireEvent.click(
       screen.getByRole('button', { name: 'Update listing approval' }),
@@ -587,32 +593,38 @@ describe('Vendor relationships, listings, participation and offerings', () => {
     await waitFor(() =>
       expect(
         screen.getByRole('table', {
-          name: 'Listing approvals (backend order)',
+          name: 'Listing approvals',
         }),
-      ).toHaveTextContent('approved'),
+      ).toHaveTextContent('Approved'),
     );
-    expect(document.body).toHaveTextContent(
-      'Approval, publication and offering availability remain separate',
-    );
+
     expect(screen.queryByRole('button', { name: /Publish/ })).toBeNull();
+    fireEvent.click(
+      within(
+        screen.getByRole('table', { name: 'Listing approvals' }),
+      ).getAllByRole('button')[0]!,
+    );
     fireEvent.change(screen.getByLabelText('Listing approval status'), {
       target: { value: 'withdrawn' },
     });
     fireEvent.click(
       screen.getByRole('button', { name: 'Update listing approval' }),
     );
-    expect(screen.getByRole('dialog')).toBeVisible();
+    expect(screen.getByRole('dialog', { name: /Confirm/ })).toBeVisible();
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', {
-        name: 'Confirm change',
-      }),
+      within(screen.getByRole('dialog', { name: /Confirm/ })).getByRole(
+        'button',
+        {
+          name: 'Confirm change',
+        },
+      ),
     );
     await waitFor(() =>
       expect(
         screen.getByRole('table', {
-          name: 'Listing approvals (backend order)',
+          name: 'Listing approvals',
         }),
-      ).toHaveTextContent('withdrawn'),
+      ).toHaveTextContent('Withdrawn'),
     );
   });
   it('membership suspension requires deliberate confirmation', async () => {
@@ -642,9 +654,9 @@ describe('Vendor relationships, listings, participation and offerings', () => {
         />,
       );
       const table = await screen.findByRole('table', {
-        name: 'Occurrence participation (backend order)',
+        name: 'Occurrence participation',
       });
-      expect(table).toHaveTextContent(status);
+      expect(table).toHaveTextContent(friendlyLabel(status!));
       expect(document.body.textContent).not.toMatch(
         /checked.in|no.show|attended/i,
       );
@@ -654,18 +666,23 @@ describe('Vendor relationships, listings, participation and offerings', () => {
     const service = createFixtureMarketService(marketFixtureContext()),
       command = vi.spyOn(service, 'participation');
     render(<MarketVendors service={service} id="12" tab="participation" />);
+    const participations = await screen.findByRole('table', {
+      name: 'Occurrence participation',
+    });
+    fireEvent.click(within(participations).getAllByRole('button')[0]!);
     await screen.findByLabelText('Participation status');
     fireEvent.change(screen.getByLabelText('Participation status'), {
       target: { value: 'cancelled' },
     });
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Update participation' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Save and Close' }));
     expect(command).not.toHaveBeenCalled();
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', {
-        name: 'Confirm change',
-      }),
+      within(screen.getByRole('dialog', { name: /Confirm/ })).getByRole(
+        'button',
+        {
+          name: 'Confirm change',
+        },
+      ),
     );
     await waitFor(() =>
       expect(command).toHaveBeenCalledWith(
@@ -681,18 +698,13 @@ describe('Vendor relationships, listings, participation and offerings', () => {
       rematerialize = vi.spyOn(service, 'rematerialize');
     render(<MarketVendors service={service} id="12" tab="offerings" />);
     const table = await screen.findByRole('table', {
-      name: 'Market offerings (backend order)',
+      name: 'Product offerings',
     });
     expect(table).toHaveTextContent('20');
-    expect(document.body).toHaveTextContent(
-      'sales cap is separate from Vendor physical inventory',
-    );
-    expect(document.body).toHaveTextContent(
-      'not stock availability or checkout authorization',
-    );
+    fireEvent.click(within(table).getAllByRole('button')[0]!);
     expect(document.body).not.toHaveTextContent('20 items in inventory');
     fireEvent.change(
-      form('Configure offering 12001').getByLabelText(
+      form('Offering Settings').getByLabelText(
         'Occurrence sales cap (optional)',
       ),
       { target: { value: '25' } },
@@ -700,10 +712,15 @@ describe('Vendor relationships, listings, participation and offerings', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save offering' }));
     await waitFor(() =>
       expect(
-        screen.getByRole('table', { name: 'Market offerings (backend order)' }),
+        screen.getByRole('table', { name: 'Product offerings' }),
       ).toHaveTextContent('25'),
     );
     expect(rematerialize).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(
+        screen.getByRole('table', { name: 'Product offerings' }),
+      ).getAllByRole('button')[0]!,
+    );
     fireEvent.click(
       screen.getByRole('button', {
         name: 'Apply current window configuration',
@@ -722,7 +739,7 @@ describe('Vendor relationships, listings, participation and offerings', () => {
       />,
     );
     await screen.findByRole('table', {
-      name: 'Market offerings (backend order)',
+      name: 'Product offerings',
     });
     for (const label of [
       'Update membership',
@@ -793,8 +810,8 @@ describe('Operations privacy and complete server paging', () => {
     expect(document.body.textContent).not.toMatch(/PRIVATE_|example.invalid/);
     expect(document.body).toHaveTextContent('Original units');
     expect(document.body).toHaveTextContent('Cancelled units');
-    expect(document.body).toHaveTextContent('PARTIALLY_COMPLETED');
-    expect(document.body).toHaveTextContent('AWAITING');
+    expect(document.body).toHaveTextContent('Partially Completed');
+    expect(document.body).toHaveTextContent('Awaiting');
     expect(
       screen.getByRole('table', { name: /Operational order 1810 quantities/ }),
     ).toHaveTextContent('5212');
@@ -812,7 +829,8 @@ describe('Optional operational analytics', () => {
       const service = createFixtureMarketService(marketFixtureContext(), state),
         read = vi.spyOn(service, 'analytics');
       render(<MarketAnalytics service={service} />);
-      await screen.findByText(new RegExp(`Market analytics: ${state}`));
+      if (state !== 'ALLOWED')
+        await screen.findByText('Analytics are not available for this market.');
       if (state === 'ALLOWED') {
         await screen.findByText('Purchase count');
         expect(read).toHaveBeenCalled();
@@ -841,10 +859,14 @@ describe('Optional operational analytics', () => {
         )}
       />,
     );
-    await screen.findByText(new RegExp(`Projection: ${projection}`));
-    expect(document.body).toHaveTextContent('Source as of:');
+    await screen.findByText(
+      projection === 'UNBUILT'
+        ? 'No analytics available for these dates'
+        : 'Purchase count',
+    );
+    expect(document.body).not.toHaveTextContent('Source as of:');
     if (projection !== 'ACTIVE')
-      expect(document.body).toHaveTextContent('This projection is not current');
+      expect(document.body).toHaveTextContent('Analytics are being updated');
   });
   it('uses generation-bound cursor and resets paging on range changes', async () => {
     const service = createFixtureMarketService(marketFixtureContext());
@@ -973,7 +995,7 @@ describe('Market tenant switching and authority loss', () => {
     render(<AdminApp endpoint={endpoint} />);
     await screen.findByLabelText('Market name');
     revoked = true;
-    fireEvent.click(screen.getByRole('button', { name: 'Refresh settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh workspace' }));
     await screen.findByRole('heading', { name: 'Workspace unavailable' });
     expect(screen.queryByLabelText('Market name')).toBeNull();
     expect(document.body).not.toHaveTextContent('Synthetic Market A');

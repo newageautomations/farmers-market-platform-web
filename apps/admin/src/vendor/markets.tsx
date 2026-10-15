@@ -1,3 +1,7 @@
+import { EmptyState } from '@market/ui';
+import { Badge } from '@market/ui';
+import { vendorStatusTone } from './status-presentation';
+import { cardClassName } from '@market/ui/presentation';
 import { useCallback, useId, useState } from 'react';
 import { mayCommand } from '@market/admin-core';
 import type {
@@ -62,6 +66,58 @@ function RuleFields({ rule }: { rule: PreorderInput }) {
     </>
   );
 }
+function VendorLinkRequests({ service }: { service: VendorService }) {
+  const read = useCallback(() => service.linkRequests!(), [service]);
+  const query = useRead('vendor-link-requests', read);
+  const [busy, setBusy] = useState(false),
+    [failed, setFailed] = useState(false);
+  return (
+    <section aria-label="Market identity link requests">
+      <ReadState {...query} retry={query.refresh} />
+      {query.data?.map((r) => (
+        <div key={r.id}>
+          <p>
+            {r.marketName} requests verification that {r.businessName} is your
+            business.
+          </p>
+          <p>{r.reason}</p>
+          <p>
+            Confirm only if this is your business. Confirmation grants access to
+            future operations that explicitly use your verified identity.
+          </p>
+          {([true, false] as const).map((confirm) => (
+            <Button
+              variant="secondary"
+              type="button"
+              key={String(confirm)}
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setFailed(false);
+                try {
+                  await service.respondToLink!(r.id, r.revision, confirm);
+                  query.refresh();
+                } catch {
+                  setFailed(true);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {confirm ? 'Confirm this business link' : 'Decline link request'}
+            </Button>
+          ))}
+        </div>
+      ))}
+      {failed && (
+        <p className="alert ui-alert ui-alert-error" role="alert">
+          The link response could not be saved. Refresh to check your current
+          authority and request state.
+        </p>
+      )}
+    </section>
+  );
+}
 function ruleInput(data: FormData): PreorderInput {
   if (!data.has('use-rule')) return null;
   const opensTime = text(data, 'opens-time'),
@@ -87,6 +143,32 @@ export function Markets({
   if (id) return <MarketDetail service={service} id={id} />;
   return (
     <>
+      {service.linkRequests &&
+        service.respondToLink &&
+        mayCommand(service.context, 'ManageOwnMarketParticipation') && (
+          <VendorLinkRequests service={service} />
+        )}
+      {service.requestRelationship &&
+        mayCommand(service.context, 'ManageOwnMarketParticipation') && (
+          <CommandForm
+            title="Request a Market relationship"
+            validate={(d) => {
+              integer(d.get('market-id'));
+            }}
+            run={(d) => service.requestRelationship!(text(d, 'market-id'))}
+            onDone={query.refresh}
+          >
+            <TextField
+              name="market-id"
+              label="Market ID provided by the Market"
+              required
+            />
+            <p>
+              This records your business's consent. The Market must approve the
+              relationship separately.
+            </p>
+          </CommandForm>
+        )}
       {service.boothAssignments && (
         <RouteLink to="/vendor/booths">Your booth assignments</RouteLink>
       )}
@@ -109,7 +191,11 @@ export function Markets({
                     <small>Relationship reference {m.id}</small>
                   )}
                 </th>
-                <td>{m.status}</td>
+                <td>
+                  <Badge tone={vendorStatusTone('membership', m.status)}>
+                    {m.status}
+                  </Badge>
+                </td>
                 <td>
                   <RouteLink to={`/vendor/markets/${encodeURIComponent(m.id)}`}>
                     Manage relationship
@@ -118,7 +204,11 @@ export function Markets({
               </tr>
             ))}
           </DataTable>
-          {!query.data.length && <p>No Market relationships are available.</p>}
+          {!query.data.length && (
+            <EmptyState title="No market relationships">
+              <p>No Market relationships are available.</p>
+            </EmptyState>
+          )}
           <p>
             The backend caps this relationship projection at 1,000 rows. No
             total or cursor is provided.
@@ -138,11 +228,39 @@ function MarketDetail({ service, id }: { service: VendorService; id: string }) {
       <ReadState {...query} retry={query.refresh} />
       {query.data && (
         <div key={JSON.stringify(query.data)}>
-          <h2>{query.data.membership.market.name}</h2>
+          <h2 className="ui-section-title-dashboard">
+            {query.data.membership.market.name}
+          </h2>
           <p>
-            Membership: {query.data.membership.status} · Version{' '}
-            {query.data.membership.version}
+            Membership:{' '}
+            <Badge
+              tone={vendorStatusTone(
+                'membership',
+                query.data.membership.status,
+              )}
+            >
+              {query.data.membership.status}
+            </Badge>{' '}
+            · Version {query.data.membership.version}
           </p>
+          {can && service.requestRelationship && (
+            <CommandForm
+              title="Confirm your business relationship"
+              run={() =>
+                service.requestRelationship!(
+                  query.data!.membership.marketId,
+                  query.data!.membership.version,
+                )
+              }
+              onDone={query.refresh}
+            >
+              <p>
+                Confirm that your business intends to participate in this
+                Market. This preserves the Market's approval and does not
+                confirm dates or publish products.
+              </p>
+            </CommandForm>
+          )}
           {can && (
             <CommandForm
               title="Membership preorder default"
@@ -277,9 +395,11 @@ function Occurrences({
   });
   return (
     <>
-      <h2>Occurrences and participation</h2>
+      <h2 className="ui-section-title-dashboard">
+        Occurrences and participation
+      </h2>
       <form
-        className="filter-bar"
+        className={cardClassName({ className: 'filter-bar ui-control-row' })}
         onSubmit={(e) => {
           e.preventDefault();
           const d = new FormData(e.currentTarget),
@@ -307,10 +427,14 @@ function Occurrences({
           type="date"
           value={range.through.slice(0, 10)}
         />
-        <Button type="submit">Apply dates</Button>
+        <div className="ui-field-action">
+          <Button type="submit">Apply dates</Button>
+        </div>
       </form>
       {rangeError && (
-        <p role="alert">Choose an increasing range of at most 366 days.</p>
+        <p className="alert ui-alert ui-alert-error" role="alert">
+          Choose an increasing range of at most 366 days.
+        </p>
       )}
       <ReadState {...query} retry={query.refresh} />
       {query.data && (
@@ -332,10 +456,22 @@ function Occurrences({
                   <small>{o.timezone}</small>
                 </th>
                 <td>{o.venue}</td>
-                <td>{o.status}</td>
                 <td>
-                  {state.participations.find((p) => p.occurrenceId === o.id)
-                    ?.status ?? 'Not configured'}
+                  <Badge tone={vendorStatusTone('participation', o.status)}>
+                    {o.status}
+                  </Badge>
+                </td>
+                <td>
+                  <Badge
+                    tone={vendorStatusTone(
+                      'participation',
+                      state.participations.find((p) => p.occurrenceId === o.id)
+                        ?.status ?? 'Not configured',
+                    )}
+                  >
+                    {state.participations.find((p) => p.occurrenceId === o.id)
+                      ?.status ?? 'Not configured'}
+                  </Badge>
                 </td>
                 <td>
                   {can && o.status === 'scheduled' && (
@@ -347,7 +483,11 @@ function Occurrences({
               </tr>
             ))}
           </DataTable>
-          {!query.data.length && <p>No occurrences in this range.</p>}
+          {!query.data.length && (
+            <EmptyState title="No occurrences in this range">
+              <p>No occurrences in this range.</p>
+            </EmptyState>
+          )}
           <p>
             Occurrence projection is capped at 1,000 rows. Narrow the date range
             to inspect fewer records.
@@ -416,7 +556,7 @@ function ListingRequest({
   return (
     <>
       <form
-        className="filter-bar"
+        className={cardClassName({ className: 'filter-bar ui-control-row' })}
         onSubmit={(event) => {
           event.preventDefault();
           setSkip(0);
@@ -428,7 +568,9 @@ function ListingRequest({
           label="Search owned products for a listing"
           required={false}
         />
-        <Button type="submit">Search variants</Button>
+        <div className="ui-field-action">
+          <Button type="submit">Search variants</Button>
+        </div>
       </form>
       <ReadState {...query} retry={query.refresh} />
       {query.data && (
@@ -457,6 +599,13 @@ function ListingRequest({
       )}
       {query.data && (
         <Pagination
+          summary={
+            <>
+              {query.data.totalItems} records. Showing{' '}
+              {query.data.items.length ? skip + 1 : 0} to{' '}
+              {query.data.items.length ? skip + query.data.items.length : 0}.
+            </>
+          }
           hasPrevious={skip > 0}
           hasNext={skip + 20 < query.data.totalItems}
           onPrevious={() => setSkip(skip - 20)}
@@ -487,16 +636,25 @@ function PublicationRow({
   return (
     <tr>
       <th scope="row">Variant reference {listing.variantId}</th>
-      <td>{listing.status}</td>
+      <td>
+        <Badge tone={vendorStatusTone('publication', listing.status)}>
+          {listing.status}
+        </Badge>
+      </td>
       <td>
         <ReadState {...query} retry={query.refresh} />
-        {query.data?.state.replaceAll('_', ' ').toLowerCase()}
+        {query.data && (
+          <Badge tone={vendorStatusTone('publication', query.data.state)}>
+            {query.data.state.replaceAll('_', ' ').toLowerCase()}
+          </Badge>
+        )}
       </td>
       <td>
         {mayCommand(service.context, 'ManageCatalogPublication') && (
           <>
             {listing.status === 'approved' && (
               <CommandForm
+                embedded
                 title="Publish listing"
                 run={() => service.publish(listing.id)}
                 onDone={done}
@@ -506,6 +664,7 @@ function PublicationRow({
               </CommandForm>
             )}
             <CommandForm
+              embedded
               title="Unpublish listing"
               confirm="Unpublish this listing from its Market? Existing orders remain backend managed."
               run={() => service.unpublish(listing.id)}
@@ -538,7 +697,9 @@ function OfferingEditor({
     );
   return (
     <section>
-      <h2>Configure occurrence offering</h2>
+      <h2 className="ui-section-title-dashboard">
+        Configure occurrence offering
+      </h2>
       <Field id="offering-attendance" label="Participation">
         <Select
           id="offering-attendance"
@@ -554,7 +715,10 @@ function OfferingEditor({
                   state.occurrences.find((o) => o.id === p.occurrenceId)
                     ?.startsAt,
                 )}{' '}
-                · {p.status}
+                ·{' '}
+                <Badge tone={vendorStatusTone('participation', p.status)}>
+                  {p.status}
+                </Badge>
               </option>
             ))}
         </Select>

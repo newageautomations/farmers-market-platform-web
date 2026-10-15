@@ -163,23 +163,27 @@ All prices and amounts entered in fields labelled **minor units** are integer ce
 
    **EXPECTED RESULT:** Guest Produce stays external. Texas Wild becomes platform linked only after your deliberate selection. Linking does not replace the existing canonical Vendor or automatically assign a booth. An approved native Market relationship is required for later linked-Vendor occurrence approval.
 
-10. **Create a layout.** In Layouts, enter `Main Saturday Layout`, then click **Create layout**.
+10. **Create a layout.** In Layouts, click **Create layout**, then enter `Main Saturday Layout` in **Layout name** in the Layout inspector. The dominant drawing surface is a Konva canvas, with a tool palette, contextual inspector and Layers tab.
 
     **EXPECTED RESULT:** A draft layout editor opens, separate from any occurrence assignment.
 
-11. **Add areas.** Use **New area name** and **Add area** to add `Main Market` and `Food Truck Lot`. Choose **Main Market** in **Area for new elements**. The initial empty Main area can stay unused.
+11. **Add areas.** With nothing selected, use **New area name** and **Add area** in the inspector to add `Main Market` and `Food Truck Lot`. Choose **Main Market** in the editor header's **Area** selector. Rename an area through **Area name**. **Delete empty area** is unavailable for an area containing objects. The initial empty Main area can stay unused.
 
     **EXPECTED RESULT:** Both named areas are available for placing elements.
 
-12. **Draw design elements.** Try **Add rectangle**, circle, triangle, line and text. Move/resize/rotate elements, change their labels, and exercise **Undo**, **Redo**, **Copy**, **Paste** and **Duplicate**. An image element may use a locally hosted asset; keep provider and remote image URLs out of this demo.
+12. **Draw design elements.** Use the rectangle, circle, triangle, line, text, image and **Draw path** tools. Scroll over the canvas to zoom around the pointer. Try **Pan**, Space + drag, Alt + drag, **Fit map** and **Reset zoom**. Under **Canvas settings**, toggle **Show grid** and **Snap to grid**, and change **Grid spacing**. Drag an object's visible Transformer corners to resize, and the handle above it to rotate. Hold Shift while rotating for 45-degree snapping. Enter exact geometry and fill/stroke/opacity in the inspector; text also offers font size, bold and alignment. An image may use a locally hosted public asset with CORS support; keep provider and remote image URLs out of this demo.
+
+    Shift-click several objects or drag a marquee across empty canvas to select them. Move the selection together; try **Align selection**, distribution with at least three objects, and **Arrange selection**. Use **Layers** to select, locate, lock and hide/show objects. Hide is explicitly editor-only: published maps still show the object. Lock your finished background, confirm dragging and Delete cannot change it, then unlock explicitly in Layers. Group and ungroup at least two decorations. Booths cannot be grouped, and selections containing multiple booths move together but resize individually to preserve physical dimensions.
+
+    Exercise **Copy**, **Paste**, **Duplicate**, Ctrl/Cmd + C/V/D, arrow and Shift + arrow nudges, Delete, Escape, **Undo** and **Redo**. Shortcuts must leave active input fields alone. Save explicitly with **Save layout**, reload and reopen the draft. Expect geometry, styling, paths, locks, groups and booth properties to persist. Unsaved edits must prompt before leaving the page.
 
     **EXPECTED RESULT:** The canvas changes and saved geometry survives refresh. Shapes do not become booths automatically.
 
-13. **Create A01 without electricity.** Add a booth in Main Market. Select it and set **Label** `A01`, width and depth `10`, default fee `4000`, currency `USD`. Leave electricity unchecked.
+13. **Create A01 without electricity.** Use the **Booth** tool in Main Market. Select it and use the Booth inspector: **Label** `A01`, width and depth `10`, default fee `4000`, currency `USD`. Leave electricity unchecked. Resize through Transformer and confirm the feet update, then restore 10 by 10 numerically and confirm the visual size follows. Check space type, description, actual amenities, preferred business and private manager notes.
 
     **EXPECTED RESULT:** A01 is a 10 by 10 ft, $40 space without an electric amenity.
 
-14. **Create A02 with electricity.** Add another booth labelled `A02`, 10 by 10 ft, fee `4000`, and check electricity. Add `A03` with electricity as a free destination for the later move test, and `A04` without electricity for Texas Wild. Optional: add a Food Truck Lot booth with vehicle/food-truck amenities. Preferred business suggestions are optional and do not assign booths.
+14. **Create A02 with electricity.** Copy/paste or duplicate A01. The copy gets a fresh element identity and a unique label; fee, dimensions and amenities carry over, while private notes and preferred business start empty. Set **Label** `A02`, move it, and check electricity. Create `A03` with electricity as a free destination for the later move test, and `A04` without electricity for Texas Wild. Select multiple booths, open **Sync booth attributes**, choose a source and explicit categories, and review the confirmation before applying. Try dimensions, amenities, fee, space type or style, then restore A01/A04 without electricity and A02/A03 with electricity. Sync must preserve booth IDs, preferences, notes and occurrence data. Optional: add a Food Truck Lot booth with vehicle/food-truck amenities. Preferred business suggestions are optional and do not assign booths.
 
     **EXPECTED RESULT:** A02 and A03 support electric applicants. Each booth has its own label and space details.
 

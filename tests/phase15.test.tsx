@@ -28,7 +28,7 @@ async function builder() {
   const user = userEvent.setup(),
     run = vi.fn(async (_command: OperationsCommand) => data.versions![0]);
   render(<Applications data={structuredClone(data)} run={run} canManage />);
-  await user.click(screen.getByRole('button', { name: 'Version 1 · draft' }));
+  await user.click(screen.getByRole('button', { name: 'Open Draft' }));
   return { user, run };
 }
 test('application and layout creation do not require names', async () => {
@@ -141,13 +141,15 @@ test('submitted application opens in a modal and omits blank optional answers', 
       view="submissions"
     />,
   );
-  await user.click(screen.getByRole('button', { name: 'Local Orchard' }));
+  await user.click(
+    screen.getByRole('button', { name: 'Review Local Orchard' }),
+  );
   const dialog = screen.getByRole('dialog');
   expect(within(dialog).queryByText('Setup notes')).toBeNull();
   expect(within(dialog).queryByText('Products sold')).toBeNull();
   expect(within(dialog).getByText('No')).toBeInTheDocument();
   await user.click(within(dialog).getByRole('button', { name: 'Close' }));
-  expect(screen.queryByRole('dialog')).toBeNull();
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 });
 test('empty checkbox answers are omitted while zero and No remain', () => {
   render(

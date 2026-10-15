@@ -1,3 +1,5 @@
+import { EmptyState } from '@market/ui';
+import { cardClassName } from '@market/ui/presentation';
 import { useCallback, useState } from 'react';
 import {
   AppError,
@@ -62,7 +64,9 @@ export function AvailabilityNotice({
 }
 export function Metadata({ metadata: m }: { metadata: AnalyticsMetadata }) {
   return (
-    <div className="projection-status">
+    <div
+      className={`projection-status alert ui-alert ${m.status === 'ACTIVE' ? 'ui-alert-info' : 'ui-alert-warning'}`}
+    >
       <p>
         Projection: {m.status} · {m.completeness} · {m.technicalBucket}
       </p>
@@ -86,6 +90,7 @@ export function TotalsTable({ data }: { data: AnalyticsTotals }) {
     <>
       <Metadata metadata={data.metadata} />
       <DataTable
+        wide
         label="Vendor analytics totals by currency"
         headings={[
           'Currency',
@@ -116,10 +121,12 @@ export function TotalsTable({ data }: { data: AnalyticsTotals }) {
         ))}
       </DataTable>
       {!data.items.length && (
-        <p>
-          No projected activity in this range. This does not establish that no
-          operational activity exists.
-        </p>
+        <EmptyState title="No projected activity">
+          <p>
+            No projected activity in this range. This does not establish that no
+            operational activity exists.
+          </p>
+        </EmptyState>
       )}
     </>
   );
@@ -171,7 +178,9 @@ export function Analytics({ service }: { service: VendorService }) {
       {availability.data === 'allowed' && (
         <>
           <form
-            className="filter-bar"
+            className={cardClassName({
+              className: 'filter-bar ui-control-row',
+            })}
             onSubmit={(e) => {
               e.preventDefault();
               const d = new FormData(e.currentTarget);
@@ -196,10 +205,12 @@ export function Analytics({ service }: { service: VendorService }) {
               type="date"
               value={range.end.slice(0, 10)}
             />
-            <Button type="submit">Apply range</Button>
+            <div className="ui-field-action">
+              <Button type="submit">Apply range</Button>
+            </div>
           </form>
           {invalid && (
-            <p role="alert">
+            <p className="alert ui-alert ui-alert-error" role="alert">
               Choose valid UTC dates in an increasing range of at most 366 days.
             </p>
           )}
@@ -234,6 +245,7 @@ export function Analytics({ service }: { service: VendorService }) {
             <>
               <Metadata metadata={page.data.metadata} />
               <DataTable
+                wide
                 label={`Vendor ${view} analytics`}
                 headings={[
                   'UTC day',
@@ -274,9 +286,13 @@ export function Analytics({ service }: { service: VendorService }) {
                 ))}
               </DataTable>
               {!page.data.items.length && (
-                <p>No projected rows in this range.</p>
+                <EmptyState title="No projected rows">
+                  <p>No projected rows in this range.</p>
+                </EmptyState>
               )}
               <Pagination
+                label="Analytics pages"
+                summary={<>{page.data.items.length} records on this page.</>}
                 hasPrevious={previous.length > 0}
                 hasNext={!!page.data.nextCursor}
                 onPrevious={() => {

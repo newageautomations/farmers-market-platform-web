@@ -2,6 +2,8 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadEnv } from 'vite';
+import { localAccountEnvironment } from './local-account-environment';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const backend = path.resolve(root, '../farmers-market-platform');
@@ -9,6 +11,13 @@ const action = process.argv[2] ?? '';
 const npm = process.env.npm_execpath;
 if (!npm) throw new Error('Run this helper through its npm script.');
 const env = { ...process.env };
+// All three servers must receive the same ignored development configuration.
+// Forward only account settings to the backend, never frontend DB/provider values.
+if (['admin', 'storefront', 'serve'].includes(action))
+  Object.assign(
+    env,
+    localAccountEnvironment(loadEnv('development', root, ''), process.env),
+  );
 let args: string[];
 if (['admin', 'storefront'].includes(action)) {
   Object.assign(env, {
@@ -17,8 +26,6 @@ if (['admin', 'storefront'].includes(action)) {
     FRONTEND_FIXTURE_MODE: 'false',
     SHOP_API_URL: 'http://localhost:3000/shop-api',
     PUBLIC_ADMIN_API_URL: 'http://localhost:3000/admin-api',
-    PLATFORM_ACCOUNT_ORIGIN: 'http://auth.platform.localhost:4321',
-    PLATFORM_ACCOUNT_BRIDGE_KEY: '',
     ASTRO_TELEMETRY_DISABLED: '1',
   });
   args = ['run', `dev:${action}`];

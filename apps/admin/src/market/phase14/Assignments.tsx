@@ -1,3 +1,5 @@
+import { date } from '../presentation';
+import { MarketDialog as Dialog } from '../presentation';
 import { useState } from 'react';
 import type {
   MarketOperationsData,
@@ -7,9 +9,18 @@ import type {
   RentalSnapshot,
   BoothInvoice,
 } from '@market/api';
-import { MarketMap, Dialog, ErrorState, type BoothStatus } from '@market/ui';
+import {
+  Button,
+  Select,
+  Card,
+  MarketMap,
+  ErrorState,
+  type BoothStatus,
+} from '@market/ui';
 import { Check, Control, Entry, moneyLabel } from './common';
 import { Invoice } from './Billing';
+import { OccurrenceLayoutActions } from './OccurrenceLayoutActions';
+import { Chevron } from '../../NavigationIcon';
 type Run = (c: OperationsCommand) => Promise<unknown>;
 export function boothStatus(
   assignment: SpaceAssignment | undefined,
@@ -34,6 +45,7 @@ export function Assignments({
   canDay,
   canBill,
   commandError,
+  canEditLayout = false,
 }: {
   data: MarketOperationsData;
   run: Run;
@@ -43,9 +55,9 @@ export function Assignments({
   canDay: boolean;
   canBill: boolean;
   commandError?: unknown;
+  canEditLayout?: boolean;
 }) {
-  const [layout, setLayout] = useState(''),
-    [directory, setDirectory] = useState(''),
+  const [directory, setDirectory] = useState(''),
     [previous, setPrevious] = useState(''),
     [copy, setCopy] = useState<{
       proposals: Array<{
@@ -105,67 +117,78 @@ export function Assignments({
   return (
     <>
       {data.daySummary && (
-        <div className="ops-summary" aria-live="polite">
-          <p>
-            {data.daySummary.expected} expected · {data.daySummary.assigned}{' '}
-            assigned · {data.daySummary.unassigned} unassigned
-          </p>
-          <p>
-            {data.daySummary.checkedIn} checked in ·{' '}
-            {data.daySummary.notCheckedIn} awaiting arrival
-          </p>
-          <p>
-            {Object.entries(data.daySummary.attendance)
-              .map(([s, n]) => `${n} ${s.toLowerCase().replaceAll('_', ' ')}`)
-              .join(' · ')}
-          </p>
-          <p>
-            {Object.entries(data.daySummary.rentalQuantities)
-              .map(([n, q]) => `${n}: ${q}`)
-              .join(' · ') || 'No accepted rentals'}
-          </p>
-          {data.billingSummary && (
-            <p>
-              {data.billingSummary.paid} paid · {data.billingSummary.open} open
-              · {data.billingSummary.pastDue} past due
-            </p>
-          )}
-        </div>
-      )}
-      {!plan && canAssign && (
-        <form
-          className="ops-toolbar"
-          onSubmit={(e) => {
-            e.preventDefault();
-            return run({
-              action: 'SET_PLAN',
-              data: { occurrenceId, layoutVersionId: Number(layout) },
-            });
-          }}
+        <dl
+          className="ops-day-summary ui-kpi-grid"
+          aria-label="Occurrence summary"
+          aria-live="polite"
         >
-          <Control label="Published layout version">
-            {(id) => (
-              <select
-                id={id}
-                value={layout}
-                required
-                onChange={(e) => setLayout(e.target.value)}
-              >
-                <option value="">Choose a layout</option>
-                {data.layoutVersions
-                  ?.filter((v) => v.status === 'PUBLISHED')
-                  .map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {data.layouts?.find((l) => l.id === v.layoutId)?.name} ·
-                      Version {v.versionNumber}
-                    </option>
-                  ))}
-              </select>
-            )}
-          </Control>
-          <button>Use layout for occurrence</button>
-        </form>
+          <div>
+            <dt>Expected vendors</dt>
+            <dd>{data.daySummary.expected}</dd>
+            <dd className="ops-day-summary-detail">
+              {data.daySummary.assigned} assigned · {data.daySummary.unassigned}{' '}
+              unassigned
+            </dd>
+          </div>
+          <div>
+            <dt>Checked in</dt>
+            <dd>{data.daySummary.checkedIn}</dd>
+            <dd className="ops-day-summary-detail">
+              {data.daySummary.notCheckedIn} awaiting arrival
+            </dd>
+          </div>
+          <div>
+            <dt>Attendance</dt>
+            <dd className="ops-day-summary-detail">
+              {Object.entries(data.daySummary.attendance).map(
+                ([status, count]) => (
+                  <span key={status}>
+                    {count} {status.toLowerCase().replaceAll('_', ' ')}
+                  </span>
+                ),
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt>Accepted rentals</dt>
+            <dd>
+              {Object.values(data.daySummary.rentalQuantities).reduce(
+                (sum, quantity) => sum + quantity,
+                0,
+              )}
+            </dd>
+            <dd className="ops-day-summary-detail">
+              {Object.entries(data.daySummary.rentalQuantities).map(
+                ([name, quantity]) => (
+                  <span key={name}>
+                    {name}: {quantity}
+                  </span>
+                ),
+              )}
+              {!Object.keys(data.daySummary.rentalQuantities).length &&
+                'No accepted rentals'}
+            </dd>
+          </div>
+          {data.billingSummary && (
+            <div>
+              <dt>Paid invoices</dt>
+              <dd>{data.billingSummary.paid}</dd>
+              <dd className="ops-day-summary-detail">
+                {data.billingSummary.open} open · {data.billingSummary.pastDue}{' '}
+                past due
+              </dd>
+            </div>
+          )}
+        </dl>
       )}
+      <OccurrenceLayoutActions
+        key={`occurrence-layout:${occurrenceId}`}
+        data={data}
+        occurrenceId={occurrenceId}
+        run={run}
+        canChange={canAssign}
+        canEdit={canAssign && canEditLayout}
+      />
       {plan && (
         <div className="ops-toolbar">
           <p>
@@ -175,7 +198,9 @@ export function Assignments({
               : 'Operations open'}
           </p>
           {canAssign && (
-            <button
+            <Button
+              variant="secondary"
+              size="compact"
               type="button"
               onClick={() =>
                 run({
@@ -189,12 +214,14 @@ export function Assignments({
               {plan.state === 'PUBLISHED'
                 ? 'Unpublish map'
                 : 'Publish occurrence map'}
-            </button>
+            </Button>
           )}
         </div>
       )}
       {version && (
         <MarketMap
+          key={`map:${version.id}`}
+          boothListLimit={10}
           definition={version.definition}
           spaces={mapSpaces}
           overlays={overlays}
@@ -290,7 +317,7 @@ export function Assignments({
             <>
               <Control label="Business for selected booth">
                 {(id) => (
-                  <select
+                  <Select
                     id={id}
                     value={mapDirectory}
                     disabled={!!selectedAssignment}
@@ -302,19 +329,21 @@ export function Assignments({
                         {d.contact.businessName}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 )}
               </Control>
               {mapDirectory &&
                 !approvals.some(
                   (a) => a.directoryId === Number(mapDirectory),
                 ) && (
-                  <div className="dashboard-card">
+                  <Card as="div" className="dashboard-card">
                     <p>
                       This business needs approval for this market date before
                       it can receive a booth.
                     </p>
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="compact"
                       type="button"
                       onClick={() =>
                         run({
@@ -327,8 +356,8 @@ export function Assignments({
                       }
                     >
                       Approve business for this date
-                    </button>
-                  </div>
+                    </Button>
+                  </Card>
                 )}
               {approvals
                 .filter((a) => a.directoryId === Number(mapDirectory))
@@ -362,7 +391,7 @@ export function Assignments({
       {!day && canAssign && (
         <>
           <form
-            className="ops-toolbar"
+            className="ops-toolbar ui-control-row ui-control-row-lookup"
             onSubmit={(e) => {
               e.preventDefault();
               return run({
@@ -373,7 +402,7 @@ export function Assignments({
           >
             <Control label="Approve directory business">
               {(id) => (
-                <select
+                <Select
                   id={id}
                   required
                   value={directory}
@@ -389,13 +418,17 @@ export function Assignments({
                         {d.contact.businessName}
                       </option>
                     ))}
-                </select>
+                </Select>
               )}
             </Control>
-            <button>Approve occurrence</button>
+            <div className="ui-field-action">
+              <Button type="submit" variant="primary">
+                Approve occurrence
+              </Button>
+            </div>
           </form>
           <form
-            className="ops-toolbar"
+            className="ops-toolbar ui-control-row ui-control-row-lookup"
             onSubmit={async (e) => {
               e.preventDefault();
               setCopy(
@@ -408,7 +441,7 @@ export function Assignments({
           >
             <Control label="Previous occurrence">
               {(id) => (
-                <select
+                <Select
                   id={id}
                   value={previous}
                   required
@@ -426,19 +459,25 @@ export function Assignments({
                     )
                     .map((o) => (
                       <option key={o.id} value={o.id}>
-                        {new Date(o.startsAt).toLocaleString()}
+                        {date(o.startsAt)}
                       </option>
                     ))}
-                </select>
+                </Select>
               )}
             </Control>
-            <button disabled={!plan || plan.state !== 'DRAFT'}>
-              Prepare copy suggestions
-            </button>
+            <div className="ui-field-action">
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={!plan || plan.state !== 'DRAFT'}
+              >
+                Prepare copy suggestions
+              </Button>
+            </div>
           </form>
           {copy && (
             <section>
-              <h2>Draft copy review</h2>
+              <h2 className="ui-section-title-dashboard">Draft copy review</h2>
               <p>
                 {copy.proposals.length} suggestions · {copy.conflicts.length}{' '}
                 conflicts · {copy.newVendors.length} Vendors needing placement
@@ -450,7 +489,9 @@ export function Assignments({
                 </p>
               ))}
               {copy.proposals.map((p) => (
-                <button
+                <Button
+                  variant="secondary"
+                  size="compact"
                   type="button"
                   key={p.directoryId}
                   onClick={() =>
@@ -462,7 +503,7 @@ export function Assignments({
                     data.directory?.find((d) => d.id === p.directoryId)?.contact
                       .businessName
                   }
-                </button>
+                </Button>
               ))}
             </section>
           )}
@@ -474,7 +515,13 @@ export function Assignments({
         value={search}
         onChange={setSearch}
       />
-      <div className="ops-day-list">
+      <div
+        className="ops-vendor-list ops-scroll-list"
+        role="region"
+        aria-label="Expected vendors"
+        // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- Keyboard users need to scroll the bounded vendor list.
+        tabIndex={0}
+      >
         {approvals
           .filter((a) =>
             data.directory
@@ -483,31 +530,51 @@ export function Assignments({
               .includes(search.toLowerCase()),
           )
           .map((a) => (
-            <AssignmentCard
-              key={`${a.id}:${a.revision}:${assignments
-                .filter((x) => x.approvalId === a.id)
-                .map((x) => x.revision)
-                .join(':')}`}
-              approval={a}
-              data={data}
-              assignments={assignments.filter((x) => x.approvalId === a.id)}
-              run={run}
-              canAssign={canAssign}
-              canDay={canDay && day}
-              canBill={canBill}
-            />
+            <details className="booth-list-item ui-disclosure" key={a.id}>
+              <summary>
+                <span>
+                  {data.directory?.find((d) => d.id === a.directoryId)?.contact
+                    .businessName ?? 'Unknown business'}
+                </span>
+                <span className="ops-vendor-booths">
+                  {assignments
+                    .filter((x) => x.approvalId === a.id)
+                    .map((x) => x.spaceSnapshot.label)
+                    .join(', ') || 'Needs a booth'}
+                </span>
+                <Chevron />
+              </summary>
+              <div className="booth-list-details ui-disclosure-content">
+                <AssignmentCard
+                  embedded
+                  key={`${a.id}:${a.revision}:${assignments
+                    .filter((x) => x.approvalId === a.id)
+                    .map((x) => x.revision)
+                    .join(':')}`}
+                  approval={a}
+                  data={data}
+                  assignments={assignments.filter((x) => x.approvalId === a.id)}
+                  run={run}
+                  canAssign={canAssign}
+                  canDay={canDay && day}
+                  canBill={canBill}
+                />
+              </div>
+            </details>
           ))}
       </div>
       {day && plan && canDay && (
-        <section className="ops-editor">
-          <h2>Day closeout</h2>
+        <Card as="section" className="ops-editor">
+          <h2 className="ui-section-title-dashboard">Day closeout</h2>
           <p>
             {data.daySummary?.attendance.NOT_RECORDED ?? 0} attendance records
             missing · {data.billingSummary?.open ?? 0} unpaid invoices ·{' '}
             {data.daySummary?.unassigned ?? 0} unassigned Vendors ·{' '}
             {data.daySummary?.notes ?? 0} manager notes
           </p>
-          <button
+          <Button
+            variant="secondary"
+            size="compact"
             type="button"
             disabled={plan.operationsComplete}
             onClick={() =>
@@ -520,8 +587,8 @@ export function Assignments({
             }
           >
             Mark day operations complete
-          </button>
-        </section>
+          </Button>
+        </Card>
       )}
     </>
   );
@@ -535,6 +602,7 @@ function AssignmentCard({
   canDay,
   canBill,
   initialSpaceId,
+  embedded = false,
 }: {
   approval: OccurrenceApproval;
   data: MarketOperationsData;
@@ -544,6 +612,7 @@ function AssignmentCard({
   canDay: boolean;
   canBill: boolean;
   initialSpaceId?: number;
+  embedded?: boolean;
 }) {
   const [selected, setSelected] = useState(
       assignments.find((a) => a.spaceId === initialSpaceId)?.id ??
@@ -581,8 +650,12 @@ function AssignmentCard({
       data: d,
     });
   return (
-    <article className="ops-day-card">
-      <h2>
+    <Card
+      as="article"
+      className="ops-day-card"
+      surface={embedded ? 'embedded' : 'card'}
+    >
+      <h2 className="ui-section-title-dashboard">
         {
           data.directory?.find((d) => d.id === a.directoryId)?.contact
             .businessName
@@ -596,7 +669,9 @@ function AssignmentCard({
       </p>
       {canDay && (
         <>
-          <button
+          <Button
+            variant="secondary"
+            size="compact"
             type="button"
             onClick={() =>
               update({
@@ -606,10 +681,10 @@ function AssignmentCard({
             }
           >
             {a.checkIn === 'CHECKED_IN' ? 'Undo check-in' : 'Check in'}
-          </button>
+          </Button>
           <Control label="Final attendance">
             {(id) => (
-              <select
+              <Select
                 id={id}
                 value={a.attendance}
                 onChange={(e) => update({ attendance: e.target.value })}
@@ -625,7 +700,7 @@ function AssignmentCard({
                     {s.toLowerCase().replaceAll('_', ' ')}
                   </option>
                 ))}
-              </select>
+              </Select>
             )}
           </Control>
           <form
@@ -639,7 +714,9 @@ function AssignmentCard({
               value={notes}
               onChange={setNotes}
             />
-            <button>Save manager note</button>
+            <Button type="submit" variant="primary" size="compact">
+              Save manager note
+            </Button>
           </form>
         </>
       )}
@@ -666,7 +743,7 @@ function AssignmentCard({
           {assignments.length > 1 && (
             <Control label="Assignment to edit">
               {(id) => (
-                <select
+                <Select
                   id={id}
                   value={selected}
                   onChange={(e) => {
@@ -687,13 +764,13 @@ function AssignmentCard({
                       {row.spaceSnapshot.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
             </Control>
           )}
           <Control label="Booth assignment">
             {(id) => (
-              <select
+              <Select
                 id={id}
                 required
                 value={space}
@@ -718,7 +795,7 @@ function AssignmentCard({
                       : ''}
                   </option>
                 ))}
-              </select>
+              </Select>
             )}
           </Control>
           {data.rentals
@@ -781,13 +858,20 @@ function AssignmentCard({
             onChange={setMultiple}
           />
           <div className="actions">
-            <button disabled={!!issued && !keep}>
+            <Button
+              type="submit"
+              variant="primary"
+              size="compact"
+              disabled={!!issued && !keep}
+            >
               {assignment
                 ? 'Save booth and rental changes'
                 : 'Confirm booth and accepted rentals'}
-            </button>
+            </Button>
             {assignment && (
-              <button
+              <Button
+                variant="secondary"
+                size="compact"
                 type="button"
                 onClick={() => {
                   setSelected(0);
@@ -797,7 +881,7 @@ function AssignmentCard({
                 }}
               >
                 Assign an additional space
-              </button>
+              </Button>
             )}
           </div>
         </form>
@@ -807,18 +891,20 @@ function AssignmentCard({
         {prior.map((r) => `${r.name} × ${r.quantity}`).join(', ') || 'None'}
       </p>
       {invoice && (
-        <details>
+        <details className="ui-disclosure">
           <summary>
             Invoice {invoice.id}: {invoice.status.toLowerCase()}
           </summary>
-          <Invoice
-            key={`${invoice.id}:${invoice.revision}`}
-            invoice={invoice}
-            run={run}
-            canManage={canBill}
-          />
+          <div className="ui-disclosure-content">
+            <Invoice
+              key={`${invoice.id}:${invoice.revision}`}
+              invoice={invoice}
+              run={run}
+              canManage={canBill}
+            />
+          </div>
         </details>
       )}
-    </article>
+    </Card>
   );
 }

@@ -5,11 +5,15 @@
   "type": "module",
   "exports": {
     ".": "./src/index.tsx",
+    "./presentation": "./src/presentation.ts",
     "./styles.css": "./src/styles.css"
   },
   "dependencies": {
     "@market/api": "0.1.0",
+    "konva": "10.7.1",
+    "libphonenumber-js": "^1.13.15",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "react-konva": "19.3.0"
   }
 }

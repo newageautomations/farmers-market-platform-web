@@ -1,0 +1,135 @@
+---
+import { buttonClassName } from '@market/ui/presentation';
+import Button from '../../components/ui/Button.astro';
+import { createHash } from 'node:crypto';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import {
+  accountBridge,
+  isCentral,
+  AccountBridgeError,
+} from '../../lib/account';
+if (!isCentral(Astro.url))
+  return new Response('Use the central account page.', { status: 400 });
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+let status:
+  { phone: string; resendAvailableAt?: string; serverTime: string } | undefined;
+let unavailable = false;
+try {
+  status = await accountBridge({
+    action: 'phoneRegistrationStatus',
+    challenge: Astro.cookies.get('phone-challenge')?.value ?? '',
+    boundary: createHash('sha256').update(Astro.clientAddress).digest('hex'),
+  });
+} catch (error) {
+  unavailable = !(error instanceof AccountBridgeError && error.status === 400);
+}
+---
+
+<SiteLayout title="Verify your phone number" noindex>
+  <section class="py-12 account-panel verification-panel">
+    <h1>Verify your phone number</h1>
+    {status ? (
+      <>
+        <p>
+          We sent a 6-digit verification code to:
+          <br />
+          <strong>{status.phone}</strong>
+        </p>
+        <p class="field-help">
+          Your code expires in five minutes. Your account activates as soon as
+          your phone is verified.
+        </p>
+        <p
+          class="alert ui-alert ui-alert-error"
+          role="alert"
+          data-verification-error
+        >
+          {Astro.url.searchParams.has('unavailable')
+            ? 'Account verification is temporarily unavailable. Please try again later.'
+            : Astro.url.searchParams.has('error')
+              ? 'Verification could not be completed. Check the current code or request a new one.'
+              : Astro.url.searchParams.has('resendError')
+                ? 'A new code could not be sent. Please wait before trying again.'
+                : ''}
+        </p>
+        <form method="post" action="/api/account" data-otp-form>
+          <input type="hidden" name="action" value="verifyPhoneRegistration" />
+          <input type="hidden" name="code" value="" />
+          <fieldset class="otp-fieldset" aria-describedby="otp-help">
+            <legend>SMS verification code</legend>
+            <div class="otp-inputs">
+              {Array.from({ length: 6 }, (_, index) => (
+                <input
+                  type="text"
+                  name={`digit${index + 1}`}
+                  aria-label={`Verification code digit ${index + 1} of 6`}
+                  inputmode="numeric"
+                  autocomplete={index === 0 ? 'one-time-code' : 'off'}
+                  pattern="[0-9]"
+                  maxlength={index === 0 ? 6 : 1}
+                  required
+                  data-otp-digit
+                />
+              ))}
+            </div>
+            <small id="otp-help">
+              Enter six digits. You can also paste the whole code.
+            </small>
+          </fieldset>
+          <Button type="submit">Verify &amp; Create Account</Button>
+        </form>
+        <form
+          method="post"
+          action="/api/account"
+          data-resend-form
+          data-available-at={status.resendAvailableAt ?? status.serverTime}
+          data-server-time={status.serverTime}
+        >
+          <input type="hidden" name="action" value="resendPhoneRegistration" />
+          <Button type="submit" variant="secondary" class="resend-button">
+            Resend code
+          </Button>
+          <span data-resend-countdown></span>
+          <p
+            class="alert ui-alert ui-alert-info"
+            role="status"
+            data-resend-status
+          >
+            {Astro.url.searchParams.has('resent')
+              ? 'A new verification code has been sent.'
+              : ''}
+          </p>
+        </form>
+      </>
+    ) : (
+      <p class="alert ui-alert ui-alert-error" role="alert">
+        {unavailable
+          ? 'Account verification is temporarily unavailable. Please try again later.'
+          : 'This verification session has expired or is unavailable. Start signup again to receive a new code.'}
+      </p>
+    )}
+    <div class="actions">
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href="/account/signup"
+      >
+        Start signup again
+      </a>
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href="/account/login"
+      >
+        Sign in
+      </a>
+    </div>
+  </section>
+</SiteLayout>
+<script>
+  import '../../lib/phone-verification';
+</script>

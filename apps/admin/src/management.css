@@ -40,7 +40,6 @@
   min-width: 0;
 }
 .management-workspace .command-section {
-  margin: 1.5rem 0;
   max-width: 640px;
 }
 .management-workspace fieldset > label {
@@ -54,17 +53,7 @@
 .management-workspace th {
   overflow-wrap: anywhere;
 }
-.management-workspace .capability-note {
-  border-left: 3px solid var(--border);
-  padding: 0.5rem 1rem;
-  margin: 1.25rem 0;
-}
 .management-workspace select,
 .management-workspace input {
   max-width: 100%;
-}
-@media (max-width: 600px) {
-  .management-workspace table {
-    min-width: 580px;
-  }
 }

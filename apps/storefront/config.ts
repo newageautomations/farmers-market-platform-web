@@ -14,6 +14,17 @@ const environment = {
   ...process.env,
 };
 validateEnvironment(environment, development ? 'development' : 'production');
+// Astro's dev import.meta env loader does not populate process.env. These are
+// server-only account settings consumed by SSR; never add them to vite.define.
+if (development) {
+  for (const name of [
+    'PLATFORM_ACCOUNT_ORIGIN',
+    'PLATFORM_ACCOUNT_BRIDGE_KEY',
+    'ADMIN_ORIGIN',
+  ]) {
+    if (environment[name] !== undefined) process.env[name] = environment[name];
+  }
+}
 export default defineConfig({
   logger:
     runtimeMode(environment) === 'production'
@@ -49,6 +60,7 @@ export default defineConfig({
   adapter: node({ mode: 'standalone' }),
   integrations: [react()],
   vite: {
+    server: { strictPort: true },
     envDir: '../..',
     plugins: [tailwind()],
     build: { sourcemap: false },

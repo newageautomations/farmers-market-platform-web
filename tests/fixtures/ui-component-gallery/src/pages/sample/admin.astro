@@ -1,0 +1,65 @@
+---
+export const prerender = false;
+import PreviewLayout from '../../components/PreviewLayout.astro';
+import Sample from '../../components/Sample.astro';
+import { ShellPreview } from '../../components/ShellPreview';
+import '../../../../../../apps/admin/src/vendor.css';
+import '../../../../../../apps/admin/src/market.css';
+import '../../../../../../apps/admin/src/management.css';
+import '../../../../../../apps/admin/src/phase15.css';
+import '../../../../../../apps/admin/src/phase15b.css';
+import '../../../../../../apps/admin/src/market/dashboard.css';
+import designerCss from '../../../../../../apps/admin/src/market/phase14/designer.css?url';
+import { additionalCandidates } from '../../../additional-candidates';
+const shell = ['DSH-01', 'SID-01', 'HDR-01', 'MOB-01'].includes(
+  Astro.url.searchParams.get('id') ?? '',
+);
+const scope = Astro.url.searchParams.get('scope');
+const id = Astro.url.searchParams.get('id') ?? '';
+const ancestor = additionalCandidates[id]?.ancestor;
+const management = id === 'SEL-04' || ancestor === 'management';
+const vendor = ancestor === 'vendor';
+const operations =
+  ancestor === 'operations' ||
+  ['BTN-03', 'SEL-05', 'CRD-03', 'CRD-04', 'CRD-05'].includes(id);
+const shellScope =
+  scope === 'VENDOR' || scope === 'PLATFORM' ? scope : 'MARKET';
+---
+
+<PreviewLayout>
+  {id === 'TAB-02' && <link rel="stylesheet" href={designerCss} />}
+  {shell ? (
+    <>
+      <Sample />
+      <ShellPreview scope={shellScope} client:only="react" />
+    </>
+  ) : (
+    <div
+      class={management || vendor ? undefined : 'market-dashboard'}
+      data-input-mode="keyboard"
+    >
+      <div class="admin-shell">
+        <aside class="admin-sidebar">
+          <p>Ancestor CSS context only</p>
+        </aside>
+        <div class="admin-main">
+          <main class="admin-content">
+            <div
+              class={
+                management
+                  ? 'management-workspace'
+                  : vendor
+                    ? 'vendor-workspace'
+                    : 'market-workspace'
+              }
+            >
+              <div class={operations ? 'ops-workspace' : undefined}>
+                <Sample />
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+  )}
+</PreviewLayout>

@@ -1,0 +1,444 @@
+.occurrence-layout-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-block: 1rem;
+}
+.market-dashboard
+  .occurrence-layout-actions
+  > .button:not(.secondary):not(.ui-button),
+.market-dashboard .market-disclosure-header > .button:not(.ui-button),
+.market-dashboard
+  .layout-card-actions
+  > .button:not(.secondary):not(.ui-button) {
+  background: var(--brand-primary, #27523b);
+  border-color: var(--brand-primary, #27523b);
+  color: white;
+}
+.occurrence-layout-options > details {
+  border: 1px solid #d5dfd8;
+  border-radius: 8px;
+  margin-block: 0.8rem;
+}
+.occurrence-layout-options > details > summary {
+  padding: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.occurrence-layout-preview {
+  padding: 0 1rem 1rem;
+}
+.occurrence-layout-preview .konva-viewport {
+  height: clamp(240px, 35dvh, 380px);
+}
+.occurrence-layout-warning {
+  padding: 1rem;
+  border: 1px solid #d9a19b;
+  border-radius: 8px;
+  background: #fff2ef;
+}
+.occurrence-layout-warning .danger {
+  color: white;
+  background: #b33535;
+  border-color: #b33535;
+}
+.market-dashboard :is(h1, h2, h3, h4, legend, th) {
+  text-transform: capitalize;
+}
+.market-dashboard select.market-status-select {
+  font-weight: 600;
+}
+.market-dashboard select.market-status-select option {
+  background: white;
+  color: #24352b;
+}
+.market-dashboard .market-danger-command button[type='submit']:not(.ui-button),
+.market-dashboard
+  .market-danger-command
+  button[type='submit']:not(.ui-button):hover {
+  background: #b33535;
+  border-color: #b33535;
+  color: white;
+}
+.market-dashboard .market-next-date {
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  font-weight: 600;
+}
+.market-dashboard .market-rental-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+.market-dashboard .market-stock {
+  font-weight: 600;
+}
+.market-dashboard :is(button, .button, input, select, textarea, tr) {
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+.market-dashboard .market-workspace {
+  animation: market-enter 180ms ease both;
+}
+.market-dashboard .market-status-choice[aria-pressed='true'],
+.market-dashboard .market-status-choice[aria-pressed='true']:hover {
+  background: #315947;
+  color: white;
+  border-color: #315947;
+  box-shadow: inset 0 0 0 1px #315947;
+}
+.market-dashboard .market-status-choice[aria-pressed='true']::before {
+  content: '✓ ';
+}
+.market-dashboard
+  .market-status-choice[aria-pressed='true'][data-tone='warning'] {
+  background: var(--status-warning-bg);
+  color: var(--status-warning-fg);
+  border-color: var(--status-warning-fg);
+  box-shadow: inset 0 0 0 1px var(--status-warning-fg);
+}
+.market-dashboard
+  .market-status-choice[aria-pressed='true'][data-tone='danger'] {
+  background: var(--status-danger-bg);
+  color: var(--status-danger-fg);
+  border-color: var(--status-danger-fg);
+  box-shadow: inset 0 0 0 1px var(--status-danger-fg);
+}
+.market-dashboard
+  .market-status-choice[aria-pressed='true'][data-tone='neutral'] {
+  background: var(--status-neutral-bg);
+  color: var(--status-neutral-fg);
+  border-color: var(--status-neutral-fg);
+  box-shadow: inset 0 0 0 1px var(--status-neutral-fg);
+}
+@supports (appearance: base-select) {
+  .market-dashboard select:not(.ui-select),
+  .market-dashboard select:not(.ui-select)::picker(select) {
+    appearance: base-select;
+  }
+  .market-dashboard select:not(.ui-select) {
+    background-image: none;
+  }
+  .market-dashboard select:not(.ui-select)::picker(select) {
+    border: 1px solid #d5dfd8;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px #17392516;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition:
+      opacity 150ms,
+      transform 150ms,
+      display 150ms allow-discrete,
+      overlay 150ms allow-discrete;
+  }
+  .market-dashboard select:not(.ui-select):open::picker(select) {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @starting-style {
+    .market-dashboard select:not(.ui-select):open::picker(select) {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+  .market-dashboard select:not(.ui-select) option {
+    padding: 0.6rem 0.8rem;
+  }
+}
+@supports (interpolate-size: allow-keywords) {
+  .ui-disclosure::details-content {
+    interpolate-size: allow-keywords;
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 180ms,
+      content-visibility 180ms allow-discrete;
+  }
+  .ui-disclosure[open]::details-content {
+    block-size: auto;
+  }
+}
+@keyframes market-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes market-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (max-width: 1100px) {
+  .market-dashboard .market-rental-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .market-dashboard .market-rental-grid {
+    grid-template-columns: 1fr;
+  }
+  .market-dashboard .market-menu-toggle {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-dashboard *,
+  .market-dashboard *::before,
+  .market-dashboard *::after,
+  .market-dashboard dialog::backdrop {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+.market-disclosure {
+  border: 1px solid var(--border, #d3dfd6);
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+.market-disclosure-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+.market-dashboard .market-disclosure-toggle {
+  flex: 1;
+  min-width: 0;
+}
+.market-disclosure-toggle > span:first-child {
+  overflow-wrap: anywhere;
+}
+.market-disclosure-chevron {
+  transition: transform 220ms ease;
+  display: flex;
+  flex: none;
+}
+.market-disclosure.is-open
+  > .market-disclosure-header
+  .market-disclosure-chevron {
+  transform: rotate(180deg);
+}
+.market-disclosure-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 240ms ease;
+}
+.market-disclosure.is-open > .market-disclosure-content {
+  grid-template-rows: 1fr;
+}
+.market-disclosure-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.occurrence-layout-options > .market-disclosure {
+  margin-block: 0.75rem;
+}
+.occurrence-layout-options .market-disclosure-header > .button {
+  flex: 0 0 auto;
+}
+.occurrence-layout-preview {
+  padding: 0 1rem 1rem;
+}
+.saved-layouts-card {
+  width: 100%;
+  box-shadow: 0 4px 20px #17392509;
+}
+.saved-layouts-card > .market-disclosure-header {
+  padding: 1.5rem;
+}
+.saved-layouts-card .market-disclosure-toggle {
+  font-size: 1.15rem;
+}
+.layout-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
+  gap: 1.25rem;
+  padding: 0 1.5rem 1.5rem;
+}
+.layout-card {
+  border: 1px solid #d3dfd6;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  min-width: 0;
+}
+.layout-card-info {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+}
+.layout-card-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.layout-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0 1rem 1rem;
+}
+.layout-card-preview {
+  padding: 0.75rem;
+  background: #f2f6f2;
+}
+.layout-card-preview .konva-viewport {
+  height: 200px;
+  min-height: 200px;
+}
+.market-dashboard .layout-card-preview .ops-map {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+.layout-card-preview .ops-toolbar,
+.layout-card-preview .map-navigation,
+.layout-card-preview .map-hint {
+  display: none;
+}
+.layout-screen-navigation {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+}
+.layout-screen-navigation p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #526958;
+}
+.market-dashboard .admin-shell:has(.layout-editor-screen) {
+  display: block;
+}
+.market-dashboard .admin-shell:has(.layout-editor-screen) > .admin-sidebar,
+.market-dashboard .admin-main:has(.layout-editor-screen) > .admin-topbar,
+.market-dashboard .admin-main:has(.layout-editor-screen) > .admin-mobile-nav,
+.market-dashboard .admin-content:has(.layout-editor-screen) > .page-header {
+  display: none;
+}
+.market-dashboard .admin-content:has(.layout-editor-screen) {
+  padding: 0;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+}
+.market-dashboard .market-workspace:has(.layout-editor-screen) {
+  max-width: none;
+  margin: 0;
+}
+.market-dashboard .fixture-notice:has(~ .admin-shell .layout-editor-screen) {
+  display: none;
+}
+.layout-editor-screen .designer-header h1 {
+  font-size: 1.15rem;
+  margin: 0 0 0.25rem;
+}
+.layout-editor-screen {
+  height: 100dvh;
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.market-dashboard .ops-vendor-list .ops-day-card {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.layout-editor-screen .designer {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.layout-editor-screen .designer-body {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+.ops-workspace:has(.layout-editor-screen),
+.ops-controls:has(.layout-editor-screen) {
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  width: 100%;
+}
+@media (max-width: 700px) {
+  .saved-layouts-card > .market-disclosure-header {
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+  .layout-card-grid {
+    padding: 0 1rem 1rem;
+  }
+  .layout-screen-navigation {
+    flex-wrap: wrap;
+  }
+  .layout-editor-screen .designer-body {
+    height: auto;
+  }
+  .layout-editor-screen {
+    height: auto;
+    min-height: 100dvh;
+  }
+  .layout-editor-screen .designer-body > .map-canvas-shell {
+    min-height: 60dvh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-disclosure-content,
+  .market-disclosure-chevron {
+    transition: none;
+  }
+}
+
+/* Feature-specific BTN-01 adapter for the existing application decisions. */
+.application-status-action[data-tone='success'] {
+  --application-action-color: var(--status-success-fg);
+}
+.application-status-action[data-tone='warning'] {
+  --application-action-color: var(--status-warning-fg);
+}
+.application-status-action[data-tone='danger'] {
+  --application-action-color: var(--status-danger-fg);
+}
+.application-status-action[data-tone='info'] {
+  --application-action-color: var(--status-info-fg);
+}
+.application-status-action[data-tone='neutral'] {
+  --application-action-color: var(--status-neutral-fg);
+}
+.button.ui-button.application-status-action {
+  background: transparent;
+  border-color: var(--application-action-color);
+  color: var(--application-action-color);
+}
+.button.ui-button.application-status-action[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 1px var(--application-action-color);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.button.ui-button.application-status-action:hover:not(:disabled) {
+  background: var(--application-action-color);
+  border-color: var(--application-action-color);
+  color: white;
+}

@@ -1,3 +1,5 @@
+import { buttonClassName } from '@market/ui/presentation';
+import { Button, Input } from '@market/ui';
 import { useRef, useState } from 'react';
 import {
   cartMessage,
@@ -89,15 +91,23 @@ export function MarketPurchase({
     >
       {cart && <p>Your cart is for {occurrenceLabel(cart.occurrence)}.</p>}
       {mismatch && (
-        <p role="status">
+        <p className="alert ui-alert ui-alert-info" role="status">
           Remove the current items before switching occurrences.{' '}
-          <a href="/cart">Review your cart</a>
+          <a
+            className={buttonClassName({
+              variant: 'secondary',
+              className: 'button secondary',
+            })}
+            href="/cart"
+          >
+            Review your cart
+          </a>
         </p>
       )}
       {variantId && (
         <div className="field">
           <label htmlFor="market-quantity">Quantity</label>
-          <input
+          <Input
             id="market-quantity"
             name="quantity"
             type="number"
@@ -111,18 +121,37 @@ export function MarketPurchase({
           />
         </div>
       )}
-      <button className="button" disabled={pending || mismatch}>
+      <Button type="submit" variant="primary" disabled={pending || mismatch}>
         {pending
           ? 'Updating…'
           : variantId
             ? 'Add to cart'
             : 'Use this occurrence for my cart'}
-      </button>
+      </Button>
 
-      <p role="status" aria-live="polite">
-        {message} {message && <a href="/cart">View cart</a>}
+      <p
+        className={message ? 'alert ui-alert ui-alert-info' : undefined}
+        role="status"
+        aria-live="polite"
+      >
+        {message}{' '}
+        {message && (
+          <a
+            className={buttonClassName({
+              variant: 'secondary',
+              className: 'button secondary',
+            })}
+            href="/cart"
+          >
+            View cart
+          </a>
+        )}
       </p>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p className="alert ui-alert ui-alert-error" role="alert">
+          {error}
+        </p>
+      )}
     </form>
   );
 }

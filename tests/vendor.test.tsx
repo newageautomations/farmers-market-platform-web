@@ -262,7 +262,7 @@ describe('Vendor authority and boundary', () => {
     await userEvent
       .setup()
       .click(screen.getByRole('button', { name: 'Refresh workspace' }));
-    await screen.findByRole('heading', { name: 'Workspace unavailable' });
+    await screen.findByRole('heading', { name: 'Your account' });
     expect(screen.queryByText('Guarded Vendor')).not.toBeInTheDocument();
     expect(screen.queryByText('Vendor purchases')).not.toBeInTheDocument();
     f.mockRestore();
@@ -513,6 +513,29 @@ describe('read and command lifecycle', () => {
           token = (init?.headers as Record<string, string>)['vendure-token'];
         if (query.includes('query AdminSession'))
           return response({ me: multiUser });
+        if (query.includes('OwnPlatformAccountContexts'))
+          return response({
+            ownPlatformAccountContexts: {
+              customer: true,
+              onboarding: [],
+              affiliations: [
+                {
+                  mode: 'VENDOR',
+                  id: 1,
+                  name: 'Guarded Vendor',
+                  channelId: '7',
+                  canApply: true,
+                },
+                {
+                  mode: 'VENDOR',
+                  id: 2,
+                  name: 'Guarded Vendor B',
+                  channelId: '8',
+                  canApply: true,
+                },
+              ],
+            },
+          });
         if (query.includes('query VendorIdentity'))
           return response({
             ownVendorIdentity:
@@ -538,8 +561,8 @@ describe('read and command lifecycle', () => {
     await screen.findByText('Guarded Vendor');
     await userEvent
       .setup()
-      .selectOptions(screen.getByLabelText('Workspace'), '8');
-    await screen.findByText('Guarded Vendor B');
+      .selectOptions(await screen.findByLabelText('Business'), '8');
+    await screen.findByText('Guarded Vendor B', { selector: '.brand' });
     await act(async () =>
       oldRead.resolve(
         new Response(
@@ -547,7 +570,9 @@ describe('read and command lifecycle', () => {
         ),
       ),
     );
-    expect(screen.getByText('Guarded Vendor B')).toBeInTheDocument();
+    expect(
+      screen.getByText('Guarded Vendor B', { selector: '.brand' }),
+    ).toBeInTheDocument();
     expect(
       f.mock.calls.filter((call) =>
         JSON.parse(String(call[1]?.body)).query.includes('query AdminSession'),
@@ -688,8 +713,8 @@ describe('read and command lifecycle', () => {
     render(<Overview service={service} />);
     await waitFor(() =>
       expect(
-        screen.getByText(/23 Vendor customer relationships/),
-      ).toBeInTheDocument(),
+        screen.getByText('Vendor customer relationships').nextElementSibling,
+      ).toHaveTextContent(/^23$/),
     );
     expect(
       screen.getByRole('link', { name: 'Find an order' }),

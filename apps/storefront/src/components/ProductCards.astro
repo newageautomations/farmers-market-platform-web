@@ -1,4 +1,5 @@
 ---
+import { cardClassName } from '@market/ui/presentation';
 import type { PublicCatalog } from '@market/api';
 import {
   safeAsset,
@@ -13,7 +14,12 @@ const { items } = Astro.props;
 
 <div class="catalog-grid">
   {items.map((product) => (
-    <article class="product-card card">
+    <article
+      class={cardClassName({
+        className: 'product-card card',
+        spacing: 'contained',
+      })}
+    >
       <a href={`/products/${encodeURIComponent(product.slug)}`}>
         {safeAsset(product.featuredAsset?.preview) ? (
           <img
@@ -29,7 +35,7 @@ const { items } = Astro.props;
             No image
           </div>
         )}
-        <h2>{product.name}</h2>
+        <h2 class="ui-section-title-consumer">{product.name}</h2>
       </a>
       <p>{priceLabel(product.variants)}</p>
       <p>{plainDescription(product.description).slice(0, 160)}</p>

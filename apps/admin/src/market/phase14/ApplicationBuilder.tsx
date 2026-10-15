@@ -1,3 +1,5 @@
+import { Button, Select, Input } from '@market/ui';
+import { date, StatusBadge } from '../presentation';
 import { useState } from 'react';
 import {
   applicationQuestionTypes,
@@ -8,6 +10,7 @@ import {
   type OperationsCommand,
 } from '@market/api';
 import { ApplicationFields } from '@market/ui';
+import { platformName } from '@market/config';
 import { Check, Control, Entry, moneyLabel } from './common';
 
 const typeLabels: Record<ApplicationQuestion['type'], string> = {
@@ -106,6 +109,11 @@ export function ApplicationBuilder({
       className="ops-editor application-builder"
       aria-label="Application builder"
     >
+      <p>
+        Every public application starts with the required question: Do you have
+        an account with {platformName}? Yes or No. This platform-owned preamble
+        is always first and cannot be edited, hidden, or removed.
+      </p>
       <fieldset disabled={!editable} className="application-title">
         <Entry
           label="Application name"
@@ -115,22 +123,34 @@ export function ApplicationBuilder({
         />
       </fieldset>
       <p>
-        Version {version.versionNumber} · {version.status.toLowerCase()}.{' '}
+        <StatusBadge>{version.status}</StatusBadge>{' '}
         {editable
           ? 'Click a question to edit it. Drag the dots to change the order.'
-          : 'Create a new draft version to make changes.'}
+          : 'Create a new draft to make changes.'}
       </p>
       <div className="ops-toolbar">
-        <button type="button" onClick={() => setPreview((v) => !v)}>
+        <Button
+          variant="secondary"
+          size="compact"
+          type="button"
+          onClick={() => setPreview((v) => !v)}
+        >
           {preview ? 'Return to builder' : 'Preview application'}
-        </button>
+        </Button>
         {editable && (
-          <button type="button" onClick={save}>
+          <Button
+            variant="secondary"
+            size="compact"
+            type="button"
+            onClick={save}
+          >
             Save draft
-          </button>
+          </Button>
         )}
         {canManage && (
-          <button
+          <Button
+            variant="secondary"
+            size="compact"
             type="button"
             onClick={async () => {
               const cloned = (await run({
@@ -141,8 +161,8 @@ export function ApplicationBuilder({
               if (cloned) onSelect(cloned.id);
             }}
           >
-            Create new draft version
-          </button>
+            Create new draft
+          </Button>
         )}
       </div>
       {preview ? (
@@ -174,7 +194,7 @@ export function ApplicationBuilder({
                   </button>
                 )}
                 {editable ? (
-                  <input
+                  <Input
                     aria-label={`Section name: ${section}`}
                     defaultValue={section}
                     maxLength={200}
@@ -203,24 +223,32 @@ export function ApplicationBuilder({
                 )}
                 {editable && (
                   <div className="ops-toolbar">
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="compact"
+                      iconOnly
                       type="button"
                       disabled={sectionIndex === 0}
                       onClick={() => moveSection(section, sectionIndex - 1)}
                       aria-label={`Move section ${section} up`}
                     >
                       ↑
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="compact"
+                      iconOnly
                       type="button"
                       disabled={sectionIndex === definition.sections.length - 1}
                       onClick={() => moveSection(section, sectionIndex + 1)}
                       aria-label={`Move section ${section} down`}
                     >
                       ↓
-                    </button>
+                    </Button>
                     {definition.sections.length > 1 && (
-                      <button
+                      <Button
+                        variant="destructive"
+                        size="compact"
                         type="button"
                         onClick={() =>
                           setDefinition((d) => ({
@@ -240,7 +268,7 @@ export function ApplicationBuilder({
                         }
                       >
                         Remove section
-                      </button>
+                      </Button>
                     )}
                   </div>
                 )}
@@ -282,7 +310,7 @@ export function ApplicationBuilder({
                             />
                             <Control label="Question type">
                               {(id) => (
-                                <select
+                                <Select
                                   id={id}
                                   value={q.type}
                                   disabled={!!q.semantic}
@@ -290,6 +318,9 @@ export function ApplicationBuilder({
                                     edit(q.id, {
                                       type: e.target
                                         .value as ApplicationQuestion['type'],
+                                      maxLength: undefined,
+                                      minimum: undefined,
+                                      maximum: undefined,
                                       options: choiceTypes.includes(
                                         e.target.value,
                                       )
@@ -305,7 +336,7 @@ export function ApplicationBuilder({
                                       {typeLabels[type]}
                                     </option>
                                   ))}
-                                </select>
+                                </Select>
                               )}
                             </Control>
                           </div>
@@ -332,7 +363,9 @@ export function ApplicationBuilder({
                                       })
                                     }
                                   />
-                                  <button
+                                  <Button
+                                    variant="secondary"
+                                    size="compact"
                                     type="button"
                                     aria-label={`Remove option ${optionIndex + 1}`}
                                     disabled={q.options.length === 1}
@@ -345,10 +378,12 @@ export function ApplicationBuilder({
                                     }
                                   >
                                     ×
-                                  </button>
+                                  </Button>
                                 </div>
                               ))}
-                              <button
+                              <Button
+                                variant="secondary"
+                                size="compact"
                                 type="button"
                                 onClick={() =>
                                   edit(q.id, {
@@ -360,12 +395,52 @@ export function ApplicationBuilder({
                                 }
                               >
                                 Add option
-                              </button>
+                              </Button>
                             </div>
+                          )}
+                          {['SHORT_TEXT', 'LONG_TEXT'].includes(q.type) && (
+                            <Entry
+                              label="Maximum answer length"
+                              type="number"
+                              min={1}
+                              max={q.type === 'LONG_TEXT' ? 5000 : 500}
+                              step={1}
+                              value={
+                                q.maxLength ??
+                                (q.type === 'LONG_TEXT' ? 5000 : 500)
+                              }
+                              onChange={(v) =>
+                                edit(q.id, { maxLength: Number(v) })
+                              }
+                            />
+                          )}
+                          {q.type === 'NUMBER' && (
+                            <>
+                              <Entry
+                                label="Minimum answer value"
+                                type="number"
+                                min={-1000000}
+                                max={q.maximum ?? 1000000}
+                                value={q.minimum ?? -1000000}
+                                onChange={(v) =>
+                                  edit(q.id, { minimum: Number(v) })
+                                }
+                              />
+                              <Entry
+                                label="Maximum answer value"
+                                type="number"
+                                min={q.minimum ?? -1000000}
+                                max={1000000}
+                                value={q.maximum ?? 1000000}
+                                onChange={(v) =>
+                                  edit(q.id, { maximum: Number(v) })
+                                }
+                              />
+                            </>
                           )}
                           <Control label="Section">
                             {(id) => (
-                              <select
+                              <Select
                                 id={id}
                                 value={q.section}
                                 onChange={(e) =>
@@ -375,7 +450,7 @@ export function ApplicationBuilder({
                                 {definition.sections.map((s) => (
                                   <option key={s}>{s}</option>
                                 ))}
-                              </select>
+                              </Select>
                             )}
                           </Control>
                           {q.semantic && (
@@ -399,7 +474,9 @@ export function ApplicationBuilder({
                               />
                             </fieldset>
                             {!protectedField(q) && (
-                              <button
+                              <Button
+                                variant="destructive"
+                                size="compact"
                                 type="button"
                                 onClick={() => {
                                   setDefinition((d) => ({
@@ -412,9 +489,12 @@ export function ApplicationBuilder({
                                 }}
                               >
                                 Delete question
-                              </button>
+                              </Button>
                             )}
-                            <button
+                            <Button
+                              variant="secondary"
+                              size="compact"
+                              iconOnly
                               type="button"
                               disabled={index === 0}
                               aria-label={`Move ${q.label} up`}
@@ -423,8 +503,11 @@ export function ApplicationBuilder({
                               }
                             >
                               ↑
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="compact"
+                              iconOnly
                               type="button"
                               disabled={index === questions.length - 1}
                               aria-label={`Move ${q.label} down`}
@@ -433,13 +516,15 @@ export function ApplicationBuilder({
                               }
                             >
                               ↓
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="compact"
                               type="button"
                               onClick={() => setSelected('')}
                             >
                               Done
-                            </button>
+                            </Button>
                           </div>
                         </>
                       ) : (
@@ -470,7 +555,9 @@ export function ApplicationBuilder({
                   ))}
               </ol>
               {editable && (
-                <button
+                <Button
+                  variant="secondary"
+                  size="compact"
                   type="button"
                   onClick={() => {
                     const id = crypto.randomUUID();
@@ -494,12 +581,14 @@ export function ApplicationBuilder({
                   }}
                 >
                   Add question to {section}
-                </button>
+                </Button>
               )}
             </div>
           ))}
           {editable && (
-            <button
+            <Button
+              variant="secondary"
+              size="compact"
               type="button"
               onClick={() => {
                 let number = definition.sections.length + 1;
@@ -523,7 +612,7 @@ export function ApplicationBuilder({
               }}
             >
               Add section
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -539,7 +628,7 @@ export function ApplicationBuilder({
               .map((o) => (
                 <Check
                   key={o.id}
-                  label={new Date(o.startsAt).toLocaleString()}
+                  label={date(o.startsAt)}
                   checked={definition.occurrenceIds.includes(o.id)}
                   onChange={(v) =>
                     setDefinition((d) => ({
@@ -582,7 +671,9 @@ export function ApplicationBuilder({
             checked={advertised}
             onChange={setAdvertised}
           />
-          <button
+          <Button
+            variant="secondary"
+            size="compact"
             type="button"
             onClick={async () => {
               const saved = (await save()) as ApplicationVersion;
@@ -599,7 +690,7 @@ export function ApplicationBuilder({
             }}
           >
             Save and publish
-          </button>
+          </Button>
         </div>
       )}
     </section>

@@ -15,7 +15,10 @@ mutation ShopLogin(
   $password: String!
   $rememberMe: Boolean!
 ) {
-  login(username: $username, password: $password, rememberMe: $rememberMe) {
+  login: authenticate(
+    input: { platformShop: { username: $username, password: $password } }
+    rememberMe: $rememberMe
+  ) {
     __typename
     ... on CurrentUser {
       id

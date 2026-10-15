@@ -19,6 +19,7 @@
   },
   "include": [
     "apps/admin",
+    "apps/storefront/src/env.d.ts",
     "packages/**/*.ts",
     "packages/**/*.tsx",
     "scripts",

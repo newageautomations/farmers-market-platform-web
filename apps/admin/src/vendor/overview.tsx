@@ -54,13 +54,18 @@ export function Overview({ service }: { service: VendorService }) {
         <RouteLink to="/vendor/orders">Find an order</RouteLink>
         <RouteLink to="/vendor/markets">Manage Market relationships</RouteLink>
       </div>
-      <h2>Current workspace</h2>
+      <h2 className="ui-section-title-dashboard">Current workspace</h2>
       <ReadState {...customers} retry={customers.refresh} />
       {customers.data && (
-        <p>
-          {customers.data.totalItems} Vendor customer relationships.{' '}
-          <RouteLink to="/vendor/customers">View customers</RouteLink>
-        </p>
+        <dl className="ui-kpi-grid">
+          <div>
+            <dt>Vendor customer relationships</dt>
+            <dd>{customers.data.totalItems}</dd>
+            <dd className="ops-day-summary-detail">
+              <RouteLink to="/vendor/customers">View customers</RouteLink>
+            </dd>
+          </div>
+        </dl>
       )}
       <ReadState {...memberships} retry={memberships.refresh} />
       {memberships.data && (
@@ -70,10 +75,26 @@ export function Overview({ service }: { service: VendorService }) {
         </p>
       )}
       <ReadState {...catalog} retry={catalog.refresh} />
-      {catalog.data && <p>{catalog.data.totalItems} owned products.</p>}
+      {catalog.data && (
+        <dl className="ui-kpi-grid">
+          <div>
+            <dt>Owned products</dt>
+            <dd>{catalog.data.totalItems}</dd>
+          </div>
+        </dl>
+      )}
       <ReadState {...orders} retry={orders.refresh} />
-      {orders.data && <p>{orders.data.totalItems} operational orders.</p>}
-      <h2>Optional analytics snapshot</h2>
+      {orders.data && (
+        <dl className="ui-kpi-grid">
+          <div>
+            <dt>Operational orders</dt>
+            <dd>{orders.data.totalItems}</dd>
+          </div>
+        </dl>
+      )}
+      <h2 className="ui-section-title-dashboard">
+        Optional analytics snapshot
+      </h2>
       <ReadState {...availability} retry={availability.refresh} />
       {availability.data && (
         <AvailabilityNotice availability={availability.data} />

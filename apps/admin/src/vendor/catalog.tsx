@@ -1,8 +1,12 @@
+import { EmptyState } from '@market/ui';
+import { Badge } from '@market/ui';
+import { cardClassName, disclosureClassName } from '@market/ui/presentation';
 import { useCallback, useId, useState } from 'react';
 import { mayCommand } from '@market/admin-core';
 import { AppError, type ProductInput } from '@market/api';
 import { formatMoney, parsePrice } from '@market/config';
 import {
+  Select,
   Button,
   Checkbox,
   Field,
@@ -117,7 +121,9 @@ export function Products({
       {
         <>
           <form
-            className="filter-bar"
+            className={cardClassName({
+              className: 'filter-bar ui-control-row ui-control-row-lookup',
+            })}
             onSubmit={(e) => {
               e.preventDefault();
               setSkip(0);
@@ -130,7 +136,9 @@ export function Products({
               required={false}
               maxLength={200}
             />
-            <Button type="submit">Search</Button>
+            <div className="ui-field-action">
+              <Button type="submit">Search</Button>
+            </div>
           </form>
           <ReadState {...query} retry={query.refresh} />
           {query.data && (
@@ -142,7 +150,11 @@ export function Products({
                 {query.data.items.map((p) => (
                   <tr key={p.id}>
                     <th scope="row">{p.name}</th>
-                    <td>{p.enabled ? 'Enabled' : 'Disabled'}</td>
+                    <td>
+                      <Badge tone={p.enabled ? 'success' : 'neutral'}>
+                        {p.enabled ? 'Enabled' : 'Disabled'}
+                      </Badge>
+                    </td>
                     <td>{p.variants.length}</td>
                     <td>
                       <RouteLink
@@ -155,9 +167,21 @@ export function Products({
                 ))}
               </DataTable>
               {!query.data.items.length && (
-                <p>No products match your search.</p>
+                <EmptyState title="No matching products">
+                  <p>No products match your search.</p>
+                </EmptyState>
               )}
               <Pagination
+                summary={
+                  <>
+                    {query.data.totalItems} records. Showing{' '}
+                    {query.data.items.length ? skip + 1 : 0} to{' '}
+                    {query.data.items.length
+                      ? skip + query.data.items.length
+                      : 0}
+                    .
+                  </>
+                }
                 hasPrevious={skip > 0}
                 hasNext={skip + 20 < query.data.totalItems}
                 onPrevious={() => setSkip(skip - 20)}
@@ -266,7 +290,7 @@ function ProductDetail({
                   id={`option-${group.id}`}
                   label={group.name}
                 >
-                  <select
+                  <Select
                     id={`option-${group.id}`}
                     name={`option-${group.id}`}
                     required
@@ -277,7 +301,7 @@ function ProductDetail({
                         {option.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </Field>
               ))}
               <p>
@@ -301,53 +325,57 @@ function VariantEditor({
 }) {
   const formId = useId();
   return (
-    <details className="record-details">
+    <details className={disclosureClassName()}>
       <summary>Edit {v.name}</summary>
-      <CommandForm
-        title="Variant metadata"
-        run={(data) =>
-          service.updateVariant(v.id, {
-            name: text(data, 'variant-name'),
-            sku: text(data, 'sku'),
-            enabled: data.has('variant-enabled'),
-          })
-        }
-        onDone={refresh}
-      >
-        <TextField name="variant-name" label="Variant name" value={v.name} />
-        <TextField name="sku" label="SKU" value={v.sku} />
-        <Field id={`${formId}-enabled`} label="Enabled">
-          <Checkbox
-            id={`${formId}-enabled`}
-            name="variant-enabled"
-            defaultChecked={v.enabled}
-          />
-        </Field>
-      </CommandForm>
-      <CommandForm
-        title="Canonical price"
-        validate={(data) => {
-          parsePrice(text(data, 'price'), v.currency);
-        }}
-        run={(data) =>
-          service.price(v.id, parsePrice(text(data, 'price'), v.currency))
-        }
-        onDone={refresh}
-      >
-        <Field id={`${formId}-price`} label={`Price (${v.currency})`}>
-          <Input
-            name="price"
-            id={`${formId}-price`}
-            defaultValue={decimal(v.price, v.currency)}
-            inputMode="decimal"
-            required
-          />
-        </Field>
-        <p>
-          Enter an exact decimal amount. This price belongs to the canonical
-          Vendor currency.
-        </p>
-      </CommandForm>
+      <div className="ui-disclosure-content">
+        <CommandForm
+          embedded
+          title="Variant metadata"
+          run={(data) =>
+            service.updateVariant(v.id, {
+              name: text(data, 'variant-name'),
+              sku: text(data, 'sku'),
+              enabled: data.has('variant-enabled'),
+            })
+          }
+          onDone={refresh}
+        >
+          <TextField name="variant-name" label="Variant name" value={v.name} />
+          <TextField name="sku" label="SKU" value={v.sku} />
+          <Field id={`${formId}-enabled`} label="Enabled">
+            <Checkbox
+              id={`${formId}-enabled`}
+              name="variant-enabled"
+              defaultChecked={v.enabled}
+            />
+          </Field>
+        </CommandForm>
+        <CommandForm
+          embedded
+          title="Canonical price"
+          validate={(data) => {
+            parsePrice(text(data, 'price'), v.currency);
+          }}
+          run={(data) =>
+            service.price(v.id, parsePrice(text(data, 'price'), v.currency))
+          }
+          onDone={refresh}
+        >
+          <Field id={`${formId}-price`} label={`Price (${v.currency})`}>
+            <Input
+              name="price"
+              id={`${formId}-price`}
+              defaultValue={decimal(v.price, v.currency)}
+              inputMode="decimal"
+              required
+            />
+          </Field>
+          <p>
+            Enter an exact decimal amount. This price belongs to the canonical
+            Vendor currency.
+          </p>
+        </CommandForm>
+      </div>
     </details>
   );
 }

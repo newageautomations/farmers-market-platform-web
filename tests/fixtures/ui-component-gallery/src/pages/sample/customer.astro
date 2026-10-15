@@ -1,0 +1,31 @@
+---
+export const prerender = false;
+import CustomerLayout from '../../../../../../apps/storefront/src/layouts/CustomerLayout.astro';
+import Sample from '../../components/Sample.astro';
+const id = Astro.url.searchParams.get('id') ?? '';
+const shell = ['DSH-02', 'SID-02', 'HDR-02', 'MOB-02'].includes(id);
+---
+
+<CustomerLayout
+  title={
+    id === 'PGH-02'
+      ? 'Synthetic market overview'
+      : 'Synthetic customer workspace'
+  }
+  name="Synthetic customer"
+  path="/account"
+>
+  {shell ? (
+    <>
+      <p>
+        This is the actual Astro customer shell with synthetic content. Form
+        submissions and account requests are blocked. No dashboard is hydrated.
+      </p>
+      <article class="card">
+        <p>Synthetic card content.</p>
+      </article>
+    </>
+  ) : (
+    <Sample />
+  )}
+</CustomerLayout>

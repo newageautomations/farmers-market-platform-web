@@ -8,15 +8,15 @@
     border-color 150ms ease,
     box-shadow 150ms ease;
 }
-.admin-content button:hover:not(:disabled),
-.admin-content .button:hover {
+.admin-content button:not(.ui-button):not([role='tab']):hover:not(:disabled),
+.admin-content .button:not(.ui-button):hover {
   box-shadow: 0 2px 6px #17392518;
   filter: brightness(0.95);
 }
-.admin-topbar .button:hover {
+.admin-topbar .button:not(.ui-button):hover {
   background: #edf4ef;
 }
-.admin-content .ops-workspace button:hover:not(:disabled) {
+.admin-content .ops-workspace button:not(.ui-button):hover:not(:disabled) {
   background: #edf4ef;
 }
 .admin-content .route-button {
@@ -43,10 +43,6 @@
   margin-block: 1.5rem;
 }
 .admin-content .command-section {
-  padding: 1.5rem;
-  background: #fff;
-  border: 1px solid #d5dfd8;
-  border-radius: 10px;
   max-width: 900px;
 }
 .admin-content .command-section form > fieldset > .button {
@@ -72,57 +68,9 @@
 .admin-content .form-grid {
   margin-block: 1rem;
 }
-.admin-content dialog {
-  margin: auto;
-  width: min(900px, calc(100vw - 2rem));
-  max-height: 85dvh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: clamp(1rem, 3vw, 2rem);
-}
-.admin-content dialog .ops-editor {
+.admin-content dialog .ops-editor:not(.ui-card) {
   padding: 0;
   border: 0;
-}
-.admin-content .ops-editor > button + button {
-  margin-left: 0.75rem;
-}
-.nav-parent {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-.nav-parent > a {
-  flex: 1;
-}
-.nav-parent > button {
-  width: 32px;
-  min-height: 36px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  border-radius: 5px;
-}
-.nav-parent > button:hover {
-  background: #31594712;
-}
-.nav-subpages {
-  display: none;
-  padding: 0.25rem 0 0.5rem 0.75rem;
-  border-left: 1px solid #ccd9cf;
-  margin-left: 0.75rem;
-}
-.nav-group.expanded .nav-subpages,
-.nav-group:focus-within .nav-subpages {
-  display: grid;
-  gap: 0.25rem;
-}
-.admin-sidebar .nav-group:hover .nav-subpages {
-  display: grid;
-  gap: 0.25rem;
-}
-.admin-sidebar nav a:hover {
-  background: #31594712;
 }
 .admin-content .application-builder {
   max-width: 960px;
@@ -138,6 +86,8 @@
 }
 .application-title input {
   font-size: 1.6rem;
+}
+.application-title input:not(.ui-input) {
   border-width: 0 0 1px;
   border-radius: 0;
 }
@@ -210,7 +160,7 @@
   gap: 1rem;
   align-items: end;
 }
-.question-heading input {
+.question-heading input:not(.ui-input) {
   background: #f7f8f7;
   border-width: 0 0 1px;
   border-radius: 0;

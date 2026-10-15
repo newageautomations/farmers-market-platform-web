@@ -3,6 +3,7 @@ import {
   createStorefrontApi,
   createMarketStorefrontApi,
   createCheckoutApi,
+  createCustomerDashboardApi,
   createPreferenceApi,
   createPublicMarketOperationsApi,
 } from '@market/api';
@@ -60,6 +61,12 @@ export function requestCheckout(
   responseHeaders?: Headers,
 ) {
   return createCheckoutApi(requestOptions(context, responseHeaders));
+}
+export function requestCustomerDashboard(
+  context: Pick<APIContext, 'locals' | 'request'>,
+  responseHeaders?: Headers,
+) {
+  return createCustomerDashboardApi(requestOptions(context, responseHeaders));
 }
 export function requestPreferences(
   context: Pick<APIContext, 'locals' | 'request'>,

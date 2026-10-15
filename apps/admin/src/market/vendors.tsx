@@ -1,4 +1,5 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import { cardClassName } from '@market/ui/presentation';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   AppError,
   type MarketOrganizerRelationshipState as MarketRelationshipState,
@@ -8,8 +9,13 @@ import {
   type MarketListingStatus,
 } from '@market/api';
 import { mayMarketCommand } from '@market/admin-core';
-import { Badge, Button, Dialog, EmptyState, Pagination } from '@market/ui';
+import { Card, Button, EmptyState, Pagination } from '@market/ui';
 import type { MarketService } from './service';
+import {
+  MarketDialog as Dialog,
+  StatusBadge as Badge,
+  SearchSelect,
+} from './presentation';
 import {
   Choice,
   CommandForm,
@@ -23,7 +29,6 @@ import {
   RouteLink,
   RuleFields,
   ruleInput,
-  RuleSummary,
   SelectField,
   text,
   TextField,
@@ -93,13 +98,12 @@ export function MarketVendors({
   return (
     <>
       <ReadState {...active} retry={active.refresh} />
-      <Button className="secondary" onClick={active.refresh}>
-        Refresh Vendor relationships
-      </Button>
       {!id && (
         <>
           <form
-            className="dashboard-card"
+            className={cardClassName({
+              className: 'dashboard-card ui-control-row ui-control-row-lookup',
+            })}
             onSubmit={(event) => {
               event.preventDefault();
               setSearch(text(new FormData(event.currentTarget), 'search'));
@@ -113,7 +117,9 @@ export function MarketVendors({
               maxLength={200}
               value={search}
             />
-            <Button type="submit">Search relationships</Button>
+            <div className="ui-field-action">
+              <Button type="submit">Search relationships</Button>
+            </div>
           </form>
           {mayMarketCommand(service.context, 'ManageOwnMarketMemberships') && (
             <Button onClick={() => setAdd(true)}>Add Vendor</Button>
@@ -129,12 +135,7 @@ export function MarketVendors({
             (list.data.items.length ? (
               <DataTable
                 label="Vendor business relationships"
-                headings={[
-                  'Vendor',
-                  'Membership',
-                  'Preorder default',
-                  'Version',
-                ]}
+                headings={['Vendor', 'Membership', 'Preorder default']}
                 sort={{ heading: 'Vendor', direction: 'ascending' }}
               >
                 {list.data.items.map((member) => (
@@ -143,7 +144,6 @@ export function MarketVendors({
                       <RouteLink to={`/market/vendors/${tab}/${member.id}`}>
                         {member.vendor.name}
                       </RouteLink>
-                      <small>{member.vendor.slug}</small>
                     </td>
                     <td>
                       <Badge>{member.status}</Badge>
@@ -153,7 +153,6 @@ export function MarketVendors({
                         ? 'Configured by Vendor'
                         : 'Uses Market default'}
                     </td>
-                    <td>{member.version}</td>
                   </tr>
                 ))}
               </DataTable>
@@ -204,8 +203,8 @@ function PageControls({
   return (
     <div role="region" aria-label={label}>
       <p>
-        {page.totalItems} records. Showing {skip + (page.items.length ? 1 : 0)}{' '}
-        to {skip + page.items.length}.
+        {page.totalItems} records. Showing {page.items.length ? skip + 1 : 0} to{' '}
+        {page.items.length ? skip + page.items.length : 0}.
       </p>
       <Pagination
         label={label}
@@ -226,93 +225,99 @@ function AddVendor({
   close: () => void;
   refresh: () => void;
 }) {
-  const [skip, setSkip] = useState(0),
-    [search, setSearch] = useState(''),
-    [busy, setBusy] = useState(false);
+  const [query, setQuery] = useState('');
+  const [search, setSearch] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [selected, setSelected] = useState<{ id: string; name: string } | null>(
+    null,
+  );
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(query), 250);
+    return () => clearTimeout(timer);
+  }, [query]);
   const read = useCallback(
-    () => service.eligibleVendors({ take: 20, skip, search }),
-    [service, skip, search],
+    () => service.eligibleVendors({ take: 20, skip: 0, search }),
+    [service, search],
   );
   const directory = useRead(
-    `${service.readKey}:eligible-vendors:${skip}:${search}`,
+    `${service.readKey}:eligible-vendors:${search}`,
     read,
   );
+  const searching = directory.loading || query !== search;
   return (
-    <Dialog open title="Add Vendor" busy={busy} onClose={close}>
-      <p>
-        Choose an eligible business. The backend rechecks the relationship when
-        you submit.
-      </p>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          setSearch(text(new FormData(event.currentTarget), 'search'));
-          setSkip(0);
-        }}
-      >
-        <TextField
-          name="search"
-          label="Search eligible Vendors"
-          required={false}
-          maxLength={200}
-          value={search}
-        />
-        <Button type="submit" disabled={busy}>
-          Search directory
-        </Button>
-      </form>
-      <ReadState {...directory} retry={directory.refresh} />
-      {directory.data && (
+    <Dialog
+      open
+      title="Add Vendor"
+      busy={busy}
+      onClose={close}
+      showClose={false}
+    >
+      {(dismiss) => (
         <>
-          <PageControls
-            label="Eligible Vendor pages"
-            skip={skip}
-            page={directory.data}
-            change={setSkip}
-          />
-          {directory.data.items.length ? (
-            <CommandForm
-              key={`${skip}:${search}`}
-              title="New Vendor relationship"
-              submitLabel="Create relationship"
-              onDone={() => {
-                refresh();
-                close();
-              }}
-              run={async (data) => {
-                const selected = directory.data!.items.find(
-                  (v) => v.id === text(data, 'vendor'),
-                );
-                if (!selected) throw new AppError('validation');
-                setBusy(true);
-                try {
-                  return await service.membershipStatus(
-                    service.marketId,
-                    selected.id,
-                    status<MarketMembershipStatus>(data, membershipStatuses),
-                  );
-                } finally {
-                  setBusy(false);
+          <ReadState {...directory} retry={directory.refresh} />
+          <CommandForm
+            embedded
+            title="New Vendor relationship"
+            submitLabel="Create relationship"
+            onPendingChange={setBusy}
+            validate={() => {
+              if (!selected) throw new AppError('validation');
+            }}
+            secondaryAction={
+              <Button variant="secondary" disabled={busy} onClick={dismiss}>
+                Close
+              </Button>
+            }
+            onDone={() => {
+              refresh();
+              close();
+            }}
+            run={async (data) => {
+              if (!selected || selected.id !== text(data, 'vendor'))
+                throw new AppError('validation');
+              return service.membershipStatus(
+                service.marketId,
+                selected.id,
+                status<MarketMembershipStatus>(data, membershipStatuses),
+              );
+            }}
+          >
+            <SearchSelect
+              label="Vendor business"
+              placeholder="Search vendor businesses"
+              value={selected?.id ?? ''}
+              selectedLabel={selected?.name}
+              onSearch={setQuery}
+              loading={searching}
+              disabled={busy}
+              allowClear
+              onChange={(id) => {
+                if (!id) {
+                  setSelected(null);
+                  return;
                 }
+                const vendor = directory.data?.items.find((v) => v.id === id);
+                if (vendor) setSelected({ id: vendor.id, name: vendor.name });
               }}
-            >
-              <SelectField name="vendor" label="Vendor business">
-                {directory.data.items.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name} ({v.slug})
-                  </option>
-                ))}
-              </SelectField>
-              <Choice
-                name="status"
-                label="Initial business membership status"
-                choices={membershipStatuses}
-                value="pending"
-              />
-            </CommandForm>
-          ) : (
-            <EmptyState title="No eligible Vendors match" />
-          )}
+              options={(directory.data?.items ?? []).map((v) => ({
+                value: v.id,
+                label: v.name,
+              }))}
+              searchHint={
+                directory.data &&
+                directory.data.totalItems > directory.data.items.length
+                  ? 'Type more of the business name to narrow these results.'
+                  : undefined
+              }
+            />
+            <input type="hidden" name="vendor" value={selected?.id ?? ''} />
+            <Choice
+              name="status"
+              label="Initial business membership status"
+              choices={membershipStatuses}
+              value="pending"
+            />
+          </CommandForm>
         </>
       )}
     </Dialog>
@@ -333,28 +338,25 @@ function Relationship({
   tab: 'memberships' | 'participation' | 'listings' | 'offerings';
 }) {
   const member = state.membership;
-  const [range, setRange] = useState(initialRange);
-  const [choiceSkip, setChoiceSkip] = useState(0);
-  const bounds = dateBounds(range.from, range.through);
-  const occurrencesRead = useCallback(
-    () =>
-      service.occurrencePage({
-        take: 20,
-        skip: choiceSkip,
-        from: bounds.from,
-        through: bounds.through,
-      }),
-    [service, bounds.from, bounds.through, choiceSkip],
-  );
-  const occurrences = useRead(
-    `${service.readKey}:participation-choices:${bounds.from}:${bounds.through}:${choiceSkip}`,
-    occurrencesRead,
-  );
-  const configRead = useCallback(
-    () => service.configuration(service.marketId),
-    [service],
-  );
-  const config = useRead(`${service.readKey}:relationship-config`, configRead);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [modalBusy, setModalBusy] = useState(false);
+  const close = () => setEditing(null);
+  const saved = () => {
+    close();
+    refresh();
+  };
+  const occurrenceName = (id: string) => {
+    const occurrence = state.occurrences.find((o) => o.id === id);
+    return occurrence
+      ? date(occurrence.startsAt, occurrence.timezone)
+      : `Market Date ${id}`;
+  };
+  const productName = (variantId: string) => {
+    const listing = state.listings.find((l) => l.variantId === variantId);
+    return listing
+      ? `${listing.variant.product.name} / ${listing.variant.name}`
+      : 'Product Offering';
+  };
   const canMembership = mayMarketCommand(
     service.context,
     'ManageOwnMarketMemberships',
@@ -388,17 +390,14 @@ function Relationship({
           </RouteLink>
         ))}
       </div>
-      <p>
-        {member.vendor.name} · Business membership {member.status} · version{' '}
-        {member.version}
-      </p>
-      <p>
-        Business membership, listing approval, participation, offering and
-        publication are independent states.
-      </p>
-      <RuleSummary rule={member.preorderDefault} />
+      <h2 className="ui-section-title-dashboard">{member.vendor.name}</h2>
       {tab === 'memberships' && (
         <>
+          {!canMembership && (
+            <p>
+              <Badge>{member.status}</Badge>
+            </p>
+          )}
           {canMembership && (
             <CommandForm
               title="Business membership"
@@ -430,276 +429,141 @@ function Relationship({
       )}
       {tab === 'listings' && (
         <>
-          <p>
-            Labels reflect the current Vendor catalog. Approval, publication and
-            offering availability remain separate.
-          </p>
           {controls('listings', 'Listing pages')}
           {state.listings.length ? (
             <DataTable
-              label="Listing approvals (backend order)"
-              headings={[
-                'Listing',
-                'Variant',
-                'Approval',
-                'Publication',
-                'Version',
-              ]}
+              label="Listing approvals"
+              headings={['Variant', 'Approval', 'Publication']}
             >
               {state.listings.map((row) => (
                 <tr key={row.id}>
-                  <td>Listing reference {row.id}</td>
                   <td>
-                    {row.variant.product.name}
+                    <Button
+                      className="secondary"
+                      onClick={() => setEditing(`listing:${row.id}`)}
+                    >
+                      {row.variant.product.name}
+                    </Button>
                     <small>
                       {row.variant.name} · {row.variant.sku}
                     </small>
                   </td>
-                  <td>{row.status}</td>
+                  <td>
+                    <Badge>{row.status}</Badge>
+                  </td>
                   <td>
                     <Badge>{row.publication.state}</Badge>
                   </td>
-                  <td>{row.version}</td>
                 </tr>
               ))}
             </DataTable>
           ) : (
             <EmptyState title="No listings returned" />
           )}
-          {canListing &&
-            state.listings.map((listing) => (
-              <CommandForm
-                key={`listing:${listing.id}:${listing.version}`}
-                title={`Listing reference ${listing.id}`}
-                onDone={refresh}
-                submitLabel="Update listing approval"
-                run={(data) =>
-                  service.approveListing(
-                    listing.id,
-                    listing.version,
-                    status<MarketListingStatus>(data, listingStatuses),
-                  )
-                }
-                confirm={(data) =>
-                  text(data, 'status') === 'withdrawn'
-                    ? 'Withdraw this listing approval? This does not delete the Product or act as a refund.'
-                    : undefined
-                }
+          {state.listings
+            .filter((listing) => editing === `listing:${listing.id}`)
+            .map((listing) => (
+              <Dialog
+                key={listing.id}
+                open
+                title={listing.variant.product.name}
+                busy={modalBusy}
+                onClose={close}
+                showClose={!canListing}
               >
-                <Choice
-                  name="status"
-                  label="Listing approval status"
-                  choices={listingStatuses}
-                  value={
-                    listing.status === 'pending' ? 'approved' : listing.status
-                  }
-                />
-              </CommandForm>
+                {(dismiss) => (
+                  <>
+                    {canListing ? (
+                      <CommandForm
+                        embedded
+                        key={`listing:${listing.id}:${listing.version}`}
+                        title="Listing Approval"
+                        secondaryAction={
+                          <Button
+                            variant="secondary"
+                            disabled={modalBusy}
+                            onClick={dismiss}
+                          >
+                            Close
+                          </Button>
+                        }
+                        onPendingChange={setModalBusy}
+                        onDone={saved}
+                        submitLabel="Update listing approval"
+                        run={(data) =>
+                          service.approveListing(
+                            listing.id,
+                            listing.version,
+                            status<MarketListingStatus>(data, listingStatuses),
+                          )
+                        }
+                        confirm={(data) =>
+                          text(data, 'status') === 'withdrawn'
+                            ? 'Withdraw this listing approval? This does not delete the Product or act as a refund.'
+                            : undefined
+                        }
+                      >
+                        <Choice
+                          name="status"
+                          label="Listing approval status"
+                          choices={listingStatuses}
+                          value={
+                            listing.status === 'pending'
+                              ? 'approved'
+                              : listing.status
+                          }
+                        />
+                      </CommandForm>
+                    ) : (
+                      <Badge>{listing.status}</Badge>
+                    )}
+                  </>
+                )}
+              </Dialog>
             ))}
         </>
       )}
       {tab === 'participation' && (
-        <>
-          {controls('occurrences', 'Relationship occurrence pages')}
-          {state.occurrences.length > 0 && (
-            <DataTable
-              label="Relationship occurrence history"
-              headings={['Occurrence', 'Status']}
-            >
-              {state.occurrences.map((row) => (
-                <tr key={row.id}>
-                  <td>
-                    <RouteLink to={`/market/occurrences/${row.id}`}>
-                      {row.localStartsAt} ({row.timezone})
-                    </RouteLink>
-                  </td>
-                  <td>{row.status}</td>
-                </tr>
-              ))}
-            </DataTable>
-          )}
-          {controls('participations', 'Participation pages')}
-          {state.participations.length ? (
-            <DataTable
-              label="Occurrence participation (backend order)"
-              headings={[
-                'Occurrence',
-                'Participation',
-                'Pickup instructions',
-                'Version',
-              ]}
-            >
-              {state.participations.map((row) => (
-                <tr key={row.id}>
-                  <td>
-                    <RouteLink to={`/market/occurrences/${row.occurrenceId}`}>
-                      Occurrence reference {row.occurrenceId}
-                    </RouteLink>
-                  </td>
-                  <td>{row.status}</td>
-                  <td>{row.pickupInstructions || 'Not provided'}</td>
-                  <td>{row.version}</td>
-                </tr>
-              ))}
-            </DataTable>
-          ) : (
-            <EmptyState title="No participation returned" />
-          )}
-          {canParticipation &&
-            state.participations.map((row) => (
-              <CommandForm
-                key={`participation:${row.id}:${row.version}`}
-                title={`Participation for occurrence ${row.occurrenceId}`}
-                onDone={refresh}
-                submitLabel="Update participation"
-                validate={(data) => {
-                  status(data, participationStatuses);
-                  if (data.has('useOverride')) ruleInput(data);
-                }}
-                run={(data) =>
-                  service.participation({
-                    membershipId: member.id,
-                    occurrenceId: row.occurrenceId,
-                    expectedVersion: row.version,
-                    status: status(data, participationStatuses),
-                    pickupInstructions: text(data, 'pickupInstructions'),
-                    preorderOverride: config.data?.overridePolicy
-                      .participationAllowed
-                      ? data.has('useOverride')
-                        ? ruleInput(data)
-                        : null
-                      : row.preorderOverride,
-                  })
-                }
-                confirm={(data) =>
-                  text(data, 'status') === 'cancelled'
-                    ? 'Cancel this Vendor participation? This changes participation only and does not issue refunds or prove attendance.'
-                    : undefined
-                }
-              >
-                <Choice
-                  name="status"
-                  label="Participation status"
-                  value={row.status}
-                  choices={participationStatuses}
-                />
-                <TextField
-                  name="pickupInstructions"
-                  label="Participation pickup instructions"
-                  value={row.pickupInstructions}
-                  required={false}
-                  maxLength={2000}
-                />
-                {config.data?.overridePolicy.participationAllowed ? (
-                  <RuleFields rule={row.preorderOverride} optional />
-                ) : (
-                  <RuleSummary rule={row.preorderOverride} />
-                )}
-              </CommandForm>
-            ))}
-          {canParticipation && (
-            <>
-              <RangeForm
-                range={range}
-                onChange={(value) => {
-                  setRange(value);
-                  setChoiceSkip(0);
-                }}
-              />
-              <ReadState {...occurrences} retry={occurrences.refresh} />
-              {occurrences.data && (
-                <PageControls
-                  label="Participation occurrence choices"
-                  skip={choiceSkip}
-                  page={occurrences.data}
-                  change={setChoiceSkip}
-                />
-              )}
-              {occurrences.data &&
-                (occurrences.data.items.filter(
-                  (row) =>
-                    !state.participations.some(
-                      (p) => p.occurrenceId === row.id,
-                    ),
-                ).length ? (
-                  <CommandForm
-                    title="Add occurrence participation"
-                    onDone={refresh}
-                    submitLabel="Add participation"
-                    run={(data) =>
-                      service.participation({
-                        membershipId: member.id,
-                        occurrenceId: text(data, 'occurrenceId'),
-                        expectedVersion: null,
-                        status: status(data, participationStatuses),
-                        pickupInstructions: text(data, 'pickupInstructions'),
-                        preorderOverride: data.has('useOverride')
-                          ? ruleInput(data)
-                          : null,
-                      })
-                    }
-                  >
-                    <SelectField name="occurrenceId" label="Occurrence">
-                      <>
-                        {occurrences.data.items
-                          .filter(
-                            (row) =>
-                              !state.participations.some(
-                                (p) => p.occurrenceId === row.id,
-                              ),
-                          )
-                          .map((row) => (
-                            <option key={row.id} value={row.id}>
-                              {row.localStartsAt} ({row.timezone}), {row.status}
-                            </option>
-                          ))}
-                      </>
-                    </SelectField>
-                    <Choice
-                      name="status"
-                      label="New participation status"
-                      choices={['planned', 'confirmed']}
-                      value="planned"
-                    />
-                    <TextField
-                      name="pickupInstructions"
-                      label="New participation pickup instructions"
-                      required={false}
-                      maxLength={2000}
-                    />
-                    {config.data?.overridePolicy.participationAllowed && (
-                      <RuleFields rule={null} optional />
-                    )}
-                  </CommandForm>
-                ) : (
-                  <p>No additional occurrences in this date view.</p>
-                ))}
-            </>
-          )}
-          <ReadState {...config} retry={config.refresh} />
-        </>
+        <ParticipationPanel
+          service={service}
+          state={state}
+          refresh={refresh}
+          editable={canParticipation}
+        />
       )}
       {tab === 'offerings' && (
         <>
           {controls('offerings', 'Offering pages')}
           {state.offerings.length ? (
             <DataTable
-              label="Market offerings (backend order)"
+              label="Product offerings"
               headings={[
                 'Offering',
                 'Enabled',
                 'Preorders',
                 'Sales cap',
                 'Effective window',
-                'Version',
               ]}
             >
               {state.offerings.map((row) => (
                 <tr key={row.id}>
-                  <td>Variant reference {row.variantId}</td>
-                  <td>{String(row.enabled)}</td>
-                  <td>{String(row.preorderEnabled)}</td>
-                  <td>{row.salesCap ?? 'No cap configured'}</td>
+                  <td>
+                    <Button
+                      className="secondary"
+                      onClick={() => setEditing(`offering:${row.id}`)}
+                    >
+                      {productName(row.variantId)}
+                    </Button>
+                  </td>
+                  <td>
+                    <Badge>{row.enabled ? 'enabled' : 'disabled'}</Badge>
+                  </td>
+                  <td>
+                    <Badge>
+                      {row.preorderEnabled ? 'enabled' : 'disabled'}
+                    </Badge>
+                  </td>
+                  <td>{row.salesCap ?? 'No limit'}</td>
                   <td>
                     {date(
                       row.effectivePreorderOpensAt,
@@ -710,138 +574,367 @@ function Relationship({
                       row.effectivePreorderClosesAt,
                       row.windowProvenance.timezone,
                     )}
-                    <small>
-                      {row.windowProvenance.timezone} ·{' '}
-                      {row.windowProvenance.source}
-                    </small>
                   </td>
-                  <td>{row.version}</td>
                 </tr>
               ))}
             </DataTable>
           ) : (
             <EmptyState title="No offerings returned" />
           )}
-          <p>
-            The occurrence sales cap is separate from Vendor physical inventory.
-            Effective windows come from the backend. A window is domain/time
-            configuration, not stock availability or checkout authorization.
-          </p>
-          {state.offerings.map((row) => (
-            <OfferingDetail
-              key={row.id}
-              offering={row}
-              service={service}
-              refresh={refresh}
-              editable={canOffering}
-            />
-          ))}
+          {state.offerings
+            .filter((row) => editing === `offering:${row.id}`)
+            .map((row) => (
+              <Dialog
+                key={row.id}
+                open
+                title={productName(row.variantId)}
+                busy={modalBusy}
+                onClose={close}
+              >
+                <OfferingDetail
+                  offering={row}
+                  service={service}
+                  refresh={saved}
+                  editable={canOffering}
+                  onPendingChange={setModalBusy}
+                />
+              </Dialog>
+            ))}
           {canOffering &&
             state.participations.length > 0 &&
             state.listings.length > 0 && (
-              <CommandForm
-                title="Create offering"
-                onDone={refresh}
-                submitLabel="Create offering"
-                validate={(data) => {
-                  cap(data);
-                  const participationId = text(data, 'participationId'),
-                    listingId = text(data, 'listingId');
-                  const listing = state.listings.find(
-                    (row) => row.id === listingId,
-                  );
-                  if (
-                    !listing ||
-                    state.offerings.some(
-                      (row) =>
-                        row.participationId === participationId &&
-                        row.variantId === listing.variantId,
-                    )
-                  )
-                    throw new AppError('validation');
-                }}
-                run={(data) => {
-                  const listing = state.listings.find(
-                    (row) => row.id === text(data, 'listingId'),
-                  );
-                  if (!listing) throw new AppError('validation');
-                  return service.offering({
-                    participationId: text(data, 'participationId'),
-                    listingId: listing.id,
-                    variantId: listing.variantId,
-                    expectedVersion: null,
-                    enabled: data.has('enabled'),
-                    preorderEnabled: data.has('preorderEnabled'),
-                    salesCap: cap(data),
-                  });
-                }}
-              >
-                <SelectField
-                  name="participationId"
-                  label="Offering participation"
-                >
-                  {state.participations.map((row) => (
-                    <option key={row.id} value={row.id}>
-                      Occurrence {row.occurrenceId}, {row.status}
-                    </option>
-                  ))}
-                </SelectField>
-                <SelectField name="listingId" label="Offering listing">
-                  {state.listings.map((row) => (
-                    <option key={row.id} value={row.id}>
-                      Variant reference {row.variantId}, {row.status}
-                    </option>
-                  ))}
-                </SelectField>
-                <Toggle name="enabled" label="Offering enabled" value={false} />
-                <Toggle
-                  name="preorderEnabled"
-                  label="Preorders enabled"
-                  value={false}
-                />
-                <TextField
-                  name="salesCap"
-                  label="Occurrence sales cap (optional)"
-                  required={false}
-                  type="number"
-                />
-              </CommandForm>
+              <>
+                <Button onClick={() => setEditing('new-offering')}>
+                  Create Offering
+                </Button>
+                {editing === 'new-offering' && (
+                  <Dialog
+                    open
+                    title="Create Offering"
+                    busy={modalBusy}
+                    onClose={close}
+                    showClose={false}
+                  >
+                    {(dismiss) => (
+                      <>
+                        <CommandForm
+                          embedded
+                          title="Offering Details"
+                          secondaryAction={
+                            <Button
+                              variant="secondary"
+                              disabled={modalBusy}
+                              onClick={dismiss}
+                            >
+                              Close
+                            </Button>
+                          }
+                          onPendingChange={setModalBusy}
+                          onDone={saved}
+                          submitLabel="Create offering"
+                          validate={(data) => {
+                            cap(data);
+                            const participationId = text(
+                                data,
+                                'participationId',
+                              ),
+                              listingId = text(data, 'listingId');
+                            const listing = state.listings.find(
+                              (row) => row.id === listingId,
+                            );
+                            if (
+                              !listing ||
+                              state.offerings.some(
+                                (row) =>
+                                  row.participationId === participationId &&
+                                  row.variantId === listing.variantId,
+                              )
+                            )
+                              throw new AppError('validation');
+                          }}
+                          run={(data) => {
+                            const listing = state.listings.find(
+                              (row) => row.id === text(data, 'listingId'),
+                            );
+                            if (!listing) throw new AppError('validation');
+                            return service.offering({
+                              participationId: text(data, 'participationId'),
+                              listingId: listing.id,
+                              variantId: listing.variantId,
+                              expectedVersion: null,
+                              enabled: data.has('enabled'),
+                              preorderEnabled: data.has('preorderEnabled'),
+                              salesCap: cap(data),
+                            });
+                          }}
+                        >
+                          <SelectField
+                            name="participationId"
+                            label="Offering participation"
+                          >
+                            {state.participations.map((row) => (
+                              <option key={row.id} value={row.id}>
+                                {occurrenceName(row.occurrenceId)}
+                              </option>
+                            ))}
+                          </SelectField>
+                          <SelectField
+                            name="listingId"
+                            label="Offering listing"
+                          >
+                            {state.listings.map((row) => (
+                              <option key={row.id} value={row.id}>
+                                {row.variant.product.name} / {row.variant.name}
+                              </option>
+                            ))}
+                          </SelectField>
+                          <Toggle
+                            name="enabled"
+                            label="Offering enabled"
+                            value={false}
+                          />
+                          <Toggle
+                            name="preorderEnabled"
+                            label="Preorders enabled"
+                            value={false}
+                          />
+                          <TextField
+                            name="salesCap"
+                            label="Occurrence sales cap (optional)"
+                            required={false}
+                            type="number"
+                          />
+                        </CommandForm>
+                      </>
+                    )}
+                  </Dialog>
+                )}
+              </>
             )}
         </>
       )}
     </>
   );
 }
+function ParticipationPanel({
+  service,
+  state,
+  refresh,
+  editable,
+}: {
+  service: MarketService;
+  state: MarketRelationshipState;
+  refresh: () => void;
+  editable: boolean;
+}) {
+  const [range, setRange] = useState(initialRange);
+  const [skip, setSkip] = useState(0);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const bounds = dateBounds(range.from, range.through);
+  const load = useCallback(
+    () =>
+      service.occurrencePage({
+        take: 20,
+        skip,
+        from: bounds.from,
+        through: bounds.through,
+      }),
+    [service, skip, bounds.from, bounds.through],
+  );
+  const occurrences = useRead(
+    `${service.readKey}:participation-dates:${bounds.from}:${bounds.through}:${skip}`,
+    load,
+  );
+  // Read every participation page so a date on a later page cannot be mistaken for a new participation.
+  const loadParticipation = useCallback(async () => {
+    let rows: MarketRelationshipState['participations'] = [];
+    let offset = 0;
+    while (true) {
+      const page = (
+        await service.relationshipDetail(state.membership.id, {
+          participations: offset,
+        })
+      ).participations;
+      rows = [...rows, ...page.items];
+      offset += page.items.length;
+      if (offset >= page.totalItems) return rows;
+      if (!page.items.length) throw new AppError('unavailable');
+    }
+  }, [service, state.membership.id]);
+  const participations = useRead(
+    `${service.readKey}:all-participations:${state.membership.id}`,
+    loadParticipation,
+  );
+  const configRead = useCallback(
+    () => service.configuration(service.marketId),
+    [service],
+  );
+  const config = useRead(`${service.readKey}:participation-config`, configRead);
+  const occurrence = occurrences.data?.items.find((o) => o.id === selected);
+  const row = participations.data?.find((p) => p.occurrenceId === selected);
+  return (
+    <>
+      <RangeForm
+        range={range}
+        onChange={(value) => {
+          setRange(value);
+          setSkip(0);
+        }}
+      />
+      <ReadState {...occurrences} retry={occurrences.refresh} />
+      <ReadState {...participations} retry={participations.refresh} />
+      {occurrences.data && participations.data && (
+        <>
+          <DataTable
+            label="Occurrence participation"
+            headings={['Occurrence', 'Participation', 'Pickup Instructions']}
+          >
+            {occurrences.data.items.map((o) => {
+              const participation = participations.data!.find(
+                (p) => p.occurrenceId === o.id,
+              );
+              return (
+                <tr key={o.id}>
+                  <td>
+                    <Button
+                      className="secondary"
+                      onClick={() => setSelected(o.id)}
+                    >
+                      {date(o.startsAt, o.timezone)}
+                    </Button>
+                  </td>
+                  <td>
+                    <Badge>
+                      {participation?.status ?? 'not participating'}
+                    </Badge>
+                  </td>
+                  <td>{participation?.pickupInstructions || 'Not provided'}</td>
+                </tr>
+              );
+            })}
+          </DataTable>
+          {!occurrences.data.items.length && (
+            <EmptyState title="No occurrences in these dates" />
+          )}
+          <PageControls
+            label="Participation occurrence pages"
+            skip={skip}
+            page={occurrences.data}
+            change={setSkip}
+          />
+        </>
+      )}
+      {occurrence && (
+        <Dialog
+          open
+          title={date(occurrence.startsAt, occurrence.timezone)}
+          busy={busy}
+          onClose={() => setSelected(null)}
+          showClose={!editable || !config.data}
+        >
+          {(dismiss) => (
+            <>
+              <ReadState {...config} retry={config.refresh} />
+              {editable && config.data ? (
+                <CommandForm
+                  embedded
+                  title="Occurrence Participation"
+                  secondaryAction={
+                    <Button
+                      variant="secondary"
+                      disabled={busy}
+                      onClick={dismiss}
+                    >
+                      Close
+                    </Button>
+                  }
+                  onPendingChange={setBusy}
+                  submitLabel="Save and Close"
+                  onDone={() => {
+                    setSelected(null);
+                    participations.refresh();
+                    refresh();
+                  }}
+                  validate={(data) => {
+                    status(data, participationStatuses);
+                    if (data.has('useOverride')) ruleInput(data);
+                  }}
+                  run={(data) =>
+                    service.participation({
+                      membershipId: state.membership.id,
+                      occurrenceId: occurrence.id,
+                      expectedVersion: row?.version ?? null,
+                      status: status(data, participationStatuses),
+                      pickupInstructions: text(data, 'pickupInstructions'),
+                      preorderOverride: config.data!.overridePolicy
+                        .participationAllowed
+                        ? data.has('useOverride')
+                          ? ruleInput(data)
+                          : null
+                        : (row?.preorderOverride ?? null),
+                    })
+                  }
+                  confirm={(data) =>
+                    text(data, 'status') === 'cancelled'
+                      ? 'Cancel this vendor participation? Existing orders will need to be handled separately.'
+                      : undefined
+                  }
+                >
+                  <Choice
+                    name="status"
+                    label="Participation status"
+                    value={row?.status ?? 'planned'}
+                    choices={participationStatuses}
+                  />
+                  <TextField
+                    name="pickupInstructions"
+                    label="Participation pickup instructions"
+                    value={row?.pickupInstructions ?? ''}
+                    required={false}
+                    maxLength={2000}
+                  />
+                  {config.data.overridePolicy.participationAllowed && (
+                    <RuleFields rule={row?.preorderOverride ?? null} optional />
+                  )}
+                </CommandForm>
+              ) : (
+                !editable && <Badge>{row?.status ?? 'not participating'}</Badge>
+              )}
+            </>
+          )}
+        </Dialog>
+      )}
+    </>
+  );
+}
+
 function OfferingDetail({
   offering: row,
   service,
   refresh,
   editable,
+  onPendingChange,
 }: {
   offering: Offering;
   service: MarketService;
   refresh: () => void;
   editable: boolean;
+  onPendingChange: (pending: boolean) => void;
 }) {
   return (
-    <div className="record-details">
+    <Card as="div" className="record-details">
       <p>
-        Offering reference {row.id}. Materialized window:{' '}
-        {row.effectivePreorderOpensAt} to {row.effectivePreorderClosesAt} (UTC).
-      </p>
-      <p>
-        Provenance {row.windowProvenance.source}; timezone{' '}
-        {row.windowProvenance.timezone}; Market version{' '}
-        {row.windowProvenance.marketVersion}; occurrence{' '}
-        {row.windowProvenance.occurrenceVersion}; membership{' '}
-        {row.windowProvenance.membershipVersion}; participation{' '}
-        {row.windowProvenance.participationVersion}; policy{' '}
-        {row.windowProvenance.policyVersion}.
+        Preorders:{' '}
+        {date(row.effectivePreorderOpensAt, row.windowProvenance.timezone)} to{' '}
+        {date(row.effectivePreorderClosesAt, row.windowProvenance.timezone)}
       </p>
       {editable && (
         <>
           <CommandForm
-            title={`Configure offering ${row.id}`}
+            embedded
+            title="Offering Settings"
+            onPendingChange={onPendingChange}
             onDone={refresh}
             submitLabel="Save offering"
             validate={(data) => {
@@ -878,19 +971,17 @@ function OfferingDetail({
             />
           </CommandForm>
           <CommandForm
-            title={`Rematerialize window ${row.id}`}
+            embedded
+            title="Preorder Schedule"
+            onPendingChange={onPendingChange}
             onDone={refresh}
             submitLabel="Apply current window configuration"
             run={() => service.rematerialize(row.id, row.version)}
           >
-            <p>
-              Explicitly apply the current permitted configuration to this
-              materialized preorder window. Existing backend version and
-              future-occurrence guards apply.
-            </p>
+            <p>Update this offering to use the current preorder schedule.</p>
           </CommandForm>
         </>
       )}
-    </div>
+    </Card>
   );
 }

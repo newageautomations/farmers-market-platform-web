@@ -21,7 +21,6 @@
   margin-bottom: 0;
 }
 .vendor-workspace .command-section {
-  margin: 1.5rem 0;
   max-width: 680px;
 }
 .vendor-workspace fieldset {
@@ -50,19 +49,7 @@
   margin: 0.35rem 0 0;
   font-weight: 600;
 }
-.vendor-workspace .capability-note {
-  border-left: 3px solid var(--border);
-  padding: 0.25rem 1rem;
-  margin: 1rem 0;
-}
-.vendor-workspace .projection-status {
-  padding: 0.5rem 1rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin: 1rem 0;
-}
-.vendor-workspace .record-details {
+.vendor-workspace .record-details:not(.ui-card) {
   padding: 1rem 0;
   border-bottom: 1px solid var(--border);
 }
@@ -79,16 +66,13 @@
 .vendor-workspace .table-scroll {
   max-width: 100%;
 }
-.vendor-workspace table {
-  min-width: 640px;
-}
 .admin-topbar .fixture-controls {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
 }
-.fixture-controls select {
+.fixture-controls select.ui-select {
   width: auto;
   max-width: 100%;
 }
@@ -101,9 +85,6 @@
   }
   .vendor-workspace .filter-bar {
     align-items: stretch;
-  }
-  .vendor-workspace .filter-bar button {
-    width: 100%;
   }
   .vendor-workspace .facts {
     gap: 1rem;

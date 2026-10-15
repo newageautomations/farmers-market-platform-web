@@ -146,6 +146,7 @@ mutation CustomerHandoff(
     correlation: $correlation
   ) {
     success
+    principalId
   }
 }
 query AccountProfile {
@@ -155,6 +156,9 @@ query AccountProfile {
     emailAddress
     phoneNumber
   }
+}
+query PlatformShopAccountContexts {
+  platformAccountContexts
 }
 mutation CustomerSignOut {
   customerSignOut {

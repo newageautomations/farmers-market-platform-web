@@ -4,11 +4,17 @@ import {
   OwnMarketOperationsDocument,
   MarketOperationsCommandDocument,
   OwnVendorBoothAssignmentsDocument,
+  OwnVendorLinkRequestsDocument,
+  RespondToVendorLinkDocument,
+  VendorRequestMarketRelationshipDocument,
+  OwnPlatformAccountContextsDocument,
+  ExchangePlatformAdminHandoffDocument,
 } from './generated/admin';
 import {
   PublicMarketApplicationDocument,
   PublicMarketOccurrenceMapDocument,
   SubmitMarketApplicationDocument,
+  MarketApplicationApplicantDocument,
 } from './generated/shop';
 
 export type OperationsSection =
@@ -22,11 +28,16 @@ export type OperationsAction =
   | 'REVIEW_APPLICATION'
   | 'ACCEPT_ASSIGN'
   | 'SAVE_DIRECTORY'
+  | 'REQUEST_VENDOR_LINK'
+  | 'CONVERT_OCCURRENCE_IDENTITY'
+  | 'REVIEW_OCCURRENCE'
   | 'SAVE_RENTAL'
   | 'CREATE_LAYOUT'
   | 'SAVE_LAYOUT'
   | 'CLONE_LAYOUT'
   | 'PUBLISH_LAYOUT'
+  | 'ARCHIVE_LAYOUT'
+  | 'UNARCHIVE_LAYOUT'
   | 'SET_PLAN'
   | 'APPROVE_OCCURRENCE'
   | 'ASSIGN'
@@ -63,6 +74,9 @@ export interface ApplicationQuestion {
   required: boolean;
   hidden: boolean;
   options: string[];
+  maxLength?: number;
+  minimum?: number;
+  maximum?: number;
 }
 export interface ApplicationDefinition {
   sections: string[];
@@ -84,6 +98,19 @@ export interface MapElement {
   text: string;
   fill: string;
   imageUrl?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  opacity?: number;
+  fontSize?: number;
+  fontWeight?: 'normal' | 'bold';
+  textAlign?: 'left' | 'center' | 'right';
+  locked?: boolean;
+  /** Authoring visibility only. Read-only maps always render this element. */
+  editorHidden?: boolean;
+  /** Decorations only; every member retains absolute domain geometry. */
+  groupId?: string;
+  /** LINE paths: at most 512 normalized x,y pairs within [0,1]. */
+  points?: number[];
 }
 export interface MapDefinition {
   pixelsPerFoot: number;
@@ -149,6 +176,10 @@ export interface ApplicationVersion extends OperationsRecord {
   definition: ApplicationDefinition;
 }
 export interface ApplicationSubmission extends OperationsRecord {
+  accountAnswer?: 'YES' | 'NO' | null;
+  identityMode?:
+    'LEGACY_UNKNOWN' | 'ANONYMOUS' | 'ACCOUNT_ONLY' | 'AUTHORIZED_VENDOR';
+  applicantVendorId?: number | null;
   status: string;
   applicant: ApplicantContact;
   answers: Record<string, unknown>;
@@ -167,6 +198,12 @@ export interface ApplicationSubmission extends OperationsRecord {
   };
 }
 export interface DirectoryEntry extends OperationsRecord {
+  linkState?:
+    | 'EXTERNAL'
+    | 'LINK_PENDING'
+    | 'LINK_VERIFIED'
+    | 'LEGACY_UNVERIFIED'
+    | 'LINK_REVOKED';
   contact: ApplicantContact;
   kind: 'EXTERNAL' | 'PLATFORM_LINKED';
   linkedVendorId: number | null;
@@ -177,9 +214,11 @@ export interface RentalOption extends OperationsRecord {
 }
 export interface Layout extends OperationsRecord {
   name: string;
+  deletedAt?: string | null;
 }
 export interface LayoutVersion extends OperationsRecord {
   layoutId: number;
+  occurrenceId?: number | null;
   versionNumber: number;
   status: 'DRAFT' | 'PUBLISHED' | 'RETIRED';
   definition: MapDefinition;
@@ -197,6 +236,8 @@ export interface OccurrencePlan extends OperationsRecord {
   publicInstructions: string;
 }
 export interface OccurrenceApproval extends OperationsRecord {
+  decision?: 'PENDING' | 'CONFIRMED' | 'WAITLISTED' | 'DECLINED' | 'CANCELLED';
+  participationId?: number | null;
   occurrenceId: number;
   directoryId: number;
   submissionId: number | null;
@@ -210,6 +251,7 @@ export interface OccurrenceApproval extends OperationsRecord {
   managerNotes: string;
 }
 export interface SpaceAssignment extends OperationsRecord {
+  verifiedVendorId?: number | null;
   occurrenceId: number;
   spaceId: number;
   directoryId: number;
@@ -248,6 +290,14 @@ export interface BoothInvoice extends OperationsRecord {
   recipientSnapshot: ApplicantContact;
 }
 export interface MarketOperationsData {
+  linkRequests?: Array<
+    OperationsRecord & {
+      directoryId: number;
+      vendorId: number;
+      status: string;
+      reason: string;
+    }
+  >;
   selectedOccurrenceId?: number | null;
   marketId: number;
   providerState: 'NOT_CONFIGURED';
@@ -266,6 +316,7 @@ export interface MarketOperationsData {
   rentals?: RentalOption[];
   eligibleVendors?: Array<{ id: number; name: string; slug: string }>;
   layouts?: Layout[];
+  archivedLayouts?: Layout[];
   layoutVersions?: LayoutVersion[];
   spaces?: MarketSpace[];
   plans?: OccurrencePlan[];
@@ -317,6 +368,11 @@ export interface PublicOccurrenceMap {
   }>;
 }
 export interface PublicApplication {
+  accountPreamble?: {
+    semantic: 'platformAccount';
+    required: true;
+    options: ['YES', 'NO'];
+  };
   slug: string;
   name: string;
   versionId: number;
@@ -371,6 +427,37 @@ function object<T>(value: unknown): T {
 export function createMarketOperationsApi(options: TransportOptions) {
   const execute = transport('admin', options);
   return {
+    requestRelationship: async (marketId: string, expectedVersion?: number) =>
+      (
+        await execute(
+          { api: 'admin', document: VendorRequestMarketRelationshipDocument },
+          { marketId, expectedVersion },
+        )
+      ).requestOwnMarketMembership,
+    vendorLinkRequests: async () =>
+      (
+        await execute(
+          { api: 'admin', document: OwnVendorLinkRequestsDocument },
+          {},
+        )
+      ).ownVendorLinkRequests as Array<{
+        id: number;
+        revision: number;
+        marketName: string;
+        businessName: string;
+        reason: string;
+      }>,
+    respondToVendorLink: async (
+      id: number,
+      expectedRevision: number,
+      confirm: boolean,
+    ) =>
+      (
+        await execute(
+          { api: 'admin', document: RespondToVendorLinkDocument },
+          { id, expectedRevision, confirm },
+        )
+      ).respondToVendorLink,
     read: async (section: OperationsSection, occurrenceId?: number) =>
       object<MarketOperationsData>(
         (
@@ -405,10 +492,22 @@ export function createMarketOperationsApi(options: TransportOptions) {
     },
   };
 }
-export type MarketOperationsApi = ReturnType<typeof createMarketOperationsApi>;
+export type MarketOperationsApi = Pick<
+  ReturnType<typeof createMarketOperationsApi>,
+  'read' | 'command' | 'vendorAssignments'
+>;
 export function createPublicMarketOperationsApi(options: TransportOptions) {
   const execute = transport('shop', options);
   return {
+    applicant: async () =>
+      object<ApplicationApplicant>(
+        (
+          await execute(
+            { api: 'shop', document: MarketApplicationApplicantDocument },
+            {},
+          )
+        ).marketApplicationApplicant,
+      ),
     application: async (slug?: string) =>
       object<PublicApplication>(
         (
@@ -428,6 +527,8 @@ export function createPublicMarketOperationsApi(options: TransportOptions) {
         ).publicMarketOccurrenceMap,
       ),
     submit: async (input: {
+      accountAnswer: 'YES' | 'NO';
+      vendorId?: number | null;
       slug: string;
       versionId: number;
       answers: Record<string, unknown>;
@@ -443,5 +544,48 @@ export function createPublicMarketOperationsApi(options: TransportOptions) {
           )
         ).submitMarketApplication,
       ),
+  };
+}
+export interface ApplicationApplicant {
+  authenticated: true;
+  principalId: string;
+  profile: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+  };
+  vendors: Array<{ id: number; name: string }>;
+}
+export interface PlatformAccountContexts {
+  customer: true;
+  affiliations: Array<{
+    mode: 'VENDOR' | 'MARKET_MANAGER';
+    id: number;
+    name: string;
+    channelId: string;
+    canApply: boolean;
+  }>;
+  onboarding: Array<{ role: string; state: string; provenance: string }>;
+}
+export function createPlatformAccountApi(options: TransportOptions) {
+  const execute = transport('admin', options);
+  return {
+    contexts: async () =>
+      object<PlatformAccountContexts>(
+        (
+          await execute(
+            { api: 'admin', document: OwnPlatformAccountContextsDocument },
+            {},
+          )
+        ).ownPlatformAccountContexts,
+      ),
+    handoff: async (code: string, correlation: string) =>
+      (
+        await execute(
+          { api: 'admin', document: ExchangePlatformAdminHandoffDocument },
+          { code, correlation },
+        )
+      ).exchangePlatformAdminHandoff,
   };
 }

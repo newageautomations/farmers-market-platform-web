@@ -1,0 +1,10 @@
+{
+  "database": "vendure_demo_market_ops",
+  "email": "demo.customer@example.test",
+  "phone": "+12105550123",
+  "phoneVerified": true,
+  "emailVerified": true,
+  "userId": "26",
+  "customerId": "1",
+  "password": "local-identity-regression-only-password"
+}

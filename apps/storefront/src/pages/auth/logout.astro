@@ -1,4 +1,5 @@
 ---
+import Button from '../../components/ui/Button.astro';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { isCentral } from '../../lib/account';
 if (!isCentral(Astro.url)) return new Response('Not found', { status: 404 });
@@ -13,10 +14,12 @@ if (!isCentral(Astro.url)) return new Response('Not found', { status: 404 });
     </p>
     <form method="post" action="/api/account">
       <input type="hidden" name="action" value="logout" />
-      <button class="button">Sign out of the central account</button>
-      <button name="everywhere" value="true">
+      <Button type="submit" variant="primary">
+        Sign out of the central account
+      </Button>
+      <Button type="submit" variant="primary" name="everywhere" value="true">
         Sign out everywhere
-      </button>
+      </Button>
     </form>
   </section>
 </SiteLayout>

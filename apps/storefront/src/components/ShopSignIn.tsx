@@ -1,3 +1,4 @@
+import { buttonClassName } from '@market/ui/presentation';
 export function ShopSignIn({
   storefrontId: _storefrontId,
 }: {
@@ -6,7 +7,15 @@ export function ShopSignIn({
   return (
     <p>
       You can buy without an account.{' '}
-      <a href="/account/sign-in">Access your orders</a>
+      <a
+        className={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href="/account/login"
+      >
+        Access your orders
+      </a>
     </p>
   );
 }

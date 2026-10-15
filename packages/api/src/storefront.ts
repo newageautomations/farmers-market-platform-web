@@ -149,7 +149,7 @@ export function cartMessage(error: { code?: string; kind?: string }) {
   )
     return 'That quantity was rejected. Enter a positive whole number.';
   if (error.kind === 'authentication' || error.kind === 'forbidden')
-    return 'A verified customer sign-in is required to edit this cart.';
+    return 'This cart is unavailable in the current storefront. Refresh and try again.';
   if (error.kind === 'network' || error.kind === 'unavailable')
     return 'The Shop session is unavailable. Please try again.';
   return 'The Shop could not apply that change. Refresh the cart and try again.';

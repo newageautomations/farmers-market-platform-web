@@ -1,3 +1,8 @@
+import { EmptyState } from '@market/ui';
+import { Badge } from '@market/ui';
+import { vendorOrderStatus } from './order-presentation';
+import { vendorStatusTone } from './status-presentation';
+import { cardClassName } from '@market/ui/presentation';
 import { useCallback, useState } from 'react';
 import { formatMoney } from '@market/config';
 import { Button, Pagination } from '@market/ui';
@@ -34,7 +39,9 @@ export function Customers({
         purchase relationship is not marketing consent.
       </p>
       <form
-        className="filter-bar"
+        className={cardClassName({
+          className: 'filter-bar ui-control-row ui-control-row-lookup',
+        })}
         onSubmit={(e) => {
           e.preventDefault();
           setSkip(0);
@@ -47,7 +54,9 @@ export function Customers({
           required={false}
           maxLength={200}
         />
-        <Button type="submit">Search</Button>
+        <div className="ui-field-action">
+          <Button type="submit">Search</Button>
+        </div>
       </form>
       <ReadState {...query} retry={query.refresh} />
       {query.data && (
@@ -73,16 +82,29 @@ export function Customers({
                   </RouteLink>
                 </th>
                 <td>{c.emailAddress}</td>
-                <td>{c.status}</td>
+                <td>
+                  <Badge tone={vendorStatusTone('customer', c.status)}>
+                    {c.status}
+                  </Badge>
+                </td>
                 <td>{c.purchaseCount}</td>
                 <td>{date(c.lastActivityAt)} (UTC)</td>
               </tr>
             ))}
           </DataTable>
           {!query.data.items.length && (
-            <p>No customer relationships match your search.</p>
+            <EmptyState title="No matching customers">
+              <p>No customer relationships match your search.</p>
+            </EmptyState>
           )}
           <Pagination
+            summary={
+              <>
+                {query.data.totalItems} records. Showing{' '}
+                {query.data.items.length ? skip + 1 : 0} to{' '}
+                {query.data.items.length ? skip + query.data.items.length : 0}.
+              </>
+            }
             hasPrevious={skip > 0}
             hasNext={skip + 20 < query.data.totalItems}
             onPrevious={() => setSkip(skip - 20)}
@@ -115,14 +137,18 @@ function CustomerDetail({
       <ReadState {...query} retry={query.refresh} />
       {query.data && (
         <>
-          <h2>
+          <h2 className="ui-section-title-dashboard">
             {query.data.firstName} {query.data.lastName}
           </h2>
           <p>{query.data.emailAddress}</p>
           <dl className="facts">
             <div>
               <dt>Relationship status</dt>
-              <dd>{query.data.status}</dd>
+              <dd>
+                <Badge tone={vendorStatusTone('customer', query.data.status)}>
+                  {query.data.status}
+                </Badge>
+              </dd>
             </div>
             <div>
               <dt>Purpose</dt>
@@ -159,7 +185,9 @@ function CustomerDetail({
               </tr>
             ))}
           </DataTable>
-          <h2>Vendor purchase history</h2>
+          <h2 className="ui-section-title-dashboard">
+            Vendor purchase history
+          </h2>
           <ReadState {...history} retry={history.refresh} />
           {history.data && (
             <>
@@ -190,7 +218,15 @@ function CustomerDetail({
                       {p.kind === 'MARKET_OCCURRENCE'
                         ? `Market · ${service.marketName(p.marketId ?? '')} · Occurrence ${p.occurrenceId}`
                         : 'Direct Vendor'}
-                      <small>{p.pickupStatus}</small>
+                      <small>
+                        <Badge
+                          tone={
+                            vendorOrderStatus('pickup', p.pickupStatus).tone
+                          }
+                        >
+                          {p.pickupStatus}
+                        </Badge>
+                      </small>
                       {p.pickupPromise && (
                         <small>
                           {p.pickupPromise.venue} ·{' '}
@@ -198,8 +234,22 @@ function CustomerDetail({
                         </small>
                       )}
                     </td>
-                    <td>{p.nativeState}</td>
-                    <td>{p.financialStatus}</td>
+                    <td>
+                      <Badge
+                        tone={vendorOrderStatus('order', p.nativeState).tone}
+                      >
+                        {p.nativeState}
+                      </Badge>
+                    </td>
+                    <td>
+                      <Badge
+                        tone={
+                          vendorOrderStatus('payment', p.financialStatus).tone
+                        }
+                      >
+                        {p.financialStatus}
+                      </Badge>
+                    </td>
                     <td>{formatMoney(p.original, p.currency)}</td>
                     <td>{formatMoney(p.refunded, p.currency)}</td>
                     <td>{formatMoney(p.remaining, p.currency)}</td>
@@ -207,9 +257,21 @@ function CustomerDetail({
                 ))}
               </DataTable>
               {!history.data.items.length && (
-                <p>No purchase history is available for this relationship.</p>
+                <EmptyState title="No purchase history">
+                  <p>No purchase history is available for this relationship.</p>
+                </EmptyState>
               )}
               <Pagination
+                summary={
+                  <>
+                    {history.data.totalItems} records. Showing{' '}
+                    {history.data.items.length ? skip + 1 : 0} to{' '}
+                    {history.data.items.length
+                      ? skip + history.data.items.length
+                      : 0}
+                    .
+                  </>
+                }
                 hasPrevious={skip > 0}
                 hasNext={skip + 20 < history.data.totalItems}
                 onPrevious={() => setSkip(skip - 20)}

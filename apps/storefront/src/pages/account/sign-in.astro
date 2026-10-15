@@ -1,10 +1,13 @@
 ---
+import { buttonClassName, inputClassName } from '@market/ui/presentation';
+import Button from '../../components/ui/Button.astro';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import {
   accountBridge,
   centralSignIn,
   isCentral,
   setCentral,
+  setUnifiedCentral,
 } from '../../lib/account';
 const central = isCentral(Astro.url),
   origin = Astro.url.searchParams.get('origin') ?? '',
@@ -20,9 +23,27 @@ if (!central && Astro.url.searchParams.get('retry') === '1') {
   }
 } else {
   try {
-    await accountBridge({ action: 'target', origin });
+    if (origin) await accountBridge({ action: 'target', origin });
+    const unified = Astro.cookies.get('platform-unified-account')?.value;
+    if (origin && unified && /^[A-Za-z0-9_-]{43}$/.test(correlation)) {
+      try {
+        const result = await accountBridge<{
+          central: string;
+          callback: string;
+        }>({
+          action: 'unifiedAuthorize',
+          origin,
+          central: unified,
+          correlation,
+        });
+        setUnifiedCentral(Astro, result.central);
+        return Astro.redirect(result.callback);
+      } catch {
+        Astro.cookies.delete('platform-unified-account', { path: '/' });
+      }
+    }
     const cookie = Astro.cookies.get('platform-account')?.value;
-    if (cookie && /^[A-Za-z0-9_-]{43}$/.test(correlation)) {
+    if (origin && cookie && /^[A-Za-z0-9_-]{43}$/.test(correlation)) {
       try {
         const result = await accountBridge<{
           central: string;
@@ -39,6 +60,8 @@ if (!central && Astro.url.searchParams.get('retry') === '1') {
   }
 }
 Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 const sent = Astro.url.searchParams.get('requested') === '1';
 ---
 
@@ -52,10 +75,13 @@ const sent = Astro.url.searchParams.get('requested') === '1';
     <h1>Access your orders</h1>
     {unavailable ? (
       <>
-        <p role="alert">
+        <p class="alert ui-alert ui-alert-error" role="alert">
           Account access could not be completed. Please try again.
         </p>
-        <a class="button" href="/account/sign-in">
+        <a
+          class={buttonClassName({ variant: 'primary', className: 'button' })}
+          href="/account/sign-in"
+        >
           Try account access again
         </a>
       </>
@@ -65,8 +91,19 @@ const sent = Astro.url.searchParams.get('requested') === '1';
           Use a one-time email link to claim your account or sign in. Your
           purchases stay on the same platform account.
         </p>
+        <p>
+          <a
+            class={buttonClassName({
+              variant: 'secondary',
+              className: 'button secondary',
+            })}
+            href={`/account/login?origin=${encodeURIComponent(origin)}&correlation=${encodeURIComponent(correlation)}`}
+          >
+            Sign in with your platform password
+          </a>
+        </p>
         {sent && (
-          <p role="status">
+          <p class="alert ui-alert ui-alert-info" role="status">
             {Astro.url.searchParams.get('delivery') === 'unavailable'
               ? 'Account email delivery is currently unavailable. Your request was accepted. Please try again later.'
               : 'If that email can receive an account link, we accepted the request. Check your inbox. If delivery is unavailable, try again later.'}
@@ -74,11 +111,31 @@ const sent = Astro.url.searchParams.get('requested') === '1';
         )}
         <form method="post" action="/api/account">
           <input type="hidden" name="action" value="request" />
-          <input type="hidden" name="origin" value={origin} />
+          {origin ? (
+            <input type="hidden" name="origin" value={origin} />
+          ) : (
+            <label class="field">
+              Storefront address
+              <input
+                class={inputClassName('url')}
+                name="origin"
+                type="url"
+                required
+                maxlength="2048"
+                placeholder="https://your-storefront.example"
+                aria-describedby="email-link-storefront"
+              />
+              <small id="email-link-storefront">
+                Enter the address of the participating storefront where you want
+                to access your orders.
+              </small>
+            </label>
+          )}
           <input type="hidden" name="correlation" value={correlation} />
           <div class="field">
             <label for="account-email">Email</label>
             <input
+              class={inputClassName('email')}
               id="account-email"
               name="email"
               type="email"
@@ -87,7 +144,9 @@ const sent = Astro.url.searchParams.get('requested') === '1';
               maxlength="254"
             />
           </div>
-          <button class="button">Request account link</button>
+          <Button type="submit" variant="primary">
+            Request account link
+          </Button>
         </form>
       </>
     )}

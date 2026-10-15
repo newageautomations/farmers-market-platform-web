@@ -11,6 +11,7 @@ import { Catalog } from './catalog';
 import { Payments } from './payments';
 import { Pos } from './pos';
 import { Billing } from './billing';
+import { AccountOnboardingReview } from './AccountOnboardingReview';
 export function ManagementRoutes({
   service,
   path,
@@ -22,7 +23,12 @@ export function ManagementRoutes({
 }) {
   if (service.context.scope === 'PLATFORM') {
     if (path === '/platform/tenants')
-      return <TenantDirectory service={service} />;
+      return (
+        <>
+          <AccountOnboardingReview service={service} />
+          <TenantDirectory service={service} />
+        </>
+      );
     const detail = /^\/platform\/tenants\/(vendor|market)\/([1-9][0-9]*)$/.exec(
       path,
     );

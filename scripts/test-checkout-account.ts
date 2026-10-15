@@ -14,6 +14,7 @@ const frontend = process.cwd(),
   backend = resolve(
     process.env.BACKEND_REFERENCE_PATH ?? '../farmers-market-platform',
   );
+const storefrontPort = process.env.PHONE_TEST_STOREFRONT_PORT ?? '4337';
 const requireBackend = createRequire(join(backend, 'package.json'));
 const runtime = join(
   backend,
@@ -88,11 +89,11 @@ try {
   astro = child(['apps/storefront/dist/server/entry.mjs'], frontend, {
     FRONTEND_FIXTURE_MODE: 'false',
     SHOP_API_URL: ready.endpoint + '/shop-api',
-    PLATFORM_ACCOUNT_ORIGIN: 'http://auth.platform.localhost:4337',
+    PLATFORM_ACCOUNT_ORIGIN: `http://auth.platform.localhost:${storefrontPort}`,
     PLATFORM_ACCOUNT_BRIDGE_KEY: (ready as unknown as { bridgeKey: string })
       .bridgeKey,
     HOST: '127.0.0.1',
-    PORT: '4337',
+    PORT: storefrontPort,
   });
   astroExit = exitOf(astro);
   astro.stdout!.pipe(process.stdout);
@@ -102,8 +103,8 @@ try {
     try {
       const status = await new Promise<number>((r, j) => {
         const req = httpRequest(
-          'http://127.0.0.1:4337/',
-          { headers: { Host: 'market-a.localhost:4337' } },
+          `http://127.0.0.1:${storefrontPort}/`,
+          { headers: { Host: `market-a.localhost:${storefrontPort}` } },
           (res) => {
             res.resume();
             r(res.statusCode!);

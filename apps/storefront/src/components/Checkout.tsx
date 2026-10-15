@@ -1,3 +1,6 @@
+import { buttonClassName } from '@market/ui/presentation';
+import { Button, Input, Select } from '@market/ui';
+import { PhoneInput } from '@market/ui';
 import { useRef, useState } from 'react';
 import type { CheckoutView, PickupOption } from '@market/api';
 import { formatMoney } from '@market/config';
@@ -22,7 +25,7 @@ export function CheckoutSummary({ view }: { view: CheckoutView }) {
       )}
       {view.groups.map((group) => (
         <section key={group.vendorId} aria-label={group.vendorName}>
-          <h2>{group.vendorName}</h2>
+          <h2 className="ui-section-title-consumer">{group.vendorName}</h2>
           <ul>
             {group.lines.map((line) => (
               <li key={line.id}>
@@ -78,7 +81,9 @@ export function Checkout({
     [stage, setStage] = useState(initial.attempt ? 'Payment' : 'Contact'),
     [options, setOptions] = useState<PickupOption[]>([]),
     [pending, setPending] = useState(false),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [paymentMethod, setPaymentMethod] = useState(''),
+    [paymentUncertain, setPaymentUncertain] = useState(false);
   const lock = useRef(false),
     heading = useRef<HTMLHeadingElement>(null);
   const contact = view.contact ?? view.profile;
@@ -103,6 +108,7 @@ export function Checkout({
     const current = await shopCall<CheckoutView>(
       storefrontId,
       'checkout-status',
+      { orderId: view.orderId },
     );
     setView(current);
     return current;
@@ -124,14 +130,24 @@ export function Checkout({
           )}
         </ol>
       </nav>
-      <h2 ref={heading} tabIndex={-1}>
+      <h2 className="ui-section-title-consumer" ref={heading} tabIndex={-1}>
         {stage}
       </h2>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p className="alert ui-alert ui-alert-error" role="alert">
+          {error}
+        </p>
+      )}
       {view.committed ? (
         <p>
           Your order is confirmed.{' '}
-          <a href={`/checkout/success?order=${view.orderId}`}>
+          <a
+            className={buttonClassName({
+              variant: 'secondary',
+              className: 'button secondary',
+            })}
+            href={`/checkout/success?order=${view.orderId}`}
+          >
             View confirmation
           </a>
         </p>
@@ -157,7 +173,7 @@ export function Checkout({
           <p>Enter your pickup contact. You can purchase without an account.</p>
           <div className="field">
             <label htmlFor="firstName">First name</label>
-            <input
+            <Input
               id="firstName"
               name="firstName"
               autoComplete="given-name"
@@ -169,7 +185,7 @@ export function Checkout({
           </div>
           <div className="field">
             <label htmlFor="lastName">Last name</label>
-            <input
+            <Input
               id="lastName"
               name="lastName"
               autoComplete="family-name"
@@ -181,7 +197,7 @@ export function Checkout({
           </div>
           <div className="field">
             <label htmlFor="emailAddress">Email</label>
-            <input
+            <Input
               id="emailAddress"
               name="emailAddress"
               type="email"
@@ -194,20 +210,16 @@ export function Checkout({
             />
           </div>
           <div className="field">
-            <label htmlFor="phoneNumber">Phone (optional pickup contact)</label>
-            <input
+            <PhoneInput
               id="phoneNumber"
               name="phoneNumber"
-              type="tel"
-              autoComplete="tel"
-              maxLength={40}
+              label="Phone (optional pickup contact)"
               defaultValue={contact?.phoneNumber ?? ''}
-              disabled={pending}
             />
           </div>
-          <button className="button" disabled={pending}>
+          <Button type="submit" variant="primary" disabled={pending}>
             Continue to pickup
-          </button>
+          </Button>
         </form>
       ) : stage === 'Pickup' ? (
         <form
@@ -233,7 +245,7 @@ export function Checkout({
                 {own.length ? (
                   own.map((option) => (
                     <label className="pickup-choice" key={option.methodId}>
-                      <input
+                      <Input
                         type="radio"
                         name={'pickup-' + group.vendorId}
                         value={option.methodId}
@@ -247,7 +259,7 @@ export function Checkout({
                     </label>
                   ))
                 ) : (
-                  <p role="alert">
+                  <p className="alert ui-alert ui-alert-error" role="alert">
                     Pickup is currently unavailable for this Vendor. Contact the
                     Storefront before continuing.
                   </p>
@@ -255,15 +267,17 @@ export function Checkout({
               </fieldset>
             );
           })}
-          <button
+          <Button
+            variant="secondary"
             type="button"
             onClick={() => go('Contact')}
             disabled={pending}
           >
             Edit contact
-          </button>{' '}
-          <button
-            className="button"
+          </Button>{' '}
+          <Button
+            type="submit"
+            variant="primary"
             disabled={
               pending ||
               view.groups.some(
@@ -272,16 +286,22 @@ export function Checkout({
             }
           >
             Review order
-          </button>
+          </Button>
         </form>
       ) : stage === 'Review' ? (
         <>
           <CheckoutSummary view={view} />
-          <button onClick={() => go('Pickup')} disabled={pending}>
+          <Button
+            type="submit"
+            variant="primary"
+            onClick={() => go('Pickup')}
+            disabled={pending}
+          >
             Edit pickup
-          </button>{' '}
-          <button
-            className="button"
+          </Button>{' '}
+          <Button
+            type="submit"
+            variant="primary"
             disabled={pending}
             onClick={() =>
               void run(async () => {
@@ -291,48 +311,71 @@ export function Checkout({
             }
           >
             Continue to payment
-          </button>
+          </Button>
         </>
       ) : (
         <>
           <CheckoutSummary view={view} />
-          {['PENDING', 'RECONCILIATION_REQUIRED'].includes(
+          {paymentUncertain ||
+          ['PENDING', 'RECONCILIATION_REQUIRED'].includes(
             view.paymentStatus,
           ) ? (
-            <p role="alert">
+            <p className="alert ui-alert ui-alert-warning" role="alert">
               Payment status is uncertain. Your purchase has not been confirmed.
               Refresh the checkout status before continuing. Do not submit
               another payment.
             </p>
           ) : view.paymentStatus === 'FAILED' ? (
-            <p role="alert">
+            <p className="alert ui-alert ui-alert-error" role="alert">
               Payment failed. Your purchase has not been confirmed. Check the
               checkout status before trying again.
             </p>
           ) : view.availability.state !== 'AVAILABLE' ? (
-            <p role="status">
+            <p className="alert ui-alert ui-alert-info" role="status">
               Online payment is not currently configured. Your order has not
               been placed.
             </p>
           ) : view.attempt &&
             !['HELD', 'COMMITTED'].includes(view.attempt.state) ? (
-            <p role="alert">
+            <p className="alert ui-alert ui-alert-error" role="alert">
               {view.attempt.state === 'EXPIRED'
                 ? 'Checkout expired.'
                 : 'Inventory or checkout details are no longer available.'}{' '}
               Your purchase has not been confirmed.{' '}
-              <a href="/cart">Return to cart</a>
+              <a
+                className={buttonClassName({
+                  variant: 'secondary',
+                  className: 'button secondary',
+                })}
+                href="/cart"
+              >
+                Return to cart
+              </a>
             </p>
           ) : (
             <>
               {view.availability.mode === 'LOCAL' && (
-                <p>
-                  Local test payment. No card or external payment provider is
-                  used.
-                </p>
+                <div className="field">
+                  <label htmlFor="payment-method">Payment method</label>
+                  <Select
+                    id="payment-method"
+                    value={paymentMethod}
+                    onChange={(event) => setPaymentMethod(event.target.value)}
+                    disabled={pending}
+                    aria-describedby="test-payment-notice"
+                  >
+                    <option value="">Select a payment method</option>
+                    <option value="dev-test-payment">
+                      {'Test Payment \u2014 No Charge'}
+                    </option>
+                  </Select>
+                  <p id="test-payment-notice">
+                    This is a test purchase. No real payment will be made.
+                  </p>
+                </div>
               )}
               {view.attempt?.state === 'HELD' && (
-                <p role="status">
+                <p className="alert ui-alert ui-alert-info" role="status">
                   Checkout is held until{' '}
                   {view.attempt.expiresAt
                     ? new Date(view.attempt.expiresAt).toLocaleTimeString()
@@ -340,12 +383,33 @@ export function Checkout({
                   . Check status before resuming.
                 </p>
               )}
-              <button
-                className="button"
-                disabled={pending || view.availability.mode !== 'LOCAL'}
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={
+                  pending ||
+                  view.availability.mode !== 'LOCAL' ||
+                  paymentMethod !== 'dev-test-payment'
+                }
                 onClick={() =>
                   void run(async () => {
                     const current = await refresh();
+                    if (current.committed) {
+                      window.location.assign(
+                        `/checkout/success?order=${current.orderId}`,
+                      );
+                      return;
+                    }
+                    if (
+                      current.availability.state !== 'AVAILABLE' ||
+                      current.availability.mode !== 'LOCAL' ||
+                      ['PENDING', 'RECONCILIATION_REQUIRED', 'FAILED'].includes(
+                        current.paymentStatus,
+                      )
+                    )
+                      return;
+                    // Once payment work starts, a lost response must be reconciled by a status read.
+                    setPaymentUncertain(true);
                     const attempt =
                       current.attempt ??
                       (await shopCall<{ attemptId: string; state: string }>(
@@ -356,7 +420,20 @@ export function Checkout({
                       attempt.state !== 'HELD' &&
                       attempt.state !== 'COMMITTED'
                     ) {
-                      await refresh();
+                      const status = await refresh();
+                      setPaymentUncertain(
+                        ['PENDING', 'RECONCILIATION_REQUIRED'].includes(
+                          status.paymentStatus,
+                        ),
+                      );
+                      return;
+                    }
+                    if (attempt.state === 'COMMITTED') {
+                      const status = await refresh();
+                      if (status.committed)
+                        window.location.assign(
+                          `/checkout/success?order=${status.orderId}`,
+                        );
                       return;
                     }
                     const result = await shopCall<{
@@ -369,20 +446,29 @@ export function Checkout({
                       window.location.assign(
                         `/checkout/success?order=${result.orderId}`,
                       );
-                    else await refresh();
+                    else {
+                      const status = await refresh();
+                      setPaymentUncertain(
+                        ['PENDING', 'RECONCILIATION_REQUIRED'].includes(
+                          status.paymentStatus,
+                        ),
+                      );
+                    }
                   })
                 }
               >
                 {pending
                   ? 'Checking checkout…'
                   : view.attempt
-                    ? 'Resume local payment'
-                    : 'Confirm local test payment'}
-              </button>
+                    ? 'Complete purchase'
+                    : 'Place order'}
+              </Button>
             </>
           )}
           {view.attempt && !view.committed && (
-            <button
+            <Button
+              type="submit"
+              variant="primary"
               disabled={pending}
               onClick={() =>
                 void run(async () => {
@@ -394,22 +480,34 @@ export function Checkout({
               }
             >
               Cancel checkout
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            type="submit"
+            variant="primary"
             disabled={pending}
             onClick={() =>
               void run(async () => {
-                await refresh();
+                const status = await refresh();
+                setPaymentUncertain(
+                  ['PENDING', 'RECONCILIATION_REQUIRED'].includes(
+                    status.paymentStatus,
+                  ),
+                );
               })
             }
           >
             Refresh checkout status
-          </button>
+          </Button>
           {!view.frozen && (
-            <button disabled={pending} onClick={() => go('Review')}>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={pending}
+              onClick={() => go('Review')}
+            >
               Back to review
-            </button>
+            </Button>
           )}
         </>
       )}

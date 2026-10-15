@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  within,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
 import { MarketMap, boothTooltipPosition } from '@market/ui';
@@ -128,7 +134,7 @@ test('a booth opens a modal where an unapproved directory business can receive d
     data: { occurrenceId: 1, directoryId: 2 },
   });
   await user.click(within(dialog).getByRole('button', { name: 'Close' }));
-  expect(screen.queryByRole('dialog')).toBeNull();
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 });
 test('editing a business with multiple booths selects the clicked assignment', async () => {
   const data = structuredClone(boothData);
@@ -151,9 +157,9 @@ test('editing a business with multiple booths selects the clicked assignment', a
     />,
   );
   const row = screen
-    .getByText('A3', { selector: 'summary span' })
+    .getByText('A3 - Local Orchard', { selector: 'summary span' })
     .closest('details')!;
-  await user.click(within(row).getByText('A3'));
+  await user.click(within(row).getByText('A3 - Local Orchard'));
   await user.click(
     within(row).getByRole('button', { name: 'Manage business assignment' }),
   );
@@ -172,3 +178,68 @@ test('editing a business with multiple booths selects the clicked assignment', a
     }),
   );
 });
+
+test.each([false, true])(
+  'vendors collapse with working assignment and day controls, day=%s',
+  async (day) => {
+    const data = structuredClone(boothData);
+    data.daySummary = {
+      expected: 1,
+      assigned: 1,
+      unassigned: 0,
+      checkedIn: 0,
+      notCheckedIn: 1,
+      attendance: { NOT_RECORDED: 1 },
+      rentalQuantities: { Table: 2 },
+      notes: 0,
+    };
+    const run = vi.fn(async (_c: OperationsCommand) => ({}));
+    const user = userEvent.setup();
+    render(
+      <Assignments
+        data={data}
+        occurrenceId={1}
+        run={run}
+        canAssign
+        canDay
+        canBill
+        day={day}
+      />,
+    );
+    expect(document.querySelector('.ops-summary')).toBeNull();
+    expect(screen.getByLabelText('Occurrence summary')).toHaveTextContent(
+      'Expected vendors',
+    );
+    const list = screen.getByRole('region', { name: 'Expected vendors' });
+    const vendor = list.querySelector('details')!;
+    expect(vendor).not.toHaveAttribute('open');
+    expect(
+      within(list).getByRole('button', {
+        name: 'Save booth and rental changes',
+      }),
+    ).not.toBeVisible();
+    await user.click(
+      within(list).getByText('Local Orchard', { selector: 'summary span' }),
+    );
+    expect(vendor).toHaveAttribute('open');
+    expect(within(vendor).getByLabelText('Booth assignment')).toHaveValue('2');
+    if (day) {
+      await user.click(
+        within(vendor).getByRole('button', { name: 'Check in' }),
+      );
+      expect(run).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'DAY_UPDATE',
+          data: { checkIn: 'CHECKED_IN' },
+        }),
+      );
+    } else {
+      expect(
+        within(vendor).queryByRole('button', { name: 'Check in' }),
+      ).toBeNull();
+    }
+    expect(
+      document.querySelector('.ops-map-list.ops-scroll-list'),
+    ).toHaveAttribute('tabindex', '0');
+  },
+);

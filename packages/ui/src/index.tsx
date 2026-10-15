@@ -1,6 +1,11 @@
+export { PhoneInput } from './PhoneInput';
+export { SearchSelect } from './SearchSelect';
+export { TimezoneField, usTimezones } from './TimezoneField';
+export { fieldLimits, inputContract } from './input-validation';
+export { Input, Textarea } from './form-controls';
 import {
   Component,
-  useEffect,
+  createElement,
   useId,
   useRef,
   useState,
@@ -8,6 +13,23 @@ import {
   type ReactNode,
 } from 'react';
 import { safeError, type ErrorKind } from '@market/api';
+import {
+  buttonClassName,
+  cardClassName,
+  selectClassName,
+  statusBadgeClassName,
+  alertClassName,
+  disclosureClassName,
+  sectionHeadingClassName,
+  type StatusTone,
+  type AlertSeverity,
+  type HeadingLevel,
+  type ButtonVariant,
+  type ButtonSize,
+} from './presentation';
+export { buttonClassName } from './presentation';
+export { DashboardFrame, DashboardMenu } from './dashboard';
+export { AccountModeSelect, type AccountModeChoice } from './account-mode';
 export class ErrorBoundary extends Component<
   { children: ReactNode },
   { failed: boolean }
@@ -27,7 +49,7 @@ export class ErrorBoundary extends Component<
   render() {
     if (this.state.failed)
       return (
-        <section role="alert">
+        <section className={alertClassName('error')} role="alert">
           <h1>This page is temporarily unavailable</h1>
           <p>Please reload to try again.</p>
           <Button onClick={() => window.location.reload()}>Reload page</Button>
@@ -36,8 +58,29 @@ export class ErrorBoundary extends Component<
     return this.props.children;
   }
 }
-export function Button({ className = '', ...props }: ComponentProps<'button'>) {
-  return <button type="button" {...props} className={`button ${className}`} />;
+export function Button({
+  className = '',
+  variant,
+  size,
+  iconOnly,
+  loading = false,
+  disabled,
+  ...props
+}: ComponentProps<'button'> & {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  iconOnly?: boolean;
+  loading?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      {...props}
+      disabled={disabled || loading}
+      aria-busy={loading ? true : props['aria-busy']}
+      className={buttonClassName({ variant, size, iconOnly, className })}
+    />
+  );
 }
 export function Link({
   href,
@@ -56,13 +99,44 @@ export function Link({
     </a>
   );
 }
-export const Input = (props: ComponentProps<'input'>) => <input {...props} />;
-export const Textarea = (props: ComponentProps<'textarea'>) => (
-  <textarea {...props} />
+export const Select = ({
+  className,
+  variant = 'ordinary',
+  ...props
+}: ComponentProps<'select'> & { variant?: 'ordinary' | 'status' }) => (
+  <select {...props} className={selectClassName(className, variant)} />
 );
-export const Select = (props: ComponentProps<'select'>) => (
-  <select {...props} />
-);
+export function SelectField({
+  label,
+  info,
+  error,
+  id,
+  children,
+  ...props
+}: ComponentProps<typeof Select> & {
+  label: ReactNode;
+  info?: string;
+  error?: string;
+}) {
+  const generatedId = useId();
+  const fieldId = id ?? generatedId;
+  return (
+    <Field id={fieldId} label={label} info={info} error={error}>
+      <Select
+        {...props}
+        id={fieldId}
+        aria-invalid={error ? true : props['aria-invalid']}
+        aria-describedby={
+          [props['aria-describedby'], error ? `${fieldId}-error` : '']
+            .filter(Boolean)
+            .join(' ') || undefined
+        }
+      >
+        {children}
+      </Select>
+    </Field>
+  );
+}
 export const Checkbox = (props: Omit<ComponentProps<'input'>, 'type'>) => (
   <input {...props} type="checkbox" />
 );
@@ -126,21 +200,60 @@ export function Container({
 }) {
   return <div className={`container ${className}`}>{children}</div>;
 }
-export function Card({
+type CardElement = 'div' | 'article' | 'section' | 'li' | 'fieldset';
+type CardProps<T extends CardElement> = {
+  as?: T;
+  spacing?: 'block' | 'contained';
+  padding?: 'default' | 'none';
+  surface?: 'card' | 'embedded';
+} & ComponentProps<T>;
+export function Card<T extends CardElement = 'div'>({
+  as,
   children,
+  className = '',
+  spacing,
+  padding,
+  surface,
+  ...props
+}: CardProps<T>) {
+  return createElement(
+    as ?? 'div',
+    {
+      ...props,
+      className: cardClassName({ className, spacing, padding, surface }),
+    },
+    children,
+  );
+}
+export function Badge({
+  children,
+  tone,
   className = '',
 }: {
   children: ReactNode;
+  tone?: StatusTone;
   className?: string;
 }) {
-  return <div className={`card ${className}`}>{children}</div>;
-}
-export function Badge({ children }: { children: ReactNode }) {
-  return <span className="badge">{children}</span>;
-}
-export function Alert({ children }: { children: ReactNode }) {
   return (
-    <div className="alert" role="status">
+    <span
+      className={`${tone ? statusBadgeClassName(tone) : 'badge'} ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
+export function Alert({
+  children,
+  severity = 'info',
+  className = '',
+  ...props
+}: ComponentProps<'div'> & { severity?: AlertSeverity }) {
+  return (
+    <div
+      role="status"
+      {...props}
+      className={alertClassName(severity, className)}
+    >
       {children}
     </div>
   );
@@ -162,13 +275,19 @@ export function PageHeader({
 export function SectionHeader({
   title,
   children,
+  level = 2,
+  variant = 'dashboard',
+  id,
 }: {
-  title: string;
+  title: ReactNode;
   children?: ReactNode;
+  level?: HeadingLevel;
+  variant?: 'dashboard' | 'consumer';
+  id?: string;
 }) {
   return (
-    <header>
-      <h2>{title}</h2>
+    <header className={sectionHeadingClassName(variant)}>
+      {createElement(`h${level}`, { id }, title)}
       {children}
     </header>
   );
@@ -187,14 +306,19 @@ export function Spinner({ label = 'Loading' }: { label?: string }) {
 export function EmptyState({
   title,
   children,
+  action,
+  level = 3,
 }: {
   title: string;
   children?: ReactNode;
+  action?: ReactNode;
+  level?: HeadingLevel;
 }) {
   return (
     <div className="empty-state">
-      <h3>{title}</h3>
+      {createElement(`h${level}`, {}, title)}
       {children}
+      {action && <div className="ui-actions">{action}</div>}
     </div>
   );
 }
@@ -213,65 +337,13 @@ const stateTitles: Record<ErrorKind, string> = {
 export function ErrorState({ error }: { error: unknown }) {
   const safe = safeError(error);
   return (
-    <section className="error-state" role="alert">
+    <section className={alertClassName('error', 'error-state')} role="alert">
       <h2>{stateTitles[safe.kind]}</h2>
       <p>{safe.message}</p>
     </section>
   );
 }
-export function Dialog({
-  open,
-  onClose,
-  title,
-  children,
-  drawer = false,
-  busy = false,
-  focusTitle = false,
-}: {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  children: ReactNode;
-  drawer?: boolean;
-  busy?: boolean;
-  focusTitle?: boolean;
-}) {
-  const ref = useRef<HTMLDialogElement>(null),
-    titleRef = useRef<HTMLHeadingElement>(null),
-    id = useId();
-  useEffect(() => {
-    const dialog = ref.current;
-    if (open && dialog && !dialog.open) {
-      dialog.showModal();
-      if (focusTitle) {
-        titleRef.current?.focus({ preventScroll: true });
-        dialog.scrollTop = 0;
-      }
-    } else if (!open && dialog?.open) dialog.close();
-  }, [open, focusTitle]);
-  return (
-    <dialog
-      ref={ref}
-      aria-labelledby={id}
-      onClose={onClose}
-      onCancel={(event) => {
-        if (busy) event.preventDefault();
-      }}
-      className={drawer ? 'drawer' : ''}
-    >
-      <h2 ref={titleRef} id={id} tabIndex={focusTitle ? -1 : undefined}>
-        {title}
-      </h2>
-      {children}
-      <Button disabled={busy} onClick={onClose}>
-        Close
-      </Button>
-    </dialog>
-  );
-}
-export function Drawer(props: Omit<ComponentProps<typeof Dialog>, 'drawer'>) {
-  return <Dialog {...props} drawer />;
-}
+export { Dialog, Drawer, type DialogProps } from './dialog';
 export function Dropdown({
   label,
   children,
@@ -280,42 +352,52 @@ export function Dropdown({
   children: ReactNode;
 }) {
   return (
-    <details className="dropdown">
+    <details className={disclosureClassName('dropdown')}>
       <summary>{label}</summary>
-      <div>{children}</div>
+      <div className="ui-disclosure-content">{children}</div>
     </details>
   );
 }
 export function Tabs({
   items,
 }: {
-  items: readonly { label: string; content: ReactNode }[];
+  items: readonly { label: string; content: ReactNode; disabled?: boolean }[];
 }) {
-  const [selected, setSelected] = useState(0),
+  const [selected, setSelected] = useState(() =>
+      items.findIndex((item) => !item.disabled),
+    ),
     id = useId();
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
   return (
     <div>
-      <div role="tablist" aria-label="Views">
+      <div role="tablist" className="ui-tabs" aria-label="Views">
         {items.map((item, index) => (
           <button
+            type="button"
             key={item.label}
             ref={(element) => {
               refs.current[index] = element;
             }}
             id={`${id}-tab-${index}`}
             role="tab"
+            disabled={item.disabled}
             aria-selected={selected === index}
             aria-controls={`${id}-panel-${index}`}
             tabIndex={selected === index ? 0 : -1}
             onClick={() => setSelected(index)}
             onKeyDown={(event) => {
+              const enabled = items
+                .map((item, index) => (item.disabled ? -1 : index))
+                .filter((index) => index >= 0);
+              const position = enabled.indexOf(index);
               let next = index;
-              if (event.key === 'ArrowRight') next = (index + 1) % items.length;
+              if (event.key === 'ArrowRight')
+                next = enabled[(position + 1) % enabled.length]!;
               else if (event.key === 'ArrowLeft')
-                next = (index + items.length - 1) % items.length;
-              else if (event.key === 'Home') next = 0;
-              else if (event.key === 'End') next = items.length - 1;
+                next =
+                  enabled[(position + enabled.length - 1) % enabled.length]!;
+              else if (event.key === 'Home') next = enabled[0]!;
+              else if (event.key === 'End') next = enabled.at(-1)!;
               else return;
               event.preventDefault();
               setSelected(next);
@@ -349,7 +431,7 @@ export const Table = (props: ComponentProps<'table'>) => (
     role="region"
     aria-label={`${props['aria-label'] ?? 'Table'} scroll area`}
   >
-    <table {...props} />
+    <table {...props} className={`ui-table ${props.className ?? ''}`} />
   </div>
 );
 /* eslint-enable jsx-a11y-x/no-noninteractive-tabindex */
@@ -359,29 +441,79 @@ export const TableHead = (props: ComponentProps<'thead'>) => (
 export const TableBody = (props: ComponentProps<'tbody'>) => (
   <tbody {...props} />
 );
+/** TBL-02. Sorting remains feature-owned; this component only announces it. */
+export function DataTable({
+  headings,
+  children,
+  label,
+  sort,
+  wide = false,
+}: {
+  headings: readonly string[];
+  children: ReactNode;
+  label: string;
+  sort?: { heading: string; direction: 'ascending' | 'descending' };
+  wide?: boolean;
+}) {
+  return (
+    <Table aria-label={label} className={wide ? 'ui-table-wide' : undefined}>
+      <caption className="sr-only">{label}</caption>
+      <thead>
+        <tr>
+          {headings.map((heading) => (
+            <th
+              scope="col"
+              key={heading}
+              aria-sort={sort?.heading === heading ? sort.direction : undefined}
+            >
+              {heading}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>{children}</tbody>
+    </Table>
+  );
+}
 export function Pagination({
   label = 'Pagination',
   hasPrevious,
   hasNext,
   onPrevious,
   onNext,
+  summary,
+  previousLabel = 'Previous',
+  nextLabel = 'Next',
 }: {
   label?: string;
   hasPrevious: boolean;
   hasNext: boolean;
   onPrevious: () => void;
   onNext: () => void;
+  summary?: ReactNode;
+  previousLabel?: string;
+  nextLabel?: string;
 }) {
   return (
-    <nav aria-label={label} className="actions">
-      <Button disabled={!hasPrevious} onClick={onPrevious}>
-        Previous
+    <nav aria-label={label} className="actions ui-pagination">
+      {summary && <p className="ui-pagination-summary">{summary}</p>}
+      <Button variant="secondary" disabled={!hasPrevious} onClick={onPrevious}>
+        {previousLabel}
       </Button>
       <Button disabled={!hasNext} onClick={onNext}>
-        Next
+        {nextLabel}
       </Button>
     </nav>
   );
 }
 export { MarketMap, boothTooltipPosition, type BoothStatus } from './MarketMap';
+export { MapCanvas, type MapCanvasHandle, type MapTool } from './map/MapCanvas';
+export * from './map/model';
 export { ApplicationFields } from './ApplicationFields';
+
+export {
+  passwordChecks,
+  validPassword,
+  passwordMaximum,
+  passwordSymbols,
+} from './password-policy';

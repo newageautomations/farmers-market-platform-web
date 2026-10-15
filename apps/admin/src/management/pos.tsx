@@ -1,3 +1,6 @@
+import { EmptyState } from '@market/ui';
+import { Badge } from '@market/ui';
+import { managementStatusTone } from './status-presentation';
 import { useCallback, useState } from 'react';
 import { AppError, type PosConnection } from '@market/api';
 import { Button, Card } from '@market/ui';
@@ -47,26 +50,31 @@ export function Pos({
                 localIO = canManage && runtime?.providerIOAllowed;
               return (
                 <Card key={p.providerCode}>
-                  <h2>{p.providerCode}</h2>
+                  <h2 className="ui-section-title-dashboard">
+                    {p.providerCode}
+                  </h2>
                   <p>
                     API version {p.apiVersion} ·{' '}
                     {runtime?.state ?? 'NOT_CONFIGURED'}
                   </p>
-                  <details>
+                  <details className="ui-disclosure">
                     <summary>Provider capabilities</summary>
-                    <dl>
-                      {Object.entries(p.capabilities).map(([key, c]) => (
-                        <div key={key}>
-                          <dt>{key}</dt>
-                          <dd>
-                            {c.support} · {c.reason}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
+                    <div className="ui-disclosure-content">
+                      <dl>
+                        {Object.entries(p.capabilities).map(([key, c]) => (
+                          <div key={key}>
+                            <dt>{key}</dt>
+                            <dd>
+                              {c.support} · {c.reason}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
                   </details>
                   {localIO && p.capabilities.oauth?.support === 'SUPPORTED' ? (
                     <CommandForm
+                      embedded
                       title={`Connect ${p.providerCode}`}
                       submitLabel="Connect local adapter"
                       run={async (f) => {
@@ -121,6 +129,7 @@ export function Pos({
                     p.capabilities.clientCredentials?.support ===
                       'SUPPORTED' ? (
                     <CommandForm
+                      embedded
                       title={`Connect ${p.providerCode}`}
                       run={(f) =>
                         service.connectPos({
@@ -145,15 +154,20 @@ export function Pos({
             })}
           </div>
           <section>
-            <h2>Connections</h2>
+            <h2 className="ui-section-title-dashboard">Connections</h2>
             {!data.connections.length && (
-              <p>No connections are recorded for this Vendor.</p>
+              <EmptyState title="No connections recorded">
+                <p>No connections are recorded for this Vendor.</p>
+              </EmptyState>
             )}
             {data.connections.map((c) => (
               <Card key={c.id}>
                 <h3>{c.providerCode}</h3>
                 <p>
-                  {c.status} · {c.mode} · API {c.apiVersion}
+                  <Badge tone={managementStatusTone('connection', c.status)}>
+                    {c.status}
+                  </Badge>{' '}
+                  · {c.mode} · API {c.apiVersion}
                 </p>
                 <p>Inventory authority: {c.policies.inventory}</p>
                 <p>Last successful observation: {date(c.lastSuccessAt)}</p>
@@ -231,18 +245,32 @@ function PosDetail({
   };
   return (
     <section>
-      <h2>{c.providerCode} connection details</h2>
+      <h2 className="ui-section-title-dashboard">
+        {c.providerCode} connection details
+      </h2>
       <ReadState {...result} retry={refresh} />
       {result.data && (
         <>
           <p>
-            {result.data.health.pollingHealthy
-              ? 'Polling observation is recent'
-              : 'Polling is stale or unavailable'}{' '}
+            <Badge
+              tone={result.data.health.pollingHealthy ? 'success' : 'warning'}
+            >
+              {result.data.health.pollingHealthy
+                ? 'Polling observation is recent'
+                : 'Polling is stale or unavailable'}
+            </Badge>{' '}
             ·{' '}
-            {result.data.health.reauthorizationRequired
-              ? 'Reauthorization or reconciliation required'
-              : 'No reauthorization flagged'}
+            <Badge
+              tone={
+                result.data.health.reauthorizationRequired
+                  ? 'warning'
+                  : 'neutral'
+              }
+            >
+              {result.data.health.reauthorizationRequired
+                ? 'Reauthorization or reconciliation required'
+                : 'No reauthorization flagged'}
+            </Badge>
           </p>
           <p>
             Catalog sync: {date(result.data.health.lastCatalogSync)} · Inventory
@@ -257,16 +285,18 @@ function PosDetail({
               </li>
             ))}
           </ul>
-          <details>
+          <details className="ui-disclosure">
             <summary>Effective connection capabilities</summary>
-            <dl>
-              {Object.entries(c.capabilities).map(([key, value]) => (
-                <div key={key}>
-                  <dt>{key}</dt>
-                  <dd>{value}</dd>
-                </div>
-              ))}
-            </dl>
+            <div className="ui-disclosure-content">
+              <dl>
+                {Object.entries(c.capabilities).map(([key, value]) => (
+                  <div key={key}>
+                    <dt>{key}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
           </details>
           <section>
             <h3>Confirmed mappings</h3>
@@ -277,7 +307,10 @@ function PosDetail({
                   {m.variantId
                     ? `Owned variant ${m.variantId}`
                     : `Owned source ${m.stockLocationId}`}{' '}
-                  · {m.status}
+                  ·{' '}
+                  <Badge tone={managementStatusTone('mapping', m.status)}>
+                    {m.status}
+                  </Badge>
                 </li>
               ))}
             </ul>

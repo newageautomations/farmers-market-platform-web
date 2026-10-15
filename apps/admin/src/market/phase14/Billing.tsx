@@ -1,3 +1,5 @@
+import { Button, Select } from '@market/ui';
+import { StatusBadge } from '../presentation';
 import { useState } from 'react';
 import type {
   BoothInvoice,
@@ -5,6 +7,7 @@ import type {
   OperationsCommand,
 } from '@market/api';
 import { Entry, Control, moneyLabel } from './common';
+import { InvoiceTable } from './InvoiceTable';
 export function Billing({
   data,
   run,
@@ -16,17 +19,26 @@ export function Billing({
 }) {
   return (
     <>
-      <p>Online invoicing not configured</p>
-      <button type="button" disabled>
-        Send online invoice
-      </button>
       {data.billingSummary && (
         <div className="ops-summary">
-          <p>
-            {data.billingSummary.paid} paid · {data.billingSummary.open} open ·{' '}
-            {data.billingSummary.pastDue} past due ·{' '}
-            {data.billingSummary.complimentary} complimentary
-          </p>
+          <dl className="ui-kpi-grid" aria-label="Invoice summary">
+            <div>
+              <dt>Paid invoices</dt>
+              <dd>{data.billingSummary.paid}</dd>
+            </div>
+            <div>
+              <dt>Open invoices</dt>
+              <dd>{data.billingSummary.open}</dd>
+            </div>
+            <div>
+              <dt>Past due invoices</dt>
+              <dd>{data.billingSummary.pastDue}</dd>
+            </div>
+            <div>
+              <dt>Complimentary invoices</dt>
+              <dd>{data.billingSummary.complimentary}</dd>
+            </div>
+          </dl>
           {Object.entries(data.billingSummary.byCurrency).map(
             ([currency, s]) => (
               <p key={currency}>
@@ -67,11 +79,13 @@ export function Invoice({
     [key] = useState(() => crypto.randomUUID());
   return (
     <section className="ops-invoice" aria-label={`Invoice ${i.id}`}>
-      <h2>
+      <h2 className="ui-section-title-dashboard">
         Invoice {i.id} · {i.recipientSnapshot.businessName}
       </h2>
-      <p>{(i.billingStatus ?? i.status).toLowerCase().replaceAll('_', ' ')}</p>
-      <table>
+      <p>
+        <StatusBadge>{i.billingStatus ?? i.status}</StatusBadge>
+      </p>
+      <InvoiceTable>
         <caption>Invoice line items</caption>
         <thead>
           <tr>
@@ -91,7 +105,7 @@ export function Invoice({
             </tr>
           ))}
         </tbody>
-      </table>
+      </InvoiceTable>
       <p>
         Total {moneyLabel(i.totalMinor, i.currency)} · Settled{' '}
         {moneyLabel(i.paidMinor, i.currency)} · Outstanding{' '}
@@ -118,7 +132,9 @@ export function Invoice({
             value={dueAt}
             onChange={setDueAt}
           />
-          <button>Issue manual invoice</button>
+          <Button type="submit" variant="primary" size="compact">
+            Issue manual invoice
+          </Button>
         </form>
       )}
       {canManage && i.status === 'OPEN' && (
@@ -143,7 +159,7 @@ export function Invoice({
           >
             <Control label="Payment method">
               {(id) => (
-                <select
+                <Select
                   id={id}
                   value={method}
                   onChange={(e) => setMethod(e.target.value)}
@@ -160,7 +176,7 @@ export function Invoice({
                       {m.toLowerCase()}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
             </Control>
             <Entry
@@ -179,11 +195,20 @@ export function Invoice({
               onChange={setPaidAt}
               required
             />
-            <Entry label="Payment note" value={note} onChange={setNote} />
-            <button>Record manual payment</button>
+            <Entry
+              label="Payment note"
+              maxLength={2000}
+              value={note}
+              onChange={setNote}
+            />
+            <Button type="submit" variant="primary" size="compact">
+              Record manual payment
+            </Button>
           </form>
           {i.paidMinor === 0 && (
-            <button
+            <Button
+              variant="destructive"
+              size="compact"
               type="button"
               onClick={() =>
                 run({
@@ -195,7 +220,7 @@ export function Invoice({
               }
             >
               Void unpaid invoice and create replacement
-            </button>
+            </Button>
           )}
         </>
       )}

@@ -232,7 +232,7 @@ export function createMarketApi(
     operations: (occurrenceId: string, skip: number) =>
       run(
         { api: 'admin', document: g.MarketOperationsDocument },
-        { occurrenceId, options: { skip, take: 20, search: null } },
+        { occurrenceId, options: { skip, take: 20 } },
       ).then((r) => r.ownOccurrenceCustomerOperations),
     featureAvailability: () =>
       run(

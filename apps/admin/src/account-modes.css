@@ -1,0 +1,9 @@
+@media (max-width: 600px) {
+  .admin-topbar .actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .account-mode-controls {
+    width: 100%;
+  }
+}

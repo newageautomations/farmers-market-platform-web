@@ -37,6 +37,8 @@ npm run dev:admin
 
 These start live-mode apps. The storefront shows unavailable until an approved backend host/theme projection exists. It never falls back to fixtures. Admin uses native cookie sessions, current own Vendor/Market identity and exact selected native Channel grants. Market modules use named generated Admin contracts. Use localhost consistently with backend http://localhost:3000 for real cookie tests. 127.0.0.1 and localhost are different sites. Backend startup/credentials are not managed here. See [contracts/blockers](docs/backend-contract.md).
 
+The two ports are intentional: Astro serves storefronts and central/customer accounts on 4321, and the Vite React application serves Vendor, Market Manager and Platform dashboards on 4322. Both now reject an occupied port instead of silently falling back. Preserve the matching configured account, Admin and storefront origins on both frontend and backend. See [account switching and authentication architecture](docs/ACCOUNT_SWITCHING_AUTH_ARCHITECTURE.md) for exact routes, authentication methods, local startup and regression commands.
+
 Astro 7 permits one supervised dev session per project. Stop with Ctrl+C before another storefront dev session. A detached session can be stopped with `npm exec --workspace @market/storefront -- astro dev stop`. Browser tests use built SSR for their second context rather than a second Astro dev session.
 
 ## GraphQL

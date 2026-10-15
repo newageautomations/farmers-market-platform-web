@@ -194,6 +194,20 @@ for (const api of ['shop', 'admin'] as const) {
         'customerAccountShopSchema',
       ),
     );
+  if (api === 'shop')
+    extensions.push(
+      extract(
+        'src/plugins/platform-identity/account-session-policy.ts',
+        'platformShopContractSchema',
+      ),
+    );
+  if (api === 'admin')
+    extensions.push(
+      extract(
+        'src/plugins/marketplace-commerce/customer-account/api.ts',
+        'customerAccountAdminSchema',
+      ),
+    );
   if (api === 'admin')
     extensions.push(
       extract('src/plugins/platform-identity/api.ts', 'identityAdminSchema'),

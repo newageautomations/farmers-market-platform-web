@@ -1,0 +1,325 @@
+.layout-library {
+  display: flex;
+  gap: 1rem;
+  align-items: start;
+  flex-wrap: wrap;
+  margin-block: 1rem;
+  flex-direction: column;
+}
+.layout-library details {
+  flex: 1;
+  min-width: 0;
+}
+.designer {
+  background: #fff;
+  border: 1px solid #c9d6cd;
+  border-radius: 12px;
+  overflow: hidden;
+  min-width: 0;
+  margin-block: 1rem;
+  box-shadow: 0 4px 20px #17392509;
+}
+.designer-header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 1rem;
+  border-bottom: 1px solid #d5dcd5;
+  background: white;
+}
+.designer-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.15rem;
+}
+.designer-header span:not(.ui-status) {
+  font-size: 0.8rem;
+  color: #526958;
+  margin-right: 0.7rem;
+}
+.designer-header .designer-dirty {
+  color: #845319;
+}
+.designer-header label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.designer-save {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+.designer-commands {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid #dbe4de;
+  background: #f8faf8;
+}
+.designer-commands > span {
+  font-size: 0.85rem;
+  color: #526958;
+  margin-right: auto;
+}
+.designer-body {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 280px;
+  height: max(620px, calc(100dvh - 290px));
+}
+.designer button:not(.ui-button),
+.designer select:not(.ui-select) {
+  font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  min-height: 34px;
+}
+.designer select:not(.ui-select) {
+  width: auto;
+  max-width: 100%;
+  padding-right: 2rem;
+}
+.designer-header select.ui-select {
+  min-width: 150px;
+}
+.designer-commands select {
+  max-width: 180px;
+}
+.admin-content:has(.designer) {
+  padding: 1.25rem;
+}
+.admin-content:has(.designer) > .page-header {
+  display: none;
+}
+.admin-content:has(.designer) .ops-controls > .actions {
+  display: none;
+}
+.admin-content .designer button + button {
+  margin-inline: 0;
+}
+.designer button:not(.ui-button)[aria-pressed='true'] {
+  color: #173925;
+  background: #deebe2;
+  border-color: #648974;
+}
+.designer .primary:not(.ui-button) {
+  background: #27523b;
+  color: white;
+}
+.designer-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.6rem;
+  border-right: 1px solid #dbe4de;
+  overflow-y: auto;
+}
+.designer-tools button {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  flex-direction: column;
+  font-weight: 400;
+}
+.designer-commands > .button.ui-button.button-compact,
+.designer-save > .button.ui-button.button-compact {
+  min-height: var(--ui-control-height);
+}
+.designer-tools button span {
+  font-size: 1.3rem;
+}
+.designer-body > .map-canvas-shell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: #f3f6f3;
+}
+.designer-body .konva-viewport {
+  height: auto;
+  flex: 1;
+  border: 0;
+  border-radius: 0;
+}
+.designer-sidebar {
+  border-left: 1px solid #dbe4de;
+  overflow-y: auto;
+  min-width: 0;
+  padding: 0.75rem;
+}
+.designer-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.designer-inspector fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.designer-inspector fieldset fieldset {
+  border: 1px solid #dbe4de;
+  padding: 0.75rem;
+  margin-block: 0.75rem;
+  border-radius: 6px;
+}
+.designer-inspector legend {
+  font-size: 1rem;
+  font-weight: 650;
+  margin-bottom: 0.75rem;
+}
+.designer-inspector .ops-field {
+  margin-bottom: 0.65rem;
+}
+.designer-inspector input:not(.ui-input),
+.designer-inspector select:not(.ui-select) {
+  width: 100%;
+  min-width: 0;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.5rem;
+}
+.inspector-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.designer-view-options p,
+.designer-layers p,
+.designer-inspector p {
+  font-size: 0.8rem;
+  color: #526958;
+}
+.designer-layers summary {
+  font-weight: 600;
+}
+.designer-layers summary span {
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+.designer-layers ul {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.4rem;
+}
+.designer-layers li {
+  border: 1px solid #dbe4de;
+  border-radius: 6px;
+  padding: 0.4rem;
+}
+.layer-select {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  justify-content: flex-start;
+}
+.layer-type {
+  font-size: 1.2rem;
+}
+.layer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+.layer-actions .ops-check label {
+  font-size: 0.7rem;
+}
+.layer-actions input {
+  width: auto;
+}
+.designer-footer {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  border-top: 1px solid #dbe4de;
+  padding: 0.6rem 1rem;
+  font-size: 0.8rem;
+  color: #526958;
+}
+@media (max-width: 1100px) {
+  .designer-body {
+    grid-template-columns: 80px minmax(0, 1fr) 240px;
+  }
+}
+@media (max-width: 900px) {
+  .designer-body {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+  .designer-body > .map-canvas-shell {
+    height: 550px;
+  }
+  .designer-tools {
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: 0;
+    border-bottom: 1px solid #dbe4de;
+  }
+  .designer-tools button {
+    flex-direction: row;
+  }
+  .designer-sidebar {
+    grid-column: 1/-1;
+    border-left: 0;
+    border-top: 1px solid #dbe4de;
+    max-height: 440px;
+  }
+  .designer-inspector > fieldset {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+  }
+  .designer-inspector legend {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 550px) {
+  .designer-header {
+    padding: 0.75rem;
+  }
+  .designer-save {
+    margin-left: 0;
+  }
+  .designer-commands {
+    padding: 0.5rem;
+  }
+  .designer-commands > span {
+    width: 100%;
+  }
+  .designer-body {
+    display: flex;
+    flex-direction: column;
+  }
+  .designer-tools {
+    flex-direction: row;
+    flex-wrap: wrap;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid #dbe4de;
+    gap: 0.25rem;
+  }
+  .designer-tools button {
+    flex-direction: row;
+  }
+  .designer-body > .map-canvas-shell {
+    height: 430px;
+  }
+  .designer-inspector > fieldset {
+    display: block;
+  }
+  .designer-sidebar {
+    max-height: 480px;
+  }
+  .designer-footer span:last-child {
+    display: none;
+  }
+}

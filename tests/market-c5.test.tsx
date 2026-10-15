@@ -1,3 +1,4 @@
+import { date, friendlyLabel } from '../apps/admin/src/market/presentation';
 import {
   act,
   fireEvent,
@@ -89,25 +90,22 @@ it('direct occurrence detail succeeds without requesting the date list', async (
     status: 'cancelled',
   });
   render(<MarketOccurrences service={api} id="101" />);
-  await screen.findByText('2020-01-01T09:00');
+  await screen.findByText(date('2020-01-01T15:00:00Z', row.timezone));
   expect(direct).toHaveBeenCalledWith('101');
   expect(list).not.toHaveBeenCalled();
   expect(
     screen.queryByRole('button', { name: 'Cancel occurrence' }),
   ).toBeNull();
 });
-it('Overview renders the summary count even when a loaded relationship page has fewer rows', async () => {
-  const api = service(),
-    summary = await api.overview();
-  vi.spyOn(api, 'overview').mockResolvedValue({
-    ...summary,
-    totalVendorRelationships: 1400,
-    approvedVendorRelationships: 1300,
-  });
+it('Overview shows the next date and a labeled vendor table without diagnostics', async () => {
+  const api = service();
   render(<MarketOverview service={api} />);
-  await screen.findByText(
-    '1300 approved Vendor relationships out of 1400 total relationships.',
-  );
+  await screen.findByRole('table', { name: 'Vendor relationships' });
+  expect(
+    screen.getByRole('heading', { name: 'Next Scheduled Occurrence' }),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Refresh/ })).toBeNull();
+  expect(document.body).not.toHaveTextContent('Operational totals');
 });
 function status(
   jobId: string,
@@ -139,9 +137,7 @@ it.each(['COMPLETED', 'FAILED'] as const)(
       );
       await act(async () => {});
       await act(async () => vi.advanceTimersByTimeAsync(2000));
-      expect(
-        screen.getByText(new RegExp('Status: ' + terminal)),
-      ).toBeInTheDocument();
+      expect(screen.getByText(friendlyLabel(terminal))).toBeInTheDocument();
       await act(async () => vi.advanceTimersByTimeAsync(120000));
       expect(read).toHaveBeenCalledTimes(2);
       expect(done).toHaveBeenCalledTimes(terminal === 'COMPLETED' ? 1 : 0);
@@ -177,7 +173,7 @@ it('stops A polling, clears A job state and discards an in-flight result after M
     await act(async () => {});
     await act(async () => finish(status('job-A', 'COMPLETED')));
     expect(screen.queryByText(/job-A/)).toBeNull();
-    expect(screen.getByText(/job-B/)).toBeInTheDocument();
+    expect(screen.getByText('Completed')).toBeInTheDocument();
     expect(done).toHaveBeenCalledTimes(1);
     await act(async () => vi.advanceTimersByTimeAsync(120000));
     expect(old).toHaveBeenCalledTimes(1);

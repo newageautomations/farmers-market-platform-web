@@ -5,6 +5,7 @@ import {
   requireStrongSecret,
 } from './security.ts';
 export * from './security.ts';
+export const platformName = 'Market platform';
 
 const endpoint = z
   .url()

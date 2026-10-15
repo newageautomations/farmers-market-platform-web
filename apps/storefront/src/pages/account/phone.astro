@@ -1,0 +1,120 @@
+---
+import { inputClassName, buttonClassName } from '@market/ui/presentation';
+import Button from '../../components/ui/Button.astro';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { PhoneInput } from '@market/ui';
+import {
+  accountBridge,
+  isCentral,
+  type CentralAccountData,
+} from '../../lib/account';
+if (!isCentral(Astro.url)) return Astro.redirect('/account/login');
+let account: CentralAccountData;
+try {
+  account = await accountBridge<CentralAccountData>({
+    action: 'centralProfile',
+    central: Astro.cookies.get('platform-unified-account')?.value ?? '',
+  });
+} catch {
+  return Astro.redirect('/account/login');
+}
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+
+<SiteLayout title="Verify your personal phone" noindex>
+  <section class="py-12 account-panel">
+    <h1>
+      {account.profile.phoneVerified
+        ? 'Change your personal phone'
+        : 'Verify your personal phone'}
+    </h1>
+    <p>
+      {account.profile.phoneVerified
+        ? 'Your current verified number is ' +
+          account.profile.phoneNumber +
+          '. It remains active until the replacement is verified.'
+        : 'Verify one personal phone to continue using your account. Your business memberships and account history are preserved.'}
+    </p>
+    {Astro.url.searchParams.has('error') && (
+      <p class="alert ui-alert ui-alert-error" role="alert">
+        Verification is unavailable or the code is invalid. Check your details
+        and try again.
+      </p>
+    )}
+    {Astro.url.searchParams.has('sent') && (
+      <form method="post" action="/api/account">
+        <input type="hidden" name="action" value="verifyPersonalPhone" />
+        <label class="field">
+          SMS verification code{' '}
+          <input
+            class={inputClassName('text')}
+            name="code"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            minlength="6"
+            required
+          />
+        </label>
+        {account.profile.needsPassword && (
+          <label class="field">
+            New password{' '}
+            <input
+              class={inputClassName('password')}
+              name="password"
+              type="password"
+              autocomplete="new-password"
+              minlength="12"
+              maxlength="128"
+              required
+            />
+          </label>
+        )}
+        <Button type="submit" variant="primary">
+          Verify personal phone
+        </Button>
+      </form>
+    )}
+    <form method="post" action="/api/account">
+      <input type="hidden" name="action" value="requestPersonalPhone" />
+      <PhoneInput
+        name="phone"
+        label="Personal phone number"
+        required
+        client:load
+      />
+      {!account.profile.needsPassword && (
+        <label class="field">
+          Current password{' '}
+          <input
+            class={inputClassName('password')}
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            maxlength="1024"
+            required
+          />
+        </label>
+      )}
+      <p>
+        Codes expire in five minutes. Wait at least one minute before requesting
+        another code.
+      </p>
+      <Button type="submit" variant="primary">
+        Send SMS verification code
+      </Button>
+    </form>
+    <p>
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href="/account"
+      >
+        Return to your account
+      </a>
+    </p>
+  </section>
+</SiteLayout>

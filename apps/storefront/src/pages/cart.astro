@@ -15,9 +15,12 @@ let error = storefrontError,
 let marketBootstrap: MarketBootstrap = { cart: null, signedIn: false };
 try {
   if (storefront?.kind === 'MARKET' && storefront.source === 'backend')
-    marketBootstrap = await requestMarketShop(Astro).bootstrap();
+    marketBootstrap = await requestMarketShop(
+      Astro,
+      Astro.response.headers,
+    ).bootstrap();
   else if (storefront?.source === 'backend')
-    bootstrap = await requestShop(Astro).bootstrap();
+    bootstrap = await requestShop(Astro, Astro.response.headers).bootstrap();
 } catch (e) {
   error = safeError(e);
 }

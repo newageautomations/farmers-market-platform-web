@@ -1,0 +1,59 @@
+---
+import { inputClassName, buttonClassName } from '@market/ui/presentation';
+import Button from '../../components/ui/Button.astro';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { isCentral } from '../../lib/account';
+if (!isCentral(Astro.url))
+  return new Response('Use your original account recovery link.', {
+    status: 400,
+  });
+const token = Astro.url.searchParams.get('token') ?? '';
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+---
+
+<SiteLayout title="Reset your password" noindex>
+  <section class="py-12 account-panel">
+    <h1>Reset your password</h1>
+    {/^[A-Za-z0-9_-]{43}$/.test(token) && (
+      <form method="post" action="/api/account">
+        <input type="hidden" name="action" value="resetPassword" />
+        <input type="hidden" name="token" value={token} />
+        <label class="field">
+          New password{' '}
+          <input
+            class={inputClassName('password')}
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            required
+            minlength="12"
+            maxlength="72"
+          />
+        </label>
+        <p>
+          Use 12 to 72 English letters, numbers and keyboard symbols, with at
+          least one uppercase letter, one number and one special character.
+          Spaces and invisible characters are not supported.
+        </p>
+        <Button type="submit" variant="primary">
+          Reset password
+        </Button>
+      </form>
+    )}
+    <p>
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href="/account/recover"
+      >
+        Request another recovery email
+      </a>
+    </p>
+  </section>
+</SiteLayout>
+<script>
+  history.replaceState(null, '', '/account/reset');
+</script>

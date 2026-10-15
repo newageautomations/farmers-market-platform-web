@@ -1,10 +1,12 @@
+import { cardClassName } from '@market/ui/presentation';
 import { useCallback, useState } from 'react';
 import { type AnalyticsMetadata, type MarketMetrics } from '@market/api';
-import { Alert, Button, EmptyState, Pagination } from '@market/ui';
+import { Card, Alert, Button, EmptyState, Pagination } from '@market/ui';
 import type { MarketService, MarketAvailability } from './service';
 import {
   Choice,
   DataTable,
+  date,
   dateBounds,
   initialRange,
   RangeForm,
@@ -33,41 +35,16 @@ export const marketMetrics: readonly {
   { field: 'cancelledParticipations', label: 'Cancelled participations' },
 ];
 export function Projection({ metadata }: { metadata: AnalyticsMetadata }) {
-  return (
-    <div className="projection-status" role="status">
-      <p>
-        Projection: {metadata.status}. Completeness: {metadata.completeness}.
-      </p>
-      <p>
-        Source as of: {metadata.sourceAsOf ?? metadata.asOf ?? 'Not provided'}.
-        Active generation: {metadata.activeGenerationId ?? 'Not built'}.
-      </p>
-      <p>
-        Last success: {metadata.lastSuccessfulAt ?? 'Not provided'}. Last
-        reconciliation: {metadata.lastReconciledAt ?? 'Not provided'}. Technical
-        bucket: {metadata.technicalBucket}.
-      </p>
-      {metadata.status !== 'ACTIVE' && (
-        <p>
-          This projection is not current. Its returned snapshot may be stale,
-          rebuilding, failed or unbuilt.
-        </p>
-      )}
-    </div>
+  return metadata.status === 'ACTIVE' ? null : (
+    <Alert severity="warning">
+      Analytics are being updated. Some figures may be out of date.
+    </Alert>
   );
 }
 export function AvailabilityState({ value }: { value: MarketAvailability }) {
-  return (
-    <Alert>
-      Market analytics: {value}.{' '}
-      {value === 'ALLOWED'
-        ? 'Operational analytics are available.'
-        : value === 'DENIED'
-          ? 'Analytics access is denied for this context.'
-          : value === 'UNCONFIGURED'
-            ? 'This analytics boundary is unconfigured.'
-            : 'Analytics availability has not been established.'}{' '}
-      Core Market administration remains available.
+  return value === 'ALLOWED' ? null : (
+    <Alert severity="neutral">
+      Analytics are not available for this market.
     </Alert>
   );
 }
@@ -101,20 +78,12 @@ export function MarketAnalytics({ service }: { service: MarketService }) {
   }
   return (
     <>
-      <div className="dashboard-card">
+      <Card as="div" className="dashboard-card">
         <ReadState {...availability} retry={refresh} />
-        <Button className="secondary" onClick={refresh}>
-          Refresh analytics
-        </Button>
         {availability.data && <AvailabilityState value={availability.data} />}
-      </div>
+      </Card>
       {availability.data === 'ALLOWED' && (
         <>
-          <p>
-            UTC midnight [from, through), maximum 366 days. Counts remain exact
-            backend strings. Daily and occurrence buckets are separate; this UI
-            does not add distinct Vendor counts across buckets.
-          </p>
           <RangeForm
             range={range}
             onChange={(next) => {
@@ -123,7 +92,9 @@ export function MarketAnalytics({ service }: { service: MarketService }) {
             }}
           />
           <form
-            className="filter-bar"
+            className={cardClassName({
+              className: 'filter-bar ui-control-row',
+            })}
             onSubmit={(event) => {
               event.preventDefault();
               const data = new FormData(event.currentTarget);
@@ -135,16 +106,18 @@ export function MarketAnalytics({ service }: { service: MarketService }) {
           >
             <Choice
               name="view"
-              label="Bucket view"
+              label="View"
               choices={['daily', 'occurrence']}
               value={view}
             />
             <TextField
               name="occurrenceId"
-              label="Filter occurrence reference (optional)"
+              label="Occurrence Number (optional)"
               required={false}
             />
-            <Button type="submit">Apply view</Button>
+            <div className="ui-field-action">
+              <Button type="submit">Apply view</Button>
+            </div>
           </form>
           <ReadState {...state} retry={refresh} />
           {state.data && (
@@ -152,14 +125,15 @@ export function MarketAnalytics({ service }: { service: MarketService }) {
               <Projection metadata={state.data.metadata} />
               {state.data.items.length ? (
                 state.data.items.map((bucket, index) => (
-                  <div
+                  <Card
+                    as="div"
                     className="record-details"
                     key={`${bucket.day}:${bucket.occurrenceId}:${index}`}
                   >
                     <p>
-                      UTC day {bucket.day}
+                      {date(bucket.day)}
                       {bucket.occurrenceId
-                        ? ` · occurrence reference ${bucket.occurrenceId}`
+                        ? ` · Market Date ${bucket.occurrenceId}`
                         : ''}
                     </p>
                     <DataTable
@@ -173,10 +147,10 @@ export function MarketAnalytics({ service }: { service: MarketService }) {
                         </tr>
                       ))}
                     </DataTable>
-                  </div>
+                  </Card>
                 ))
               ) : (
-                <EmptyState title="No operational analytics buckets returned" />
+                <EmptyState title="No analytics available for these dates" />
               )}
               <Pagination
                 hasPrevious={cursors.length > 1}

@@ -38,6 +38,7 @@ export function syntheticProductionEnvironment() {
     POS_ALLOW_NETWORK: 'false',
     COMMUNICATIONS_ENABLED: 'false',
     COMMUNICATION_ALLOW_NETWORK: 'false',
+    PHONE_SMS_ALLOW_NETWORK: 'false',
     SAAS_BILLING_ALLOW_NETWORK: 'false',
   };
   // Empty optional credentials stop dotenv from adopting any configured real provider values.
@@ -48,6 +49,8 @@ export function syntheticProductionEnvironment() {
     'RESEND_WEBHOOK_SECRET',
     'RESEND_CONFIG_VERSION',
     'RESEND_ACCOUNT_KEY',
+    'PHONE_SMS_MESSAGING_SERVICE_SID',
+    'PHONE_OTP_KEY',
     'TWILIO_ACCOUNT_SID',
     'TWILIO_API_KEY',
     'TWILIO_API_SECRET',

@@ -1,7 +1,9 @@
+import { Input } from '@market/ui';
 import { useCallback, useState } from 'react';
 import type { CatalogRecord, CatalogSection } from '@market/api';
 import { AppError } from '@market/api';
-import { Card } from '@market/ui';
+import { Card, Badge, EmptyState } from '@market/ui';
+import { managementStatusTone } from './status-presentation';
 import { formatMoney } from '@market/config';
 import type { ManagementService } from './service';
 import {
@@ -84,8 +86,9 @@ function RuleFields({
       ) : (
         kind && (
           <>
-            <label>
-              <input type="checkbox" name="unlimited" /> Unlimited
+            <label htmlFor="catalog-unlimited">
+              <Input id="catalog-unlimited" type="checkbox" name="unlimited" />{' '}
+              Unlimited
             </label>
             <TextField
               name="limit"
@@ -190,9 +193,14 @@ export function Catalog({
   };
   return (
     <>
-      <nav className="overview-links" aria-label="Billing catalog">
+      <nav className="ui-tabs" aria-label="Billing catalog">
         {catalogSections.map((s) => (
-          <RouteLink key={s.path} to={`/platform/billing/${s.path}`}>
+          <RouteLink
+            key={s.path}
+            variant="tab"
+            current={s.section === section}
+            to={`/platform/billing/${s.path}`}
+          >
             {s.label}
           </RouteLink>
         ))}
@@ -217,15 +225,22 @@ export function Catalog({
             ))}
           </div>
           {!result.data.items.length && (
-            <p>
-              No{' '}
-              {catalogSections
-                .find((s) => s.section === section)
-                ?.label.toLowerCase()}{' '}
-              are configured.
-            </p>
+            <EmptyState title="No catalog records">
+              <p>
+                No{' '}
+                {catalogSections
+                  .find((s) => s.section === section)
+                  ?.label.toLowerCase()}{' '}
+                are configured.
+              </p>
+            </EmptyState>
           )}
-          <Pager skip={skip} total={result.data.totalItems} setSkip={setSkip} />
+          <Pager
+            skip={skip}
+            total={result.data.totalItems}
+            count={result.data.items.length}
+            setSkip={setSkip}
+          />
         </>
       )}
       {refs.data && (
@@ -258,7 +273,7 @@ function CatalogCard({
 }) {
   return (
     <Card>
-      <h2>
+      <h2 className="ui-section-title-dashboard">
         {r.displayName ??
           r.featureCode ??
           r.metricCode ??
@@ -267,7 +282,17 @@ function CatalogCard({
       </h2>
       <p>
         Reference {r.id}
-        {r.status ? ` · ${r.status}` : ''}
+        {r.status ? (
+          <>
+            {' '}
+            ·{' '}
+            <Badge tone={managementStatusTone('catalog', r.status)}>
+              {r.status}
+            </Badge>
+          </>
+        ) : (
+          ''
+        )}
       </p>
       {r.planId && (
         <p>
@@ -342,6 +367,7 @@ function CatalogCard({
       {section === 'PLANS' && (
         <>
           <CommandForm
+            embedded
             title={`Edit ${r.displayName}`}
             run={(f) =>
               service.editPlan({
@@ -361,6 +387,7 @@ function CatalogCard({
           </CommandForm>
           {r.status === 'ACTIVE' && (
             <CommandForm
+              embedded
               title="Archive plan"
               confirm="Archive this stable plan identity? Historical versions and subscribers remain intact."
               run={() =>
@@ -379,6 +406,7 @@ function CatalogCard({
       )}
       {section === 'VERSIONS' && r.status === 'DRAFT' && (
         <CommandForm
+          embedded
           title="Publish plan version"
           submitLabel="Publish version"
           confirm="Publish this exact immutable entitlement snapshot? Future edits require a new draft version."
@@ -393,6 +421,7 @@ function CatalogCard({
       {section === 'VERSIONS' && r.status === 'PUBLISHED' && (
         <>
           <CommandForm
+            embedded
             title="Set default published version"
             confirm="Use this version as the plan default? Existing subscriptions retain their current exact version."
             run={() =>
@@ -403,6 +432,7 @@ function CatalogCard({
             <p>Default changes do not migrate subscribers.</p>
           </CommandForm>
           <CommandForm
+            embedded
             title="Retire plan version"
             confirm="Retire this published version? Existing subscription history remains intact."
             run={() => service.retireVersion(r.id)}
@@ -414,6 +444,7 @@ function CatalogCard({
       )}
       {section === 'OVERRIDES' && !r.revokedAt && (
         <CommandForm
+          embedded
           title="Revoke entitlement override"
           confirm="Revoke this override? Backend overlap and revocation rules remain authoritative."
           run={() => service.revokeOverride(r.id)}
@@ -661,7 +692,7 @@ function CatalogCommands({
           'RECONCILIATION_REQUIRED',
         ].map((s) => (
           <label key={s}>
-            <input type="checkbox" name={s} /> {s}
+            <Input type="checkbox" name={s} /> {s}
           </label>
         ))}
       </CommandForm>

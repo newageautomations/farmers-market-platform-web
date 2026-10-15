@@ -1,0 +1,167 @@
+{
+  "database": "vendure_demo_market_ops",
+  "applied": true,
+  "accounts": [
+    {
+      "email": "demo.platform@example.test",
+      "userId": "1",
+      "phone": "+12105550100",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "market.manager@example.test",
+      "userId": "2",
+      "phone": "+12105550101",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "boerne.manager@example.test",
+      "userId": "25",
+      "phone": "+12105550102",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "texas.wild@example.test",
+      "userId": "3",
+      "phone": "+12105550103",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "hill.country.honey@example.test",
+      "userId": "4",
+      "phone": "+12105550104",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "canyon.bakery@example.test",
+      "userId": "5",
+      "phone": "+12105550105",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "manna-roots@example.test",
+      "userId": "8",
+      "phone": "+12105550106",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "showbread-catering@example.test",
+      "userId": "9",
+      "phone": "+12105550107",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "norma-jeans-greens@example.test",
+      "userId": "10",
+      "phone": "+12105550108",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "tamales-de-reina@example.test",
+      "userId": "11",
+      "phone": "+12105550109",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "mummys-macarons@example.test",
+      "userId": "12",
+      "phone": "+12105550110",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "smith-pastures@example.test",
+      "userId": "13",
+      "phone": "+12105550111",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "grammies-crackers@example.test",
+      "userId": "14",
+      "phone": "+12105550112",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "last-watch-coffee@example.test",
+      "userId": "15",
+      "phone": "+12105550113",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "pucker-up@example.test",
+      "userId": "16",
+      "phone": "+12105550114",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "priceless-honey@example.test",
+      "userId": "17",
+      "phone": "+12105550115",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "jake-n-bake@example.test",
+      "userId": "18",
+      "phone": "+12105550116",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "twice-baked-cafe@example.test",
+      "userId": "19",
+      "phone": "+12105550117",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "hisco-apparel@example.test",
+      "userId": "20",
+      "phone": "+12105550118",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "manna-tallow@example.test",
+      "userId": "21",
+      "phone": "+12105550119",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "9-1-produce-farm@example.test",
+      "userId": "22",
+      "phone": "+12105550120",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "sunflour-and-crumb@example.test",
+      "userId": "23",
+      "phone": "+12105550121",
+      "country": "US",
+      "phoneVerified": true
+    },
+    {
+      "email": "annas-kimchi@example.test",
+      "userId": "24",
+      "phone": "+12105550122",
+      "country": "US",
+      "phoneVerified": true
+    }
+  ]
+}

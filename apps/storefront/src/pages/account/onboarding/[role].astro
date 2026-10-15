@@ -1,0 +1,148 @@
+---
+import { inputClassName, buttonClassName } from '@market/ui/presentation';
+import Button from '../../../components/ui/Button.astro';
+import { PhoneInput, TimezoneField } from '@market/ui';
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import {
+  accountBridge,
+  accountOrigin,
+  isCentral,
+  type CentralAccountData,
+} from '../../../lib/account';
+const segment = Astro.params.role;
+if (segment !== 'vendor' && segment !== 'market')
+  return new Response('Not found', { status: 404 });
+if (!isCentral(Astro.url))
+  return Astro.redirect(
+    new URL(`/account/onboarding/${segment}`, accountOrigin()).toString(),
+  );
+const role = segment === 'vendor' ? 'VENDOR' : 'MARKET_MANAGER';
+let account: CentralAccountData;
+try {
+  account = await accountBridge<CentralAccountData>({
+    action: 'centralProfile',
+    central: Astro.cookies.get('platform-unified-account')?.value ?? '',
+  });
+} catch {
+  return Astro.redirect('/account/login');
+}
+const row = account.contexts.onboarding.find((r) => r.role === role);
+const draft = row?.draft ?? {};
+const editable =
+  !row || ['NOT_STARTED', 'IN_PROGRESS', 'PENDING_REVIEW'].includes(row.state);
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+
+<SiteLayout
+  title={segment === 'vendor' ? 'Vendor onboarding' : 'Market onboarding'}
+  noindex
+>
+  <section class="py-12 account-panel signup-panel">
+    <h1>
+      {segment === 'vendor' ? 'Become a Vendor' : 'Create / Manage a Market'}
+    </h1>
+    <p>
+      {row?.state === 'COMPLETED'
+        ? 'Your account role is ready.'
+        : row?.state === 'SUSPENDED' || row?.state === 'CLOSED'
+          ? 'Your account role is inactive.'
+          : 'Your phone is verified. Add your details to finish signup.'}
+    </p>
+    {row?.reviewNote && ['SUSPENDED', 'CLOSED'].includes(row.state) && (
+      <p>{row.reviewNote}</p>
+    )}
+    {Astro.url.searchParams.has('saved') && (
+      <p class="alert ui-alert ui-alert-info" role="status">
+        Your onboarding progress was saved.
+      </p>
+    )}
+    <p>
+      Finish signup to open your{' '}
+      {segment === 'vendor' ? 'Vendor' : 'Market Manager'} dashboard.
+    </p>
+    {editable ? (
+      <form method="post" action="/api/account">
+        <input type="hidden" name="action" value="saveOnboarding" />
+        <input type="hidden" name="role" value={role} />
+        <input type="hidden" name="revision" value={row?.revision ?? 0} />
+        <label class="field">
+          {segment === 'vendor' ? 'Business name' : 'Market name'}{' '}
+          <input
+            class={inputClassName('text')}
+            name="name"
+            value={draft.name ?? ''}
+            maxlength="200"
+            required
+          />
+        </label>
+        <label class="field">
+          Primary contact name{' '}
+          <input
+            class={inputClassName('text')}
+            name="contactName"
+            value={
+              draft.contactName ??
+              `${account.profile.firstName} ${account.profile.lastName}`
+            }
+            maxlength="100"
+            required
+          />
+        </label>
+        <label class="field">
+          Contact email{' '}
+          <input
+            class={inputClassName('email')}
+            name="email"
+            value={draft.email ?? account.profile.emailAddress}
+            type="email"
+            maxlength="254"
+            required
+          />
+        </label>
+        <PhoneInput
+          name="phone"
+          label="Contact phone"
+          defaultValue={draft.phone || account.profile.phoneNumber}
+          client:load
+        />
+        {segment === 'market' && (
+          <TimezoneField
+            label="Market timezone"
+            value={draft.timezone ?? 'America/Chicago'}
+          />
+        )}
+        <div class="actions">
+          <Button
+            type="submit"
+            variant="secondary"
+            name="submit"
+            value="false"
+            formnovalidate
+          >
+            Save progress
+          </Button>
+          <Button type="submit" variant="primary" name="submit" value="true">
+            Finish {segment === 'vendor' ? 'Vendor' : 'Market'} signup
+          </Button>
+        </div>
+      </form>
+    ) : (
+      <p>
+        {row?.state === 'COMPLETED'
+          ? 'Initial role onboarding is complete. Operational setup, storefront publication, billing, and payments have separate requirements.'
+          : 'This account role is inactive. Contact support to restore access.'}
+      </p>
+    )}
+    <p>
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href="/account"
+      >
+        Return to your account
+      </a>
+    </p>
+  </section>
+</SiteLayout>

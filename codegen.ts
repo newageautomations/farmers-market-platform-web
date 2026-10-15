@@ -16,6 +16,7 @@ const config: CodegenConfig = {
             : [
                 'packages/api/operations/shop.graphql',
                 'packages/api/operations/checkout.graphql',
+                'packages/api/operations/customer-dashboard.graphql',
                 'packages/api/operations/preferences.graphql',
                 'packages/api/operations/public-market-operations.graphql',
               ],

@@ -1,0 +1,163 @@
+---
+import { inputClassName, buttonClassName } from '@market/ui/presentation';
+import Button from '../../components/ui/Button.astro';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { platformName } from '@market/config';
+import {
+  accountBridge,
+  centralSignIn,
+  isCentral,
+  setUnifiedCentral,
+  setCentral,
+  authorizeUnifiedAccount,
+} from '../../lib/account';
+let unavailable = false;
+const origin = Astro.url.searchParams.get('origin') ?? '',
+  correlation = Astro.url.searchParams.get('correlation') ?? '';
+if (!isCentral(Astro.url)) {
+  try {
+    return Astro.redirect(
+      await centralSignIn(
+        Astro,
+        true,
+        Astro.url.searchParams.get('returnTo') ?? '/account',
+      ),
+    );
+  } catch {
+    unavailable = true;
+  }
+} else {
+  try {
+    if (origin) await accountBridge({ action: 'unifiedTarget', origin });
+    const cookie = Astro.cookies.get('platform-unified-account')?.value;
+    if (cookie && !origin) {
+      try {
+        await accountBridge({ action: 'centralProfile', central: cookie });
+        return Astro.redirect('/account');
+      } catch {
+        Astro.cookies.delete('platform-unified-account', { path: '/' });
+      }
+    }
+    if (cookie && /^[A-Za-z0-9_-]{43}$/.test(correlation)) {
+      try {
+        const result = await authorizeUnifiedAccount(
+          cookie,
+          origin,
+          correlation,
+        );
+        setUnifiedCentral(Astro, result.central);
+        return Astro.redirect(result.callback);
+      } catch {
+        Astro.cookies.delete('platform-unified-account', { path: '/' });
+      }
+    }
+    // A Phase 13F email-link session remains valid when password login is the
+    // primary entry. Exchange only through its existing customer-only handoff.
+    const emailSession = Astro.cookies.get('platform-account')?.value;
+    if (emailSession && origin && /^[A-Za-z0-9_-]{43}$/.test(correlation)) {
+      try {
+        const result = await accountBridge<{
+          central: string;
+          callback: string;
+        }>({
+          action: 'authorize',
+          central: emailSession,
+          origin,
+          correlation,
+        });
+        setCentral(Astro, result.central);
+        return Astro.redirect(result.callback);
+      } catch {
+        Astro.cookies.delete('platform-account', { path: '/' });
+      }
+    }
+  } catch {
+    unavailable = true;
+  }
+}
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+---
+
+<SiteLayout
+  context={Astro.locals.storefront}
+  title={`Sign in to ${platformName}`}
+  noindex
+>
+  <section class="py-12 account-panel">
+    <h1>Sign in to {platformName}</h1>
+    {Astro.url.searchParams.has('verified') && (
+      <p class="alert ui-alert ui-alert-info" role="status">
+        Your phone is verified. Sign in to your account.
+      </p>
+    )}
+    {Astro.url.searchParams.has('security') && (
+      <p class="alert ui-alert ui-alert-info" role="status">
+        Your password was updated. Sign in again.
+      </p>
+    )}
+    {unavailable ? (
+      <p class="alert ui-alert ui-alert-error" role="alert">
+        Account sign-in is temporarily unavailable. Please try again later.
+      </p>
+    ) : (
+      <>
+        <p>
+          Use your existing platform credentials. Your Customer, Vendor, and
+          Market workspaces use the same account.
+        </p>
+        <form method="post" action="/api/account">
+          <input type="hidden" name="action" value="unifiedLogin" />
+          <input type="hidden" name="origin" value={origin} />
+          <input type="hidden" name="correlation" value={correlation} />
+          <label class="field">
+            Email{' '}
+            <input
+              class={inputClassName('email')}
+              name="email"
+              type="email"
+              autocomplete="username"
+              required
+              maxlength="254"
+            />
+          </label>
+          <label class="field">
+            Password{' '}
+            <input
+              class={inputClassName('password')}
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              maxlength="1024"
+            />
+          </label>
+          <p>
+            <a href="/account/recover">Forgot your password?</a>
+          </p>
+          <Button type="submit" variant="primary">
+            Sign in
+          </Button>
+          <p class="login-signup">
+            Don't have an account? <a href="/account/signup">Sign up here</a>
+          </p>
+        </form>
+        <p>
+          <a
+            class={buttonClassName({
+              variant: 'secondary',
+              className: 'button secondary',
+            })}
+            href={
+              origin && origin !== process.env.ADMIN_ORIGIN
+                ? `/account/sign-in?origin=${encodeURIComponent(origin)}&correlation=${encodeURIComponent(correlation)}`
+                : '/account/sign-in'
+            }
+          >
+            Sign in with Email Link
+          </a>
+        </p>
+      </>
+    )}
+  </section>
+</SiteLayout>

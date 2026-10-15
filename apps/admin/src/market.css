@@ -13,7 +13,6 @@
   margin: 0;
 }
 .market-workspace .command-section {
-  margin: 1.5rem 0;
   max-width: 720px;
 }
 .market-workspace fieldset {
@@ -40,19 +39,7 @@
   font-weight: 600;
   overflow-wrap: anywhere;
 }
-.market-workspace .capability-note {
-  border-left: 3px solid var(--border);
-  padding: 0.25rem 1rem;
-  margin: 1rem 0;
-}
-.market-workspace .projection-status {
-  padding: 0.5rem 1rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin: 1rem 0;
-}
-.market-workspace .record-details {
+.market-workspace .record-details:not(.ui-card) {
   padding: 1rem 0;
   border-bottom: 1px solid var(--border);
 }
@@ -67,9 +54,6 @@
 .market-workspace td,
 .market-workspace p {
   overflow-wrap: anywhere;
-}
-.market-workspace table {
-  min-width: 640px;
 }
 .market-workspace small {
   display: block;
@@ -97,8 +81,5 @@
   }
   .market-workspace .filter-bar {
     align-items: stretch;
-  }
-  .market-workspace .filter-bar button {
-    width: 100%;
   }
 }

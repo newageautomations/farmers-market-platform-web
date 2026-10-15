@@ -1,4 +1,5 @@
 ---
+import Button from '../../components/ui/Button.astro';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { isCentral } from '../../lib/account';
 if (!isCentral(Astro.url)) return new Response('Not found', { status: 404 });
@@ -14,10 +15,12 @@ const token = Astro.url.searchParams.get('token') ?? '',
         <p>Continue to verify your email and access your orders.</p>
         <input type="hidden" name="action" value="claim" />
         <input type="hidden" name="token" value={token} />
-        <button class="button">Access my orders</button>
+        <Button type="submit" variant="primary">
+          Access my orders
+        </Button>
       </form>
     ) : (
-      <p role="alert">
+      <p class="alert ui-alert ui-alert-error" role="alert">
         This link is invalid or expired. Request a new one from your Storefront.
       </p>
     )}

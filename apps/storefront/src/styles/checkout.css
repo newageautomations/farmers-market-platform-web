@@ -23,9 +23,25 @@
   margin: 1rem 0;
 }
 .checkout-shell input:not([type='radio']),
-.account-panel input:not([type='hidden']) {
+.account-panel input:not([type='hidden']):not([type='checkbox']) {
   width: 100%;
   box-sizing: border-box;
+}
+.account-modes {
+  display: grid;
+  gap: 1rem;
+}
+.account-modes a {
+  margin: 0.25rem;
+}
+.account-modes a:not(.ui-button) {
+  display: inline-block;
+}
+.account-panel details {
+  margin-block: 1.5rem;
+}
+.account-panel select {
+  width: 100%;
 }
 .checkout-shell fieldset {
   margin: 1rem 0;
@@ -89,5 +105,88 @@
   }
   .checkout-shell fieldset {
     padding: 0.6rem;
+  }
+}
+.signup-panel {
+  max-width: 40rem;
+}
+.verification-panel {
+  max-width: 32rem;
+}
+.signup-panel form,
+.verification-panel form {
+  margin-block: 1.5rem;
+}
+.password-control {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.password-control input {
+  min-width: 0;
+  flex: 1;
+}
+.password-control button:not(.ui-button),
+.resend-button:not(.ui-button) {
+  min-height: 44px;
+  padding: 0.5rem 0.8rem;
+  background: transparent;
+  color: inherit;
+  border: 1px solid var(--brand-muted);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.field-help {
+  color: #4d5d53;
+  font-size: 0.9rem;
+}
+.password-checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 1rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+.password-checklist [data-met='true'] {
+  color: #28513b;
+}
+.otp-fieldset {
+  padding: 0;
+  margin: 0 0 1.5rem;
+  border: 0;
+}
+.otp-fieldset legend {
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+.otp-inputs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.75rem;
+}
+.otp-inputs input {
+  text-align: center;
+  min-width: 0;
+  height: 3.4rem;
+  font-size: 1.5rem;
+  padding: 0.3rem;
+  border-color: #9aa99f;
+}
+.verification-panel .button,
+.signup-panel form > .button {
+  width: 100%;
+  margin-top: 1rem;
+}
+[data-resend-countdown] {
+  font-size: 0.95rem;
+}
+@media (max-width: 420px) {
+  .otp-inputs {
+    gap: 0.35rem;
+  }
+  .password-checklist {
+    grid-template-columns: 1fr;
   }
 }

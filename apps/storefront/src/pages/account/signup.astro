@@ -1,0 +1,107 @@
+---
+import { inputClassName, buttonClassName } from '@market/ui/presentation';
+import Button from '../../components/ui/Button.astro';
+import { PhoneInput } from '@market/ui';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { platformName } from '@market/config';
+import { accountOrigin, isCentral } from '../../lib/account';
+import { SignupPasswords } from '../../components/SignupPasswords';
+if (!isCentral(Astro.url)) {
+  try {
+    return Astro.redirect(
+      new URL('/account/signup', accountOrigin()).toString(),
+    );
+  } catch {
+    return new Response('Account registration is temporarily unavailable.', {
+      status: 503,
+    });
+  }
+}
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+const requested = Astro.url.searchParams.has('requested');
+---
+
+<SiteLayout title={`Create your free ${platformName} account`} noindex>
+  <section class="py-12 account-panel signup-panel">
+    <h1>Create your free account</h1>
+    <p>
+      Use one account as a Customer, Vendor, or Market Manager. Add your
+      business or Market details whenever you need those dashboards.
+    </p>
+    {requested && (
+      <p class="alert ui-alert ui-alert-info" role="status">
+        {Astro.url.searchParams.has('delivery')
+          ? 'Your request was accepted. SMS delivery is currently unavailable. Please try again later.'
+          : 'Phone verification is required. Request an SMS code to continue.'}
+      </p>
+    )}
+    <form method="post" action="/api/account">
+      <input type="hidden" name="action" value="register" />
+      <label class="field">
+        First name{' '}
+        <input
+          class={inputClassName('text')}
+          name="firstName"
+          autocomplete="given-name"
+          required
+          maxlength="100"
+        />
+      </label>
+      <label class="field">
+        Last name{' '}
+        <input
+          class={inputClassName('text')}
+          name="lastName"
+          autocomplete="family-name"
+          required
+          maxlength="100"
+        />
+      </label>
+      <label class="field">
+        Email{' '}
+        <input
+          class={inputClassName('email')}
+          name="email"
+          type="email"
+          autocomplete="email"
+          required
+          maxlength="254"
+        />
+      </label>
+      <PhoneInput
+        name="phone"
+        label="Personal phone number"
+        required
+        client:load
+      />
+      <SignupPasswords client:load />
+      <Button type="submit" variant="primary">
+        Send Verification Code
+      </Button>
+    </form>
+    <div class="actions">
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href="/account/login"
+      >
+        Sign in to an existing account
+      </a>
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href="/account/recover"
+      >
+        Account recovery
+      </a>
+    </div>
+    <p>
+      If you submitted a Market application anonymously, signup does not claim
+      or display that previous application. The Market can still review it.
+    </p>
+  </section>
+</SiteLayout>

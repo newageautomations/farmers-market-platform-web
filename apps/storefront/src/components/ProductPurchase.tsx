@@ -1,3 +1,5 @@
+import { buttonClassName } from '@market/ui/presentation';
+import { Select, Button, Input } from '@market/ui';
 import { useRef, useState } from 'react';
 import { cartMessage, type PublicProduct } from '@market/api';
 import { formatMoney } from '@market/config';
@@ -48,7 +50,7 @@ export function ProductPurchase({
     >
       <div className="field">
         <label htmlFor="product-variant">Product option</label>
-        <select
+        <Select
           id="product-variant"
           value={variantId}
           onChange={(e) => {
@@ -65,7 +67,7 @@ export function ProductPurchase({
                 : ''}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
       {selected && (
         <p className="product-price" data-variant-price>
@@ -74,7 +76,7 @@ export function ProductPurchase({
       )}
       <div className="field">
         <label htmlFor="product-quantity">Quantity</label>
-        <input
+        <Input
           id="product-quantity"
           type="number"
           inputMode="numeric"
@@ -87,23 +89,45 @@ export function ProductPurchase({
           disabled={pending}
         />
       </div>
-      <button className="button" disabled={pending || !selected || fixture}>
+      <Button
+        type="submit"
+        variant="primary"
+        disabled={pending || !selected || fixture}
+      >
         {pending ? 'Adding…' : 'Add to cart'}
-      </button>
+      </Button>
 
       {fixture && (
         <p>Fixture preview. Cart mutations require a connected Shop session.</p>
       )}
-      <p role="status" aria-live="polite">
+      <p
+        className={
+          pending || message ? 'alert ui-alert ui-alert-info' : undefined
+        }
+        role="status"
+        aria-live="polite"
+      >
         {pending ? 'Updating your cart…' : message}
         {message && (
           <>
             {' '}
-            <a href="/cart">View cart</a>
+            <a
+              className={buttonClassName({
+                variant: 'secondary',
+                className: 'button secondary',
+              })}
+              href="/cart"
+            >
+              View cart
+            </a>
           </>
         )}
       </p>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p className="alert ui-alert ui-alert-error" role="alert">
+          {error}
+        </p>
+      )}
     </form>
   );
 }

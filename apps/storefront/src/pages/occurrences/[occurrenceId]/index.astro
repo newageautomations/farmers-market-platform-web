@@ -1,4 +1,10 @@
 ---
+import {
+  buttonClassName,
+  cardClassName,
+  selectClassName,
+} from '@market/ui/presentation';
+import Button from '../../../components/ui/Button.astro';
 import SiteLayout from '../../../layouts/SiteLayout.astro';
 import { MarketPurchase } from '../../../components/MarketPurchase';
 import { requestMarketShop } from '../../../lib/shop';
@@ -31,7 +37,7 @@ try {
     !/^[1-9][0-9]{0,9}$/.test(occurrenceId)
   )
     throw new AppError('not-found');
-  const api = requestMarketShop(Astro);
+  const api = requestMarketShop(Astro, Astro.response.headers);
   occurrence = await api.occurrence(occurrenceId);
   if (!occurrence) throw new AppError('not-found');
   catalog = await api.catalog(occurrenceId, options);
@@ -88,7 +94,12 @@ const structured =
         <h1>Occurrence unavailable</h1>
         <p>This occurrence cannot currently be browsed here.</p>
         <ErrorState error={error} />
-        <a href="/#occurrences">Choose an occurrence</a>
+        <a
+          class={buttonClassName({ variant: 'secondary' })}
+          href="/#occurrences"
+        >
+          Choose an occurrence
+        </a>
       </>
     ) : (
       <>
@@ -98,7 +109,12 @@ const structured =
           <br />
           {occurrence.venue}
         </p>
-        <a href="/#occurrences">Choose another occurrence</a>
+        <a
+          class={buttonClassName({ variant: 'secondary' })}
+          href="/#occurrences"
+        >
+          Choose another occurrence
+        </a>
         <MarketPurchase
           storefrontId={storefront?.storefrontId ?? ''}
           occurrenceId={occurrence.id}
@@ -106,17 +122,21 @@ const structured =
           initialCart={bootstrap.cart}
           client:load
         />
-        <h2>Browse this occurrence</h2>
+        <h2 class="ui-section-title-consumer">Browse this occurrence</h2>
         <p class="market-catalog-note">
           Catalog eligibility: {catalog.eligibility}. Offerings satisfy current
           domain and time rules. Cart quantities are validated separately and
           are not reserved.
         </p>
-        <form method="get" class="card" aria-label="Catalog filters">
-          <div class="catalog-filters">
+        <form
+          method="get"
+          class={cardClassName({ className: 'card' })}
+          aria-label="Catalog filters"
+        >
+          <div class="catalog-filters ui-control-row">
             <div class="field">
               <label for="market-sort">Sort offerings</label>
-              <select id="market-sort" name="sort">
+              <select class={selectClassName()} id="market-sort" name="sort">
                 <option value="NAME_ASC" selected={options.sort === 'NAME_ASC'}>
                   Name A to Z
                 </option>
@@ -181,20 +201,29 @@ const structured =
             </fieldset>
           )}
           <div class="actions">
-            <button class="button">Apply filters</button>
-            <a href={path}>Clear filters</a>
+            <Button type="submit" variant="primary">
+              Apply filters
+            </Button>
+            <a class={buttonClassName({ variant: 'secondary' })} href={path}>
+              Clear filters
+            </a>
           </div>
         </form>
         <p role="status">{catalog.totalItems} eligible offerings</p>
         {!catalog.items.length ? (
           <div class="empty-state">
-            <h2>No eligible offerings</h2>
+            <h2 class="ui-section-title-consumer">No eligible offerings</h2>
             <p>Try clearing filters or choosing another occurrence.</p>
           </div>
         ) : (
           <div class="catalog-grid">
             {catalog.items.map((item) => (
-              <article class="product-card card">
+              <article
+                class={cardClassName({
+                  className: 'product-card card',
+                  spacing: 'contained',
+                })}
+              >
                 <a href={`${path}/products/${item.variantId}`}>
                   {safeAsset(item.featuredAsset?.preview) ? (
                     <img
@@ -225,11 +254,31 @@ const structured =
             ))}
           </div>
         )}
-        <nav class="pagination" aria-label="Catalog pages">
-          {page > 1 && <a href={pageUrl(page - 1)}>Previous page</a>}
+        <nav class="pagination ui-pagination" aria-label="Catalog pages">
+          <p>
+            {catalog.totalItems} offerings. Showing{' '}
+            {catalog.items.length ? (options.skip ?? 0) + 1 : 0} to{' '}
+            {catalog.items.length
+              ? (options.skip ?? 0) + catalog.items.length
+              : 0}
+            .
+          </p>
+          {page > 1 && (
+            <a
+              class={buttonClassName({ variant: 'secondary' })}
+              href={pageUrl(page - 1)}
+            >
+              Previous page
+            </a>
+          )}
           <span>Page {page}</span>
           {page * 12 < catalog.totalItems && (
-            <a href={pageUrl(page + 1)}>Next page</a>
+            <a
+              class={buttonClassName({ variant: 'secondary' })}
+              href={pageUrl(page + 1)}
+            >
+              Next page
+            </a>
           )}
         </nav>
       </>

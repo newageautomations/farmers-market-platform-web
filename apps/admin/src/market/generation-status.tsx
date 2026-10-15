@@ -1,3 +1,4 @@
+import { StatusBadge } from './presentation';
 import { useEffect, useState } from 'react';
 import {
   safeError,
@@ -54,20 +55,30 @@ export function MarketGenerationStatus({
   const active = result.key === key ? result : undefined;
   return (
     <div role="status" aria-live="polite">
-      <p>Generation request {jobId} accepted.</p>
+      <p>Creating your market dates.</p>
       {active?.error ? (
         <ErrorState error={active.error} />
       ) : (
-        <Alert>
-          Status: {active?.data?.status ?? 'PENDING'}.
+        <Alert
+          severity={
+            active?.data?.status === 'COMPLETED'
+              ? 'success'
+              : active?.data?.status === 'FAILED'
+                ? 'error'
+                : active?.exhausted
+                  ? 'warning'
+                  : 'info'
+          }
+        >
+          <StatusBadge>{active?.data?.status ?? 'PENDING'}</StatusBadge>
           {active?.data?.status === 'COMPLETED' &&
-            ' Worker completed. Occurrences were refreshed.'}
+            ' Your market dates are ready.'}
           {active?.data?.status === 'FAILED' &&
-            ' Generation failed. Check the schedule before deliberately submitting another request.'}
+            ' We could not create these dates. Check the schedule and try again.'}
           {active?.data?.matchedOccurrences != null &&
             ` ${active.data.matchedOccurrences} occurrences matched the generation request, including existing occurrences.`}
           {active?.exhausted &&
-            ' Automatic observation reached its read limit. Check status again when ready.'}
+            ' This is taking longer than expected. Check progress again when ready.'}
         </Alert>
       )}
       {(active?.error || active?.exhausted) && (

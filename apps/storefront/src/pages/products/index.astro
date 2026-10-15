@@ -1,6 +1,12 @@
 ---
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import ProductCards from '../../components/ProductCards.astro';
+import Button from '../../components/ui/Button.astro';
+import {
+  buttonClassName,
+  inputClassName,
+  selectClassName,
+} from '@market/ui/presentation';
 import { requestShop } from '../../lib/shop';
 import { AppError, safeError, type PublicCatalog } from '@market/api';
 import { ErrorState } from '@market/ui';
@@ -61,11 +67,12 @@ const pageLink = (page: number) =>
       <ErrorState error={error} />
     ) : (
       <>
-        <form class="catalog-filters" method="get">
+        <form class="catalog-filters ui-control-row" method="get">
           <div class="field">
             <label for="catalog-search">Search products</label>
             <input
               id="catalog-search"
+              class={inputClassName('search')}
               name="q"
               type="search"
               value={inputs.search}
@@ -74,7 +81,7 @@ const pageLink = (page: number) =>
           </div>
           <div class="field">
             <label for="catalog-sort">Sort products</label>
-            <select id="catalog-sort" name="sort">
+            <select id="catalog-sort" name="sort" class={selectClassName()}>
               <option value="asc" selected={inputs.sort === 'asc'}>
                 Name A to Z
               </option>
@@ -83,24 +90,46 @@ const pageLink = (page: number) =>
               </option>
             </select>
           </div>
-          <button class="button">Apply</button>
+          <div class="ui-field-action">
+            <Button type="submit">Apply</Button>
+          </div>
         </form>
         {catalog?.items.length ? (
           <ProductCards items={catalog.items} />
         ) : (
           <div class="empty-state">
-            <h2>No products found</h2>
+            <h2 class="ui-section-title-consumer">No products found</h2>
             <p>Try another search or return to the first page.</p>
-            <a href="/products">View all products</a>
+            <a
+              class={buttonClassName({ variant: 'secondary' })}
+              href="/products"
+            >
+              View all products
+            </a>
           </div>
         )}
-        <nav class="pagination" aria-label="Catalog pages">
+        <nav class="pagination ui-pagination" aria-label="Catalog pages">
           {inputs.page > 1 && (
-            <a href={pageLink(inputs.page - 1)}>Previous page</a>
+            <a
+              class={buttonClassName({ variant: 'secondary' })}
+              href={pageLink(inputs.page - 1)}
+            >
+              Previous page
+            </a>
           )}
-          <span>Page {inputs.page}</span>
+          <span>
+            {catalog?.totalItems ?? 0} records. Showing{' '}
+            {catalog?.items.length ? inputs.skip + 1 : 0} to{' '}
+            {catalog?.items.length ? inputs.skip + catalog.items.length : 0}.
+            Page {inputs.page}
+          </span>
           {catalog && inputs.skip + inputs.take < catalog.totalItems && (
-            <a href={pageLink(inputs.page + 1)}>Next page</a>
+            <a
+              class={buttonClassName({ variant: 'secondary' })}
+              href={pageLink(inputs.page + 1)}
+            >
+              Next page
+            </a>
           )}
         </nav>
       </>

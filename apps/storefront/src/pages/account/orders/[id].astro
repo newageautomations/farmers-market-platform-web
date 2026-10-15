@@ -1,34 +1,52 @@
 ---
-import SiteLayout from '../../../layouts/SiteLayout.astro';
+import { cardClassName, buttonClassName } from '@market/ui/presentation';
+import CustomerLayout from '../../../layouts/CustomerLayout.astro';
 import PurchaseDetail from '../../../components/PurchaseDetail.astro';
-import { requestCheckout } from '../../../lib/shop';
-const id = Astro.params.id ?? '';
+import {
+  customerApi,
+  customerAuthenticationError,
+} from '../../../lib/customer-dashboard';
+import { temporaryUnavailableResponse } from '@market/config';
+const api = customerApi(Astro),
+  id = Astro.params.id ?? '';
 let purchase;
 try {
-  if (/^[1-9]\d*$/.test(id))
-    purchase = await requestCheckout(Astro, Astro.response.headers).purchase(
-      id,
-    );
-} catch {}
+  if (!(await api.profile())) return Astro.redirect(api.login);
+} catch (error) {
+  return customerAuthenticationError(error)
+    ? Astro.redirect(api.login)
+    : temporaryUnavailableResponse();
+}
+try {
+  if (/^[1-9]\d*$/.test(id)) purchase = await api.purchase(id);
+} catch (error) {
+  if (!customerAuthenticationError(error))
+    return temporaryUnavailableResponse();
+}
 if (!purchase) Astro.response.status = 404;
-Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 ---
 
-<SiteLayout
-  context={Astro.locals.storefront}
-  path="/account/orders"
-  title="Order detail"
-  noindex
->
-  <section class="py-12">
-    <h1>Order detail</h1>
-    {purchase ? (
+<CustomerLayout title="Order detail" path="/account/orders">
+  {purchase ? (
+    <article class={cardClassName({ className: 'card' })}>
+      <p>
+        Order {purchase.orderId} ·{' '}
+        {purchase.nativeState.replace(/([a-z])([A-Z])/g, '$1 $2')}
+      </p>
       <PurchaseDetail purchase={purchase} />
-    ) : (
-      <p>This purchase is unavailable.</p>
-    )}
-    <p>
-      <a href="/account/orders">Your orders</a>
-    </p>
-  </section>
-</SiteLayout>
+    </article>
+  ) : (
+    <p class="alert ui-alert ui-alert-neutral">This purchase is unavailable.</p>
+  )}
+  <p>
+    <a
+      class={buttonClassName({
+        variant: 'secondary',
+        className: 'button secondary',
+      })}
+      href="/account/orders"
+    >
+      Your orders
+    </a>
+  </p>
+</CustomerLayout>

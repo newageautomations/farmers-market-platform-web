@@ -1,7 +1,15 @@
+import { EmptyState } from '@market/ui';
+import { Badge } from '@market/ui';
+import {
+  cardClassName,
+  disclosureClassName,
+  statusBadgeClassName,
+} from '@market/ui/presentation';
+import { vendorOrderStatus } from './order-presentation';
 import { useCallback, useState } from 'react';
 import { mayCommand } from '@market/admin-core';
 import { formatMoney } from '@market/config';
-import { Button, Field, Pagination, Select } from '@market/ui';
+import { Button, Card, Field, Pagination, Select } from '@market/ui';
 import { AppError } from '@market/api';
 import type { VendorService } from './service';
 import {
@@ -78,16 +86,45 @@ export function Orders({
                       )}
                       <small>Placed {date(o.portion.placedAt)} (UTC)</small>
                     </td>
-                    <td>{o.portion.nativeState}</td>
                     <td>
-                      {o.portion.pickupStatus}
+                      <Badge
+                        tone={
+                          vendorOrderStatus('order', o.portion.nativeState).tone
+                        }
+                      >
+                        {o.portion.nativeState}
+                      </Badge>
+                    </td>
+                    <td>
+                      <Badge
+                        tone={
+                          vendorOrderStatus('pickup', o.portion.pickupStatus)
+                            .tone
+                        }
+                      >
+                        {o.portion.pickupStatus}
+                      </Badge>
                       <small>{o.portion.pickupPromise?.venue}</small>
                     </td>
                   </tr>
                 ))}
               </DataTable>
-              {!query.data.items.length && <p>No orders match this context.</p>}
+              {!query.data.items.length && (
+                <EmptyState title="No matching orders">
+                  <p>No orders match this context.</p>
+                </EmptyState>
+              )}
               <Pagination
+                summary={
+                  <>
+                    {query.data.totalItems} records. Showing{' '}
+                    {query.data.items.length ? skip + 1 : 0} to{' '}
+                    {query.data.items.length
+                      ? skip + query.data.items.length
+                      : 0}
+                    .
+                  </>
+                }
                 hasPrevious={skip > 0}
                 hasNext={skip + 20 < query.data.totalItems}
                 onPrevious={() => setSkip(skip - 20)}
@@ -98,7 +135,9 @@ export function Orders({
         </>
       }
       <form
-        className="filter-bar"
+        className={cardClassName({
+          className: 'filter-bar ui-control-row ui-control-row-lookup',
+        })}
         onSubmit={(e) => {
           e.preventDefault();
           const id = text(new FormData(e.currentTarget), 'order-id');
@@ -110,7 +149,9 @@ export function Orders({
           label="Owned operational order reference"
           maxLength={100}
         />
-        <Button type="submit">Look up order</Button>
+        <div className="ui-field-action">
+          <Button type="submit">Look up order</Button>
+        </div>
       </form>
     </>
   );
@@ -126,56 +167,79 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
       {query.data && (
         <div key={JSON.stringify(query.data)}>
           <p>Order {query.data.portion.operationalOrderId}</p>
-          <dl className="facts">
-            <div>
-              <dt>Operational state</dt>
-              <dd>{query.data.portion.nativeState}</dd>
-            </div>
-            <div>
-              <dt>Pickup status</dt>
-              <dd>{query.data.portion.pickupStatus}</dd>
-            </div>
-            <div>
-              <dt>Context</dt>
-              <dd>
-                {query.data.portion.kind === 'MARKET_OCCURRENCE'
-                  ? `Market occurrence · ${query.data.portion.marketName}`
-                  : 'Direct Vendor'}
-              </dd>
-            </div>
-          </dl>
-          <p>Placed {date(query.data.portion.placedAt)} (UTC).</p>
-          {query.data.portion.occurrenceStartsAt && (
-            <p>
-              Occurrence {query.data.portion.occurrenceId} ·{' '}
-              {date(query.data.portion.occurrenceStartsAt)} (UTC).
-            </p>
-          )}
-          {query.data.context && (
-            <p>
-              Vendor attributed{' '}
-              {formatMoney(
-                query.data.context.original,
-                query.data.context.currency,
-              )}{' '}
-              · Settled refund{' '}
-              {formatMoney(
-                query.data.context.refunded,
-                query.data.context.currency,
-              )}{' '}
-              · Vendor remaining attributed{' '}
-              {formatMoney(
-                query.data.context.remaining,
-                query.data.context.currency,
+          <Card as="section" aria-label="Order status and context">
+            <dl className="facts">
+              <div>
+                <dt>Operational state</dt>
+                <dd>
+                  <OrderStatus
+                    domain="order"
+                    value={query.data.portion.nativeState}
+                  />
+                </dd>
+              </div>
+              <div>
+                <dt>Pickup status</dt>
+                <dd>
+                  <OrderStatus
+                    domain="pickup"
+                    value={query.data.portion.pickupStatus}
+                  />
+                </dd>
+              </div>
+              {query.data.context && (
+                <div>
+                  <dt>Payment status</dt>
+                  <dd>
+                    <OrderStatus
+                      domain="payment"
+                      value={query.data.context.financialStatus}
+                    />
+                  </dd>
+                </div>
               )}
-            </p>
-          )}
-          {query.data.context?.occurrenceId && (
-            <p>Occurrence reference {query.data.context.occurrenceId}</p>
-          )}
+              <div>
+                <dt>Context</dt>
+                <dd>
+                  {query.data.portion.kind === 'MARKET_OCCURRENCE'
+                    ? `Market occurrence · ${query.data.portion.marketName}`
+                    : 'Direct Vendor'}
+                </dd>
+              </div>
+            </dl>
+            <p>Placed {date(query.data.portion.placedAt)} (UTC).</p>
+            {query.data.portion.occurrenceStartsAt && (
+              <p>
+                Occurrence {query.data.portion.occurrenceId} ·{' '}
+                {date(query.data.portion.occurrenceStartsAt)} (UTC).
+              </p>
+            )}
+            {query.data.context && (
+              <p>
+                Vendor attributed{' '}
+                {formatMoney(
+                  query.data.context.original,
+                  query.data.context.currency,
+                )}{' '}
+                · Settled refund{' '}
+                {formatMoney(
+                  query.data.context.refunded,
+                  query.data.context.currency,
+                )}{' '}
+                · Vendor remaining attributed{' '}
+                {formatMoney(
+                  query.data.context.remaining,
+                  query.data.context.currency,
+                )}
+              </p>
+            )}
+            {query.data.context?.occurrenceId && (
+              <p>Occurrence reference {query.data.context.occurrenceId}</p>
+            )}
+          </Card>
           {query.data.portion.pickupPromise ? (
-            <div>
-              <h2>Pickup promise</h2>
+            <Card as="section" aria-label="Pickup promise">
+              <h2 className="ui-section-title-dashboard">Pickup promise</h2>
               <p>
                 {query.data.portion.pickupPromise.mode} ·{' '}
                 {query.data.portion.pickupPromise.venue}
@@ -185,7 +249,7 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
                 {date(query.data.portion.pickupPromise.startsAt)} to{' '}
                 {date(query.data.portion.pickupPromise.endsAt)} (UTC)
               </p>
-            </div>
+            </Card>
           ) : (
             <p>No pickup promise provided.</p>
           )}
@@ -229,40 +293,19 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
               return remaining > 0 ? (
                 <details
                   key={line.operationalLineId}
-                  className="record-details"
+                  className={disclosureClassName()}
                 >
                   <summary>Manage {line.variantName}</summary>
-                  <CommandForm
-                    title="Fulfill quantity"
-                    validate={(d) => {
-                      if (integer(d.get('quantity')) > remaining)
-                        throw new AppError('validation');
-                    }}
-                    run={(d, operationKey) =>
-                      service.fulfill({
-                        operationKey,
-                        orderId: id,
-                        orderLineId: line.operationalLineId,
-                        quantity: integer(d.get('quantity')),
-                        fulfillmentId: null,
-                      })
-                    }
-                    onDone={query.refresh}
-                    submitLabel="Fulfill"
-                  >
-                    <TextField name="quantity" label="Quantity to fulfill" />
-                    <p>Remaining operational quantity: {remaining}.</p>
-                  </CommandForm>
-                  {line.fulfilledQuantity === 0 ? (
+                  <div className="ui-disclosure-content">
                     <CommandForm
-                      title="Cancel unfulfilled quantity"
-                      confirm="Cancel this unfulfilled operational quantity? The backend restores eligible allocations. Financial attribution and payments do not change."
+                      embedded
+                      title="Fulfill quantity"
                       validate={(d) => {
                         if (integer(d.get('quantity')) > remaining)
                           throw new AppError('validation');
                       }}
                       run={(d, operationKey) =>
-                        service.cancelQuantity({
+                        service.fulfill({
                           operationKey,
                           orderId: id,
                           orderLineId: line.operationalLineId,
@@ -271,17 +314,42 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
                         })
                       }
                       onDone={query.refresh}
-                      submitLabel="Review cancellation"
+                      submitLabel="Fulfill"
                     >
-                      <TextField name="quantity" label="Quantity to cancel" />
+                      <TextField name="quantity" label="Quantity to fulfill" />
+                      <p>Remaining operational quantity: {remaining}.</p>
                     </CommandForm>
-                  ) : (
-                    <Unavailable>
-                      Unfulfilled cancellation on a mixed fulfilled line is not
-                      supported by the backend. Fulfillment cancellation is a
-                      separate command.
-                    </Unavailable>
-                  )}
+                    {line.fulfilledQuantity === 0 ? (
+                      <CommandForm
+                        embedded
+                        title="Cancel unfulfilled quantity"
+                        confirm="Cancel this unfulfilled operational quantity? The backend restores eligible allocations. Financial attribution and payments do not change."
+                        validate={(d) => {
+                          if (integer(d.get('quantity')) > remaining)
+                            throw new AppError('validation');
+                        }}
+                        run={(d, operationKey) =>
+                          service.cancelQuantity({
+                            operationKey,
+                            orderId: id,
+                            orderLineId: line.operationalLineId,
+                            quantity: integer(d.get('quantity')),
+                            fulfillmentId: null,
+                          })
+                        }
+                        onDone={query.refresh}
+                        submitLabel="Review cancellation"
+                      >
+                        <TextField name="quantity" label="Quantity to cancel" />
+                      </CommandForm>
+                    ) : (
+                      <Unavailable>
+                        Unfulfilled cancellation on a mixed fulfilled line is
+                        not supported by the backend. Fulfillment cancellation
+                        is a separate command.
+                      </Unavailable>
+                    )}
+                  </div>
                 </details>
               ) : null;
             })}
@@ -292,11 +360,14 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
             {query.data.portion.fulfillments.map((f) => (
               <tr key={f.id}>
                 <th scope="row">Fulfillment {f.id}</th>
-                <td>{f.state}</td>
+                <td>
+                  <OrderStatus domain="fulfillment" value={f.state} />
+                </td>
                 <td>{f.lines.map((l) => `${l.quantity} units`).join(', ')}</td>
                 <td>
                   {can && f.state !== 'Cancelled' && f.lines.length === 1 && (
                     <CommandForm
+                      embedded
                       title="Cancel fulfillment"
                       confirm="Cancel this existing fulfillment? Eligible sold stock restoration is backend controlled. This is not a financial refund."
                       run={(_d, operationKey) =>
@@ -321,5 +392,17 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
         </div>
       )}
     </>
+  );
+}
+function OrderStatus({
+  domain,
+  value,
+}: {
+  domain: Parameters<typeof vendorOrderStatus>[0];
+  value: string;
+}) {
+  const status = vendorOrderStatus(domain, value);
+  return (
+    <span className={statusBadgeClassName(status.tone)}>{status.label}</span>
   );
 }

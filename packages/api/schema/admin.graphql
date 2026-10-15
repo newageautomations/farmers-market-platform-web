@@ -118,6 +118,7 @@ type Query {
   zone(id: ID!): Zone
   ownMarketOperations(section: MarketOperationsSection!, occurrenceId: Int): JSON!
   ownVendorBoothAssignments: JSON!
+  ownVendorLinkRequests: JSON!
   ownCommercePortion(orderId: ID!): CommercePortion!
   ownCommercePortions(options: OwnOperationalOrderOptions): OwnOperationalOrderPage!
   ownOccurrenceOperations(occurrenceId: ID!): [CommercePortion!]!
@@ -130,6 +131,8 @@ type Query {
   ownPaymentAccount(mode: StripeAccountMode!): OwnPaymentAccount
   ownVendorEarningsPolicy(mode: StripeAccountMode!): OwnVendorEarningsPolicy!
   ownCommunicationCounts(vendorId: ID, marketId: ID, medium: CommunicationMedium!, purpose: CommunicationPurpose!): CommunicationCounts!
+  platformRoleOnboardingReviewQueue: JSON!
+  ownPlatformAccountContexts: JSON!
   ownVendorIdentity(id: ID): VendorIdentity!
   ownVendorStorefront(id: ID!): VendorStorefront!
   ownVendorMemberships(vendorId: ID): [VendorMembership!]!
@@ -714,6 +717,8 @@ type Mutation {
   """Remove members from a Zone"""
   removeMembersFromZone(zoneId: ID!, memberIds: [ID!]!): Zone!
   marketOperationsCommand(input: MarketOperationsCommand!): JSON!
+  respondToVendorLink(id: Int!, expectedRevision: Int!, confirm: Boolean!): JSON!
+  correctMarketVendorLink(marketId: Int!, directoryId: Int!, expectedRevision: Int!, vendorId: Int, reason: String!): JSON!
   createOwnCatalogProduct(input: OwnCatalogProductInput!): CatalogCommandResult!
   createOwnCatalogVariant(input: OwnCatalogVariantInput!): CatalogCommandResult!
   updateOwnCatalogProduct(id: ID!, input: OwnCatalogProductInput!): CatalogCommandResult!
@@ -738,6 +743,8 @@ type Mutation {
   disconnectOwnPaymentAccount(mode: StripeAccountMode!): OwnPaymentAccount!
   createOwnCommunicationCampaign(input: CommunicationCampaignInput!): CommunicationCampaignResult!
   cancelOwnCommunicationCampaign(id: ID!): CommunicationCampaignResult!
+  reviewPlatformRoleOnboarding(id: ID!, revision: Int!, decision: String!, slug: String!, note: String!): JSON!
+  exchangePlatformAdminHandoff(code: String!, correlation: String!): Boolean!
   provisionVendorIdentity(input: ProvisionVendorIdentityInput!): VendorIdentity!
   setVendorMembership(input: SetVendorMembershipInput!): VendorMembership!
   revokeOwnVendorMembership(id: ID!): VendorMembership!
@@ -755,6 +762,7 @@ type Mutation {
   reviseMarketOccurrence(id: ID!, expectedVersion: Int!, input: MarketSessionInput!): MarketSession!
   cancelMarketOccurrence(id: ID!, expectedVersion: Int!): MarketSession!
   setMarketVendorMembership(marketId: ID!, vendorId: ID!, status: MarketBusinessMembershipStatus!, expectedVersion: Int): MarketBusinessMembership!
+  requestOwnMarketMembership(marketId: ID!, expectedVersion: Int): MarketBusinessMembership!
   configureOwnMarketMembershipDefault(id: ID!, expectedVersion: Int!, rule: MarketPreorderRuleInput): MarketBusinessMembership!
   configureMarketParticipation(input: MarketAttendanceInput!): MarketAttendance!
   requestOwnMarketListing(membershipId: ID!, variantId: ID!): MarketVariantListing!
@@ -6954,11 +6962,16 @@ enum MarketOperationsAction {
   REVIEW_APPLICATION
   ACCEPT_ASSIGN
   SAVE_DIRECTORY
+  REQUEST_VENDOR_LINK
+  CONVERT_OCCURRENCE_IDENTITY
+  REVIEW_OCCURRENCE
   SAVE_RENTAL
   CREATE_LAYOUT
   SAVE_LAYOUT
   CLONE_LAYOUT
   PUBLISH_LAYOUT
+  ARCHIVE_LAYOUT
+  UNARCHIVE_LAYOUT
   SET_PLAN
   APPROVE_OCCURRENCE
   ASSIGN

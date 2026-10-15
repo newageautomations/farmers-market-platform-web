@@ -1,0 +1,18 @@
+---
+import type { HeadingLevel } from '@market/ui/presentation';
+const { title, level = 2 } = Astro.props as {
+  title: string;
+  level?: HeadingLevel;
+};
+const Heading = level === 2 ? 'h2' : level === 3 ? 'h3' : 'h4';
+---
+
+<div class="empty-state">
+  <Heading>{title}</Heading>
+  <slot />
+  {Astro.slots.has('action') && (
+    <div class="ui-actions">
+      <slot name="action" />
+    </div>
+  )}
+</div>

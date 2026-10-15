@@ -13,12 +13,15 @@ export const POST: APIRoute = async (context) => {
     'Content-Type': 'application/json',
     'Cache-Control': 'private, no-store',
   });
+  let stage = 'storefront-resolution';
   try {
     if (!context.locals.storefront)
       throw context.locals.storefrontError ?? new AppError('unavailable');
     const storefront = context.locals.storefront;
+    stage = 'origin-check';
     if (context.request.headers.get('origin') !== storefront.canonicalOrigin)
       throw new AppError('forbidden');
+    stage = 'request-validation';
     if (
       !context.request.headers
         .get('content-type')
@@ -50,6 +53,7 @@ export const POST: APIRoute = async (context) => {
     };
     let result: unknown;
     const checkout = requestCheckout(context, headers);
+    stage = 'shop-operation';
     switch (input.action) {
       case 'communication-settings':
       case 'communication-change': {
@@ -238,6 +242,17 @@ export const POST: APIRoute = async (context) => {
           : safe.kind === 'forbidden' || safe.kind === 'authentication'
             ? 403
             : 400;
+    if (import.meta.env.DEV)
+      console.info(
+        JSON.stringify({
+          event: 'shop_request_failed',
+          stage,
+          status,
+          kind: safe.kind,
+          code: safe.code,
+          storefrontKind: context.locals.storefront?.kind,
+        }),
+      );
     return new Response(
       JSON.stringify({ error: { kind: safe.kind, code: safe.code } }),
       { status, headers },

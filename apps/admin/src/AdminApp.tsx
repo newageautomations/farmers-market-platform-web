@@ -1,3 +1,4 @@
+import { buttonClassName } from '@market/ui/presentation';
 import {
   useCallback,
   useEffect,
@@ -8,8 +9,14 @@ import {
 import { createAdminSession, type SessionState } from '@market/auth';
 import { resolveAdminContext, type AdminContext } from '@market/admin-core';
 import { AppError, safeError } from '@market/api';
-import { Button, ErrorState, Field, Input, Spinner } from '@market/ui';
+import { Select, Button, ErrorState, Field, Input, Spinner } from '@market/ui';
 import { AdminShell } from './AdminShell';
+import { AccountModes } from './AccountModes';
+import {
+  completePlatformAccountLogin,
+  platformAccountLogin,
+  selectAuthorizedAccountContext,
+} from './account-login';
 import { createLiveVendorService, type VendorService } from './vendor/service';
 import { createLiveMarketService, type MarketService } from './market/service';
 import {
@@ -17,7 +24,15 @@ import {
   type ManagementService,
 } from './management/service';
 
-export function AdminApp({ endpoint }: { endpoint: string }) {
+export function AdminApp({
+  endpoint,
+  accountOrigin,
+  customerOrigin,
+}: {
+  endpoint: string;
+  accountOrigin?: string;
+  customerOrigin?: string;
+}) {
   const [session, setSession] = useState<SessionState>({ status: 'loading' });
   const [sessionEndpoint, setSessionEndpoint] = useState(endpoint);
   const [context, setContext] = useState<AdminContext | null>(null);
@@ -28,7 +43,11 @@ export function AdminApp({ endpoint }: { endpoint: string }) {
   const [contextError, setContextError] = useState<AppError | null>(null);
   const [busy, setBusy] = useState(false);
   const [loginError, setLoginError] = useState<AppError | null>(null);
+  const [loginMethod, setLoginMethod] = useState(
+    accountOrigin ? 'account' : 'username',
+  );
   const generation = useRef(0);
+  const startup = useRef<Promise<void> | null>(null);
   const refreshSession = useCallback(
     (channelId?: string) => {
       const request = ++generation.current;
@@ -53,10 +72,25 @@ export function AdminApp({ endpoint }: { endpoint: string }) {
   useEffect(() => {
     let active = true;
     const initialGeneration = ++generation.current;
-    createAdminSession(endpoint)
-      .restore()
+    (startup.current ??= completePlatformAccountLogin(endpoint))
+      .then(() => createAdminSession(endpoint).restore())
+      .then((result) => selectAuthorizedAccountContext(endpoint, result))
       .then((result) => {
         if (active && generation.current === initialGeneration) {
+          const destination = new URL(window.location.href);
+          if (
+            accountOrigin &&
+            destination.searchParams.get('account') === '1'
+          ) {
+            destination.searchParams.delete('account');
+            window.history.replaceState(
+              null,
+              '',
+              destination.pathname + destination.search,
+            );
+            platformAccountLogin(accountOrigin);
+            return;
+          }
           setContext(null);
           setVendorService(undefined);
           setMarketService(undefined);
@@ -75,7 +109,7 @@ export function AdminApp({ endpoint }: { endpoint: string }) {
     return () => {
       active = false;
     };
-  }, [endpoint]);
+  }, [endpoint, accountOrigin]);
   useEffect(() => {
     if (session.status !== 'authenticated' || endpoint !== sessionEndpoint)
       return;
@@ -146,18 +180,28 @@ export function AdminApp({ endpoint }: { endpoint: string }) {
     setLoginError(null);
     const form = event.currentTarget;
     const data = new FormData(form);
+    let navigating = false;
     try {
+      if (loginMethod === 'account') {
+        if (!accountOrigin) throw new AppError('unavailable');
+        platformAccountLogin(accountOrigin);
+        navigating = true;
+        return;
+      }
       setSession(
-        await createAdminSession(endpoint).login(
-          String(data.get('username') ?? ''),
-          String(data.get('password') ?? ''),
+        await selectAuthorizedAccountContext(
+          endpoint,
+          await createAdminSession(endpoint).login(
+            String(data.get('username') ?? ''),
+            String(data.get('password') ?? ''),
+          ),
         ),
       );
       form.reset();
     } catch (error) {
       setLoginError(safeError(error));
     } finally {
-      setBusy(false);
+      if (!navigating) setBusy(false);
     }
   }
   async function logout() {
@@ -195,59 +239,139 @@ export function AdminApp({ endpoint }: { endpoint: string }) {
     return (
       <main className="login">
         <h1>Sign in</h1>
-        <p>Access your Market platform workspace.</p>
+        <p>Access your Market platform account.</p>
         <form onSubmit={login}>
-          <Field id="username" label="Email or username">
-            <Input
-              id="username"
-              name="username"
-              autoComplete="username"
-              required
-              disabled={busy}
-            />
-          </Field>
-          <Field id="password" label="Password">
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              disabled={busy}
-            />
-          </Field>
+          {accountOrigin && (
+            <Field id="login-method" label="Sign in with">
+              <Select
+                id="login-method"
+                value={loginMethod}
+                disabled={busy}
+                onChange={(event) => {
+                  setLoginMethod(event.target.value);
+                  setLoginError(null);
+                }}
+              >
+                <option value="account">Platform email account</option>
+                <option value="username">Administrator username</option>
+              </Select>
+            </Field>
+          )}
+          {loginMethod === 'account' ? (
+            <p>
+              Continue to your platform account to sign in with your email. Your
+              account determines your available workspaces.
+            </p>
+          ) : (
+            <>
+              <Field id="username" label="Administrator username">
+                <Input
+                  id="username"
+                  name="username"
+                  autoComplete="username"
+                  required
+                  disabled={busy}
+                />
+              </Field>
+              <Field id="password" label="Password">
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  disabled={busy}
+                />
+              </Field>
+            </>
+          )}
           {loginError && <ErrorState error={loginError} />}
+          {accountOrigin && (
+            <p>
+              <a href={new URL('/account/recover', accountOrigin).toString()}>
+                Forgot your password?
+              </a>
+            </p>
+          )}
           <Button type="submit" disabled={busy}>
             {busy ? 'Signing in' : 'Sign in'}
           </Button>
+          {accountOrigin && (
+            <p className="login-signup">
+              Don't have an account?{' '}
+              <a href={new URL('/account/signup', accountOrigin).toString()}>
+                Sign up here
+              </a>
+            </p>
+          )}
         </form>
+      </main>
+    );
+  if (
+    !session.user.channels.some((channel) =>
+      channel.permissions.some((permission) =>
+        ['SuperAdmin', 'ReadOwnVendorIdentity', 'ReadOwnMarket'].includes(
+          permission,
+        ),
+      ),
+    )
+  )
+    return (
+      <main className="login">
+        <h1>Your account</h1>
+        {accountOrigin ? (
+          <p>
+            <a href={new URL('/account/login', accountOrigin).toString()}>
+              Open your customer dashboard
+            </a>
+          </p>
+        ) : (
+          <p>Personal account sign-in is temporarily unavailable.</p>
+        )}
+        <Button variant="secondary" onClick={() => void logout()}>
+          Sign out
+        </Button>
       </main>
     );
   if (contextError)
     return (
       <main className="login">
         <h1>Workspace unavailable</h1>
-        <ErrorState error={contextError} />
-        <Button onClick={() => refreshSession(session.channel.id)}>
-          Refresh workspace
-        </Button>
-        {session.user.channels.length > 1 && (
-          <>
-            <label htmlFor="unavailable-workspace">Workspace</label>
-            <select
-              id="unavailable-workspace"
-              value={session.channel.id}
-              onChange={(event) => refreshSession(event.target.value)}
+        {accountOrigin && (
+          <p>
+            <a
+              className={buttonClassName({ variant: 'secondary' })}
+              href={new URL('/account/phone', accountOrigin).toString()}
             >
-              {session.user.channels.map((channel, index) => (
-                <option key={channel.id} value={channel.id}>
-                  Available workspace {index + 1}
-                </option>
-              ))}
-            </select>
-          </>
+              Verify your personal phone in your platform account
+            </a>
+          </p>
         )}
-        <Button onClick={() => void logout()}>Sign out</Button>
+        <ErrorState error={contextError} />
+        <div className="ui-actions">
+          <Button onClick={() => refreshSession(session.channel.id)}>
+            Refresh workspace
+          </Button>
+          {session.user.channels.length > 1 && (
+            <>
+              <label htmlFor="unavailable-workspace">Workspace</label>
+              <Select
+                id="unavailable-workspace"
+                value={session.channel.id}
+                onChange={(event) => refreshSession(event.target.value)}
+              >
+                {session.user.channels.map((channel, index) => (
+                  <option key={channel.id} value={channel.id}>
+                    Available workspace {index + 1}
+                  </option>
+                ))}
+              </Select>
+            </>
+          )}
+          <Button variant="secondary" onClick={() => void logout()}>
+            Sign out
+          </Button>
+        </div>
       </main>
     );
   if (!context)
@@ -272,29 +396,14 @@ export function AdminApp({ endpoint }: { endpoint: string }) {
           >
             Refresh workspace
           </Button>
-          {session.user.channels.length > 1 ? (
-            <>
-              <label htmlFor="channel">Workspace</label>
-              <select
-                id="channel"
-                value={session.channel.id}
-                onChange={(event) => {
-                  const id = event.target.value;
-                  refreshSession(id);
-                }}
-              >
-                {session.user.channels.map((channel, index) => (
-                  <option key={channel.id} value={channel.id}>
-                    {context.scope === 'MARKET'
-                      ? channel.id === session.channel.id
-                        ? context.name
-                        : `Available workspace ${index + 1}`
-                      : channel.code}
-                  </option>
-                ))}
-              </select>
-            </>
-          ) : null}
+          <AccountModes
+            endpoint={endpoint}
+            channelToken={session.channel.token}
+            context={context}
+            onSwitch={refreshSession}
+            customerOrigin={customerOrigin}
+            accountOrigin={accountOrigin}
+          />
         </>
       }
     />

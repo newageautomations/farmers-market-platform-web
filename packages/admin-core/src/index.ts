@@ -329,6 +329,8 @@ export function routeAllowed(context: AdminContext, path: string) {
   }
   if (context.scope === 'MARKET') {
     const canonical = marketPath(path);
+    if (/^\/market\/assignments\/[1-9][0-9]*\/edit-layout$/.test(canonical))
+      return context.permissions.includes('ReadOwnMarketAssignments');
     if (
       /^\/market\/(applications|layouts)\/(new|[1-9][0-9]*(?:\/edit)?)$/.test(
         canonical,

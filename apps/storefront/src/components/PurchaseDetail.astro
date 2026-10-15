@@ -1,4 +1,6 @@
 ---
+import { statusBadgeClassName } from '@market/ui/presentation';
+import { purchaseStatusTone } from './purchase-status';
 import { formatMoney } from '@market/config';
 import type { CustomerPurchase } from '@market/api';
 interface Props {
@@ -30,8 +32,14 @@ const pickupNames: Record<string, string> = {
     : 'Market purchase'}
 </p>
 <p>
-  {financialNames[purchase.financial.financialStatus] ??
-    'Payment status pending'}
+  <span
+    class={statusBadgeClassName(
+      purchaseStatusTone('financial', purchase.financial.financialStatus),
+    )}
+  >
+    {financialNames[purchase.financial.financialStatus] ??
+      'Payment status pending'}
+  </span>
 </p>
 <dl class="checkout-totals">
   <div>
@@ -58,8 +66,16 @@ const pickupNames: Record<string, string> = {
 </dl>
 {purchase.portions.map((portion) => (
   <section aria-label={`Vendor ${portion.vendorId}`}>
-    <h2>{portion.vendorName}</h2>
-    <p>{pickupNames[portion.pickupStatus] ?? 'Pickup status pending'}</p>
+    <h2 class="ui-section-title-consumer">{portion.vendorName}</h2>
+    <p>
+      <span
+        class={statusBadgeClassName(
+          purchaseStatusTone('pickup', portion.pickupStatus),
+        )}
+      >
+        {pickupNames[portion.pickupStatus] ?? 'Pickup status pending'}
+      </span>
+    </p>
     <p>
       {portion.pickupPromise.venue} {portion.pickupPromise.instructions}
     </p>

@@ -1,0 +1,314 @@
+---
+import type { CentralAccountData } from '../lib/account';
+import Button from './ui/Button.astro';
+import {
+  buttonClassName,
+  inputClassName,
+  selectClassName,
+  cardClassName,
+} from '@market/ui/presentation';
+const { account, embedded = false } = Astro.props as {
+  account: CentralAccountData;
+  embedded?: boolean;
+};
+const labels = { VENDOR: 'Vendor', MARKET_MANAGER: 'Market Manager' };
+---
+
+<section class="py-12 account-panel">
+  {embedded ? (
+    <h2 class="ui-section-title-consumer">Your account</h2>
+  ) : (
+    <h1>Your account</h1>
+  )}
+  <p>
+    {account.profile.firstName} {account.profile.lastName} ·{' '}
+    <span>{account.profile.emailAddress}</span>
+  </p>
+  <p>
+    Phone verified. Email{' '}
+    {account.profile.emailVerified ? 'verified' : 'unverified'}. Current mode:
+    Customer.
+  </p>
+  {!account.profile.emailVerified && (
+    <form method="post" action="/api/account">
+      <input type="hidden" name="action" value="requestEmailProof" />
+      <p>
+        Verify your email to enable email recovery and private email
+        notifications.
+      </p>
+      <Button type="submit">Send optional email verification</Button>
+    </form>
+  )}
+  {Astro.url.searchParams.has('emailSent') && (
+    <p class="alert ui-alert ui-alert-info" role="status">
+      Check your email for a verification link.
+    </p>
+  )}
+  <nav
+    class={cardClassName({ className: 'account-modes' })}
+    aria-label="Account modes"
+  >
+    <a
+      class={buttonClassName({
+        variant: 'secondary',
+        className: 'button secondary',
+      })}
+      href="/account"
+      aria-current="page"
+    >
+      Customer
+    </a>
+    {(['VENDOR', 'MARKET_MANAGER'] as const).map((role) => {
+      const businesses = account.contexts.affiliations.filter(
+        (a) => a.mode === role,
+      );
+      return (
+        <div>
+          {businesses.length && process.env.ADMIN_ORIGIN ? (
+            <div>
+              <p>{labels[role]}</p>
+              {businesses.length > 1 && (
+                <div data-business-picker>
+                  <label for={`account-business-${role}`}>
+                    {role === 'VENDOR'
+                      ? 'Vendor business'
+                      : 'Market organization'}
+                  </label>
+                  <select
+                    id={`account-business-${role}`}
+                    class={selectClassName()}
+                    data-business-choice
+                  >
+                    {businesses.map((a) => (
+                      <option
+                        value={`${process.env.ADMIN_ORIGIN}/${role === 'VENDOR' ? 'vendor' : 'market'}?channel=${encodeURIComponent(a.channelId)}`}
+                      >
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                  <a
+                    class={buttonClassName({
+                      variant: 'primary',
+                      className: 'button',
+                    })}
+                    data-selected-workspace
+                    href={`${process.env.ADMIN_ORIGIN}/${role === 'VENDOR' ? 'vendor' : 'market'}?channel=${encodeURIComponent(businesses[0]!.channelId)}`}
+                  >
+                    Open selected {labels[role]} mode
+                  </a>
+                </div>
+              )}
+              {businesses.map((a) => (
+                <a
+                  class={buttonClassName({
+                    variant: 'secondary',
+                    className: 'button secondary',
+                  })}
+                  href={`${process.env.ADMIN_ORIGIN}/${role === 'VENDOR' ? 'vendor' : 'market'}?channel=${encodeURIComponent(a.channelId)}`}
+                >
+                  Open {labels[role]} mode: {a.name}
+                </a>
+              ))}
+            </div>
+          ) : businesses.length ? (
+            <p>
+              {labels[role]} access is authorized. Dashboard routing is
+              currently unavailable.
+            </p>
+          ) : (
+            <a
+              class={buttonClassName({
+                variant: 'primary',
+                className: 'button',
+              })}
+              href={`/account/onboarding/${role === 'VENDOR' ? 'vendor' : 'market'}`}
+            >
+              {role === 'VENDOR'
+                ? 'Become a Vendor'
+                : 'Create / Manage a Market'}
+            </a>
+          )}
+          <p>
+            {labels[role]} onboarding:{' '}
+            {account.contexts.onboarding.find((r) => r.role === role)?.state ===
+            'PENDING_REVIEW'
+              ? 'ready to finish signup'
+              : (account.contexts.onboarding
+                  .find((r) => r.role === role)
+                  ?.state.toLowerCase()
+                  .replaceAll('_', ' ') ?? 'not started')}
+            .
+          </p>
+          {businesses.length > 0 && (
+            <a
+              class={buttonClassName({
+                variant: 'secondary',
+                className: 'button secondary',
+              })}
+              href={`/account/onboarding/${role === 'VENDOR' ? 'vendor' : 'market'}`}
+            >
+              View onboarding progress
+            </a>
+          )}
+        </div>
+      );
+    })}
+  </nav>
+  {Astro.url.searchParams.has('saved') && (
+    <p class="alert ui-alert ui-alert-info" role="status">
+      Your changes were saved.
+    </p>
+  )}
+  {['vendor', 'market'].includes(
+    Astro.url.searchParams.get('onboarded') ?? '',
+  ) && (
+    <p class="alert ui-alert ui-alert-info" role="status">
+      Your{' '}
+      {Astro.url.searchParams.get('onboarded') === 'vendor'
+        ? 'Vendor'
+        : 'Market Manager'}{' '}
+      account is ready.
+    </p>
+  )}
+  <form method="post" action="/api/account">
+    <input type="hidden" name="action" value="updateProfile" />
+    <label class="field">
+      First name{' '}
+      <input
+        name="firstName"
+        class={inputClassName()}
+        value={account.profile.firstName}
+        autocomplete="given-name"
+        required
+        maxlength="100"
+      />
+    </label>
+    <label class="field">
+      Last name{' '}
+      <input
+        name="lastName"
+        class={inputClassName()}
+        value={account.profile.lastName}
+        autocomplete="family-name"
+        required
+        maxlength="100"
+      />
+    </label>
+    <p>
+      Verified personal phone: {account.profile.phoneNumber}.{' '}
+      <a
+        class={buttonClassName({
+          variant: 'secondary',
+          className: 'button secondary',
+        })}
+        href="/account/phone"
+      >
+        Change personal phone
+      </a>
+    </p>
+    <Button type="submit">Save personal profile</Button>
+  </form>
+  <details class="ui-disclosure">
+    <summary>Password and security</summary>
+    <div class="ui-disclosure-content">
+      <form method="post" action="/api/account">
+        <input type="hidden" name="action" value="changePassword" />
+        <label class="field">
+          Current password{' '}
+          <input
+            name="currentPassword"
+            class={inputClassName('password')}
+            type="password"
+            autocomplete="current-password"
+            required
+            maxlength="1024"
+          />
+        </label>
+        <label class="field">
+          New password{' '}
+          <input
+            name="password"
+            class={inputClassName('password')}
+            type="password"
+            autocomplete="new-password"
+            required
+            minlength="12"
+            maxlength="72"
+          />
+        </label>
+        <p>
+          Use 12 to 72 English letters, numbers and keyboard symbols, with an
+          uppercase letter, a number and a special character. Changing your
+          password signs out your existing sessions.
+        </p>
+        <Button type="submit">Change password</Button>
+      </form>
+    </div>
+  </details>
+  <details class="ui-disclosure">
+    <summary>Platform communication preferences</summary>
+    <div class="ui-disclosure-content">
+      <p>
+        Role updates require completed onboarding and current access. Saving a
+        preference does not promise notification delivery. Promotions require
+        separate explicit consent.
+      </p>
+      {(['VENDOR', 'MARKET_MANAGER'] as const).map((role) => (
+        <form method="post" action="/api/account">
+          <input type="hidden" name="action" value="rolePreference" />
+          <input type="hidden" name="role" value={role} />
+          <label>
+            <input
+              type="checkbox"
+              name="updates"
+              value="true"
+              checked={account.preferences.some(
+                (p) => p.role === role && p.updatesEnabled,
+              )}
+            />{' '}
+            Receive {labels[role]} platform updates when eligible
+          </label>
+          <Button type="submit">Save {labels[role]} preference</Button>
+        </form>
+      ))}
+      <form method="post" action="/api/account">
+        <input type="hidden" name="action" value="withdrawPromotions" />
+        <Button type="submit">Withdraw platform promotional consent</Button>
+      </form>
+    </div>
+  </details>
+  <p>
+    Registration, your profile, and initial onboarding are free. Application
+    history, reusable private documents, and application notifications are
+    planned separately.
+  </p>
+  {!embedded && (
+    <form method="post" action="/api/account">
+      <input type="hidden" name="action" value="logout" />
+      <Button type="submit">Sign out</Button>
+    </form>
+  )}
+  <a
+    class={buttonClassName({
+      variant: 'secondary',
+      className: 'button secondary',
+    })}
+    href="/account/recover"
+  >
+    Account recovery
+  </a>
+</section>
+<script>
+  for (const picker of document.querySelectorAll('[data-business-picker]')) {
+    const select = picker.querySelector<HTMLSelectElement>(
+      '[data-business-choice]',
+    );
+    const link = picker.querySelector<HTMLAnchorElement>(
+      '[data-selected-workspace]',
+    );
+    select?.addEventListener('change', () => {
+      if (link) link.href = select.value;
+    });
+  }
+</script>

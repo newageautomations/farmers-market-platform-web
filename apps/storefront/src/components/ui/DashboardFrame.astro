@@ -1,0 +1,11 @@
+---
+import { dashboardClasses } from '@market/ui/presentation';
+---
+
+<div class={dashboardClasses.frame}>
+  <slot name="sidebar" />
+  <div class={dashboardClasses.main}>
+    <slot name="header" />
+    <slot />
+  </div>
+</div>

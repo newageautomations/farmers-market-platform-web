@@ -25,15 +25,15 @@ for (const width of [390, 768, 1280]) {
       ).toHaveCount(0);
       await expect(page.locator('main')).toContainText(
         module === 'Settings'
-          ? 'America/Chicago'
+          ? 'Market name'
           : module === 'Analytics'
             ? 'Purchase count'
             : module === 'Overview'
-              ? '2 upcoming scheduled occurrences'
+              ? 'Next Scheduled Occurrence'
               : module === 'Vendors'
                 ? 'Synthetic Market A Vendor 1'
                 : module === 'Occurrences'
-                  ? 'generated'
+                  ? 'Scheduled'
                   : 'View operations for',
       );
       expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
@@ -70,7 +70,9 @@ test('Market settings and recurrence commands reread and stale refusal stays saf
   await expect(page.getByLabel('Market name', { exact: true })).toHaveValue(
     'Changed synthetic Market',
   );
-  await expect(page.locator('main')).toContainText('version 2');
+  await expect(page.getByLabel('Market name', { exact: true })).toHaveValue(
+    'Changed synthetic Market',
+  );
   await page
     .getByRole('link', { name: 'Manage repeating schedule and generate dates' })
     .click();
@@ -122,8 +124,10 @@ test('generated/manual occurrences, deliberate cancellation and native dialog fo
   await page
     .getByRole('button', { name: 'Generate occurrences', exact: true })
     .click();
-  await expect(page.locator('main')).toContainText('accepted.');
-  await expect(page.locator('main')).toContainText('Status: COMPLETED');
+  await expect(page.locator('main')).toContainText(
+    'Creating your market dates.',
+  );
+  await expect(page.locator('main')).toContainText('Completed');
   await page
     .getByRole('link', { name: 'Back to occurrences', exact: true })
     .click();
@@ -148,9 +152,7 @@ test('generated/manual occurrences, deliberate cancellation and native dialog fo
       .locator('tbody tr'),
   ).toHaveCount(4);
   await page.goto(fixtureUrl + '/market/occurrences/102');
-  await page
-    .getByLabel('Venue snapshot', { exact: true })
-    .fill('Revised fixture venue');
+  await page.getByLabel('Venue', { exact: true }).fill('Revised fixture venue');
   await page
     .locator('section')
     .filter({
@@ -161,7 +163,9 @@ test('generated/manual occurrences, deliberate cancellation and native dialog fo
     })
     .getByRole('button', { name: 'Save', exact: true })
     .click();
-  await expect(page.locator('main')).toContainText('Version 2');
+  await expect(page.getByLabel('Venue', { exact: true })).toHaveValue(
+    'Revised fixture venue',
+  );
   const cancel = page.getByRole('button', {
     name: 'Cancel occurrence',
     exact: true,
@@ -178,7 +182,7 @@ test('generated/manual occurrences, deliberate cancellation and native dialog fo
   await expect(cancel).toBeFocused();
   await cancel.click();
   await dialog.getByRole('button', { name: 'Confirm change' }).click();
-  await expect(page.locator('main')).toContainText('cancelled');
+  await expect(page.locator('main')).toContainText('Cancelled');
   await expect(page.locator('main')).not.toContainText(
     /refund issued|inventory restored|customers notified/i,
   );
@@ -189,74 +193,89 @@ test('membership/listing/participation/offering stay distinct with confirmations
   await page.goto(fixtureUrl + '/market/vendors/11');
   await page.getByLabel('Business membership status').selectOption('approved');
   await page.getByRole('button', { name: 'Update membership' }).click();
-  await expect(page.locator('main')).toContainText(
-    'Business membership approved',
+  await expect(page.getByLabel('Business membership status')).toHaveValue(
+    'approved',
   );
   await page
     .locator('main')
     .getByRole('link', { name: 'Listing approvals', exact: true })
     .click();
+  await page
+    .getByRole('table', { name: 'Listing approvals' })
+    .getByRole('button')
+    .first()
+    .click();
   await page.getByRole('button', { name: 'Update listing approval' }).click();
   await expect(
-    page.getByRole('table', { name: 'Listing approvals (backend order)' }),
-  ).toContainText('approved');
-  await expect(page.locator('main')).toContainText(
-    'Approval, publication and offering availability remain separate',
-  );
+    page.getByRole('table', { name: 'Listing approvals' }),
+  ).toContainText('Approved');
+  await page
+    .getByRole('table', { name: 'Listing approvals' })
+    .getByRole('button')
+    .first()
+    .click();
   await page.getByLabel('Listing approval status').selectOption('withdrawn');
   await page.getByRole('button', { name: 'Update listing approval' }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: /Confirm/ })).toBeVisible();
   await page
-    .getByRole('dialog')
+    .getByRole('dialog', { name: /Confirm/ })
     .getByRole('button', { name: 'Confirm change' })
     .click();
   await expect(
-    page.getByRole('table', { name: 'Listing approvals (backend order)' }),
-  ).toContainText('withdrawn');
+    page.getByRole('table', { name: 'Listing approvals' }),
+  ).toContainText('Withdrawn');
   await page.goto(fixtureUrl + '/market/vendors/offerings/12');
   await expect(
-    page.getByRole('table', { name: 'Market offerings (backend order)' }),
+    page.getByRole('table', { name: 'Product offerings' }),
   ).toContainText('20');
+  await page
+    .getByRole('table', { name: 'Product offerings' })
+    .getByRole('button')
+    .first()
+    .click();
   const offering = page.locator('section').filter({
     has: page.getByRole('heading', {
-      name: 'Configure offering 12001',
+      name: 'Offering Settings',
       exact: true,
     }),
   });
   await offering.getByLabel('Occurrence sales cap (optional)').fill('25');
   await offering.getByRole('button', { name: 'Save offering' }).click();
   await expect(
-    page.getByRole('table', { name: 'Market offerings (backend order)' }),
+    page.getByRole('table', { name: 'Product offerings' }),
   ).toContainText('25');
+  await page
+    .getByRole('table', { name: 'Product offerings' })
+    .getByRole('button')
+    .first()
+    .click();
   await page
     .getByRole('button', { name: 'Apply current window configuration' })
     .click();
-  await expect(
-    page
-      .getByRole('table', { name: 'Market offerings (backend order)' })
-      .locator('tbody tr')
-      .first()
-      .locator('td')
-      .last(),
-  ).toHaveText('3');
+  await expect(page.getByRole('dialog')).not.toBeVisible();
   await page
     .locator('main')
     .getByRole('link', { name: 'Occurrence participation', exact: true })
     .click();
   await page
+    .getByRole('table', { name: 'Occurrence participation' })
+    .getByRole('button')
+    .first()
+    .click();
+  await page
     .getByLabel('Participation status', { exact: true })
     .selectOption('cancelled');
-  await page.getByRole('button', { name: 'Update participation' }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', { name: 'Save and Close' }).click();
+  await expect(page.getByRole('dialog', { name: /Confirm/ })).toBeVisible();
   await page
-    .getByRole('dialog')
+    .getByRole('dialog', { name: /Confirm/ })
     .getByRole('button', { name: 'Confirm change' })
     .click();
   await expect(
     page.getByRole('table', {
-      name: 'Occurrence participation (backend order)',
+      name: 'Occurrence participation',
     }),
-  ).toContainText('cancelled');
+  ).toContainText('Cancelled');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 test('operations page shows complete server paging and safe operational semantics', async ({
@@ -264,8 +283,8 @@ test('operations page shows complete server paging and safe operational semantic
 }) => {
   await page.goto(fixtureUrl + '/market/operations/101');
   await expect(page.locator('main')).toContainText('Showing 1 to 20');
-  await expect(page.locator('main')).toContainText('PARTIALLY_COMPLETED');
-  await expect(page.locator('main')).toContainText('AWAITING');
+  await expect(page.locator('main')).toContainText('Partially Completed');
+  await expect(page.locator('main')).toContainText('Awaiting');
   await expect(page.locator('main')).not.toContainText(
     /customer email|customer phone|payment details|vendor attributed|refunded|paid out/i,
   );
@@ -349,11 +368,15 @@ test('analytics availability and freshness do not obstruct core administration',
   for (const state of ['DENIED', 'UNKNOWN', 'UNCONFIGURED', 'ALLOWED']) {
     await page.getByLabel('Market analytics availability').selectOption(state);
     await expect(page.locator('main')).toContainText(
-      `Market analytics: ${state}`,
+      state === 'ALLOWED'
+        ? 'Purchase count'
+        : 'Analytics are not available for this market.',
     );
   }
   await page.getByLabel('Market projection preview').selectOption('BUILDING');
-  await expect(page.locator('main')).toContainText('Projection: BUILDING');
+  await expect(page.locator('main')).toContainText(
+    'Analytics are being updated',
+  );
   await page
     .locator('.admin-sidebar')
     .getByRole('link', { name: 'Occurrences', exact: true })

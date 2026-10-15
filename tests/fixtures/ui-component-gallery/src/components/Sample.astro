@@ -1,0 +1,293 @@
+---
+import { Button, Card, Field, Input } from '@market/ui';
+import { cardClassName, inputClassName } from '@market/ui/presentation';
+import {
+  readCandidates,
+  states,
+  stateDescription,
+  type DisplayState,
+} from '../../candidates';
+import { InteractiveSample } from './InteractiveSample';
+import { additionalCandidates } from '../../additional-candidates';
+import { AdditionalSample } from './AdditionalSample';
+import AdditionalMarkup from './AdditionalMarkup.astro';
+const candidate = readCandidates().find(
+  (c) => c.id === Astro.url.searchParams.get('id'),
+);
+if (!candidate) throw new Error(`Unknown gallery candidate: ${Astro.url.href}`);
+const requested = Astro.url.searchParams.get('state');
+const state: DisplayState = states.includes(requested as DisplayState)
+  ? (requested as DisplayState)
+  : 'default';
+const variant = Astro.url.searchParams.get('variant') ?? 'primary';
+const id = candidate.id;
+const disabled = state === 'disabled' || state === 'loading';
+const error = state === 'error';
+const additional = additionalCandidates[id];
+const markup = [
+  'ALT-03',
+  'EMP-02',
+  'LOD-04',
+  'KPI-01',
+  'FIL-03',
+  'FIL-05',
+  'PAG-04',
+  'PAG-05',
+  'PGH-02',
+  'PGH-03',
+  'SCH-02',
+  'SCH-04',
+].includes(id);
+const additionalInteractive = [
+  'DDN-02',
+  'LOD-02',
+  'LOD-03',
+  'FIL-04',
+  'TAB-01',
+  'TAB-02',
+  'PAG-01',
+  'PAG-02',
+  'PAG-03',
+].includes(id);
+const interactive = [
+  'BTN-05',
+  'SEL-02',
+  'SEL-03',
+  'SEL-04',
+  'SEL-05',
+  'SEL-07',
+  'CRD-04',
+  'DLG-01',
+  'DLG-02',
+].includes(id);
+---
+
+<details class="gallery-note" data-technical-details>
+  <summary>Source and limitations</summary>
+  <p>
+    <code>{candidate.source}</code>
+  </p>
+  <p>{candidate.limitation}</p>
+  {candidate.css && (
+    <p>
+      Existing CSS: <code>{candidate.css}</code>
+    </p>
+  )}
+  {candidate.route && (
+    <p>
+      Representative route: <code>{candidate.route}</code>
+    </p>
+  )}
+  <p data-state-contract>{stateDescription(id, state)}</p>
+</details>
+{additional ? (
+  <div
+    class="gallery-fieldset"
+    data-specimen={id}
+    data-rendering={additional.rendering}
+  >
+    <p class="gallery-note">
+      {additional.rendering === 'imported'
+        ? 'Actual imported component'
+        : additional.rendering === 'partial'
+          ? 'Partial existing markup evidence'
+          : 'Source/route evidence only'}
+    </p>
+    {additional.rendering === 'evidence' ? (
+      <p data-evidence-only>
+        {additional.limitation} Source: <code>{candidate.source}</code>. Route:{' '}
+        <code>{candidate.route}</code>. Historical images:{' '}
+        <code>docs/evidence/phase15c/editor-1440.png</code> and{' '}
+        <code>editor-390.png</code>.
+      </p>
+    ) : markup ? (
+      <AdditionalMarkup id={id} state={state} />
+    ) : additionalInteractive ? (
+      <AdditionalSample id={id} state={state} client:load />
+    ) : (
+      <AdditionalSample id={id} state={state} />
+    )}
+  </div>
+) : id === 'HDR-03' ? (
+  <p>
+    Route/source evidence only. See <code>{candidate.source}</code> and existing{' '}
+    <code>docs/evidence/phase15c/editor-1440.png</code>,{' '}
+    <code>editor-390.png</code>. Historical screenshots may differ from current
+    source. No designer markup is fabricated here.
+  </p>
+) : (
+  <fieldset
+    disabled={disabled && !id.startsWith('DLG-')}
+    class="gallery-fieldset"
+  >
+    <legend class="sr-only">{candidate.name} specimen</legend>
+    {interactive && (
+      <InteractiveSample id={id} state={state} variant={variant} client:load />
+    )}
+    {id === 'BTN-01' && (
+      <div class="actions">
+        <Button
+          className={variant === 'secondary' ? 'secondary' : ''}
+          disabled={disabled}
+        >
+          {state === 'loading' ? 'Simulated working…' : 'Synthetic action'}
+        </Button>
+        <Button className="secondary" disabled={disabled}>
+          Secondary action
+        </Button>
+      </div>
+    )}
+    {['BTN-02', 'BTN-03', 'BTN-04'].includes(id) && (
+      <div class="actions">
+        <button
+          type="button"
+          class={
+            id === 'BTN-02'
+              ? `button ${variant === 'secondary' ? 'secondary' : ''}`
+              : undefined
+          }
+          disabled={disabled}
+        >
+          {state === 'loading' ? 'Simulated working…' : 'Synthetic action'}
+        </button>
+        {id === 'BTN-02' && (
+          <a class="button secondary" href="#sample-note">
+            Native action link
+          </a>
+        )}
+      </div>
+    )}
+    {id === 'BTN-05' && (
+      <button type="button" class="resend-button" disabled={disabled}>
+        Resend code
+      </button>
+    )}
+    {id === 'INP-01' && (
+      <Field
+        id="synthetic-name"
+        label="First name"
+        error={error ? 'Simulated caller validation message' : undefined}
+      >
+        <Input
+          id="synthetic-name"
+          name="firstName"
+          defaultValue="Synthetic"
+          disabled={disabled}
+          aria-invalid={error || undefined}
+          aria-describedby={error ? 'synthetic-name-error' : undefined}
+        />
+      </Field>
+    )}
+    {id === 'INP-02' && (
+      <label class="field">
+        First name
+        <input
+          name="firstName"
+          class={inputClassName()}
+          value="Synthetic"
+          autocomplete="given-name"
+          required
+          maxlength="100"
+          disabled={disabled}
+          aria-invalid={error || undefined}
+        />
+        {error && <span>Simulated form feedback; no account controller</span>}
+      </label>
+    )}
+    {id === 'INP-03' && (
+      <fieldset class="otp-fieldset" aria-describedby="otp-help">
+        <legend>SMS verification code</legend>
+        <div class="otp-inputs">
+          {Array.from({ length: 6 }, (_, index) => (
+            <input
+              type="text"
+              name={`digit${index + 1}`}
+              aria-label={`Verification code digit ${index + 1} of 6`}
+              inputmode="numeric"
+              autocomplete={index === 0 ? 'one-time-code' : 'off'}
+              pattern="[0-9]"
+              maxlength={index === 0 ? 6 : 1}
+              required
+              data-otp-digit
+            />
+          ))}
+        </div>
+        <small id="otp-help">
+          Display-only markup. Paste/autofocus script omitted.
+        </small>
+      </fieldset>
+    )}
+    {id === 'SEL-01' && (
+      <InteractiveSample id={id} state={state} variant={variant} />
+    )}
+    {id === 'SEL-06' && (
+      <label class="field">
+        Product option
+        <select
+          name="variant"
+          disabled={disabled}
+          aria-invalid={error || undefined}
+        >
+          <option value="synthetic-a" selected={state !== 'selected'}>
+            Synthetic small box
+          </option>
+          <option value="synthetic-b" selected={state === 'selected'}>
+            Synthetic large box
+          </option>
+        </select>
+      </label>
+    )}
+    {id === 'CRD-01' && (
+      <>
+        <Card>
+          <p>Actual React Card with synthetic display content.</p>
+          <Button disabled={disabled}>Synthetic child action</Button>
+        </Card>
+        <article class={cardClassName()}>
+          <p>
+            Astro native article.card counterpart, using the same production
+            CSS.
+          </p>
+        </article>
+      </>
+    )}
+    {id === 'CRD-02' && (
+      <>
+        <section class="dashboard-card">
+          <p>Synthetic dashboard-card content.</p>
+          <Button disabled={disabled}>Synthetic child action</Button>
+        </section>
+        <section class="command-section">
+          <p>Synthetic command-section content. No command form mounted.</p>
+        </section>
+      </>
+    )}
+    {id === 'CRD-03' && (
+      <>
+        <section class="ops-editor">
+          <p>Synthetic ops-editor content.</p>
+        </section>
+        <section class="ops-section">
+          <p>Synthetic ops-section content.</p>
+        </section>
+        <aside class="ops-inspector">
+          <p>Synthetic ops-inspector content.</p>
+        </aside>
+      </>
+    )}
+    {id === 'CRD-05' && (
+      <ol class="application-question-cards" aria-label="Synthetic questions">
+        <li
+          class={`application-question ${state === 'selected' ? 'editing' : ''}`}
+        >
+          <p>Synthetic question surface only. Full builder controls omitted.</p>
+          <Button disabled={disabled}>Synthetic child action</Button>
+        </li>
+      </ol>
+    )}
+  </fieldset>
+)}
+<p id="sample-note" class="gallery-note">
+  Hover and keyboard focus are real browser interactions. Reset by reloading
+  this specimen through the gallery controls.
+</p>

@@ -1,3 +1,5 @@
+import { buttonClassName } from '@market/ui/presentation';
+import { Card, Button, Input } from '@market/ui';
 import { useRef, useState } from 'react';
 import {
   cartMessage,
@@ -72,7 +74,7 @@ export function MarketCart({
   const editable = cart?.state === 'AddingItems';
   return (
     <div aria-busy={pending}>
-      <h2>{marketName}</h2>
+      <h2 className="ui-section-title-consumer">{marketName}</h2>
       {cart && (
         <p className="occurrence-summary" data-cart-occurrence>
           {occurrenceLabel(cart.occurrence)}
@@ -80,22 +82,38 @@ export function MarketCart({
           {cart.occurrence.venue}
         </p>
       )}
-      <p role="status" aria-live="polite">
+      <p
+        className={
+          pending || message ? 'alert ui-alert ui-alert-info' : undefined
+        }
+        role="status"
+        aria-live="polite"
+      >
         {pending ? 'Updating your cart…' : message}
       </p>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p className="alert ui-alert ui-alert-error" role="alert">
+          {error}
+        </p>
+      )}
       {!cart?.totalQuantity ? (
         <div className="empty-state">
-          <h2>Your cart is empty</h2>
+          <h2 className="ui-section-title-consumer">Your cart is empty</h2>
           <p>Choose an occurrence to browse its eligible offerings.</p>
-          <a className="button" href="/#occurrences">
+          <a
+            className={buttonClassName({
+              variant: 'primary',
+              className: 'button',
+            })}
+            href="/#occurrences"
+          >
             Choose an occurrence
           </a>
         </div>
       ) : (
         <>
           {!editable && (
-            <p role="status">
+            <p className="alert ui-alert ui-alert-info" role="status">
               This cart cannot be edited in its current state.
             </p>
           )}
@@ -106,10 +124,20 @@ export function MarketCart({
               aria-labelledby={`vendor-${group.vendorId}`}
               data-vendor-group={group.vendorId}
             >
-              <h2 id={`vendor-${group.vendorId}`}>{group.vendorName}</h2>
+              <h2
+                className="ui-section-title-consumer"
+                id={`vendor-${group.vendorId}`}
+              >
+                {group.vendorName}
+              </h2>
               <ul className="cart-lines">
                 {group.lines.map((line) => (
-                  <li className="cart-line card" key={line.id}>
+                  <Card
+                    as="li"
+                    spacing="contained"
+                    className="cart-line"
+                    key={line.id}
+                  >
                     <div>
                       <h3>
                         <a
@@ -143,7 +171,7 @@ export function MarketCart({
                         <label htmlFor={`quantity-${line.id}`}>
                           Quantity for {line.name}
                         </label>
-                        <input
+                        <Input
                           key={`${line.id}-${line.quantity}`}
                           id={`quantity-${line.id}`}
                           name="quantity"
@@ -158,14 +186,15 @@ export function MarketCart({
                         />
                       </div>
                       <div className="actions">
-                        <button
-                          className="button"
+                        <Button
+                          type="submit"
+                          variant="primary"
                           disabled={pending || !editable}
                         >
                           Update quantity
-                        </button>
-                        <button
-                          className="button secondary"
+                        </Button>
+                        <Button
+                          variant="destructive"
                           type="button"
                           aria-label={`Remove ${line.name}`}
                           disabled={pending || !editable}
@@ -174,16 +203,16 @@ export function MarketCart({
                           }
                         >
                           Remove
-                        </button>
+                        </Button>
                       </div>
                     </form>
-                  </li>
+                  </Card>
                 ))}
               </ul>
             </section>
           ))}
-          <div className="cart-totals card">
-            <h2>Cart summary</h2>
+          <Card as="div" className="cart-totals">
+            <h2 className="ui-section-title-consumer">Cart summary</h2>
             <dl>
               <div>
                 <dt>Subtotal including tax</dt>
@@ -220,7 +249,7 @@ export function MarketCart({
             >
               <div className="field">
                 <label htmlFor="vendor-coupon">Vendor coupon code</label>
-                <input
+                <Input
                   id="vendor-coupon"
                   name="code"
                   required
@@ -229,39 +258,52 @@ export function MarketCart({
                   autoComplete="off"
                 />
               </div>
-              <button
-                className="button secondary"
+              <Button
+                type="submit"
+                variant="secondary"
                 disabled={pending || !editable}
               >
                 Apply coupon
-              </button>
+              </Button>
             </form>
             {!!cart.couponCodes.length && (
               <ul aria-label="Applied Vendor coupon codes">
                 {cart.couponCodes.map((code) => (
                   <li key={code}>
                     {code}{' '}
-                    <button
+                    <Button
+                      variant="destructive"
                       type="button"
-                      className="button secondary"
                       disabled={pending || !editable}
                       aria-label={`Remove coupon ${code}`}
                       onClick={() => void change('remove-coupon', { code })}
                     >
                       Remove
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>
             )}
             <p className="cart-boundary">Adding items does not reserve them.</p>
-            <a className="button" href="/checkout">
+            <a
+              className={buttonClassName({
+                variant: 'primary',
+                className: 'button',
+              })}
+              href="/checkout"
+            >
               Continue to checkout
             </a>
-            <a href={`/occurrences/${cart.occurrence.id}`}>
+            <a
+              className={buttonClassName({
+                variant: 'secondary',
+                className: 'button secondary',
+              })}
+              href={`/occurrences/${cart.occurrence.id}`}
+            >
               Continue browsing this occurrence
             </a>
-          </div>
+          </Card>
         </>
       )}
     </div>

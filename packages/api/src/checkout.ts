@@ -10,6 +10,14 @@ export function createCheckoutApi(
 ) {
   const execute = transport('shop', options);
   return {
+    accountContexts: async () =>
+      (
+        await execute(
+          { api: 'shop', document: shop.PlatformShopAccountContextsDocument },
+          {},
+        )
+      )
+        .platformAccountContexts as import('./market-operations').PlatformAccountContexts,
     status: async (orderId?: string) =>
       (
         await execute(

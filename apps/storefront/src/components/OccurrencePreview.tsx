@@ -17,6 +17,7 @@ export default function OccurrencePreview() {
         About occurrence selection
       </Button>
       <Dialog
+        size="standard"
         open={open}
         onClose={() => setOpen(false)}
         title="Choose a Market occurrence"

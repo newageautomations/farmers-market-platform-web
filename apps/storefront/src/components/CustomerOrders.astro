@@ -1,0 +1,72 @@
+---
+import { statusBadgeClassName } from '@market/ui/presentation';
+import { purchaseStatusTone } from './purchase-status';
+import type { CustomerPurchase } from '@market/api';
+import { formatMoney } from '@market/config';
+import { buttonClassName, cardClassName } from '@market/ui/presentation';
+const { purchases, level = 2 } = Astro.props as {
+  purchases: CustomerPurchase[];
+  level?: 2 | 3;
+};
+const Heading = level === 2 ? 'h2' : 'h3';
+---
+
+{purchases.length ? (
+  <ul class="customer-order-list purchase-list">
+    {purchases.map((p) => (
+      <li class={cardClassName({ spacing: 'contained' })}>
+        <header>
+          <Heading class="ui-section-title-consumer">
+            <a href={`/account/orders/${p.orderId}`}>Order {p.orderId}</a>
+          </Heading>
+          <strong>
+            {formatMoney(p.financial.originalPaid, p.financial.currency)}
+          </strong>
+        </header>
+        <p>
+          <time datetime={p.purchasedAt}>
+            {new Date(p.purchasedAt).toLocaleDateString('en-US', {
+              dateStyle: 'medium',
+              timeZone: 'UTC',
+            })}
+          </time>{' '}
+          · {p.storefront.displayName} ·{' '}
+          {p.kind === 'DIRECT_VENDOR'
+            ? 'Direct vendor purchase'
+            : 'Market purchase'}
+        </p>
+        <p>
+          {p.portions.map((v) => v.vendorName).join(', ')} ·{' '}
+          <span
+            class={statusBadgeClassName(
+              purchaseStatusTone('financial', p.financial.financialStatus),
+            )}
+          >
+            {p.financial.financialStatus.toLowerCase().replaceAll('_', ' ')}
+          </span>
+        </p>
+        <p class="customer-muted">
+          {p.portions
+            .flatMap((v) =>
+              v.lines.map((l) => `${l.variantName} × ${l.quantity}`),
+            )
+            .join(', ')}
+        </p>
+      </li>
+    ))}
+  </ul>
+) : (
+  <div class="empty-state">
+    <Heading class="ui-section-title-consumer">No orders yet</Heading>
+    <p>
+      You haven't placed any orders yet. Explore markets and vendors to get
+      started.
+    </p>
+    <a
+      class={buttonClassName({ variant: 'secondary' })}
+      href="/account/markets"
+    >
+      Explore markets
+    </a>
+  </div>
+)}

@@ -1,4 +1,6 @@
 ---
+import EmptyState from './ui/EmptyState.astro';
+import { buttonClassName, cardClassName } from '@market/ui/presentation';
 import type { StorefrontContext } from '@market/storefront-core';
 import { occurrenceLabel } from '@market/storefront-core';
 import type { PublicMarketOccurrence, AppError } from '@market/api';
@@ -9,8 +11,10 @@ interface Props {
   totalItems: number;
   page: number;
   error?: AppError;
+  advertisedApplication?: boolean;
 }
-const { context, occurrences, totalItems, page, error } = Astro.props;
+const { context, occurrences, totalItems, page, error, advertisedApplication } =
+  Astro.props;
 ---
 
 <div data-composition="market">
@@ -22,10 +26,24 @@ const { context, occurrences, totalItems, page, error } = Astro.props;
       </p>
       {occurrences[0] && page === 1 && (
         <div class="actions">
-          <a class="button" href={`/occurrences/${occurrences[0].id}`}>
+          <a
+            class={buttonClassName({ variant: 'primary', className: 'button' })}
+            href={`/occurrences/${occurrences[0].id}`}
+          >
             Browse the next occurrence
           </a>
         </div>
+      )}
+      {advertisedApplication && (
+        <a
+          class={buttonClassName({
+            variant: 'secondary',
+            className: 'button secondary',
+          })}
+          href="/apply"
+        >
+          Apply to this Market
+        </a>
       )}
     </div>
   </section>
@@ -34,36 +52,59 @@ const { context, occurrences, totalItems, page, error } = Astro.props;
     class="market-occurrences"
     aria-labelledby="occurrences-title"
   >
-    <h2 id="occurrences-title">Upcoming occurrences</h2>
+    <h2 class="ui-section-title-consumer" id="occurrences-title">
+      Upcoming occurrences
+    </h2>
     {error ? (
       <ErrorState error={error} />
     ) : !occurrences.length ? (
-      <p>No upcoming occurrences are currently listed.</p>
+      <EmptyState title="No upcoming occurrences" level={3}>
+        <p>No upcoming occurrences are currently listed.</p>
+      </EmptyState>
     ) : (
       <ul class="occurrence-list">
         {occurrences.map((occurrence) => (
-          <li class="card">
+          <li
+            class={cardClassName({ className: 'card', spacing: 'contained' })}
+          >
             <h3>
               <a href={`/occurrences/${occurrence.id}`}>
                 {occurrenceLabel(occurrence)}
               </a>
             </h3>
             {occurrence.venue && <p>{occurrence.venue}</p>}
-            <a class="button secondary" href={`/occurrences/${occurrence.id}`}>
+            <a
+              class={buttonClassName({
+                variant: 'secondary',
+                className: 'button secondary',
+              })}
+              href={`/occurrences/${occurrence.id}`}
+            >
               Explore this occurrence
             </a>
           </li>
         ))}
       </ul>
     )}
-    <nav class="pagination" aria-label="Occurrence pages">
+    <nav class="pagination ui-pagination" aria-label="Occurrence pages">
+      <p>
+        {totalItems} occurrences. Showing{' '}
+        {occurrences.length ? (page - 1) * 8 + 1 : 0} to{' '}
+        {occurrences.length ? (page - 1) * 8 + occurrences.length : 0}.
+      </p>
       {page > 1 && (
-        <a href={`/?occurrencePage=${page - 1}#occurrences`}>
+        <a
+          class={buttonClassName({ variant: 'secondary' })}
+          href={`/?occurrencePage=${page - 1}#occurrences`}
+        >
           Previous occurrences
         </a>
       )}
       {page * 8 < totalItems && (
-        <a href={`/?occurrencePage=${page + 1}#occurrences`}>
+        <a
+          class={buttonClassName({ variant: 'secondary' })}
+          href={`/?occurrencePage=${page + 1}#occurrences`}
+        >
           More occurrences
         </a>
       )}

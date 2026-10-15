@@ -1,0 +1,389 @@
+---
+export const prerender = false;
+import '@market/ui/styles.css';
+import { Button, Field, Input, Select } from '@market/ui';
+import { platformTheme, themeStyle } from '@market/theme';
+import {
+  categories,
+  candidatesForCategory,
+  stateDescription,
+  states,
+  type Category,
+} from '../../candidates';
+const query = Astro.url.searchParams;
+const category: Category = Object.hasOwn(
+  categories,
+  query.get('category') ?? '',
+)
+  ? (query.get('category') as Category)
+  : 'BTN';
+const state = states.includes(query.get('state') as (typeof states)[number])
+  ? query.get('state')!
+  : 'default';
+const widths =
+  query.get('width') === 'both' || !query.has('width')
+    ? [1280, 390]
+    : [Number(query.get('width'))];
+const safeWidths = widths.map((w) =>
+  [390, 600, 601, 767, 768, 1280, 1440].includes(w) ? w : 390,
+);
+const zoom = query.get('zoom') === '1' ? 1 : 0.5;
+const context = ['base', 'admin', 'storefront'].includes(
+  query.get('context') ?? '',
+)
+  ? query.get('context')!
+  : 'existing';
+const variant = ['primary', 'secondary', 'drawer', 'title-focus'].includes(
+  query.get('variant') ?? '',
+)
+  ? query.get('variant')!
+  : 'primary';
+const scope = ['MARKET', 'VENDOR', 'PLATFORM'].includes(
+  query.get('scope') ?? '',
+)
+  ? query.get('scope')!
+  : 'MARKET';
+const candidates = candidatesForCategory(category);
+const frames = safeWidths.map((width) => ({
+  width,
+  scale: width >= 768 ? zoom : 1,
+  height: ['DSH', 'MOB', 'DLG'].includes(category) ? 920 : 660,
+}));
+function sampleUrl(candidate: (typeof candidates)[number]) {
+  const shell = /^(DSH|SID|HDR|MOB)-/.test(candidate.id);
+  const chosen =
+    shell || candidate.id === 'PGH-02'
+      ? candidate.context
+      : context === 'existing'
+        ? candidate.context
+        : context;
+  const parameters = new URLSearchParams({
+    id: candidate.id,
+    state,
+    variant,
+    scope,
+  });
+  return `/sample/${['DSH-02', 'SID-02', 'HDR-02', 'MOB-02'].includes(candidate.id) ? 'customer' : chosen}?${parameters}`;
+}
+---
+
+<!doctype html>
+<html lang="en" style={themeStyle(platformTheme)}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UI component comparison gallery</title>
+    <meta name="robots" content="noindex,nofollow" />
+  </head>
+  <body>
+    <main class="gallery">
+      <h1>UI component comparison gallery</h1>
+      <p>
+        Local development fixture. Synthetic data only. Existing approved
+        decisions remain unchanged; the 13 added categories await developer
+        selection.
+      </p>
+      <p>
+        Move the pointer over each specimen. Use Tab and Shift+Tab inside its
+        frame to inspect real keyboard focus. Native selects and disclosures
+        retain browser behavior. The horizontal comparison area lets you inspect
+        candidates side by side.
+      </p>
+      <div class="gallery-controls">
+        <Field id="category" label="Category">
+          <Select id="category" data-control="category" defaultValue={category}>
+            {Object.entries(categories).map(([value, label]) => (
+              <option value={value} selected={value === category}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field id="state" label="Display state">
+          <Select id="state" data-control="state" defaultValue={state}>
+            {states.map((value) => (
+              <option value={value} selected={value === state}>
+                {value}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field id="width" label="Frame viewport width">
+          <Select
+            id="width"
+            data-control="width"
+            defaultValue={query.get('width') ?? 'both'}
+          >
+            <option
+              value="both"
+              selected={!query.has('width') || query.get('width') === 'both'}
+            >
+              Desktop 1280px and mobile 390px
+            </option>
+            {[390, 600, 601, 767, 768, 1280, 1440].map((w) => (
+              <option
+                value={String(w)}
+                selected={query.get('width') === String(w)}
+              >
+                {w}px
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field id="zoom" label="Desktop display scale">
+          <Select id="zoom" data-control="zoom" defaultValue={String(zoom)}>
+            <option value="0.5" selected={zoom === 0.5}>
+              50% display, actual viewport width preserved
+            </option>
+            <option value="1" selected={zoom === 1}>
+              100% display
+            </option>
+          </Select>
+        </Field>
+        <Field id="context" label="CSS context">
+          <Select id="context" data-control="context" defaultValue={context}>
+            <option value="existing" selected={context === 'existing'}>
+              Existing context per candidate
+            </option>
+            <option value="base" selected={context === 'base'}>
+              Base shared CSS
+            </option>
+            <option value="admin" selected={context === 'admin'}>
+              Admin and operations ancestors
+            </option>
+            <option value="storefront" selected={context === 'storefront'}>
+              Storefront account ancestors
+            </option>
+          </Select>
+        </Field>
+        <Field id="variant" label="Existing variant">
+          <Select id="variant" data-control="variant" defaultValue={variant}>
+            <option value="primary" selected={variant === 'primary'}>
+              Primary / ordinary dialog
+            </option>
+            <option value="secondary" selected={variant === 'secondary'}>
+              Secondary button
+            </option>
+            <option value="drawer" selected={variant === 'drawer'}>
+              DLG-01 Drawer
+            </option>
+            <option value="title-focus" selected={variant === 'title-focus'}>
+              DLG-01 title focus
+            </option>
+          </Select>
+        </Field>
+        <Field id="scope" label="Admin shell scope">
+          <Select id="scope" data-control="scope" defaultValue={scope}>
+            {['MARKET', 'VENDOR', 'PLATFORM'].map((s) => (
+              <option value={s} selected={s === scope}>
+                {s.toLowerCase()}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field id="filter" label="Filter candidate IDs or names">
+          <Input
+            id="filter"
+            name="galleryFilter"
+            placeholder="For example SEL-07"
+          />
+        </Field>
+        <Button id="reload-samples" className="secondary">
+          Reset specimens
+        </Button>
+      </div>
+      <p>
+        CSS context overrides are diagnostic comparisons, not approved variants.
+        Dashboard specimens retain their own renderer and CSS. Loading/error
+        feedback is caller simulation when stated. Unsupported states retain the
+        default specimen. Variant controls apply only to the named
+        implementation.
+      </p>
+      <details class="gallery-details">
+        <summary>CSS contexts and comparison limitations</summary>
+        <p>
+          Base: <code>packages/ui/src/styles.css</code> and platformTheme.
+          Admin: base plus vendor.css, market.css, management.css, phase15.css,
+          phase15b.css, market/dashboard.css; ancestors{' '}
+          <code>
+            .market-dashboard .admin-shell .admin-content .market-workspace
+            .ops-workspace
+          </code>
+          . Storefront: base plus vendor.css, market.css, checkout.css;
+          ancestors <code>.container .account-panel .verification-panel</code>.
+          Customer: actual CustomerLayout plus customer-dashboard.css.
+        </p>
+        <p>
+          New specimens retain their documented vendor, management, operations,
+          customer or public ancestors. TAB-02 also references the original
+          designer CSS. Unsupported states and omitted controllers are described
+          in each candidate's source details.
+        </p>
+      </details>
+      <div
+        class="gallery-rail"
+        role="region"
+        aria-label="Side by side component comparisons"
+        tabindex="0"
+      >
+        {candidates.map((candidate) => (
+          <article
+            class="gallery-candidate"
+            data-candidate={candidate.id}
+            data-filter={`${candidate.id} ${candidate.name}`.toLowerCase()}
+            style={`width:${Math.max(...safeWidths.map((w) => w * (w >= 768 ? zoom : 1)), 390)}px`}
+          >
+            <h2>
+              {candidate.name} <code>{candidate.id}</code>
+            </h2>
+            <p class="gallery-rendering">
+              {candidate.rendering === 'imported'
+                ? 'Actual imported component'
+                : candidate.rendering === 'partial'
+                  ? 'Partial existing markup evidence'
+                  : candidate.rendering === 'evidence' ||
+                      candidate.id === 'HDR-03'
+                    ? 'Source/route evidence only'
+                    : candidate.kind}
+            </p>
+            <details class="gallery-details" data-candidate-details>
+              <summary>Source and limitations</summary>
+              <p>
+                <code>{candidate.source}</code>
+              </p>
+              <p>
+                {candidate.kind}. {candidate.scope}
+              </p>
+              <p>{candidate.limitation}</p>
+              {candidate.css && (
+                <p>
+                  Existing CSS: <code>{candidate.css}</code>
+                </p>
+              )}
+              {candidate.route && (
+                <p>
+                  Representative route: <code>{candidate.route}</code>
+                </p>
+              )}
+              <p>
+                {stateDescription(
+                  candidate.id,
+                  state as (typeof states)[number],
+                )}
+              </p>
+            </details>
+            {frames.map((frame) => (
+              <div>
+                <p>
+                  {frame.width}px viewport, {frame.scale * 100}% display scale,{' '}
+                  {state} state
+                </p>
+                <div
+                  class="gallery-frame-window"
+                  style={`width:${frame.width * frame.scale}px;height:${frame.height * frame.scale}px`}
+                >
+                  <iframe
+                    title={`${candidate.id} at ${frame.width}px`}
+                    src={sampleUrl(candidate)}
+                    sandbox="allow-scripts allow-same-origin"
+                    width={frame.width}
+                    height={frame.height}
+                    style={`transform:scale(${frame.scale})`}
+                    loading="lazy"
+                  ></iframe>
+                </div>
+              </div>
+            ))}
+          </article>
+        ))}
+      </div>
+      <p>
+        No selection or approval controls are provided. After review, manually
+        record explicit candidate, scope, renderer, variants, date and evidence
+        in UI_COMPONENTS.md. Request consolidation as a separate task.
+      </p>
+    </main>
+    <script>
+      for (const control of document.querySelectorAll<HTMLSelectElement>(
+        '[data-control]',
+      )) {
+        control.addEventListener('change', () => {
+          const url = new URL(location.href);
+          url.searchParams.set(control.dataset.control!, control.value);
+          location.assign(url.href);
+        });
+      }
+      document
+        .getElementById('reload-samples')
+        ?.addEventListener('click', () => {
+          for (const frame of document.querySelectorAll('iframe'))
+            frame.src = frame.src;
+        });
+      document.getElementById('filter')?.addEventListener('input', (event) => {
+        const value = (event.target as HTMLInputElement).value.toLowerCase();
+        for (const candidate of document.querySelectorAll<HTMLElement>(
+          '[data-candidate]',
+        ))
+          candidate.hidden = !candidate.dataset.filter?.includes(value);
+      });
+    </script>
+    <style>
+      .gallery {
+        padding: clamp(1rem, 3vw, 2.5rem);
+      }
+      .gallery > h1 {
+        font-size: clamp(2rem, 4vw, 3rem);
+      }
+      .gallery-controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 1rem;
+        align-items: end;
+        margin-block: 1.5rem;
+      }
+      .gallery-rail {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.5rem;
+        overflow: auto;
+        padding-block: 1rem;
+      }
+      .gallery-candidate {
+        flex: none;
+        overflow-wrap: anywhere;
+      }
+      .gallery-candidate[hidden] {
+        display: none;
+      }
+      .gallery-candidate h2 {
+        font-size: 1.35rem;
+      }
+      .gallery-candidate h2 code {
+        font-size: 1rem;
+      }
+      .gallery-details {
+        margin-block: 0.75rem;
+        overflow-wrap: anywhere;
+      }
+      .gallery-details summary {
+        cursor: pointer;
+      }
+      .gallery-details p,
+      .gallery-state-note,
+      .gallery-rendering {
+        font-size: 0.9rem;
+      }
+      .gallery-frame-window {
+        overflow: hidden;
+        border: 1px solid var(--brand-muted);
+        margin-bottom: 1.5rem;
+        background: var(--brand-surface);
+      }
+      iframe {
+        display: block;
+        border: 0;
+        transform-origin: top left;
+      }
+    </style>
+  </body>
+</html>

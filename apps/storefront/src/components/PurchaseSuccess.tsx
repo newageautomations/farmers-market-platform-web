@@ -1,3 +1,5 @@
+import { buttonClassName } from '@market/ui/presentation';
+import { Button } from '@market/ui';
 import { useState } from 'react';
 import type { CheckoutView } from '@market/api';
 import { CheckoutSummary } from './Checkout';
@@ -19,17 +21,27 @@ export function PurchaseSuccess({
       </p>
       <CheckoutSummary view={view} />
       {state === 'AUTHENTICATED' ? (
-        <a href="/account/orders">View your orders</a>
+        <a
+          className={buttonClassName({
+            variant: 'secondary',
+            className: 'button secondary',
+          })}
+          href="/account/orders"
+        >
+          View your orders
+        </a>
       ) : (
         <>
-          <p role="status">
+          <p className="alert ui-alert ui-alert-info" role="status">
             {state === 'ACCEPTED'
               ? 'Check your email to access your orders.'
               : state === 'UNAVAILABLE'
                 ? 'An account access email could not currently be sent. Your order is confirmed. You can request an account link later.'
                 : 'You can access your orders with a one-time email link whenever you choose.'}
           </p>
-          <button
+          <Button
+            type="submit"
+            variant="primary"
             disabled={pending || state === 'ACCEPTED'}
             onClick={async () => {
               setPending(true);
@@ -48,9 +60,17 @@ export function PurchaseSuccess({
             }}
           >
             Email me an account link
-          </button>
+          </Button>
           <p>
-            <a href="/account/sign-in">Request a fresh account link later</a>
+            <a
+              className={buttonClassName({
+                variant: 'secondary',
+                className: 'button secondary',
+              })}
+              href="/account/sign-in"
+            >
+              Request a fresh account link later
+            </a>
           </p>
         </>
       )}

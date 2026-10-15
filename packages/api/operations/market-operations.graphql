@@ -10,3 +10,54 @@ mutation MarketOperationsCommand($input: MarketOperationsCommand!) {
 query OwnVendorBoothAssignments {
   ownVendorBoothAssignments
 }
+query OwnVendorLinkRequests {
+  ownVendorLinkRequests
+}
+mutation VendorRequestMarketRelationship(
+  $marketId: ID!
+  $expectedVersion: Int
+) {
+  requestOwnMarketMembership(
+    marketId: $marketId
+    expectedVersion: $expectedVersion
+  ) {
+    id
+    version
+    status
+  }
+}
+mutation RespondToVendorLink(
+  $id: Int!
+  $expectedRevision: Int!
+  $confirm: Boolean!
+) {
+  respondToVendorLink(
+    id: $id
+    expectedRevision: $expectedRevision
+    confirm: $confirm
+  )
+}
+query OwnPlatformAccountContexts {
+  ownPlatformAccountContexts
+}
+query PlatformRoleOnboardingReviewQueue {
+  platformRoleOnboardingReviewQueue
+}
+mutation ReviewPlatformRoleOnboarding(
+  $id: ID!
+  $revision: Int!
+  $decision: String!
+  $slug: String!
+  $note: String!
+) {
+  reviewPlatformRoleOnboarding(
+    id: $id
+    revision: $revision
+    decision: $decision
+    slug: $slug
+    note: $note
+  )
+}
+mutation ExchangePlatformAdminHandoff($code: String!, $correlation: String!) {
+  exchangePlatformAdminHandoff(code: $code, correlation: $correlation)
+}

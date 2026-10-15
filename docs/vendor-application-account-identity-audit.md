@@ -1,0 +1,502 @@
+# Vendor applications, account identity, and Market linking audit
+
+Audit date: October 10, 2026. Scope: the current local source in `E:\coding\farmers-market-platform-web` and `E:\coding\farmers-market-platform`, including existing uncommitted changes. This report is the only artifact created, as requested. No application code, existing documentation, database, packages, branches, or remote resources were changed.
+
+Method: read-only source inspection of components, GraphQL documents/resolvers, services, entities, migrations, plugin composition, and relevant installed Vendure source. No builds, tests, servers, database queries, account requests, or external services were executed. Environment files and credential values were not inspected. Existing test source was read for context, not treated as proof of a passing test.
+
+Classifications used throughout:
+
+- **VERIFIED**: behavior or infrastructure confirmed in the inspected source. This does not certify a running deployment.
+- **PARTIAL**: related implementation exists, but the requested workflow is incomplete.
+- **MISSING**: no implementation of the described workflow was found in the inspected application source.
+- **UNVERIFIED**: runtime configuration, deployed schema, live data, or end-to-end behavior cannot be established by this audit.
+- **RECOMMENDATION**: future work, not current behavior or authorization to implement.
+
+Source references are clickable local file links with exact starting line numbers. The final section supplies the full paths and relevant ranges.
+
+## 1. Executive Summary
+
+**VERIFIED:** Applications are Market-owned, versioned forms. Anonymous submission creates a durable `MarketApplicationSubmission` and a rate-limit audit record. It creates no platform User, canonical Vendor, directory entry, Market membership, occurrence participation, product listing, or order. A directory entry is normally created or selected only when the manager accepts the application. [Submission writes][b-submit-write] [Acceptance][b-review]
+
+**VERIFIED:** The actual linking feature sets `MarketVendorDirectoryEntry.linkedVendorId` and `kind = PLATFORM_LINKED`. It changes a Market-owned association, not the canonical Vendor, Seller, commerce ownership, or account ownership. However, any active canonical Vendor ID is accepted. Vendor ownership, consent, geographic relevance, and prior relationship to the Market are not checked. [Directory command][b-directory] [Link implementation][b-link]
+
+**VERIFIED:** The Texas manager can link an external directory business to an unrelated active Alaska Vendor. The selector exposes up to 100 active platform Vendors without Market filtering; the API accepts other active Vendor IDs as well. The association can give that Vendor's authorized users access to the directory business's upcoming booth assignments and invoice summaries. Linking does not automatically create approved Market membership or commerce eligibility. [Selector data][b-eligible] [Vendor assignment projection][b-vendor-assignments]
+
+**VERIFIED:** A newly approved occurrence for an already linked directory entry requires approved `MarketVendorMembership`. Application acceptance can create canonical participation when that membership already exists. Conversely, linking after external approval leaves existing approval rows with `participationId = null`; assignment validation then skips the platform participation check. This is a concrete consistency gap between the external operations model and canonical participation. [Approval helper][b-approve] [Assignment check][b-assign]
+
+**PARTIAL:** Native platform identity, customer account email links, cross-storefront account handoff, and internal no-charge subscriptions already exist. They do not yet provide the proposed applicant signup, Vendor-authorized application submission, application autofill, document tracking, or application claiming. Customer account handoff explicitly excludes Administrator Users, while Vendor authorization currently uses Administrator Users. Billing subjects are Vendors or Markets, not account-only applicants. [Customer identity boundary][b-customer-bound] [Vendor authority][b-policy-vendor] [Billing subjects][b-entitlement-subject]
+
+**RECOMMENDATION:** Preserve the existing User, Vendor, Market directory, application snapshots, membership, participation, and commerce entities. First secure linking and its historical-data access effects. Then add a protected account question, a server-verified applicant identity path, account-only support, optional post-submission invitation, secure claim capabilities, and account-level free capabilities. No parallel account system or additional repository is needed.
+
+## 2. Existing Application Workflow
+
+### Creation and form building
+
+**VERIFIED:** `/market/applications` renders `OperationsRoutes` and `Applications`. Creating a form sends `CREATE_APPLICATION`, with the default name `Untitled application`, through `run`, `createMarketOperationsApi.command`, the `MarketOperationsCommand` GraphQL operation, and `MarketOperationsAdminResolver.marketOperationsCommand`. The service creates a Market template with a random UUID slug, `PUBLIC` visibility, `advertised = false`, and a first `DRAFT` version using `defaultDefinition()`. [Admin route][f-ops-routes] [Creation UI][f-applications] [Frontend API][f-api-admin] [GraphQL document][f-admin-document] [Resolver][b-admin-resolver] [Create/save/publish][b-app-commands]
+
+**VERIFIED:** `ApplicationBuilder` maintains `sections[]` and `questions[]`, supports section creation/renaming/reordering/removal, and moves questions with drag/drop and up/down controls. Managers edit labels, help text, custom question types, choice options, section placement, and required status. New custom questions get `crypto.randomUUID()` IDs. Published versions are not editable; `CLONE_APPLICATION` copies a definition to a new draft, and publishing retires the prior published version. [Builder][f-builder] [Question controls][f-builder-controls] [Custom IDs][f-builder-custom] [Version commands][b-app-commands]
+
+**VERIFIED:** Supported types are `SHORT_TEXT`, `LONG_TEXT`, `BOOLEAN`, `NUMBER`, `SINGLE_SELECT`, `DROPDOWN`, `MULTI_SELECT`, `DATE`, `TIME`, `EMAIL`, `PHONE`, `URL`, and `INFO`. `INFO` is display text, not an answer-bearing field. No file-upload question type exists. [Question model][b-question-model] [Field renderer][f-fields]
+
+**VERIFIED:** There is already a distinction between fields with a recognized `semantic` and manager-created custom questions. The required system semantics are `businessName`, `firstName`, `lastName`, and `email`. Backend definition validation requires their presence, correct type, `required = true`, and `hidden = false`; duplicate semantic bindings are rejected. Other recognized semantics cover phone, description, website/social URL, business type/category, and booth requirements. Optional system fields may be omitted. The builder locks required status/deletion for the four identity fields and locks types for semantic fields. [System fields and defaults][b-system-fields] [Definition validator][b-definition] [Builder protection][f-builder] [Controls][f-builder-controls]
+
+**MISSING:** The account question and its Yes/No branching are absent. Existing protected fields can still be moved, relabeled, and assigned to another section. Neither the model nor validator enforces a permanent question before all manager questions. Existing protection is reusable but insufficient for the proposed rule. [Builder moves][f-builder] [Definition validator][b-definition]
+
+### Publication and applicant access
+
+**VERIFIED:** The definition selects permitted occurrence IDs and rental IDs. Saving validates that each occurrence belongs to this Market, is scheduled, and begins in the future, and that rentals belong to the Market. Publishing sets `PUBLIC` or `PRIVATE` visibility and optionally advertises a public template, clearing other advertised templates. [Save/publish][b-app-commands] [Publishing UI][f-builder-publish]
+
+**VERIFIED:** `/apply` loads the advertised public application; `/apply/<slug>` loads a direct-link application. `publicApplication()` resolves within the current Shop channel's active Market and selects the latest published version. `PRIVATE` means accessible by slug without advertising, not authenticated or invitation-only. Returned dates are limited to selected, scheduled, future occurrences; returned rentals are selected and enabled. [Apply route][f-apply] [Public read][b-public-app] [Shop context middleware][b-shop-context]
+
+**PARTIAL:** The advertised-application query and a homepage Apply button exist in `MarketHome.astro`. However, the current home route uses `MarketPublicHome.astro` for backend-backed Markets, and that component contains no application query or Apply button. The other `MarketHome` branch is for non-backend storefront context, while its application query requires backend context. Therefore setting `advertised` supports `/apply` resolution but does not produce the expected application link on the current backend-backed homepage. [Home routing][f-home] [Old application CTA][f-old-market-home] [Current Market homepage][f-market-home] [Shop request context][f-shop-transport]
+
+### Answer validation and submission
+
+**VERIFIED:** `MarketApplication` starts with empty answers and selected dates, rental defaults, and an in-memory submission UUID. It renders `ApplicationFields`, date checkboxes, and rental quantities. Native browser `required` constraints cover ordinary inputs, selects, radio groups, and nonempty required multiselects. The backend remains authoritative. [Application component][f-public-application] [Field renderer][f-fields]
+
+**VERIFIED:** The request path is:
+
+`MarketApplication` -> `POST /api/market-application` -> `requestPublicMarketOperations().submit` -> `SubmitMarketApplication` -> `MarketOperationsShopResolver.submitMarketApplication` -> `MarketOperationsService.submit`.
+
+The Astro endpoint requires a Market storefront, an exact matching Origin, JSON content type, a body no larger than 60,000 bytes, allowed top-level keys, and basic input shapes. The GraphQL resolver is public. Server validation checks answer shape/size, required visible answers, Boolean/number types, allowed choices, email/URL/phone/time/date formats, the current published version, selected eligible dates, duplicate date/rental IDs, enabled rentals, and quantity limits. [HTTP endpoint][f-submit-route] [Shop API/document][f-api-public] [Public operation][f-shop-document] [Resolver][b-shop-resolver] [Answer validation][b-answers] [Submit validation][b-submit]
+
+**VERIFIED:** Submission is a transaction serialized using a Market row lock. Idempotency is Market-scoped: the same key and same inputs return success; different inputs with the same key fail. Source contains a unique `(marketId, submissionKey)` database constraint. A hashed network source is limited to ten successful submissions per hour per Market. Requested rentals are stored with price/name/currency snapshots; they reserve no equipment. [Submit][b-submit] [Migration constraints][b-migration]
+
+**VERIFIED:** The service stores `SUBMITTED`, definition/answer/applicant/requirements snapshots, requested occurrence IDs, rental snapshots, empty approved dates, `directoryId = null`, notes, and submission key. It appends `PUBLIC_SUBMISSION` with a network hash and returns only `{ submitted: true }`. Authentication, account identity, and canonical Vendor identity are not submission inputs. Cookies may be forwarded by transport, and the audit may record an existing active User, but the submission itself has no applicant User/Vendor relationship. [Entity][b-ops-entities] [Write][b-submit-write] [Audit actor][b-audit] [Transport][f-shop-transport]
+
+### Manager review and actions
+
+**VERIFIED:** `/market/application-submissions` renders a list and review dialog. `ApplicationReview` displays submitted contact details, requirements, and read-only answers using `definitionSnapshot`. Managers choose requested dates, notes, an existing directory business or platform Vendor, a review status, and optionally a booth. Both selectors pass IDs; neither establishes applicant ownership. [Review UI][f-review]
+
+| Action | VERIFIED backend effect |
+| --- | --- |
+| `UNDER_REVIEW`, `NEEDS_INFO`, `WAITLISTED` | Changes status and manager notes. No applicant notification or response workflow is invoked. |
+| `DECLINED`, `WITHDRAWN` | Changes status and notes. These become terminal for the exposed review command. No directory or membership is created. Withdrawal is a manager action here; no public withdrawal API was found. |
+| `ACCEPTED` via `REVIEW_APPLICATION` | Creates/selects a directory entry; stores its ID and approved requested dates; creates occurrence approvals. For a linked entry, approved canonical Market membership is required for each new approved date, and missing canonical participation is created as `confirmed`. |
+| `ACCEPT_ASSIGN` | Performs acceptance, additionally requires `ManageOwnMarketAssignments`, then assigns a selected booth, creates rental allocations, and creates/rebuilds a draft booth invoice in the same transaction. |
+| Re-review of accepted submission | Cannot change it away from `ACCEPTED`; trying acceptance again fails `APPLICATION_ALREADY_ACCEPTED`. The UI directs the manager to assignments. |
+
+Sources: [Review/accept commands][b-review] [Approval bridge][b-approve] [Assignment][b-assign] [Invoice rebuilding][b-invoice].
+
+**VERIFIED:** Non-accepted review does not consume the UI's edited rental quantities. They are used by assignment, while historical submission rental requests remain unchanged. Acceptance may select zero dates. `DRAFT` is an entity status, but public submission goes directly to `SUBMITTED`; no applicant draft persistence/resume workflow was found. [Review command][b-review] [Rental assignment][b-assignment-rentals] [Public submission][b-submit-write]
+
+## 3. Existing Data Model and Entity Relationships
+
+| Concept | Existing entity and relationships | Classification |
+| --- | --- | --- |
+| Account/principal | Vendure `User`, authentication methods, roles, sessions; `Administrator.user` or `Customer.user` supplies application-specific account context. | VERIFIED |
+| Canonical platform business | `Vendor` in `platform_vendor`; unique Seller and primary commerce Channel; name, slug, status, provisioning identity. | VERIFIED |
+| Authority to represent a business | `TenantMembership(principalId, vendorId, role, status)` with owner/staff roles; separate Market admin membership uses `marketId`. | VERIFIED |
+| Market | `Market` with unique channel identity, status, schedule/preorder policy. | VERIFIED |
+| Market directory business | `MarketVendorDirectoryEntry(marketId, contact, kind, linkedVendorId?, status, managerNotes)`. External entries exist without Vendor/User identities. | VERIFIED |
+| Form and form version | `MarketApplicationTemplate` with slug/visibility/advertising, and `MarketApplicationTemplateVersion` with JSON definition and lifecycle. | VERIFIED |
+| Submitted application | `MarketApplicationSubmission` with definition/answers/applicant/requirements/rental snapshots, date IDs, status, nullable directory ID. No applicant principal ID or canonical Vendor ID. | VERIFIED |
+| Canonical Market membership | `MarketVendorMembership(marketId, vendorId, status, preorderDefault)`; distinct from directory entry and application status. | VERIFIED |
+| Canonical occurrence participation | `OccurrenceParticipation(occurrenceId, membershipId, status, preorderOverride, pickupInstructions)`. | VERIFIED |
+| External/platform operations approval | `MarketOccurrenceApproval(occurrenceId, directoryId, submissionId?, participationId?, requirements, checkIn, attendance)`. This can exist without canonical participation. | VERIFIED |
+| Booth assignment and rental allocations | `MarketOccurrenceSpaceAssignment` points to directory and approval, with business/space snapshots; `MarketRentalAllocation` points to assignment and rental option. | VERIFIED |
+| Booth invoicing | `MarketInvoice` points to assignment/directory/occurrence and stores recipient/line snapshots; `MarketPayment` records manual settlement and actor. | VERIFIED |
+| Product approval | `MarketListing(membershipId, variantId, status)`. | VERIFIED |
+| Occurrence commerce | `OccurrenceOffering(participationId, listingId, variantId, enabled, preorderEnabled, effective window, cap, provenance)`. | VERIFIED |
+| Product publication | Native Product/Variant channel associations, Market prices, and asset/stock-location dependencies controlled by `CatalogPublishingService`. | VERIFIED |
+| Change history | `MarketOperationsAudit` for operations commands; `AuditRecord`/`OutboxRecord` for identity/domain/commerce changes. | VERIFIED |
+
+Sources: [Native User][b-native-user] [Native Customer][b-native-customer] [Native Administrator][b-native-admin] [Identity entities][b-identity-entities] [Market entities][b-market-entities] [Operations entities][b-ops-entities] [Publication][b-publication].
+
+**VERIFIED:** Many operations relationships are scalar IDs in entity classes, with database constraints defined in the migration. The migration uses restrictive Market foreign keys and composite `(id, marketId)` foreign keys for template, directory, approval, assignment, rental, and invoice relationships. `linkedVendorId` is a restrictive FK to global `platform_vendor`; kind/link consistency is checked. There is no uniqueness constraint on `(marketId, linkedVendorId)`. [Migration][b-migration]
+
+**VERIFIED:** Canonical uniqueness is stronger: one Market membership per `(marketId, vendorId)`, one participation per `(occurrenceId, membershipId)`, one listing per membership/variant, one offering per participation/variant, and one operations approval per occurrence/directory. These constraints do not prevent several directory entries representing the same Vendor. [Market entities][b-market-entities] [Operations entities][b-ops-entities]
+
+**UNVERIFIED:** Whether these migrations, constraints, triggers, and optional plugins are active in a running database. Schema synchronization, deployment history, and live records were not checked.
+
+## 4. Actual Applied-Business-to-Vendor Linking Behavior
+
+### What the terms mean
+
+**VERIFIED:** There is no separate `AppliedBusiness` entity. Before acceptance, the applied business is the submission's `applicant` JSON snapshot and answers. After acceptance, it is represented operationally by a Market directory entry, referenced through `submission.directoryId`. It is Market-local, even when it later references a platform-global Vendor. [Submission/directory entities][b-ops-entities] [Acceptance][b-review]
+
+**VERIFIED:** An external vendor/business is `MarketVendorDirectoryEntry(kind = EXTERNAL, linkedVendorId = null)`. It is not a canonical Vendor. A manager may also add one directly, without an application, using `SAVE_DIRECTORY`. Its contact fields are local to that Market. [Directory UI][f-directory] [Directory command][b-directory]
+
+### Complete execution path
+
+1. **VERIFIED:** Application review provides a searchable platform Vendor selector. `Directory` provides a platform Vendor select for existing/new local directory entries. Both populate from operations `eligibleVendors`. Selection automatically sends `confirmLink: true`; there is no independent consent or ownership verification step. [Review][f-review] [Directory][f-directory] [Local search][f-search-select]
+2. **VERIFIED:** `OperationsRoutes.run()` calls `api.command()` and refreshes operations data. The API sends `marketOperationsCommand(input: { action, id, expectedRevision, data })`. [Route dispatcher][f-ops-run] [API transport][f-api-admin] [GraphQL operation][f-admin-document]
+3. **VERIFIED:** The resolver allows the operations permission group, then the service checks the exact action permission. `SAVE_DIRECTORY`, `REVIEW_APPLICATION`, and `ACCEPT_ASSIGN` require `ManageOwnMarketApplications`; the last also checks `ManageOwnMarketAssignments` before assigning. [Resolver][b-admin-resolver] [Permission map][b-ops-permission-map] [Review][b-review]
+4. **VERIFIED:** The service derives an active Market from `ctx.channelId`, verifies Admin API context, active principal, current channel-scoped permission grants, an active `marketAdmin` TenantMembership for that Market, and an Administrator record. Existing target rows are loaded by both ID and `marketId`, and revision conflicts fail. These are genuine backend tenant checks. [Market authorization][b-ops-market-auth] [Current grants/Market policy][b-policy-market]
+5. **VERIFIED:** For `SAVE_DIRECTORY`, supplied contact/notes are validated and stored. A nonempty link requires `confirmLink === true`. `linkVendor()` loads `Vendor` only by ID and `status = active`, rejects replacing an already established different link, then sets the two directory fields. The directory is saved. [Directory command][b-directory] [Link helper][b-link]
+6. **VERIFIED:** In acceptance, linking is performed only when creating a new directory entry. Selecting an existing directory entry ignores a simultaneously supplied `linkedVendorId`; its existing association is used. Approved dates call the separate approval helper. [Review acceptance][b-review]
+7. **VERIFIED:** At transaction completion, the service saves `MarketOperationsAudit` with the acting User ID, action, input target ID, and result. Directory-save results include the resulting link. Acceptance's result ordinarily identifies the submission/directory, but is not a dedicated before/after link record; `ACCEPT_ASSIGN` returns the assignment. [Audit][b-audit] [Command audit][b-command-audit]
+
+### Direct answers about writes, ownership, reversal, and duplicates
+
+| Question | Source-confirmed answer |
+| --- | --- |
+| Which entities change on standalone linking? | Existing/new directory row and operations audit. Existing row revision increases. The canonical Vendor does not change. |
+| Is this a platform-wide identity change? | No. It is a Market directory association to a global ID. It nevertheless changes which canonical Vendor's users can discover this local business's assignments. |
+| Does it create/change Market membership? | No. `linkVendor()` does not save `MarketVendorMembership` or `TenantMembership`. |
+| Can one Vendor be linked across Markets? | Yes. Several Market-local directory entries can reference the same canonical Vendor. There is no cross-Market uniqueness restriction. |
+| Can managers select arbitrary Vendors? | UI: up to 100 active Vendors, globally sourced, with name-only choices; application review searches that local list. API: any active Vendor ID, regardless of membership, ownership, or location. |
+| What prevents a wrong Vendor? | Existence/active status, valid numeric ID, a truthy link confirmation, and preventing replacement of a different existing link. Nothing verifies the selected business is the applicant. |
+| Is ownership or control verified? | No. The link path never calls `requireVendor` for the applicant or requires Vendor consent. |
+| Can it be undone through this feature? | No. Sending `null` or an empty selection skips link handling and leaves the old link intact. Supplying a different Vendor fails `DIRECTORY_LINK_ALREADY_ESTABLISHED`. No unlink/correction action was found. |
+| What happens to history? | Linking does not rewrite answers, applicant snapshots, assignment snapshots, invoice recipients/lines, or IDs. Future assignment reads resolve through the new directory link. Existing approvals are not reconciled. |
+| Are duplicate/conflicting links prevented? | A single directory entry cannot switch to a different Vendor. Multiple entries in the same Market can link to the same Vendor; different applications can be associated with the same existing directory without identity matching. No business deduplication or conflict-resolution workflow was found. |
+| Is the actor audited? | Yes, generic operations auditing exists and migration source makes that audit append-only. Dedicated consent evidence, correction reason, old/new identity fields, and claim history do not exist. |
+
+Sources: [Directory write][b-directory] [Link restrictions][b-link] [Approval][b-approve] [Assignment reads][b-vendor-assignments] [Audit][b-command-audit] [Migration][b-migration].
+
+## 5. Alaska/Texas Cross-Market Risk Analysis
+
+**VERIFIED:** Assume the manager has current Texas Market permissions/membership and the Alaska Vendor is active. A `SAVE_DIRECTORY` request naming that Vendor passes the link checks. If Alaska is outside the 100 returned choices, the current linking selector may not show it, but the backend still accepts its ID. Geographic constraints are absent; the canonical Vendor entity does not even contain a geographic eligibility field. [Eligible list][b-eligible] [Link][b-link] [Vendor entity][b-identity-entities]
+
+The outcomes below distinguish standalone linking from acceptance, operations approval, and commerce commands.
+
+| Possible consequence | Classification and trigger | Backend rule or limitation |
+| --- | --- | --- |
+| Linked to Texas Market | **VERIFIED: automatically happens on linking**, as a directory association. | Sets the Texas entry's `linkedVendorId`; no account ownership transfer. |
+| Approved canonical Market membership | **VERIFIED: requires an additional action.** | Linking/acceptance do not create it. Separately, `setMarketVendorMembership` lets a Texas manager with `ManageOwnMarketMemberships` create an approved relationship to any valid canonical Vendor, without Vendor confirmation. |
+| Appears in Market's private directory | **VERIFIED: automatically associated on linking.** | The directory row was already present or is saved now. Its displayed business/contact remains the external applicant's data; the link does not replace it with Alaska's profile. |
+| Appears in canonical Market membership list | **VERIFIED: requires the separate membership action.** | That list reads `MarketVendorMembership`, not directory linking. |
+| Appears on public Market website | **VERIFIED: requires additional public projection state.** | A published booth map shows assignment `businessSnapshot`, not canonical Vendor identity. Catalog Vendor filters/names come from eligible published offerings. No public directory endpoint driven simply by `linkedVendorId` was found. |
+| Canonical attendance for a specific occurrence | **VERIFIED: blocked without approved membership for a new linked approval; requires approval/participation action.** | Application acceptance or `APPROVE_OCCURRENCE` creates missing participation as `confirmed` if approved membership already exists. Linking itself does not. Separate participation API can configure attendance. |
+| Operational attendance/check-in recorded | **VERIFIED: requires additional actions, or can already exist before linking.** | These fields live on directory-based approval rows and can survive a later link; `DAY_UPDATE` changes them separately. They are distinct from canonical `OccurrenceParticipation`. |
+| Assigned to a booth | **VERIFIED: requires assignment or an existing assignment; a later link can expose an existing booth immediately.** | New assignments require an approval and compatible plan/space/resources. But an external approval linked later still has null participation, so the conditional platform membership check is skipped. |
+| Products published into Texas commerce Channel | **VERIFIED: requires additional Vendor-authorized publication; manager-only link is blocked from doing this.** | Publication calls `requireVendor(..., publication, member.vendorId)`, verifies owned variant, approved membership/listing, an offering, canonical source, and compatible channel/pricing. Linking never touches products or prices. |
+| Eligible for occurrence preorders | **VERIFIED: linking alone is explicitly insufficient.** | Requires active Market/Vendor, approved membership/listing, scheduled occurrence, confirmed participation, enabled product/variant, enabled/preorder-enabled offering, valid effective window and provenance. Public catalog/cart add native publication/pricing checks. Stock/capacity/checkout checks remain additional. |
+| Receives commerce orders | **VERIFIED: requires eligible published products and a customer's checkout.** | Cart validation resolves Vendor from protected product ownership, not directory link. A wrong link does not redirect existing orders, payment allocation, or product ownership. |
+| Receives booth/invoice information | **VERIFIED: automatically becomes accessible after linking when qualifying assignments already exist.** | `ownVendorBoothAssignments` searches all entries with the caller's canonical Vendor ID, without verifying Market membership or link consent. Returns scheduled, not-yet-ended assignments, space/rental data, public map/instructions, invoice IDs/status/currency/totals/paid totals. It does not return full application answers, contact details, or invoice recipient snapshots. |
+| Receives application/link notifications | **MISSING:** no link/submission/review notification integration found. | Operations write their audit table, not communications notification intents. Existing communications cover purchase/refund/operation facts and opted-in campaigns; source alone cannot establish configured delivery. |
+
+Sources: [Link][b-link] [Membership service][b-market-membership] [Membership API][b-market-mutations] [Approval][b-approve] [Assignment][b-assign] [Day update][b-day] [Public map][b-map] [Vendor summaries][b-vendor-assignments] [Publication][b-publication] [Offering validation][b-offering] [Eligibility][b-eligibility] [Public catalog][b-catalog] [Cart validation][b-order-line] [Communication consumer][b-communication].
+
+### Three distinct paths through the scenario
+
+- **VERIFIED: link first, no Texas membership, accept dates.** `SAVE_DIRECTORY` succeeds. A fresh occurrence approval fails `APPROVED_PLATFORM_MEMBERSHIP_REQUIRED`. Acceptance creating a linked entry and approving dates in one transaction rolls back completely if that membership check fails. Accepting no dates creates the linked directory/submission association without a membership check.
+- **VERIFIED: link first, approved Texas membership already exists.** Acceptance can create `confirmed` canonical participation for selected dates without a second Vendor-confirmation action. If participation already exists as `planned`, the helper leaves it planned; if cancelled, it fails. An existing planned participation can satisfy operations assignment's noncancelled check, but not commerce's confirmed-participation check.
+- **VERIFIED: accept/assign as external, then link.** Link succeeds without approved membership. Existing approvals retain null participation; re-approving the same directory/date returns the old row before the membership check. Existing/new operational assignments can remain available, and Alaska's authorized users can read qualifying booth/invoice summaries. No canonical attendance, product publication, or preorder offering is created by this link.
+
+Sources: [Transactional command][b-command] [Review][b-review] [Prior approval short-circuit][b-approve] [Assignment condition][b-assign] [Vendor projection][b-vendor-assignments].
+
+**UNVERIFIED:** Whether any live wrong links exist, whether the Alaska Vendor appears in the returned 100 choices, runtime permission grants, actual emails/orders, or database impact in a deployed environment. None was exercised.
+
+## 6. Authentication, Platform Accounts, and Vendor Ownership
+
+**VERIFIED:** Vendure `User` is the common authentication identity for Administrators and registered Customers. Accounts and Vendor businesses are separate concepts. Vendor `TenantMembership` points to a User; Market membership points to a Vendor, not an applicant account. [Native User][b-native-user] [Identity entities][b-identity-entities] [Market entities][b-market-entities]
+
+**VERIFIED:** Current Vendor membership assignment is a platform-authorized operation. `IdentityService.setMembership` requires platform Vendor-management authority, an existing Vendor, and a native Administrator for the target User; it writes owner/staff membership and audit/outbox facts. The membership alone is insufficient: Vendor APIs also need matching current channel-scoped permission grants. Owners have mutation authority; staff can read and use the CRM capability where granted. [Identity membership service][b-identity-membership] [Vendor authorization][b-policy-vendor]
+
+**VERIFIED:** One User can have memberships in several Vendors, and several Users can represent one Vendor. Uniqueness is on the principal/Vendor pair. The Admin app can select among the User's channels, and `requireVendor` resolves the Vendor from the selected commerce Channel and reloads active membership. [Membership model][b-identity-entities] [Policy][b-policy-vendor] [Admin channel selection][f-admin-session]
+
+**MISSING:** There is no Shop/application API that enumerates a signed-in applicant's authorized Vendors or verifies one for submission. Simply calling the current Admin-only policy from a public Shop resolver will reject the context. A purpose-built boundary is needed using the same authoritative memberships and User identity. Staff application authority needs an explicit policy decision. [Vendor policy][b-policy-vendor] [Public submission contract][b-shop-schema]
+
+**VERIFIED:** Native username/password Admin login and session restoration are implemented by `createAdminSession`; a customer login wrapper also exists. The custom customer account flow offers one-time email access and central account handoff, not OAuth/OIDC or a general business SSO flow. It hashes capabilities, uses expirations and consumption, binds Customer/User identities, checks active registered storefront origins, and binds handoff to browser correlation before establishing a native session. [Auth package][f-auth] [Customer tokens][b-customer-capabilities] [Customer claim/handoff][b-customer-claim] [Frontend account bridge][f-account-bridge]
+
+**VERIFIED:** The custom customer bridge rejects Administrator Users and Users whose roles are not solely the native customer role. Thus the existing Vendor-owner Admin session and the customer central-account flow are not interchangeable. They share the native identity infrastructure but currently enforce different account contexts. This is the main compatibility issue for one free applicant account later becoming a Vendor manager. [Customer boundary][b-customer-bound] [Membership assignment][b-identity-membership]
+
+**PARTIAL:** Existing public sign-in requests email access for an already present Customer/User. `requestLink` returns a generic accepted receipt when no eligible account exists; it does not register arbitrary new users. Guest checkout, separately, can create an unverified Customer/User and later issue an account-access link after purchase. This is a purchase account-claiming flow, not applicant onboarding. [Customer request][b-customer-request] [Checkout creation][b-customer-create] [Sign-in page][f-account-signin] [Purchase success][f-purchase-success]
+
+**PARTIAL:** Installed Vendure includes native `registerCustomerAccount` and verification resolvers. No public applicant/business signup route or registration UI was found. Market Shop middleware's operation allowlist does not include `registerCustomerAccount`, so the native mutation is not a drop-in Market applicant registration path. Do not equate dependency capability with implemented signup. [Native registration][b-native-register] [Market allowlist][b-market-roots] [Middleware][b-shop-context]
+
+**UNVERIFIED:** Whether the optional customer-account bridge and email delivery are enabled and usable locally or deployed. Source composition conditions the extension on account configuration and requires native/paid commerce and purchase history infrastructure. No secret/config values or transport were accessed. [Plugin composition][b-commerce-plugin]
+
+## 7. Existing Application Autofill and Document Capabilities
+
+| Question | Finding |
+| --- | --- |
+| Stable field identifiers? | **VERIFIED:** answers are keyed by `Question.id`; system defaults use semantic names and custom UI questions use UUIDs. Cloning preserves IDs. The server allows IDs to be changed in a draft, so immutable identity across all future versions is not guaranteed. |
+| Standard fields mappable? | **PARTIAL:** semantic names provide a mapping mechanism. Customer profile supplies first/last name, verified email and phone. Vendor supplies business name, but canonical business contact, description/category, URLs, booth preferences, and document profile fields are not represented by the inspected Vendor identity entity. |
+| Custom questions coexist? | **VERIFIED:** custom questions with no semantic binding are stored beside system questions and render from the same definition. |
+| Existing application autofill? | **MISSING:** application starts with `{}` and never queries account/Vendor profile or authorized Vendor selection. Checkout uses profile/contact prefilling, which is a separate flow. |
+| Durable historical answers? | **VERIFIED:** submission stores answer and definition snapshots, an extracted applicant projection, requirements, requested dates and rental snapshots. There is no dynamic profile lookup when displaying the application. |
+| Profile changes rewrite history? | **VERIFIED:** current linking/profile paths do not rewrite submissions. Migration source rejects changes to answers, definition, applicant, rental requests, requested dates, version and Market. Requirements are stored but are not included in that trigger's immutable-field list. |
+| Files linked to applications/accounts/Vendors/Markets? | **MISSING:** no upload question, application document field, business-document entity, account document library, or secure application-document reuse path was found. Generic catalog assets and asset-server infrastructure are unrelated capabilities. |
+| Current profile vs submitted snapshot? | **PARTIAL:** historical snapshot storage exists; application identity/profile provenance and a current business profile/autofill API do not. Directory contact can be edited separately from the submission snapshot. |
+
+Sources: [Question model/defaults][b-question-model] [System semantics][b-system-fields] [Definition validator][b-definition] [Custom question IDs][f-builder-custom] [Public application state][f-public-application] [Customer profile][b-customer-profile] [Vendor fields][b-identity-entities] [Submission entity][b-ops-entities] [Snapshot writes][b-submit-write] [Immutable submission trigger][b-immutable-submission] [Directory edits][b-directory] [Catalog assets][b-publication].
+
+**RECOMMENDATION:** Autofill should be a one-time copy into editable answer state based on semantic mappings, not a live relationship replacing answers. The server must derive principal from the session, enumerate only currently authorized Vendors, and recheck the chosen Vendor at submission. An authenticated account with no Vendor should receive contact-only autofill and remain distinguishable from an anonymous accountless applicant.
+
+**RECOMMENDATION:** Persist principal/Vendor authorization provenance separately from the submitted answer snapshot. Store the final applicant-confirmed answers, chosen Vendor ID where authorized, submission timestamp, and any reused document version references. Do not trust client-supplied Vendor IDs, email matches, prior channel lists, or old sessions after membership revocation.
+
+**RECOMMENDATION:** Scope draft storage by Market/form version, principal, and chosen Vendor. Clear/switch prefills when identity changes. Return an allowlisted profile projection rather than global Vendor search results or arbitrary entity JSON. Preserve independent custom answers and make expired/changed forms explicit.
+
+**RECOMMENDATION:** Private reusable business documents need a document ownership/version model attached to the existing User and/or authorized Vendor, explicit per-application sharing, server-authorized access, protected file delivery, retention rules, and historical version references. A catalog Asset or a URL answer does not establish permission to view a business document. No document feature should be described as working today.
+
+## 8. Existing Post-Submission Experience and Signup Infrastructure
+
+**VERIFIED:** Application success is only an in-memory confirmation: `Application submitted` and text explaining Market review and no payment. No application reference, account invitation, account signup placeholder, tracking dashboard, email receipt, or claim capability is returned. Refreshing resets the component and its idempotency key; there is no saved progress across login or reload. [Public component][f-public-application] [Submission response][b-submit-write]
+
+**PARTIAL:** Post-purchase `PurchaseSuccess` already shows confirmed success independently of an optional email account-access request, including an unavailable-email state that does not revoke order success. This interaction pattern is reusable, but it works on orders and Customer accounts. It cannot securely claim a submitted application as currently implemented. [Purchase component][f-purchase-success] [Customer capabilities][b-customer-capabilities]
+
+**MISSING:** The proposed `Claim My Free Account` / `Maybe Later` application invitation and clearly identified placeholder screen. The existing `/auth/claim` page is a real customer order-access capability redemption page, not the proposed placeholder. [Existing claim page][f-account-claim]
+
+**MISSING:** Secure association of a preexisting anonymous application with a newly registered account. Submission contains no claimant identity, single-use claim secret, expiry, verified invitation destination, or claim audit. Knowing a business name/email or finding an existing Customer does not prove entitlement to its application history. [Submission entity][b-ops-entities] [Public contract][b-shop-schema]
+
+**PARTIAL:** Billing/entitlements can support no-charge tenant subscriptions. The code already has plans, immutable published versions, feature rules, access policies, usage metrics/buckets, overrides, and `INTERNAL_NO_CHARGE` subscriptions with explicit internal assignment/transition commands. It is unnecessary to create a second billing engine. [Billing entities][b-billing-entities] [Internal subscriptions][b-free-subscription] [Entitlement evaluation][b-entitlement-rule]
+
+**MISSING:** A verified free applicant plan and self-service enrollment workflow. Billing account subjects currently contain exactly one Vendor or Market ID. There is no User/Customer applicant subject, and no link from application submission to billing. Assigning a tenant no-charge plan does not solve account-only onboarding. Actual stored plan offerings are **UNVERIFIED** without database access. [Entitlement subject][b-entitlement-subject] [Billing subject authorization][b-billing-authority] [Billing entities][b-billing-entities]
+
+**RECOMMENDATION:** Reuse Vendure User identity and existing plan/rule concepts. Decide whether base applicant features are guaranteed free account capabilities or whether the billing subject model should extend to the existing User for account-scoped entitlements. Do not create a canonical Vendor, Seller, or Channel solely to fit current billing subject requirements. The existing Vendor provisioning command creates commerce identity, so it is not a harmless account-registration helper. [Vendor provisioning][b-vendor-provisioning]
+
+**PARTIAL:** Communications has consent/subscription, notification intent, campaign, batching, delivery and recovery infrastructure. Its transactional consumer supports commerce facts, not application submission/review/link facts. Application updates, manager requests for information, and reusable document notifications need explicit domain events, recipient ownership, templates, and policy. Runtime notification delivery remains **UNVERIFIED**. [Communication facts][b-communication]
+
+## 9. Current Architecture vs Proposed Architecture (comparison table)
+
+| Proposed capability | Current source | Status | Minimum future change |
+| --- | --- | --- | --- |
+| Mandatory account Yes/No question, permanently first | Four required system identity fields; no account semantic or immutable ordering | MISSING | Add system question identity/type/visibility/position invariants in server and builder; render it before manager sections. |
+| Recognize authenticated applicant | Cookies/native sessions exist; application ignores identity | PARTIAL | Applicant bootstrap returning verified principal context and distinct anonymous/account-only/Vendor-authorized states. |
+| Login and return to form | Customer and Admin login exist; callback returns `/account` | PARTIAL | Reviewed login boundary, allowlisted return path, draft restoration, and account-context compatibility. |
+| Authorized Vendor choice | Multi-Vendor Admin memberships/channel selector exist | PARTIAL | Server-issued applicant Vendor list and submission-time authorization check using existing memberships. |
+| Profile autofill | Semantic fields and Customer contact projection exist | PARTIAL | Allowlisted Vendor/contact profile data and semantic copy-to-answer mappings. |
+| No-account submission | Public submission directly saves application snapshots | VERIFIED | Preserve it and record account-choice/provenance explicitly. |
+| No silent canonical Vendor creation | Public submission does not provision Vendor | VERIFIED | Maintain that invariant during signup and claiming. |
+| Success before optional free invitation | Success confirmation exists; invitation absent | PARTIAL | Render invitation after committed success; placeholder destination until signup is authorized and complete. |
+| Account-only applicant | Native Customer/User exists outside Vendor model | PARTIAL | Integrate that state into applications and future profile/free capabilities. |
+| Secure application history claiming | No claim relationship or capability | MISSING | Submission-bound, expiring, single-use claim workflow with proof and audit. |
+| Market-local external directory | Existing directory entity supports external or canonical reference | VERIFIED | Keep entity and Market scope. |
+| Vendor-confirmed canonical linking | Manager can choose any active Vendor; confirmation is client Boolean | MISSING | Vendor-confirmed link request or explicitly privileged audited correction. |
+| Linking alone does not create membership/commerce | Link only saves directory association/audit | VERIFIED | Preserve; control resulting assignment-data access and reconcile existing approval state. |
+| Application approval distinct from participation | Separate entities, but acceptance invokes approval/participation helper | PARTIAL | Explicit policy/UI boundary between application decision and date approval/participation. |
+| Historical records remain intact | Snapshots and restrictive/immutable migration rules exist | VERIFIED | Add provenance/corrections without rewriting snapshots; carefully migrate links. |
+| Private reusable documents | Generic assets only | MISSING | User/Vendor-owned versioned documents with application sharing and private access. |
+| Free applicant tier in existing billing | No-charge tenant plans exist; User subject absent | PARTIAL | Define free feature policy and account-scoped enrollment/entitlements without duplicate accounts. |
+| Application notifications/history dashboard | Existing commerce account history/communications only | MISSING | Ownership-scoped application reads and explicit application notification events. |
+
+The evidence for these rows is detailed in sections 2 through 8. This table describes source compatibility, not live availability or an implementation commitment.
+
+## 10. Security/Data Integrity Risks, Ranked by Severity
+
+Severity reflects the exposed behavior and plausible impact in source. It does not assert that exploitation or an incorrect live record has occurred.
+
+| Rank | Severity | Finding and evidence | Effect and future response |
+| --- | --- | --- | --- |
+| R1 | High | **VERIFIED:** `linkVendor` checks only active existence and prior row link. `ownVendorBoothAssignments` treats this association as authority to return operations summaries. [Link][b-link] [Read projection][b-vendor-assignments] | An authorized Market manager can associate an unrelated Vendor and disclose upcoming booth/rental/invoice summaries to that Vendor's users. Require Vendor-confirmed association or privileged correction; restrict access until identity proof is complete. Canonical Vendor ownership itself is not transferred. |
+| R2 | High | **VERIFIED:** Late linking does not reconcile external approvals. Existing approvals short-circuit `approve`, and assignment skips canonical checks when participation is null. [Directory save][b-directory] [Approval][b-approve] [Assignment][b-assign] | External operations authority can become associated with a platform Vendor without approved membership/participation. Define explicit conversion rules, preserve history, validate every new assignment, and avoid turning historical external approval into implied canonical authority. Commerce eligibility remains separately protected. |
+| R3 | Medium | **VERIFIED:** Separate membership management lets Market managers approve any valid Vendor without Vendor confirmation. [Membership command][b-market-membership] [Global membership search][b-global-membership-search] | Additional action can establish a wrong approved canonical relationship, enabling later manager attendance/offering configuration subject to their permissions. Decide whether approval needs a Vendor request/confirmation. Product request/publication still requires Vendor authority. |
+| R4 | Medium | **VERIFIED:** No unlink/relink workflow; clearing the selector sends null, which is ignored; another ID fails. [UI][f-directory] [Backend][b-directory] [Link][b-link] | A mistaken association cannot be corrected through the existing feature. Add audited, history-preserving privileged correction and appropriate Vendor confirmation. |
+| R5 | Medium | **VERIFIED:** No `(marketId, linkedVendorId)` uniqueness or identity match for directory reuse. [Migration][b-migration] [Acceptance][b-review] | Several unrelated entries may reference one Vendor; approvals are unique per directory, so duplicate business identities can yield separate operational assignments for one canonical participant. Define intentional multi-location/booth policy before deduplication. |
+| R6 | Medium | **VERIFIED:** Ordinary application acceptance uses `ManageOwnMarketApplications` while creating occurrence approvals and potentially canonical participation; additional assignment permission is checked only for `ACCEPT_ASSIGN`. [Permission map][b-ops-permission-map] [Review][b-review] [Approval][b-approve] | Review authority implicitly includes attendance effects, unlike the separate occurrence/assignment APIs. Decide the intended permission boundary and enforce it consistently. |
+| R7 | Medium, conditional | **VERIFIED code / UNVERIFIED runtime:** rate limit uses resolver `req.ip` or socket address, while storefront server forwarding includes cookies/bridge headers but no original applicant network identity. [Resolver][b-shop-resolver] [Rate count][b-submit] [Forwarding][f-shop-transport] | In an SSR proxy topology many applicants can share the storefront server's ten-per-hour bucket. Verify trusted network attribution and proxy configuration before selecting a durable anti-abuse strategy. |
+| R8 | Low | **VERIFIED:** advertised-form CTA exists in the homepage component that current backend routing does not select. [Routing][f-home] [Old CTA][f-old-market-home] [Current home][f-market-home] | Published advertised applications may be undiscoverable from the main Market homepage even though `/apply` works. Connect the intended CTA to the actual backend homepage in a later implementation. |
+| R9 | Low | **VERIFIED:** generic command audit stores result objects, while public submission audit has no submission ID in detail. [Audit actor][b-audit] [Command detail][b-command-audit] [Submission audit][b-submit-write] | Audit exists, but claim/link evidence lacks dedicated old/new IDs, purpose, consent, and precise public submission linkage. Generic results also duplicate applicant/contact/answer data for some actions. Add minimal structured identity evidence and review audit PII retention/access. |
+
+**VERIFIED protections worth retaining:** authoritative channel/Market access, active tenant membership reloads, current permission reloads, scoped row lookup, transaction/revision controls, active Vendor check, restrictive composite FKs, submission/invoice snapshots, and layered commerce ownership/publication/preorder checks. These reduce cross-Market CRUD and commerce risks, but do not prove a directory identity link is correct.
+
+**RECOMMENDATION, not a current implemented vulnerability:** Future account claiming must never attach applications by unverified email alone. Current application code does not implement such automatic claiming; it would become a risk only if a future workflow introduced it.
+
+## 11. Recommended Future Implementation Sequence
+
+All steps below are **RECOMMENDATION** and require a separate implementation task.
+
+1. **Finalize authority and identity rules.** Define who may apply for a Vendor, account-only behavior, directory linking consent, privileged correction, and whether app acceptance also approves dates. Keep User identity, Vendor ownership membership, Market membership, and participation separate.
+2. **Secure existing linking before expanding it.** Replace arbitrary manager assertion with a Vendor-confirmed link request or reviewed privileged correction. Audit actor, old/new reference, reason, proof/consent, and resulting access. Correct the late-link/null-participation gap and define duplicate-entry policy. Preserve directory IDs and historical application/assignment/invoice snapshots.
+3. **Add the protected account question and an explicit applicant state model.** Enforce question identity, Yes/No type, visibility, required status, and first position on the server and in the builder. Define handling for existing published versions; do not mutate old submission snapshots. Reuse the renderer or a protected preamble rather than allowing a manager-editable question to impersonate account proof.
+4. **Expose applicant identity and authorized Vendors using existing User/memberships.** Resolve authentication server-side, support authenticated accounts with no Vendor, enumerate only authorized businesses, and recheck authority at submit. Address the current customer-only bridge versus Administrator membership boundary deliberately. Do not broaden customer handoff to privileged accounts without corresponding policy changes.
+5. **Extend canonical profile projections and autofill.** Reuse semantic fields, allowlist data, copy into applicant-confirmed answers, and add identity/profile provenance beside snapshots. Support contact-only prefilling and custom questions. Preserve progress with a versioned, scoped draft and validated login return destination.
+6. **Extend public submission without weakening anonymous acceptance.** Accept both verified account-only/Vendor-authorized provenance and the accountless path. Do not infer authority from the Yes answer or a client Vendor ID. Do not create a canonical Vendor on submission.
+7. **Add the post-success invitation and placeholder only when authorized.** Show committed application success first, then the optional free-account invitation and `Maybe Later`. The destination must explicitly say onboarding is forthcoming. Preserve success even when login/email/signup is unavailable. This audit does not create that screen.
+8. **Implement secure claiming and application history later.** Use a submission-bound, high-entropy, hashed, expiring, single-use capability with an explicit proof/delivery policy; bind it to the verified principal during redemption and audit the transition. Reuse existing capability patterns, not only an email join. Application claim must not automatically establish Vendor ownership or commerce rights.
+9. **Add free account policy and reusable documents.** Reuse existing plan/rule machinery where appropriate, extend subject support only if account-scoped entitlements require it, and enroll without payment/provider calls for no-charge capabilities. Add private versioned document ownership/sharing rather than exposing generic catalog assets.
+10. **Add application-specific notifications and validation coverage.** Introduce committed application events, consent/transactional policy, history reads, and templates. When implementing, test cross-Market IDs, wrong Vendor, revoked ownership, staff authority, multiple Vendors, late links, correction, duplicates, login return/draft isolation, claims/replay, snapshots, and the full commerce gate chain. Such tests were not run in this audit.
+
+## 12. Outstanding Product Decisions
+
+- **Account meaning:** Does “have an account” include customer accounts, Vendor Admin accounts, or both? How should an existing customer become an authorized Vendor representative without duplicate identity or broken customer account handoff?
+- **Vendor application authority:** Owners only, staff with a capability, or both? Can one account-only applicant save business details before creating a canonical Vendor?
+- **Account choice semantics:** Can a signed-in applicant choose No and submit without association? What should happen when an account has no Vendor or loses Vendor permission while a form is open?
+- **Canonical business profile:** Which fields belong to the User contact profile versus Vendor profile, and which may managers override locally? Should application contact default to the actual applicant rather than a generic business contact?
+- **Directory uniqueness:** One entry per Vendor per Market, or multiple entries for brands/locations? How should duplicate accepted applications and approved booths be represented?
+- **Link confirmation/correction:** Which Vendor users may confirm, what evidence is required, and which platform role may make an audited correction? What access should pending/unconfirmed links grant?
+- **Attendance conversion:** After an external entry is linked, do future approvals require a new canonical approval? Historical external attendance should remain historical evidence, not be silently rewritten as Vendor participation.
+- **Application decision scope:** Does “Accepted” mean accepted business, approved selected dates, or both? Is accepting zero dates permitted? Who may approve canonical Market membership and occurrence participation?
+- **Status lifecycle:** How do applicants provide requested information, withdraw, appeal, or resubmit? Existing `NEEDS_INFO` is only a stored status, and declined/withdrawn submissions cannot reopen through review.
+- **Draft preservation:** Browser-only draft versus server draft; retention duration; restoration after login; handling retired/changed versions and identity switches.
+- **Claims:** Which verified channel or proof binds a submitted application to an account? How are shared business inboxes, mistaken email addresses, transferred ownership, and later claims handled?
+- **Free plan scope:** Guaranteed account features or account-scoped billing subject? Which quotas apply to applications, documents, and optional communications, and what upgrade path preserves identity/history?
+- **Documents:** File types/sizes, ownership, sharing with managers, expiration/reminders, private delivery, historical copies/version references, retention/deletion, and revocation behavior.
+- **Notifications:** Applicant transactional updates versus customer marketing subscriptions, intended recipients, delivery readiness, and manager requests for information.
+- **Privacy/discovery:** Is a private form merely an unlisted UUID link, or should it require an invitation? Should backend Market homepages advertise published applications?
+
+These are **RECOMMENDATION/product decisions**, not claims that the corresponding workflows exist.
+
+## 13. Exact Relevant Files, Services, APIs, and Database Entities
+
+The paths below are absolute. Line ranges describe inspected code; links target a single starting line.
+
+| File | Exact implementation locations |
+| --- | --- |
+| [E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/OperationsRoutes.tsx][f-ops-routes] | Lines 46-74 reads/merges data; 103-115 command dispatch; 154-180 applications/directory permissions and rendering. |
+| [E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/Applications.tsx][f-applications] | Lines 27-76 creation/builder; 132-184 review dialog; 203-243 review command payload; 274-335 answers/directory/Vendor selectors; 341-440 review/assignment controls. |
+| [E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/ApplicationBuilder.tsx][f-builder] | Lines 14-31 type/protection definitions; 46-104 state/moves/save; 133-145 clone; 157-243 sections; 274-444 question controls; 475-497 custom IDs; 531-602 dates/rentals/publication. |
+| [E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/Directory.tsx][f-directory] | Lines 40-62 local business list; 77-95 `SAVE_DIRECTORY`/confirmation; 136-158 platform Vendor select. |
+| [E:/coding/farmers-market-platform-web/apps/admin/src/market/presentation.tsx][f-search-select] | Lines 205-231 searchable select filters supplied labels locally. |
+| [E:/coding/farmers-market-platform-web/apps/admin/src/market/vendors.tsx][f-membership-ui] | Lines 210-298 global eligible Vendor search and separate initial membership status command; 375-405 subsequent membership changes. |
+| [E:/coding/farmers-market-platform-web/apps/admin/src/vendor/booths.tsx][f-vendor-booths] | Lines 4-47 Vendor-own upcoming booth/rental/invoice/map display. |
+| [E:/coding/farmers-market-platform-web/apps/admin/src/vendor/service.ts][f-vendor-service] | Lines 138 onward connects booth assignment projection to operations API. |
+| [E:/coding/farmers-market-platform-web/apps/admin/src/AdminApp.tsx][f-admin-session] | Lines 143-164 login/session refresh; 234-248 and 275-298 multi-channel selection. |
+| [E:/coding/farmers-market-platform-web/packages/auth/src/index.ts][f-auth] | Lines 22-61 Admin session/login/logout; 63-85 customer session wrapper. |
+| [E:/coding/farmers-market-platform-web/packages/api/src/market-operations.ts][f-api-admin] | Lines 389-424 Admin operations factory; 427-463 public application/map/submission factory. |
+| [E:/coding/farmers-market-platform-web/packages/api/src/market.ts][f-membership-api] | Lines 72-80 eligible Vendor query; 198-207 separate membership mutation. |
+| [E:/coding/farmers-market-platform-web/packages/api/operations/market-operations.graphql][f-admin-document] | Lines 1-12 `OwnMarketOperations`, `MarketOperationsCommand`, `OwnVendorBoothAssignments`. |
+| [E:/coding/farmers-market-platform-web/packages/api/operations/public-market-operations.graphql][f-shop-document] | Lines 1-9 `PublicMarketApplication`, `PublicMarketOccurrenceMap`, `SubmitMarketApplication`. |
+| [E:/coding/farmers-market-platform-web/packages/ui/src/ApplicationFields.tsx][f-fields] | Lines 15-60 visibility/read-only projection; 73-206 editable controls/required checks. |
+| [E:/coding/farmers-market-platform-web/apps/storefront/src/components/MarketApplication.tsx][f-public-application] | Lines 21-44 empty state and success; 51-83 submission; 91-141 questions/dates/rentals. |
+| [E:/coding/farmers-market-platform-web/apps/storefront/src/pages/apply/[...applicationSlug].astro][f-apply] | Lines 9-15 application fetch/errors; 19-29 public renderer. |
+| [E:/coding/farmers-market-platform-web/apps/storefront/src/pages/api/market-application.ts][f-submit-route] | Lines 11-55 storefront/origin/body validation and Shop submission. |
+| [E:/coding/farmers-market-platform-web/apps/storefront/src/lib/shop.ts][f-shop-transport] | Lines 11-56 backend/cookie/bridge transport; 92-97 public Market operations context. |
+| [E:/coding/farmers-market-platform-web/apps/storefront/src/pages/index.astro][f-home] | Lines 21-27 Market occurrence fetch; 60-70 selects actual backend homepage. |
+| [E:/coding/farmers-market-platform-web/apps/storefront/src/components/MarketHome.astro][f-old-market-home] | Lines 10-15 advertised-form query; 33-35 Apply button. |
+| [E:/coding/farmers-market-platform-web/apps/storefront/src/components/MarketPublicHome.astro][f-market-home] | Lines 16-72 current backend homepage; occurrence browsing without application CTA. |
+| [E:/coding/farmers-market-platform-web/apps/storefront/src/lib/account.ts][f-account-bridge] | Lines 29-47 bridge request; 49-72 central cookie/correlation setup. |
+| [E:/coding/farmers-market-platform-web/apps/storefront/src/pages/account/sign-in.astro][f-account-signin] | Lines 15-38 central handoff; 64-90 email account-link request. |
+| [E:/coding/farmers-market-platform-web/apps/storefront/src/pages/auth/callback.ts][f-account-callback] | Lines 8-28 correlation-bound handoff and fixed `/account` return. |
+| [E:/coding/farmers-market-platform-web/apps/storefront/src/pages/auth/claim.astro][f-account-claim] | Lines 4-25 real existing customer account capability redemption page. |
+| [E:/coding/farmers-market-platform-web/apps/storefront/src/components/PurchaseSuccess.tsx][f-purchase-success] | Lines 16-55 confirmed purchase before optional account email request. |
+| [E:/coding/farmers-market-platform/src/plugins/market-operations/api.ts][b-admin-resolver] | Lines 73-101 Admin/Shop schema roots; 105-126 Admin resolvers; 129-177 public application/map/submission resolvers. |
+| [E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts][b-command] | Lines 57-90 permissions; 122-161 Market/row authorization; 163-176 audit; 210-229 globally sourced selector; 404-558 template lifecycle; 560-654 review/accept; 656-687 directory write; 971-991 occurrence approval; 1106-1121 map publication; 1238-1269 day updates; 1286-1306 audit/link; 1307-1360 approval bridge; 1398-1551 assignment/rentals; 1677-1711 invoice snapshot; 1714-1747 public map; 1749-1814 public application; 1816-1935 submit; 1946-1998 Vendor-own assignments. |
+| [E:/coding/farmers-market-platform/src/plugins/market-operations/model.ts][b-question-model] | Lines 3-35 question/definition schema; 114-164 applicant/system defaults; 201-240 definition invariants; 242-305 answer validation; 307-330 booth requirements. |
+| [E:/coding/farmers-market-platform/src/plugins/market-operations/entities.ts][b-ops-entities] | Lines 14-70 template/version/directory/submission; 112-148 approvals/assignments; 149-196 rental/invoice/payment/audit. |
+| [E:/coding/farmers-market-platform/src/plugins/market-operations/permissions.ts][b-ops-permissions] | Lines 2-37 application/layout/assignment/billing/day permission definitions. |
+| [E:/coding/farmers-market-platform/src/plugins/market-operations/market-operations.plugin.ts][b-ops-plugin] | Lines 13-34 entity/service/resolver/permission registration. |
+| [E:/coding/farmers-market-platform/src/migrations/1791400000000-MarketOperationsPhase14.ts][b-migration] | Lines 8-27 tables/constraints; 33-96 composite relationships; 99-111 indexes; 114-140 version/invoice/audit/submission immutability. This file was read, not executed. |
+| [E:/coding/farmers-market-platform/src/plugins/platform-identity/entities.ts][b-identity-entities] | Lines 10-27 Vendor; 29-54 TenantMembership; 56-78 Storefront; 119-137 canonical audit. |
+| [E:/coding/farmers-market-platform/src/plugins/platform-identity/tenant-access-policy.ts][b-policy-market] | Lines 18-26 authoritative grants; 38-47 Market authority; 50-69 Vendor channel/membership/role authority. |
+| [E:/coding/farmers-market-platform/src/plugins/platform-identity/identity.service.ts][b-identity-membership] | Lines 33-58 identity reads; 61-98 platform membership assignment/revocation/facts. |
+| [E:/coding/farmers-market-platform/src/plugins/platform-identity/vendor-provisioning.service.ts][b-vendor-provisioning] | Lines 25-76 platform-only canonical Vendor, Seller, Channel provisioning. |
+| [E:/coding/farmers-market-platform/src/plugins/platform-identity/api.ts][b-identity-api] | Lines 35-48 identity/membership/ownership API roots; 56-80 resolver authorization. |
+| [E:/coding/farmers-market-platform/src/plugins/platform-identity/shop-context.middleware.ts][b-shop-context] | Lines 15-52 active storefront and private customer graph boundary; 60-87 Market operation allowlist. |
+| [E:/coding/farmers-market-platform/src/plugins/farmers-market/entities/market.entities.ts][b-market-entities] | Lines 6-61 Market/occurrence; 63-96 membership/participation; 98-137 listing/offering. |
+| [E:/coding/farmers-market-platform/src/plugins/farmers-market/api/admin-api.ts][b-market-mutations] | Lines 187-200 separate membership, participation, listing and offering mutations. |
+| [E:/coding/farmers-market-platform/src/plugins/farmers-market/services/market-vendor-membership.service.ts][b-market-membership] | Lines 15-25 manager-authorized membership changes without Vendor confirmation. |
+| [E:/coding/farmers-market-platform/src/plugins/farmers-market/services/market-organizer-read.service.ts][b-global-membership-search] | Lines 58-67 global eligible membership Vendor search; excludes existing Market relationships, not unrelated geographic businesses. |
+| [E:/coding/farmers-market-platform/src/plugins/farmers-market/services/market-domain.service.ts][b-market-domain] | Lines 44-62 manager/Vendor authority, approved/future/version rules and domain facts. |
+| [E:/coding/farmers-market-platform/src/plugins/farmers-market/services/participation.service.ts][b-participation] | Lines 16-35 membership-authorized occurrence attendance changes. |
+| [E:/coding/farmers-market-platform/src/plugins/farmers-market/services/market-listing.service.ts][b-listing] | Lines 9-22 Vendor-only owned product request; 25-37 manager listing approval. |
+| [E:/coding/farmers-market-platform/src/plugins/farmers-market/services/occurrence-offering.service.ts][b-offering] | Lines 11-36 matching relationship/ownership/approval/window checks. |
+| [E:/coding/farmers-market-platform/src/plugins/farmers-market/services/offering-eligibility.service.ts][b-eligibility] | Lines 10-28 domain/time preorder gates. |
+| [E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/catalog-publishing.service.ts][b-publication] | Lines 73-111 Vendor-authorized publication and native channel/price/dependency writes. |
+| [E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/occurrence-catalog.service.ts][b-catalog] | Lines 32-87 publication/ownership/attendance/listing/window SQL projection and public Vendor labels. |
+| [E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/commerce/order-context.service.ts][b-order-line] | Lines 137-159 protected Vendor ownership, native publication/price, and offering checks for order lines. |
+| [E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/commerce/contracts.ts][b-market-roots] | Lines 8-11 allowlisted Market Shop account/commerce roots; registration is absent. |
+| [E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/customer-account/service.ts][b-customer-profile] | Lines 93-118 verified contact profile/customer-only identity; 145-230 checkout creation; 290-348 capability hashing/binding/consumption; 363-422 existing-customer email requests; 460-542 claim/central handoff/native session. |
+| [E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/customer-account/api.ts][b-customer-api] | Lines 83-98 profile/contact/purchase-link/handoff roots; 112-115 authenticated profile resolver. |
+| [E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/marketplace-commerce.plugin.ts][b-commerce-plugin] | Lines 69-86 conditional entities/schema/allowlist; 124-127 optional account flow requires native commerce, paid attribution, purchase history. |
+| [E:/coding/farmers-market-platform/src/plugins/platform-identity/entitlement-port.ts][b-entitlement-subject] | Lines 5-6 Vendor/Market entitlement subject and value types. |
+| [E:/coding/farmers-market-platform/src/plugins/billing-entitlements/entities.ts][b-billing-entities] | Lines 7-75 features/plans/rules/offers; 91-137 tenant billing account and subscription source. |
+| [E:/coding/farmers-market-platform/src/plugins/billing-entitlements/subscription.service.ts][b-free-subscription] | Lines 14-19 Vendor/Market billing accounts; 29-41 no-charge assignment; 51-61 explicit transition after subscription end. |
+| [E:/coding/farmers-market-platform/src/plugins/billing-entitlements/authority.service.ts][b-billing-authority] | Lines 11-13 subject validation; 18-45 current tenant/platform ownership and billing permissions. |
+| [E:/coding/farmers-market-platform/src/plugins/billing-entitlements/entitlement.service.ts][b-entitlement-rule] | Lines 16-27 plan/access/override evaluation and absent-subscription denial. |
+| [E:/coding/farmers-market-platform/src/plugins/communications/intent.service.ts][b-communication] | Lines 39-124 supported transactional commerce facts and intents; 248-279 consent-subscription campaigns. No application fact handler. |
+| [E:/coding/farmers-market-platform/node_modules/@vendure/core/dist/entity/user/user.entity.d.ts][b-native-user] | Lines 12-26 common User identity and sessions. Installed dependency inspected read-only. |
+| [E:/coding/farmers-market-platform/node_modules/@vendure/core/dist/entity/customer/customer.entity.d.ts][b-native-customer] | Lines 19-32 contact profile and optional User. |
+| [E:/coding/farmers-market-platform/node_modules/@vendure/core/dist/entity/administrator/administrator.entity.d.ts][b-native-admin] | Lines 15-22 Administrator profile and User. |
+| [E:/coding/farmers-market-platform/node_modules/@vendure/core/dist/api/resolvers/shop/shop-auth.resolver.js][b-native-register] | Lines 59-105 native registration/verification infrastructure, not applicant onboarding. |
+
+Relevant database tables: `user`, `administrator`, `customer`, `platform_vendor`, `platform_tenant_membership`, `platform_storefront`, `farmers_market`, `market_occurrence`, `market_application_template`, `market_application_template_version`, `market_application_submission`, `market_vendor_directory_entry`, `market_occurrence_approval`, `market_occurrence_space_assignment`, `market_rental_option`, `market_rental_allocation`, `market_invoice`, `market_payment`, `market_operations_audit`, `market_vendor_membership`, `occurrence_participation`, `market_listing`, `occurrence_offering`, native product/channel/price relationships, `platform_audit_record`, `platform_outbox_record`, SaaS plan/billing/subscription tables, and communication intent/subscription tables. These names are source evidence, not a live schema inventory.
+
+No commands are required to apply this report. Implementation, migration execution, tests, and deployment remain outside this audit.
+
+[f-ops-routes]: <E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/OperationsRoutes.tsx:46>
+[f-ops-run]: <E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/OperationsRoutes.tsx:103>
+[f-applications]: <E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/Applications.tsx:27>
+[f-review]: <E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/Applications.tsx:203>
+[f-builder]: <E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/ApplicationBuilder.tsx:30>
+[f-builder-controls]: <E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/ApplicationBuilder.tsx:274>
+[f-builder-custom]: <E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/ApplicationBuilder.tsx:475>
+[f-builder-publish]: <E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/ApplicationBuilder.tsx:531>
+[f-directory]: <E:/coding/farmers-market-platform-web/apps/admin/src/market/phase14/Directory.tsx:77>
+[f-search-select]: <E:/coding/farmers-market-platform-web/apps/admin/src/market/presentation.tsx:205>
+[f-membership-ui]: <E:/coding/farmers-market-platform-web/apps/admin/src/market/vendors.tsx:210>
+[f-vendor-booths]: <E:/coding/farmers-market-platform-web/apps/admin/src/vendor/booths.tsx:4>
+[f-vendor-service]: <E:/coding/farmers-market-platform-web/apps/admin/src/vendor/service.ts:138>
+[f-admin-session]: <E:/coding/farmers-market-platform-web/apps/admin/src/AdminApp.tsx:234>
+[f-auth]: <E:/coding/farmers-market-platform-web/packages/auth/src/index.ts:22>
+[f-api-admin]: <E:/coding/farmers-market-platform-web/packages/api/src/market-operations.ts:389>
+[f-api-public]: <E:/coding/farmers-market-platform-web/packages/api/src/market-operations.ts:427>
+[f-membership-api]: <E:/coding/farmers-market-platform-web/packages/api/src/market.ts:198>
+[f-admin-document]: <E:/coding/farmers-market-platform-web/packages/api/operations/market-operations.graphql:1>
+[f-shop-document]: <E:/coding/farmers-market-platform-web/packages/api/operations/public-market-operations.graphql:1>
+[f-fields]: <E:/coding/farmers-market-platform-web/packages/ui/src/ApplicationFields.tsx:15>
+[f-public-application]: <E:/coding/farmers-market-platform-web/apps/storefront/src/components/MarketApplication.tsx:21>
+[f-apply]: <E:/coding/farmers-market-platform-web/apps/storefront/src/pages/apply/[...applicationSlug].astro:9>
+[f-submit-route]: <E:/coding/farmers-market-platform-web/apps/storefront/src/pages/api/market-application.ts:11>
+[f-shop-transport]: <E:/coding/farmers-market-platform-web/apps/storefront/src/lib/shop.ts:11>
+[f-home]: <E:/coding/farmers-market-platform-web/apps/storefront/src/pages/index.astro:60>
+[f-old-market-home]: <E:/coding/farmers-market-platform-web/apps/storefront/src/components/MarketHome.astro:10>
+[f-market-home]: <E:/coding/farmers-market-platform-web/apps/storefront/src/components/MarketPublicHome.astro:16>
+[f-account-bridge]: <E:/coding/farmers-market-platform-web/apps/storefront/src/lib/account.ts:29>
+[f-account-signin]: <E:/coding/farmers-market-platform-web/apps/storefront/src/pages/account/sign-in.astro:15>
+[f-account-callback]: <E:/coding/farmers-market-platform-web/apps/storefront/src/pages/auth/callback.ts:8>
+[f-account-claim]: <E:/coding/farmers-market-platform-web/apps/storefront/src/pages/auth/claim.astro:4>
+[f-purchase-success]: <E:/coding/farmers-market-platform-web/apps/storefront/src/components/PurchaseSuccess.tsx:16>
+[b-admin-resolver]: <E:/coding/farmers-market-platform/src/plugins/market-operations/api.ts:105>
+[b-shop-resolver]: <E:/coding/farmers-market-platform/src/plugins/market-operations/api.ts:129>
+[b-shop-schema]: <E:/coding/farmers-market-platform/src/plugins/market-operations/api.ts:88>
+[b-ops-permission-map]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:57>
+[b-ops-market-auth]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:122>
+[b-audit]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:163>
+[b-eligible]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:225>
+[b-command]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:404>
+[b-app-commands]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:423>
+[b-review]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:560>
+[b-directory]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:656>
+[b-day]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:1238>
+[b-command-audit]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:1286>
+[b-link]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:1293>
+[b-approve]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:1307>
+[b-assign]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:1398>
+[b-assignment-rentals]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:1466>
+[b-invoice]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:1677>
+[b-map]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:1714>
+[b-public-app]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:1749>
+[b-submit]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:1816>
+[b-submit-write]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:1916>
+[b-vendor-assignments]: <E:/coding/farmers-market-platform/src/plugins/market-operations/service.ts:1946>
+[b-question-model]: <E:/coding/farmers-market-platform/src/plugins/market-operations/model.ts:3>
+[b-system-fields]: <E:/coding/farmers-market-platform/src/plugins/market-operations/model.ts:132>
+[b-definition]: <E:/coding/farmers-market-platform/src/plugins/market-operations/model.ts:201>
+[b-answers]: <E:/coding/farmers-market-platform/src/plugins/market-operations/model.ts:242>
+[b-ops-entities]: <E:/coding/farmers-market-platform/src/plugins/market-operations/entities.ts:14>
+[b-ops-permissions]: <E:/coding/farmers-market-platform/src/plugins/market-operations/permissions.ts:2>
+[b-ops-plugin]: <E:/coding/farmers-market-platform/src/plugins/market-operations/market-operations.plugin.ts:13>
+[b-migration]: <E:/coding/farmers-market-platform/src/migrations/1791400000000-MarketOperationsPhase14.ts:8>
+[b-immutable-submission]: <E:/coding/farmers-market-platform/src/migrations/1791400000000-MarketOperationsPhase14.ts:137>
+[b-identity-entities]: <E:/coding/farmers-market-platform/src/plugins/platform-identity/entities.ts:10>
+[b-policy-market]: <E:/coding/farmers-market-platform/src/plugins/platform-identity/tenant-access-policy.ts:18>
+[b-policy-vendor]: <E:/coding/farmers-market-platform/src/plugins/platform-identity/tenant-access-policy.ts:50>
+[b-identity-membership]: <E:/coding/farmers-market-platform/src/plugins/platform-identity/identity.service.ts:61>
+[b-vendor-provisioning]: <E:/coding/farmers-market-platform/src/plugins/platform-identity/vendor-provisioning.service.ts:25>
+[b-identity-api]: <E:/coding/farmers-market-platform/src/plugins/platform-identity/api.ts:35>
+[b-shop-context]: <E:/coding/farmers-market-platform/src/plugins/platform-identity/shop-context.middleware.ts:15>
+[b-market-entities]: <E:/coding/farmers-market-platform/src/plugins/farmers-market/entities/market.entities.ts:63>
+[b-market-mutations]: <E:/coding/farmers-market-platform/src/plugins/farmers-market/api/admin-api.ts:187>
+[b-market-membership]: <E:/coding/farmers-market-platform/src/plugins/farmers-market/services/market-vendor-membership.service.ts:15>
+[b-global-membership-search]: <E:/coding/farmers-market-platform/src/plugins/farmers-market/services/market-organizer-read.service.ts:58>
+[b-market-domain]: <E:/coding/farmers-market-platform/src/plugins/farmers-market/services/market-domain.service.ts:44>
+[b-participation]: <E:/coding/farmers-market-platform/src/plugins/farmers-market/services/participation.service.ts:16>
+[b-listing]: <E:/coding/farmers-market-platform/src/plugins/farmers-market/services/market-listing.service.ts:9>
+[b-offering]: <E:/coding/farmers-market-platform/src/plugins/farmers-market/services/occurrence-offering.service.ts:11>
+[b-eligibility]: <E:/coding/farmers-market-platform/src/plugins/farmers-market/services/offering-eligibility.service.ts:10>
+[b-publication]: <E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/catalog-publishing.service.ts:73>
+[b-catalog]: <E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/occurrence-catalog.service.ts:32>
+[b-order-line]: <E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/commerce/order-context.service.ts:137>
+[b-market-roots]: <E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/commerce/contracts.ts:8>
+[b-customer-profile]: <E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/customer-account/service.ts:93>
+[b-customer-create]: <E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/customer-account/service.ts:145>
+[b-customer-capabilities]: <E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/customer-account/service.ts:290>
+[b-customer-bound]: <E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/customer-account/service.ts:318>
+[b-customer-request]: <E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/customer-account/service.ts:363>
+[b-customer-claim]: <E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/customer-account/service.ts:460>
+[b-customer-api]: <E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/customer-account/api.ts:83>
+[b-commerce-plugin]: <E:/coding/farmers-market-platform/src/plugins/marketplace-commerce/marketplace-commerce.plugin.ts:124>
+[b-entitlement-subject]: <E:/coding/farmers-market-platform/src/plugins/platform-identity/entitlement-port.ts:5>
+[b-billing-entities]: <E:/coding/farmers-market-platform/src/plugins/billing-entitlements/entities.ts:91>
+[b-free-subscription]: <E:/coding/farmers-market-platform/src/plugins/billing-entitlements/subscription.service.ts:29>
+[b-billing-authority]: <E:/coding/farmers-market-platform/src/plugins/billing-entitlements/authority.service.ts:11>
+[b-entitlement-rule]: <E:/coding/farmers-market-platform/src/plugins/billing-entitlements/entitlement.service.ts:16>
+[b-communication]: <E:/coding/farmers-market-platform/src/plugins/communications/intent.service.ts:39>
+[b-native-user]: <E:/coding/farmers-market-platform/node_modules/@vendure/core/dist/entity/user/user.entity.d.ts:12>
+[b-native-customer]: <E:/coding/farmers-market-platform/node_modules/@vendure/core/dist/entity/customer/customer.entity.d.ts:19>
+[b-native-admin]: <E:/coding/farmers-market-platform/node_modules/@vendure/core/dist/entity/administrator/administrator.entity.d.ts:15>
+[b-native-register]: <E:/coding/farmers-market-platform/node_modules/@vendure/core/dist/api/resolvers/shop/shop-auth.resolver.js:59>

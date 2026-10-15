@@ -32,12 +32,19 @@ export const POST: APIRoute = async (context) => {
             'occurrenceIds',
             'rentals',
             'idempotencyKey',
+            'accountAnswer',
+            'vendorId',
           ].includes(k),
       )
     )
       throw new AppError('validation');
     if (
       typeof input.slug !== 'string' ||
+      !['YES', 'NO'].includes(String(input.accountAnswer)) ||
+      (input.vendorId !== undefined &&
+        input.vendorId !== null &&
+        (!Number.isSafeInteger(input.vendorId) ||
+          Number(input.vendorId) <= 0)) ||
       typeof input.versionId !== 'number' ||
       typeof input.idempotencyKey !== 'string' ||
       !input.answers ||

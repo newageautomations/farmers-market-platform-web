@@ -18,7 +18,11 @@ if (__FIXTURE_MODE__) {
   root.render(
     <StrictMode>
       <ErrorBoundary>
-        <AdminApp endpoint={__ADMIN_API_URL__} />
+        <AdminApp
+          endpoint={__ADMIN_API_URL__}
+          accountOrigin={__PLATFORM_ACCOUNT_ORIGIN__ || undefined}
+          customerOrigin={__CUSTOMER_STOREFRONT_ORIGIN__ || undefined}
+        />
       </ErrorBoundary>
     </StrictMode>,
   );

@@ -1,0 +1,450 @@
+[
+  {
+    "category": "BTN",
+    "theme": "base",
+    "width": 390,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 65)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "base",
+    "width": 600,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "base",
+    "width": 601,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "base",
+    "width": 767,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "base",
+    "width": 768,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "base",
+    "width": 1280,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "base",
+    "width": 1440,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "admin",
+    "width": 390,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "admin",
+    "width": 600,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "admin",
+    "width": 601,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 65)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "admin",
+    "width": 767,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "admin",
+    "width": 768,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "admin",
+    "width": 1280,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "admin",
+    "width": 1440,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "storefront",
+    "width": 390,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "storefront",
+    "width": 600,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "storefront",
+    "width": 601,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "storefront",
+    "width": 767,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "storefront",
+    "width": 768,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "storefront",
+    "width": 1280,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "storefront",
+    "width": 1440,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "customer",
+    "width": 390,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "customer",
+    "width": 600,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "customer",
+    "width": 601,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "customer",
+    "width": 767,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "customer",
+    "width": 768,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "customer",
+    "width": 1280,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  },
+  {
+    "category": "BTN",
+    "theme": "customer",
+    "width": 1440,
+    "style": {
+      "background": "rgb(35, 77, 66)",
+      "color": "rgb(255, 255, 255)",
+      "border": "5px",
+      "padding": "10.4px 18.4px",
+      "minimum": "44px"
+    },
+    "hover": {
+      "background": "rgb(35, 77, 66)",
+      "filter": "none"
+    }
+  }
+]

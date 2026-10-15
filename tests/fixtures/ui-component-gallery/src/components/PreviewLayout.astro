@@ -1,0 +1,29 @@
+---
+import '@market/ui/styles.css';
+import { platformTheme, themeStyle } from '@market/theme';
+---
+
+<!doctype html>
+<html lang="en" style={themeStyle(platformTheme)}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Isolated component specimen</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+<style is:global>
+  .gallery-note {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+  }
+  .gallery-fieldset {
+    border: 0;
+    margin: 0;
+    padding: 1rem;
+    min-width: 0;
+  }
+</style>

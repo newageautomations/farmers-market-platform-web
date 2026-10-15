@@ -10,15 +10,26 @@ import {
   type PublicCatalog,
   type PublicMarketOccurrence,
 } from '@market/api';
-import { requestShop, requestMarketShop } from '../lib/shop';
+import {
+  requestShop,
+  requestMarketShop,
+  requestPublicMarketOperations,
+} from '../lib/shop';
 const { storefront, storefrontError } = Astro.locals;
 let catalog: PublicCatalog | undefined, catalogError;
+let advertisedApplication = false;
 let occurrences: readonly PublicMarketOccurrence[] = [],
   totalOccurrences = 0;
 const rawPage = Number(Astro.url.searchParams.get('occurrencePage') ?? 1);
 const occurrencePage =
   Number.isSafeInteger(rawPage) && rawPage > 0 && rawPage <= 1250 ? rawPage : 1;
 if (storefront?.kind === 'MARKET' && storefront.source === 'backend') {
+  try {
+    await requestPublicMarketOperations(Astro).application();
+    advertisedApplication = true;
+  } catch {
+    /* Only an advertised published application grants this entry point. */
+  }
   try {
     const result = await requestMarketShop(Astro).occurrences({
       options: { skip: (occurrencePage - 1) * 8, take: 8 },
@@ -60,6 +71,7 @@ if (storefrontError)
     composition(storefront) === 'market' ? (
       storefront.source === 'backend' ? (
         <MarketPublicHome
+          advertisedApplication={advertisedApplication}
           context={storefront}
           occurrences={occurrences}
           totalItems={totalOccurrences}

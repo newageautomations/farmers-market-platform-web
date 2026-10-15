@@ -1,0 +1,169 @@
+---
+import {
+  buttonClassName,
+  alertClassName,
+  dashboardClasses,
+  navigationIconPaths,
+} from '@market/ui/presentation';
+import { AccountModeSelect, type AccountModeChoice } from '@market/ui';
+import { customerApi } from '../lib/customer-dashboard';
+import Button from '../components/ui/Button.astro';
+import DashboardFrame from '../components/ui/DashboardFrame.astro';
+import DashboardMenu from '../components/ui/DashboardMenu.astro';
+import '@market/ui/styles.css';
+import '../styles/customer-dashboard.css';
+import { platformTheme, themeStyle } from '@market/theme';
+import CustomerNavigation from '../components/CustomerNavigation.astro';
+const {
+  title,
+  path = '/account',
+  name = 'Your account',
+} = Astro.props as { title: string; path?: string; name?: string };
+const merchant = Astro.locals.storefront?.source === 'backend';
+let switchingUnavailable = false;
+const choices: AccountModeChoice[] = [
+  { value: 'CUSTOMER', label: 'Customer', href: '/account' },
+];
+try {
+  const contexts = await customerApi(Astro).contexts();
+  if (process.env.ADMIN_ORIGIN) {
+    for (const affiliation of contexts.affiliations) {
+      const target = new URL(
+        affiliation.mode === 'VENDOR' ? '/vendor' : '/market',
+        process.env.ADMIN_ORIGIN,
+      );
+      target.searchParams.set('channel', affiliation.channelId);
+      target.searchParams.set('account', '1');
+      choices.push({
+        value: `${affiliation.mode}:${affiliation.channelId}`,
+        label: `${affiliation.mode === 'VENDOR' ? 'Vendor' : 'Market Manager'}: ${affiliation.name}`,
+        href: target.toString(),
+      });
+    }
+  } else if (contexts.affiliations.length) switchingUnavailable = true;
+} catch {
+  switchingUnavailable = true;
+}
+---
+
+<!doctype html>
+<html lang="en" style={themeStyle(platformTheme)}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>{title} | Market platform</title>
+  </head>
+  <body class="customer-dashboard">
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <DashboardFrame>
+      <aside slot="sidebar" id="customer-sidebar" class="admin-sidebar">
+        <a class="brand" href="/account">
+          Market platform
+        </a>
+        <CustomerNavigation path={path} />
+      </aside>
+      <header slot="header" class="admin-topbar">
+        <Button
+          iconOnly
+          variant="secondary"
+          class={dashboardClasses.sidebarToggle}
+          aria-label="Collapse sidebar"
+          aria-expanded="true"
+          aria-controls="customer-sidebar"
+          hidden
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d={navigationIconPaths['panel-left']} />
+          </svg>
+        </Button>
+        <span class="brand">{name}</span>
+        <DashboardMenu>
+          <CustomerNavigation slot="navigation" path={path} />
+          <div class="account-mode-controls customer-account-mode">
+            <AccountModeSelect
+              id="customer-account-mode"
+              value="CUSTOMER"
+              choices={choices}
+              client:load
+            />
+            {switchingUnavailable && (
+              <span role="status">Account switching unavailable</span>
+            )}
+            <noscript>
+              {choices
+                .filter((choice) => choice.value !== 'CUSTOMER')
+                .map((choice) => (
+                  <a href={choice.href}>{choice.label}</a>
+                ))}
+            </noscript>
+          </div>
+          <a
+            class={buttonClassName({ variant: 'secondary' })}
+            href={merchant ? '/' : '/account/markets'}
+          >
+            {merchant ? 'Visit storefront' : 'Explore markets'}
+          </a>
+          <form method="post" action="/api/account">
+            <input type="hidden" name="action" value="logout" />
+            <Button type="submit" variant="secondary">
+              Sign out
+            </Button>
+          </form>
+        </DashboardMenu>
+      </header>
+      <main id="main" tabindex="-1" class="admin-content">
+        <h1>{title}</h1>
+        {Astro.url.searchParams.has('followSaved') && (
+          <p role="status" class={alertClassName('success')}>
+            Your follow preferences were updated.
+          </p>
+        )}
+        {Astro.url.searchParams.has('followError') && (
+          <p role="alert" class={alertClassName('error')}>
+            We couldn't update that preference. Please try again.
+          </p>
+        )}
+        <slot />
+      </main>
+    </DashboardFrame>
+    <script>
+      import { installDashboardSidebarToggle } from '@market/ui/presentation';
+      for (const button of document.querySelectorAll<HTMLButtonElement>(
+        '.ui-dashboard-sidebar-toggle',
+      ))
+        installDashboardSidebarToggle(button);
+      for (const form of document.querySelectorAll<HTMLFormElement>(
+        '[data-follow-form]',
+      )) {
+        form.addEventListener('submit', () => {
+          form.setAttribute('aria-busy', 'true');
+          const button = form.querySelector('button');
+          if (button) {
+            button.disabled = true;
+            button.textContent = 'Saving preference…';
+          }
+        });
+      }
+      for (const link of document.querySelectorAll<HTMLAnchorElement>(
+        'nav a',
+      )) {
+        link.addEventListener('click', () =>
+          document.querySelector('main')?.setAttribute('aria-busy', 'true'),
+        );
+      }
+    </script>
+  </body>
+</html>

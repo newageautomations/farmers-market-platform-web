@@ -1,4 +1,5 @@
 ---
+import { buttonClassName } from '@market/ui/presentation';
 import type { StorefrontContext } from '@market/storefront-core';
 import type { PublicCatalog, AppError } from '@market/api';
 import { ErrorState } from '@market/ui';
@@ -21,12 +22,15 @@ const { context, catalog, error } = Astro.props;
         ? 'Development Vendor fixture. This independent storefront demonstrates Vendor composition and isolated branding.'
         : 'Explore this Vendor storefront.'}
     </p>
-    <a class="button" href="/products">
+    <a
+      class={buttonClassName({ variant: 'primary', className: 'button' })}
+      href="/products"
+    >
       Explore the catalog
     </a>
   </section>
   <section id="catalog" class="py-12">
-    <h2>Vendor catalog</h2>
+    <h2 class="ui-section-title-consumer">Vendor catalog</h2>
     {error ? (
       <ErrorState error={error} />
     ) : catalog?.items.length ? (

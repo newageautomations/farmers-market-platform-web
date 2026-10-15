@@ -1,3 +1,6 @@
+import { EmptyState } from '@market/ui';
+import { Badge } from '@market/ui';
+import { managementStatusTone } from './status-presentation';
 import { useCallback } from 'react';
 import { Button, Card } from '@market/ui';
 import { formatMoney } from '@market/config';
@@ -19,8 +22,16 @@ export function Billing({ service }: { service: ManagementService }) {
       {data && (
         <>
           <Card>
-            <h2>Subscription</h2>
-            <p>{s ? s.status : 'No subscription assigned'}</p>
+            <h2 className="ui-section-title-dashboard">Subscription</h2>
+            <p>
+              {s ? (
+                <Badge tone={managementStatusTone('subscription', s.status)}>
+                  {s.status}
+                </Badge>
+              ) : (
+                'No subscription assigned'
+              )}
+            </p>
             <p>
               Source:{' '}
               {data.ownBillingConfiguration.subscriptionSource ??
@@ -60,15 +71,17 @@ export function Billing({ service }: { service: ManagementService }) {
           </Card>
           <Entitlements items={data.ownEntitlements} />
           <section>
-            <h2>Usage</h2>
+            <h2 className="ui-section-title-dashboard">Usage</h2>
             {data.ownUsage.length ? (
               <Entitlements items={data.ownUsage} />
             ) : (
-              <p>No metered usage definitions apply to this tenant.</p>
+              <EmptyState title="No metered usage">
+                <p>No metered usage definitions apply to this tenant.</p>
+              </EmptyState>
             )}
           </section>
           <section>
-            <h2>Available offers</h2>
+            <h2 className="ui-section-title-dashboard">Available offers</h2>
             <div className="management-grid">
               {data.availableBillingOffers.map((o) => (
                 <Card key={o.id}>
@@ -83,7 +96,9 @@ export function Billing({ service }: { service: ManagementService }) {
               ))}
             </div>
             {!data.availableBillingOffers.length && (
-              <p>No approved offers are configured.</p>
+              <EmptyState title="No offers configured">
+                <p>No approved offers are configured.</p>
+              </EmptyState>
             )}
           </section>
           <Unavailable>

@@ -1,5 +1,7 @@
-import { useId, type ReactNode } from 'react';
-import { Button, Field } from '@market/ui';
+import { Badge } from '@market/ui';
+import { managementStatusTone } from './status-presentation';
+import { type ReactNode } from 'react';
+import { Card, Pagination, SelectField } from '@market/ui';
 import type { ManagementEntitlement, ModuleReadiness } from '@market/api';
 import { date } from '../vendor/common';
 export function Choice({
@@ -17,50 +19,44 @@ export function Choice({
   onChange?: (value: string) => void;
   required?: boolean;
 }) {
-  const id = useId();
   return (
-    <Field id={id} label={label}>
-      <select
-        id={id}
-        name={name}
-        required={required}
-        value={value}
-        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-      >
-        {children}
-      </select>
-    </Field>
+    <SelectField
+      label={label}
+      name={name}
+      required={required}
+      value={value}
+      onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+    >
+      {children}
+    </SelectField>
   );
 }
 export function Pager({
   skip,
   total,
   setSkip,
+  count = Math.max(0, Math.min(20, total - skip)),
 }: {
   skip: number;
   total: number;
   setSkip: (skip: number) => void;
+  count?: number;
 }) {
   return (
-    <nav className="actions" aria-label="Results pages">
-      <p>
-        {total} results · {total ? skip + 1 : 0} to {Math.min(skip + 20, total)}
-      </p>
-      <Button
-        className="secondary"
-        disabled={skip === 0}
-        onClick={() => setSkip(Math.max(0, skip - 20))}
-      >
-        Previous page
-      </Button>
-      <Button
-        className="secondary"
-        disabled={skip + 20 >= total}
-        onClick={() => setSkip(skip + 20)}
-      >
-        Next page
-      </Button>
-    </nav>
+    <Pagination
+      label="Results pages"
+      summary={
+        <>
+          {total} results · {count ? skip + 1 : 0} to {count ? skip + count : 0}
+        </>
+      }
+      hasPrevious={skip > 0}
+      hasNext={skip + 20 < total}
+      onPrevious={() => setSkip(Math.max(0, skip - 20))}
+      onNext={() => setSkip(skip + 20)}
+      previousLabel="Previous page"
+      nextLabel="Next page"
+    />
   );
 }
 export function Entitlements({
@@ -71,10 +67,13 @@ export function Entitlements({
   return (
     <div className="management-grid">
       {items.map((e) => (
-        <article className="card" key={e.featureCode}>
-          <h2>{e.featureCode}</h2>
+        <Card as="article" spacing="contained" key={e.featureCode}>
+          <h2 className="ui-section-title-dashboard">{e.featureCode}</h2>
           <p>
-            {e.allowed ? 'Allowed' : 'Denied'} · {e.reason}
+            <Badge tone={e.allowed ? 'success' : 'neutral'}>
+              {e.allowed ? 'Allowed' : 'Denied'}
+            </Badge>{' '}
+            · {e.reason}
           </p>
           <dl className="facts">
             <div>
@@ -121,7 +120,7 @@ export function Entitlements({
             </p>
           )}
           <p>Access policy: {e.accessPolicyVersion ?? 'Not configured'}</p>
-        </article>
+        </Card>
       ))}
     </div>
   );
@@ -140,13 +139,19 @@ export function Readiness({ items }: { items: readonly ModuleReadiness[] }) {
   return (
     <div className="management-grid">
       {items.map((m) => (
-        <article className="card" key={m.code}>
-          <h2>{names[m.code] ?? m.code}</h2>
-          <p>{m.state === 'NOT_CONFIGURED' ? 'Not configured' : m.state}</p>
+        <Card as="article" spacing="contained" key={m.code}>
+          <h2 className="ui-section-title-dashboard">
+            {names[m.code] ?? m.code}
+          </h2>
+          <p>
+            <Badge tone={managementStatusTone('readiness', m.state)}>
+              {m.state === 'NOT_CONFIGURED' ? 'Not configured' : m.state}
+            </Badge>
+          </p>
           <p>{m.detail}</p>
           <p>External qualification: {m.qualification}</p>
           <p>Configuration observed {date(m.asOf)}</p>
-        </article>
+        </Card>
       ))}
     </div>
   );

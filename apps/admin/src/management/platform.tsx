@@ -1,3 +1,8 @@
+import { EmptyState } from '@market/ui';
+import { Badge } from '@market/ui';
+import { managementStatusTone } from './status-presentation';
+import { cardClassName } from '@market/ui/presentation';
+import { Input } from '@market/ui';
 import { useCallback, useState } from 'react';
 import type { TenantKind, TenantOptions } from '@market/api';
 import { Card, Button } from '@market/ui';
@@ -38,7 +43,7 @@ export function PlatformOverview({ service }: { service: ManagementService }) {
       <ReadState {...result} retry={result.refresh} />
       {result.data && (
         <>
-          <dl className="facts">
+          <dl className="ui-kpi-grid">
             <div>
               <dt>Vendors</dt>
               <dd>{result.data.vendors}</dd>
@@ -91,7 +96,7 @@ export function TenantDirectory({ service }: { service: ManagementService }) {
   return (
     <>
       <form
-        className="filter-bar"
+        className={cardClassName({ className: 'filter-bar ui-control-row' })}
         onSubmit={(e) => {
           e.preventDefault();
           const f = new FormData(e.currentTarget);
@@ -121,7 +126,9 @@ export function TenantDirectory({ service }: { service: ManagementService }) {
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
         </Choice>
-        <Button type="submit">Search tenants</Button>
+        <div className="ui-field-action">
+          <Button type="submit">Search tenants</Button>
+        </div>
       </form>
       <ReadState {...result} retry={result.refresh} />
       {result.data && (
@@ -142,8 +149,21 @@ export function TenantDirectory({ service }: { service: ManagementService }) {
                     <small>{t.slug}</small>
                   </th>
                   <td>{t.kind === 'VENDOR' ? 'Vendor' : 'Market'}</td>
-                  <td>{t.status}</td>
-                  <td>{t.storefrontStatus}</td>
+                  <td>
+                    <Badge tone={managementStatusTone('tenant', t.status)}>
+                      {t.status}
+                    </Badge>
+                  </td>
+                  <td>
+                    <Badge
+                      tone={managementStatusTone(
+                        'storefront',
+                        t.storefrontStatus,
+                      )}
+                    >
+                      {t.storefrontStatus}
+                    </Badge>
+                  </td>
                   <td>{date(t.createdAt)}</td>
                 </tr>
               ))}
@@ -152,9 +172,14 @@ export function TenantDirectory({ service }: { service: ManagementService }) {
           <Pager
             skip={options.skip ?? 0}
             total={result.data.totalItems}
+            count={result.data.items.length}
             setSkip={(skip) => setOptions({ ...options, skip })}
           />
-          {!result.data.totalItems && <p>No tenants match these filters.</p>}
+          {!result.data.totalItems && (
+            <EmptyState title="No matching tenants">
+              <p>No tenants match these filters.</p>
+            </EmptyState>
+          )}
         </>
       )}
       <Provisioning service={service} onDone={result.refresh} />
@@ -171,7 +196,7 @@ function Provisioning({
   const [kind, setKind] = useState<TenantKind>('VENDOR');
   return (
     <section>
-      <h2>Provision a tenant</h2>
+      <h2 className="ui-section-title-dashboard">Provision a tenant</h2>
       <Choice
         name="provision-kind"
         label="New tenant kind"
@@ -259,13 +284,21 @@ function Provisioning({
               label="Preorder closing time"
               type="time"
             />
-            <label>
-              <input type="checkbox" name="membershipAllowed" /> Allow
-              membership window overrides
+            <label htmlFor="platform-membership">
+              <Input
+                id="platform-membership"
+                type="checkbox"
+                name="membershipAllowed"
+              />{' '}
+              Allow membership window overrides
             </label>
-            <label>
-              <input type="checkbox" name="participationAllowed" /> Allow
-              participation window overrides
+            <label htmlFor="platform-participation">
+              <Input
+                id="platform-participation"
+                type="checkbox"
+                name="participationAllowed"
+              />{' '}
+              Allow participation window overrides
             </label>
             <Choice name="windowMode" label="Vendor window rule">
               <option value="narrower">Narrower</option>
@@ -306,20 +339,42 @@ export function TenantDetail({
       {data && (
         <>
           <Card>
-            <h2>{data.identity.name}</h2>
+            <h2 className="ui-section-title-dashboard">{data.identity.name}</h2>
             <p>
               {kind === 'VENDOR' ? 'Vendor' : 'Market'} · {data.identity.slug} ·{' '}
-              {data.identity.status}
+              <Badge
+                tone={managementStatusTone('tenant', data.identity.status)}
+              >
+                {data.identity.status}
+              </Badge>
             </p>
-            <p>Storefront: {data.identity.storefrontStatus}</p>
+            <p>
+              Storefront:{' '}
+              <Badge
+                tone={managementStatusTone(
+                  'storefront',
+                  data.identity.storefrontStatus,
+                )}
+              >
+                {data.identity.storefrontStatus}
+              </Badge>
+            </p>
             <p>Created {date(data.identity.createdAt)}</p>
           </Card>
           <Card>
-            <h2>Billing state</h2>
+            <h2 className="ui-section-title-dashboard">Billing state</h2>
             {data.subscription ? (
               <>
                 <p>
-                  {data.subscription.status} · {data.subscription.source}
+                  <Badge
+                    tone={managementStatusTone(
+                      'subscription',
+                      data.subscription.status,
+                    )}
+                  >
+                    {data.subscription.status}
+                  </Badge>{' '}
+                  · {data.subscription.source}
                 </p>
                 <p>
                   Exact plan version {data.subscription.planVersionId} · Offer{' '}

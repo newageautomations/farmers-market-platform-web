@@ -1,6 +1,9 @@
+import { vendorOrderStatus } from '../vendor/order-presentation';
+import { Badge as OrderBadge } from '@market/ui';
+import { StatusBadge as Badge } from './presentation';
 import { useCallback, useState } from 'react';
 import type { MarketOperationsPage } from '@market/api';
-import { Badge, Button, EmptyState, Pagination } from '@market/ui';
+import { Card, EmptyState, Pagination } from '@market/ui';
 import type { MarketService } from './service';
 import {
   DataTable,
@@ -17,20 +20,33 @@ export function OperationalPurchases({ page }: { page: MarketOperationsPage }) {
   return page.items.length ? (
     <>
       {page.items.map((purchase) => (
-        <div className="record-details" key={purchase.customerOrderId}>
+        <Card
+          as="div"
+          className="record-details"
+          key={purchase.customerOrderId}
+        >
           <p>
-            Operational purchase reference {purchase.customerOrderId} ·
-            occurrence reference {purchase.occurrenceId}
+            Order {purchase.customerOrderId} · market date{' '}
+            {purchase.occurrenceId}
           </p>
           {purchase.portions.map((portion) => (
             <div className="market-portion" key={portion.operationalOrderId}>
               <p>
-                Vendor reference {portion.vendorId} · operational order
-                reference {portion.operationalOrderId}
+                Vendor {portion.vendorId} · order {portion.operationalOrderId}
               </p>
               <p>
-                Native state: <Badge>{portion.nativeState}</Badge> · Pickup
-                status: <Badge>{portion.pickupStatus}</Badge>
+                Order Status:{' '}
+                <OrderBadge
+                  tone={vendorOrderStatus('order', portion.nativeState).tone}
+                >
+                  {portion.nativeState}
+                </OrderBadge>{' '}
+                · Pickup status:{' '}
+                <OrderBadge
+                  tone={vendorOrderStatus('pickup', portion.pickupStatus).tone}
+                >
+                  {portion.pickupStatus}
+                </OrderBadge>
               </p>
               <DataTable
                 label={`Operational order ${portion.operationalOrderId} quantities`}
@@ -45,8 +61,7 @@ export function OperationalPurchases({ page }: { page: MarketOperationsPage }) {
                 {portion.lines.map((line) => (
                   <tr key={line.operationalLineId}>
                     <td>
-                      {line.variantName ||
-                        `Variant reference ${line.variantId}`}
+                      {line.variantName || `Product ${line.variantId}`}
                       <small>{line.sku}</small>
                     </td>
                     <td>{line.quantity}</td>
@@ -64,29 +79,30 @@ export function OperationalPurchases({ page }: { page: MarketOperationsPage }) {
                 .
               </p>
               <p>
-                Pickup instants:{' '}
-                {portion.pickupPromise.startsAt ?? 'Not provided'} to{' '}
-                {portion.pickupPromise.endsAt ?? 'Not provided'}.
+                Pickup Time: {date(portion.pickupPromise.startsAt)} to{' '}
+                {date(portion.pickupPromise.endsAt)}.
               </p>
               {portion.fulfillments.length ? (
                 portion.fulfillments.map((row) => (
                   <p key={row.id}>
-                    Fulfillment reference {row.id}: {row.state};{' '}
+                    Fulfillment {row.id}: {row.state};{' '}
                     {row.lines
                       .map(
                         (line) =>
-                          `${line.quantity} units on operational line ${line.operationalLineId}`,
+                          `${line.quantity} units on order line ${line.operationalLineId}`,
                       )
                       .join('; ')}
                     .
                   </p>
                 ))
               ) : (
-                <p>No fulfillments returned.</p>
+                <EmptyState title="No fulfillments">
+                  <p>No fulfillments returned.</p>
+                </EmptyState>
               )}
             </div>
           ))}
-        </div>
+        </Card>
       ))}
     </>
   ) : (
@@ -130,38 +146,28 @@ export function MarketOperations({
   );
   return (
     <>
-      <div className="dashboard-card">
-        <p>
-          Coordinate Vendor operational portions by occurrence. This view is
-          read only. Native order state, pickup status and line quantities
-          describe separate operational facts.
-        </p>
-      </div>
       {id ? (
         <>
-          <section
+          <Card
+            as="section"
             className="dashboard-card"
             aria-label="Occurrence operations controls"
           >
             <RouteLink to="/market/operations">
               Choose another occurrence
             </RouteLink>
-            <p>
-              Occurrence reference {id}. Server order: purchase placement
-              descending, then reference descending.
-            </p>
             <ReadState {...operations} retry={operations.refresh} />
-            <Button className="secondary" onClick={operations.refresh}>
-              Refresh operations
-            </Button>
-          </section>
+          </Card>
           {operations.data && (
             <>
               <p>
                 {operations.data.totalItems} operational purchases in this
                 occurrence. Showing{' '}
-                {skip + (operations.data.items.length ? 1 : 0)} to{' '}
-                {skip + operations.data.items.length}.
+                {operations.data.items.length ? skip + 1 : 0} to{' '}
+                {operations.data.items.length
+                  ? skip + operations.data.items.length
+                  : 0}
+                .
               </p>
               <OperationalPurchases page={operations.data} />
               <Pagination
@@ -175,7 +181,7 @@ export function MarketOperations({
         </>
       ) : (
         <>
-          <div className="dashboard-card">
+          <Card as="div" className="dashboard-card">
             <RangeForm
               range={range}
               onChange={(value) => {
@@ -183,11 +189,7 @@ export function MarketOperations({
                 setOccurrenceSkip(0);
               }}
             />
-          </div>
-          <p>
-            Occurrence choices use server pages ordered by start, then
-            reference.
-          </p>
+          </Card>
           <ReadState {...occurrences} retry={occurrences.refresh} />
           {occurrences.data && (
             <>
@@ -211,16 +213,13 @@ export function MarketOperations({
               >
                 {occurrences.data.items.map((row) => (
                   <tr key={row.id}>
+                    <td>{date(row.startsAt, row.timezone)}</td>
                     <td>
-                      {date(row.startsAt, row.timezone)}
-                      <small>
-                        {row.localStartsAt} · {row.timezone}
-                      </small>
+                      <Badge>{row.status}</Badge>
                     </td>
-                    <td>{row.status}</td>
                     <td>
                       <RouteLink to={`/market/operations/${row.id}`}>
-                        View operations for {row.scheduleDate}
+                        View operations for {date(row.scheduleDate)}
                       </RouteLink>
                     </td>
                   </tr>

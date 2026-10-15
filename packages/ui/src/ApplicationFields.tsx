@@ -1,3 +1,7 @@
+import { selectClassName } from './presentation';
+import { Textarea, Input } from './form-controls';
+import { PhoneInput } from './PhoneInput';
+import { fieldLimits } from './input-validation';
 import { useId } from 'react';
 import type { ApplicationDefinition } from '@market/api';
 export function ApplicationFields({
@@ -62,7 +66,7 @@ export function ApplicationFields({
                       </>
                     ) : (
                       <>
-                        {!['SINGLE_SELECT', 'MULTI_SELECT'].includes(
+                        {!['SINGLE_SELECT', 'MULTI_SELECT', 'PHONE'].includes(
                           q.type,
                         ) && (
                           <label htmlFor={id}>
@@ -71,16 +75,26 @@ export function ApplicationFields({
                           </label>
                         )}
                         {q.type === 'LONG_TEXT' ? (
-                          <textarea
+                          <Textarea
                             id={id}
                             aria-describedby={q.help ? help : undefined}
                             required={q.required}
-                            maxLength={5000}
+                            maxLength={q.maxLength ?? 5000}
                             value={String(value ?? '')}
                             onChange={(e) => onAnswer?.(q.id, e.target.value)}
                           />
+                        ) : q.type === 'PHONE' ? (
+                          <PhoneInput
+                            id={id}
+                            label={q.label}
+                            required={q.required}
+                            value={String(value ?? '')}
+                            aria-describedby={q.help ? help : undefined}
+                            onChange={(v) => onAnswer?.(q.id, v)}
+                          />
                         ) : q.type === 'BOOLEAN' ? (
                           <select
+                            className={selectClassName()}
                             id={id}
                             aria-describedby={q.help ? help : undefined}
                             required={q.required}
@@ -111,7 +125,7 @@ export function ApplicationFields({
                             </legend>
                             {q.options.map((option, index) => (
                               <label key={option} htmlFor={`${id}-${index}`}>
-                                <input
+                                <Input
                                   id={`${id}-${index}`}
                                   type={
                                     q.type === 'MULTI_SELECT'
@@ -157,6 +171,7 @@ export function ApplicationFields({
                           </fieldset>
                         ) : q.type === 'DROPDOWN' ? (
                           <select
+                            className={selectClassName()}
                             id={id}
                             aria-describedby={q.help ? help : undefined}
                             required={q.required}
@@ -171,11 +186,30 @@ export function ApplicationFields({
                             ))}
                           </select>
                         ) : (
-                          <input
+                          <Input
                             id={id}
                             aria-describedby={q.help ? help : undefined}
                             required={q.required}
-                            maxLength={500}
+                            maxLength={Math.min(
+                              q.type === 'EMAIL'
+                                ? 254
+                                : q.type === 'URL'
+                                  ? 2048
+                                  : (q.maxLength ?? 500),
+                              fieldLimits[
+                                q.semantic as keyof typeof fieldLimits
+                              ] ?? 50000,
+                            )}
+                            min={
+                              q.type === 'NUMBER'
+                                ? (q.minimum ?? -1000000)
+                                : undefined
+                            }
+                            max={
+                              q.type === 'NUMBER'
+                                ? (q.maximum ?? 1000000)
+                                : undefined
+                            }
                             type={
                               q.type === 'NUMBER'
                                 ? 'number'
@@ -185,11 +219,9 @@ export function ApplicationFields({
                                     ? 'time'
                                     : q.type === 'EMAIL'
                                       ? 'email'
-                                      : q.type === 'PHONE'
-                                        ? 'tel'
-                                        : q.type === 'URL'
-                                          ? 'url'
-                                          : 'text'
+                                      : q.type === 'URL'
+                                        ? 'url'
+                                        : 'text'
                             }
                             value={String(value ?? '')}
                             step={q.type === 'NUMBER' ? 'any' : undefined}

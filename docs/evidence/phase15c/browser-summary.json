@@ -1,0 +1,31 @@
+{
+  "status": "PASS",
+  "flows": [
+    "existing SVG-era published layout opens as a real Konva canvas",
+    "new layout and Main Market area",
+    "rectangle resized and rotated using actual Transformer handles",
+    "locked background ignores drag and delete",
+    "text styling and bounded freehand pointer path",
+    "A01 and A02 booth inspector, fee, amenities and safe duplicate",
+    "Shift-click multiple booths, move together, alignment, copy/paste, undo/redo",
+    "confirmed booth attribute sync",
+    "pan, pointer-centered wheel zoom, reset and fit",
+    "layers hide/show, locate and decoration grouping",
+    "save/reload preserves domain geometry, path, style, lock and booth semantics",
+    "desktop/tablet/mobile authoring, no overflow and representative Axe",
+    "publish/clone preserves immutable source and occurrence historical geometry",
+    "Phase15B hover, correct booth modal and drag suppression with invoice-derived paid state",
+    "logged-out public map search/highlight, pan/zoom and privacy",
+    "Market Day shared canvas, private overlays, booth selection and accessibility",
+    "500 visual elements including 200 booths respond to render, pan, zoom, select and move"
+  ],
+  "performance": {
+    "fixture": "synthetic local, not production scale",
+    "initialRenderMs": 264,
+    "panMs": 594,
+    "zoomMs": 179,
+    "selectMs": 98,
+    "moveMs": 440
+  },
+  "errors": []
+}

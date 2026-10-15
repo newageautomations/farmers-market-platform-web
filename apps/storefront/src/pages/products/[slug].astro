@@ -1,4 +1,5 @@
 ---
+import { buttonClassName } from '@market/ui/presentation';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { ProductPurchase } from '../../components/ProductPurchase';
 import { requestShop } from '../../lib/shop';
@@ -22,7 +23,7 @@ try {
         await import('@market/storefront-core/fixtures');
       product = fixtureProduct(Astro.params.slug ?? '');
     } else {
-      const api = requestShop(Astro);
+      const api = requestShop(Astro, Astro.response.headers);
       product = (await api.product(Astro.params.slug ?? '')).product;
       // A session outage does not erase an otherwise valid public Product.
       try {
@@ -86,7 +87,9 @@ const structured =
             : 'Product unavailable'}
         </h1>
         <ErrorState error={error} />
-        <a href="/products">Browse products</a>
+        <a class={buttonClassName({ variant: 'secondary' })} href="/products">
+          Browse products
+        </a>
       </>
     ) : (
       <div class="product-detail" data-composition="vendor">

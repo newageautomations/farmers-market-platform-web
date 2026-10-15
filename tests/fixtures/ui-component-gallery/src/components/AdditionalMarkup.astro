@@ -1,0 +1,172 @@
+---
+import CustomerOrders from '../../../../../apps/storefront/src/components/CustomerOrders.astro';
+import type { DisplayState } from '../../candidates';
+const { id, state } = Astro.props as { id: string; state: DisplayState };
+const title = 'Synthetic market overview';
+const middle = state === 'selected';
+const last = state === 'disabled';
+---
+
+{id === 'ALT-03' && (
+  <>
+    <div class="checkout-shell">
+      <p role="status">Synthetic checkout status.</p>
+      <p role="alert">Synthetic checkout error.</p>
+    </div>
+    <div class="customer-dashboard">
+      <p role="status" class="alert">
+        Synthetic follow success.
+      </p>
+      <p role="alert" class="alert">
+        Synthetic follow error.
+      </p>
+    </div>
+  </>
+)}
+{id === 'EMP-02' && (
+  <>
+    <CustomerOrders purchases={[]} />
+    <div class="empty-state">
+      <h2>No products found</h2>
+      <p>Try another search or return to the first page.</p>
+      <a href="#sample-note">View all products</a>
+    </div>
+    <div class="empty-state">
+      <h2>Your cart is empty</h2>
+      <p>Browse this synthetic Vendor’s products to get started.</p>
+      <a class="button" href="#sample-note">
+        Browse products
+      </a>
+    </div>
+  </>
+)}
+{id === 'LOD-04' && (
+  <div aria-busy="true">
+    <p role="status" aria-live="polite">
+      Updating your cart…
+    </p>
+  </div>
+)}
+{id === 'KPI-01' && (
+  <div class="customer-stats">
+    <a href="#sample-note">
+      <strong>128</strong>Orders
+    </a>
+    <a href="#sample-note">
+      <strong>12</strong>Followed markets
+    </a>
+    <a href="#sample-note">
+      <strong>36</strong>Favorite vendors
+    </a>
+  </div>
+)}
+{id === 'FIL-03' && (
+  <>
+    <form class="catalog-filters" method="get">
+      <div class="field">
+        <label for="catalog-search">Search products</label>
+        <input id="catalog-search" name="q" type="search" maxlength="200" />
+      </div>
+      <div class="field">
+        <label for="catalog-sort">Sort products</label>
+        <select id="catalog-sort" name="sort">
+          <option value="asc">Name A to Z</option>
+          <option value="desc">Name Z to A</option>
+        </select>
+      </div>
+      <button class="button">Apply</button>
+    </form>
+    <fieldset>
+      <legend>Shop by Vendor</legend>
+      <div class="market-filter-options">
+        <label>
+          <input type="checkbox" name="vendor" value="synthetic" />
+          Synthetic Orchard (12)
+        </label>
+      </div>
+    </fieldset>
+  </>
+)}
+{id === 'FIL-05' && (
+  <form method="get" class="customer-search">
+    <label class="field">
+      Search markets
+      <input type="search" name="search" maxlength="100" />
+    </label>
+    <button class="button">Search</button>
+  </form>
+)}
+{id === 'PAG-04' && (
+  <nav class="pagination" aria-label="Catalog pages">
+    {(middle || last) && <a href="#sample-note">Previous page</a>}
+    <span>Page {last ? 3 : middle ? 2 : 1}</span>
+    {!last && <a href="#sample-note">Next page</a>}
+  </nav>
+)}
+{id === 'PAG-05' && (
+  <nav class="customer-pagination" aria-label="Follow pages">
+    {(middle || last) && (
+      <a class="button secondary" href="#sample-note">
+        Previous follows
+      </a>
+    )}
+    {!last && (
+      <a class="button secondary" href="#sample-note">
+        Next follows
+      </a>
+    )}
+  </nav>
+)}
+{id === 'PGH-02' && (
+  <p class="customer-muted">Synthetic description for heading comparison.</p>
+)}
+{id === 'PGH-03' && (
+  <>
+    <div data-composition="market">
+      <section class="hero" aria-labelledby="market-title">
+        <div>
+          <h1 id="market-title">{title}</h1>
+          <p>Synthetic description for heading comparison.</p>
+          <div class="actions">
+            <a class="button" href="#sample-note">
+              Local heading action
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+    <section class="account-panel">
+      <h1>{title}</h1>
+      <p>Synthetic authentication heading context.</p>
+    </section>
+  </>
+)}
+{id === 'SCH-02' && (
+  <>
+    <section class="customer-section">
+      <header>
+        <h2>Synthetic section</h2>
+      </header>
+      <p>Synthetic section content.</p>
+    </section>
+    <section class="customer-section">
+      <header>
+        <h2>Synthetic section</h2>
+        <a href="#sample-note">View order history</a>
+      </header>
+      <p>Synthetic section content.</p>
+    </section>
+  </>
+)}
+{id === 'SCH-04' && (
+  <div data-composition="market">
+    <section
+      id="occurrences"
+      class="market-occurrences"
+      aria-labelledby="occurrences-title"
+    >
+      <h2 id="occurrences-title">Synthetic section</h2>
+      <p>Synthetic section content.</p>
+    </section>
+  </div>
+)}

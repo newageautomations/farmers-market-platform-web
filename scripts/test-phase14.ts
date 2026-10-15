@@ -3,6 +3,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { resolve } from 'node:path';
 import { chromium, type Page } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
+import { mapPoint } from './konva-pointer';
 assert.equal(process.env.FRONTEND_NO_EVIDENCE, 'true');
 const backend = resolve('../farmers-market-platform'),
   children: ChildProcess[] = [],
@@ -365,38 +366,31 @@ async function main() {
             .getByLabel('Preferred business suggestion', { exact: true })
             .selectOption({ label: 'Local Orchard' });
           await page.locator('.ops-canvas').scrollIntoViewIfNeeded();
-          const booth = await page
-            .locator('[data-element]')
-            .last()
-            .boundingBox();
-          assert.ok(booth);
-          await page.mouse.move(
-            booth.x + booth.width / 2,
-            booth.y + booth.height / 2,
+          const originalX = Number(
+            await page.getByLabel('x', { exact: true }).inputValue(),
           );
+          const originalY = Number(
+            await page.getByLabel('y', { exact: true }).inputValue(),
+          );
+          const booth = await mapPoint(page, originalX + 60, originalY + 50);
+          await page.mouse.move(booth.x, booth.y);
           await page.mouse.down();
-          await page.mouse.move(
-            booth.x + booth.width / 2 + 60,
-            booth.y + booth.height / 2 + 35,
-            { steps: 6 },
-          );
+          await page.mouse.move(booth.x + 60, booth.y + 35, { steps: 6 });
           await page.mouse.up();
           assert.notEqual(
             await page.getByLabel('x', { exact: true }).inputValue(),
-            '50',
+            String(originalX),
           );
-          const handle = await page.locator('[data-resize]').boundingBox();
-          assert.ok(handle);
-          await page.mouse.move(
-            handle.x + handle.width / 2,
-            handle.y + handle.height / 2,
+          const handle = await mapPoint(
+            page,
+            Number(await page.getByLabel('x', { exact: true }).inputValue()) +
+              120,
+            Number(await page.getByLabel('y', { exact: true }).inputValue()) +
+              100,
           );
+          await page.mouse.move(handle.x, handle.y);
           await page.mouse.down();
-          await page.mouse.move(
-            handle.x + handle.width / 2 + 25,
-            handle.y + handle.height / 2 + 20,
-            { steps: 6 },
-          );
+          await page.mouse.move(handle.x + 25, handle.y + 20, { steps: 6 });
           await page.mouse.up();
           assert.ok(
             Number(
@@ -422,6 +416,7 @@ async function main() {
           await page
             .getByRole('heading', { name: 'Untitled layout', exact: true })
             .waitFor();
+          await page.locator('.layout-library > details > summary').click();
           await page
             .locator('.ops-record-list > li')
             .filter({

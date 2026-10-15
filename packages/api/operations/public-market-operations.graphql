@@ -1,6 +1,9 @@
 query PublicMarketApplication($slug: String) {
   publicMarketApplication(slug: $slug)
 }
+query MarketApplicationApplicant {
+  marketApplicationApplicant
+}
 query PublicMarketOccurrenceMap($occurrenceId: Int!) {
   publicMarketOccurrenceMap(occurrenceId: $occurrenceId)
 }

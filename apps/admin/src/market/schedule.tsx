@@ -1,3 +1,4 @@
+import { Select, Input } from '@market/ui';
 import { useState } from 'react';
 import { AppError, type MarketConfiguration } from '@market/api';
 import type { MarketService } from './service';
@@ -67,7 +68,7 @@ export function RecurrenceFields({ market }: { market: MarketConfiguration }) {
     <>
       <label className="field">
         Repeat
-        <select
+        <Select
           name="frequency"
           value={frequency}
           onChange={(e) => setFrequency(e.target.value)}
@@ -75,7 +76,7 @@ export function RecurrenceFields({ market }: { market: MarketConfiguration }) {
           <option value="weekly">Every week</option>
           <option value="biweekly">Every other week</option>
           <option value="monthly">Selected weeks each month</option>
-        </select>
+        </Select>
       </label>
       <Weekdays values={recurrence?.weekdays ?? [6]} />
       {frequency === 'monthly' && (
@@ -84,7 +85,7 @@ export function RecurrenceFields({ market }: { market: MarketConfiguration }) {
           {['First', 'Second', 'Third', 'Fourth', 'Fifth'].map(
             (label, index) => (
               <label key={label}>
-                <input
+                <Input
                   type="checkbox"
                   name="monthWeeks"
                   value={index + 1}

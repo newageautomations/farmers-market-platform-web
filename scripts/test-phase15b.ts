@@ -5,8 +5,12 @@ import { resolve } from 'node:path';
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import { createServer } from 'vite';
+import { mapPoint } from './konva-pointer';
 const root = process.cwd(),
-  evidence = resolve(root, 'docs/evidence/phase15b');
+  evidence = resolve(
+    root,
+    process.env.PHASE15B_EVIDENCE_DIR ?? 'docs/evidence/phase15b',
+  );
 mkdirSync(evidence, { recursive: true });
 process.env.FRONTEND_FIXTURE_MODE = 'true';
 process.chdir(resolve(root, 'apps/admin'));
@@ -48,8 +52,8 @@ try {
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('http://127.0.0.1:4336/market/assignments/1');
   await page.getByLabel('Search Vendor or booth').waitFor();
-  const booth = page.locator('[data-element="booth-1"]');
-  await booth.hover();
+  const booth = await mapPoint(page, 120, 130);
+  await page.mouse.move(booth.x, booth.y);
   const tooltip = page.getByRole('tooltip');
   await tooltip.waitFor();
   assert.match(await tooltip.innerText(), /12 × 10 ft/);
@@ -66,7 +70,7 @@ try {
       card.y + card.height <= viewport.y + viewport.height + 1,
   );
   await page.screenshot({ path: resolve(evidence, 'booth-hover-1440.png') });
-  await booth.click();
+  await page.mouse.click(booth.x, booth.y);
   const dialog = page.getByRole('dialog', { name: 'Booth A1' });
   await dialog.waitFor();
   await dialog.getByLabel('Business for selected booth').selectOption('2');
@@ -92,16 +96,23 @@ try {
   await page.keyboard.press('Escape');
   await dialog.waitFor({ state: 'hidden' });
   const row = page.locator('.booth-list-item').filter({
-    has: page.locator('summary span').filter({ hasText: /^A1$/ }),
+    has: page
+      .locator('summary span')
+      .filter({ hasText: /^A1 - River Bakery$/ }),
   });
   assert.equal(await row.getAttribute('open'), null);
-  assert.equal(await row.locator('summary').innerText(), 'A1\nAssigned');
+  assert.equal(
+    await row.locator('summary').innerText(),
+    'A1 - River Bakery\nAssigned',
+  );
   await row.locator('summary').click();
   await row.getByText('River Bakery', { exact: true }).waitFor();
   assert.equal(await page.getByRole('dialog').count(), 0);
   await row.locator('summary').click();
   const paid = page.locator('.booth-list-item').filter({
-    has: page.locator('summary span').filter({ hasText: /^A2$/ }),
+    has: page
+      .locator('summary span')
+      .filter({ hasText: /^A2 - Local Orchard$/ }),
   });
   assert.match(await paid.locator('summary').innerText(), /Paid/);
   for (const width of [1440, 768, 390]) {

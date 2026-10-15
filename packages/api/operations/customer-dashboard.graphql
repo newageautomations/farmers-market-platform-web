@@ -1,0 +1,56 @@
+fragment CustomerFollow on CustomerFollowSubject {
+  id
+  name
+  status
+  url
+  following
+}
+fragment CustomerEvent on CustomerUpcomingEvent {
+  id
+  startsAt
+  endsAt
+  timezone
+  venue
+  status
+  marketId
+  marketName
+  marketUrl
+  url
+  followedMarket
+  vendors {
+    id
+    name
+    url
+  }
+}
+query CustomerDashboard($section: String, $skip: Int, $eventSkip: Int) {
+  customerDashboard(section: $section, skip: $skip, eventSkip: $eventSkip) {
+    marketCount
+    vendorCount
+    orderCount
+    hasMore
+    hasMoreEvents
+    markets {
+      ...CustomerFollow
+    }
+    vendors {
+      ...CustomerFollow
+    }
+    events {
+      ...CustomerEvent
+    }
+  }
+}
+query CustomerFollowSubjects($kind: String!, $search: String, $skip: Int) {
+  customerFollowSubjects(kind: $kind, search: $search, skip: $skip) {
+    hasMore
+    items {
+      ...CustomerFollow
+    }
+  }
+}
+mutation SetCustomerFollow($kind: String!, $id: ID!, $following: Boolean!) {
+  setCustomerFollow(kind: $kind, id: $id, following: $following) {
+    following
+  }
+}

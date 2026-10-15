@@ -1,0 +1,40 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import {
+  buttonClassName,
+  type ButtonVariant,
+  type ButtonSize,
+} from '@market/ui/presentation';
+// Native SSR preserves form submitters without hydrating React for appearance.
+interface Props extends HTMLAttributes<'button'> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  iconOnly?: boolean;
+  loading?: boolean;
+}
+const {
+  variant,
+  size,
+  iconOnly,
+  loading = false,
+  disabled,
+  class: className = '',
+  type = 'button',
+  ...props
+} = Astro.props;
+---
+
+<button
+  {...props}
+  type={type}
+  disabled={disabled || loading}
+  aria-busy={loading ? 'true' : props['aria-busy']}
+  class={buttonClassName({
+    variant,
+    size,
+    iconOnly,
+    className: String(className),
+  })}
+>
+  <slot />
+</button>

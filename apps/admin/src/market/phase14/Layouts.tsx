@@ -1,59 +1,69 @@
-import { useReducer, useState } from 'react';
+import { EmptyState } from '@market/ui';
+import { AnimatedDisclosure, StatusBadge, MarketDialog } from '../presentation';
+import { go, RouteLink } from '../../vendor/common';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import type {
   LayoutVersion,
-  MapDefinition,
   MapElement,
   MarketOperationsData,
   OperationsCommand,
   SpaceDetails,
 } from '@market/api';
-import { MarketMap } from '@market/ui';
-import { Check, Control, Entry } from './common';
-interface Drawing {
-  definition: MapDefinition;
-  spaces: Record<string, SpaceDetails>;
+import {
+  Select,
+  Button,
+  MarketMap,
+  MapCanvas,
+  align,
+  baseSpace,
+  copies,
+  drawingHistory,
+  geometry,
+  group,
+  nudge,
+  patchFlags,
+  remove,
+  reorder,
+  selectIds,
+  syncBooths,
+  uniqueLabel,
+  type Drawing,
+  type MapCanvasHandle,
+  type MapTool,
+  type SyncCategory,
+} from '@market/ui';
+import { LayoutInspector } from './LayoutInspector';
+import { LayoutLayers } from './LayoutLayers';
+import './designer.css';
+export { drawingHistory } from '@market/ui';
+export function currentLayoutVersion(
+  data: MarketOperationsData,
+  layoutId: number,
+) {
+  return data.layoutVersions
+    ?.filter(
+      (v) =>
+        v.layoutId === layoutId && !v.occurrenceId && v.status !== 'RETIRED',
+    )
+    .sort((a, b) => b.versionNumber - a.versionNumber)[0];
 }
-interface History {
-  present: Drawing;
-  past: Drawing[];
-  future: Drawing[];
+export function LayoutPreview({
+  data,
+  version,
+}: {
+  data: MarketOperationsData;
+  version: LayoutVersion;
+}) {
+  return (
+    <MarketMap
+      showBoothList={false}
+      definition={version.definition}
+      spaces={(data.spaces ?? [])
+        .filter((s) => s.layoutVersionId === version.id)
+        .map((s) => ({ elementId: s.elementId, ...s.details, vendor: null }))}
+    />
+  );
 }
-export function drawingHistory(
-  state: History,
-  action: { type: 'EDIT'; value: Drawing } | { type: 'UNDO' | 'REDO' },
-): History {
-  if (action.type === 'EDIT')
-    return {
-      present: action.value,
-      past: [...state.past, state.present].slice(-100),
-      future: [],
-    };
-  if (action.type === 'UNDO' && state.past.length)
-    return {
-      present: state.past[state.past.length - 1]!,
-      past: state.past.slice(0, -1),
-      future: [state.present, ...state.future],
-    };
-  if (action.type === 'REDO' && state.future.length)
-    return {
-      present: state.future[0]!,
-      past: [...state.past, state.present],
-      future: state.future.slice(1),
-    };
-  return state;
-}
-const baseSpace = (label: string): SpaceDetails => ({
-  label,
-  widthFeet: 10,
-  depthFeet: 10,
-  spaceType: 'BOOTH',
-  description: '',
-  amenities: [],
-  feeMinor: 0,
-  currency: 'USD',
-  preferredDirectoryId: null,
-  managerNotes: '',
-});
 export function Layouts({
   data,
   run,
@@ -63,528 +73,996 @@ export function Layouts({
   run: (c: OperationsCommand) => Promise<unknown>;
   canManage: boolean;
 }) {
-  const [selected, setSelected] = useState<number | null>(null);
-  const version = data.layoutVersions?.find((v) => v.id === selected);
+  const [archive, setArchive] = useState<
+    NonNullable<MarketOperationsData['layouts']>[number] | null
+  >(null);
+  const [archiveBusy, setArchiveBusy] = useState(false);
+  const archiving = useRef(false);
+  const savedLayouts = (data.layouts ?? []).filter(
+    (layout) => !layout.deletedAt,
+  );
+  const archivedLayouts =
+    data.archivedLayouts ??
+    (data.layouts ?? []).filter((layout) => !!layout.deletedAt);
   return (
-    <>
-      {canManage && (
-        <div className="ops-toolbar">
-          <button
-            type="button"
+    <div className="layout-library">
+      <AnimatedDisclosure
+        title="Saved layouts"
+        defaultOpen
+        className="saved-layouts-card"
+        action={
+          canManage && (
+            <Button
+              onClick={async () => {
+                const v = (await run({
+                  action: 'CREATE_LAYOUT',
+                  data: { name: 'Untitled layout' },
+                })) as LayoutVersion;
+                if (v) go(`/market/layouts/${v.layoutId}/edit`);
+              }}
+            >
+              Create layout
+            </Button>
+          )
+        }
+      >
+        <div className="layout-card-grid">
+          {!savedLayouts.length && (
+            <EmptyState title="No saved layouts">
+              <p>No saved layouts yet.</p>
+            </EmptyState>
+          )}
+          {savedLayouts.map((layout) => {
+            const version = currentLayoutVersion(data, layout.id);
+            if (!version) return null;
+            return (
+              <article
+                className="layout-card"
+                key={layout.id}
+                aria-label={layout.name}
+              >
+                <div className="layout-card-preview" aria-hidden="true" inert>
+                  <LayoutPreview data={data} version={version} />
+                </div>
+                <div className="layout-card-info">
+                  <span className="layout-card-name">{layout.name}</span>
+                  <StatusBadge>{version.status}</StatusBadge>
+                </div>
+                <div className="layout-card-actions">
+                  <Button
+                    size="compact"
+                    aria-label={`${canManage ? 'Edit' : 'View'} ${layout.name}`}
+                    onClick={() => go(`/market/layouts/${layout.id}/edit`)}
+                  >
+                    {canManage ? 'Edit' : 'View'}
+                  </Button>
+                  {canManage && (
+                    <>
+                      <Button
+                        size="compact"
+                        aria-label={`Copy ${layout.name}`}
+                        className="secondary"
+                        onClick={async () => {
+                          const copy = (await run({
+                            action: 'CLONE_LAYOUT',
+                            id: version.id,
+                            expectedRevision: version.revision,
+                            data: {},
+                          })) as LayoutVersion;
+                          if (copy) go(`/market/layouts/${copy.layoutId}/edit`);
+                        }}
+                      >
+                        Copy
+                      </Button>
+                      <Button
+                        size="compact"
+                        aria-label={`Archive ${layout.name}`}
+                        className="secondary"
+                        onClick={() => setArchive(layout)}
+                      >
+                        Archive
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </AnimatedDisclosure>
+      <MarketDialog
+        open={archive !== null}
+        title={archive ? `Archive ${archive.name}?` : 'Archive layout'}
+        busy={archiveBusy}
+        onClose={() => setArchive(null)}
+        actions={
+          <Button
+            variant="destructive"
+            disabled={archiveBusy}
             onClick={async () => {
-              const v = (await run({
-                action: 'CREATE_LAYOUT',
-                data: { name: 'Untitled layout' },
-              })) as LayoutVersion;
-              if (v) setSelected(v.id);
+              if (!archive || archiving.current) return;
+              archiving.current = true;
+              setArchiveBusy(true);
+              try {
+                await run({
+                  action: 'ARCHIVE_LAYOUT',
+                  id: archive.id,
+                  expectedRevision: archive.revision,
+                  data: {},
+                });
+              } finally {
+                archiving.current = false;
+                setArchiveBusy(false);
+                setArchive(null);
+              }
             }}
           >
-            Create layout
-          </button>
+            {archiveBusy ? 'Archiving' : 'Archive layout'}
+          </Button>
+        }
+      >
+        <p>Existing occurrences and their data will be kept.</p>
+      </MarketDialog>
+      <AnimatedDisclosure
+        title="Archived layouts"
+        className="saved-layouts-card"
+      >
+        <div className="layout-card-grid">
+          {!archivedLayouts.length && (
+            <EmptyState title="No archived layouts">
+              <p>No archived layouts.</p>
+            </EmptyState>
+          )}
+          {archivedLayouts.map((layout) => {
+            const version = currentLayoutVersion(data, layout.id);
+            return (
+              <article
+                className="layout-card"
+                key={layout.id}
+                aria-label={layout.name}
+              >
+                {version && (
+                  <div className="layout-card-preview" aria-hidden="true" inert>
+                    <LayoutPreview data={data} version={version} />
+                  </div>
+                )}
+                <div className="layout-card-info">
+                  <span className="layout-card-name">{layout.name}</span>
+                  <StatusBadge>Archived</StatusBadge>
+                </div>
+                {canManage && (
+                  <div className="layout-card-actions">
+                    <Button
+                      onClick={() =>
+                        run({
+                          action: 'UNARCHIVE_LAYOUT',
+                          id: layout.id,
+                          expectedRevision: layout.revision,
+                          data: {},
+                        })
+                      }
+                    >
+                      Unarchive layout
+                    </Button>
+                  </div>
+                )}
+              </article>
+            );
+          })}
         </div>
-      )}
-      <ul className="ops-record-list">
-        {data.layouts?.map((l) => (
-          <li key={l.id}>
-            <h2>{l.name}</h2>
-            {data.layoutVersions
-              ?.filter((v) => v.layoutId === l.id)
-              .map((v) => (
-                <button
-                  type="button"
-                  key={v.id}
-                  onClick={() => setSelected(v.id)}
-                >
-                  Version {v.versionNumber} · {v.status.toLowerCase()}
-                </button>
-              ))}
-          </li>
-        ))}
-      </ul>
-      {version && (
+      </AnimatedDisclosure>
+    </div>
+  );
+}
+export function LayoutScreen({
+  data,
+  layoutId,
+  run,
+  canManage,
+}: {
+  data: MarketOperationsData;
+  layoutId: number;
+  run: (c: OperationsCommand) => Promise<unknown>;
+  canManage: boolean;
+}) {
+  const version = data.layouts?.some(
+    (layout) => layout.id === layoutId && !layout.deletedAt,
+  )
+    ? currentLayoutVersion(data, layoutId)
+    : undefined;
+  return (
+    <div className="layout-editor-screen">
+      <div className="layout-screen-navigation">
+        <RouteLink to="/market/layouts">Back to layouts</RouteLink>
+      </div>
+      {version ? (
         <LayoutEditor
           key={`${version.id}:${version.revision}`}
           version={version}
           data={data}
           run={run}
           canManage={canManage}
+          editablePublished
+          onClone={(v) => go(`/market/layouts/${v.layoutId}/edit`)}
         />
+      ) : (
+        <p>This layout is unavailable or archived.</p>
       )}
-    </>
+    </div>
   );
 }
-function LayoutEditor({
+export function LayoutEditor({
   version,
   data,
   run,
   canManage,
+  onDirtyChange,
+  onClone,
+  occurrenceId,
+  onSave,
+  editablePublished = false,
 }: {
   version: LayoutVersion;
   data: MarketOperationsData;
   run: (c: OperationsCommand) => Promise<unknown>;
   canManage: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
+  onClone?: (v: LayoutVersion) => void;
+  occurrenceId?: number;
+  onSave?: (drawing: Drawing) => Promise<void>;
+  editablePublished?: boolean;
 }) {
+  const initial: Drawing = {
+    definition: version.definition,
+    spaces: Object.fromEntries(
+      data.spaces
+        ?.filter((s) => s.layoutVersionId === version.id)
+        .map((s) => [s.elementId, s.details]) ?? [],
+    ),
+  };
   const [history, dispatch] = useReducer(drawingHistory, {
       past: [],
       future: [],
-      present: {
-        definition: version.definition,
-        spaces: Object.fromEntries(
-          data.spaces
-            ?.filter((s) => s.layoutVersionId === version.id)
-            .map((s) => [s.elementId, s.details]) ?? [],
-        ),
-      },
+      present: initial,
     }),
-    [selected, setSelected] = useState(''),
+    [selected, setSelected] = useState<string[]>([]),
     [grid, setGrid] = useState(true),
     [snap, setSnap] = useState(true),
-    [areaName, setAreaName] = useState(''),
-    [area, setArea] = useState(version.definition.areas[0]?.id ?? ''),
-    [copied, setCopied] = useState<{
-      element: MapElement;
-      space?: SpaceDetails;
-    } | null>(null);
+    [spacing, setSpacing] = useState(version.definition.pixelsPerFoot),
+    [area, setArea] = useState(
+      version.definition.elements[0]?.areaId ??
+        version.definition.areas[0]?.id ??
+        '',
+    ),
+    [tool, setTool] = useState<MapTool>('select'),
+    [clipboard, setClipboard] = useState<{
+      drawing: Drawing;
+      ids: string[];
+    } | null>(null),
+    [name, setName] = useState(
+      data.layouts?.find((l) => l.id === version.layoutId)?.name ??
+        'Market layout',
+    ),
+    [panel, setPanel] = useState<'inspector' | 'layers'>('inspector'),
+    [saving, setSaving] = useState(false);
+  const canvas = useRef<MapCanvasHandle>(null),
+    typing = useRef(''),
+    pasteOffset = useRef(20);
   const drawing = history.present,
     definition = drawing.definition,
-    element = definition.elements.find((e) => e.id === selected),
-    space = drawing.spaces[selected],
-    editable = canManage && version.status === 'DRAFT';
-  function update(value: Drawing) {
-    dispatch({ type: 'EDIT', value });
+    editable =
+      canManage &&
+      (version.status === 'DRAFT' ||
+        !!onSave ||
+        (editablePublished && version.status === 'PUBLISHED')),
+    activeArea = definition.areas.some((a) => a.id === area)
+      ? area
+      : (definition.areas[0]?.id ?? ''),
+    ids = selected.filter((id) => definition.elements.some((e) => e.id === id)),
+    items = definition.elements.filter((e) => ids.includes(e.id)),
+    mutable =
+      items.length > 0 && items.every((e) => !e.locked && !e.editorHidden);
+  const dirty =
+    JSON.stringify(initial) !== JSON.stringify(drawing) ||
+    name !==
+      (data.layouts?.find((l) => l.id === version.layoutId)?.name ??
+        'Market layout');
+  const assignments =
+    data.assignments?.filter((a) => a.occurrenceId === occurrenceId) ?? [];
+  const protectedIds =
+    data.spaces
+      ?.filter((s) => assignments.some((a) => a.spaceId === s.id))
+      .map((s) => s.elementId) ?? [];
+  useEffect(() => onDirtyChange?.(dirty), [dirty, onDirtyChange]);
+  useEffect(() => {
+    if (!dirty) return;
+    let linkApproved = false;
+    const unload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    const navigate = (e: MouseEvent) => {
+      const link = (e.target as HTMLElement).closest<HTMLAnchorElement>(
+        'a[href]',
+      );
+      if (
+        link &&
+        !link.getAttribute('href')?.startsWith('#') &&
+        !e.ctrlKey &&
+        !e.metaKey
+      ) {
+        linkApproved = window.confirm('Discard unsaved layout changes?');
+        if (!linkApproved) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }
+    };
+    const currentUrl = window.location.href;
+    const back = (e: PopStateEvent) => {
+      if (linkApproved) {
+        linkApproved = false;
+        return;
+      }
+      if (!window.confirm('Discard unsaved layout changes?')) {
+        e.stopImmediatePropagation();
+        window.history.pushState(null, '', currentUrl);
+      }
+    };
+    window.addEventListener('beforeunload', unload);
+    document.addEventListener('click', navigate, true);
+    window.addEventListener('popstate', back, true);
+    return () => {
+      window.removeEventListener('beforeunload', unload);
+      document.removeEventListener('click', navigate, true);
+      window.removeEventListener('popstate', back, true);
+    };
+  }, [dirty]);
+  function update(value: Drawing, merge = false) {
+    if (
+      protectedIds.some(
+        (id) =>
+          !value.spaces[id] ||
+          !value.definition.elements.some(
+            (e) => e.id === id && e.type === 'SPACE',
+          ),
+      )
+    )
+      return;
+    if (editable) dispatch({ type: 'EDIT', value, merge });
   }
-  function geometry(next: MapElement) {
-    const spaces = { ...drawing.spaces };
-    if (next.type === 'SPACE' && spaces[next.id])
-      spaces[next.id] = {
-        ...spaces[next.id]!,
-        widthFeet: next.width / definition.pixelsPerFoot,
-        depthFeet: next.height / definition.pixelsPerFoot,
-      };
-    update({
-      definition: {
-        ...definition,
-        elements: definition.elements.map((e) => (e.id === next.id ? next : e)),
-      },
-      spaces,
-    });
+  function change(elements: MapElement[]) {
+    update(geometry(drawing, elements));
   }
-  function booth(patch: Partial<SpaceDetails>) {
-    if (!element || !space) return;
-    const next = { ...space, ...patch };
-    update({
-      definition: {
-        ...definition,
-        elements: definition.elements.map((e) =>
-          e.id === selected
-            ? {
-                ...e,
-                text: next.label,
-                width: next.widthFeet * definition.pixelsPerFoot,
-                height: next.depthFeet * definition.pixelsPerFoot,
-              }
-            : e,
-        ),
-      },
-      spaces: { ...drawing.spaces, [selected]: next },
-    });
+  function changeBooth(id: string, patch: Partial<SpaceDetails>) {
+    const s = drawing.spaces[id];
+    if (!s) return;
+    const next = { ...s, ...patch };
+    if (
+      next.widthFeet < 1 ||
+      next.widthFeet > 1000 ||
+      next.depthFeet < 1 ||
+      next.depthFeet > 1000
+    )
+      return;
+    const d = geometry(
+      drawing,
+      definition.elements
+        .filter((e) => e.id === id)
+        .map((e) => ({
+          ...e,
+          text: next.label,
+          width: next.widthFeet * definition.pixelsPerFoot,
+          height: next.depthFeet * definition.pixelsPerFoot,
+        })),
+    );
+    update(
+      { ...d, spaces: { ...d.spaces, [id]: next } },
+      typing.current === id,
+    );
+    typing.current = id;
+  }
+  function inspectorGeometry(e: MapElement) {
+    update(geometry(drawing, [e]), typing.current === e.id);
+    typing.current = e.id;
   }
   function add(
     type: MapElement['type'],
-    source?: { element: MapElement; space?: SpaceDetails },
+    path?: Pick<MapElement, 'x' | 'y' | 'width' | 'height' | 'points'>,
   ) {
+    if (!editable || definition.elements.length >= 1000) return;
     const id = crypto.randomUUID(),
-      e: MapElement = source
-        ? {
-            ...source.element,
-            id,
-            x: source.element.x + 20,
-            y: source.element.y + 20,
-          }
-        : {
-            id,
-            areaId: area,
-            type,
-            x: 50,
-            y: 50,
-            width: 100,
-            height: 100,
-            rotation: 0,
-            zIndex: definition.elements.length,
-            text:
-              type === 'SPACE'
-                ? `Booth ${definition.elements.filter((e) => e.type === 'SPACE').length + 1}`
-                : type === 'TEXT'
-                  ? 'Venue label'
-                  : '',
-            fill: type === 'SPACE' ? '#e0ebd9' : '#d4dccf',
-          };
+      center = canvas.current?.center() ?? { x: 100, y: 100 },
+      label =
+        type === 'SPACE'
+          ? uniqueLabel(
+              new Set(Object.values(drawing.spaces).map((s) => s.label)),
+            )
+          : type === 'TEXT'
+            ? 'Venue label'
+            : '';
+    const size = type === 'SPACE' ? 10 * definition.pixelsPerFoot : 120;
+    const e: MapElement = {
+      id,
+      areaId: activeArea,
+      type,
+      x: center.x - size / 2,
+      y: center.y - size / 2,
+      width: type === 'TEXT' ? 200 : size,
+      height: type === 'TEXT' ? 40 : type === 'LINE' ? 60 : size,
+      rotation: 0,
+      zIndex: Math.max(-1, ...definition.elements.map((e) => e.zIndex)) + 1,
+      text: label,
+      fill:
+        type === 'SPACE' ? '#e0ebd9' : type === 'TEXT' ? '#173925' : '#d4dccf',
+      ...path,
+    };
     update({
       definition: { ...definition, elements: [...definition.elements, e] },
       spaces:
-        e.type === 'SPACE'
-          ? {
-              ...drawing.spaces,
-              [id]: source?.space
-                ? { ...source.space, label: source.space.label + ' copy' }
-                : baseSpace(e.text),
-            }
+        type === 'SPACE'
+          ? { ...drawing.spaces, [id]: baseSpace(label) }
           : drawing.spaces,
     });
-    setSelected(id);
+    setSelected([id]);
+    if (!path) setTool('select');
+    setPanel('inspector');
   }
+  function copy() {
+    setClipboard({ drawing: structuredClone(drawing), ids: [...ids] });
+    pasteOffset.current = 20;
+  }
+  function paste(source = clipboard) {
+    if (
+      !source ||
+      !editable ||
+      definition.elements.length + source.ids.length > 1000
+    )
+      return;
+    const result = copies(
+      source.drawing,
+      drawing,
+      source.ids,
+      activeArea,
+      () => crypto.randomUUID(),
+      pasteOffset.current,
+    );
+    update(result.drawing);
+    setSelected(result.ids);
+    pasteOffset.current += 20;
+  }
+  function duplicate() {
+    paste({ drawing, ids });
+  }
+  function flags(
+    targets: string[],
+    patch: Pick<MapElement, 'locked' | 'editorHidden'>,
+  ) {
+    const expanded = [
+      ...new Set(
+        targets.flatMap((id) => selectIds(definition.elements, [], id)),
+      ),
+    ];
+    update(patchFlags(drawing, expanded, patch));
+  }
+  function sync(source: string, targets: string[], categories: SyncCategory[]) {
+    update(syncBooths(drawing, source, targets, categories));
+  }
+  const commands = useRef({
+    drawing,
+    ids,
+    editable,
+    clipboard,
+    activeArea,
+    protectedIds,
+  });
+  useEffect(() => {
+    commands.current = {
+      drawing,
+      ids,
+      editable,
+      clipboard,
+      activeArea,
+      protectedIds,
+    };
+  });
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      const dialog = target?.closest('dialog');
+      if (
+        target?.closest('input,textarea,select,[contenteditable="true"]') ||
+        (dialog && !dialog.querySelector('[data-testid="layout-editor"]'))
+      )
+        return;
+      const {
+        drawing: d,
+        ids,
+        editable,
+        clipboard,
+        activeArea,
+        protectedIds,
+      } = commands.current;
+      if (!editable) return;
+      const mod = event.ctrlKey || event.metaKey,
+        k = event.key.toLowerCase();
+      let handled = true;
+      if (mod && k === 'z')
+        dispatch({ type: event.shiftKey ? 'REDO' : 'UNDO' });
+      else if (mod && k === 'y') dispatch({ type: 'REDO' });
+      else if (mod && k === 'c') {
+        setClipboard({ drawing: structuredClone(d), ids: [...ids] });
+        pasteOffset.current = 20;
+      } else if (mod && (k === 'v' || k === 'd')) {
+        const source = k === 'd' ? { drawing: d, ids } : clipboard;
+        if (
+          source &&
+          d.definition.elements.length + source.ids.length <= 1000
+        ) {
+          const result = copies(
+            source.drawing,
+            d,
+            source.ids,
+            activeArea,
+            () => crypto.randomUUID(),
+            pasteOffset.current,
+          );
+          dispatch({ type: 'EDIT', value: result.drawing });
+          setSelected(result.ids);
+          pasteOffset.current += 20;
+        }
+      } else if (k === 'delete' || k === 'backspace') {
+        if (!ids.some((id) => protectedIds.includes(id)))
+          dispatch({ type: 'EDIT', value: remove(d, ids) });
+      } else if (k === 'escape') {
+        if (dialog && !ids.length) return;
+        setSelected([]);
+        setTool('select');
+      } else if (
+        ['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(k)
+      ) {
+        const step = event.shiftKey ? 10 : 1;
+        dispatch({
+          type: 'EDIT',
+          value: nudge(d, ids, {
+            x: k === 'arrowleft' ? -step : k === 'arrowright' ? step : 0,
+            y: k === 'arrowup' ? -step : k === 'arrowdown' ? step : 0,
+          }),
+        });
+      } else handled = false;
+      if (handled) event.preventDefault();
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, []);
   const publicSpaces = Object.entries(drawing.spaces).map(([elementId, s]) => ({
     elementId,
     label: s.label,
     widthFeet: s.widthFeet,
     depthFeet: s.depthFeet,
     amenities: s.amenities,
-    vendor: null,
+    vendor:
+      assignments.find((a) =>
+        data.spaces?.some(
+          (space) => space.id === a.spaceId && space.elementId === elementId,
+        ),
+      )?.businessSnapshot ?? null,
   }));
-  const save = () =>
-    run({
-      action: 'SAVE_LAYOUT',
-      id: version.id,
-      expectedRevision: version.revision,
-      data: { ...drawing },
-    });
+  async function save(publish = false) {
+    if (saving) return;
+    setSaving(true);
+    try {
+      if (onSave) {
+        await onSave(drawing);
+        return;
+      }
+      const saved = (await run({
+        action: 'SAVE_LAYOUT',
+        id: version.id,
+        expectedRevision: version.revision,
+        data: { ...drawing, name },
+      })) as LayoutVersion;
+      if (saved && publish)
+        await run({
+          action: 'PUBLISH_LAYOUT',
+          id: saved.id,
+          expectedRevision: saved.revision,
+          data: {},
+        });
+    } finally {
+      setSaving(false);
+    }
+  }
   return (
-    <section className="ops-editor" aria-label="Market layout editor">
-      <h2>Layout version {version.versionNumber}</h2>
-      <p>
-        Drag elements to move them. Drag the blue corner to resize. The
-        inspector supports exact keyboard entry. Drag the background to pan.
-      </p>
-      <div className="ops-toolbar">
-        <button
-          type="button"
-          disabled={!editable || !history.past.length}
-          onClick={() => dispatch({ type: 'UNDO' })}
-        >
-          Undo
-        </button>
-        <button
-          type="button"
-          disabled={!editable || !history.future.length}
-          onClick={() => dispatch({ type: 'REDO' })}
-        >
-          Redo
-        </button>
-        <Check label="Show grid" checked={grid} onChange={setGrid} />
-        <Check label="Snap to grid" checked={snap} onChange={setSnap} />
-        {canManage && (
-          <button
-            type="button"
-            onClick={() =>
-              run({ action: 'CLONE_LAYOUT', id: version.id, data: {} })
-            }
-          >
-            Create new draft version
-          </button>
-        )}
-        {editable && (
-          <>
-            <button type="button" onClick={save}>
-              Save layout
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                const saved = (await save()) as LayoutVersion;
-                if (!saved) return;
-                await run({
-                  action: 'PUBLISH_LAYOUT',
-                  id: saved.id,
-                  expectedRevision: saved.revision,
-                  data: {},
-                });
-              }}
-            >
-              Save and publish layout
-            </button>
-          </>
-        )}
-      </div>
-      {editable && (
-        <>
-          <form
-            className="ops-toolbar"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (areaName) {
-                const id = crypto.randomUUID();
-                update({
-                  ...drawing,
-                  definition: {
-                    ...definition,
-                    areas: [...definition.areas, { id, name: areaName }],
-                  },
-                });
-                setArea(id);
-                setAreaName('');
-              }
+    <section
+      className="designer"
+      aria-label="Market layout editor"
+      data-testid="layout-editor"
+      onBlurCapture={() => {
+        typing.current = '';
+      }}
+    >
+      <header className="designer-header">
+        <div>
+          <h1>{name}</h1>
+          <StatusBadge>{version.status}</StatusBadge>
+          <span className={dirty ? 'designer-dirty' : ''} role="status">
+            {dirty ? 'Unsaved changes' : 'All changes saved'}
+          </span>
+        </div>
+        <label>
+          Area{' '}
+          <Select
+            aria-label="Area"
+            value={activeArea}
+            onChange={(e) => {
+              setArea(e.target.value);
+              setSelected([]);
             }}
           >
-            <Entry
-              label="New area name"
-              value={areaName}
-              onChange={setAreaName}
-            />
-            <button>Add area</button>
-          </form>
-          <Control label="Area for new elements">
-            {(id) => (
-              <select
-                id={id}
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
-              >
-                {definition.areas.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Control>
-          <div className="ops-toolbar">
-            {(
-              [
-                'SPACE',
-                'RECTANGLE',
-                'CIRCLE',
-                'TRIANGLE',
-                'LINE',
-                'TEXT',
-                'IMAGE',
-              ] as const
-            ).map((type) => (
-              <button key={type} type="button" onClick={() => add(type)}>
-                Add {type === 'SPACE' ? 'booth' : type.toLowerCase()}
-              </button>
+            {definition.areas.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
             ))}
-          </div>
-          <div className="ops-toolbar">
-            <button
+          </Select>
+        </label>
+        <div className="designer-save">
+          <Button
+            variant="secondary"
+            size="compact"
+            type="button"
+            disabled={!editable || !history.past.length}
+            onClick={() => dispatch({ type: 'UNDO' })}
+          >
+            Undo
+          </Button>
+          <Button
+            variant="secondary"
+            size="compact"
+            type="button"
+            disabled={!editable || !history.future.length}
+            onClick={() => dispatch({ type: 'REDO' })}
+          >
+            Redo
+          </Button>
+          {editable && (
+            <>
+              <Button
+                variant="secondary"
+                size="compact"
+                type="button"
+                disabled={!dirty || saving}
+                onClick={() => save()}
+              >
+                Save layout
+              </Button>
+              {!onSave && version.status === 'DRAFT' && (
+                <Button
+                  variant="primary"
+                  size="compact"
+                  type="button"
+                  disabled={saving}
+                  onClick={() => save(true)}
+                >
+                  Save and publish layout
+                </Button>
+              )}
+            </>
+          )}
+          {canManage && !onSave && (
+            <Button
+              variant="secondary"
+              size="compact"
               type="button"
-              disabled={!element}
-              onClick={() => element && setCopied({ element, space })}
-            >
-              Copy
-            </button>
-            <button
-              type="button"
-              disabled={!copied}
-              onClick={() => copied && add(copied.element.type, copied)}
-            >
-              Paste
-            </button>
-            <button
-              type="button"
-              disabled={!element}
-              onClick={() => element && add(element.type, { element, space })}
-            >
-              Duplicate
-            </button>
-            <button
-              type="button"
-              disabled={!element}
-              onClick={() => {
-                const spaces = { ...drawing.spaces };
-                delete spaces[selected];
-                update({
-                  definition: {
-                    ...definition,
-                    elements: definition.elements.filter(
-                      (e) => e.id !== selected,
-                    ),
-                  },
-                  spaces,
-                });
-                setSelected('');
+              disabled={dirty || saving}
+              onClick={async () => {
+                const v = (await run({
+                  action: 'CLONE_LAYOUT',
+                  id: version.id,
+                  expectedRevision: version.revision,
+                  data: {},
+                })) as LayoutVersion;
+                if (v) onClone?.(v);
               }}
             >
-              Delete
-            </button>
-          </div>
-        </>
-      )}
-      <div className="ops-map-columns">
-        <MarketMap
+              Copy Layout
+            </Button>
+          )}
+        </div>
+      </header>
+      <div className="designer-commands" aria-label="Selection commands">
+        <span>
+          {ids.length ? `${ids.length} selected` : 'Select an object to edit'}
+        </span>
+        <Button
+          variant="secondary"
+          size="compact"
+          type="button"
+          disabled={!editable || !ids.length}
+          onClick={copy}
+        >
+          Copy
+        </Button>
+        <Button
+          variant="secondary"
+          size="compact"
+          type="button"
+          disabled={!editable || !clipboard}
+          onClick={() => paste()}
+        >
+          Paste
+        </Button>
+        <Button
+          variant="secondary"
+          size="compact"
+          type="button"
+          disabled={!editable || !ids.length}
+          onClick={duplicate}
+        >
+          Duplicate
+        </Button>
+        <Button
+          variant="destructive"
+          size="compact"
+          type="button"
+          disabled={
+            !editable || !mutable || ids.some((id) => protectedIds.includes(id))
+          }
+          onClick={() => update(remove(drawing, ids))}
+        >
+          Delete
+        </Button>
+        <Button
+          variant="secondary"
+          size="compact"
+          type="button"
+          disabled={!editable || !ids.length}
+          onClick={() => flags(ids, { locked: !items.every((e) => e.locked) })}
+        >
+          {items.length && items.every((e) => e.locked) ? 'Unlock' : 'Lock'}
+        </Button>
+        <Button
+          variant="secondary"
+          size="compact"
+          type="button"
+          disabled={!editable || !ids.length}
+          onClick={() =>
+            flags(ids, { editorHidden: !items.every((e) => e.editorHidden) })
+          }
+        >
+          {items.length && items.every((e) => e.editorHidden) ? 'Show' : 'Hide'}
+        </Button>
+        <label className="sr-only" htmlFor="designer-arrange">
+          Arrange selection
+        </label>
+        <Select
+          id="designer-arrange"
+          value=""
+          disabled={!editable || !mutable}
+          onChange={(e) =>
+            update(
+              reorder(
+                drawing,
+                ids,
+                e.target.value as 'front' | 'forward' | 'backward' | 'back',
+              ),
+            )
+          }
+        >
+          <option value="">Arrange…</option>
+          <option value="front">Bring to front</option>
+          <option value="forward">Bring forward</option>
+          <option value="backward">Send backward</option>
+          <option value="back">Send to back</option>
+        </Select>
+        <label className="sr-only" htmlFor="designer-align">
+          Align selection
+        </label>
+        <Select
+          id="designer-align"
+          value=""
+          disabled={!editable || !mutable || ids.length < 2}
+          onChange={(e) => update(align(drawing, ids, e.target.value))}
+        >
+          <option value="">Align…</option>
+          {[
+            ['left', 'Align left'],
+            ['center', 'Align center horizontally'],
+            ['right', 'Align right'],
+            ['top', 'Align top'],
+            ['middle', 'Align center vertically'],
+            ['bottom', 'Align bottom'],
+            ['horizontal', 'Distribute horizontally'],
+            ['vertical', 'Distribute vertically'],
+          ].map(([v, label]) => (
+            <option
+              key={v}
+              value={v}
+              disabled={
+                ['horizontal', 'vertical'].includes(v!) && ids.length < 3
+              }
+            >
+              {label}
+            </option>
+          ))}
+        </Select>
+        <Button
+          variant="secondary"
+          size="compact"
+          type="button"
+          disabled={
+            !editable ||
+            !mutable ||
+            ids.length < 2 ||
+            items.some((e) => e.type === 'SPACE')
+          }
+          onClick={() => update(group(drawing, ids, crypto.randomUUID()))}
+        >
+          Group
+        </Button>
+        <Button
+          variant="secondary"
+          size="compact"
+          type="button"
+          disabled={!editable || !mutable || !items.some((e) => e.groupId)}
+          onClick={() => update(group(drawing, ids))}
+        >
+          Ungroup
+        </Button>
+      </div>
+      <div className="designer-body">
+        <div className="designer-tools" aria-label="Design tools">
+          <Button
+            variant={tool === 'select' ? 'primary' : 'secondary'}
+            size="compact"
+            type="button"
+            aria-pressed={tool === 'select'}
+            onClick={() => setTool('select')}
+          >
+            ↖ Select
+          </Button>
+          <Button
+            variant={tool === 'pan' ? 'primary' : 'secondary'}
+            size="compact"
+            type="button"
+            aria-pressed={tool === 'pan'}
+            onClick={() => setTool('pan')}
+          >
+            ✥ Pan
+          </Button>
+          {editable && (
+            <>
+              {(
+                [
+                  'SPACE',
+                  'RECTANGLE',
+                  'CIRCLE',
+                  'TRIANGLE',
+                  'LINE',
+                  'TEXT',
+                  'IMAGE',
+                ] as const
+              ).map((type) => (
+                <Button
+                  variant="secondary"
+                  size="compact"
+                  type="button"
+                  key={type}
+                  aria-label={`Add ${type === 'SPACE' ? 'booth' : type.toLowerCase()}`}
+                  title={`Add ${type === 'SPACE' ? 'booth' : type.toLowerCase()}`}
+                  onClick={() => add(type)}
+                >
+                  <span aria-hidden="true">
+                    {
+                      {
+                        SPACE: '▦',
+                        RECTANGLE: '□',
+                        CIRCLE: '○',
+                        TRIANGLE: '△',
+                        LINE: '╱',
+                        TEXT: 'T',
+                        IMAGE: '▧',
+                      }[type]
+                    }
+                  </span>
+                  {type === 'SPACE'
+                    ? 'Booth'
+                    : type.charAt(0) + type.slice(1).toLowerCase()}
+                </Button>
+              ))}
+              <Button
+                variant={tool === 'draw' ? 'primary' : 'secondary'}
+                size="compact"
+                type="button"
+                aria-pressed={tool === 'draw'}
+                onClick={() => setTool('draw')}
+              >
+                ✎ Draw path
+              </Button>
+            </>
+          )}
+        </div>
+        <MapCanvas
+          ref={canvas}
           definition={definition}
+          areaId={activeArea}
           spaces={publicSpaces}
+          selectedIds={ids}
+          onSelection={setSelected}
           editable={editable}
-          selectedId={selected}
-          onSelect={setSelected}
-          onEdit={geometry}
+          onChange={change}
+          onPath={(path) => add('LINE', path)}
+          tool={tool}
           grid={grid}
           snap={snap}
-          activeArea={area}
-          onAreaChange={setArea}
+          spacing={spacing}
         />
-        {element && (
-          <fieldset className="ops-inspector" disabled={!editable}>
-            <legend>{space ? 'Booth inspector' : 'Element inspector'}</legend>
-            <Entry
-              label="Label"
-              value={space?.label ?? element.text}
-              onChange={(v) =>
-                space ? booth({ label: v }) : geometry({ ...element, text: v })
-              }
+        <aside className="designer-sidebar" aria-label="Layout properties">
+          <div className="designer-tabs">
+            <button
+              type="button"
+              aria-pressed={panel === 'inspector'}
+              onClick={() => setPanel('inspector')}
+            >
+              Inspector
+            </button>
+            <button
+              type="button"
+              aria-pressed={panel === 'layers'}
+              onClick={() => setPanel('layers')}
+            >
+              Layers
+            </button>
+          </div>
+          {panel === 'inspector' ? (
+            <LayoutInspector
+              drawing={drawing}
+              selected={ids}
+              editable={editable}
+              version={version}
+              data={data}
+              area={activeArea}
+              name={name}
+              setName={setName}
+              canRename={!onSave}
+              update={update}
+              geometry={inspectorGeometry}
+              booth={changeBooth}
+              grid={grid}
+              setGrid={setGrid}
+              snap={snap}
+              setSnap={setSnap}
+              spacing={spacing}
+              setSpacing={setSpacing}
+              sync={sync}
             />
-            {(['x', 'y', 'rotation', 'zIndex'] as const).map((key) => (
-              <Entry
-                key={key}
-                label={key === 'zIndex' ? 'Stack order' : key}
-                type="number"
-                value={element[key]}
-                onChange={(v) => geometry({ ...element, [key]: Number(v) })}
-              />
-            ))}
-            <Control label="Element area">
-              {(id) => (
-                <select
-                  id={id}
-                  value={element.areaId}
-                  onChange={(e) =>
-                    geometry({ ...element, areaId: e.target.value })
-                  }
-                >
-                  {definition.areas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
+          ) : (
+            <LayoutLayers
+              elements={definition.elements.filter(
+                (e) => e.areaId === activeArea,
               )}
-            </Control>
-            <Entry
-              label="Fill color"
-              type="color"
-              value={element.fill}
-              onChange={(v) => geometry({ ...element, fill: v })}
+              selected={ids}
+              select={(id, shift) =>
+                setSelected(selectIds(definition.elements, ids, id, shift))
+              }
+              locate={(id) => {
+                canvas.current?.locate(id);
+                setSelected(selectIds(definition.elements, [], id));
+              }}
+              flags={flags}
+              editable={editable}
             />
-            {space ? (
-              <>
-                <Entry
-                  label="Width in feet"
-                  type="number"
-                  min={1}
-                  max={1000}
-                  step={0.1}
-                  value={space.widthFeet}
-                  onChange={(v) => booth({ widthFeet: Number(v) })}
-                />
-                <Entry
-                  label="Depth in feet"
-                  type="number"
-                  min={1}
-                  max={1000}
-                  step={0.1}
-                  value={space.depthFeet}
-                  onChange={(v) => booth({ depthFeet: Number(v) })}
-                />
-                <Entry
-                  label="Space type"
-                  value={space.spaceType}
-                  onChange={(v) => booth({ spaceType: v })}
-                />
-                <Entry
-                  label="Description"
-                  value={space.description}
-                  onChange={(v) => booth({ description: v })}
-                />
-                <Entry
-                  label="Default fee in minor units"
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={space.feeMinor}
-                  onChange={(v) => booth({ feeMinor: Number(v) })}
-                />
-                <Entry
-                  label="Currency"
-                  value={space.currency}
-                  onChange={(v) => booth({ currency: v.toUpperCase() })}
-                />
-                <fieldset>
-                  <legend>Physical amenities</legend>
-                  {[
-                    'ELECTRICITY',
-                    'WATER',
-                    'SHADE',
-                    'COVERED',
-                    'INDOOR',
-                    'VEHICLE',
-                    'FOOD_TRUCK',
-                  ].map((a) => (
-                    <Check
-                      key={a}
-                      label={a.toLowerCase().replaceAll('_', ' ')}
-                      checked={space.amenities.includes(a)}
-                      onChange={(v) =>
-                        booth({
-                          amenities: v
-                            ? [...space.amenities, a]
-                            : space.amenities.filter((x) => x !== a),
-                        })
-                      }
-                    />
-                  ))}
-                </fieldset>
-                <Control label="Preferred business suggestion">
-                  {(id) => (
-                    <select
-                      id={id}
-                      value={space.preferredDirectoryId ?? ''}
-                      onChange={(e) =>
-                        booth({
-                          preferredDirectoryId: e.target.value
-                            ? Number(e.target.value)
-                            : null,
-                        })
-                      }
-                    >
-                      <option value="">No preference</option>
-                      {data.directory?.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.contact.businessName}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </Control>
-                <Entry
-                  label="Private manager notes"
-                  value={space.managerNotes}
-                  onChange={(v) => booth({ managerNotes: v })}
-                />
-              </>
-            ) : (
-              <>
-                {(['width', 'height'] as const).map((key) => (
-                  <Entry
-                    key={key}
-                    label={key}
-                    type="number"
-                    min={1}
-                    value={element[key]}
-                    onChange={(v) => geometry({ ...element, [key]: Number(v) })}
-                  />
-                ))}
-                {element.type === 'IMAGE' && (
-                  <Entry
-                    label="Image or logo URL"
-                    type="url"
-                    value={element.imageUrl ?? ''}
-                    onChange={(v) => geometry({ ...element, imageUrl: v })}
-                  />
-                )}
-              </>
-            )}
-          </fieldset>
-        )}
+          )}
+        </aside>
       </div>
+      <footer className="designer-footer">
+        <span>
+          {definition.elements.length} objects ·{' '}
+          {Object.keys(drawing.spaces).length} booths
+        </span>
+        <span>Ctrl/Cmd + D duplicate · Arrow keys nudge · Esc clear</span>
+      </footer>
     </section>
   );
 }

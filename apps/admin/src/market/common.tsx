@@ -1,3 +1,5 @@
+import { cardClassName } from '@market/ui/presentation';
+import { CommandForm as SharedCommandForm } from './CommandForm';
 import {
   useId,
   useState,
@@ -10,45 +12,54 @@ import {
   type MarketConfiguration,
   type MarketSessionInput,
 } from '@market/api';
-import { Button, Checkbox, Field, Input, Select, InfoTip } from '@market/ui';
+import {
+  Button,
+  Checkbox,
+  Field,
+  Input,
+  Select,
+  SelectField as SharedSelectField,
+  InfoTip,
+  ErrorState,
+  Spinner,
+} from '@market/ui';
 import { localParts, localToInstant, TimezoneField } from './timezones';
+import { clockTime, friendlyLabel, statusTone } from './presentation';
+export { date, StatusBadge, MarketDialog } from './presentation';
 // Existing common primitives are shared without changing Vendor module behavior.
 export {
   DataTable,
-  ReadState,
   RouteLink,
   Unavailable,
-  date,
   go,
   integer,
   text,
   TextField,
   useRead,
 } from '../vendor/common';
-import {
-  CommandForm as SharedCommandForm,
-  integer,
-  text,
-  TextField,
-} from '../vendor/common';
-
-export function CommandForm(props: ComponentProps<typeof SharedCommandForm>) {
+import { integer, text, TextField } from '../vendor/common';
+export function CommandForm({
+  danger = false,
+  ...props
+}: ComponentProps<typeof SharedCommandForm> & { danger?: boolean }) {
   const [dirty, setDirty] = useState(false);
   return (
-    <SharedCommandForm
-      {...props}
-      run={async (data, key) => {
-        const result = await props.run(data, key);
-        setDirty(false);
-        return result;
-      }}
-    >
-      <div onChange={() => setDirty(true)}>{props.children}</div>
-      {dirty && <p role="status">Unsaved changes</p>}
-    </SharedCommandForm>
+    <div className={danger ? 'market-danger-command' : undefined}>
+      <SharedCommandForm
+        {...props}
+        submitVariant={danger ? 'destructive' : props.submitVariant}
+        run={async (data, key) => {
+          const result = await props.run(data, key);
+          setDirty(false);
+          return result;
+        }}
+      >
+        <div onChange={() => setDirty(true)}>{props.children}</div>
+        {dirty && <p role="status">Unsaved changes</p>}
+      </SharedCommandForm>
+    </div>
   );
 }
-
 export function Choice({
   name,
   label,
@@ -65,12 +76,24 @@ export function Choice({
   labels?: Record<string, string>;
 }) {
   const id = useId();
+  const [selected, setSelected] = useState(value ?? choices[0] ?? '');
   return (
     <Field id={id} label={label} info={info}>
-      <Select id={id} name={name} defaultValue={value}>
+      <Select
+        id={id}
+        variant={name === 'status' ? 'status' : 'ordinary'}
+        name={name}
+        value={selected}
+        onChange={(e) => setSelected(e.target.value)}
+        className={
+          name === 'status'
+            ? `input market-status-select market-status-${statusTone(selected)}`
+            : undefined
+        }
+      >
         {choices.map((choice) => (
           <option key={choice} value={choice}>
-            {labels?.[choice] ?? choice}
+            {labels?.[choice] ?? friendlyLabel(choice)}
           </option>
         ))}
       </Select>
@@ -158,24 +181,31 @@ export function RangeForm({
   }
   return (
     <>
-      <form className="filter-bar" onSubmit={submit}>
+      <form
+        className={cardClassName({ className: 'filter-bar ui-control-row' })}
+        onSubmit={submit}
+      >
         <TextField
           name="from"
-          label="From date (UTC, inclusive)"
+          label="From Date"
           type="date"
           value={range.from}
         />
         <TextField
           name="through"
-          label="Through date (UTC, exclusive)"
+          label="Through Date"
           type="date"
           value={range.through}
         />
         {children}
-        <Button type="submit">Apply dates</Button>
+        <div className="ui-field-action">
+          <Button type="submit">Apply dates</Button>
+        </div>
       </form>
       {invalid && (
-        <p role="alert">Choose a valid date range of 1 to 366 days.</p>
+        <p className="alert ui-alert ui-alert-error" role="alert">
+          Choose a valid date range of 1 to 366 days.
+        </p>
       )}
     </>
   );
@@ -338,7 +368,7 @@ export function SessionFields({
         <TimezoneField name="sessionTimezone" value={timezone} />
         <TextField
           name="venue"
-          label="Venue snapshot"
+          label="Venue"
           info="The saved venue for this date, kept even if the market's default venue changes later."
           value={value.venue}
           required={false}
@@ -346,7 +376,7 @@ export function SessionFields({
         />
         <TextField
           name="pickupInstructions"
-          label="Pickup instructions snapshot"
+          label="Pickup Instructions"
           info="The saved pickup directions for this date, kept even if the market's default instructions change later."
           value={value.pickupInstructions}
           required={false}
@@ -360,31 +390,17 @@ export function SessionFields({
 export function RuleSummary({ rule }: { rule: PreorderRule | null }) {
   return rule ? (
     <p>
-      Opens {rule.opensDaysBefore} days before at {rule.opensTime}; closes{' '}
-      {rule.closesDaysBefore} days before at {rule.closesTime}, interpreted in
-      the Market timezone.
+      Preorders open {rule.opensDaysBefore} days before at{' '}
+      {clockTime(rule.opensTime)} and close {rule.closesDaysBefore} days before
+      at {clockTime(rule.closesTime)}, in the market's time zone.
     </p>
-  ) : (
-    <p>No override configured.</p>
-  );
+  ) : null;
 }
 export function SelectField({
-  name,
-  label,
-  children,
-}: {
-  name: string;
-  label: string;
-  children: ReactNode;
-}) {
-  const id = useId();
-  return (
-    <Field id={id} label={label}>
-      <Select name={name} id={id} required>
-        {children}
-      </Select>
-    </Field>
-  );
+  required = true,
+  ...props
+}: ComponentProps<typeof SharedSelectField>) {
+  return <SharedSelectField {...props} required={required} />;
 }
 export function Weekdays({ values }: { values: readonly number[] }) {
   const id = useId();
@@ -413,4 +429,25 @@ export function Weekdays({ values }: { values: readonly number[] }) {
       ))}
     </fieldset>
   );
+}
+
+export function ReadState({
+  loading,
+  error,
+  retry,
+}: {
+  loading: boolean;
+  error?: AppError;
+  retry: () => void;
+}) {
+  return loading ? (
+    <Spinner label="Loading current records" />
+  ) : error ? (
+    <>
+      <ErrorState error={error} />
+      <Button className="secondary" onClick={retry}>
+        Try Again
+      </Button>
+    </>
+  ) : null;
 }

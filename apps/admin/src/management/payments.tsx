@@ -1,3 +1,5 @@
+import { Badge } from '@market/ui';
+import { managementStatusTone } from './status-presentation';
 import { useCallback, useState } from 'react';
 import { Button, Card } from '@market/ui';
 import type { ManagementService } from './service';
@@ -39,7 +41,9 @@ export function Payments({ service }: { service: ManagementService }) {
       {config && (
         <>
           <Card>
-            <h2>Marketplace Stripe Connect</h2>
+            <h2 className="ui-section-title-dashboard">
+              Marketplace Stripe Connect
+            </h2>
             <p>
               {config.state === 'NOT_CONFIGURED'
                 ? 'Not configured'
@@ -57,7 +61,16 @@ export function Payments({ service }: { service: ManagementService }) {
               <dl className="facts">
                 <div>
                   <dt>Connection</dt>
-                  <dd>{account.connectionStatus}</dd>
+                  <dd>
+                    <Badge
+                      tone={managementStatusTone(
+                        'connection',
+                        account.connectionStatus,
+                      )}
+                    >
+                      {account.connectionStatus}
+                    </Badge>
+                  </dd>
                 </div>
                 <div>
                   <dt>Account reference</dt>
@@ -79,7 +92,9 @@ export function Payments({ service }: { service: ManagementService }) {
               <div className="management-grid">
                 {account.readiness.map((r) => (
                   <Card key={r.purpose}>
-                    <h2>{purpose[r.purpose] ?? r.purpose}</h2>
+                    <h2 className="ui-section-title-dashboard">
+                      {purpose[r.purpose] ?? r.purpose}
+                    </h2>
                     <p>
                       {r.ready
                         ? 'Ready according to persisted account state'

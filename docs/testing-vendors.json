@@ -1,0 +1,823 @@
+{
+  "status": "PASS",
+  "database": "vendure_demo_market_ops",
+  "market": "Bulverde Market Day Demo",
+  "vendors": [
+    {
+      "id": 7,
+      "name": "Manna Roots",
+      "slug": "manna-roots",
+      "channelId": 9,
+      "email": "manna-roots@example.test",
+      "directoryId": 3,
+      "contact": {
+        "email": "manna-roots@example.test",
+        "phone": "210-555-0100",
+        "address": "100 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:manna-roots",
+        "website": "http://manna-roots.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#008080",
+            "name": "Teal"
+          },
+          "secondary": {
+            "hex": "#FFFFFF",
+            "name": "White"
+          }
+        },
+        "category": "Coffee & Drinks, Wellness",
+        "lastName": "Brooks",
+        "firstName": "Elena",
+        "categories": ["drinks", "wellness"],
+        "description": "Small-batch fruit and vegetable juices made with bright, seasonal ingredients.",
+        "businessName": "Manna Roots"
+      },
+      "hostname": "manna-roots.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 8,
+      "name": "Showbread Catering",
+      "slug": "showbread-catering",
+      "channelId": 10,
+      "email": "showbread-catering@example.test",
+      "directoryId": 4,
+      "contact": {
+        "email": "showbread-catering@example.test",
+        "phone": "210-555-0101",
+        "address": "110 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:showbread-catering",
+        "website": "http://showbread-catering.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#D4AF37",
+            "name": "Gold"
+          },
+          "secondary": {
+            "hex": "#FFF8E7",
+            "name": "Cream"
+          }
+        },
+        "category": "Bakery, Breads & Flour, Cheese & Dairy, Pantry & Honey, Prepared Foods",
+        "lastName": "Bennett",
+        "firstName": "Marcus",
+        "categories": ["bakery", "breads", "dairy", "pantry", "prepared"],
+        "description": "Fresh breads, artisan cheese selections and ready-to-share picnic boards.",
+        "businessName": "Showbread Catering"
+      },
+      "hostname": "showbread-catering.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 9,
+      "name": "Norma Jean’s Greens",
+      "slug": "norma-jeans-greens",
+      "channelId": 11,
+      "email": "norma-jeans-greens@example.test",
+      "directoryId": 5,
+      "contact": {
+        "email": "norma-jeans-greens@example.test",
+        "phone": "210-555-0102",
+        "address": "120 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:norma-jeans-greens",
+        "website": "http://norma-jeans-greens.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#65D830",
+            "name": "Bright Green"
+          },
+          "secondary": {
+            "hex": "#FFFFFF",
+            "name": "White"
+          }
+        },
+        "category": "Produce, Greens & Microgreens, Wellness",
+        "lastName": "Williams",
+        "firstName": "Naomi",
+        "categories": ["produce", "greens", "wellness"],
+        "description": "Fresh-cut microgreens grown for colorful salads, sandwiches and everyday cooking.",
+        "businessName": "Norma Jean’s Greens"
+      },
+      "hostname": "norma-jeans-greens.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 10,
+      "name": "Tamales De Reina",
+      "slug": "tamales-de-reina",
+      "channelId": 12,
+      "email": "tamales-de-reina@example.test",
+      "directoryId": 6,
+      "contact": {
+        "email": "tamales-de-reina@example.test",
+        "phone": "210-555-0103",
+        "address": "130 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:tamales-de-reina",
+        "website": "http://tamales-de-reina.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#C62828",
+            "name": "Red"
+          },
+          "secondary": {
+            "hex": "#D4AF37",
+            "name": "Gold"
+          }
+        },
+        "category": "Prepared Foods, Meat & Poultry, Cheese & Dairy, Pastries & Desserts",
+        "lastName": "Ramirez",
+        "firstName": "Lucia",
+        "categories": ["prepared", "poultry", "dairy", "desserts"],
+        "description": "Handmade tamales with savory fillings and family-style take-home packs.",
+        "businessName": "Tamales De Reina"
+      },
+      "hostname": "tamales-de-reina.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 11,
+      "name": "Mummy’s Macarons",
+      "slug": "mummys-macarons",
+      "channelId": 13,
+      "email": "mummys-macarons@example.test",
+      "directoryId": 7,
+      "contact": {
+        "email": "mummys-macarons@example.test",
+        "phone": "210-555-0104",
+        "address": "140 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:mummys-macarons",
+        "website": "http://mummys-macarons.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#F4A6C1",
+            "name": "Pink"
+          },
+          "secondary": {
+            "hex": "#E6007E",
+            "name": "Hot Pink"
+          }
+        },
+        "category": "Bakery, Pastries & Desserts",
+        "lastName": "Foster",
+        "firstName": "Amelia",
+        "categories": ["bakery", "desserts"],
+        "description": "Colorful French macarons in familiar favorites and rotating seasonal flavors.",
+        "businessName": "Mummy’s Macarons"
+      },
+      "hostname": "mummys-macarons.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 12,
+      "name": "Smith Pastures",
+      "slug": "smith-pastures",
+      "channelId": 14,
+      "email": "smith-pastures@example.test",
+      "directoryId": 8,
+      "contact": {
+        "email": "smith-pastures@example.test",
+        "phone": "210-555-0105",
+        "address": "150 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:smith-pastures",
+        "website": "http://smith-pastures.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#172B4D",
+            "name": "Navy"
+          },
+          "secondary": {
+            "hex": "#FFFFFF",
+            "name": "White"
+          }
+        },
+        "category": "Meat & Poultry",
+        "lastName": "Smith",
+        "firstName": "Steve",
+        "categories": ["poultry"],
+        "description": "Pasture-raised chicken in convenient cuts and whole-bird packages for home cooking.",
+        "businessName": "Smith Pastures"
+      },
+      "hostname": "smith-pastures.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 13,
+      "name": "Grammies Crackers",
+      "slug": "grammies-crackers",
+      "channelId": 15,
+      "email": "grammies-crackers@example.test",
+      "directoryId": 9,
+      "contact": {
+        "email": "grammies-crackers@example.test",
+        "phone": "210-555-0106",
+        "address": "160 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:grammies-crackers",
+        "website": "http://grammies-crackers.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#172B4D",
+            "name": "Navy"
+          },
+          "secondary": {
+            "hex": "#FFF4D6",
+            "name": "Cream"
+          }
+        },
+        "category": "Bakery, Pastries & Desserts, Pantry & Honey",
+        "lastName": "Carter",
+        "firstName": "Evelyn",
+        "categories": ["bakery", "desserts", "pantry"],
+        "description": "Small-batch graham crackers for snacking, dessert boards and campfire treats.",
+        "businessName": "Grammies Crackers"
+      },
+      "hostname": "grammies-crackers.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 14,
+      "name": "Last Watch Coffee",
+      "slug": "last-watch-coffee",
+      "channelId": 16,
+      "email": "last-watch-coffee@example.test",
+      "directoryId": 10,
+      "contact": {
+        "email": "last-watch-coffee@example.test",
+        "phone": "210-555-0107",
+        "address": "170 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:last-watch-coffee",
+        "website": "http://last-watch-coffee.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#6F4E37",
+            "name": "Coffee Brown"
+          },
+          "secondary": {
+            "hex": "#FFFFFF",
+            "name": "White"
+          }
+        },
+        "category": "Coffee & Drinks, Pantry & Honey, Prepared Foods",
+        "lastName": "Hayes",
+        "firstName": "Daniel",
+        "categories": ["drinks", "pantry", "prepared"],
+        "description": "Fresh-roasted coffee beans and brewed favorites for your Saturday morning.",
+        "businessName": "Last Watch Coffee"
+      },
+      "hostname": "last-watch-coffee.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 15,
+      "name": "Pucker Up!",
+      "slug": "pucker-up",
+      "channelId": 17,
+      "email": "pucker-up@example.test",
+      "directoryId": 11,
+      "contact": {
+        "email": "pucker-up@example.test",
+        "phone": "210-555-0108",
+        "address": "180 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:pucker-up",
+        "website": "http://pucker-up.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#718C32",
+            "name": "Pickle Green"
+          },
+          "secondary": {
+            "hex": "#FFFFFF",
+            "name": "White"
+          }
+        },
+        "category": "Fermented & Pickled Foods, Pantry & Honey",
+        "lastName": "Reed",
+        "firstName": "Olivia",
+        "categories": ["fermented", "pantry"],
+        "description": "Crunchy pickles and flavorful fermented vegetables made in small batches.",
+        "businessName": "Pucker Up!"
+      },
+      "hostname": "pucker-up.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 16,
+      "name": "Priceless Honey",
+      "slug": "priceless-honey",
+      "channelId": 18,
+      "email": "priceless-honey@example.test",
+      "directoryId": 12,
+      "contact": {
+        "email": "priceless-honey@example.test",
+        "phone": "210-555-0109",
+        "address": "190 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:priceless-honey",
+        "website": "http://priceless-honey.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#D4AF37",
+            "name": "Gold"
+          },
+          "secondary": {
+            "hex": "#FFFFFF",
+            "name": "White"
+          }
+        },
+        "category": "Pantry & Honey, Wellness",
+        "lastName": "Turner",
+        "firstName": "Caleb",
+        "categories": ["pantry", "wellness"],
+        "description": "Wildflower honey, creamed honey and comb honey for everyday pantry favorites.",
+        "businessName": "Priceless Honey"
+      },
+      "hostname": "priceless-honey.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 17,
+      "name": "Jake n Bake",
+      "slug": "jake-n-bake",
+      "channelId": 19,
+      "email": "jake-n-bake@example.test",
+      "directoryId": 13,
+      "contact": {
+        "email": "jake-n-bake@example.test",
+        "phone": "210-555-0110",
+        "address": "200 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:jake-n-bake",
+        "website": "http://jake-n-bake.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#2563EB",
+            "name": "Blue"
+          },
+          "secondary": {
+            "hex": "#FFFFFF",
+            "name": "White"
+          }
+        },
+        "category": "Bakery, Pastries & Desserts, Breads & Flour",
+        "lastName": "Miller",
+        "firstName": "Jacob",
+        "categories": ["bakery", "desserts", "breads"],
+        "description": "Fresh cookies, brownies, muffins and sweet loaves baked for the weekend market.",
+        "businessName": "Jake n Bake"
+      },
+      "hostname": "jake-n-bake.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 18,
+      "name": "Twice Baked Cafe",
+      "slug": "twice-baked-cafe",
+      "channelId": 20,
+      "email": "twice-baked-cafe@example.test",
+      "directoryId": 14,
+      "contact": {
+        "email": "twice-baked-cafe@example.test",
+        "phone": "210-555-0111",
+        "address": "210 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:twice-baked-cafe",
+        "website": "http://twice-baked-cafe.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#38CFC3",
+            "name": "Aqua"
+          },
+          "secondary": {
+            "hex": "#FFFFFF",
+            "name": "White"
+          }
+        },
+        "category": "Coffee & Drinks, Prepared Foods, Bakery, Pastries & Desserts, Pantry & Honey",
+        "lastName": "Collins",
+        "firstName": "Sophie",
+        "categories": ["drinks", "prepared", "bakery", "desserts", "pantry"],
+        "description": "Freshly brewed coffee paired with crisp biscotti in classic and seasonal flavors.",
+        "businessName": "Twice Baked Cafe"
+      },
+      "hostname": "twice-baked-cafe.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 19,
+      "name": "Hisco Apparel",
+      "slug": "hisco-apparel",
+      "channelId": 21,
+      "email": "hisco-apparel@example.test",
+      "directoryId": 15,
+      "contact": {
+        "email": "hisco-apparel@example.test",
+        "phone": "210-555-0112",
+        "address": "220 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:hisco-apparel",
+        "website": "http://hisco-apparel.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#D4AF37",
+            "name": "Gold"
+          },
+          "secondary": {
+            "hex": "#FFFFFF",
+            "name": "White"
+          }
+        },
+        "category": "Clothing & Accessories",
+        "lastName": "Cooper",
+        "firstName": "Isaiah",
+        "categories": ["apparel"],
+        "description": "Christ-centered clothing and accessories with comfortable everyday fits.",
+        "businessName": "Hisco Apparel"
+      },
+      "hostname": "hisco-apparel.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 20,
+      "name": "Manna Tallow",
+      "slug": "manna-tallow",
+      "channelId": 22,
+      "email": "manna-tallow@example.test",
+      "directoryId": 16,
+      "contact": {
+        "email": "manna-tallow@example.test",
+        "phone": "210-555-0113",
+        "address": "230 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:manna-tallow",
+        "website": "http://manna-tallow.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#87CEEB",
+            "name": "Sky Blue"
+          },
+          "secondary": {
+            "hex": "#FFFFFF",
+            "name": "White"
+          }
+        },
+        "category": "Skincare, Wellness",
+        "lastName": "Ellis",
+        "firstName": "Rebecca",
+        "categories": ["skincare", "wellness"],
+        "description": "Simple tallow-based skincare and balms crafted in small batches.",
+        "businessName": "Manna Tallow"
+      },
+      "hostname": "manna-tallow.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 21,
+      "name": "9-1 Produce Farm",
+      "slug": "9-1-produce-farm",
+      "channelId": 23,
+      "email": "9-1-produce-farm@example.test",
+      "directoryId": 17,
+      "contact": {
+        "email": "9-1-produce-farm@example.test",
+        "phone": "210-555-0114",
+        "address": "240 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:9-1-produce-farm",
+        "website": "http://9-1-produce-farm.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#800020",
+            "name": "Maroon"
+          },
+          "secondary": {
+            "hex": "#FFFFFF",
+            "name": "White"
+          }
+        },
+        "category": "Produce, Greens & Microgreens, Wellness",
+        "lastName": "Walker",
+        "firstName": "Thomas",
+        "categories": ["produce", "greens", "wellness"],
+        "description": "Seasonal vegetables and fresh greens harvested for the local market.",
+        "businessName": "9-1 Produce Farm"
+      },
+      "hostname": "9-1-produce-farm.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 22,
+      "name": "Sunflour & Crumb",
+      "slug": "sunflour-and-crumb",
+      "channelId": 24,
+      "email": "sunflour-and-crumb@example.test",
+      "directoryId": 18,
+      "contact": {
+        "email": "sunflour-and-crumb@example.test",
+        "phone": "210-555-0115",
+        "address": "250 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:sunflour-and-crumb",
+        "website": "http://sunflour-and-crumb.localhost:4321",
+        "branding": {
+          "primary": {
+            "hex": "#F4C430",
+            "name": "Yellow"
+          },
+          "secondary": {
+            "hex": "#FFF8E7",
+            "name": "Cream"
+          }
+        },
+        "category": "Bakery, Breads & Flour, Cheese & Dairy, Pantry & Honey",
+        "lastName": "Parker",
+        "firstName": "Abigail",
+        "categories": ["bakery", "breads", "dairy", "pantry"],
+        "description": "Slow-fermented sourdough loaves and flour for home bakers.",
+        "businessName": "Sunflour & Crumb"
+      },
+      "hostname": "sunflour-and-crumb.localhost",
+      "products": 4,
+      "variants": 4
+    },
+    {
+      "id": 23,
+      "name": "Anna’s Kimchi",
+      "slug": "annas-kimchi",
+      "channelId": 25,
+      "email": "annas-kimchi@example.test",
+      "directoryId": 19,
+      "contact": {
+        "email": "annas-kimchi@example.test",
+        "phone": "210-555-0116",
+        "address": "260 Example Farm Lane, Bulverde, TX 78163 (fictional)",
+        "seedKey": "requested-vendors:annas-kimchi",
+        "website": "http://annas-kimchi.localhost:4321",
+        "branding": {
+          "accent": {
+            "hex": "#387A3A",
+            "name": "Green"
+          },
+          "primary": {
+            "hex": "#C62828",
+            "name": "Red"
+          },
+          "secondary": {
+            "hex": "#FFFFFF",
+            "name": "White"
+          }
+        },
+        "category": "Fermented & Pickled Foods, Pantry & Honey, Prepared Foods",
+        "lastName": "Kim",
+        "firstName": "Anna",
+        "categories": ["fermented", "pantry", "prepared"],
+        "description": "Small-batch kimchi with traditional flavors and a plant-based option.",
+        "businessName": "Anna’s Kimchi"
+      },
+      "hostname": "annas-kimchi.localhost",
+      "products": 4,
+      "variants": 4
+    }
+  ],
+  "productCount": 68,
+  "variantCount": 68,
+  "categories": [
+    {
+      "code": "bakery",
+      "name": "Bakery",
+      "vendors": 6,
+      "products": 19
+    },
+    {
+      "code": "breads",
+      "name": "Breads & Flour",
+      "vendors": 3,
+      "products": 7
+    },
+    {
+      "code": "dairy",
+      "name": "Cheese & Dairy",
+      "vendors": 3,
+      "products": 4
+    },
+    {
+      "code": "apparel",
+      "name": "Clothing & Accessories",
+      "vendors": 1,
+      "products": 4
+    },
+    {
+      "code": "drinks",
+      "name": "Coffee & Drinks",
+      "vendors": 3,
+      "products": 10
+    },
+    {
+      "code": "fermented",
+      "name": "Fermented & Pickled Foods",
+      "vendors": 2,
+      "products": 8
+    },
+    {
+      "code": "greens",
+      "name": "Greens & Microgreens",
+      "vendors": 2,
+      "products": 6
+    },
+    {
+      "code": "poultry",
+      "name": "Meat & Poultry",
+      "vendors": 2,
+      "products": 5
+    },
+    {
+      "code": "pantry",
+      "name": "Pantry & Honey",
+      "vendors": 8,
+      "products": 20
+    },
+    {
+      "code": "desserts",
+      "name": "Pastries & Desserts",
+      "vendors": 5,
+      "products": 15
+    },
+    {
+      "code": "prepared",
+      "name": "Prepared Foods",
+      "vendors": 5,
+      "products": 9
+    },
+    {
+      "code": "produce",
+      "name": "Produce",
+      "vendors": 2,
+      "products": 8
+    },
+    {
+      "code": "skincare",
+      "name": "Skincare",
+      "vendors": 1,
+      "products": 4
+    },
+    {
+      "code": "wellness",
+      "name": "Wellness",
+      "vendors": 5,
+      "products": 11
+    }
+  ],
+  "offerings": [
+    {
+      "occurrenceId": 1,
+      "offerings": 68,
+      "vendors": 17
+    },
+    {
+      "occurrenceId": 2,
+      "offerings": 68,
+      "vendors": 17
+    },
+    {
+      "occurrenceId": 3,
+      "offerings": 68,
+      "vendors": 17
+    },
+    {
+      "occurrenceId": 4,
+      "offerings": 68,
+      "vendors": 17
+    }
+  ],
+  "createdVendors": 0,
+  "accessChecks": [
+    {
+      "vendor": "Manna Roots",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Showbread Catering",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Norma Jean’s Greens",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Tamales De Reina",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Mummy’s Macarons",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Smith Pastures",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Grammies Crackers",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Last Watch Coffee",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Pucker Up!",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Priceless Honey",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Jake n Bake",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Twice Baked Cafe",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Hisco Apparel",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Manna Tallow",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "9-1 Produce Farm",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Sunflour & Crumb",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    },
+    {
+      "vendor": "Anna’s Kimchi",
+      "ownerLogin": "PASS",
+      "adminCatalog": "PASS",
+      "inventory": "PASS",
+      "storefront": "PASS"
+    }
+  ],
+  "loginPassword": "local-identity-regression-only-password",
+  "note": "Brand colors are stored in directory contact.branding and manager notes. The existing storefront theme contract does not render per-vendor colors. Existing preorder windows are preserved."
+}

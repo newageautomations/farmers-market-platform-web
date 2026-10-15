@@ -1,0 +1,27 @@
+---
+export const prerender = false;
+import PreviewLayout from '../../components/PreviewLayout.astro';
+import Sample from '../../components/Sample.astro';
+import '../../../../../../apps/storefront/src/styles/vendor.css';
+import '../../../../../../apps/storefront/src/styles/market.css';
+import '../../../../../../apps/storefront/src/styles/checkout.css';
+const id = Astro.url.searchParams.get('id');
+const wrapper =
+  id === 'BTN-02'
+    ? 'checkout-shell'
+    : id === 'INP-03'
+      ? 'account-panel verification-panel'
+      : ['ALT-03', 'LOD-04', 'FIL-03', 'PAG-04', 'PGH-03', 'SCH-04'].includes(
+            id ?? '',
+          )
+        ? undefined
+        : 'account-panel';
+---
+
+<PreviewLayout>
+  <div class="container">
+    <section class={wrapper}>
+      <Sample />
+    </section>
+  </div>
+</PreviewLayout>

@@ -77,6 +77,7 @@ type Query {
 
   """Get active shipping methods"""
   activeShippingMethods: [PublicShippingMethod]!
+  marketApplicationApplicant: JSON!
   publicMarketApplication(slug: String): JSON!
   publicMarketOccurrenceMap(occurrenceId: Int!): JSON!
   marketOccurrenceCatalog(occurrenceId: ID!, options: OccurrenceCatalogOptions): OccurrenceCatalog!
@@ -90,8 +91,11 @@ type Query {
   myPurchase(orderId: ID!): CustomerPurchaseProjection!
   myStorefrontCommunicationPreferences: StorefrontCommunicationPreferences!
   myCommunicationPreferences: [CommunicationPreference!]!
+  customerDashboard(section: String, skip: Int, eventSkip: Int): CustomerDashboard!
+  customerFollowSubjects(kind: String!, search: String, skip: Int): CustomerSubjectPage!
   currentCheckoutStatus(orderId: ID): CustomerCheckoutView
   customerAccountProfile: CheckoutContactView
+  platformAccountContexts: JSON!
 }
 
 type Mutation {
@@ -275,6 +279,7 @@ type Mutation {
   unsubscribeVendorCommunications(vendorId: ID!, medium: CommunicationMedium!, purpose: CommunicationPurpose!, noticeVersion: String!): CommunicationPreference!
   subscribeMarketCommunications(marketId: ID!, medium: CommunicationMedium!, purpose: CommunicationPurpose!, noticeVersion: String!): CommunicationPreference!
   unsubscribeMarketCommunications(marketId: ID!, medium: CommunicationMedium!, purpose: CommunicationPurpose!, noticeVersion: String!): CommunicationPreference!
+  setCustomerFollow(kind: String!, id: ID!, following: Boolean!): CustomerFollowResult!
   customerSignOut: CustomerHandoffResult!
   setCheckoutContact(input: CheckoutContactInput!): CheckoutContactView!
   requestPurchaseAccountLink(orderId: ID!, origin: String!): PurchaseAccountLinkReceipt!
@@ -3592,6 +3597,7 @@ type PublicShippingMethod {
 
 input AuthenticationInput {
   native: NativeAuthInput
+  platformShop: PlatformShopCredentials
 }
 
 input RegisterCustomerInput {
@@ -4021,6 +4027,8 @@ input MarketApplicationRentalRequest {
 }
 
 input MarketApplicationSubmissionInput {
+  accountAnswer: String!
+  vendorId: Int
   slug: String!
   versionId: Int!
   answers: JSON!
@@ -4411,6 +4419,55 @@ type StorefrontCommunicationPreferences {
   preferences: [ScopedCommunicationPreference!]!
 }
 
+type CustomerFollowSubject {
+  id: ID!
+  name: String!
+  status: String
+  url: String
+  following: Boolean!
+}
+
+type CustomerSubjectPage {
+  items: [CustomerFollowSubject!]!
+  hasMore: Boolean!
+}
+
+type CustomerEventVendor {
+  id: ID!
+  name: String!
+  url: String
+}
+
+type CustomerUpcomingEvent {
+  id: ID!
+  startsAt: DateTime!
+  endsAt: DateTime!
+  timezone: String!
+  venue: String!
+  status: String!
+  marketId: ID!
+  marketName: String!
+  marketUrl: String
+  url: String
+  followedMarket: Boolean!
+  vendors: [CustomerEventVendor!]!
+}
+
+type CustomerDashboard {
+  marketCount: Int!
+  vendorCount: Int!
+  orderCount: Int!
+  markets: [CustomerFollowSubject!]!
+  vendors: [CustomerFollowSubject!]!
+  events: [CustomerUpcomingEvent!]!
+  hasMore: Boolean!
+  hasMoreEvents: Boolean!
+}
+
+type CustomerFollowResult {
+  following: Boolean!
+}
+
 input CheckoutContactInput {
   firstName: String!
   lastName: String!
@@ -4488,4 +4545,10 @@ type PurchaseAccountLinkReceipt {
 
 type CustomerHandoffResult {
   success: Boolean!
+  principalId: String
+}
+
+input PlatformShopCredentials {
+  username: String!
+  password: String!
 }

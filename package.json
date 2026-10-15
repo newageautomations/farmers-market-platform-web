@@ -11,6 +11,8 @@
     "node": ">=24.0.0"
   },
   "scripts": {
+    "test:live:layout-designer": "tsx scripts/test-phase15c.ts",
+    "test:layout-demo:read-only": "tsx scripts/check-phase15c-demo.ts",
     "test:live:market-operations": "tsx scripts/test-phase14.ts",
     "start:storefront:production": "node --import tsx scripts/start-storefront.ts",
     "serve:admin:production": "node --import tsx scripts/serve-admin.ts",
@@ -50,7 +52,13 @@
     "demo:market-operations:verify": "tsx scripts/demo-market-operations.ts verify",
     "demo:market-operations:test": "tsx scripts/demo-market-operations.ts test",
     "demo:market-operations:admin": "tsx scripts/demo-market-operations.ts admin",
-    "demo:market-operations:storefront": "tsx scripts/demo-market-operations.ts storefront"
+    "demo:market-operations:storefront": "tsx scripts/demo-market-operations.ts storefront",
+    "test:customer:backend": "tsx scripts/customer-dashboard.ts backend",
+    "test:customer:live": "tsx scripts/customer-dashboard.ts test",
+    "demo:customer:start": "tsx scripts/customer-dashboard.ts start",
+    "demo:customer:reset": "tsx scripts/customer-dashboard.ts reset",
+    "demo:customer:verify": "tsx scripts/customer-dashboard.ts verify",
+    "demo:customer:cleanup": "tsx scripts/customer-dashboard.ts cleanup"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",

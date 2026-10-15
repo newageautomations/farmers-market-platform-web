@@ -9,15 +9,17 @@ import {
 } from 'react';
 import { AppError, safeError } from '@market/api';
 import {
+  Card,
   Alert,
   Button,
+  buttonClassName,
   Dialog,
   ErrorState,
   Field,
   Input,
   Spinner,
-  Table,
 } from '@market/ui';
+export { DataTable } from '@market/ui';
 import { formatDate } from '@market/config';
 
 export function go(path: string) {
@@ -28,13 +30,25 @@ export function go(path: string) {
 export function RouteLink({
   to,
   children,
+  variant = 'button',
+  current,
 }: {
   to: string;
   children: ReactNode;
+  variant?: 'button' | 'tab';
+  current?: boolean;
 }) {
   return (
     <a
-      className="button secondary route-button"
+      aria-current={current ? 'page' : undefined}
+      className={
+        variant === 'tab'
+          ? 'ui-route-tab'
+          : buttonClassName({
+              variant: 'secondary',
+              className: 'route-button',
+            })
+      }
       href={to}
       onClick={(e) => {
         if (
@@ -109,40 +123,12 @@ export function ReadState({
 }
 export function Unavailable({ children }: { children: ReactNode }) {
   return (
-    <div className="capability-note" role="status">
+    <div
+      className="capability-note alert ui-alert ui-alert-neutral"
+      role="status"
+    >
       <p>{children}</p>
     </div>
-  );
-}
-export function DataTable({
-  headings,
-  children,
-  label,
-  sort,
-}: {
-  headings: readonly string[];
-  children: ReactNode;
-  label: string;
-  sort?: { heading: string; direction: 'ascending' | 'descending' };
-}) {
-  return (
-    <Table aria-label={label}>
-      <caption className="sr-only">{label}</caption>
-      <thead>
-        <tr>
-          {headings.map((h) => (
-            <th
-              scope="col"
-              key={h}
-              aria-sort={sort?.heading === h ? sort.direction : undefined}
-            >
-              {h}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>{children}</tbody>
-    </Table>
   );
 }
 export function TextField({
@@ -169,7 +155,8 @@ export function TextField({
         id={id}
         name={name}
         defaultValue={value}
-        type={type}
+        type={type === 'text' && name === 'quantity' ? 'number' : type}
+        min={name === 'quantity' ? 1 : undefined}
         required={required}
         maxLength={maxLength}
       />
@@ -209,6 +196,8 @@ export function CommandForm({
   submitLabel = 'Save',
   validate,
   onPendingChange,
+  embedded = false,
+  secondaryAction,
 }: {
   title: string;
   run: (data: FormData, operationKey: string) => Promise<unknown>;
@@ -218,6 +207,8 @@ export function CommandForm({
   submitLabel?: string;
   validate?: (data: FormData) => void;
   onPendingChange?: (pending: boolean) => void;
+  embedded?: boolean;
+  secondaryAction?: ReactNode;
 }) {
   const [pending, setPending] = useState(false),
     [error, setError] = useState<AppError | null>(null),
@@ -274,8 +265,12 @@ export function CommandForm({
     }
   }
   return (
-    <section className="command-section">
-      <h2>{title}</h2>
+    <Card
+      as="section"
+      className="command-section"
+      surface={embedded ? 'embedded' : 'card'}
+    >
+      <h2 className="ui-section-title-dashboard">{title}</h2>
       <form
         onSubmit={submit}
         aria-busy={pending}
@@ -283,13 +278,20 @@ export function CommandForm({
       >
         <fieldset disabled={pending || uncertain || requiresRefresh}>
           {children}
+        </fieldset>
+        <div
+          className={
+            secondaryAction ? 'ui-actions ui-modal-actions' : 'ui-actions'
+          }
+        >
           <Button
             type="submit"
             disabled={pending || uncertain || requiresRefresh}
           >
             {pending ? 'Saving' : submitLabel}
           </Button>
-        </fieldset>
+          {secondaryAction}
+        </div>
       </form>
       {error && (
         <div id={`${formId}-error`}>
@@ -301,7 +303,7 @@ export function CommandForm({
         </div>
       )}
       {uncertain && (
-        <Alert>
+        <Alert severity="warning">
           The command outcome is unconfirmed. Refresh current records before
           attempting another change. Do not repeat this intent automatically.
         </Alert>
@@ -312,7 +314,7 @@ export function CommandForm({
         </Button>
       )}
       {success && (
-        <Alert>
+        <Alert severity="success">
           Backend command confirmed. Current records are being refreshed.
         </Alert>
       )}
@@ -323,17 +325,19 @@ export function CommandForm({
           if (!busy.current) setCandidate(null);
         }}
         title={`Confirm ${title.toLowerCase()}`}
+        actions={
+          <Button
+            disabled={pending}
+            onClick={() => {
+              if (candidate) void execute(candidate);
+            }}
+          >
+            {pending ? 'Saving' : 'Confirm change'}
+          </Button>
+        }
       >
         <p>{confirmation}</p>
-        <Button
-          disabled={pending}
-          onClick={() => {
-            if (candidate) void execute(candidate);
-          }}
-        >
-          {pending ? 'Saving' : 'Confirm change'}
-        </Button>
       </Dialog>
-    </section>
+    </Card>
   );
 }

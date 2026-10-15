@@ -5,10 +5,11 @@ import {
   type MarketConfiguration,
 } from '@market/api';
 import { mayMarketCommand } from '@market/admin-core';
-import { Alert, Button } from '@market/ui';
+import { Card, Alert } from '@market/ui';
 import type { MarketService } from './service';
 import {
   Choice,
+  StatusBadge,
   CommandForm,
   integer,
   ReadState,
@@ -75,16 +76,15 @@ export function MarketSettings({ service }: { service: MarketService }) {
       <ReadState {...state} retry={state.refresh} />
       {market && (
         <>
-          <div className="dashboard-card">
+          <Card as="div" className="dashboard-card">
             <p>
-              {market.name} · {market.status} · {market.timezone} · version{' '}
-              {market.version}
+              {market.name} <StatusBadge>{market.status}</StatusBadge>
             </p>
             <p>
               Set the market's contact details, time zone, and preorder defaults
               here. Manage repeating dates on the occurrences page.
             </p>
-          </div>
+          </Card>
           {market.status === 'suspended' && (
             <Alert>
               This Market is suspended. Its permitted administration remains
@@ -92,9 +92,6 @@ export function MarketSettings({ service }: { service: MarketService }) {
               Market.
             </Alert>
           )}
-          <Button className="secondary" onClick={state.refresh}>
-            Refresh settings
-          </Button>
           {edit ? (
             <CommandForm
               key={`config:${market.version}`}
@@ -181,12 +178,11 @@ export function MarketSettings({ service }: { service: MarketService }) {
               </dl>
               <RuleSummary rule={market.defaultPreorderRule} />
               <p>
-                Membership overrides:{' '}
-                {String(market.overridePolicy.membershipAllowed)}; participation
-                overrides: {String(market.overridePolicy.participationAllowed)};
-                window policy: {market.overridePolicy.vendorWindowMode}; close
-                boundary: {market.overridePolicy.closeMinutesBeforeStart}{' '}
-                minutes.
+                Vendors{' '}
+                {market.overridePolicy.membershipAllowed ? 'can' : 'cannot'}{' '}
+                choose their own preorder schedule. Preorders close at least{' '}
+                {market.overridePolicy.closeMinutesBeforeStart} minutes before
+                the market starts.
               </p>
             </>
           )}
