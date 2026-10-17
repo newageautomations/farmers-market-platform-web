@@ -1,0 +1,9 @@
+query OwnNotificationPreferences {
+  ownNotificationPreferences
+}
+mutation SetOwnNotificationPreferences($input: JSON!) {
+  setOwnNotificationPreferences(input: $input)
+}
+query OwnComplianceSummary($vendorIds: [Int!]) {
+  ownComplianceSummary(vendorIds: $vendorIds)
+}

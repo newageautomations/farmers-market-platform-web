@@ -5,7 +5,11 @@ import {
   dashboardClasses,
   navigationIconPaths,
 } from '@market/ui/presentation';
-import { AccountModeSelect, type AccountModeChoice } from '@market/ui';
+import {
+  MarketPlatformLogo,
+  AccountModeSelect,
+  type AccountModeChoice,
+} from '@market/ui';
 import { customerApi } from '../lib/customer-dashboard';
 import Button from '../components/ui/Button.astro';
 import DashboardFrame from '../components/ui/DashboardFrame.astro';
@@ -61,7 +65,7 @@ try {
     <DashboardFrame>
       <aside slot="sidebar" id="customer-sidebar" class="admin-sidebar">
         <a class="brand" href="/account">
-          Market platform
+          <MarketPlatformLogo />
         </a>
         <CustomerNavigation path={path} />
       </aside>

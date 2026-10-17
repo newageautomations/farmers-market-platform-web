@@ -10,6 +10,7 @@ import {
 } from '@market/api';
 import { mayMarketCommand } from '@market/admin-core';
 import { Card, Button, EmptyState, Pagination } from '@market/ui';
+import { DocumentStatus } from '@market/ui/documents';
 import type { MarketService } from './service';
 import {
   MarketDialog as Dialog,
@@ -86,6 +87,20 @@ export function MarketVendors({
     !!id,
   );
   const active = id ? detail : list;
+  const vendorIds = list.data?.items.map((m) => Number(m.vendor.id)) ?? [];
+  const vendorKey = vendorIds.join(',');
+  const complianceRead = useCallback(
+    () =>
+      service.notifications!.summary(
+        vendorKey ? vendorKey.split(',').map(Number) : [],
+      ),
+    [service, vendorKey],
+  );
+  const compliance = useRead(
+    `${service.readKey}:vendor-compliance:${vendorKey}`,
+    complianceRead,
+    !!service.notifications && !!vendorKey && !id,
+  );
   const controls = (kind: keyof MarketDetailPages, label: string) =>
     detail.data ? (
       <PageControls
@@ -131,11 +146,19 @@ export function MarketVendors({
               refresh={list.refresh}
             />
           )}
+          <ReadState {...compliance} retry={compliance.refresh} />
           {list.data &&
             (list.data.items.length ? (
               <DataTable
                 label="Vendor business relationships"
-                headings={['Vendor', 'Membership', 'Preorder default']}
+                recordDetails={{ status: 1 }}
+                wide
+                headings={[
+                  'Vendor',
+                  'Membership',
+                  'Preorder default',
+                  ...(service.notifications ? ['Documentation'] : []),
+                ]}
                 sort={{ heading: 'Vendor', direction: 'ascending' }}
               >
                 {list.data.items.map((member) => (
@@ -153,6 +176,21 @@ export function MarketVendors({
                         ? 'Configured by Vendor'
                         : 'Uses Market default'}
                     </td>
+                    {service.notifications && (
+                      <td>
+                        <RouteLink
+                          to={`/market/documents?vendor=${member.vendor.id}#vendor-${member.vendor.id}`}
+                        >
+                          <DocumentStatus
+                            value={
+                              compliance.data?.vendorReadiness.find(
+                                (r) => r.vendor_id === Number(member.vendor.id),
+                              )?.status ?? 'Incomplete view'
+                            }
+                          />
+                        </RouteLink>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </DataTable>
@@ -245,14 +283,8 @@ function AddVendor({
   );
   const searching = directory.loading || query !== search;
   return (
-    <Dialog
-      open
-      title="Add Vendor"
-      busy={busy}
-      onClose={close}
-      showClose={false}
-    >
-      {(dismiss) => (
+    <Dialog open title="Add Vendor" busy={busy} onClose={close}>
+      {() => (
         <>
           <ReadState {...directory} retry={directory.refresh} />
           <CommandForm
@@ -263,11 +295,6 @@ function AddVendor({
             validate={() => {
               if (!selected) throw new AppError('validation');
             }}
-            secondaryAction={
-              <Button variant="secondary" disabled={busy} onClick={dismiss}>
-                Close
-              </Button>
-            }
             onDone={() => {
               refresh();
               close();
@@ -433,6 +460,11 @@ function Relationship({
           {state.listings.length ? (
             <DataTable
               label="Listing approvals"
+              recordDetails={{
+                status: 1,
+                onOpen: (index) =>
+                  setEditing(`listing:${state.listings[index]!.id}`),
+              }}
               headings={['Variant', 'Approval', 'Publication']}
             >
               {state.listings.map((row) => (
@@ -469,24 +501,14 @@ function Relationship({
                 title={listing.variant.product.name}
                 busy={modalBusy}
                 onClose={close}
-                showClose={!canListing}
               >
-                {(dismiss) => (
+                {() => (
                   <>
                     {canListing ? (
                       <CommandForm
                         embedded
                         key={`listing:${listing.id}:${listing.version}`}
                         title="Listing Approval"
-                        secondaryAction={
-                          <Button
-                            variant="secondary"
-                            disabled={modalBusy}
-                            onClick={dismiss}
-                          >
-                            Close
-                          </Button>
-                        }
                         onPendingChange={setModalBusy}
                         onDone={saved}
                         submitLabel="Update listing approval"
@@ -613,22 +635,12 @@ function Relationship({
                     title="Create Offering"
                     busy={modalBusy}
                     onClose={close}
-                    showClose={false}
                   >
-                    {(dismiss) => (
+                    {() => (
                       <>
                         <CommandForm
                           embedded
                           title="Offering Details"
-                          secondaryAction={
-                            <Button
-                              variant="secondary"
-                              disabled={modalBusy}
-                              onClick={dismiss}
-                            >
-                              Close
-                            </Button>
-                          }
                           onPendingChange={setModalBusy}
                           onDone={saved}
                           submitLabel="Create offering"
@@ -788,6 +800,11 @@ function ParticipationPanel({
         <>
           <DataTable
             label="Occurrence participation"
+            recordDetails={{
+              status: 1,
+              onOpen: (index) =>
+                setSelected(occurrences.data!.items[index]!.id),
+            }}
             headings={['Occurrence', 'Participation', 'Pickup Instructions']}
           >
             {occurrences.data.items.map((o) => {
@@ -831,26 +848,16 @@ function ParticipationPanel({
           title={date(occurrence.startsAt, occurrence.timezone)}
           busy={busy}
           onClose={() => setSelected(null)}
-          showClose={!editable || !config.data}
         >
-          {(dismiss) => (
+          {() => (
             <>
               <ReadState {...config} retry={config.refresh} />
               {editable && config.data ? (
                 <CommandForm
                   embedded
                   title="Occurrence Participation"
-                  secondaryAction={
-                    <Button
-                      variant="secondary"
-                      disabled={busy}
-                      onClick={dismiss}
-                    >
-                      Close
-                    </Button>
-                  }
                   onPendingChange={setBusy}
-                  submitLabel="Save and Close"
+                  submitLabel="Save"
                   onDone={() => {
                     setSelected(null);
                     participations.refresh();

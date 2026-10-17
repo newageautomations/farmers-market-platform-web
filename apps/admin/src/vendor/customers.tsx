@@ -63,6 +63,7 @@ export function Customers({
         <>
           <DataTable
             label="Owned customer relationships"
+            recordDetails={{ status: 2 }}
             sort={{ heading: 'Last activity', direction: 'descending' }}
             headings={[
               'Customer',

@@ -1,3 +1,4 @@
+import { IconButton } from '@market/ui';
 import {
   useCallback,
   useEffect,
@@ -115,9 +116,12 @@ export function ReadState({
   ) : error ? (
     <>
       <ErrorState error={error} />
-      <Button className="secondary" onClick={retry}>
-        Refresh records
-      </Button>
+      <IconButton
+        icon="refresh"
+        label="Refresh records"
+        className="secondary"
+        onClick={retry}
+      />
     </>
   ) : null;
 }

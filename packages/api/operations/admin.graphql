@@ -640,3 +640,14 @@ query TenantEntitlements($subject: BillingSubjectInput!) {
     overLimit
   }
 }
+
+query OwnDashboardPalette {
+  getSettingsStoreValue(key: "marketDashboard.palette")
+}
+mutation SaveOwnDashboardPalette($input: SettingsStoreInput!) {
+  setSettingsStoreValue(input: $input) {
+    key
+    result
+    error
+  }
+}

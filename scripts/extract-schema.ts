@@ -189,6 +189,10 @@ for (const api of ['shop', 'admin'] as const) {
   );
   if (api === 'shop')
     extensions.push(
+      extract('src/plugins/documents-compliance/api.ts', 'documentsShopSchema'),
+    );
+  if (api === 'shop')
+    extensions.push(
       extract(
         'src/plugins/marketplace-commerce/customer-account/api.ts',
         'customerAccountShopSchema',
@@ -219,6 +223,14 @@ for (const api of ['shop', 'admin'] as const) {
       extract('src/plugins/billing-entitlements/api.ts', 'billingAdminSchema'),
       extract('src/plugins/analytics/api.ts', 'analyticsAdminSchema'),
       extract('src/plugins/platform-admin/api.ts', 'platformAdminSchema'),
+      extract(
+        'src/plugins/documents-compliance/api.ts',
+        'documentsAdminSchema',
+      ),
+      extract(
+        'src/plugins/platform-notifications/api.ts',
+        'notificationSchema',
+      ),
       extract(
         'src/plugins/marketplace-commerce/owned-admin-reads.ts',
         'ownedReadsAdminSchema',

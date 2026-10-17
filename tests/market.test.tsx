@@ -298,7 +298,7 @@ describe('Market overview, configuration and recurrence', () => {
       within(table)
         .getAllByRole('columnheader')
         .map((h) => h.textContent),
-    ).toEqual(['Vendor', 'Status', 'Edit']);
+    ).toEqual(['Vendor', 'Status']);
     expect(document.body).not.toHaveTextContent('Operational totals');
     expect(screen.queryByLabelText('From Date')).toBeNull();
     expect(document.body.textContent).not.toMatch(
@@ -558,7 +558,7 @@ describe('Vendor relationships, listings, participation and offerings', () => {
     expect(screen.getByText('Pending')).toBeInTheDocument();
     expect(screen.getByText('Suspended')).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: 'Synthetic Market A Vendor 1' }),
+      screen.getByRole('button', { name: 'Open Synthetic Market A Vendor 1' }),
     ).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(
       /Seller|credentials|Stripe|private money/,
@@ -674,7 +674,7 @@ describe('Vendor relationships, listings, participation and offerings', () => {
     fireEvent.change(screen.getByLabelText('Participation status'), {
       target: { value: 'cancelled' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Save and Close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(command).not.toHaveBeenCalled();
     fireEvent.click(
       within(screen.getByRole('dialog', { name: /Confirm/ })).getByRole(
@@ -810,8 +810,13 @@ describe('Operations privacy and complete server paging', () => {
     expect(document.body.textContent).not.toMatch(/PRIVATE_|example.invalid/);
     expect(document.body).toHaveTextContent('Original units');
     expect(document.body).toHaveTextContent('Cancelled units');
-    expect(document.body).toHaveTextContent('Partially Completed');
-    expect(document.body).toHaveTextContent('Awaiting');
+    expect(screen.getByText('PARTIALLY_COMPLETED')).toHaveClass(
+      'ui-status-neutral',
+    );
+    expect(screen.getByText('AWAITING')).toHaveClass('ui-status-neutral');
+    expect(screen.getByText('PartiallyDelivered')).toHaveClass(
+      'ui-status-warning',
+    );
     expect(
       screen.getByRole('table', { name: /Operational order 1810 quantities/ }),
     ).toHaveTextContent('5212');
@@ -967,41 +972,73 @@ describe('Market tenant switching and authority loss', () => {
     );
     expect(document.body).not.toHaveTextContent('Synthetic Market A');
   });
-  it('next protected forbidden request clears loaded content and requires fresh bootstrap', async () => {
+  it('a protected denial clears Market content and preserves personal access across refresh and a stale Channel URL', async () => {
     let revoked = false;
     const fixture = createFixtureMarketService(marketFixtureContext());
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
-      const query = (JSON.parse(String(init?.body)) as { query: string }).query;
-      if (query.includes('query AdminSession'))
-        return response({
-          me: revoked
-            ? {
-                ...user,
-                channels: user.channels.map((c) => ({
-                  ...c,
-                  permissions: ['Authenticated'],
-                })),
-              }
-            : user,
-        });
-      if (revoked) return denied();
-      if (query.includes('query MarketIdentity'))
-        return response({ ownMarketIdentity: identity() });
-      if (query.includes('query MarketConfiguration'))
-        return response({ ownMarket: await fixture.configuration('1') });
-      throw new Error('Unexpected mock operation');
-    });
+    const fetcher = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (_url, init) => {
+        const query = (JSON.parse(String(init?.body)) as { query: string })
+          .query;
+        if (query.includes('query AdminSession'))
+          return response({
+            me: revoked
+              ? {
+                  ...user,
+                  channels: user.channels.map((c) => ({
+                    ...c,
+                    permissions: ['Authenticated'],
+                  })),
+                }
+              : user,
+          });
+        if (query.includes('query OwnPlatformAccountContexts'))
+          return response({ ownPlatformAccountContexts: { affiliations: [] } });
+        if (revoked) return denied();
+        if (query.includes('query MarketIdentity'))
+          return response({ ownMarketIdentity: identity() });
+        if (query.includes('query MarketConfiguration'))
+          return response({ ownMarket: await fixture.configuration('1') });
+        throw new Error('Unexpected mock operation');
+      });
     window.history.replaceState(null, '', '/market/settings');
-    render(<AdminApp endpoint={endpoint} />);
+    const accountOrigin = 'http://auth.platform.localhost:4321';
+    const view = render(
+      <AdminApp endpoint={endpoint} accountOrigin={accountOrigin} />,
+    );
     await screen.findByLabelText('Market name');
     revoked = true;
-    fireEvent.click(screen.getByRole('button', { name: 'Refresh workspace' }));
-    await screen.findByRole('heading', { name: 'Workspace unavailable' });
+    fireEvent.submit(screen.getByLabelText('Market name').closest('form')!);
+    await screen.findByRole('heading', { name: 'Your account' });
+    expect(
+      fetcher.mock.calls.some(([, init]) =>
+        String(init?.body).includes('mutation MarketConfigure'),
+      ),
+    ).toBe(true);
+    expect(
+      screen.getByRole('link', { name: 'Open your customer dashboard' }),
+    ).toHaveAttribute('href', `${accountOrigin}/account/login`);
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeEnabled();
     expect(screen.queryByLabelText('Market name')).toBeNull();
     expect(document.body).not.toHaveTextContent('Synthetic Market A');
     expect(document.body).not.toHaveTextContent(
       'private database/provider details',
     );
+    view.unmount();
+    const protectedReads = fetcher.mock.calls.filter(([, init]) =>
+      String(init?.body).includes('query Market'),
+    ).length;
+    window.history.replaceState(null, '', '/market/settings?channel=1');
+    render(<AdminApp endpoint={endpoint} accountOrigin={accountOrigin} />);
+    await screen.findByRole('heading', { name: 'Your account' });
+    expect(screen.queryByLabelText('Market name')).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Account mode' })).toBeNull();
+    expect(document.body).not.toHaveTextContent('Synthetic Market A');
+    expect(
+      fetcher.mock.calls.filter(([, init]) =>
+        String(init?.body).includes('query Market'),
+      ),
+    ).toHaveLength(protectedReads);
   });
   it('late pending core data cannot survive revocation within the same service', async () => {
     let resolveConfiguration!: (value: Response) => void;

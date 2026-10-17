@@ -1,4 +1,5 @@
 import { Button, Select, Input } from '@market/ui';
+import { buttonClassName } from '@market/ui/presentation';
 import { date, StatusBadge } from '../presentation';
 import { useState } from 'react';
 import {
@@ -183,7 +184,10 @@ export function ApplicationBuilder({
                 {editable && (
                   <button
                     type="button"
-                    className="drag-handle"
+                    className={buttonClassName({
+                      variant: 'tertiary',
+                      className: 'drag-handle',
+                    })}
                     draggable
                     aria-label={`Drag section ${section}`}
                     onDragStart={(e) =>
@@ -289,7 +293,10 @@ export function ApplicationBuilder({
                       {editable && (
                         <button
                           type="button"
-                          className="drag-handle"
+                          className={buttonClassName({
+                            variant: 'tertiary',
+                            className: 'drag-handle',
+                          })}
                           draggable
                           aria-label={`Drag ${q.label}`}
                           onDragStart={(e) =>
@@ -542,7 +549,10 @@ export function ApplicationBuilder({
                           {q.hidden && <p>Hidden from applicants</p>}
                           {editable && (
                             <button
-                              className="question-edit-overlay"
+                              className={buttonClassName({
+                                variant: 'tertiary',
+                                className: 'question-edit-overlay',
+                              })}
                               type="button"
                               onClick={() => setSelected(q.id)}
                             >

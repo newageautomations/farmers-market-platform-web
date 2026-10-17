@@ -1,0 +1,19 @@
+---
+export const prerender = false;
+import '@market/ui/styles.css';
+import { platformTheme, themeStyle } from '@market/theme';
+import ButtonPlayground from '../components/ButtonPlayground';
+---
+
+<!doctype html>
+<html lang="en" style={themeStyle(platformTheme)}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Button playground</title>
+  </head>
+  <body>
+    <ButtonPlayground client:load />
+  </body>
+</html>

@@ -1,9 +1,17 @@
 import { buttonClassName } from '@market/ui/presentation';
 import { Button, Card, Select, Input } from '@market/ui';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import type { PublicApplication, ApplicationApplicant } from '@market/api';
+import { AppError, documentErrorMessages } from '@market/api';
 import { ApplicationFields } from '@market/ui';
 import { formatMoney, platformName } from '@market/config';
+import { ApplicationDocuments } from './ApplicationDocuments';
 const subscribe = () => () => {};
 function submissionKey() {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
@@ -33,6 +41,7 @@ export function MarketApplication({
     [pending, setPending] = useState(false),
     [submitted, setSubmitted] = useState(false),
     [error, setError] = useState('');
+  const formId = useId();
   const key = useRef<string | null>(null);
   const submitting = useRef(false);
   const [accountChoice, setAccountChoice] = useState<'YES' | 'NO' | ''>('');
@@ -210,190 +219,209 @@ export function MarketApplication({
       </div>
     );
   return (
-    <form
-      className="ops-application"
-      data-ready={hydrated}
-      aria-busy={pending}
-      onSubmit={async (e) => {
-        e.preventDefault();
-        if (submitting.current) return;
-        submitting.current = true;
-        setPending(true);
-        setError('');
-        try {
-          if (
-            !accountChoice ||
-            (accountChoice === 'YES' && (!applicant || !vendorChoice))
-          )
-            throw new Error();
-          key.current ??= submissionKey();
-          const response = await fetch('/api/market-application', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              slug: a.slug,
-              versionId: a.versionId,
-              answers,
-              occurrenceIds: dates,
-              rentals: a.rentals.map((r) => ({
-                optionId: r.id,
-                quantity: rentals[r.id] ?? 0,
-              })),
-              idempotencyKey: key.current,
-              accountAnswer: accountChoice,
-              vendorId:
-                accountChoice === 'YES' && vendorChoice !== 'account-only'
-                  ? Number(vendorChoice)
-                  : null,
-            }),
-          });
-          if (!response.ok) throw new Error();
-          setSubmitted(true);
-        } catch {
-          setError(
-            'The application could not be submitted. Check your answers and dates, then try again. If the application changed, refresh this page.',
-          );
-        } finally {
-          submitting.current = false;
-          setPending(false);
-        }
-      }}
-    >
-      <Card
-        as="fieldset"
-        className="ops-section"
-        disabled={pending || !hydrated}
+    <>
+      <form
+        id={formId}
+        className="ops-application"
+        data-ready={hydrated}
+        aria-busy={pending}
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (submitting.current) return;
+          submitting.current = true;
+          setPending(true);
+          setError('');
+          try {
+            if (
+              !accountChoice ||
+              (accountChoice === 'YES' && (!applicant || !vendorChoice))
+            )
+              throw new Error();
+            key.current ??= submissionKey();
+            const response = await fetch('/api/market-application', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({
+                slug: a.slug,
+                versionId: a.versionId,
+                answers,
+                occurrenceIds: dates,
+                rentals: a.rentals.map((r) => ({
+                  optionId: r.id,
+                  quantity: rentals[r.id] ?? 0,
+                })),
+                idempotencyKey: key.current,
+                accountAnswer: accountChoice,
+                vendorId:
+                  accountChoice === 'YES' && vendorChoice !== 'account-only'
+                    ? Number(vendorChoice)
+                    : null,
+              }),
+            });
+            if (!response.ok) {
+              const result = await response.json().catch(() => ({}));
+              throw new AppError('validation', result.error);
+            }
+            setSubmitted(true);
+          } catch (failure) {
+            setError(
+              failure instanceof AppError &&
+                failure.code === 'APPLICATION_DOCUMENTS_REQUIRED'
+                ? documentErrorMessages.APPLICATION_DOCUMENTS_REQUIRED!
+                : 'The application could not be submitted. Check your answers and dates, then try again. If the application changed, refresh this page.',
+            );
+          } finally {
+            submitting.current = false;
+            setPending(false);
+          }
+        }}
       >
-        <legend>Do you have an account with {platformName}?</legend>
-        {(['YES', 'NO'] as const).map((value) => (
-          <label className="ops-check" key={value}>
-            <Input
-              type="radio"
-              name="platform-account"
-              value={value}
-              required
-              checked={accountChoice === value}
-              onChange={() => {
-                setAccountChoice(value);
-                if (value === 'NO') setVendorChoice('');
-                else if (!applicant?.vendors.length)
-                  setVendorChoice('account-only');
-              }}
-            />
-            {value === 'YES' ? 'Yes' : 'No'}
-          </label>
-        ))}
-        {accountChoice === 'YES' &&
-          (identityLoading ? (
-            <p>Checking your account</p>
-          ) : applicant ? (
-            <>
-              <p>
-                Signed in as {applicant.profile.email}. Your business authority
-                is checked again when you submit.
-              </p>
-              {applicant.vendors.length ? (
-                <label className="ops-field">
-                  Business for this application
-                  <Select
-                    required
-                    value={vendorChoice}
-                    onChange={(e) => setVendorChoice(e.target.value)}
-                  >
-                    <option value="">Choose or confirm a business</option>
-                    <option value="account-only">
-                      Apply with my account only
-                    </option>
-                    {applicant.vendors.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.name}
-                      </option>
-                    ))}
-                  </Select>
-                </label>
-              ) : (
-                <p>
-                  Your account has no Vendor business you can apply for. You can
-                  use your personal contact details.
-                </p>
-              )}
-              <Button variant="secondary" type="button" onClick={autofill}>
-                Fill empty fields from my account
-              </Button>
-            </>
-          ) : (
-            <>
-              <p>
-                Sign in to use your account and return to this application with
-                your progress.
-              </p>
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={() => void signIn()}
-              >
-                Sign in to my platform account
-              </Button>
-            </>
+        <Card
+          as="fieldset"
+          className="ops-section"
+          disabled={pending || !hydrated}
+        >
+          <legend>Do you have an account with {platformName}?</legend>
+          {(['YES', 'NO'] as const).map((value) => (
+            <label className="ops-check" key={value}>
+              <Input
+                type="radio"
+                name="platform-account"
+                value={value}
+                required
+                checked={accountChoice === value}
+                onChange={() => {
+                  setAccountChoice(value);
+                  if (value === 'NO') setVendorChoice('');
+                  else if (!applicant?.vendors.length)
+                    setVendorChoice('account-only');
+                }}
+              />
+              {value === 'YES' ? 'Yes' : 'No'}
+            </label>
           ))}
-        {accountChoice === 'NO' && applicant && (
-          <p>
-            This application will be submitted without linking it to your
-            signed-in account or Vendor business.
-          </p>
-        )}
-      </Card>
-      <p>
-        Apply as a business without creating a platform Vendor account. No
-        payment is collected when you apply.
-      </p>
-      <ApplicationFields
-        definition={a.definition}
-        answers={answers}
-        onAnswer={(id, value) => setAnswers((v) => ({ ...v, [id]: value }))}
-      />
-      <Card as="fieldset" className="ops-section">
-        <legend>Requested Market dates</legend>
-        {a.occurrences.map((o) => (
-          <label className="ops-check" key={o.id}>
-            <Input
-              type="checkbox"
-              checked={dates.includes(o.id)}
-              onChange={(e) =>
-                setDates((v) =>
-                  e.target.checked
-                    ? [...v, o.id]
-                    : v.filter((id) => id !== o.id),
-                )
-              }
-            />
-            {new Date(o.startsAt).toLocaleString()} · {o.venue}
-          </label>
-        ))}
-      </Card>
-      <Card as="fieldset" className="ops-section">
-        <legend>Requested rentals and add-ons</legend>
+          {accountChoice === 'YES' &&
+            (identityLoading ? (
+              <p>Checking your account</p>
+            ) : applicant ? (
+              <>
+                <p>
+                  Signed in as {applicant.profile.email}. Your business
+                  authority is checked again when you submit.
+                </p>
+                {applicant.vendors.length ? (
+                  <label className="ops-field">
+                    Business for this application
+                    <Select
+                      required
+                      value={vendorChoice}
+                      onChange={(e) => setVendorChoice(e.target.value)}
+                    >
+                      <option value="">Choose or confirm a business</option>
+                      <option value="account-only">
+                        Apply with my account only
+                      </option>
+                      {applicant.vendors.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                ) : (
+                  <p>
+                    Your account has no Vendor business you can apply for. You
+                    can use your personal contact details.
+                  </p>
+                )}
+                <Button variant="secondary" type="button" onClick={autofill}>
+                  Fill empty fields from my account
+                </Button>
+              </>
+            ) : (
+              <>
+                <p>
+                  Sign in to use your account and return to this application
+                  with your progress.
+                </p>
+                <Button
+                  variant="secondary"
+                  type="button"
+                  onClick={() => void signIn()}
+                >
+                  Sign in to my platform account
+                </Button>
+              </>
+            ))}
+          {accountChoice === 'NO' && applicant && (
+            <p>
+              This application will be submitted without linking it to your
+              signed-in account or Vendor business.
+            </p>
+          )}
+        </Card>
         <p>
-          These quantities apply to each requested date. The manager confirms
-          accepted quantities for each occurrence. Requests do not reserve
-          resources.
+          Apply as a business without creating a platform Vendor account. No
+          payment is collected when you apply.
         </p>
-        {a.rentals.map((r) => (
-          <label key={r.id} className="ops-field">
-            {r.name} · {formatMoney(r.priceMinor, r.currency)} each
-            <Input
-              type="number"
-              min={0}
-              max={r.maxQuantity}
-              step={1}
-              value={rentals[r.id] ?? 0}
-              onChange={(e) =>
-                setRentals((v) => ({ ...v, [r.id]: Number(e.target.value) }))
-              }
-            />
-          </label>
-        ))}
-      </Card>
+        <ApplicationFields
+          definition={a.definition}
+          answers={answers}
+          onAnswer={(id, value) => setAnswers((v) => ({ ...v, [id]: value }))}
+        />
+        <Card as="fieldset" className="ops-section">
+          <legend>Requested Market dates</legend>
+          {a.occurrences.map((o) => (
+            <label className="ops-check" key={o.id}>
+              <Input
+                type="checkbox"
+                checked={dates.includes(o.id)}
+                onChange={(e) =>
+                  setDates((v) =>
+                    e.target.checked
+                      ? [...v, o.id]
+                      : v.filter((id) => id !== o.id),
+                  )
+                }
+              />
+              {new Date(o.startsAt).toLocaleString()} · {o.venue}
+            </label>
+          ))}
+        </Card>
+        <Card as="fieldset" className="ops-section">
+          <legend>Requested rentals and add-ons</legend>
+          <p>
+            These quantities apply to each requested date. The manager confirms
+            accepted quantities for each occurrence. Requests do not reserve
+            resources.
+          </p>
+          {a.rentals.map((r) => (
+            <label key={r.id} className="ops-field">
+              {r.name} · {formatMoney(r.priceMinor, r.currency)} each
+              <Input
+                type="number"
+                min={0}
+                max={r.maxQuantity}
+                step={1}
+                value={rentals[r.id] ?? 0}
+                onChange={(e) =>
+                  setRentals((v) => ({ ...v, [r.id]: Number(e.target.value) }))
+                }
+              />
+            </label>
+          ))}
+        </Card>
+      </form>
+      <ApplicationDocuments
+        key={`${a.slug}:${accountChoice}:${vendorChoice}`}
+        application={a}
+        vendorId={
+          accountChoice === 'YES' &&
+          applicant?.vendors.some((v) => String(v.id) === vendorChoice)
+            ? Number(vendorChoice)
+            : null
+        }
+      />
       {error && (
         <p className="alert ui-alert ui-alert-error" role="alert">
           {error}
@@ -402,6 +430,7 @@ export function MarketApplication({
       <Button
         variant="primary"
         type="submit"
+        form={formId}
         disabled={
           pending ||
           !hydrated ||
@@ -410,6 +439,6 @@ export function MarketApplication({
       >
         {pending ? 'Submitting application' : 'Submit application'}
       </Button>
-    </form>
+    </>
   );
 }

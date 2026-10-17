@@ -1,11 +1,23 @@
+export {
+  IconButton,
+  Tooltip,
+  UtilityIcon,
+  MarketPlatformLogo,
+} from './utility';
+export { RecordCard } from './record-details';
+import {
+  RecordDetailsTable,
+  type RecordDetailsColumns,
+} from './record-details';
 export { PhoneInput } from './PhoneInput';
-export { SearchSelect } from './SearchSelect';
+export { SearchSelect, SearchableMultiSelect } from './SearchSelect';
 export { TimezoneField, usTimezones } from './TimezoneField';
 export { fieldLimits, inputContract } from './input-validation';
 export { Input, Textarea } from './form-controls';
 import {
   Component,
   createElement,
+  useSyncExternalStore,
   useId,
   useRef,
   useState,
@@ -13,6 +25,7 @@ import {
   type ReactNode,
 } from 'react';
 import { safeError, type ErrorKind } from '@market/api';
+import { Tooltip } from './utility';
 import {
   buttonClassName,
   cardClassName,
@@ -99,13 +112,31 @@ export function Link({
     </a>
   );
 }
-export const Select = ({
+const subscribeNativePicker = () => () => {};
+const nativePickerSupported = () =>
+  typeof window !== 'undefined' &&
+  'HTMLSelectedContentElement' in window &&
+  CSS.supports('appearance', 'base-select');
+export function Select({
   className,
   variant = 'ordinary',
+  children,
   ...props
-}: ComponentProps<'select'> & { variant?: 'ordinary' | 'status' }) => (
-  <select {...props} className={selectClassName(className, variant)} />
-);
+}: ComponentProps<'select'> & { variant?: 'ordinary' | 'status' }) {
+  const customizable = useSyncExternalStore(
+    subscribeNativePicker,
+    nativePickerSupported,
+    () => false,
+  );
+  return (
+    <select {...props} className={selectClassName(className, variant)}>
+      {customizable && !props.multiple && (!props.size || props.size <= 1) && (
+        <button type="button">{createElement('selectedcontent')}</button>
+      )}
+      {children}
+    </select>
+  );
+}
 export function SelectField({
   label,
   info,
@@ -182,12 +213,17 @@ export function InfoTip({ text, label }: { text: string; label: string }) {
   const id = useId();
   return (
     <span className="info-tip">
-      <button type="button" aria-label={`About ${label}`} aria-describedby={id}>
-        i
-      </button>
-      <span id={id} role="tooltip">
-        {text}
-      </span>
+      <Tooltip label={text} id={id}>
+        <Button
+          variant="tertiary"
+          iconOnly
+          type="button"
+          aria-label={`About ${label}`}
+          aria-describedby={id}
+        >
+          i
+        </Button>
+      </Tooltip>
     </span>
   );
 }
@@ -360,11 +396,16 @@ export function Dropdown({
 }
 export function Tabs({
   items,
+  initialTab,
 }: {
   items: readonly { label: string; content: ReactNode; disabled?: boolean }[];
+  initialTab?: string;
 }) {
   const [selected, setSelected] = useState(() =>
-      items.findIndex((item) => !item.disabled),
+      initialTab &&
+      items.some((item) => item.label === initialTab && !item.disabled)
+        ? items.findIndex((item) => item.label === initialTab)
+        : items.findIndex((item) => !item.disabled),
     ),
     id = useId();
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -448,16 +489,34 @@ export function DataTable({
   label,
   sort,
   wide = false,
+  recordDetails,
 }: {
   headings: readonly string[];
   children: ReactNode;
   label: string;
   sort?: { heading: string; direction: 'ascending' | 'descending' };
   wide?: boolean;
+  recordDetails?: RecordDetailsColumns;
 }) {
+  if (recordDetails)
+    return (
+      <RecordDetailsTable
+        headings={headings}
+        label={label}
+        columns={recordDetails}
+        sort={sort}
+      >
+        {children}
+      </RecordDetailsTable>
+    );
   return (
     <Table aria-label={label} className={wide ? 'ui-table-wide' : undefined}>
-      <caption className="sr-only">{label}</caption>
+      <caption className="sr-only">
+        {label}
+        {sort && !headings.includes(sort.heading)
+          ? `. Sorted by ${sort.heading}, ${sort.direction}.`
+          : ''}
+      </caption>
       <thead>
         <tr>
           {headings.map((heading) => (

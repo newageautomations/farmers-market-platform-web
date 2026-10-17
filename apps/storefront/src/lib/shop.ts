@@ -6,6 +6,7 @@ import {
   createCustomerDashboardApi,
   createPreferenceApi,
   createPublicMarketOperationsApi,
+  createApplicationDocumentsApi,
 } from '@market/api';
 import type { APIContext } from 'astro';
 
@@ -102,4 +103,15 @@ export function requestPublicMarketOperations(
   if (context.locals.storefront?.kind !== 'MARKET')
     throw new AppError('forbidden');
   return createPublicMarketOperationsApi(requestOptions(context));
+}
+export function requestApplicationDocuments(
+  context: Pick<APIContext, 'locals' | 'request'>,
+  application: { slug: string; vendorId: number },
+) {
+  if (context.locals.storefront?.kind !== 'MARKET')
+    throw new AppError('forbidden');
+  return createApplicationDocumentsApi({
+    ...requestOptions(context),
+    application,
+  });
 }

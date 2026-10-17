@@ -137,7 +137,6 @@ For representative modals: Close, reopen, Escape, backdrop (existing consumers s
 
 No backend, authentication/session, cart, checkout/payment, financial/inventory calculations, permissions, application commands, map geometry/model, dependencies, lockfiles, build/deployment configuration or Phase C/D migrations were changed. No commits, pushes, PRs or deployments occurred.
 
-
 ## Developer-reported acceptance recorded during Phase C/D
 
 On 2026-10-14 the developer stated that the Phase B implementation looks good after manual review. This records their visual acceptance. The earlier DOM test evidence and its limitations remain unchanged. Combined Phase C/D preserves packages/ui/src/dialog.tsx byte-for-byte, including native modality, guarded dismissal, focus restoration, animation, drawers, native footer forms and the 0.8rem action-row contract. The combined task reran the existing 25 DOM dialog cases as a compatibility check. No additional native browser lifecycle verification is claimed.

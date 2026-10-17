@@ -58,7 +58,8 @@
     "src/plugins/marketplace-commerce/customer-relationships/api.ts": "839aa1642a79a74417cc78c97450e9b393cbbe93666d917d30ef1d3e39be4638",
     "src/plugins/payments/api.ts": "2c0273615c1e63a70e4f94b3e6fdc1049397d443b5ad7457f49ea5cf8a160199",
     "src/plugins/communications/api.ts": "c7cf810313467e5c585e08b329039edc4237b77780fe1b16f840008716232f5b",
-    "src/plugins/marketplace-commerce/customer-account/api.ts": "29dbbb3ee98ab29d4446220af255c758893ec7146260f4afc6dacf50e628f2ee",
+    "src/plugins/documents-compliance/api.ts": "c2c518e727bc164b1e4b79f193531d3513abd1cb242816e32f5139d44688eaef",
+    "src/plugins/marketplace-commerce/customer-account/api.ts": "9bb5c0e26f697fece1a69b9ba827946d84af1bc705bdd30696623436b0190b8b",
     "src/plugins/platform-identity/account-session-policy.ts": "e9404616db9c0f737cd95174c845c9d17f5c1a90b0d98e1aa87a5155f5e78206",
     "node_modules/@vendure/core/dist/api/schema/admin-api/administrator.api.graphql": "e3bb111e234cc9b3882242070744ec4945723d5150f019e2c21df8b81a85b96f",
     "node_modules/@vendure/core/dist/api/schema/admin-api/administrator.type.graphql": "5ae970e7f59f71a49015a428cd8ca199629c85611fd8e22ea331316bd870ee80",
@@ -113,6 +114,7 @@
     "src/plugins/pos-integration/api.ts": "ce51509bdc97e3cad83d722a9f22b14707e2a4d6a585b2689a66cf9359c492f8",
     "src/plugins/billing-entitlements/api.ts": "7f0de4c2e49e74cc1ea2f0ca9832f5fa3fb1f9335a5cbead5784d767dcddf6bc",
     "src/plugins/platform-admin/api.ts": "508ad6be07afbed18f1840c8e0973897b28c74f1094b1b96f36fd297404a294d",
+    "src/plugins/platform-notifications/api.ts": "3d3eb943e02f0974f75b1faeee39f0bd1b4a1ccea3e69bd7f497d1308a2a30f7",
     "src/plugins/marketplace-commerce/owned-admin-reads.ts": "c4ff6722d5c398dfbaab5527886ac24e766215c77fa9d54902ae2bb925383a4e",
     "node_modules/@vendure/core/package.json": "fc35f0f951c64650e4a20658dd20f74a151f5fd15ff3e749319e9d0a982dedd4"
   }

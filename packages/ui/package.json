@@ -6,7 +6,9 @@
   "exports": {
     ".": "./src/index.tsx",
     "./presentation": "./src/presentation.ts",
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./src/styles.css",
+    "./documents": "./src/documents.tsx",
+    "./document-status": "./src/document-status.ts"
   },
   "dependencies": {
     "@market/api": "0.1.0",

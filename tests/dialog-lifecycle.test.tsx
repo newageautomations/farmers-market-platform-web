@@ -426,7 +426,7 @@ describe('shared DLG-02 lifecycle', () => {
 });
 
 describe('dialog actions and affected command forms', () => {
-  it('vendor Inventory retains its embedded action pair and uses shared dismissal when cancelled', async () => {
+  it('vendor Inventory retains its submit action and dismisses through the header X', async () => {
     const service = createFixtureVendorService(fixtureContexts.VENDOR);
     service.restock = vi.fn();
     await act(async () => {
@@ -442,7 +442,9 @@ describe('dialog actions and affected command forms', () => {
     const submit = within(dialog).getByRole('button', { name: 'Restock' });
     const close = within(dialog).getByRole('button', { name: 'Close' });
     expect(submit).toHaveAttribute('type', 'submit');
-    expect(submit.parentElement).toBe(close.parentElement);
+    expect(close.parentElement).toHaveClass('ui-dialog-header');
+    expect(close.querySelector('svg')).not.toBeNull();
+    expect(submit.parentElement).not.toBe(close.parentElement);
     fireEvent.click(close);
     settleClose();
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -478,7 +480,9 @@ describe('dialog actions and affected command forms', () => {
     );
     const save = screen.getByRole('button', { name: 'Save' }),
       close = screen.getByRole('button', { name: 'Close' });
-    expect(save.parentElement).toBe(close.parentElement);
+    expect(close.parentElement).toHaveClass('ui-dialog-header');
+    expect(close.textContent).toBe('');
+    expect(save.parentElement).not.toBe(close.parentElement);
     expect(save.parentElement).toHaveClass('ui-actions', 'ui-modal-actions');
     expect(save).toHaveClass('ui-button');
     expect(save).not.toHaveClass('secondary');
@@ -528,7 +532,8 @@ describe('dialog actions and affected command forms', () => {
         name: 'Confirm change',
       });
       const close = within(dialog).getByRole('button', { name: 'Close' });
-      expect(confirm.parentElement).toBe(close.parentElement);
+      expect(close.parentElement).toHaveClass('ui-dialog-header');
+      expect(confirm.parentElement).not.toBe(close.parentElement);
       fireEvent.click(confirm);
       fireEvent.click(confirm);
       escape(dialog);

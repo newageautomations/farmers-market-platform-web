@@ -145,6 +145,7 @@ export function Products({
             <>
               <DataTable
                 label="Owned products"
+                recordDetails={{ status: 1 }}
                 headings={['Product', 'Status', 'Variants', 'Actions']}
               >
                 {query.data.items.map((p) => (

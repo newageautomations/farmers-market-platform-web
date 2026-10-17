@@ -1,0 +1,6 @@
+mutation ApplicationCompliance($input: JSON!) {
+  applicationCompliance(input: $input)
+}
+mutation UploadApplicationCompliance($input: JSON!, $file: Upload!) {
+  uploadApplicationCompliance(input: $input, file: $file)
+}

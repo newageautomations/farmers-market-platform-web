@@ -24,6 +24,7 @@ export function MarketRoutes({
       <Phase14Routes
         key={`${service.readKey}:${canonical}`}
         api={service.phase14}
+        notifications={service.notifications}
         path={canonical}
         permissions={service.context.permissions}
       />

@@ -1,3 +1,4 @@
+import { IconButton } from '@market/ui';
 import { Badge } from '@market/ui';
 import { managementStatusTone } from './status-presentation';
 import { useCallback, useState } from 'react';
@@ -160,7 +161,7 @@ export function Payments({ service }: { service: ManagementService }) {
           ) : (
             <div className="actions">
               <Button disabled>Connect account</Button>
-              <Button disabled>Refresh account</Button>
+              <IconButton icon="refresh" label="Refresh account" disabled />
               <Button disabled>Disconnect account</Button>
             </div>
           )}

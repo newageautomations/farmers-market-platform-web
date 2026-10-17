@@ -482,10 +482,7 @@ it('searches the authoritative vendor directory beyond its initial page and subm
   ).toBeNull();
   expect(
     within(dialog).getByRole('button', { name: 'Close' }).parentElement,
-  ).toBe(
-    within(dialog).getByRole('button', { name: 'Create relationship' })
-      .parentElement,
-  );
+  ).toHaveClass('ui-dialog-header');
   fireEvent.click(
     within(dialog).getByRole('button', { name: 'Create relationship' }),
   );

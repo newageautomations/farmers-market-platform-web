@@ -11,6 +11,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
+    "test:e2e:compliance-phase3": "playwright test --config playwright.compliance-phase3.config.ts",
     "test:live:layout-designer": "tsx scripts/test-phase15c.ts",
     "test:layout-demo:read-only": "tsx scripts/check-phase15c-demo.ts",
     "test:live:market-operations": "tsx scripts/test-phase14.ts",
@@ -58,7 +59,19 @@
     "demo:customer:start": "tsx scripts/customer-dashboard.ts start",
     "demo:customer:reset": "tsx scripts/customer-dashboard.ts reset",
     "demo:customer:verify": "tsx scripts/customer-dashboard.ts verify",
-    "demo:customer:cleanup": "tsx scripts/customer-dashboard.ts cleanup"
+    "demo:customer:cleanup": "tsx scripts/customer-dashboard.ts cleanup",
+    "documents:configure": "tsx scripts/documents.ts configure",
+    "documents:scanner:up": "tsx scripts/documents.ts up",
+    "documents:scanner:stop": "tsx scripts/documents.ts stop",
+    "documents:scanner:health": "tsx scripts/documents.ts health",
+    "documents:scanner:logs": "tsx scripts/documents.ts logs",
+    "documents:scanner:update": "tsx scripts/documents.ts update",
+    "test:documents": "tsx scripts/documents.ts test",
+    "test:documents:live": "tsx scripts/documents.ts live",
+    "demo:documents": "tsx scripts/documents.ts demo",
+    "test:documents:unit": "tsx scripts/documents.ts unit",
+    "notifications:check": "tsx scripts/documents.ts notifications",
+    "test:e2e:notifications": "playwright test --config playwright.notifications.config.ts"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",

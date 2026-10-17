@@ -1,6 +1,7 @@
 import { navigationIconPaths } from '@market/ui/presentation';
 const paths: Record<string, string> = {
   ...navigationIconPaths,
+  documents: 'M6 3h8l5 5v13H6V3Zm8 0v6h5M9 13h7m-7 4h7',
 
   applications: 'M7 3h10v3h3v15H4V6h3m0-3v5h10V3M8 12h8m-8 4h5',
   occurrences: 'M5 5h14v16H5V5Zm3-3v6m8-6v6M5 10h14m-10 4h2m3 0h2m-7 4h2',

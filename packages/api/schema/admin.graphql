@@ -190,6 +190,10 @@ type Query {
   ownPaymentAdminAccount(mode: PlatformPaymentMode!): AdminPaymentAccount
   ownPosRuntime: OwnPosRuntime!
   ownBillingConfiguration(subject: BillingSubjectInput!): OwnBillingConfiguration!
+  ownComplianceDocuments(skip: Int): JSON!
+  ownComplianceSummary(vendorIds: [Int!]): JSON!
+  ownAdvancedCompliance(input: JSON!): JSON!
+  ownNotificationPreferences: JSON!
   ownMarketListingPublication(listingId: ID!): OwnListingPublication!
   ownVendorCatalog(options: OwnCatalogOptions): OwnCatalogPage!
   ownVendorProduct(productId: ID!): OwnCatalogProduct!
@@ -805,6 +809,10 @@ type Mutation {
   reconcileAnalytics: AnalyticsReconciliationResult!
   platformProvisionVendor(input: PlatformProvisionVendorInput!): PlatformTenantSummary!
   platformProvisionMarket(input: PlatformProvisionMarketInput!): PlatformTenantSummary!
+  uploadComplianceDocument(input: JSON!, file: Upload!): JSON!
+  complianceDocumentCommand(input: ComplianceCommandInput!): JSON!
+  downloadComplianceDocument(fileId: String!): JSON!
+  setOwnNotificationPreferences(input: JSON!): JSON!
 }
 
 type Address implements Node {
@@ -8596,6 +8604,13 @@ input PlatformProvisionMarketInput {
   initialPrincipalId: ID
   defaultPreorderRule: MarketPreorderRuleInput!
   overridePolicy: MarketOverridePolicyInput!
+}
+
+input ComplianceCommandInput {
+  action: String!
+  id: String
+  expectedRevision: Int
+  data: JSON!
 }
 
 enum OwnCatalogSort {

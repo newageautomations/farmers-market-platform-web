@@ -44,6 +44,8 @@ export function themeVariables(input: Theme) {
     '--brand-surface': theme.surface,
     '--brand-foreground': theme.foreground,
     '--brand-muted': theme.muted,
+    '--brand-on-primary': readableColor(theme.primary),
+    '--brand-on-secondary': readableColor(theme.secondary),
     '--font-heading': fonts[theme.headingFont],
     '--font-body': fonts[theme.bodyFont],
   });
@@ -75,3 +77,129 @@ export const vendorTheme: Theme = {
   foreground: '#26394A',
   muted: '#526679',
 };
+
+/** Account palette controls existing dashboard tokens only, never storefront branding. */
+export const dashboardPaletteSchema = z
+  .object({
+    primary: color,
+    secondary: color,
+    background: color,
+    surface: color,
+  })
+  .strict();
+export type DashboardPalette = z.infer<typeof dashboardPaletteSchema>;
+export const dashboardPaletteDefaults: DashboardPalette = {
+  primary: platformTheme.primary,
+  secondary: platformTheme.secondary,
+  background: platformTheme.background,
+  surface: platformTheme.surface,
+};
+/** Presets edit the same four account tokens as custom colors. */
+export const dashboardPalettePresets = [
+  {
+    id: 'forest',
+    label: 'Forest',
+    palette: {
+      primary: '#315947',
+      secondary: '#365349',
+      background: '#F8F5EB',
+      surface: '#FFFFFF',
+    },
+  },
+  {
+    id: 'ocean',
+    label: 'Ocean',
+    palette: {
+      primary: '#245A75',
+      secondary: '#315267',
+      background: '#F0F5F8',
+      surface: '#FFFFFF',
+    },
+  },
+  {
+    id: 'clay',
+    label: 'Clay',
+    palette: {
+      primary: '#884A34',
+      secondary: '#6D5143',
+      background: '#F9F3ED',
+      surface: '#FFFCF8',
+    },
+  },
+  {
+    id: 'plum',
+    label: 'Plum',
+    palette: {
+      primary: '#65436E',
+      secondary: '#5B4A66',
+      background: '#F5F1F7',
+      surface: '#FEFCFF',
+    },
+  },
+  {
+    id: 'slate',
+    label: 'Slate',
+    palette: {
+      primary: '#455567',
+      secondary: '#4D5967',
+      background: '#F2F4F6',
+      surface: '#FFFFFF',
+    },
+  },
+] as const satisfies readonly {
+  id: string;
+  label: string;
+  palette: DashboardPalette;
+}[];
+export function contrastRatio(a: string, b: string) {
+  function luminance(hex: string) {
+    const rgb = [1, 3, 5]
+      .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return rgb[0]! * 0.2126 + rgb[1]! * 0.7152 + rgb[2]! * 0.0722;
+  }
+  const x = luminance(a),
+    y = luminance(b);
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+export function dashboardPaletteError(value: unknown): string | undefined {
+  const result = dashboardPaletteSchema.safeParse(value);
+  if (!result.success) return 'Use a six-digit HEX color for each field.';
+}
+/** Contrast guidance is advisory. Only the strict color schema blocks saving. */
+export function dashboardPaletteAdvice(value: unknown): string | undefined {
+  const result = dashboardPaletteSchema.safeParse(value);
+  if (!result.success) return;
+  const p = result.data;
+  if (
+    [p.background, p.surface].some((bg) => contrastRatio('#54665e', bg) < 4.5)
+  )
+    return 'Choose lighter backgrounds to keep dashboard text and status controls readable.';
+  if (
+    [p.primary, p.secondary].some((fg) =>
+      [p.background, p.surface, '#ffffff'].some(
+        (bg) => contrastRatio(fg, bg) < 4.5,
+      ),
+    )
+  )
+    return 'Choose darker primary and secondary colors for readable buttons, links and focus indicators.';
+}
+
+function readableColor(background: string) {
+  if (contrastRatio('#20352c', background) >= 4.5) return '#20352c';
+  return contrastRatio('#ffffff', background) >= 4.5 ? '#ffffff' : '#000000';
+}
+
+export function dashboardTheme(base: Theme, palette: DashboardPalette): Theme {
+  const approved = dashboardPaletteSchema.parse(palette);
+  const foreground = readableColor(approved.surface);
+  return {
+    ...base,
+    ...approved,
+    foreground,
+    muted:
+      contrastRatio(base.muted, approved.surface) >= 4.5
+        ? base.muted
+        : foreground,
+  };
+}

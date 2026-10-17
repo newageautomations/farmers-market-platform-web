@@ -26,7 +26,7 @@ it('keeps application edits local until save, including searched business and se
       view="submissions"
     />,
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Review Orchard Farm' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Open Orchard Farm' }));
   const modal = screen.getByRole('dialog');
   fireEvent.click(within(modal).getByRole('button', { name: 'Waitlisted' }));
   expect(
@@ -47,9 +47,7 @@ it('keeps application edits local until save, including searched business and se
     },
   );
   expect(run).not.toHaveBeenCalled();
-  fireEvent.click(
-    within(modal).getByRole('button', { name: 'Save and Close' }),
-  );
+  fireEvent.click(within(modal).getByRole('button', { name: 'Save' }));
   await waitFor(() => expect(run).toHaveBeenCalledTimes(1));
   expect(run).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -75,17 +73,17 @@ it('discards application drafts when closed and keeps failed saves open', async 
       view="submissions"
     />,
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Review Orchard Farm' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Open Orchard Farm' }));
   fireEvent.click(screen.getByRole('button', { name: 'Declined' }));
   fireEvent.click(screen.getByRole('button', { name: 'Close' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   expect(run).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: 'Review Orchard Farm' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Open Orchard Farm' }));
   expect(screen.getByRole('button', { name: 'Under Review' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Save and Close' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   await screen.findByRole('alert');
   expect(screen.getByRole('dialog')).toBeInTheDocument();
 });
@@ -140,7 +138,7 @@ it('caps vendors at twenty and requests the next page', async () => {
     within(table).queryByRole('columnheader', { name: 'Version' }),
   ).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-  await screen.findByRole('link', { name: 'Farm 21' });
+  await screen.findByRole('button', { name: 'Open Farm 21' });
   expect(read).toHaveBeenLastCalledWith({ take: 20, skip: 20, search: '' });
 });
 

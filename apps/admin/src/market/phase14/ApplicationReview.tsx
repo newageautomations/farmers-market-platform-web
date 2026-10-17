@@ -9,6 +9,7 @@ import { Button, Card, Select, ApplicationFields } from '@market/ui';
 import { date } from '../common';
 import { friendlyLabel, SearchSelect, statusTone } from '../presentation';
 import { Entry, Check } from './common';
+import { DocumentStatus } from '@market/ui/documents';
 
 export function ApplicationReview({
   submission: s,
@@ -17,9 +18,9 @@ export function ApplicationReview({
   canManage,
   canConfirmDates = false,
   canBilling = false,
+  canRequestDocuments = false,
   onSaved,
   onBusy,
-  onClose,
 }: {
   submission: ApplicationSubmission;
   data: MarketOperationsData;
@@ -27,6 +28,7 @@ export function ApplicationReview({
   canManage: boolean;
   canConfirmDates?: boolean;
   canBilling?: boolean;
+  canRequestDocuments?: boolean;
   onSaved: () => void;
   onBusy: (busy: boolean) => void;
   onClose?: () => void;
@@ -37,6 +39,9 @@ export function ApplicationReview({
     [reviewed, setReviewed] = useState(false),
     [busy, setBusy] = useState(false),
     [failed, setFailed] = useState(false);
+  const [conditional, setConditional] = useState(
+    s.conditionalAcceptance ?? false,
+  );
   const decisions =
     data.approvals?.filter((a) => a.submissionId === s.id) ?? [];
   async function save() {
@@ -50,6 +55,7 @@ export function ApplicationReview({
         expectedRevision: s.revision,
         data: {
           status,
+          conditionalAcceptance: conditional,
           managerNotes: notes,
           directoryId: directory ? Number(directory) : null,
           reviewedOccurrenceIds: reviewed
@@ -78,6 +84,42 @@ export function ApplicationReview({
         {s.applicant.firstName} {s.applicant.lastName} · {s.applicant.email}
       </p>
       <p>Identity: {friendlyLabel(s.identityMode ?? 'LEGACY_UNKNOWN')}</p>
+      {s.documentation && (
+        <Card
+          as="section"
+          surface="embedded"
+          aria-label="Application documentation"
+        >
+          <DocumentStatus value={s.documentation.status} />
+          <p>
+            Documents: {s.documentation.complete} of {s.documentation.total}{' '}
+            complete. Missing: {s.documentation.missing}. Awaiting review:{' '}
+            {s.documentation.pending}. Expired: {s.documentation.expired}.
+            Rejected: {s.documentation.rejected}.
+          </p>
+          {s.documentation.outstanding.length > 0 && (
+            <p>Outstanding: {s.documentation.outstanding.join(', ')}</p>
+          )}
+          <p>
+            Documentation readiness is separate from acceptance and does not
+            change attendance.
+          </p>
+          <a
+            className={buttonClassName({ variant: 'secondary' })}
+            href={`/market/documents?vendor=${s.applicantVendorId ?? ''}`}
+          >
+            Review documents
+          </a>
+          {canRequestDocuments && s.applicantVendorId && (
+            <a
+              className={buttonClassName({ variant: 'secondary' })}
+              href={`/market/documents?vendor=${s.applicantVendorId}&request=1`}
+            >
+              Request an additional document
+            </a>
+          )}
+        </Card>
+      )}
       <ApplicationFields
         definition={s.definitionSnapshot}
         answers={s.answers}
@@ -93,6 +135,11 @@ export function ApplicationReview({
         }
       >
         <legend>Application decision</legend>
+        <Check
+          label="Accept conditionally while required documentation remains outstanding"
+          checked={conditional}
+          onChange={setConditional}
+        />
         {s.status !== 'ACCEPTED' && (
           <SearchSelect
             label="Directory business"
@@ -162,13 +209,8 @@ export function ApplicationReview({
           }
           onClick={() => void save()}
         >
-          {busy ? 'Saving' : 'Save and Close'}
+          {busy ? 'Saving' : 'Save'}
         </Button>
-        {onClose && (
-          <Button variant="secondary" disabled={busy} onClick={onClose}>
-            Close
-          </Button>
-        )}
       </div>
       {failed && (
         <p className="alert ui-alert ui-alert-error" role="alert">

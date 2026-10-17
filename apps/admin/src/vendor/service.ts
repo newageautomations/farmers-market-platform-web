@@ -1,6 +1,8 @@
 import {
   AppError,
   createVendorApi,
+  createNotificationsApi,
+  type NotificationsApi,
   createMarketOperationsApi,
   type VendorBoothAssignment,
   safeError,
@@ -36,6 +38,7 @@ export interface OrderPage {
 }
 export type Availability = 'allowed' | 'denied' | 'unknown' | 'unconfigured';
 export interface VendorService extends VendorApi {
+  notifications?: NotificationsApi;
   linkRequests?: ReturnType<
     typeof createMarketOperationsApi
   >['vendorLinkRequests'];
@@ -144,6 +147,11 @@ export function createLiveVendorService(
   });
   return {
     ...guarded,
+    notifications: createNotificationsApi({
+      endpoint,
+      channelToken,
+      onAuthorityFailure,
+    }),
     linkRequests: createMarketOperationsApi({ endpoint, channelToken })
       .vendorLinkRequests,
     respondToLink: createMarketOperationsApi({ endpoint, channelToken })

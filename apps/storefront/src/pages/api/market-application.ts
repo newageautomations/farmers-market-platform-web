@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { boundedBody } from '@market/config';
-import { AppError } from '@market/api';
+import { AppError, safeError } from '@market/api';
 import { requestPublicMarketOperations } from '../../lib/shop';
 export const POST: APIRoute = async (context) => {
   const headers = {
@@ -60,9 +60,14 @@ export const POST: APIRoute = async (context) => {
       >[0],
     );
     return new Response(JSON.stringify(result), { status: 200, headers });
-  } catch {
+  } catch (error) {
     return new Response(
-      JSON.stringify({ error: 'APPLICATION_SUBMISSION_UNAVAILABLE' }),
+      JSON.stringify({
+        error:
+          safeError(error).code === 'APPLICATION_DOCUMENTS_REQUIRED'
+            ? 'APPLICATION_DOCUMENTS_REQUIRED'
+            : 'APPLICATION_SUBMISSION_UNAVAILABLE',
+      }),
       { status: 400, headers },
     );
   }

@@ -3,6 +3,7 @@ import { hasPermission } from '@market/auth';
 import type { VendorService } from './service';
 import { ReadState, RouteLink, useRead } from './common';
 import { AvailabilityNotice, TotalsTable, defaultRange } from './analytics';
+import { ComplianceOverview } from '../documents/ComplianceOverview';
 
 export function Overview({ service }: { service: VendorService }) {
   const catalogRead = useCallback(
@@ -40,6 +41,9 @@ export function Overview({ service }: { service: VendorService }) {
   );
   return (
     <>
+      {service.notifications && (
+        <ComplianceOverview api={service.notifications} />
+      )}
       <p>
         Manage your Vendor catalog, physical inventory, operational orders and
         customer relationships.

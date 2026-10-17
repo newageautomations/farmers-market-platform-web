@@ -208,6 +208,7 @@ export function MarketOperations({
             (occurrences.data.items.length ? (
               <DataTable
                 label="Choose occurrence operations"
+                recordDetails={{ status: 1 }}
                 headings={['Start', 'Status', 'Operations']}
                 sort={{ heading: 'Start', direction: 'ascending' }}
               >

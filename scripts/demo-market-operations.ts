@@ -54,6 +54,25 @@ if (['admin', 'storefront'].includes(action)) {
     `Using sibling backend ${backend}. This command only targets its approved local demo database.`,
   );
 }
+if (action === 'serve') {
+  await new Promise<void>((resolve, reject) => {
+    const scanner = spawn(
+      process.execPath,
+      [npm, '--prefix', backend, 'run', 'documents:scanner:up'],
+      { cwd: root, env, stdio: 'inherit', windowsHide: true },
+    );
+    scanner.on('error', reject);
+    scanner.on('exit', (code) =>
+      code === 0
+        ? resolve()
+        : reject(
+            new Error(
+              'ClamAV startup failed. Check Docker Desktop and scanner logs.',
+            ),
+          ),
+    );
+  });
+}
 const child = spawn(process.execPath, [npm, ...args], {
   cwd: root,
   env,

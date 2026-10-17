@@ -1,5 +1,7 @@
 # Farmers Market Frontend Platform
 
+Private Vendor/Market documents and requirements are documented in [Documents and compliance](docs/DOCUMENTS_AND_COMPLIANCE.md). From this folder, `npm run documents:configure` creates the backend's local encryption key, and `npm run documents:scanner:up` starts the official private ClamAV container. Docker Desktop with Linux containers is required for live document uploads. `npm run test:documents` runs guarded local API/security tests; `npm run test:documents:live` requires real ClamAV. No native scanner installation is needed.
+
 For the persistent Phase 14 local demo, see [the manual testing tutorial](docs/phase14-manual-testing.md). From this folder, run `npm run demo:market-operations:reset`, then start `demo:market-operations:serve`, `demo:market-operations:admin`, and `demo:market-operations:storefront` in separate terminals. This explicitly authorized local workflow uses the sibling backend's normal application and migrations on only `vendure_demo_market_ops`, with providers disabled. It is separate from the disposable historical test suites and their earlier phase-specific backend read-only restrictions.
 
 Phase 13A foundation, Phase 13B/13B.5 Vendor Admin and Phase 13C Market Admin: one multi-tenant Astro storefront, one shared React Admin and seven reusable packages. Backend APIs remain authoritative. No database or frontend commerce engine exists.

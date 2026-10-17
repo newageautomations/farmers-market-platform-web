@@ -67,7 +67,7 @@
 }
 .designer-body {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) 280px;
+  grid-template-columns: 160px minmax(0, 1fr) 280px;
   height: max(620px, calc(100dvh - 290px));
 }
 .designer button:not(.ui-button),
@@ -121,7 +121,7 @@
   display: flex;
   gap: 0.35rem;
   align-items: center;
-  flex-direction: column;
+  flex-direction: row;
   font-weight: 400;
 }
 .designer-commands > .button.ui-button.button-compact,

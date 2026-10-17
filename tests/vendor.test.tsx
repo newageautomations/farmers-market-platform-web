@@ -109,6 +109,7 @@ describe('Vendor authority and boundary', () => {
       'Inventory',
       'Orders',
       'Markets',
+      'Documents',
       'Integrations',
       'Settings',
     ]);

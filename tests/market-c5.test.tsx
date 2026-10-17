@@ -28,13 +28,22 @@ it('selects a safe directory Vendor with deliberate pending status and authorita
   await screen.findByRole('table', { name: 'Vendor business relationships' });
   fireEvent.click(screen.getByRole('button', { name: 'Add Vendor' }));
   const dialog = await screen.findByRole('dialog', { name: 'Add Vendor' });
-  await within(dialog).findByLabelText('Vendor business');
+  const business = await within(dialog).findByRole('combobox', {
+    name: 'Vendor business',
+  });
   expect(
     within(dialog).queryByRole('textbox', { name: /Vendor ID/i }),
   ).toBeNull();
-  fireEvent.change(within(dialog).getByLabelText('Vendor business'), {
-    target: { value: '1900' },
+  fireEvent.focus(business);
+  const choices = await within(dialog).findByRole('listbox', {
+    name: 'Vendor business',
   });
+  fireEvent.click(
+    await within(choices).findByRole('option', {
+      name: 'Synthetic Market A Eligible Vendor 1',
+    }),
+  );
+  expect(business).toHaveValue('Synthetic Market A Eligible Vendor 1');
   fireEvent.click(
     within(dialog).getByRole('button', { name: 'Create relationship' }),
   );
@@ -42,22 +51,52 @@ it('selects a safe directory Vendor with deliberate pending status and authorita
     expect(mutation).toHaveBeenCalledWith('1', '1900', 'pending'),
   );
   await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
-  await screen.findByRole('link', {
-    name: 'Synthetic Market A Eligible Vendor 1',
+  await screen.findByRole('button', {
+    name: 'Open Synthetic Market A Eligible Vendor 1',
   });
 });
-it('requests page two of the eligible directory from the server adapter', async () => {
+it('finds an eligible Vendor beyond the first page through bounded server search', async () => {
   const api = service(),
     read = vi.spyOn(api, 'eligibleVendors');
   render(<MarketVendors service={api} />);
   fireEvent.click(screen.getByRole('button', { name: 'Add Vendor' }));
   const dialog = await screen.findByRole('dialog');
-  await within(dialog).findByLabelText('Vendor business');
-  fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
+  const business = await within(dialog).findByRole('combobox', {
+    name: 'Vendor business',
+  });
   await waitFor(() =>
-    expect(read).toHaveBeenLastCalledWith({ take: 20, skip: 20, search: '' }),
+    expect(read).toHaveBeenLastCalledWith({ take: 20, skip: 0, search: '' }),
   );
-  await within(dialog).findByRole('option', { name: /Eligible Vendor 21/ });
+  fireEvent.focus(business);
+  const choices = within(dialog).getByRole('listbox', {
+    name: 'Vendor business',
+  });
+  await waitFor(() =>
+    expect(within(choices).getAllByRole('option')).toHaveLength(20),
+  );
+  expect(
+    within(choices).queryByRole('option', { name: /Eligible Vendor 21$/ }),
+  ).toBeNull();
+  fireEvent.change(business, { target: { value: 'Eligible Vendor 21' } });
+  await waitFor(() =>
+    expect(read).toHaveBeenLastCalledWith({
+      take: 20,
+      skip: 0,
+      search: 'Eligible Vendor 21',
+    }),
+  );
+  const vendor = await within(choices).findByRole('option', {
+    name: 'Synthetic Market A Eligible Vendor 21',
+  });
+  expect(within(choices).getAllByRole('option')).toHaveLength(1);
+  fireEvent.click(vendor);
+  expect(business).toHaveValue('Synthetic Market A Eligible Vendor 21');
+  // The adapter still supports explicit pages for other callers.
+  expect(
+    (await api.eligibleVendors({ take: 20, skip: 20, search: '' })).items[0],
+  ).toMatchObject({
+    name: 'Synthetic Market A Eligible Vendor 21',
+  });
 });
 it('discards a delayed B1 Market A page after switching to Market B', async () => {
   const a = service(),
@@ -72,10 +111,12 @@ it('discards a delayed B1 Market A page after switching to Market B', async () =
   );
   const view = render(<MarketVendors service={a} />);
   view.rerender(<MarketVendors service={b} />);
-  await screen.findByRole('link', { name: 'Synthetic Market B Vendor 1' });
+  await screen.findByRole('button', {
+    name: 'Open Synthetic Market B Vendor 1',
+  });
   await act(async () => finish(original));
   expect(
-    screen.queryByRole('link', { name: 'Synthetic Market A Vendor 1' }),
+    screen.queryByRole('button', { name: 'Open Synthetic Market A Vendor 1' }),
   ).toBeNull();
 });
 it('direct occurrence detail succeeds without requesting the date list', async () => {

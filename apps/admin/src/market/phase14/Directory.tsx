@@ -8,9 +8,11 @@ import type {
   OperationsCommand,
   DirectoryEntry,
   RentalDetails,
+  NotificationsApi,
 } from '@market/api';
 import { Check, Control, Entry, moneyLabel } from './common';
-import { RouteLink, date, useRead } from '../common';
+import { RouteLink, date, useRead, ReadState } from '../common';
+import { DocumentStatus } from '@market/ui/documents';
 import { MarketDialog, StatusBadge } from '../presentation';
 const empty: ApplicantContact = {
   businessName: '',
@@ -26,11 +28,13 @@ export function Directory({
   run,
   canManage,
   view = 'list',
+  notifications,
 }: {
   data: MarketOperationsData;
   run: (c: OperationsCommand) => Promise<unknown>;
   canManage: boolean;
   view?: 'list' | 'add';
+  notifications?: NotificationsApi;
 }) {
   const [selected, setSelected] = useState<number | null>(null),
     [contact, setContact] = useState(empty),
@@ -40,6 +44,24 @@ export function Directory({
   const [busy, setBusy] = useState(false);
   const formId = useId();
   const row = data.directory?.find((d) => d.id === selected);
+  const vendorIds = [
+    ...new Set(
+      data.directory
+        ?.filter((d) => d.linkState === 'LINK_VERIFIED' && d.linkedVendorId)
+        .map((d) => Number(d.linkedVendorId)) ?? [],
+    ),
+  ];
+  const vendorKey = vendorIds.slice(0, 50).join(',');
+  const complianceRead = useCallback(
+    () =>
+      notifications!.summary(vendorKey ? vendorKey.split(',').map(Number) : []),
+    [notifications, vendorKey],
+  );
+  const compliance = useRead(
+    `directory-compliance:${vendorKey}`,
+    complianceRead,
+    !!notifications && !!vendorKey && view === 'list',
+  );
   return (
     <>
       <p>
@@ -49,6 +71,15 @@ export function Directory({
       </p>
       {view === 'list' && canManage && (
         <RouteLink to="/market/directory/new">Add external business</RouteLink>
+      )}
+      {view === 'list' && (
+        <ReadState {...compliance} retry={compliance.refresh} />
+      )}
+      {view === 'list' && vendorIds.length > 50 && (
+        <p>
+          Readiness is available for the first 50 linked Vendors. Open Documents
+          for other Vendors.
+        </p>
       )}
       {view === 'list' && (
         <ul className="ops-record-list">
@@ -77,6 +108,21 @@ export function Directory({
                   .replaceAll('_', ' ')}{' '}
                 · {d.contact.email}
               </p>
+              {notifications &&
+                d.linkState === 'LINK_VERIFIED' &&
+                d.linkedVendorId && (
+                  <RouteLink
+                    to={`/market/documents?vendor=${d.linkedVendorId}#vendor-${d.linkedVendorId}`}
+                  >
+                    <DocumentStatus
+                      value={
+                        compliance.data?.vendorReadiness.find(
+                          (r) => r.vendor_id === Number(d.linkedVendorId),
+                        )?.status ?? 'Incomplete view'
+                      }
+                    />
+                  </RouteLink>
+                )}
             </Card>
           ))}
         </ul>

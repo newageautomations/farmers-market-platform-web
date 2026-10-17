@@ -70,12 +70,10 @@ async function main() {
         .query(
           "SELECT pg_advisory_xact_lock(hashtext('demo-customer-account-seed'))",
         );
-      let customer = await db
-        .getRepository(tx, core.Customer)
-        .findOne({
-          where: { emailAddress: email },
-          relations: ['user', 'user.roles', 'user.authenticationMethods'],
-        });
+      let customer = await db.getRepository(tx, core.Customer).findOne({
+        where: { emailAddress: email },
+        relations: ['user', 'user.roles', 'user.authenticationMethods'],
+      });
       if (!customer) {
         assert.equal(
           await db
@@ -95,12 +93,10 @@ async function main() {
           !core.isGraphQlErrorResult(created),
           'Customer creation failed.',
         );
-        customer = await db
-          .getRepository(tx, core.Customer)
-          .findOneOrFail({
-            where: { id: created.id },
-            relations: ['user', 'user.roles', 'user.authenticationMethods'],
-          });
+        customer = await db.getRepository(tx, core.Customer).findOneOrFail({
+          where: { id: created.id },
+          relations: ['user', 'user.roles', 'user.authenticationMethods'],
+        });
       }
       assert.ok(
         customer.user && !customer.deletedAt && !customer.user.deletedAt,

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { useEffect } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   Alert,
@@ -73,15 +73,18 @@ describe('approved dashboard presentation', () => {
       );
       expect(toggle).toHaveClass(dashboardClasses.sidebarToggle, 'button-icon');
       expect(toggle).toHaveAttribute('aria-expanded', 'true');
-      toggle.focus();
+      act(() => toggle.focus());
       await user.keyboard('{Enter}');
       expect(toggle).toHaveAccessibleName('Expand sidebar');
       expect(toggle).toHaveAttribute('aria-expanded', 'false');
-      expect(sidebar).toHaveAttribute('inert');
+      expect(sidebar).not.toHaveAttribute('inert');
+      expect(
+        sidebar.querySelectorAll('.navigation-icon').length,
+      ).toBeGreaterThan(0);
       expect(container.querySelector('.ui-dashboard')).toHaveClass(
         'sidebar-collapsed',
       );
-      resize(767);
+      act(() => resize(767));
       const summary = container.querySelector('summary')!;
       expect(summary).toHaveFocus();
       expect(summary.querySelector('path')).toHaveAttribute(
@@ -89,9 +92,9 @@ describe('approved dashboard presentation', () => {
         'M4 6h16M4 12h16M4 18h16',
       );
       expect(container.querySelectorAll('summary')).toHaveLength(1);
-      resize(768);
+      act(() => resize(768));
       expect(toggle).toHaveAttribute('aria-expanded', 'false');
-      toggle.focus();
+      act(() => toggle.focus());
       await user.keyboard(' ');
       expect(toggle).toHaveAccessibleName('Collapse sidebar');
       expect(sidebar).not.toHaveAttribute('inert');
@@ -378,6 +381,9 @@ describe('approved display and navigation contracts', () => {
       </form>,
     );
     screen.getByRole('tab', { name: 'First' }).focus();
+    expect(screen.getByRole('tab', { name: 'First' })).not.toHaveClass(
+      'button',
+    );
     await user.keyboard('{ArrowRight}');
     expect(screen.getByRole('tab', { name: 'Last' })).toHaveFocus();
     expect(screen.getByRole('tabpanel')).toHaveTextContent('Draft three');
@@ -393,6 +399,8 @@ describe('approved display and navigation contracts', () => {
       </nav>,
     );
     const link = screen.getByRole('link', { name: 'Plans' });
+    expect(link).toHaveClass('ui-route-tab');
+    expect(link).not.toHaveClass('button');
     expect(link).toHaveAttribute('href', '/platform/billing/plans');
     expect(link).toHaveAttribute('aria-current', 'page');
     expect(link).not.toHaveAttribute('role', 'tab');

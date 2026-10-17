@@ -279,6 +279,8 @@ type Mutation {
   unsubscribeVendorCommunications(vendorId: ID!, medium: CommunicationMedium!, purpose: CommunicationPurpose!, noticeVersion: String!): CommunicationPreference!
   subscribeMarketCommunications(marketId: ID!, medium: CommunicationMedium!, purpose: CommunicationPurpose!, noticeVersion: String!): CommunicationPreference!
   unsubscribeMarketCommunications(marketId: ID!, medium: CommunicationMedium!, purpose: CommunicationPurpose!, noticeVersion: String!): CommunicationPreference!
+  applicationCompliance(input: JSON!): JSON!
+  uploadApplicationCompliance(input: JSON!, file: Upload!): JSON!
   setCustomerFollow(kind: String!, id: ID!, following: Boolean!): CustomerFollowResult!
   customerSignOut: CustomerHandoffResult!
   setCheckoutContact(input: CheckoutContactInput!): CheckoutContactView!

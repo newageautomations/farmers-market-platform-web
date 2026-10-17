@@ -1,6 +1,3 @@
-.admin-content button,
-.admin-content .button,
-.admin-topbar .button,
 .admin-sidebar a,
 .admin-mobile-nav a {
   transition:
@@ -16,7 +13,9 @@
 .admin-topbar .button:not(.ui-button):hover {
   background: #edf4ef;
 }
-.admin-content .ops-workspace button:not(.ui-button):hover:not(:disabled) {
+.admin-content
+  .ops-workspace
+  button:not(.ui-button):not([role='tab']):hover:not(:disabled) {
   background: #edf4ef;
 }
 .admin-content .route-button {
@@ -140,10 +139,10 @@
   margin-inline: auto;
   cursor: grab;
   color: #7a877f;
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   line-height: 1;
-  padding: 0.15rem 1rem;
-  min-height: 32px;
+  padding: 6px var(--ui-button-padding-inline);
+  min-height: var(--ui-control-height);
   border: 0;
   background: transparent;
   touch-action: none;

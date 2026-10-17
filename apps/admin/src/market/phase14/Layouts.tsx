@@ -1000,20 +1000,22 @@ export function LayoutEditor({
         />
         <aside className="designer-sidebar" aria-label="Layout properties">
           <div className="designer-tabs">
-            <button
+            <Button
+              variant="tertiary"
               type="button"
               aria-pressed={panel === 'inspector'}
               onClick={() => setPanel('inspector')}
             >
               Inspector
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="tertiary"
               type="button"
               aria-pressed={panel === 'layers'}
               onClick={() => setPanel('layers')}
             >
               Layers
-            </button>
+            </Button>
           </div>
           {panel === 'inspector' ? (
             <LayoutInspector

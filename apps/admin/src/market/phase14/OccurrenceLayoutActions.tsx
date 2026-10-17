@@ -1,3 +1,4 @@
+import { IconButton } from '@market/ui';
 import { useState } from 'react';
 import type {
   LayoutVersion,
@@ -97,14 +98,14 @@ export function OccurrenceLayoutActions({
           </Button>
         )}
         {canEdit && version && (
-          <Button
+          <IconButton
+            icon="edit"
+            label="Edit layout"
             className="secondary"
             onClick={() =>
               go(`/market/assignments/${occurrenceId}/edit-layout`)
             }
-          >
-            Edit layout
-          </Button>
+          />
         )}
       </div>
       {open && (

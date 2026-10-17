@@ -21,6 +21,7 @@ export const onRequest: MiddlewareHandler = async ({ request }, next) => {
     request.method !== 'GET' ||
     url.hostname !== '127.0.0.1' ||
     (url.pathname !== '/' &&
+      !/^\/buttons\/?$/.test(url.pathname) &&
       !/^\/sample\/(base|admin|storefront|customer)\/?$/.test(url.pathname))
   )
     return new Response('Not found', { status: 404 });

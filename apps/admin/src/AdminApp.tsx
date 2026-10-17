@@ -1,3 +1,4 @@
+import { IconButton, MarketPlatformLogo } from '@market/ui';
 import { buttonClassName } from '@market/ui/presentation';
 import {
   useCallback,
@@ -223,14 +224,18 @@ export function AdminApp({
   if (session.status === 'loading' || endpoint !== sessionEndpoint)
     return (
       <main className="login">
-        <h1>Market platform</h1>
+        <h1>
+          <MarketPlatformLogo />
+        </h1>
         <Spinner label="Checking your session" />
       </main>
     );
   if (session.status === 'error')
     return (
       <main className="login">
-        <h1>Market platform</h1>
+        <h1>
+          <MarketPlatformLogo />
+        </h1>
         <ErrorState error={session.error} />
         <Button onClick={() => window.location.reload()}>Try again</Button>
       </main>
@@ -349,9 +354,11 @@ export function AdminApp({
         )}
         <ErrorState error={contextError} />
         <div className="ui-actions">
-          <Button onClick={() => refreshSession(session.channel.id)}>
-            Refresh workspace
-          </Button>
+          <IconButton
+            icon="refresh"
+            label="Refresh workspace"
+            onClick={() => refreshSession(session.channel.id)}
+          />
           {session.user.channels.length > 1 && (
             <>
               <label htmlFor="unavailable-workspace">Workspace</label>
@@ -377,25 +384,32 @@ export function AdminApp({
   if (!context)
     return (
       <main className="login">
-        <h1>Market platform</h1>
+        <h1>
+          <MarketPlatformLogo />
+        </h1>
         <Spinner label="Loading your workspace" />
       </main>
     );
   return (
     <AdminShell
       context={context}
+      accountId={session.user.id}
       vendorService={vendorService}
       marketService={marketService}
       managementService={managementService}
+      documentConnection={{
+        endpoint,
+        channelToken: session.channel.token,
+        onAuthorityFailure: () => refreshSession(session.channel.id),
+      }}
       onLogout={() => void logout()}
       controls={
         <>
-          <Button
-            className="secondary"
+          <IconButton
+            icon="refresh"
+            label="Refresh workspace"
             onClick={() => refreshSession(session.channel.id)}
-          >
-            Refresh workspace
-          </Button>
+          />
           <AccountModes
             endpoint={endpoint}
             channelToken={session.channel.token}

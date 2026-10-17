@@ -135,6 +135,7 @@ export function TenantDirectory({ service }: { service: ManagementService }) {
         <>
           <DataTable
             label="Platform tenant directory"
+            recordDetails={{ status: 2 }}
             headings={['Business', 'Kind', 'Status', 'Storefront', 'Created']}
           >
             <>

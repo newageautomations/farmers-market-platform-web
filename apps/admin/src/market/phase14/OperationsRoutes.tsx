@@ -5,6 +5,7 @@ import type {
   MarketOperationsData,
   OperationsCommand,
   OperationsSection,
+  NotificationsApi,
 } from '@market/api';
 import { safeError } from '@market/api';
 import { Select, ErrorState, Spinner } from '@market/ui';
@@ -16,6 +17,7 @@ import { Assignments } from './Assignments';
 import { Billing } from './Billing';
 import { Control } from './common';
 import { date } from '../common';
+import { RouteLink } from '../../vendor/common';
 const sections: Record<string, OperationsSection> = {
   applications: 'APPLICATIONS',
   'application-submissions': 'APPLICATIONS',
@@ -30,10 +32,12 @@ export function Phase14Routes({
   api,
   path,
   permissions,
+  notifications,
 }: {
   api: MarketOperationsApi;
   path: string;
   permissions: readonly string[];
+  notifications?: NotificationsApi;
 }) {
   const segment = path.split('/')[2] ?? '',
     section = sections[segment] ?? 'APPLICATIONS';
@@ -138,6 +142,11 @@ export function Phase14Routes({
       {pending && <Spinner label="Saving changes" />}
       <fieldset className="ops-controls" disabled={pending || read.loading}>
         <legend className="sr-only">Market operation controls</legend>
+        {active > 0 && ['DAY', 'ASSIGNMENTS'].includes(section) && (
+          <RouteLink to={`/market/documents?view=reports&occurrence=${active}`}>
+            Review documentation for this Market date
+          </RouteLink>
+        )}
         {!path.endsWith('/edit-layout') &&
           ['DAY', 'ASSIGNMENTS', 'BILLING'].includes(section) && (
             <Control
@@ -166,6 +175,7 @@ export function Phase14Routes({
             canManage={can('ManageOwnMarketApplications')}
             canConfirmDates={can('ManageOwnMarketAssignments')}
             canBilling={can('ManageOwnMarketBilling')}
+            canRequestDocuments={can('ManageOwnMarketMemberships')}
             view={
               segment === 'application-submissions'
                 ? 'submissions'
@@ -175,6 +185,7 @@ export function Phase14Routes({
         )}
         {section === 'DIRECTORY' && segment === 'directory' && (
           <Directory
+            notifications={notifications}
             data={data}
             run={run}
             canManage={can('ManageOwnMarketApplications')}

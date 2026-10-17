@@ -176,6 +176,8 @@ export interface ApplicationVersion extends OperationsRecord {
   definition: ApplicationDefinition;
 }
 export interface ApplicationSubmission extends OperationsRecord {
+  documentation?: import('./documents').DocumentationReadiness;
+  conditionalAcceptance?: boolean;
   accountAnswer?: 'YES' | 'NO' | null;
   identityMode?:
     'LEGACY_UNKNOWN' | 'ANONYMOUS' | 'ACCOUNT_ONLY' | 'AUTHORIZED_VENDOR';
@@ -368,6 +370,13 @@ export interface PublicOccurrenceMap {
   }>;
 }
 export interface PublicApplication {
+  documentRequirements?: Array<{
+    id: string;
+    title: string;
+    instructions: string;
+    required: boolean;
+    submission_blocking: boolean;
+  }>;
   accountPreamble?: {
     semantic: 'platformAccount';
     required: true;

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Card, EmptyState } from '@market/ui';
 import type { MarketService } from './service';
+import { ComplianceOverview } from '../documents/ComplianceOverview';
 import {
   DataTable,
   date,
@@ -24,6 +25,9 @@ export function MarketOverview({ service }: { service: MarketService }) {
   const next = occurrences.data?.nextOccurrence;
   return (
     <>
+      {service.notifications && (
+        <ComplianceOverview api={service.notifications} manager />
+      )}
       <Card
         as="section"
         className="dashboard-card"
@@ -60,6 +64,7 @@ export function MarketOverview({ service }: { service: MarketService }) {
           (relationships.data.items.length ? (
             <DataTable
               label="Vendor relationships"
+              recordDetails={{ status: 1 }}
               headings={['Vendor', 'Status', 'Edit']}
             >
               {relationships.data.items.map((row) => (

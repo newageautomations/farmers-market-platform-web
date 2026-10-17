@@ -15,12 +15,14 @@ import {
 } from '../presentation';
 
 import { ApplicationBuilder } from './ApplicationBuilder';
+import { DocumentStatus } from '@market/ui/documents';
 export function Applications({
   data,
   run,
   canManage,
   canConfirmDates = false,
   canBilling = false,
+  canRequestDocuments = false,
   view = 'templates',
 }: {
   data: MarketOperationsData;
@@ -28,6 +30,7 @@ export function Applications({
   canManage: boolean;
   canConfirmDates?: boolean;
   canBilling?: boolean;
+  canRequestDocuments?: boolean;
   view?: 'templates' | 'submissions';
 }) {
   const [selected, setSelected] = useState<number | null>(null);
@@ -79,6 +82,7 @@ export function Applications({
           ) : (
             <DataTable
               label="Applications"
+              recordDetails={{ status: 2 }}
               headings={['Application', 'Visibility', 'Status', 'Edit']}
             >
               {data.templates?.map((t) => (
@@ -153,7 +157,17 @@ export function Applications({
           </p>
           <DataTable
             label="Application submissions"
-            headings={['Business', 'Email', 'Status', 'Review']}
+            recordDetails={{
+              status: 2,
+              onOpen: (index) => setReview(data.submissions![index]!.id),
+            }}
+            headings={[
+              'Business',
+              'Email',
+              'Status',
+              'Documentation',
+              'Review',
+            ]}
           >
             {data.submissions?.map((s) => (
               <tr key={s.id}>
@@ -161,6 +175,20 @@ export function Applications({
                 <td>{s.applicant.email}</td>
                 <td>
                   <StatusBadge>{s.status}</StatusBadge>
+                  {s.conditionalAcceptance && (
+                    <span>Conditional acceptance</span>
+                  )}
+                </td>
+                <td>
+                  {s.documentation && (
+                    <>
+                      <DocumentStatus value={s.documentation.status} />
+                      <span>
+                        {s.documentation.complete} of {s.documentation.total}{' '}
+                        complete
+                      </span>
+                    </>
+                  )}
                 </td>
                 <td>
                   <Button
@@ -176,7 +204,7 @@ export function Applications({
             ))}
             {!data.submissions?.length && (
               <tr>
-                <td colSpan={4}>
+                <td colSpan={5}>
                   <EmptyState title="No submissions yet">
                     <p>No submissions yet.</p>
                   </EmptyState>
@@ -194,21 +222,20 @@ export function Applications({
                 ? `Application from ${submission.applicant.businessName}`
                 : 'Application review'
             }
-            showClose={false}
           >
-            {(dismiss) =>
+            {() =>
               submission && (
                 <ApplicationReview
                   key={submission.id}
                   submission={submission}
                   onSaved={() => setReview(null)}
                   onBusy={setReviewBusy}
-                  onClose={dismiss}
                   data={data}
                   run={run}
                   canManage={canManage}
                   canConfirmDates={canConfirmDates}
                   canBilling={canBilling}
+                  canRequestDocuments={canRequestDocuments}
                 />
               )
             }

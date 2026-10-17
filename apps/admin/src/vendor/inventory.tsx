@@ -112,7 +112,6 @@ export function Inventory({ service }: { service: VendorService }) {
       <Dialog
         open={selected !== null}
         busy={pending}
-        showClose={false}
         onClose={() => setSelected(null)}
         title={
           mode === 'restock'
@@ -120,22 +119,13 @@ export function Inventory({ service }: { service: VendorService }) {
             : 'Adjust physical inventory'
         }
       >
-        {(dismiss) =>
+        {() =>
           selected && (
             <CommandForm
               embedded
               key={`${selected.variantId}:${mode}`}
               title={mode === 'restock' ? 'Restock' : 'Stock adjustment'}
               onPendingChange={setPending}
-              secondaryAction={
-                <Button
-                  variant="secondary"
-                  disabled={pending}
-                  onClick={dismiss}
-                >
-                  Close
-                </Button>
-              }
               submitLabel={mode === 'restock' ? 'Restock' : 'Review adjustment'}
               confirm={
                 mode === 'adjust'

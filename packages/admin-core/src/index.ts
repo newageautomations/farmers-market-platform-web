@@ -26,6 +26,12 @@ export interface NavItem {
 }
 export const navigation: readonly NavItem[] = [
   {
+    label: 'Documents',
+    path: '/market/documents',
+    scopes: ['MARKET'],
+    permission: 'ReadOwnMarket',
+  },
+  {
     label: 'Submitted applications',
     path: '/market/application-submissions',
     scopes: ['MARKET'],
@@ -166,6 +172,12 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnVendorIdentity',
   },
   {
+    label: 'Documents',
+    path: '/vendor/documents',
+    scopes: ['VENDOR'],
+    permission: 'ReadOwnVendorIdentity',
+  },
+  {
     label: 'Occurrences',
     path: '/market/occurrences',
     scopes: ['MARKET'],
@@ -293,6 +305,7 @@ export function visibleNavigation(context: AdminContext) {
         'Assignments',
         'Booth billing',
         'Market Day',
+        'Documents',
         'Analytics',
         'Billing',
         'Settings',

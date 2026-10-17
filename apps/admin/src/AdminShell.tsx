@@ -2,6 +2,7 @@ import {
   lazy,
   Suspense,
   useEffect,
+  useMemo,
   useState,
   type MouseEvent,
   type ReactNode,
@@ -23,9 +24,22 @@ import {
   Spinner,
   DashboardFrame,
   DashboardMenu,
+  Tooltip,
+  IconButton,
+  MarketPlatformLogo,
 } from '@market/ui';
-import { adminTheme, themeVariables } from '@market/theme';
-import { dashboardClasses, navigationIconPaths } from '@market/ui/presentation';
+import {
+  adminTheme,
+  dashboardTheme,
+  themeVariables,
+  dashboardPaletteDefaults,
+} from '@market/theme';
+import { dashboardClasses } from '@market/ui/presentation';
+import {
+  DashboardAppearanceProvider,
+  DashboardAppearanceSettings,
+  useDashboardAppearance,
+} from './DashboardAppearance';
 import type { CSSProperties } from 'react';
 import type { VendorService } from './vendor/service';
 import { VendorRoutes } from './vendor/VendorRoutes';
@@ -49,13 +63,20 @@ import './phase15.css';
 import './phase15b.css';
 import './market/dashboard.css';
 import { NavigationIcon, Chevron } from './NavigationIcon';
-export function AdminShell({
+import { NotificationPreferences } from './notifications/NotificationPreferences';
+const DocumentsWorkspace = lazy(() =>
+  import('./documents/DocumentsWorkspace').then((module) => ({
+    default: module.DocumentsWorkspace,
+  })),
+);
+function Shell({
   context,
   onLogout,
   controls,
   vendorService,
   marketService,
   managementService,
+  documentConnection,
 }: {
   context: AdminContext;
   onLogout: () => void;
@@ -63,7 +84,13 @@ export function AdminShell({
   vendorService?: VendorService;
   marketService?: MarketService;
   managementService?: ManagementService;
+  documentConnection?: {
+    endpoint: string;
+    channelToken: string;
+    onAuthorityFailure?: () => void;
+  };
 }) {
+  const appearance = useDashboardAppearance();
   const [path, setPath] = useState(window.location.pathname);
   useEffect(() => {
     const update = () => setPath(window.location.pathname);
@@ -128,7 +155,7 @@ export function AdminShell({
     setPath(next);
     document.querySelector<HTMLElement>('#main')?.focus();
   }
-  const links = (
+  const links = (rail = false) => (
     <nav aria-label="Workspace navigation">
       {items
         .filter((item) => !item.parent)
@@ -142,32 +169,41 @@ export function AdminShell({
               className={`nav-group ${isExpanded ? 'expanded' : ''}`}
             >
               <div className="nav-parent">
-                <a
-                  href={item.path}
-                  aria-current={
-                    current?.path === item.path ? 'page' : undefined
-                  }
-                  onClick={(event) => navigate(event, item.path)}
-                >
-                  <NavigationIcon path={item.path} />
-                  <span>{item.label}</span>
-                  {children.length > 0 && <Chevron />}
-                </a>
+                <Tooltip label={item.label} enabled={rail && sidebarCollapsed}>
+                  <a
+                    href={item.path}
+                    aria-label={item.label}
+                    aria-current={
+                      current?.path === item.path ? 'page' : undefined
+                    }
+                    onClick={(event) => navigate(event, item.path)}
+                  >
+                    <NavigationIcon path={item.path} />
+                    <span className="ui-nav-label">{item.label}</span>
+                    {children.length > 0 && <Chevron />}
+                  </a>
+                </Tooltip>
               </div>
               {children.length > 0 && (
                 <div className="nav-subpages">
                   {children.map((child) => (
-                    <a
+                    <Tooltip
                       key={child.path}
-                      href={child.path}
-                      aria-current={
-                        current?.path === child.path ? 'page' : undefined
-                      }
-                      onClick={(event) => navigate(event, child.path)}
+                      label={child.label}
+                      enabled={rail && sidebarCollapsed}
                     >
-                      <NavigationIcon path={child.path} />
-                      <span>{child.label}</span>
-                    </a>
+                      <a
+                        href={child.path}
+                        aria-label={child.label}
+                        aria-current={
+                          current?.path === child.path ? 'page' : undefined
+                        }
+                        onClick={(event) => navigate(event, child.path)}
+                      >
+                        <NavigationIcon path={child.path} />
+                        <span className="ui-nav-label">{child.label}</span>
+                      </a>
+                    </Tooltip>
                   ))}
                 </div>
               )}
@@ -178,9 +214,16 @@ export function AdminShell({
   );
   return (
     <div
-      className={context.scope === 'MARKET' ? 'market-dashboard' : undefined}
+      className={
+        'admin-dashboard ' +
+        (context.scope === 'MARKET' ? 'market-dashboard' : '')
+      }
       data-input-mode={inputMode}
-      style={themeVariables(adminTheme(context.branding)) as CSSProperties}
+      style={
+        themeVariables(
+          dashboardTheme(adminTheme(context.branding), appearance.palette),
+        ) as CSSProperties
+      }
     >
       <a className="skip-link" href="#main">
         Skip to content
@@ -193,48 +236,29 @@ export function AdminShell({
       <DashboardFrame
         collapsed={sidebarCollapsed}
         sidebar={
-          <aside
-            id="market-sidebar"
-            className="admin-sidebar"
-            inert={sidebarCollapsed}
-          >
-            <a
-              className="brand"
-              href="/"
-              onClick={(event) => navigate(event, '/')}
-            >
-              Market platform
-            </a>
-            {links}
+          <aside id="market-sidebar" className="admin-sidebar">
+            <div className="ui-sidebar-brand">
+              <a
+                className="brand"
+                href="/"
+                onClick={(event) => navigate(event, '/')}
+              >
+                <MarketPlatformLogo compact={sidebarCollapsed} />
+              </a>
+              <IconButton
+                icon="panel"
+                label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                className={dashboardClasses.sidebarToggle}
+                aria-expanded={!sidebarCollapsed}
+                aria-controls="market-sidebar"
+                onClick={() => setSidebarCollapsed((value) => !value)}
+              />
+            </div>
+            {links(true)}
           </aside>
         }
         header={
           <header className="admin-topbar">
-            <Button
-              iconOnly
-              variant="secondary"
-              className={dashboardClasses.sidebarToggle}
-              aria-label={
-                sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'
-              }
-              aria-expanded={!sidebarCollapsed}
-              aria-controls="market-sidebar"
-              onClick={() => setSidebarCollapsed((value) => !value)}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d={navigationIconPaths['panel-left']} />
-              </svg>
-            </Button>
             <span className="brand">
               {context.branding?.logo && (
                 <img
@@ -246,7 +270,7 @@ export function AdminShell({
               )}
               {context.name}
             </span>
-            <DashboardMenu navigation={links}>
+            <DashboardMenu navigation={links()}>
               {controls}
               <Button className="secondary" onClick={onLogout}>
                 Sign out
@@ -272,7 +296,43 @@ export function AdminShell({
                   </p>
                 )}
               </PageHeader>
-              {managementService && isManagementRoute(context.scope, path) ? (
+              {[
+                '/vendor/settings',
+                '/market/settings',
+                '/platform/settings',
+              ].includes(path) && <DashboardAppearanceSettings />}
+              {['/vendor/settings', '/market/settings'].includes(path) &&
+                (marketService?.notifications ||
+                  vendorService?.notifications) && (
+                  <NotificationPreferences
+                    key={`${context.scope}:${documentConnection?.channelToken}`}
+                    context={context}
+                    api={
+                      (marketService?.notifications ||
+                        vendorService?.notifications)!
+                    }
+                  />
+                )}
+              {['/vendor/documents', '/market/documents'].includes(path) ? (
+                documentConnection ? (
+                  <Suspense fallback={<Spinner label="Loading documents" />}>
+                    <DocumentsWorkspace
+                      key={`${context.scope}:${documentConnection.channelToken}`}
+                      context={context}
+                      connection={documentConnection}
+                    />
+                  </Suspense>
+                ) : (
+                  <EmptyState title="Connect to the backend to manage documents">
+                    <p>
+                      Document uploads and private libraries are available in
+                      the live workspace. This fixture preview has no document
+                      service.
+                    </p>
+                  </EmptyState>
+                )
+              ) : managementService &&
+                isManagementRoute(context.scope, path) ? (
                 <div className="management-workspace">
                   <Suspense
                     fallback={<Spinner label="Loading administration module" />}
@@ -328,6 +388,7 @@ export function AdminShell({
                 </>
               ) : (
                 <EmptyState
+                  level={2}
                   title={`${current?.label ?? 'This area'} will be connected in a later phase`}
                 >
                   <p>
@@ -341,5 +402,28 @@ export function AdminShell({
         </main>
       </DashboardFrame>
     </div>
+  );
+}
+
+export function AdminShell(
+  props: Parameters<typeof Shell>[0] & { accountId?: string },
+) {
+  const defaults = useMemo(
+    () => ({
+      ...dashboardPaletteDefaults,
+      primary:
+        props.context.branding?.accent ?? dashboardPaletteDefaults.primary,
+    }),
+    [props.context.branding?.accent],
+  );
+  return (
+    <DashboardAppearanceProvider
+      key={props.accountId ?? 'fixture'}
+      accountId={props.accountId}
+      connection={props.documentConnection}
+      defaults={defaults}
+    >
+      <Shell {...props} />
+    </DashboardAppearanceProvider>
   );
 }

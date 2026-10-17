@@ -7,6 +7,8 @@ export * from './storefront';
 export * from './market-storefront';
 export * from './checkout';
 export * from './customer-dashboard';
+export * from './documents';
+export * from './application-documents';
 export * from './management';
 export * from './preferences';
 export { AppError, safeError, safeMessages } from './errors';
@@ -63,3 +65,7 @@ export function createAdminApi(options: TransportOptions) {
   };
 }
 export * from './market-operations';
+export * from './notifications';
+export type * from './compliance-phase3';
+
+export * from './dashboard-preferences';

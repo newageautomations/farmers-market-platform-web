@@ -1,6 +1,6 @@
 /** Renderer-neutral approved presentation. No business controllers or runtime imports. */
 export type ButtonVariant =
-  'primary' | 'secondary' | 'destructive' | 'disclosure';
+  'primary' | 'secondary' | 'tertiary' | 'destructive' | 'disclosure';
 export type ButtonSize = 'default' | 'compact';
 export type StatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 export type AlertSeverity =
@@ -209,6 +209,7 @@ export function buttonClassName({
     'button',
     'ui-button',
     selected === 'secondary' ? 'secondary' : '',
+    selected === 'tertiary' ? 'button-tertiary' : '',
     selected === 'destructive' ? 'button-destructive' : '',
     selected === 'disclosure' ? 'button-disclosure' : '',
     size === 'compact' ? 'button-compact' : '',

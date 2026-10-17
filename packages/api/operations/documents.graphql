@@ -1,0 +1,15 @@
+query OwnComplianceDocuments($skip: Int) {
+  ownComplianceDocuments(skip: $skip)
+}
+mutation UploadComplianceDocument($input: JSON!, $file: Upload!) {
+  uploadComplianceDocument(input: $input, file: $file)
+}
+mutation ComplianceDocumentCommand($input: ComplianceCommandInput!) {
+  complianceDocumentCommand(input: $input)
+}
+mutation DownloadComplianceDocument($fileId: String!) {
+  downloadComplianceDocument(fileId: $fileId)
+}
+query OwnAdvancedCompliance($input: JSON!) {
+  ownAdvancedCompliance(input: $input)
+}

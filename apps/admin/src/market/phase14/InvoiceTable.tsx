@@ -40,12 +40,12 @@ export function InvoiceTable({ children }: { children: ReactNode }) {
     observer.observe(container);
     return () => observer.disconnect();
   }, [children]);
-  // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- The invoice scroll region needs keyboard access.
   return (
     <div
       className="invoice-line-scroll"
       role="region"
       aria-label="Invoice line items scroll area"
+      // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- Keyboard users must be able to scroll the invoice region.
       tabIndex={0}
     >
       <table ref={ref} className="invoice-lines">

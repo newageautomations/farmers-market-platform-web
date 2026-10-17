@@ -3,6 +3,8 @@ import {
   createMarketOperationsApi,
   type MarketOperationsApi,
   createMarketApi,
+  createNotificationsApi,
+  type NotificationsApi,
   safeError,
   type MarketApi,
   type Permission,
@@ -13,6 +15,7 @@ export type MarketAvailability =
   'ALLOWED' | 'DENIED' | 'UNKNOWN' | 'UNCONFIGURED';
 let serviceGeneration = 0;
 export interface MarketService extends MarketApi {
+  notifications?: NotificationsApi;
   phase14?: MarketOperationsApi;
   readKey: string;
   context: AdminContext;
@@ -145,6 +148,11 @@ export function createLiveMarketService(
     onAuthorityFailure,
   );
   const operations = createMarketOperationsApi({ endpoint, channelToken });
+  service.notifications = createNotificationsApi({
+    endpoint,
+    channelToken,
+    onAuthorityFailure,
+  });
   service.phase14 = {
     ...operations,
     read: async (...args) => {

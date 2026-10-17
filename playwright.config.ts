@@ -3,12 +3,16 @@ import { reuseStorefront, testPort, testUrl } from './tests/e2e/urls';
 export default defineConfig({
   testDir: 'tests/e2e',
   testIgnore: [
+    '**/ui-refinement-live.spec.ts',
+    '**/compliance-phase3-live.spec.ts',
     '**/vendor-live.spec.ts',
     '**/market-live.spec.ts',
     '**/storefront-live.spec.ts',
     '**/market-storefront-live.spec.ts',
     '**/checkout-account-live.spec.ts',
     '**/platform-admin-live.spec.ts',
+    '**/documents-live.spec.ts',
+    '**/notifications-live.spec.ts',
   ],
   workers: 1,
   fullyParallel: false,

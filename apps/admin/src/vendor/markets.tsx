@@ -181,6 +181,7 @@ export function Markets({
         <>
           <DataTable
             label="Owned Market relationships"
+            recordDetails={{ status: 1 }}
             headings={['Market', 'Membership', 'Actions']}
           >
             {query.data.map((m) => (
@@ -287,15 +288,29 @@ function MarketDetail({ service, id }: { service: VendorService; id: string }) {
           />
           <DataTable
             label="Market variant listings"
-            headings={['Variant', 'Listing approval', 'Publication', 'Actions']}
+            recordDetails={{ status: 1 }}
+            headings={[
+              'Variant',
+              'Listing approval',
+              'Publication and actions',
+            ]}
           >
             {query.data.listings.map((l) => (
-              <PublicationRow
-                key={l.id}
-                service={service}
-                listing={l}
-                refresh={query.refresh}
-              />
+              <tr key={l.id}>
+                <th scope="row">{service.variantName(l.variantId)}</th>
+                <td>
+                  <Badge tone={vendorStatusTone('publication', l.status)}>
+                    {l.status}
+                  </Badge>
+                </td>
+                <td>
+                  <PublicationControls
+                    service={service}
+                    listing={l}
+                    refresh={query.refresh}
+                  />
+                </td>
+              </tr>
             ))}
           </DataTable>
           {can && (
@@ -441,6 +456,7 @@ function Occurrences({
         <>
           <DataTable
             label="Market occurrences"
+            recordDetails={{ status: 2 }}
             headings={[
               'Occurrence',
               'Venue',
@@ -615,7 +631,7 @@ function ListingRequest({
     </>
   );
 }
-function PublicationRow({
+function PublicationControls({
   service,
   listing,
   refresh,
@@ -634,49 +650,40 @@ function PublicationRow({
     refresh();
   };
   return (
-    <tr>
-      <th scope="row">Variant reference {listing.variantId}</th>
-      <td>
-        <Badge tone={vendorStatusTone('publication', listing.status)}>
-          {listing.status}
+    <>
+      <ReadState {...query} retry={query.refresh} />
+      {query.data && (
+        <Badge tone={vendorStatusTone('publication', query.data.state)}>
+          {query.data.state.replaceAll('_', ' ').toLowerCase()}
         </Badge>
-      </td>
-      <td>
-        <ReadState {...query} retry={query.refresh} />
-        {query.data && (
-          <Badge tone={vendorStatusTone('publication', query.data.state)}>
-            {query.data.state.replaceAll('_', ' ').toLowerCase()}
-          </Badge>
-        )}
-      </td>
-      <td>
-        {mayCommand(service.context, 'ManageCatalogPublication') && (
-          <>
-            {listing.status === 'approved' && (
-              <CommandForm
-                embedded
-                title="Publish listing"
-                run={() => service.publish(listing.id)}
-                onDone={done}
-                submitLabel="Publish"
-              >
-                <p>Publish this approved listing to its Market.</p>
-              </CommandForm>
-            )}
+      )}
+
+      {mayCommand(service.context, 'ManageCatalogPublication') && (
+        <>
+          {listing.status === 'approved' && (
             <CommandForm
               embedded
-              title="Unpublish listing"
-              confirm="Unpublish this listing from its Market? Existing orders remain backend managed."
-              run={() => service.unpublish(listing.id)}
+              title="Publish listing"
+              run={() => service.publish(listing.id)}
               onDone={done}
-              submitLabel="Review unpublish"
+              submitLabel="Publish"
             >
-              <p>Remove publication for this listing.</p>
+              <p>Publish this approved listing to its Market.</p>
             </CommandForm>
-          </>
-        )}
-      </td>
-    </tr>
+          )}
+          <CommandForm
+            embedded
+            title="Unpublish listing"
+            confirm="Unpublish this listing from its Market? Existing orders remain backend managed."
+            run={() => service.unpublish(listing.id)}
+            onDone={done}
+            submitLabel="Review unpublish"
+          >
+            <p>Remove publication for this listing.</p>
+          </CommandForm>
+        </>
+      )}
+    </>
   );
 }
 function OfferingEditor({

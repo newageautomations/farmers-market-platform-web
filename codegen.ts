@@ -11,6 +11,8 @@ const config: CodegenConfig = {
                 'packages/api/operations/admin.graphql',
                 'packages/api/operations/market.graphql',
                 'packages/api/operations/management.graphql',
+                'packages/api/operations/documents.graphql',
+                'packages/api/operations/notifications.graphql',
                 'packages/api/operations/market-operations.graphql',
               ]
             : [
@@ -19,6 +21,7 @@ const config: CodegenConfig = {
                 'packages/api/operations/customer-dashboard.graphql',
                 'packages/api/operations/preferences.graphql',
                 'packages/api/operations/public-market-operations.graphql',
+                'packages/api/operations/application-documents.graphql',
               ],
         plugins: ['typescript-operations', 'typed-document-node'],
         config: {

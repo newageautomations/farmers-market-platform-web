@@ -149,6 +149,9 @@ test('published application offers a new version and preserves typed inspector',
       canManage
     />,
   );
+  await user.click(
+    screen.getByRole('button', { name: 'Open Season application' }),
+  );
   await user.click(screen.getByRole('button', { name: 'Open Published' }));
   expect(
     screen.getByRole('button', { name: 'Create new draft' }),
