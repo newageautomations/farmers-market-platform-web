@@ -1,0 +1,39 @@
+# In-person payments roadmap
+
+## Stage A: POS foundation
+
+Vendor register, real catalog/variants/categories/favorites, persistent cashier-scoped drafts, canonical pricing and tax, inventory eligibility, optional exact customer association, invitation intent, validated physical context and expiring payment-ready quotes. Stage A established the unpaid foundation; Stage B now adds checkout completion. Historical Stage A implementation and qualification remain in the adjacent Stage A documents.
+
+## Stage B: Shared payment infrastructure
+
+Implemented locally: common payment coordination, durable immutable request/evidence identity and transition history, real cashier-attested cash, exact tender/change, guarded simulated terminal scenarios, existing physical capacity acquisition, native settled Payment/order placement, delivered in-person handoff, original financial units, vendor Orders, optional customer association, completed-sale guest purchase links, full/partial cash and simulated refunds, status/retry controls and bounded recovery sweeps. The Stage A transition barrier admits only the private coordinator scope and existing verified placement capability. Cash and simulated evidence remain distinct. Stage G now extends these shared completion and refund hooks to associated in-person loyalty.
+
+The [Stage B architecture](STAGE_B_ARCHITECTURE.md), [implementation summary](STAGE_B_IMPLEMENTATION_SUMMARY.md) and [testing guide](STAGE_B_TESTING.md) record actual qualification and reproducible disposable demonstration commands. No protected database migration or production enablement is included. Merchant connection storage is nonsecret metadata only; an approved credential-storage integration is a prerequisite for Stages C/D. Revoked-actor and canonical-source-drift incidents retain evidence/holds for reviewed reconciliation rather than bypassing authorization or allocating replacement stock.
+
+## Stage C: Square integration
+
+Implemented locally: official Square SDK 46.0.0, confidential vendor-owner OAuth, authenticated encrypted token envelopes and refresh, merchant/environment/location isolation, Production Terminal pairing infrastructure, separately labelled Sandbox virtual devices, exact Terminal payment verification and optional reconciled ad-hoc Orders, signed raw-body webhooks, original-operation cancellation/recovery and original-unit Refunds API integration. Existing Stage B authority, cash, simulator and customer completion remain in place. Stage G supplies shared loyalty integration. Android/iOS mobile POS app handoff and server verification are implemented behind a separate physical-pilot gate; unsupported correlation remains uncertain.
+
+Credential-free qualification passed 28 Square adapter groups, 12 focused UI tests and five DOM/a11y/geometry browser groups. Actual Square Sandbox API qualification is blocked by missing credentials/configuration. Physical pairing, card/receipt/payout behavior, external webhook delivery and phone/app/reader interaction remain unverified. No Production API calls or real charges were made. See [Stage C architecture](STAGE_C_SQUARE_ARCHITECTURE.md), [summary](STAGE_C_IMPLEMENTATION_SUMMARY.md), [testing](STAGE_C_TESTING.md), [setup](STAGE_C_SQUARE_SETUP.md) and [hardware qualification](STAGE_C_HARDWARE_QUALIFICATION.md). Do not enable Production or claim universal reader compatibility from fixture results.
+
+## Stage D: Clover integration
+
+Implemented locally: backend REST Pay Display over Clover Cloud, confidential v2 OAuth, encrypted credentials, single-use refresh/recovery, an encrypted HTTPS callback handoff to the original dashboard session, immutable merchant/device ownership, serial registration/defaults/availability, original-operation sale retrieval, cancellation/recovery and linked original-unit refunds through Stage B. Controlled fixtures and the reproducible disposable demo use separate ports and retain Square, cash and simulator behavior. Clover adds no catalog/inventory synchronization, cart or financial engine. Stage G supplies provider-independent loyalty integration.
+
+Qualification is limited to local controlled fixtures, native disposable PostgreSQL and DOM/accessibility/geometry tests. Genuine Clover Sandbox and physical devices remain unverified. US Sandbox is the enabled scope; Production and other regions fail closed. A refund whose response was lost before a durable provider ID remains quarantined because the provider's ordinary refund API cannot independently identify its original idempotency key. External webhook setup/delivery, actual transaction fields/settlement, payouts and certification still require provider/hardware qualification. See [Stage D architecture](STAGE_D_CLOVER_ARCHITECTURE.md), [summary](STAGE_D_IMPLEMENTATION_SUMMARY.md), [testing](STAGE_D_TESTING.md), [setup](STAGE_D_CLOVER_SETUP.md) and [hardware matrix](STAGE_D_HARDWARE_QUALIFICATION.md). Stage E still owns native phone-reader work.
+
+## Stage E: Phone-reader completion
+
+Implemented locally: an isolated React Native companion, separate Square mobile and Clover Go method identities, secure native session/installation binding, short-lived authenticated web handoffs, durable one-use SDK launch claims, online-only Square SDK source integration, independent provider verification and original coordinator/refund reuse. Android debug compilation with the official Square SDK and Metro export passed. Controlled native-provider tests and browser handoff/recovery tests exercise actual disposable Vendure commerce.
+
+Stage E is implemented with documented hardware/provider qualification gaps. The Stage G brief reports prior real Square/Clover Sandbox authorization and Square Android Sandbox Mock Reader testing; this run does not repeat or re-certify those external tests. Clover Go 1.5.1 distribution resolution is checked separately; the compiled availability boundary and controlled contract do not claim a physical Clover Go SDK transaction. iOS compilation, physical pairing, Tap to Pay acceptance and production readiness remain unqualified. See [Stage E summary](STAGE_E_IMPLEMENTATION_SUMMARY.md), [architecture](STAGE_E_MOBILE_ARCHITECTURE.md), [testing](STAGE_E_TESTING.md), [deviceless procedure](STAGE_E_DEVICELESS_TESTING.md) and [provider gaps](STAGE_E_PROVIDER_GAPS.md).
+
+## Stage F: Payment qualification
+
+Explicitly deferred until physical devices are available. It is not a prerequisite for Stage G. Future work includes physical-device testing, provider approval, device/firmware behavior, interruption and refund qualification, and production-readiness assessment. Controlled Stage G tests do not replace that work.
+
+## Stage G: In-person loyalty integration
+
+Implemented locally through the existing loyalty engines: cashier phone/name/reward lookup, verbal-consent vendor reward selection, authoritative native discounted quotes, durable wallet reservations, automatic verified purchase earning, selected-occurrence Discovery/Visits/Spending qualification and settled original-unit refund reconciliation. Threshold-crossing returns invalidate contributions and completion while retaining unrelated purchases and historical spending. No inference of attendance from membership or unpaid drafts is permitted.
+
+The controlled disposable demo includes Casey Demo, phone `(210) 555-0142`, current-run and future occurrences, $20 minimum challenges, multiple vendors, original-unit refunds and a read-only ledger audit. Market rewards retain their existing manager-fulfilled promise contract; no monetary discount is inferred from free text. See [architecture](STAGE_G_LOYALTY_ARCHITECTURE.md), [summary and actual status](STAGE_G_IMPLEMENTATION_SUMMARY.md), [tests](STAGE_G_TESTING.md), [manual walkthrough](STAGE_G_MANUAL_TESTING.md), [refund policy](STAGE_G_REFUND_RECONCILIATION.md) and [security](STAGE_G_SECURITY_AND_PRIVACY.md). Stage F remains deferred and production readiness is not claimed.

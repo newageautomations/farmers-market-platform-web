@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["MarketCloverGoModule"] },
+  "android": { "modules": ["com.market.pos.clover.MarketCloverGoModule"] }
+}

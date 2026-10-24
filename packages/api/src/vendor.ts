@@ -2,7 +2,21 @@ import * as g from './generated/admin';
 import { transport, type TransportOptions } from './transport';
 import { AppError } from './errors';
 
-export type ProductInput = g.VendorCreateProductMutationVariables['input'];
+// Nullable GraphQL input fields may be omitted. Preserve omission when adapting the stricter generated input type.
+export type ProductInput = Omit<
+  g.VendorCreateProductMutationVariables['input'],
+  | 'collectTaxes'
+  | 'taxOverride'
+  | 'categoryIds'
+  | 'productInformation'
+  | 'assetIds'
+> & {
+  collectTaxes?: boolean | null;
+  taxOverride?: number | null;
+  categoryIds?: string[];
+  productInformation?: string | null;
+  assetIds?: string[];
+};
 export type VariantInput = g.VendorCreateVariantMutationVariables['input'];
 export type VariantMetadata = g.VendorUpdateVariantMutationVariables['input'];
 export type InventoryInput = g.VendorRestockMutationVariables['input'];
@@ -39,6 +53,17 @@ export function createVendorApi(
   if (!options.channelToken.trim()) throw new AppError('forbidden');
   const run = transport('admin', options);
   return {
+    taxSettings: () =>
+      run({ api: 'admin', document: g.VendorTaxSettingsDocument }, {}).then(
+        (r) => r.ownVendorTaxSettings,
+      ),
+    saveTaxSettings: (
+      input: g.SaveVendorTaxSettingsMutationVariables['input'],
+    ) =>
+      run(
+        { api: 'admin', document: g.SaveVendorTaxSettingsDocument },
+        { input },
+      ).then((r) => r.saveOwnVendorTaxSettings),
     catalogRead: (options: g.VendorCatalogQueryVariables['options']) =>
       run(
         { api: 'admin', document: g.VendorCatalogDocument },
@@ -66,12 +91,17 @@ export function createVendorApi(
     createProduct: (input: ProductInput) =>
       run(
         { api: 'admin', document: g.VendorCreateProductDocument },
-        { input },
+        {
+          input: input as g.VendorCreateProductMutationVariables['input'],
+        },
       ).then((r) => r.createOwnCatalogProduct),
     updateProduct: (id: string, input: ProductInput) =>
       run(
         { api: 'admin', document: g.VendorUpdateProductDocument },
-        { id, input },
+        {
+          id,
+          input: input as g.VendorUpdateProductMutationVariables['input'],
+        },
       ).then((r) => r.updateOwnCatalogProduct),
     createVariant: (input: VariantInput) =>
       run(

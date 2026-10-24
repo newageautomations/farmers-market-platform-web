@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { AppError } from '@market/api';
 export interface CentralAccountData {
   profile: {
+    timezone?: string | null;
     firstName: string;
     lastName: string;
     emailAddress: string;

@@ -72,6 +72,7 @@ export function useRead<T>(
   key: string,
   read: () => Promise<T>,
   enabled = true,
+  options: { retainPreviousData?: boolean } = {},
 ) {
   const [result, setResult] = useState<{
     key: string;
@@ -96,7 +97,10 @@ export function useRead<T>(
   }, [requestKey, read, enabled]);
   const refresh = useCallback(() => setRevision((value) => value + 1), []);
   return {
-    data: result.key === requestKey && enabled ? result.data : undefined,
+    data:
+      enabled && (result.key === requestKey || options.retainPreviousData)
+        ? result.data
+        : undefined,
     error: result.key === requestKey && enabled ? result.error : undefined,
     refresh,
     loading: enabled && result.key !== requestKey,

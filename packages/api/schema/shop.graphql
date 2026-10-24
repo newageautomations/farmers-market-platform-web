@@ -80,6 +80,9 @@ type Query {
   marketApplicationApplicant: JSON!
   publicMarketApplication(slug: String): JSON!
   publicMarketOccurrenceMap(occurrenceId: Int!): JSON!
+  vendorMarketAppearances: [VendorMarketAppearance!]!
+  vendorPreorderOccurrences: [VendorPreorderOccurrence!]!
+  vendorPreorderAvailability(occurrenceId: ID!, variantIds: [ID!]!): [VendorPreorderAvailability!]!
   marketOccurrenceCatalog(occurrenceId: ID!, options: OccurrenceCatalogOptions): OccurrenceCatalog!
   marketStorefrontOccurrences(options: MarketPublicOccurrenceOptions): MarketPublicOccurrencePage!
   marketStorefrontOccurrence(id: ID!): MarketPublicOccurrence
@@ -264,6 +267,7 @@ type Mutation {
   """Resets a Customer's password based on the provided token"""
   resetPassword(token: String!, password: String!): ResetPasswordResult!
   submitMarketApplication(input: MarketApplicationSubmissionInput!): JSON!
+  addVendorPreorderItem(occurrenceId: ID!, variantId: ID!, quantity: Int!): UpdateOrderItemsResult!
   selectCommerceContext(occurrenceId: ID): CommerceContext!
   selectOwnedPickup(methodIds: [ID!]!): OwnedPickupSelection!
   beginLocalCheckout: LocalCheckoutResult!
@@ -286,6 +290,7 @@ type Mutation {
   setCheckoutContact(input: CheckoutContactInput!): CheckoutContactView!
   requestPurchaseAccountLink(orderId: ID!, origin: String!): PurchaseAccountLinkReceipt!
   exchangeCustomerHandoff(code: String!, origin: String!, correlation: String!): CustomerHandoffResult!
+  submitStorefrontContact(input: JSON!): JSON!
 }
 
 type Address implements Node {
@@ -813,6 +818,7 @@ enum Permission {
   ManageOwnPaymentAccount
   ReadOwnPosIntegrations
   ManageOwnPosIntegrations
+  OperateOwnPos
   ReadOwnBilling
   ManageOwnBilling
   ManageBillingCatalog
@@ -3161,6 +3167,7 @@ type Product implements Node {
   translations: [ProductTranslation!]!
   collections: [Collection!]!
   customFields: JSON
+  productInformation: String!
 }
 
 type ProductTranslation {
@@ -4039,6 +4046,25 @@ input MarketApplicationSubmissionInput {
   idempotencyKey: String!
 }
 
+type VendorPreorderOccurrence {
+  id: ID!
+  scheduleDate: String!
+  startsAt: DateTime!
+  endsAt: DateTime!
+  timezone: String!
+  venue: String!
+  pickupInstructions: String
+  marketId: ID!
+  marketName: String!
+}
+
+type VendorPreorderAvailability {
+  variantId: ID!
+  available: Boolean!
+  reason: String!
+  quantity: Int
+}
+
 enum OccurrenceCatalogSort {
   NAME_ASC
   NAME_DESC
@@ -4165,6 +4191,21 @@ type OccurrenceCatalog {
   items: [OccurrenceCatalogItem!]!
   facets: [OccurrenceCatalogFacet!]!
   vendors: [OccurrenceCatalogVendor!]!
+}
+
+type VendorMarketAppearance {
+  id: ID!
+  scheduleDate: String!
+  startsAt: DateTime!
+  endsAt: DateTime!
+  timezone: String!
+  venue: String!
+  marketId: ID!
+  marketName: String!
+  image: String
+  marketWebsite: String
+  pickupInstructions: String!
+  preorderAvailable: Boolean!
 }
 
 type CommercePickupPromise {

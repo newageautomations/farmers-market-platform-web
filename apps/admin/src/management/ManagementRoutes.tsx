@@ -72,6 +72,16 @@ export function ManagementRoutes({
         grants.
       </p>
       <nav className="overview-links" aria-label="Tenant settings">
+        {service.context.scope === 'VENDOR' &&
+          service.context.permissions.includes('ManageOwnCatalog') && (
+            <RouteLink to="/vendor/settings/taxes">Taxes</RouteLink>
+          )}
+        {service.context.scope === 'VENDOR' &&
+          service.context.permissions.includes('ManageOwnPosIntegrations') && (
+            <RouteLink to="/vendor/settings/payments">
+              Payment Integrations
+            </RouteLink>
+          )}
         {service.context.permissions.includes('ReadOwnPaymentAccount') && (
           <RouteLink to="/vendor/integrations/payments">
             Marketplace Stripe Connect

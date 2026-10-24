@@ -7,6 +7,7 @@ import {
 } from '@market/ui/presentation';
 // Native SSR preserves form submitters without hydrating React for appearance.
 interface Props extends HTMLAttributes<'button'> {
+  href?: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
   iconOnly?: boolean;
@@ -17,17 +18,22 @@ const {
   size,
   iconOnly,
   loading = false,
+  href,
   disabled,
   class: className = '',
   type = 'button',
   ...props
 } = Astro.props;
+if (href && !/^\/(?!\/)|^#/.test(href))
+  throw new Error('Expected a local storefront link');
+const Tag = href ? 'a' : 'button';
 ---
 
-<button
+<Tag
   {...props}
-  type={type}
-  disabled={disabled || loading}
+  href={href}
+  type={href ? undefined : type}
+  disabled={href ? undefined : disabled || loading}
   aria-busy={loading ? 'true' : props['aria-busy']}
   class={buttonClassName({
     variant,
@@ -37,4 +43,4 @@ const {
   })}
 >
   <slot />
-</button>
+</Tag>

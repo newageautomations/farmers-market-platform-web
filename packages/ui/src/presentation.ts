@@ -1,6 +1,11 @@
 /** Renderer-neutral approved presentation. No business controllers or runtime imports. */
 export type ButtonVariant =
-  'primary' | 'secondary' | 'tertiary' | 'destructive' | 'disclosure';
+  | 'primary'
+  | 'secondary'
+  | 'tertiary'
+  | 'destructive'
+  | 'destructive-outline'
+  | 'disclosure';
 export type ButtonSize = 'default' | 'compact';
 export type StatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 export type AlertSeverity =
@@ -18,6 +23,9 @@ export const dashboardClasses = {
   mobileNavigation: 'ui-dashboard-mobile-links',
 } as const;
 export const navigationIconPaths = {
+  loyalty:
+    'M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z',
+  notifications: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4',
   // Lucide panel-left geometry, shared by both dashboard renderers.
   'panel-left':
     'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM9 3v18',
@@ -211,6 +219,7 @@ export function buttonClassName({
     selected === 'secondary' ? 'secondary' : '',
     selected === 'tertiary' ? 'button-tertiary' : '',
     selected === 'destructive' ? 'button-destructive' : '',
+    selected === 'destructive-outline' ? 'button-destructive-outline' : '',
     selected === 'disclosure' ? 'button-disclosure' : '',
     size === 'compact' ? 'button-compact' : '',
     iconOnly ? 'button-icon' : '',

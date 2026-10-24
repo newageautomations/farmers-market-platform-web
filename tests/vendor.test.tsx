@@ -105,6 +105,7 @@ describe('Vendor authority and boundary', () => {
       permissions: ['ReadOwnVendorIdentity', 'ManageOwnInventory'] as const,
     };
     expect(visibleNavigation(operations).map((n) => n.label)).toEqual([
+      'Notifications',
       'Overview',
       'Inventory',
       'Orders',

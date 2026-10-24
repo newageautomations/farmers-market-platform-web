@@ -1,49 +1,124 @@
 ---
 import { cardClassName } from '@market/ui/presentation';
-import type { PublicCatalog } from '@market/api';
+import type { PublicCatalog, VendorPreorderAvailability } from '@market/api';
+import { FeaturedAdd } from './FeaturedAdd';
+import Button from './ui/Button.astro';
+import HarvestArtwork from './home/HarvestArtwork.astro';
 import {
   safeAsset,
   plainDescription,
   priceLabel,
+  productPreorder,
 } from '@market/storefront-core';
 interface Props {
   items: PublicCatalog['items'];
+  featured?: boolean;
+  storefrontId?: string;
+  shop?: boolean;
+  occurrenceId?: string;
+  availability?: VendorPreorderAvailability;
+  preview?: boolean;
 }
-const { items } = Astro.props;
+const {
+  items,
+  featured = false,
+  storefrontId,
+  shop = false,
+  occurrenceId,
+  availability = [],
+  preview = false,
+} = Astro.props;
+const productLink = (slug: string) =>
+  `/products/${encodeURIComponent(slug)}${occurrenceId && !preview ? `?occurrence=${encodeURIComponent(occurrenceId)}` : ''}`;
 ---
 
-<div class="catalog-grid">
-  {items.map((product) => (
-    <article
-      class={cardClassName({
-        className: 'product-card card',
-        spacing: 'contained',
-      })}
-    >
-      <a href={`/products/${encodeURIComponent(product.slug)}`}>
-        {safeAsset(product.featuredAsset?.preview) ? (
-          <img
-            class="product-media"
-            src={safeAsset(product.featuredAsset?.preview)}
-            alt=""
-            width="640"
-            height="480"
-            loading="lazy"
-          />
-        ) : (
-          <div class="product-media product-placeholder" aria-hidden="true">
-            No image
-          </div>
+<div
+  class:list={[
+    'catalog-grid',
+    (featured || shop) && 'harvest-products',
+    shop && 'shop-products',
+  ]}
+>
+  {items.map((product) => {
+    const status = productPreorder(product.variants, availability);
+    return (
+      <article
+        class={cardClassName({
+          className: `product-card card${shop && !status.available ? ' shop-product-unavailable' : ''}`,
+          spacing: 'contained',
+          padding: 'default',
+          surface: 'card',
+        })}
+      >
+        <a class="product-card-link" href={productLink(product.slug)}>
+          {safeAsset(product.featuredAsset?.preview) ? (
+            <img
+              class="product-media"
+              src={safeAsset(product.featuredAsset?.preview)}
+              alt=""
+              width="640"
+              height="480"
+              loading="lazy"
+            />
+          ) : (
+            <div class="product-media product-placeholder" aria-hidden="true">
+              {featured || shop ? <HarvestArtwork /> : 'No image'}
+            </div>
+          )}
+          {featured ? (
+            <h3>{product.name}</h3>
+          ) : (
+            <h2 class="ui-section-title-consumer">{product.name}</h2>
+          )}
+        </a>
+        <p>{priceLabel(product.variants)}</p>
+        {!shop && <p>{plainDescription(product.description).slice(0, 160)}</p>}
+        {shop && (
+          <>
+            <p class="shop-availability">
+              {!occurrenceId ? 'No upcoming pickup market' : status.reason}
+            </p>
+            {status.available && occurrenceId && !preview ? (
+              status.variantId && storefrontId ? (
+                <FeaturedAdd
+                  storefrontId={storefrontId}
+                  variantId={status.variantId}
+                  occurrenceId={occurrenceId}
+                  client:load
+                />
+              ) : (
+                <Button href={productLink(product.slug)} variant="secondary">
+                  Choose options
+                </Button>
+              )
+            ) : (
+              <Button disabled>
+                {preview && status.available ? 'Preview only' : 'Unavailable'}
+              </Button>
+            )}
+          </>
         )}
-        <h2 class="ui-section-title-consumer">{product.name}</h2>
-      </a>
-      <p>{priceLabel(product.variants)}</p>
-      <p>{plainDescription(product.description).slice(0, 160)}</p>
-      {!!product.facetValues.length && (
-        <p class="facet-tags">
-          {product.facetValues.map((f) => f.name).join(' · ')}
-        </p>
-      )}
-    </article>
-  ))}
+        {featured &&
+          (product.variants.length === 1 && storefrontId ? (
+            <FeaturedAdd
+              storefrontId={storefrontId}
+              variantId={product.variants[0]!.id}
+              client:load
+            />
+          ) : (
+            <Button
+              href={`/products/${encodeURIComponent(product.slug)}`}
+              variant="secondary"
+            >
+              {product.variants.length ? 'Choose options' : 'View product'}
+            </Button>
+          ))}
+        {!featured && !shop && !!product.facetValues.length && (
+          <p class="facet-tags">
+            {product.facetValues.map((f) => f.name).join(' · ')}
+          </p>
+        )}
+      </article>
+    );
+  })}
 </div>

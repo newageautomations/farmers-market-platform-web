@@ -1,0 +1,19 @@
+apply plugin: 'com.android.library'
+apply plugin: 'expo-module-gradle-plugin'
+group = 'com.market.pos.clover'
+version = '0.1.0'
+android {
+  namespace 'com.market.pos.clover'
+  defaultConfig { versionCode 1; versionName '0.1.0' }
+}
+
+// Distribution qualification only. This is intentionally absent from the app's
+// runtime/compile classpath while native authorization prerequisites are missing.
+configurations { cloverGoQualification }
+dependencies { cloverGoQualification 'com.clover.sdk:go-sdk:1.5.1' }
+tasks.register('qualifyCloverGoDistribution') {
+  doLast {
+    def artifacts = configurations.cloverGoQualification.resolve()
+    println("Clover Go 1.5.1 distribution resolved: ${artifacts.size()} artifacts. No SDK execution or reader qualification.")
+  }
+}

@@ -217,6 +217,30 @@ query VendorProducts($options: ProductListOptions) {
     }
   }
 }
+query VendorPreorderOccurrences {
+  vendorPreorderOccurrences {
+    pickupInstructions
+    id
+    scheduleDate
+    startsAt
+    endsAt
+    timezone
+    venue
+    marketId
+    marketName
+  }
+}
+query VendorPreorderAvailability($occurrenceId: ID!, $variantIds: [ID!]!) {
+  vendorPreorderAvailability(
+    occurrenceId: $occurrenceId
+    variantIds: $variantIds
+  ) {
+    variantId
+    available
+    reason
+    quantity
+  }
+}
 fragment StorefrontCart on Order {
   id
   code
@@ -240,6 +264,7 @@ fragment StorefrontCart on Order {
   lines {
     id
     quantity
+    unitPriceWithTax
     discountedLinePriceWithTax
     featuredAsset {
       preview
@@ -261,6 +286,7 @@ query CartSnapshot {
 }
 query StorefrontProduct($slug: String!) {
   product(slug: $slug) {
+    productInformation
     id
     name
     slug
@@ -297,6 +323,18 @@ query StorefrontProduct($slug: String!) {
       id
       name
       sku
+      assets {
+        id
+        preview
+        width
+        height
+      }
+      featuredAsset {
+        id
+        preview
+        width
+        height
+      }
       priceWithTax
       currencyCode
       options {
@@ -327,6 +365,25 @@ mutation StorefrontAdd($variantId: ID!, $quantity: Int!) {
     }
   }
 }
+mutation VendorPreorderAdd(
+  $occurrenceId: ID!
+  $variantId: ID!
+  $quantity: Int!
+) {
+  addVendorPreorderItem(
+    occurrenceId: $occurrenceId
+    variantId: $variantId
+    quantity: $quantity
+  ) {
+    __typename
+    ... on Order {
+      ...StorefrontCart
+    }
+    ... on ErrorResult {
+      errorCode
+    }
+  }
+}
 mutation StorefrontAdjust($lineId: ID!, $quantity: Int!) {
   adjustOrderLine(orderLineId: $lineId, quantity: $quantity) {
     __typename
@@ -347,5 +404,22 @@ mutation StorefrontRemove($lineId: ID!) {
     ... on ErrorResult {
       errorCode
     }
+  }
+}
+
+query VendorMarketAppearances {
+  vendorMarketAppearances {
+    id
+    scheduleDate
+    startsAt
+    endsAt
+    timezone
+    venue
+    marketId
+    marketName
+    image
+    marketWebsite
+    pickupInstructions
+    preorderAvailable
   }
 }

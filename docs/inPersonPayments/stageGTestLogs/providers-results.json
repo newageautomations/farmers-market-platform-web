@@ -1,0 +1,21 @@
+{
+  "kind": "CONTROLLED_LOCAL_TESTS",
+  "results": [
+    {
+      "name": "stage-g-final",
+      "exitCode": 0
+    },
+    {
+      "name": "stage-c-loyalty",
+      "exitCode": 0
+    },
+    {
+      "name": "stage-e-loyalty",
+      "exitCode": 0
+    },
+    {
+      "name": "stage-d-loyalty",
+      "exitCode": 0
+    }
+  ]
+}

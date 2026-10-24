@@ -1,17 +1,28 @@
 ---
 import '@market/ui/styles.css';
 import { seo, type StorefrontContext } from '@market/storefront-core';
-import { themeStyle, platformTheme } from '@market/theme';
+import { themeStyle, platformTheme, fonts } from '@market/theme';
 import '../styles/vendor.css';
 import '../styles/market.css';
 import '../styles/checkout.css';
 import { MarketCartLink } from '../components/MarketCartLink';
+import {
+  defaultStorefrontAppearance,
+  storefrontTextSizeCss,
+  storefrontThemeStyle,
+} from '@market/theme/storefront';
+import '@market/theme/storefront.css';
+import '../styles/homepage.css';
+import HarvestHeader from '../components/home/HarvestHeader.astro';
+import HarvestFooter from '../components/home/HarvestFooter.astro';
+import EditorBridge from '../components/EditorBridge.astro';
 interface Props {
   context?: StorefrontContext;
   path?: string;
   title?: string;
   description?: string;
   noindex?: boolean;
+  homepage?: boolean;
 }
 const {
   context,
@@ -19,7 +30,13 @@ const {
   title,
   description,
   noindex = false,
+  homepage = false,
 } = Astro.props;
+const appearance = context?.appearance ?? defaultStorefrontAppearance;
+const sharedVendor = context?.kind === 'VENDOR';
+const appearanceStyle = context
+  ? `${storefrontThemeStyle(appearance)}${homepage || sharedVendor ? '' : `;--font-heading:${fonts[context.theme.headingFont]}`}`
+  : themeStyle(platformTheme);
 const metadata = context ? seo(context, path) : undefined;
 const pageTitle = title
   ? context
@@ -31,16 +48,29 @@ const pageDescription =
 ---
 
 <!doctype html>
-<html lang="en" style={themeStyle(context?.theme ?? platformTheme)}>
+<html
+  lang="en"
+  style={appearanceStyle}
+  data-storefront-theme={context ? appearance.theme : undefined}
+  data-storefront-hover={appearance.buttonHover}
+  data-editor-preview={Astro.locals.editorPreview ? 'true' : undefined}
+>
   <head>
     <meta charset="UTF-8" />
+    <style
+      id="storefront-text-sizes"
+      is:inline
+      set:html={storefrontTextSizeCss(appearance)}
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={pageDescription} />
     <meta
       name="robots"
       content={
-        noindex ? 'noindex,nofollow' : (metadata?.robots ?? 'noindex,nofollow')
+        noindex || Astro.locals.editorPreview
+          ? 'noindex,nofollow'
+          : (metadata?.robots ?? 'noindex,nofollow')
       }
     />
     {metadata && <link rel="canonical" href={metadata.canonical} />}
@@ -59,6 +89,7 @@ const pageDescription =
     <slot name="structured-data" />
   </head>
   <body>
+    {Astro.locals.editorPreview && <EditorBridge />}
     <a class="skip-link" href="#main">
       Skip to content
     </a>
@@ -67,8 +98,13 @@ const pageDescription =
         Development fixture · Placeholder branding and content
       </aside>
     )}
-    <div class="container">
-      {context && (
+    <div
+      class:list={['container', (homepage || sharedVendor) && 'harvest-home']}
+    >
+      {context && (homepage || sharedVendor) && (
+        <HarvestHeader context={context} />
+      )}
+      {context && !homepage && !sharedVendor && (
         <header class="site-header">
           <a class="brand" href="/">
             {context.theme.logo && (
@@ -77,6 +113,7 @@ const pageDescription =
             {context.name}
           </a>
           <nav aria-label="Main navigation">
+            {context.appearance?.about.enabled && <a href="/about">About</a>}
             <a href="/account">Account</a>
             {context.kind === 'MARKET' ? (
               <>
@@ -100,20 +137,26 @@ const pageDescription =
       <main id="main" tabindex="-1">
         <slot />
       </main>
-      <footer class="site-footer">
-        <p>{context?.name ?? 'Market platform'}</p>
-        <p>
-          {context?.source === 'fixture'
-            ? 'Local development preview.'
-            : 'Powered by Market platform'}
-        </p>
-      </footer>
+      {context && (homepage || sharedVendor) ? (
+        <HarvestFooter context={context} />
+      ) : (
+        <footer class="site-footer">
+          <p>{context?.name ?? 'Market platform'}</p>
+          <p>
+            {context?.source === 'fixture'
+              ? 'Local development preview.'
+              : 'Powered by Market platform'}
+          </p>
+        </footer>
+      )}
     </div>
   </body>
   <script>
     import '../lib/account-form';
     function missingImage(image: HTMLImageElement) {
       if (!image.classList.contains('product-media')) return;
+      // The gallery keeps its main image mounted so another thumbnail can recover.
+      if (image.hasAttribute('data-gallery-main')) return;
       const fallback = document.createElement('div');
       fallback.className = 'product-media product-placeholder';
       fallback.textContent = 'Image unavailable';

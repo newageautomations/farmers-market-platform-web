@@ -13,9 +13,11 @@ import { POST } from '../apps/storefront/src/pages/api/customer-follow';
 import type { APIContext } from 'astro';
 
 describe('customer dashboard boundaries', () => {
-  it('has only customer sections', () => {
+  it('has customer sections and the unified human-owned notifications route', () => {
     expect(customerNavigation.map((n) => n.href)).toEqual([
+      '/notifications',
       '/account',
+      '/account/loyalty',
       '/account/orders',
       '/account/markets',
       '/account/vendors',

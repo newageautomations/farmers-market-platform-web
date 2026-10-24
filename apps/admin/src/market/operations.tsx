@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import type { MarketOperationsPage } from '@market/api';
 import { Card, EmptyState, Pagination } from '@market/ui';
 import type { MarketService } from './service';
+import { ReadinessChecklist } from './ReadinessChecklist';
 import {
   DataTable,
   date,
@@ -148,6 +149,7 @@ export function MarketOperations({
     <>
       {id ? (
         <>
+          <ReadinessChecklist service={service} occurrenceId={id} />
           <Card
             as="section"
             className="dashboard-card"

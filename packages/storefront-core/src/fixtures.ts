@@ -57,6 +57,7 @@ const products: PublicProduct[] = Array.from({ length: 15 }, (_, index) => ({
     index === 0
       ? { id: '1', preview: '/assets/vendor-mark.svg', width: 640, height: 480 }
       : null,
+  productInformation: '',
   assets: [],
   facetValues: [
     {
@@ -79,6 +80,8 @@ const products: PublicProduct[] = Array.from({ length: 15 }, (_, index) => ({
     {
       id: String(index * 2 + 1),
       name: 'Standard',
+      featuredAsset: null,
+      assets: [],
       sku: `SYN-${index}-S`,
       priceWithTax: 1000 + index * 100,
       currencyCode: 'USD',
@@ -87,6 +90,8 @@ const products: PublicProduct[] = Array.from({ length: 15 }, (_, index) => ({
     {
       id: String(index * 2 + 2),
       name: 'Large',
+      featuredAsset: null,
+      assets: [],
       sku: `SYN-${index}-L`,
       priceWithTax: 1500 + index * 100,
       currencyCode: 'USD',

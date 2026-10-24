@@ -1,0 +1,18 @@
+---
+import EditorBridge from '../../components/EditorBridge.astro';
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Storefront preview</title>
+  </head>
+  <body>
+    <p role="status">Connecting to your storefront preview…</p>
+    <EditorBridge />
+  </body>
+</html>

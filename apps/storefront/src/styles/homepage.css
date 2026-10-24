@@ -1,0 +1,585 @@
+.harvest-home.container {
+  width: min(100% - 5rem, 1320px);
+}
+.harvest-header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding-block: 1.8rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--brand-primary) 16%, transparent);
+  position: relative;
+  z-index: 5;
+}
+.harvest-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-family: var(--font-heading);
+  font-size: clamp(1.25rem, 1.7vw, 1.7rem);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  max-width: 26rem;
+}
+.harvest-desktop-nav {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2vw, 2rem);
+  font-size: 0.9rem;
+}
+.harvest-header a:not(.button):hover,
+.harvest-footer a:hover {
+  text-decoration: underline;
+}
+.harvest-desktop-nav a {
+  text-decoration: none;
+}
+.harvest-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.harvest-mobile-menu {
+  display: none;
+}
+.harvest-hero {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: clamp(2rem, 5vw, 6rem);
+  align-items: center;
+  padding-block: clamp(3rem, 6vw, 6.5rem);
+}
+.harvest-hero-copy {
+  padding-block: 1rem;
+  min-width: 0;
+}
+.harvest-hero h1 {
+  --storefront-heading-base: clamp(3rem, 6.7vw, 6.7rem);
+  font-size: var(--storefront-heading-base);
+  line-height: 0.99;
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  margin-bottom: 1.8rem;
+  overflow-wrap: anywhere;
+}
+.harvest-hero-copy > p {
+  max-width: 37ch;
+  --storefront-paragraph-base: clamp(1rem, 1.4vw, 1.15rem);
+  font-size: var(--storefront-paragraph-base);
+  color: var(--brand-muted);
+  line-height: 1.8;
+}
+.harvest-hero-actions {
+  margin-top: 2rem;
+  row-gap: 1rem;
+}
+.harvest-hero-visual {
+  position: relative;
+  min-width: 0;
+  aspect-ratio: 5/6;
+  overflow: hidden;
+  border-radius: 48% 48% 1.2rem 1.2rem;
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 9%,
+    var(--brand-background)
+  );
+}
+.harvest-hero-visual .product-media {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  display: block;
+  margin: 0;
+  border-radius: inherit;
+}
+.harvest-hero-visual .product-placeholder {
+  min-height: 22rem;
+}
+.harvest-artwork {
+  width: 100%;
+  height: 100%;
+  color: var(--brand-primary);
+}
+.harvest-hero-market {
+  grid-template-columns: 1.15fr 1fr;
+}
+.harvest-hero-market .harvest-hero-visual {
+  aspect-ratio: 1;
+  border-radius: 1.2rem 1.2rem 45% 1.2rem;
+}
+.harvest-next-visit {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid
+    color-mix(in srgb, var(--brand-primary) 20%, transparent);
+  max-width: 32rem;
+  font-size: 0.9rem;
+}
+.harvest-next-visit p {
+  margin: 0;
+}
+.harvest-next-visit p + p {
+  color: var(--brand-muted);
+}
+.harvest-visit-mark {
+  font-size: 1.5rem;
+}
+.harvest-section {
+  padding-block: clamp(2.75rem, 5vw, 5rem);
+  scroll-margin-top: 1.5rem;
+}
+.harvest-section > .ui-section-heading {
+  margin-bottom: 2rem;
+}
+.harvest-section > .ui-section-heading p {
+  color: var(--brand-muted);
+  max-width: 38ch;
+  margin: 0;
+}
+.harvest-section .ui-section-heading-consumer > h2 {
+  max-width: 25ch;
+}
+.harvest-products {
+  gap: clamp(1.2rem, 2.5vw, 2.4rem);
+}
+.harvest-products .product-card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+}
+.harvest-products .product-card-link {
+  width: 100%;
+}
+.harvest-products .product-media {
+  aspect-ratio: 4/5;
+  border-radius: 0.7rem;
+  margin-bottom: 1.25rem;
+  object-fit: cover;
+}
+.harvest-products h3 {
+  font-family: var(--font-heading);
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
+  margin-bottom: 0.6rem;
+}
+.harvest-products .product-placeholder .harvest-artwork {
+  width: 70%;
+  height: 85%;
+  opacity: 0.65;
+}
+.harvest-header-actions > a:not(.button) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.5rem;
+}
+.harvest-products p {
+  margin-bottom: 0.7rem;
+}
+.harvest-products .product-card > p:first-of-type {
+  font-weight: 600;
+  color: var(--brand-primary);
+}
+.harvest-products .product-card > p:not(:first-of-type) {
+  color: var(--brand-muted);
+  font-size: 0.9rem;
+}
+.harvest-products .product-card-link:focus-visible {
+  outline-offset: 6px;
+  border-radius: 0.7rem;
+}
+.harvest-story {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: clamp(2rem, 6vw, 7rem);
+  border-top: 1px solid
+    color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+.harvest-story h2 {
+  font-size: clamp(2rem, 3.5vw, 3.6rem);
+  font-weight: 400;
+  margin-bottom: 1.8rem;
+}
+.harvest-story > p {
+  white-space: pre-line;
+  font-size: 1.1rem;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+  max-width: 56ch;
+}
+.harvest-invitation {
+  padding: clamp(2rem, 5vw, 5rem);
+  margin-block: 2rem 5rem;
+  border-radius: 1rem;
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 8%,
+    var(--brand-background)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+.harvest-invitation h2 {
+  font-family: var(--font-heading);
+  --storefront-heading-base: clamp(2rem, 3.7vw, 3.7rem);
+  font-size: var(--storefront-heading-base);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  margin: 0;
+}
+.harvest-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  list-style: none;
+  padding: 0;
+}
+.harvest-date {
+  display: grid;
+  grid-template-columns: 4rem 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  min-width: 0;
+}
+.harvest-date-stamp {
+  display: grid;
+  text-align: center;
+  gap: 0.25rem;
+  color: var(--brand-primary);
+}
+.harvest-date-stamp span {
+  font-size: 0.85rem;
+}
+.harvest-date-stamp strong {
+  font-family: var(--font-heading);
+  font-size: 2.8rem;
+  font-weight: 400;
+  line-height: 1;
+}
+.harvest-date h3 {
+  font-size: 1.1rem;
+  font-family: var(--font-body);
+  line-height: 1.6;
+  margin-bottom: 0.6rem;
+}
+.harvest-date h3 a {
+  text-decoration: none;
+}
+.harvest-date p {
+  font-size: 0.9rem;
+  color: var(--brand-muted);
+}
+.harvest-text-link {
+  font-size: 0.9rem;
+  color: var(--brand-primary);
+}
+.harvest-vendors {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+  list-style: none;
+  padding: 0;
+}
+.harvest-vendors li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.harvest-vendor-symbol {
+  display: grid;
+  place-items: center;
+  width: 3.8rem;
+  height: 3.8rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--brand-primary) 8%, var(--brand-surface));
+  color: var(--brand-primary);
+  font: 1.8rem var(--font-heading);
+  margin-bottom: 1.5rem;
+}
+.harvest-vendors h3 {
+  font-size: 1.35rem;
+}
+.harvest-vendors a {
+  font-size: 0.85rem;
+}
+.harvest-footer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3rem;
+  padding-block: 3.5rem 1.5rem;
+  border-top: 1px solid
+    color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+.harvest-footer .harvest-brand {
+  font-size: 1.8rem;
+}
+.harvest-footer p {
+  color: var(--brand-muted);
+  --storefront-paragraph-base: 0.95rem;
+  font-size: var(--storefront-paragraph-base);
+  margin-top: 1rem;
+}
+.harvest-footer nav {
+  display: grid;
+  gap: 0.8rem;
+  align-content: start;
+  font-size: 0.9rem;
+}
+.harvest-footer nav a {
+  text-decoration: none;
+}
+.harvest-footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  grid-column: 1/-1;
+  font-size: 0.8rem;
+  color: var(--brand-muted);
+}
+.storefront-about {
+  max-width: 48rem;
+  padding-block: 4rem;
+}
+.storefront-about p {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .harvest-products .product-media {
+    transition: transform 220ms ease;
+  }
+  .harvest-products .product-card-link:hover .product-media {
+    transform: translateY(-4px);
+  }
+}
+@media (max-width: 1050px) {
+  .harvest-desktop-nav {
+    display: none;
+  }
+  .harvest-header-actions {
+    margin-inline-start: auto;
+  }
+  .harvest-mobile-menu {
+    display: block;
+  }
+  .harvest-mobile-menu summary {
+    padding: 0.6rem;
+    min-height: 44px;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+  .harvest-mobile-menu summary::-webkit-details-marker {
+    display: none;
+  }
+  .harvest-mobile-menu nav {
+    position: absolute;
+    right: 0;
+    top: calc(100% - 0.5rem);
+    width: min(24rem, 100%);
+    background: var(--brand-surface);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 35px #0002;
+    display: grid;
+    gap: 0.4rem;
+  }
+  .harvest-mobile-menu nav a {
+    padding: 0.7rem;
+    text-decoration: none;
+  }
+  .harvest-vendors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .harvest-home.container {
+    width: min(100% - 2.5rem, 1320px);
+  }
+  .harvest-header {
+    padding-block: 1.15rem;
+    gap: 0.75rem;
+  }
+  .harvest-brand {
+    max-width: 14rem;
+    font-size: 1.3rem;
+  }
+  .harvest-hero,
+  .harvest-hero-market {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+    padding-block: 2.6rem;
+  }
+  .harvest-hero-copy {
+    padding: 0;
+  }
+  .harvest-hero h1 {
+    max-width: 14ch;
+    --storefront-heading-base: clamp(2.8rem, 11vw, 4.5rem);
+    font-size: var(--storefront-heading-base);
+    margin-bottom: 1.3rem;
+  }
+  .harvest-hero-copy > p {
+    --storefront-paragraph-base: 1rem;
+    max-width: 45ch;
+  }
+  .harvest-hero-visual {
+    aspect-ratio: 6/5;
+    border-radius: 45% 45% 0.8rem 0.8rem;
+    max-height: 27rem;
+  }
+  .harvest-hero-market .harvest-hero-visual {
+    aspect-ratio: 6/5;
+  }
+  .harvest-next-visit {
+    margin-top: 1.7rem;
+  }
+  .harvest-section > .ui-section-heading {
+    align-items: start;
+    gap: 1rem;
+  }
+  .harvest-story,
+  .harvest-dates {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .harvest-invitation {
+    display: grid;
+    justify-items: start;
+    margin-block: 1rem 3rem;
+  }
+  .harvest-footer {
+    gap: 2rem;
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 2.5rem;
+  }
+}
+@media (max-width: 380px) {
+  .harvest-home.container {
+    width: calc(100% - 2rem);
+  }
+  .harvest-brand {
+    font-size: 1.1rem;
+  }
+  .harvest-header-actions {
+    gap: 0.25rem;
+  }
+  .harvest-vendors {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+[data-composition='vendor'] .harvest-hero {
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: clamp(2rem, 4vw, 4rem);
+}
+[data-composition='vendor'] .harvest-products .product-card {
+  padding: 1.3rem;
+  border-radius: var(--storefront-card-radius);
+  align-items: stretch;
+}
+.harvest-products .product-card-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.harvest-products .featured-purchase,
+.harvest-products .product-card > .button {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+}
+[data-composition='vendor'] .harvest-products .product-media {
+  border-radius: calc(var(--storefront-card-radius) * 0.65);
+  aspect-ratio: 4/3;
+}
+.featured-purchase p:empty {
+  display: none;
+}
+.featured-purchase p {
+  margin-top: 0.75rem;
+}
+.vendor-about {
+  margin-block: 4rem;
+  padding: clamp(2rem, 6vw, 6rem);
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  border-radius: var(--storefront-card-radius);
+}
+.vendor-about h2 {
+  --storefront-heading-base: clamp(2.5rem, 4vw, 4.5rem);
+  font-size: var(--storefront-heading-base);
+  font-weight: 400;
+}
+.vendor-about p {
+  --storefront-paragraph-base: 1rem;
+  white-space: pre-line;
+  line-height: 1.9;
+  max-width: 44ch;
+  overflow-wrap: anywhere;
+}
+.vendor-about .product-media {
+  aspect-ratio: 5/4;
+  border-radius: var(--storefront-card-radius);
+  margin: 0;
+}
+.vendor-about .button {
+  --brand-secondary: var(--brand-on-primary);
+  --button-hover-fill: var(--brand-surface);
+  --button-hover-ink: var(--brand-primary);
+}
+.vendor-about-text {
+  grid-template-columns: 1fr;
+}
+.vendor-closing {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1.5rem 3rem;
+  border-radius: var(--storefront-card-radius);
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 14%,
+    var(--brand-background)
+  );
+}
+.vendor-closing h2 {
+  grid-row: span 2;
+}
+.vendor-closing p {
+  --storefront-paragraph-base: 1rem;
+  max-width: 40ch;
+  margin: 0;
+}
+.vendor-closing .button {
+  justify-self: start;
+}
+.harvest-header a[aria-current] {
+  text-decoration: underline;
+}
+@media (max-width: 700px) {
+  [data-composition='vendor'] .harvest-hero,
+  .vendor-about,
+  .vendor-closing {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .vendor-about {
+    gap: 2rem;
+  }
+  .vendor-closing h2 {
+    grid-row: auto;
+  }
+}

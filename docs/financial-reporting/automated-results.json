@@ -1,0 +1,91 @@
+{
+  "mode": "test",
+  "database": "vendure_test_pos_demo_1792618107908_b6ebb2",
+  "success": true,
+  "results": [
+    {
+      "name": "Signed profit, unknown costs, general overhead and CSV injection safety",
+      "status": "PASS"
+    },
+    {
+      "name": "One month: all financial totals independently match native sale plan",
+      "status": "PASS"
+    },
+    {
+      "name": "Market and independent attribution exclude unallocated overhead",
+      "status": "PASS"
+    },
+    {
+      "name": "Product contributions, quantities and expense category totals independently reconcile",
+      "status": "PASS"
+    },
+    {
+      "name": "Refund on September 14 and expenses on sale-free days remain negative",
+      "status": "PASS"
+    },
+    {
+      "name": "Tax excluded, no transfer revenue, failed payments absent, deduplicated lines",
+      "status": "PASS"
+    },
+    {
+      "name": "CSV shares dashboard authoritative daily and product totals",
+      "status": "PASS"
+    },
+    {
+      "name": "order transactions retain complete vendor-owned lines, tax and refund audit history",
+      "status": "PASS"
+    },
+    {
+      "name": "Anonymous, Shop, foreign vendor cost, expense, receipt and market access denied",
+      "status": "PASS"
+    },
+    {
+      "name": "Account time zone persists per user, controls local dates, and respects DST",
+      "status": "PASS"
+    },
+    {
+      "name": "Expense creation retries are idempotent and a reused key cannot change an expense",
+      "status": "PASS"
+    },
+    {
+      "name": "Expense create, edit, optimistic conflict, void and immutable audit",
+      "status": "PASS"
+    },
+    {
+      "name": "Invalid expense amount/date/category/event and currency injection rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "Cost edits and clearing never rewrite historical sales, unknown remains unknown",
+      "status": "PASS"
+    },
+    {
+      "name": "Optional costed variant creation preserves selling price and private cost separately",
+      "status": "PASS"
+    },
+    {
+      "name": "Native online checkout, failed POS payments and unplaced drafts retain payment behavior",
+      "status": "PASS"
+    },
+    {
+      "name": "Known vendor fees use latest resource evidence once and duplicated statements do not reduce profit twice",
+      "status": "PASS"
+    },
+    {
+      "name": "Verified native booth payments reduce vendor profit once and remain separate manager revenue",
+      "status": "PASS"
+    },
+    {
+      "name": "Receipt private storage, controlled scanner success/failure, access and type limits",
+      "status": "PASS"
+    },
+    {
+      "name": "Manager native fee receipts and operating expenses stay separate from vendor sales",
+      "status": "PASS"
+    },
+    {
+      "name": "GraphQL schema and existing Manna Roots login",
+      "status": "PASS"
+    }
+  ]
+}

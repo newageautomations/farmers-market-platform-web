@@ -1,0 +1,9 @@
+{
+  "primary": "#315947",
+  "background": "#f8f5eb",
+  "surface": "#fff",
+  "foreground": "#263c30",
+  "muted": "#566358",
+  "warning": "#78520c",
+  "warningBackground": "#fff3d4"
+}

@@ -24,10 +24,19 @@ export type StorefrontAction =
   | 'adjust'
   | 'remove'
   | 'select-occurrence'
+  | 'product-availability'
   | 'apply-coupon'
   | 'remove-coupon';
 export type CartBootstrap = { cart: PublicCart | null; signedIn: boolean };
+export type VendorPreorderOccurrence = Omit<
+  shop.VendorPreorderOccurrencesQuery['vendorPreorderOccurrences'][number],
+  'pickupInstructions'
+> & { pickupInstructions?: string | null };
+export type VendorPreorderAvailability =
+  shop.VendorPreorderAvailabilityQuery['vendorPreorderAvailability'];
 
+export type VendorMarketAppearance =
+  shop.VendorMarketAppearancesQuery['vendorMarketAppearances'][number];
 // Documents remain Shop-tagged, with no raw execution surface for public feature code.
 export function createStorefrontApi(
   options: TransportOptions & { channelToken: string; vendorId: string },
@@ -37,17 +46,43 @@ export function createStorefrontApi(
     execute({ api: 'shop', document: shop.CartSnapshotDocument }, {});
   const session = () =>
     execute({ api: 'shop', document: shop.ShopCustomerSessionDocument }, {});
-  async function directContext() {
-    const result = await execute(
-      { api: 'shop', document: shop.StorefrontSelectContextDocument },
-      {},
+  const occurrences = async () =>
+    (
+      await execute(
+        { api: 'shop', document: shop.VendorPreorderOccurrencesDocument },
+        {},
+      )
+    ).vendorPreorderOccurrences;
+  const availability = async (occurrenceId: string, variantIds: string[]) =>
+    (
+      await execute(
+        { api: 'shop', document: shop.VendorPreorderAvailabilityDocument },
+        { occurrenceId, variantIds },
+      )
+    ).vendorPreorderAvailability;
+  async function select(occurrenceId: string) {
+    const occurrence = (await occurrences()).find((o) => o.id === occurrenceId);
+    if (!occurrence)
+      throw new AppError('validation', 'PREORDER_OCCURRENCE_REQUIRED');
+    const current = (await snapshot()).activeOrder;
+    if (current?.lines.length) {
+      const cart = (
+        await execute(
+          { api: 'shop', document: shop.MarketActiveCartSnapshotDocument },
+          {},
+        )
+      ).marketActiveCart;
+      if (!cart || cart.occurrence.id !== occurrenceId)
+        throw new AppError('conflict', 'NONEMPTY_CONTEXT_SWITCH_DENIED');
+    }
+    const { selectCommerceContext: context } = await execute(
+      { api: 'shop', document: shop.MarketSelectContextDocument },
+      { occurrenceId },
     );
-    const context = result.selectCommerceContext;
     if (
-      context.kind !== 'DIRECT_VENDOR' ||
-      context.vendorId !== options.vendorId ||
-      context.marketId ||
-      context.occurrenceId
+      context.kind !== 'MARKET_OCCURRENCE' ||
+      context.marketId !== occurrence.marketId ||
+      context.occurrenceId !== occurrenceId
     )
       throw new AppError('forbidden');
   }
@@ -69,6 +104,23 @@ export function createStorefrontApi(
     }
   }
   return {
+    appearances: async () =>
+      (
+        await execute(
+          { api: 'shop', document: shop.VendorMarketAppearancesDocument },
+          {},
+        )
+      ).vendorMarketAppearances,
+    occurrences,
+    availability,
+    select,
+    marketCart: async () =>
+      (
+        await execute(
+          { api: 'shop', document: shop.MarketActiveCartSnapshotDocument },
+          {},
+        )
+      ).marketActiveCart,
     catalog: (variables: shop.VendorProductsQueryVariables) =>
       execute(
         { api: 'shop', document: shop.VendorProductsDocument },
@@ -106,17 +158,22 @@ export function createStorefrontApi(
         throw new AppError('authentication');
       return { signedIn: true };
     },
-    async add(variantId: string, quantity: number) {
-      await directContext();
-      const result = await execute(
-        { api: 'shop', document: shop.StorefrontAddDocument },
-        { variantId, quantity },
+    async add(variantId: string, quantity: number, occurrenceId?: string) {
+      if (!occurrenceId)
+        throw new AppError('validation', 'PREORDER_OCCURRENCE_REQUIRED');
+      const status = (await availability(occurrenceId, [variantId])).find(
+        (v) => v.variantId === variantId,
       );
-      accepted(result.addItemToOrder);
+      if (!status?.available)
+        throw new AppError('validation', 'PREORDER_UNAVAILABLE');
+      const result = await execute(
+        { api: 'shop', document: shop.VendorPreorderAddDocument },
+        { occurrenceId, variantId, quantity },
+      );
+      accepted(result.addVendorPreorderItem);
       return (await snapshot()).activeOrder;
     },
     async adjust(lineId: string, quantity: number) {
-      await directContext();
       const result = await execute(
         { api: 'shop', document: shop.StorefrontAdjustDocument },
         { lineId, quantity },
@@ -125,7 +182,6 @@ export function createStorefrontApi(
       return (await snapshot()).activeOrder;
     },
     async remove(lineId: string) {
-      await directContext();
       const result = await execute(
         { api: 'shop', document: shop.StorefrontRemoveDocument },
         { lineId },
@@ -137,6 +193,13 @@ export function createStorefrontApi(
 }
 
 export function cartMessage(error: { code?: string; kind?: string }) {
+  if (error.code === 'PREORDER_OCCURRENCE_REQUIRED')
+    return 'Choose an upcoming market on the Shop page before adding products.';
+  if (
+    error.code === 'PREORDER_UNAVAILABLE' ||
+    error.code === 'ORDER_INTERCEPTOR_ERROR'
+  )
+    return 'This product is no longer available for that quantity at this market. Refresh the Shop page to check availability.';
   if (error.code === 'NONEMPTY_CONTEXT_SWITCH_DENIED')
     return 'Your cart is for another occurrence. Remove the current items before switching occurrences.';
   if (error.code === 'INSUFFICIENT_STOCK_ERROR')

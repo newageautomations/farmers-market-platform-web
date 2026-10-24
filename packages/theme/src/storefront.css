@@ -1,0 +1,103 @@
+/* Harvest extends existing brand and BTN-01 tokens for public storefronts only. */
+[data-storefront-theme='harvest'] {
+  --ui-input-focus-background: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--brand-surface)
+  );
+  color: var(--brand-foreground);
+  background: var(--brand-background);
+  font-family: var(--font-body);
+}
+/* Storefront fields follow the same live shape setting as storefront buttons. */
+[data-storefront-theme] .ui-input.ui-input,
+[data-storefront-theme]
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+    [type='color']
+  ):not([type='file']):not([type='hidden']):not([type='button']):not(
+    [type='submit']
+  ):not([type='reset']):not([type='image']) {
+  border-radius: var(--ui-button-radius);
+}
+[data-storefront-theme='harvest'] .button.ui-button {
+  --button-hover-transform: none;
+}
+[data-storefront-hover='lift']
+  .button.ui-button:not(.button-destructive-outline) {
+  --button-hover-transform: translateY(-3px);
+}
+[data-storefront-hover='outline']
+  .button.ui-button:not(.secondary):not(.button-tertiary):not(.button-icon):not(
+    .button-destructive-outline
+  ) {
+  --button-hover-fill: var(--brand-surface);
+  --button-hover-ink: var(--brand-primary);
+  --button-hover-edge: var(--brand-primary);
+}
+@media (hover: none) {
+  [data-storefront-theme='harvest'] .button.ui-button {
+    --button-hover-transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-storefront-theme='harvest'] .button.ui-button {
+    --button-hover-transform: none;
+    transition: none;
+  }
+}
+
+[data-hero-shape]:not([data-hero-shape='natural']):not(
+    [data-hero-shape='natural-rounded']
+  ) {
+  aspect-ratio: 1 !important;
+  max-height: none !important;
+}
+[data-hero-shape='natural'] {
+  border-radius: 0 !important;
+}
+[data-hero-shape='natural-rounded'] {
+  border-radius: var(--ui-card-radius, 12px) !important;
+}
+[data-hero-shape='square'] {
+  border-radius: 0 !important;
+}
+[data-hero-shape='rounded'] {
+  border-radius: 10% !important;
+}
+[data-hero-shape='circle'] {
+  border-radius: 50% !important;
+}
+[data-hero-shape='dome'] {
+  border-radius: 50% 50% 3% 3% !important;
+}
+[data-hero-shape='corner'] {
+  border-radius: 0 0 40% 0 !important;
+}
+[data-hero-shape='star'] {
+  border-radius: 0 !important;
+  clip-path: polygon(
+    50% 0%,
+    61% 34%,
+    98% 35%,
+    68% 57%,
+    79% 94%,
+    50% 72%,
+    21% 94%,
+    32% 57%,
+    2% 35%,
+    39% 34%
+  );
+}
+
+/* Textareas and native selects share the storefront's themed keyboard focus. */
+[data-storefront-theme] :is(textarea, select):focus-visible {
+  background: var(--ui-input-focus-background);
+  outline-color: var(--brand-primary);
+}
+@media (forced-colors: active) {
+  [data-storefront-theme] :is(textarea, select):focus-visible {
+    background: Highlight;
+    color: HighlightText;
+    outline-color: Highlight;
+  }
+}

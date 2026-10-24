@@ -1,0 +1,47 @@
+{
+  "mode": "seed",
+  "database": "vendure_test_pos_demo_1792526989882_c5c1fa",
+  "success": true,
+  "results": [
+    {
+      "name": "Signed profit, unknown costs, general overhead and CSV injection safety",
+      "status": "PASS"
+    },
+    {
+      "name": "One month: all financial totals independently match native sale plan",
+      "status": "PASS"
+    },
+    {
+      "name": "Market and independent attribution exclude unallocated overhead",
+      "status": "PASS"
+    },
+    {
+      "name": "Product contributions, quantities and expense category totals independently reconcile",
+      "status": "PASS"
+    },
+    {
+      "name": "Refund on September 14 and expenses on sale-free days remain negative",
+      "status": "PASS"
+    },
+    {
+      "name": "Tax excluded, no transfer revenue, failed payments absent, deduplicated lines",
+      "status": "PASS"
+    },
+    {
+      "name": "CSV shares dashboard authoritative daily and product totals",
+      "status": "PASS"
+    },
+    {
+      "name": "Anonymous, Shop, foreign vendor cost, expense, receipt and market access denied",
+      "status": "PASS"
+    },
+    {
+      "name": "Manager native fee receipts and operating expenses stay separate from vendor sales",
+      "status": "PASS"
+    },
+    {
+      "name": "GraphQL schema and existing Manna Roots login",
+      "status": "PASS"
+    }
+  ]
+}

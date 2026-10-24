@@ -1,5 +1,80 @@
 # Phase 14 local manual testing
 
+## Manna Roots POS in the populated demo, October 21, 2026
+
+This correction concerns the existing populated `vendure_demo_market_ops`, not the isolated finance/POS fixtures. **The developer approved the one-permission correction. Follow-up verification found `OperateOwnPos` already present on the exact exclusive Manna Roots role, with no remaining permission additions proposed.** The attempted apply rejected the stale original fingerprint before writing and rolled back. This run cannot attribute the intervening permission addition to a particular process. A fresh PostgreSQL read-only transaction verified the actual database name, loopback server, original grants plus only `OperateOwnPos`, and unchanged owner/channel associations. This follow-up made no database writes, applied no migration, and used no browser automation or screenshots. The current browser's selected business was not inspected; select the business explicitly during manual verification.
+
+### Root cause and scope
+
+The diagnosis below records the initial failure. The approved permission is now verified present, as described above.
+
+Manna Roots is already correctly associated: verified native user `8` (`manna-roots@example.test`), active vendor `7`, primary channel `9`, and an active `owner` tenant membership. Its existing role `9`, `testing-vendor:manna-roots`, belongs exclusively to that user and channel. Its original grants are:
+
+```text
+Authenticated,ReadOwnVendorIdentity,ManageOwnVendorMembership,ManageOwnStorefront,ManageOwnMarketParticipation,ManageOwnCatalog,ManageCatalogPublication,ManageOwnInventory,ManageOwnCoupon,ReadOwnCRM,ReadOwnVendorFinance
+```
+
+The missing grant is `OperateOwnPos`. The original requested-vendor seed never opted this role into checkout. Ordinary vendor ownership intentionally does not imply cashier authority. Both shared navigation and direct-route authorization require this grant, so the hidden sidebar entry and Access Denied are consistent. Backend resolver `@Allow(OperateOwnPos)` and `TenantAccessPolicy.requireVendor(..., 'checkout')` independently enforce it, including current channel grants and active owner/staff membership. This is a missing role permission, not a frontend route registration defect or a missing owner association.
+
+A second blocker is demo runtime configuration: normal config enables checkout only when `ENABLE_IN_PERSON_CHECKOUT=true`; the guarded demo loader previously omitted that flag and its installer removed inherited `ENABLE_` values. The isolated POS fixture explicitly enables checkout and grants its cashier roles `OperateOwnPos`, which explains the difference. No isolated credentials, financial history, or QuickBooks state are copied.
+
+The backend's `scripts/market-operations-demo/environment.ts` now defaults this one runtime flag to `true`, preserves an explicit `false`, and validates boolean values. `POS_ALLOW_NETWORK` remains false and existing provider/network guards remain in place. Restart through the documented demo commands to load the new runtime configuration. Production config, authorization guards, global permission presets, routes, navigation, and shared UI are unchanged.
+
+### Review and apply the exact role correction
+
+From the web project, the default command is strictly read-only:
+
+```powershell
+Set-Location E:\coding\farmers-market-platform-web
+npm run demo:market-operations:manna-pos
+```
+
+Reviewed dry-run: add **only `OperateOwnPos` to existing role 9**, preserving all original permissions, user assignments, memberships, and channel assignments. The approval fingerprint was:
+
+```text
+d4178a3170f68fa22267ed99a6fa91b7da8e523d106accb3db4c641edb11ae2e
+```
+
+That original fingerprint is now stale and must not be reused. If a future dry-run proposes a permission change, review its new fingerprint and obtain approval for that exact plan. Invoke the local runner directly to avoid the installed npm CLI rejecting forwarded approval flags:
+
+```powershell
+node node_modules/tsx/dist/cli.mjs scripts/manna-roots-pos.ts --apply --approve-plan <reviewed-fingerprint>
+```
+
+The helper verifies the actual local database and fixture identities, active owner membership, role exclusivity and exact vendor channel. It rejects missing identities, shared roles, additional channels, privileged platform grants, stale approval fingerprints, production settings, and unapproved database targets. Apply uses a short serializable transaction with lock/statement timeouts; association tables are locked against concurrent assignment changes. Its only data write updates the existing role's permissions and `updatedAt`. It does not bootstrap Vendure, seed, migrate, reset, change tax settings, or modify financial records. A fresh dry-run after applying shows an empty addition list; reviewing/applying that new plan performs no update. A stale pre-apply fingerprint is rejected on a repeated apply.
+
+### Existing prerequisites and limitations
+
+Read-only inspection found the POS and vendor/product tax tables present, 16 enabled Manna Roots products, and existing vendor tax settings at version 1: default **8.25%**, market `1` override **6.5%**. No tax settings or product overrides were changed. Enabled products still need a sellable variant, canonical price and stock at checkout; the existing backend validates these per sale.
+
+**There is currently no eligible market context.** The existing market relationship is market `1`, displayed as `Bulverde Market Day Demo`, approved but with `LEGACY_UNVERIFIED` consent. Confirmed participation exists for October 10, 17, 24 and 31. October 10 is cancelled; October 17 is past. October 24 is within the POS time window, but its unverified relationship still excludes it. October 31 is outside the current seven-day window. This is existing protected eligibility behavior, not a POS permission failure. No Boerne relationship or occurrence was fabricated.
+
+To qualify an event through existing UI, use Vendor Markets to record the owner's consent for the intended market using **Request a Market relationship** and its Market ID, or respond to the market's existing link request. An already approved legacy relationship becomes verified through the existing owner consent service; a pending relationship needs manager approval. The event must also be scheduled, not ended, start within seven days, have confirmed vendor participation, and belong to an active market. Market products require approved listings and correct publication/channel assignments. A different market requires its own legitimate relationship and participation. Do not use reset, broad seeding or date-forcing commands to work around these requirements. These relationship/participation actions remain manual and outside the one-permission reconciliation.
+
+### Manual verification after approval and apply
+
+1. Restart the persistent demo API with `npm run demo:market-operations:serve`. In separate terminals use `npm run demo:market-operations:worker`, `npm run demo:market-operations:admin`, and `npm run demo:market-operations:storefront`. Do not substitute ordinary backend commands. If startup reports pending migrations, inspect them and obtain separate authorization before using `npm run demo:market-operations:migrate`; this role correction itself requires no migration.
+2. Sign out, then sign in at `http://auth.platform.localhost:4321/account/login` as `manna-roots@example.test`, password `local-identity-regression-only-password`. Select Vendor mode and **Manna Roots**. Its workspace is `http://localhost:4322/vendor?channel=9&account=1`. A URL alone never grants a business membership.
+3. Confirm **In-Person Checkout** appears in the existing sidebar and open `http://localhost:4322/vendor/pos`. If denied, recheck the selected channel and a fresh dry-run; do not expose the navigation by bypassing permissions.
+4. Open existing Settings > Taxes (`/vendor/settings/taxes`) and confirm the saved 8.25% default and market 1's 6.5% rate. Use existing product tax controls to inspect collection and overrides. Configure any desired test override through the normal UI. The fixture does not pre-change those values.
+5. Start an **Independent Sale**, add an in-stock product, review the backend totals and verify the default rate or that product's existing override/collection rule. Choose Cash, enter exact amount, attest receipt of the fictional cash, and confirm. Do not choose a processor or create a real payment. Keep the receipt/order code.
+6. Open the existing Orders and Finances pages, choose a date range including today and Independent sales, and find that same completed cash sale. Existing finance grants are retained. These newly created manual test sales will be ordinary persistent financial records.
+7. After establishing legitimate consent and the event prerequisites above, refresh POS, select the eligible event, and sell an approved/published product. Verify market 1's 6.5% rate, product override precedence, and disabled collection where configured. Check the receipt's market/event and find the sale under that market in existing financial reporting. Independent sales must retain independent attribution.
+8. In a separate account session, confirm an unrelated vendor without an explicit POS grant has no POS navigation and is denied at `/vendor/pos`. The market manager must also remain denied. A vendor that already has its own legitimate cashier grant may use its own register, but must never read Manna's drafts or sales by copying identifiers.
+
+Actual Manna UI access and completed checkout remain unverified until the developer performs these steps with a fresh session and the updated demo runtime. The role permission itself is now verified present. Market-rate checkout additionally requires the legitimate consent/event prerequisites above.
+
+### Focused automated verification
+
+- With `FRONTEND_NO_EVIDENCE=true`, `npx vitest run tests/manna-roots-pos.test.ts tests/in-person.test.tsx tests/vendor-tax.test.tsx`: **43 tests passed**. New cases cover the exact permission delta, deterministic approval fingerprint, idempotent no-op planning, shared-role/additional-channel rejection, revoked/staff/wrong-vendor rejection, platform-boundary preservation, selected-business matching, and navigation/route agreement.
+- `npm run test:pos:backend`: **22 checks passed** in guarded disposable `vendure_test_in_person_1792616021447_876c0b`, removed by the harness after success. Includes authorized cashier operation, cross-vendor/manager/unprivileged denial, current grant revocation, cashier isolation, valid occurrence context, independent sales, and native tax review. No persistent demo writes.
+- Backend `npm run demo:market-operations:test`: **passed**, including new checkout flag defaults, explicit opt-out and invalid-value rejection, plus existing loopback/database/provider/network safety checks.
+- Web `npx tsc --noEmit` and focused ESLint: **passed**.
+- Backend `npm run build:server` and `npm run demo:market-operations:types`: **passed**.
+- Backend full `npm run build`: blocked by the existing dashboard config loader's `APP_ENV_EXPLICIT_MODE_REQUIRED`, including when invoked with `APP_ENV=dev`. This is recorded separately from the focused test results; no unrelated build configuration was changed.
+
+Changed local implementation files: web `scripts/manna-roots-pos.ts`, `scripts/manna-roots-pos-plan.ts`, `tests/manna-roots-pos.test.ts`, and `package.json`; backend `scripts/market-operations-demo/environment.ts` and `guards.test.ts`. This section is the single Markdown report for this correction. The initial Vitest run also refreshed its existing configured `docs/evidence/phase13c5/unit-results.json`; subsequent runs use `FRONTEND_NO_EVIDENCE=true` to avoid additional report writes.
+
 This is a real, persistent local database used by the normal React Admin and Astro Storefront. Your browser changes stay saved after you stop the servers. Reset deliberately erases only `vendure_demo_market_ops`. It never targets the protected `vendure` database or disposable acceptance-test databases.
 
 The baseline contains Bulverde Market Day Demo, four upcoming Saturday occurrences, one Market Manager, three canonical Vendors and their owners, and normal native country, zone and tax prerequisites. Applications, directory businesses, rentals, layouts, assignments, invoices, payments and attendance start empty. You perform those actions below.
@@ -56,7 +131,7 @@ Set-Location E:\coding\farmers-market-platform-web
 npm run demo:market-operations:serve
 ```
 
-Wait for **Persistent demo backend ready**. This starts Vendure at `http://localhost:3000` using the approved demo database. Startup runs pending migrations but does not reset or seed workflow data. Use this command every time you return to the demo. The ordinary backend `npm run dev` uses its ordinary configuration and is a different environment.
+Wait for **Persistent demo backend ready**. This starts Vendure at `http://localhost:3000` using the approved demo database. Startup verifies the schema and refuses pending migrations without resetting or seeding workflow data. To explicitly upgrade this existing populated database, run `npm run demo:market-operations:migrate` from the frontend folder first. This guarded command applies pending migrations only to `vendure_demo_market_ops` and exits without application bootstrap or seeding. Use the serve command every time you return to the demo. The ordinary backend `npm run dev` uses its ordinary configuration and is a different environment.
 
 Equivalent direct backend command:
 
@@ -82,6 +157,15 @@ npm run demo:market-operations:storefront
 ```
 
 Open [the Market storefront](http://localhost:4321). Both frontend demo commands force fixture mode off and use the local backend. They do not alter your usual frontend `.env`. Use `localhost` consistently in the browser; switching to `127.0.0.1` changes cookie and storefront host behavior.
+
+**Window 4: notifications and scheduled operations**
+
+```powershell
+Set-Location E:\coding\farmers-market-platform-web
+npm run demo:market-operations:worker
+```
+
+Keep this process running to project committed events into inboxes and run daily readiness, market-day, preorder and exception sweeps. It uses the same guarded demo database, account configuration and blocked external providers as the API. Startup refuses pending migrations. Existing queue consumers, including automatic occurrence generation, remain disabled. No reset or seed command is needed for the existing Boerne Market and Manna Roots dataset.
 
 ## Log in
 

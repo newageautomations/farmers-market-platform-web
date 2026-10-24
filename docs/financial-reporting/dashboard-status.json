@@ -1,0 +1,17 @@
+{
+  "backend": {
+    "success": true,
+    "checks": 20
+  },
+  "browser": {
+    "success": true,
+    "checks": 13,
+    "errors": []
+  },
+  "domTestsPassed": 34,
+  "compatibilityTestsPassed": 82,
+  "reportingTimezone": "America/Chicago",
+  "screenshots": false,
+  "protectedDatabases": "Unchanged",
+  "accountTimezoneStorage": "Existing user-scoped SettingsStore; no migration"
+}

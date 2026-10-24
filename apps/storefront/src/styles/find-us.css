@@ -1,0 +1,128 @@
+.find-page {
+  width: 100%;
+  display: grid;
+  gap: clamp(2rem, 5vw, 4rem);
+  padding-block: clamp(2rem, 5vw, 4rem);
+}
+.find-page h1 {
+  --storefront-heading-base: clamp(2rem, 4vw, 3.5rem);
+  font-size: var(--storefront-heading-base);
+  line-height: 1.1;
+  margin: 0 0 1.25rem;
+}
+.find-featured {
+  display: flex;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: center;
+}
+.find-market-image {
+  width: 45%;
+  max-height: 30rem;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: var(--storefront-card-radius);
+}
+.find-market-copy {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.find-market-copy h2 {
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  line-height: 1.15;
+  margin: 0;
+}
+.find-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: start;
+}
+.find-schedule {
+  margin-top: 3rem;
+}
+.find-month h3 {
+  font-size: 1.2rem;
+  margin-top: 2rem;
+}
+.find-month-entries {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1rem;
+}
+.find-featured-details {
+  padding-inline-start: clamp(0.75rem, 2vw, 1.25rem);
+}
+.find-row {
+  margin: 0;
+  --ui-disclosure-radius: var(--storefront-card-radius, 8px);
+  font-family: var(--font-body);
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+.find-row:is(:hover, :focus-within) {
+  border-color: var(--brand-primary);
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--brand-surface)
+  );
+}
+.find-row summary strong {
+  font-family: var(--font-heading);
+  font-weight: 500;
+}
+.find-row > summary {
+  justify-content: flex-start;
+  gap: 0.85rem;
+  cursor: pointer;
+}
+.find-row > summary > span {
+  min-width: 0;
+}
+.find-row > summary::after {
+  margin-inline-start: auto;
+  margin-inline-end: 0.25rem;
+}
+.find-row summary span span {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--brand-muted);
+  font-weight: 400;
+}
+.find-date {
+  flex-shrink: 0;
+  min-width: 3.5rem;
+  text-align: center;
+  color: var(--brand-primary);
+}
+.find-date span {
+  display: block;
+}
+.find-date strong {
+  font-size: 2rem;
+}
+@media (max-width: 700px) {
+  .find-featured {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .find-market-image {
+    width: 100%;
+    max-height: 22rem;
+  }
+  .find-month-entries {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .find-actions {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .find-row {
+    transition: none;
+  }
+}

@@ -1,0 +1,122 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import ClosingInvitation from '../components/ClosingInvitation.astro';
+import {
+  aboutSections,
+  defaultAboutCta,
+  defaultStorefrontAppearance,
+} from '@market/theme/storefront';
+import '../styles/about-story.css';
+const { storefront, storefrontError } = Astro.locals;
+const about =
+  storefront?.appearance?.about ?? defaultStorefrontAppearance.about;
+const enabled =
+  about?.enabled === true ||
+  !!(Astro.locals.editorPreview && storefront?.kind === 'VENDOR');
+const sections = about ? aboutSections(about) : [];
+const cta = about?.cta ?? defaultAboutCta;
+const preview = Astro.locals.editorPreview;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+if (!enabled)
+  Astro.response.status =
+    storefront || storefrontError?.kind === 'not-found' ? 404 : 503;
+---
+
+<SiteLayout
+  context={storefront}
+  path="/about"
+  title={enabled ? about.title : 'Page unavailable'}
+  noindex={!enabled}
+>
+  {enabled && storefront?.kind === 'VENDOR' ? (
+    <article class="story-page" aria-label={about.title}>
+      <h1 class="sr-only" data-story-title>
+        {about.title}
+      </h1>
+      {sections.map((section) => {
+        const hasText =
+          section.layout !== 'image' && !!(section.heading || section.body);
+        const hasImage = section.layout !== 'text' && !!section.image;
+        if ((!section.visible || (!hasText && !hasImage)) && !preview)
+          return null;
+        return (
+          <section
+            class:list={[
+              'story-section',
+              section.layout === 'text-image' &&
+                (hasText || preview) &&
+                (hasImage || preview) &&
+                'story-split',
+              !section.visible && 'story-hidden',
+            ]}
+            data-editor-section={`story:${section.id}`}
+            data-image-position={section.imagePosition}
+            data-text-align={section.textAlign ?? 'left'}
+            data-image-size={section.imageSize ?? 'medium'}
+          >
+            {(hasText || (preview && section.layout !== 'image')) && (
+              <div class="story-copy">
+                {(section.heading || preview) && (
+                  <h2 data-story-field="heading">{section.heading}</h2>
+                )}
+                {(section.body || preview) && (
+                  <p data-story-field="body">{section.body}</p>
+                )}
+                {preview && !hasText && (
+                  <p>Add your story in the section settings.</p>
+                )}
+              </div>
+            )}
+            {(hasImage || (preview && section.layout !== 'text')) && (
+              <div class="story-image-column">
+                {hasImage ? (
+                  <div
+                    class="story-image-frame"
+                    data-story-shape={section.shape}
+                  >
+                    <img
+                      src={section.image}
+                      alt={section.alt}
+                      data-hero-shape={section.shape}
+                      width={
+                        section.shape.startsWith('natural') ? undefined : 960
+                      }
+                      height={
+                        section.shape.startsWith('natural') ? undefined : 960
+                      }
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                ) : (
+                  <p class="story-image-placeholder">
+                    Choose an image in the section settings.
+                  </p>
+                )}
+              </div>
+            )}
+            {preview && !section.visible && (
+              <span class="story-hidden-label">Hidden on your public page</span>
+            )}
+          </section>
+        );
+      })}
+      <ClosingInvitation cta={cta} />
+    </article>
+  ) : (
+    <article class="storefront-about">
+      {enabled ? (
+        <>
+          <h1>{about.title}</h1>
+          <p>{about.content}</p>
+        </>
+      ) : (
+        <>
+          <h1>Page unavailable</h1>
+          <p>This page is not available.</p>
+        </>
+      )}
+      <a href="/">Return to the storefront</a>
+    </article>
+  )}
+</SiteLayout>

@@ -1,6 +1,14 @@
+import { createVendorContactApi, type VendorContactApi } from '@market/api';
+import { createVendorCategoryApi, type VendorCategoryApi } from '@market/api';
 import {
+  createFinanceApi,
+  type FinanceApi,
+  createInPersonApi,
+  type InPersonApi,
   AppError,
   createVendorApi,
+  createLoyaltyApi,
+  type LoyaltyApi,
   createNotificationsApi,
   type NotificationsApi,
   createMarketOperationsApi,
@@ -38,6 +46,11 @@ export interface OrderPage {
 }
 export type Availability = 'allowed' | 'denied' | 'unknown' | 'unconfigured';
 export interface VendorService extends VendorApi {
+  contact?: VendorContactApi;
+  categories?: VendorCategoryApi;
+  finance?: FinanceApi;
+  pos?: InPersonApi;
+  loyalty?: LoyaltyApi;
   notifications?: NotificationsApi;
   linkRequests?: ReturnType<
     typeof createMarketOperationsApi
@@ -75,6 +88,7 @@ export function createLiveVendorService(
   const api = createVendorApi({ endpoint, channelToken });
   const catalogCommands = [
     'createProduct',
+    'saveTaxSettings',
     'updateProduct',
     'createVariant',
     'updateVariant',
@@ -147,6 +161,10 @@ export function createLiveVendorService(
   });
   return {
     ...guarded,
+    categories: createVendorCategoryApi({ endpoint, channelToken }),
+    finance: createFinanceApi({ endpoint, channelToken, onAuthorityFailure }),
+    pos: createInPersonApi({ endpoint, channelToken }),
+    loyalty: createLoyaltyApi({ endpoint, channelToken }, 'admin'),
     notifications: createNotificationsApi({
       endpoint,
       channelToken,
@@ -170,6 +188,7 @@ export function createLiveVendorService(
         throw error;
       }
     },
+    contact: createVendorContactApi({ endpoint, channelToken }),
     context,
     vendorId,
     availability: async () => {

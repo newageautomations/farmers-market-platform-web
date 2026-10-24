@@ -1,3 +1,4 @@
+import { CheckoutPickup } from './CheckoutPickup';
 import { buttonClassName } from '@market/ui/presentation';
 import { Button } from '@market/ui';
 import { useState } from 'react';
@@ -13,13 +14,38 @@ export function PurchaseSuccess({
 }) {
   const [state, setState] = useState(view.profile ? 'AUTHENTICATED' : ''),
     [pending, setPending] = useState(false);
+  if (!view.committed || !view.code)
+    return (
+      <p>
+        Your purchase has not been confirmed.{' '}
+        <a href="/checkout">Check checkout status</a>
+      </p>
+    );
   return (
-    <div>
+    <div className="checkout-confirmation">
+      <h2>Thank you for your order</h2>
       <p>Your order is confirmed.</p>
+      <p>
+        Payment status:{' '}
+        {view.paymentStatus === 'SUCCEEDED'
+          ? 'Succeeded'
+          : view.paymentStatus.toLowerCase().replaceAll('_', ' ')}
+      </p>
       <p>
         Order reference: <strong>{view.code}</strong>
       </p>
-      <CheckoutSummary view={view} />
+      <div className="vendor-checkout-layout">
+        <CheckoutPickup view={view} />
+        <section
+          className="checkout-order-summary"
+          aria-label="Purchased items"
+        >
+          <CheckoutSummary view={view} />
+        </section>
+      </div>
+      <a className={buttonClassName({ variant: 'primary' })} href="/products">
+        Continue shopping
+      </a>
       {state === 'AUTHENTICATED' ? (
         <a
           className={buttonClassName({

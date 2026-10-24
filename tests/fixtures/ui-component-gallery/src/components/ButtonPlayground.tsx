@@ -180,6 +180,13 @@ export default function ButtonPlayground() {
         <h2 id="button-preview-title">Live preview</h2>
         <Card className="button-playground-preview-card">
           {sampleButtons()}
+          <div className="button-playground-samples">
+            <Button variant="destructive-outline">Remove</Button>
+            <Button variant="destructive-outline">Cancel</Button>
+            <Button variant="destructive-outline" disabled>
+              Disabled
+            </Button>
+          </div>
           <p>
             Filled primary, outlined secondary, and a quieter text-only
             tertiary.

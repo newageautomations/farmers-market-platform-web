@@ -1,0 +1,25 @@
+{
+  "kind": "LOCAL_FINANCE_IMPLEMENTATION",
+  "backendPassed": 20,
+  "backendSuccess": true,
+  "frontendBroad": {
+    "passed": 591,
+    "failed": 1,
+    "total": 592
+  },
+  "isolatedGalleryRetry": {
+    "passed": 8,
+    "failed": 0
+  },
+  "fixture": {
+    "database": "vendure_test_pos_demo_1792526989882_c5c1fa",
+    "passed": 10,
+    "success": true
+  },
+  "managerBrowserRerun": "PASSED_IN_DASHBOARD_UPDATE",
+  "screenshots": "Disabled in browser utility; no further screenshots or reviews after developer instruction",
+  "protectedDatabases": "Unchanged",
+  "realProcessorCalls": 0,
+  "latestUpdate": "dashboard-update.md",
+  "browserChecksPassed": 13
+}

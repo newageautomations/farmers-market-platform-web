@@ -1,0 +1,214 @@
+.notification-center {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.notification-checklist {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 1rem;
+  padding-inline-start: 1.25rem;
+}
+.notification-checklist li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* Context and severity are independent. These paired tokens keep contrast on any dashboard surface. */
+.notification-role-customer {
+  --notification-context-bg: #e7f0ff;
+  --notification-context-fg: #174478;
+}
+.notification-role-vendor {
+  --notification-context-bg: #fff0d6;
+  --notification-context-fg: #784300;
+}
+.notification-role-market {
+  --notification-context-bg: #e2f2e8;
+  --notification-context-fg: #20563a;
+}
+.notification-role-account {
+  --notification-context-bg: #f0e8fa;
+  --notification-context-fg: #5b357a;
+}
+.notification-role.notification-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--notification-context-bg);
+  color: var(--notification-context-fg);
+}
+.notification-role svg {
+  flex: none;
+}
+@media (prefers-color-scheme: dark) {
+  .notification-role-customer {
+    --notification-context-bg: #1a3554;
+    --notification-context-fg: #bfdbff;
+  }
+  .notification-role-vendor {
+    --notification-context-bg: #4a3418;
+    --notification-context-fg: #ffdaa1;
+  }
+  .notification-role-market {
+    --notification-context-bg: #193e2b;
+    --notification-context-fg: #b6ebcb;
+  }
+  .notification-role-account {
+    --notification-context-bg: #3b284f;
+    --notification-context-fg: #e3c8ff;
+  }
+}
+.notification-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem;
+}
+.notification-filters > .field,
+.notification-filters > .ui-field {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.notification-list,
+.notification-rules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.notification-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border-bottom: 1px solid var(--brand-border, var(--color-border, #ddd));
+  background: var(--brand-surface);
+  min-width: 0;
+}
+.notification-unread {
+  background: color-mix(in srgb, var(--brand-primary) 7%, var(--brand-surface));
+}
+.notification-open {
+  display: grid;
+  flex: 1;
+  gap: 0.25rem;
+  min-width: 0;
+  text-align: start;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+.notification-open:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 3px;
+}
+.notification-open strong,
+.notification-text,
+.notification-sender {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notification-open time,
+.notification-context {
+  font-size: 0.85rem;
+}
+.notification-context {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.notification-actions,
+.notification-bulk {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.notification-bulk {
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.notification-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.notification-bell {
+  position: relative;
+}
+.notification-bell-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.notification-preview {
+  width: min(380px, calc(100vw - 3rem));
+  max-height: 65vh;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+.notification-preview-item {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--brand-border, #ddd);
+  padding: 0.5rem 0;
+}
+.notification-preview-item
+  .notification-open
+  > span:not(.notification-context) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notification-bell > .dropdown > .ui-disclosure-content {
+  position: absolute;
+  right: 0;
+  z-index: 30;
+  background: var(--brand-surface);
+  box-shadow: 0 6px 24px #0002;
+  max-width: calc(100vw - 2rem);
+}
+.notification-rules > li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--brand-border, #ddd);
+}
+.notification-mobile-actions {
+  display: none;
+}
+@media (max-width: 767px) {
+  .notification-row {
+    align-items: start;
+    padding: 0.75rem 0.25rem;
+    gap: 0.4rem;
+  }
+  .notification-desktop-actions {
+    display: none;
+  }
+  .notification-mobile-actions {
+    display: block;
+  }
+  .notification-mobile-actions .ui-disclosure-content {
+    position: absolute;
+    right: 1rem;
+    background: var(--brand-surface);
+    z-index: 5;
+  }
+  .notification-open strong,
+  .notification-text {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .notification-filters > * {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .notification-preview {
+    width: min(330px, calc(100vw - 3rem));
+  }
+}

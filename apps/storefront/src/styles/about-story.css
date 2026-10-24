@@ -1,0 +1,187 @@
+.story-page {
+  width: 100%;
+  max-width: 68rem;
+  margin-inline: auto;
+  padding-block: clamp(2rem, 5vw, 5rem);
+  display: grid;
+  gap: clamp(2.5rem, 6vw, 5rem);
+}
+.story-section {
+  --story-column-padding: clamp(0.75rem, 1.8vw, 1.5rem);
+  --story-image-width: 24rem;
+  --story-image-share: 45%;
+  min-width: 0;
+  position: relative;
+}
+.story-section[data-image-size='small'] {
+  --story-image-width: 16rem;
+  --story-image-share: 30%;
+}
+.story-section[data-image-size='large'] {
+  --story-image-width: 32rem;
+  --story-image-share: 60%;
+}
+.story-copy,
+.story-image-column {
+  padding: var(--story-column-padding);
+  box-sizing: border-box;
+}
+.story-section[data-text-align='left'] .story-copy {
+  text-align: left;
+}
+.story-section[data-text-align='center'] .story-copy {
+  text-align: center;
+  margin-inline: auto;
+}
+.story-section[data-text-align='right'] .story-copy {
+  text-align: right;
+  margin-left: auto;
+}
+.story-split .story-copy {
+  max-width: none;
+  width: 100%;
+}
+.story-copy {
+  max-width: 68ch;
+  min-width: 0;
+  align-content: center;
+}
+.story-copy h2 {
+  --storefront-heading-base: clamp(1.6rem, 3vw, 2.6rem);
+  font-size: var(--storefront-heading-base);
+  line-height: 1.15;
+  margin: 0 0 1.25rem;
+}
+.story-copy p {
+  --storefront-paragraph-base: 1rem;
+  white-space: pre-wrap;
+  line-height: 1.8;
+  margin: 0;
+}
+.story-copy h2:empty,
+.story-copy p:empty,
+.story-cta p:empty {
+  display: none;
+}
+.story-copy,
+.story-cta {
+  overflow-wrap: anywhere;
+}
+.story-split {
+  --story-image-track: min(
+    var(--story-image-share),
+    calc(var(--story-image-width) + 2 * var(--story-column-padding))
+  );
+  display: grid;
+  grid-template-columns: fit-content(var(--story-image-track)) minmax(0, 1fr);
+  gap: clamp(0.75rem, 2vw, 2rem);
+  align-items: stretch;
+}
+.story-split[data-image-position='right'] {
+  grid-template-columns: minmax(0, 1fr) fit-content(var(--story-image-track));
+}
+.story-split .story-copy,
+.story-split .story-image-column {
+  grid-row: 1;
+}
+.story-split[data-image-position='left'] .story-image-column {
+  grid-column: 1;
+}
+.story-split[data-image-position='left'] .story-copy {
+  grid-column: 2;
+}
+.story-split[data-image-position='right'] .story-image-column {
+  grid-column: 2;
+}
+.story-split[data-image-position='right'] .story-copy {
+  grid-column: 1;
+}
+.story-image-column {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+}
+/* Bound the frame. Shared shapes intentionally remove image max-height. */
+.story-image-frame {
+  width: min(100%, var(--story-image-width));
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+.story-image-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.story-image-frame[data-story-shape^='natural'] {
+  width: fit-content;
+  max-width: 100%;
+  aspect-ratio: auto;
+}
+.story-image-frame[data-story-shape^='natural'] img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: var(--story-image-width);
+  object-fit: contain;
+}
+.story-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 8%,
+    var(--brand-background)
+  );
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: var(--storefront-card-radius);
+}
+.story-cta h2 {
+  margin: 0;
+  --storefront-heading-base: clamp(1.35rem, 2vw, 1.85rem);
+  font-size: var(--storefront-heading-base);
+  line-height: 1.25;
+}
+.story-cta p {
+  --storefront-paragraph-base: 1rem;
+  margin: 0.65rem 0 0;
+  max-width: 65ch;
+  white-space: pre-wrap;
+}
+.story-cta .button {
+  flex-shrink: 0;
+}
+[data-editor-preview='true'] .story-hidden {
+  opacity: 0.6;
+}
+.story-hidden-label {
+  display: block;
+  color: var(--brand-muted);
+}
+.story-image-placeholder {
+  padding: 2rem;
+  color: var(--brand-muted);
+}
+@media (max-width: 700px) {
+  .story-split[data-image-position] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .story-split[data-image-position] .story-copy,
+  .story-split[data-image-position] .story-image-column {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .story-split[data-image-position='left'] .story-image-column {
+    grid-row: 1;
+  }
+  .story-split[data-image-position='left'] .story-copy {
+    grid-row: 2;
+  }
+  .story-cta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

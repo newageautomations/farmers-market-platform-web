@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { PhoneInput, Input, Textarea } from '@market/ui';
+import { PhoneInput, Input, Textarea, formatPublicPhone } from '@market/ui';
 import { readFileSync } from 'node:fs';
 function Form({ initial = '' }: { initial?: string }) {
   const [value, setValue] = useState(initial);
@@ -19,6 +19,13 @@ function Form({ initial = '' }: { initial?: string }) {
   );
 }
 describe('shared phone input', () => {
+  it('formats public contact numbers using their country conventions and retains incomplete text', () => {
+    expect(formatPublicPhone('+14155552671')).toBe('+1 (415) 555-2671');
+    expect(formatPublicPhone('(415) 555-2671')).toBe('+1 (415) 555-2671');
+    expect(formatPublicPhone('+442079460018')).toBe('+44 20 7946 0018');
+    expect(formatPublicPhone('still typing')).toBe('still typing');
+  });
+
   it('defaults to US, selector is left of national field, typing formats and emits E.164', async () => {
     const user = userEvent.setup();
     render(<Form />);

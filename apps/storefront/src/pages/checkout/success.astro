@@ -2,14 +2,16 @@
 import { buttonClassName } from '@market/ui/presentation';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { PurchaseSuccess } from '../../components/ResilientSurfaces';
+import '../../styles/vendor-checkout.css';
 import { requestCheckout } from '../../lib/shop';
 const { storefront } = Astro.locals,
   order = Astro.url.searchParams.get('order');
 let view;
 try {
-  if (order && /^[1-9]\d*$/.test(order))
+  if (!Astro.locals.editorPreview && order && /^[1-9]\d*$/.test(order))
     view = await requestCheckout(Astro, Astro.response.headers).status(order);
 } catch {}
+Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 ---
 
@@ -19,9 +21,11 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   title="Order confirmation"
   noindex
 >
-  <section class="py-12">
+  <section class="checkout-confirmation-page">
     <h1>Order confirmation</h1>
-    {view?.committed ? (
+    {Astro.locals.editorPreview ? (
+      <p>Order confirmation preview is not available in the visual editor.</p>
+    ) : view?.committed ? (
       <PurchaseSuccess
         view={view}
         storefrontId={storefront?.storefrontId ?? ''}
@@ -29,7 +33,13 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
       />
     ) : (
       <p>
-        Your purchase has not been confirmed.{' '}
+        {view?.paymentStatus === 'FAILED'
+          ? 'Payment failed. Your purchase has not been confirmed.'
+          : ['PENDING', 'RECONCILIATION_REQUIRED'].includes(
+                view?.paymentStatus ?? '',
+              )
+            ? 'Payment is still being checked. Your purchase has not been confirmed. Please do not submit another payment.'
+            : 'Your purchase has not been confirmed.'}{' '}
         <a class={buttonClassName({ variant: 'secondary' })} href="/checkout">
           Check checkout status
         </a>

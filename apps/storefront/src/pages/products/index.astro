@@ -3,135 +3,260 @@ import SiteLayout from '../../layouts/SiteLayout.astro';
 import ProductCards from '../../components/ProductCards.astro';
 import Button from '../../components/ui/Button.astro';
 import {
-  buttonClassName,
-  inputClassName,
+  cardClassName,
   selectClassName,
+  buttonClassName,
 } from '@market/ui/presentation';
 import { requestShop } from '../../lib/shop';
+import { vendorPreorder } from '../../lib/vendor-preorder';
+import VendorPreorderBanner from '../../components/VendorPreorderBanner.astro';
 import { AppError, safeError, type PublicCatalog } from '@market/api';
 import { ErrorState } from '@market/ui';
-import { catalogInputs } from '@market/storefront-core';
+import {
+  catalogInputs,
+  shopCategories,
+  shopProducts,
+  productPreorder,
+} from '@market/storefront-core';
+import '../../styles/vendor-shop.css';
 const { storefront, storefrontError } = Astro.locals;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
 let error = storefrontError,
-  catalog: PublicCatalog | undefined,
-  inputs = { page: 1, search: '', sort: 'asc', skip: 0, take: 12 };
+  items: PublicCatalog['items'] = [],
+  page = 1;
+let preorder: Awaited<ReturnType<typeof vendorPreorder>> = {
+  occurrences: [],
+  selected: undefined,
+  availability: [],
+  unavailable: false,
+  orderOccurrence: undefined,
+};
+const category = Astro.url.searchParams.get('category') ?? '',
+  sort = Astro.url.searchParams.get('sort') === 'name' ? 'name' : 'default';
 try {
   if (storefront?.kind === 'MARKET') throw new AppError('not-found');
-  if (storefront) {
-    inputs = catalogInputs(Astro.url.searchParams);
-    if (import.meta.env.DEV && storefront.source === 'fixture') {
-      const { fixtureCatalog } =
-        await import('@market/storefront-core/fixtures');
-      catalog = fixtureCatalog(inputs);
-    } else
-      catalog = (
-        await requestShop(Astro).catalog({
-          options: {
-            skip: inputs.skip,
-            take: inputs.take,
-            sort: { name: inputs.sort === 'desc' ? 'DESC' : 'ASC' },
-            ...(inputs.search
-              ? { filter: { name: { contains: inputs.search } } }
-              : {}),
-          },
-        })
-      ).products;
+  page = catalogInputs(Astro.url.searchParams).page;
+  if (storefront?.source === 'fixture' && import.meta.env.DEV) {
+    const { fixtureCatalog } = await import('@market/storefront-core/fixtures');
+    items = fixtureCatalog({
+      search: '',
+      sort: 'asc',
+      skip: 0,
+      take: 100,
+    }).items;
+  } else if (storefront) {
+    const api = requestShop(Astro);
+    for (let skip = 0; ; skip += 100) {
+      const { products } = await api.catalog({
+        options: { skip, take: 100, sort: { id: 'ASC' } },
+      });
+      items = [...items, ...products.items];
+      if (items.length >= products.totalItems) break;
+      if (!products.items.length || skip >= 9900)
+        throw new AppError('unavailable');
+    }
   }
 } catch (e) {
   error = safeError(e);
 }
+const categories = shopCategories(items),
+  filtered = shopProducts(items, category, sort),
+  skip = (page - 1) * 12,
+  visible = filtered.slice(skip, skip + 12);
+if (!error)
+  preorder = await vendorPreorder(
+    Astro,
+    visible.flatMap((p) => p.variants.map((v) => v.id)),
+  );
+const selected = preorder.selected;
+const heading =
+  categories.find((c) => c.id === category)?.name ??
+  (category ? 'Products' : 'All Products');
+const link = (next: { category?: string; page?: number }) =>
+  '/products?' +
+  new URLSearchParams({
+    ...(selected ? { occurrence: selected.id } : {}),
+    sort,
+    ...((next.category ?? category)
+      ? { category: next.category ?? category }
+      : {}),
+    ...(next.page ? { page: String(next.page) } : {}),
+  });
 if (error)
   Astro.response.status =
     error.kind === 'not-found' ? 404 : error.kind === 'validation' ? 400 : 503;
-const pageLink = (page: number) =>
-  '/products?' +
-  new URLSearchParams({
-    page: String(page),
-    q: inputs.search,
-    sort: inputs.sort,
-  });
+const noneAvailable =
+  visible.length > 0 &&
+  selected &&
+  !preorder.unavailable &&
+  visible.every(
+    (p) => !productPreorder(p.variants, preorder.availability).available,
+  );
 ---
 
 <SiteLayout
   context={storefront}
   path="/products"
-  title={error ? 'Catalog unavailable' : 'Products'}
-  noindex={!!error || !catalog?.items.length}
+  title="Shop"
+  noindex={!!error || !items.length}
 >
   <section
-    class="py-12"
-    data-composition={storefront?.kind === 'VENDOR' ? 'vendor' : undefined}
+    class="vendor-shop"
+    data-composition="vendor"
+    aria-label="Shop products for market pickup"
   >
-    <h1>{error ? 'Catalog unavailable' : 'Products'}</h1>
     {error ? (
-      <ErrorState error={error} />
+      <>
+        <h1>Shop unavailable</h1>
+        <ErrorState error={error} />
+      </>
     ) : (
       <>
-        <form class="catalog-filters ui-control-row" method="get">
-          <div class="field">
-            <label for="catalog-search">Search products</label>
-            <input
-              id="catalog-search"
-              class={inputClassName('search')}
-              name="q"
-              type="search"
-              value={inputs.search}
-              maxlength="200"
+        <div class="shop-market-slot">
+          <VendorPreorderBanner
+            preorder={preorder}
+            storefrontId={storefront?.storefrontId ?? ''}
+            preview={!!Astro.locals.editorPreview}
+          />
+        </div>
+        <aside
+          class={cardClassName({
+            className: 'shop-categories',
+            spacing: 'contained',
+            padding: 'default',
+            surface: 'card',
+          })}
+        >
+          <h2 class="ui-section-title-consumer">Product Categories</h2>
+          <nav aria-label="Product categories">
+            <a
+              href={link({ category: '' })}
+              aria-current={!category ? 'page' : undefined}
+            >
+              All Products
+            </a>
+            {categories.map((c) => (
+              <a
+                href={link({ category: c.id })}
+                aria-current={category === c.id ? 'page' : undefined}
+              >
+                {c.name}
+              </a>
+            ))}
+          </nav>
+        </aside>
+        <div class="shop-catalog">
+          <form method="get" class="shop-catalog-controls">
+            {selected && (
+              <input type="hidden" name="occurrence" value={selected.id} />
+            )}
+            <div class="shop-catalog-heading">
+              <h1>{heading}</h1>
+              <span>
+                {filtered.length}{' '}
+                {filtered.length === 1 ? 'product' : 'products'}
+              </span>
+            </div>
+            <div class="field shop-mobile-categories">
+              <label for="shop-category">Product category</label>
+              <select
+                id="shop-category"
+                name="category"
+                class={selectClassName()}
+              >
+                <option value="" selected={!category}>
+                  All Products
+                </option>
+                {categories.map((c) => (
+                  <option value={c.id} selected={category === c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div class="field shop-sort">
+              <label for="shop-sort">Sort by</label>
+              <select id="shop-sort" name="sort" class={selectClassName()}>
+                <option value="default" selected={sort === 'default'}>
+                  Catalog order
+                </option>
+                <option value="name" selected={sort === 'name'}>
+                  Name A to Z
+                </option>
+              </select>
+            </div>
+            <Button type="submit" variant="secondary">
+              Apply
+            </Button>
+          </form>
+          {preorder.unavailable && selected && (
+            <p class="ui-alert ui-alert-info" role="status">
+              Availability could not be confirmed. Purchasing is paused until
+              you refresh the page.
+            </p>
+          )}
+          {noneAvailable && (
+            <p class="ui-alert ui-alert-info" role="status">
+              These products cannot currently be preordered for this market.
+              Preordering may be closed or products may be sold out. Choose
+              another market or check back later.
+            </p>
+          )}
+          {visible.length ? (
+            <ProductCards
+              items={visible}
+              shop
+              storefrontId={storefront?.storefrontId}
+              occurrenceId={selected?.id}
+              availability={preorder.availability}
+              preview={!!Astro.locals.editorPreview}
             />
-          </div>
-          <div class="field">
-            <label for="catalog-sort">Sort products</label>
-            <select id="catalog-sort" name="sort" class={selectClassName()}>
-              <option value="asc" selected={inputs.sort === 'asc'}>
-                Name A to Z
-              </option>
-              <option value="desc" selected={inputs.sort === 'desc'}>
-                Name Z to A
-              </option>
-            </select>
-          </div>
-          <div class="ui-field-action">
-            <Button type="submit">Apply</Button>
-          </div>
-        </form>
-        {catalog?.items.length ? (
-          <ProductCards items={catalog.items} />
-        ) : (
-          <div class="empty-state">
-            <h2 class="ui-section-title-consumer">No products found</h2>
-            <p>Try another search or return to the first page.</p>
-            <a
-              class={buttonClassName({ variant: 'secondary' })}
-              href="/products"
-            >
-              View all products
-            </a>
-          </div>
-        )}
-        <nav class="pagination ui-pagination" aria-label="Catalog pages">
-          {inputs.page > 1 && (
-            <a
-              class={buttonClassName({ variant: 'secondary' })}
-              href={pageLink(inputs.page - 1)}
-            >
-              Previous page
-            </a>
+          ) : (
+            <div class="empty-state">
+              <h2 class="ui-section-title-consumer">
+                {!items.length ? 'No products yet' : 'No products in this view'}
+              </h2>
+              <p>
+                {!items.length
+                  ? 'This vendor has not published any products yet. Please check back soon.'
+                  : 'Choose All Products or return to the first page.'}
+              </p>
+              {!!items.length && (
+                <Button
+                  href={link({ category: '', page: 1 })}
+                  variant="secondary"
+                >
+                  All Products
+                </Button>
+              )}
+            </div>
           )}
-          <span>
-            {catalog?.totalItems ?? 0} records. Showing{' '}
-            {catalog?.items.length ? inputs.skip + 1 : 0} to{' '}
-            {catalog?.items.length ? inputs.skip + catalog.items.length : 0}.
-            Page {inputs.page}
-          </span>
-          {catalog && inputs.skip + inputs.take < catalog.totalItems && (
-            <a
-              class={buttonClassName({ variant: 'secondary' })}
-              href={pageLink(inputs.page + 1)}
-            >
-              Next page
-            </a>
+          {filtered.length > 12 && (
+            <nav class="ui-pagination pagination" aria-label="Shop pages">
+              {page > 1 && (
+                <a
+                  class={buttonClassName({ variant: 'secondary' })}
+                  href={link({ page: page - 1 })}
+                >
+                  Previous page
+                </a>
+              )}
+              <span>
+                Page {page} · {visible.length ? skip + 1 : 0} to{' '}
+                {visible.length ? skip + visible.length : 0} of{' '}
+                {filtered.length} products
+              </span>
+              {skip + 12 < filtered.length && (
+                <a
+                  class={buttonClassName({ variant: 'secondary' })}
+                  href={link({ page: page + 1 })}
+                >
+                  Next page
+                </a>
+              )}
+            </nav>
           )}
-        </nav>
+        </div>
       </>
     )}
   </section>

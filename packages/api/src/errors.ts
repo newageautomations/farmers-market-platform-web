@@ -21,16 +21,58 @@ export const safeMessages: Record<ErrorKind, string> = {
   entitlement: 'This optional feature is unavailable.',
   unknown: 'Something went wrong. Please try again.',
 };
+const taxMessages: Record<string, string> = {
+  VENDOR_TAX_RATE_REQUIRED:
+    'A taxable product has no configured rate. The vendor must set a default, market rate, or product override before checkout.',
+  VENDOR_TAX_RATE_INVALID:
+    'Enter a tax percentage from 0 to 100 with at most two decimal places.',
+  VENDOR_TAX_VERSION_CONFLICT: 'Tax settings changed. Reload and try again.',
+};
 export class AppError extends Error {
   constructor(
     public readonly kind: ErrorKind,
     public readonly code?: string,
   ) {
-    super(safeMessages[kind]);
+    super((code && taxMessages[code]) || safeMessages[kind]);
     this.name = 'AppError';
   }
 }
 const codes: Record<string, ErrorKind> = {
+  PREORDER_UNAVAILABLE: 'validation',
+  NONEMPTY_CONTEXT_SWITCH_DENIED: 'conflict',
+  PREORDER_OCCURRENCE_REQUIRED: 'validation',
+  VENDOR_TAX_RATE_REQUIRED: 'validation',
+  VENDOR_TAX_RATE_INVALID: 'validation',
+  VENDOR_TAX_VERSION_CONFLICT: 'conflict',
+  QBO_BUSY: 'conflict',
+  QBO_PREVIEW_EXPIRED: 'conflict',
+  QBO_SETTINGS_INVALID: 'validation',
+  QBO_MAPPING_INVALID: 'validation',
+  QBO_CONFIRM_REQUIRED: 'validation',
+  QBO_ACTIVATION_REQUIRED: 'validation',
+  QBO_RANGE_INVALID: 'validation',
+  QBO_USE_SMALLER_RANGE: 'validation',
+  QBO_CALLBACK_INVALID: 'validation',
+  QBO_STATE_INVALID: 'validation',
+  QBO_COMPANY_CHANGE_BLOCKED: 'validation',
+  QBO_COMPANY_ALREADY_ASSIGNED: 'validation',
+  QBO_US_COMPANY_REQUIRED: 'validation',
+  QBO_USD_COMPANY_REQUIRED: 'validation',
+  QBO_RECONNECT: 'unavailable',
+  QBO_NOT_CONFIGURED: 'unavailable',
+  QBO_PRODUCTION_DISABLED: 'unavailable',
+  QBO_RATE_LIMIT: 'unavailable',
+  QBO_NETWORK_UNCERTAIN: 'unavailable',
+  QBO_PROVIDER_UNAVAILABLE: 'unavailable',
+  QBO_OPERATION_FAILED: 'unavailable',
+  FINANCE_INPUT_INVALID: 'validation',
+  FINANCE_DATE_INVALID: 'validation',
+  FINANCE_RANGE_INVALID: 'validation',
+  FINANCE_SCOPE_INVALID: 'validation',
+  FINANCE_USE_SHORTER_RANGE: 'validation',
+  FINANCE_AMOUNT_OUT_OF_RANGE: 'validation',
+  FINANCE_DUPLICATE_KEY: 'conflict',
+  FINANCE_VERSION_CONFLICT: 'conflict',
   NOTIFICATION_INPUT_INVALID: 'validation',
   NOTIFICATION_VERSION_CONFLICT: 'conflict',
   DOCUMENT_INPUT_INVALID: 'validation',

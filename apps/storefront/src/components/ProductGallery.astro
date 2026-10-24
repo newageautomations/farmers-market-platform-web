@@ -1,0 +1,80 @@
+---
+import { buttonClassName } from '@market/ui/presentation';
+import { safeAsset } from '@market/storefront-core';
+import type { PublicProduct } from '@market/api';
+const { product } = Astro.props as { product: PublicProduct };
+const assets = [
+  product.featuredAsset,
+  ...product.assets,
+  ...product.variants.flatMap((v) => [v.featuredAsset, ...v.assets]),
+]
+  .filter((a): a is NonNullable<typeof a> => !!a && !!safeAsset(a.preview))
+  .filter((a, i, all) => all.findIndex((v) => v.id === a.id) === i);
+const selectedVariant =
+  product.variants.length === 1
+    ? product.variants[0]
+    : product.variants.find(
+        (v) => v.id === Astro.url.searchParams.get('variant'),
+      );
+const primary =
+  assets.find(
+    (a) =>
+      a.id ===
+      (selectedVariant?.featuredAsset ?? selectedVariant?.assets[0])?.id,
+  ) ?? assets[0];
+---
+
+<div class="product-gallery" data-product-gallery>
+  {primary ? (
+    <img
+      data-gallery-main
+      class="product-media"
+      src={safeAsset(primary.preview)}
+      alt={product.name}
+      width={primary.width || 1000}
+      height={primary.height || 1000}
+      fetchpriority="high"
+    />
+  ) : (
+    <div
+      class="product-media product-placeholder"
+      role="img"
+      aria-label={`${product.name}: no image`}
+    >
+      No image
+    </div>
+  )}
+  {assets.length > 1 && (
+    <div
+      class="product-thumbnails"
+      role="group"
+      aria-label="Product photographs"
+    >
+      {assets.map((asset, i) => (
+        <button
+          type="button"
+          class={buttonClassName({ variant: 'secondary' })}
+          data-gallery-id={asset.id}
+          data-gallery-src={safeAsset(asset.preview)}
+          data-gallery-alt={`${product.name}, photograph ${i + 1}`}
+          aria-label={`View ${product.name}, photograph ${i + 1}`}
+          aria-pressed={asset.id === primary?.id}
+        >
+          <img
+            src={safeAsset(asset.preview)}
+            alt=""
+            width="90"
+            height="90"
+            loading="lazy"
+          />
+        </button>
+      ))}
+    </div>
+  )}
+</div>
+<script>
+  import { mountProductGallery } from '../lib/product-gallery';
+  document
+    .querySelectorAll<HTMLElement>('[data-product-gallery]')
+    .forEach(mountProductGallery);
+</script>

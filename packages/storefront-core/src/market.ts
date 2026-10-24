@@ -1,6 +1,20 @@
 import type { MarketCatalogOptions, PublicMarketOccurrence } from '@market/api';
 import { formatDate } from '@market/config';
-export function occurrenceLabel(occurrence: PublicMarketOccurrence) {
+export function occurrenceLabel(
+  occurrence: PublicMarketOccurrence,
+  format: 'full' | 'compact' = 'full',
+) {
+  if (format === 'compact') {
+    const date = new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'medium',
+      timeZone: occurrence.timezone,
+    }).format(new Date(occurrence.startsAt));
+    const time = new Intl.DateTimeFormat('en-US', {
+      timeStyle: 'short',
+      timeZone: occurrence.timezone,
+    });
+    return `${date}, ${time.format(new Date(occurrence.startsAt))} to ${time.format(new Date(occurrence.endsAt))}`;
+  }
   return `${formatDate(occurrence.startsAt, occurrence.timezone)} to ${formatDate(occurrence.endsAt, occurrence.timezone)}`;
 }
 export function marketCatalogInputs(search: URLSearchParams): {

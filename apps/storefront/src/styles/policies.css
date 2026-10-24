@@ -1,0 +1,23 @@
+.policies-page {
+  overflow-wrap: anywhere;
+  gap: clamp(2rem, 4vw, 3rem);
+}
+.policies-description,
+.policy-content {
+  white-space: pre-wrap;
+  line-height: 1.8;
+}
+.policy-section {
+  padding-block: 2rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--brand-muted) 40%, transparent);
+}
+.policy-section:first-child {
+  padding-top: 0;
+}
+.policy-section h2 {
+  margin-top: 0;
+}
+.policy-content {
+  margin-bottom: 0;
+}

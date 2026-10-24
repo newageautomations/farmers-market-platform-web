@@ -9,6 +9,7 @@ import {
 import { formatMoney } from '@market/config';
 import { occurrenceLabel } from '@market/storefront-core/market';
 import { shopCall } from './shop-client';
+import CheckoutLoyalty from './CheckoutLoyalty';
 
 export function MarketCart({
   storefrontId,
@@ -24,6 +25,15 @@ export function MarketCart({
     [error, setError] = useState(''),
     [message, setMessage] = useState('');
   const lock = useRef(false);
+  async function refreshRewards() {
+    const next = (await shopCall<MarketBootstrap>(storefrontId, 'cart')).cart;
+    setCart(next);
+    window.dispatchEvent(
+      new CustomEvent('market-cart-updated', {
+        detail: { storefrontId, quantity: next?.totalQuantity ?? 0 },
+      }),
+    );
+  }
   async function change(
     action: 'adjust' | 'remove' | 'apply-coupon' | 'remove-coupon',
     input: Record<string, unknown>,
@@ -268,22 +278,34 @@ export function MarketCart({
             </form>
             {!!cart.couponCodes.length && (
               <ul aria-label="Applied Vendor coupon codes">
-                {cart.couponCodes.map((code) => (
-                  <li key={code}>
-                    {code}{' '}
-                    <Button
-                      variant="destructive"
-                      type="button"
-                      disabled={pending || !editable}
-                      aria-label={`Remove coupon ${code}`}
-                      onClick={() => void change('remove-coupon', { code })}
-                    >
-                      Remove
-                    </Button>
-                  </li>
-                ))}
+                {cart.couponCodes
+                  .filter((code) => !code.startsWith('LR_'))
+                  .map((code) => (
+                    <li key={code}>
+                      {code}{' '}
+                      <Button
+                        variant="destructive"
+                        type="button"
+                        disabled={pending || !editable}
+                        aria-label={`Remove coupon ${code}`}
+                        onClick={() => void change('remove-coupon', { code })}
+                      >
+                        Remove
+                      </Button>
+                    </li>
+                  ))}
               </ul>
             )}
+            <CheckoutLoyalty
+              vendors={cart.groups.map((group) => group.vendorId)}
+              disabled={pending || !editable}
+              revision={JSON.stringify(cart)}
+              onApplied={refreshRewards}
+              onBusyChange={(value) => {
+                lock.current = value;
+                setPending(value);
+              }}
+            />
             <p className="cart-boundary">Adding items does not reserve them.</p>
             <a
               className={buttonClassName({
@@ -291,6 +313,10 @@ export function MarketCart({
                 className: 'button',
               })}
               href="/checkout"
+              aria-disabled={pending}
+              onClick={(event) => {
+                if (pending) event.preventDefault();
+              }}
             >
               Continue to checkout
             </a>

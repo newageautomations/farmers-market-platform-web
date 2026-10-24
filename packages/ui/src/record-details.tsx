@@ -6,6 +6,7 @@ import {
   type ReactNode,
   type ReactElement,
   type MouseEvent,
+  type ComponentProps,
 } from 'react';
 import { Button, Card, DataTable, Dialog } from './index';
 
@@ -159,30 +160,48 @@ export function RecordCard({
   summary,
   children,
   onOpen,
+  icon,
+  className = '',
+  label,
+  header,
+  renderTrigger,
 }: {
   title: string;
   summary: ReactNode;
   children?: ReactNode;
   onOpen?: () => void;
+  icon?: ReactNode;
+  className?: string;
+  label?: string;
+  header?: ReactNode;
+  renderTrigger?: (props: ComponentProps<typeof Button>) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const triggerProps: ComponentProps<typeof Button> = {
+    variant: 'disclosure',
+    className: 'ui-record-trigger',
+    'aria-label': `Open ${title}`,
+    onClick: () => (onOpen ? onOpen() : setOpen(true)),
+  };
   return (
     <>
       <Card
         as="article"
-        className="ui-record-card"
+        className={`ui-record-card ${className}`.trim()}
+        aria-label={label}
         spacing="contained"
         onClickCapture={activateRecord}
       >
+        {header}
         {summary}
-        <Button
-          variant="disclosure"
-          className="ui-record-trigger"
-          aria-label={`Open ${title}`}
-          onClick={() => (onOpen ? onOpen() : setOpen(true))}
-        >
-          {title}
-        </Button>
+        {renderTrigger ? (
+          renderTrigger(triggerProps)
+        ) : (
+          <Button {...triggerProps}>
+            {icon}
+            {title}
+          </Button>
+        )}
       </Card>
       {open && (
         <Dialog open title={title} onClose={() => setOpen(false)}>

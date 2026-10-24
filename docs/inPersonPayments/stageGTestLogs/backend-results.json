@@ -1,0 +1,9 @@
+{
+  "kind": "CONTROLLED_LOCAL_TESTS",
+  "results": [
+    {
+      "name": "backend-loyalty",
+      "exitCode": 0
+    }
+  ]
+}

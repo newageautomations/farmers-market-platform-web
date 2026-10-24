@@ -1,0 +1,138 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { MarketCartLink } from '../MarketCartLink';
+import Button from '../ui/Button.astro';
+import { storefrontText } from '@market/theme/storefront';
+interface Props {
+  context: StorefrontContext;
+}
+const { context } = Astro.props;
+const active = (path: string) =>
+  Astro.url.pathname === path ||
+  (path === '/products' && Astro.url.pathname.startsWith('/products/'))
+    ? ('page' as const)
+    : undefined;
+const market = context.kind === 'MARKET';
+---
+
+<header class="harvest-header" data-editor-section="header">
+  <a class="harvest-brand" href="/" aria-label={`${context.name} home`}>
+    {context.theme.logo && (
+      <img src={context.theme.logo} alt="" width="40" height="40" />
+    )}
+    <span>{context.name}</span>
+  </a>
+  <nav class="harvest-desktop-nav" aria-label="Main navigation">
+    <a
+      aria-current={!market ? active('/products') : undefined}
+      href={market ? '/#occurrences' : '/products'}
+    >
+      <span data-storefront-text="headerShopLabel">
+        {market
+          ? 'Market days'
+          : storefrontText(context.appearance, 'headerShopLabel')}
+      </span>
+    </a>
+    {market && <a href="/#vendors">Meet the vendors</a>}
+    {context.kind === 'VENDOR' && context.appearance?.faq?.enabled && (
+      <a href="/faq">{context.appearance.faq.title}</a>
+    )}
+    {context.kind === 'VENDOR' && context.appearance?.policies?.enabled && (
+      <a href="/policies">{context.appearance.policies.title}</a>
+    )}
+    {context.kind === 'VENDOR' && context.appearance?.contact?.enabled && (
+      <a href="/contact">{context.appearance.contact.title}</a>
+    )}
+    {context.kind === 'VENDOR' && context.appearance?.findUs?.enabled && (
+      <a href="/find-us">Find Us</a>
+    )}
+    {context.appearance?.about.enabled && (
+      <a href="/about" aria-current={active('/about')}>
+        <span data-storefront-text="headerAboutLabel">
+          {storefrontText(context.appearance, 'headerAboutLabel')}
+        </span>
+      </a>
+    )}
+    <a href="/account" aria-current={active('/account')}>
+      Account
+    </a>
+  </nav>
+  <div class="harvest-header-actions">
+    {market && context.source === 'backend' ? (
+      <MarketCartLink storefrontId={context.storefrontId ?? ''} client:load />
+    ) : (
+      !market && (
+        <Button href="/cart" variant="secondary">
+          Cart
+        </Button>
+      )
+    )}
+    <details class="harvest-mobile-menu">
+      <summary aria-label="Open navigation menu">
+        Menu <span aria-hidden="true">☰</span>
+      </summary>
+      <nav aria-label="Mobile navigation">
+        <a href="/">Home</a>
+        <a href={market ? '/#occurrences' : '/products'}>
+          <span data-storefront-text="headerShopLabel">
+            {market
+              ? 'Market days'
+              : storefrontText(context.appearance, 'headerShopLabel')}
+          </span>
+        </a>
+        {market && <a href="/#vendors">Meet the vendors</a>}
+        {context.kind === 'VENDOR' && context.appearance?.faq?.enabled && (
+          <a href="/faq">{context.appearance.faq.title}</a>
+        )}
+        {context.kind === 'VENDOR' && context.appearance?.policies?.enabled && (
+          <a href="/policies">{context.appearance.policies.title}</a>
+        )}
+        {context.kind === 'VENDOR' && context.appearance?.contact?.enabled && (
+          <a href="/contact">{context.appearance.contact.title}</a>
+        )}
+        {context.kind === 'VENDOR' && context.appearance?.findUs?.enabled && (
+          <a href="/find-us">Find Us</a>
+        )}
+        {context.appearance?.about.enabled && (
+          <a href="/about">
+            <span data-storefront-text="headerAboutLabel">
+              {storefrontText(context.appearance, 'headerAboutLabel')}
+            </span>
+          </a>
+        )}
+        <a href="/account">Account</a>
+      </nav>
+    </details>
+  </div>
+</header>
+<script>
+  for (const menu of document.querySelectorAll<HTMLDetailsElement>(
+    '.harvest-mobile-menu',
+  )) {
+    const summary = menu.querySelector('summary');
+    summary?.setAttribute('aria-expanded', 'false');
+    menu.addEventListener('toggle', () => {
+      summary?.setAttribute('aria-expanded', String(menu.open));
+      summary?.setAttribute(
+        'aria-label',
+        menu.open ? 'Close navigation menu' : 'Open navigation menu',
+      );
+    });
+    menu.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && menu.open) {
+        menu.open = false;
+        summary?.focus();
+      }
+    });
+    menu.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest('a')) {
+        menu.open = false;
+        summary?.focus();
+      }
+    });
+    document.addEventListener('click', (event) => {
+      if (event.target instanceof Node && !menu.contains(event.target))
+        menu.open = false;
+    });
+  }
+</script>

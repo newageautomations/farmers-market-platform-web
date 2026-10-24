@@ -14,7 +14,9 @@ import {
 import { requestCheckout, requestCustomerDashboard } from './shop';
 
 export const customerNavigation = [
+  { href: '/notifications', label: 'Notifications' },
   { href: '/account', label: 'Overview' },
+  { href: '/account/loyalty', label: 'Loyalty' },
   { href: '/account/orders', label: 'Order History' },
   { href: '/account/markets', label: 'Followed Markets' },
   { href: '/account/vendors', label: 'Favorite Vendors' },

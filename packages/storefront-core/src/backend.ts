@@ -1,5 +1,9 @@
 import { AppError } from '@market/api';
 import { platformTheme, vendorTheme } from '@market/theme';
+import {
+  defaultStorefrontAppearance,
+  storefrontAppearanceSchema,
+} from '@market/theme/storefront';
 import type { BackendStorefrontResolver, StorefrontContext } from './index';
 import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
@@ -23,7 +27,8 @@ const resolverFetch: typeof fetch = async (input, init) => {
         let size = 0;
         response.on('data', (chunk: Buffer) => {
           size += chunk.length;
-          if (size > 65536)
+          // Published About/story text may contain three-byte UTF-8 characters.
+          if (size > 131072)
             request.destroy(new Error('Resolver response exceeds limit'));
           else chunks.push(chunk);
         });
@@ -106,6 +111,14 @@ export function publicStorefrontResolver(
         channelToken: String(shop!.channelToken),
         template: dto.kind === 'VENDOR' ? 'modern' : 'community',
         theme: { ...(dto.kind === 'VENDOR' ? vendorTheme : platformTheme) },
+        appearancePublishedAt:
+          typeof dto.appearancePublishedAt === 'string' &&
+          Number.isFinite(Date.parse(dto.appearancePublishedAt))
+            ? dto.appearancePublishedAt
+            : undefined,
+        appearance: storefrontAppearanceSchema.parse(
+          dto.appearance ?? defaultStorefrontAppearance,
+        ),
       };
       return context;
     },

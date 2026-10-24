@@ -63,7 +63,13 @@ export function AccountModes({
     const business = account?.affiliations.find(
       (a) => a.channelId === channelId,
     );
-    if (!business) return;
+    if (
+      !business ||
+      !window.dispatchEvent(
+        new Event('storefront-editor:before-exit', { cancelable: true }),
+      )
+    )
+      return;
     window.history.replaceState(
       null,
       '',
@@ -101,6 +107,14 @@ export function AccountModes({
         ]}
         onSelect={(value) => {
           if (value === 'CUSTOMER' && personalOrigin) {
+            if (
+              !window.dispatchEvent(
+                new Event('storefront-editor:before-exit', {
+                  cancelable: true,
+                }),
+              )
+            )
+              return;
             window.location.assign(
               new URL('/account/login', personalOrigin).toString(),
             );

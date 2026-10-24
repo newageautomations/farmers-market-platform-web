@@ -11,6 +11,11 @@ import {
   cspDirectives,
 } from '@market/config';
 import { isCentral } from './lib/account';
+import {
+  editorOrigin,
+  editorPreviewConnectSource,
+} from './lib/editor-preview-server';
+import { createHash } from 'node:crypto';
 
 // The built SSR module also fails closed when started without the convenience wrapper.
 declare const __PRODUCTION_BUILD__: boolean;
@@ -48,11 +53,70 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const production = runtimeMode(process.env) === 'production';
   const headers = new Headers(responseSecurityHeaders(production));
   headers.set('X-Request-Id', requestId);
-  const privateRoute = /^\/(account|auth|checkout|api)(\/|$)/.test(
-    context.url.pathname,
-  );
+  const privateRoute =
+    /^\/(account|auth|checkout|api|notifications)(\/|$)/.test(
+      context.url.pathname,
+    );
   if (privateRoute) headers.set('X-Robots-Tag', 'noindex, nofollow');
-  function finish(response: Response) {
+  async function finish(response: Response) {
+    if (
+      context.url.pathname.startsWith('/storefront-editor-preview') ||
+      context.locals.editorPreview
+    ) {
+      headers.delete('X-Frame-Options');
+      headers.set('X-Robots-Tag', 'noindex, nofollow');
+      // no-referrer makes a browser form's Origin opaque (null), which Astro
+      // correctly rejects before this middleware. Origin-only referrers expose no draft/token.
+      headers.set('Referrer-Policy', 'strict-origin');
+      // This exception is restricted to preview responses. All public pages retain DENY.
+      let policy =
+        response.headers.get('Content-Security-Policy') ??
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http://localhost:* http://*.localhost:*; font-src 'self'; object-src 'none'; base-uri 'none'";
+      if (
+        !response.headers.has('Content-Security-Policy') &&
+        response.headers.get('Content-Type')?.includes('text/html')
+      ) {
+        // Astro's dev server does not emit its build-time CSP hashes. Permit only the
+        // exact inline runtime scripts in this trusted SSR response, including islands.
+        const html = await response.clone().text();
+        const hashes = [
+          ...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi),
+        ]
+          .filter(
+            (match) =>
+              !/\bsrc\s*=|\btype\s*=\s*["']application\//i.test(match[1]!),
+          )
+          .map(
+            (match) =>
+              `'sha256-${createHash('sha256').update(match[2]!).digest('base64')}'`,
+          );
+        policy = policy.replace(
+          "script-src 'self'",
+          `script-src 'self' ${hashes.join(' ')}`,
+        );
+      }
+      response.headers.set(
+        'Content-Security-Policy',
+        policy
+          .split(';')
+          .filter(
+            (p) =>
+              !/^\s*(frame-ancestors|form-action|connect-src|frame-src)\s/.test(
+                p,
+              ),
+          )
+          .concat([
+            `frame-ancestors ${editorOrigin()}`,
+            `form-action ${context.url.origin}/storefront-editor-preview/render`,
+            "frame-src 'none'",
+            editorPreviewConnectSource(
+              context.url,
+              import.meta.env.DEV && !production,
+            ),
+          ])
+          .join('; '),
+      );
+    }
     for (const [key, value] of headers) response.headers.set(key, value);
     if (response.status >= 400)
       response.headers.set('X-Robots-Tag', 'noindex, nofollow');
@@ -131,6 +195,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
           }),
         );
       }
+    }
+    if (context.locals.editorPreview) {
+      if (
+        context.locals.storefront?.storefrontId !==
+        context.locals.editorPreview.id
+      )
+        return finish(new Response('Preview denied.', { status: 403 }));
+      context.locals.storefront = {
+        ...context.locals.storefront,
+        appearance: context.locals.editorPreview.config,
+      };
     }
     return finish(await next());
   } catch {

@@ -1,0 +1,116 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import ClosingInvitation from '../components/ClosingInvitation.astro';
+import {
+  defaultPolicies,
+  policyContentParts,
+  publishedPolicyEntries,
+} from '@market/theme/storefront';
+import '../styles/about-story.css';
+import '../styles/policies.css';
+const { storefront, editorPreview } = Astro.locals;
+const config =
+  storefront?.appearance?.policies ??
+  (editorPreview ? defaultPolicies : undefined);
+const enabled =
+  storefront?.kind === 'VENDOR' &&
+  !!config &&
+  (config.enabled || !!editorPreview);
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+if (!enabled) Astro.response.status = storefront ? 404 : 503;
+const appearance = storefront?.appearance;
+const available = (path: string) =>
+  path === '/about'
+    ? !!appearance?.about.enabled
+    : path === '/find-us'
+      ? !!appearance?.findUs?.enabled
+      : path === '/contact'
+        ? !!appearance?.contact?.enabled
+        : path === '/faq'
+          ? !!appearance?.faq?.enabled
+          : path === '/policies'
+            ? !!config?.enabled
+            : true;
+const policies = config ? publishedPolicyEntries(config) : [];
+const publishedAt = storefront?.appearancePublishedAt;
+const date =
+  publishedAt && Number.isFinite(Date.parse(publishedAt))
+    ? new Date(publishedAt)
+    : undefined;
+---
+
+<SiteLayout
+  context={storefront}
+  path="/policies"
+  title={enabled ? config!.title : 'Page unavailable'}
+  noindex={!enabled}
+>
+  {enabled && config ? (
+    <article class="story-page policies-page" aria-label={config.title}>
+      <section data-editor-section="policies-intro">
+        <h1>{config.heading}</h1>
+        {config.description && (
+          <p class="policies-description">{config.description}</p>
+        )}
+        {date && (
+          <p>
+            Last updated:{' '}
+            <time datetime={date.toISOString()}>
+              {date.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+                timeZone: 'UTC',
+              })}
+            </time>
+          </p>
+        )}
+        {editorPreview && (
+          <p>
+            The date reflects the published storefront revision. Unsaved and
+            draft edits are not published.
+          </p>
+        )}
+      </section>
+      <div data-editor-section="policies-list" class="policies-list">
+        {policies.map((policy) => (
+          <section
+            class="policy-section"
+            data-editor-section={`policy:${policy.id}`}
+            aria-labelledby={`policy-${policy.id}`}
+          >
+            <h2 id={`policy-${policy.id}`}>{policy.title}</h2>
+            <p class="policy-content">
+              {policyContentParts(policy.content).map((part) =>
+                part.href && available(part.href) ? (
+                  <a href={part.href}>{part.text}</a>
+                ) : (
+                  <span>{part.text}</span>
+                ),
+              )}
+            </p>
+          </section>
+        ))}
+        {editorPreview && !policies.length && (
+          <p>Add a complete, visible policy to preview it here.</p>
+        )}
+      </div>
+      {appearance?.contact?.enabled && (
+        <ClosingInvitation
+          cta={{ ...config.cta, destination: '/contact' }}
+          section="policies-cta"
+        />
+      )}
+      {editorPreview && !appearance?.contact?.enabled && (
+        <p data-editor-section="policies-cta">
+          Enable Contact to show the closing invitation.
+        </p>
+      )}
+    </article>
+  ) : (
+    <section>
+      <h1>Page unavailable</h1>
+      <p>This Policies page is not available.</p>
+    </section>
+  )}
+</SiteLayout>

@@ -1,0 +1,25 @@
+{
+  "kind": "CONTROLLED_LOCAL_REGRESSION",
+  "results": [
+    {
+      "name": "pos-payments",
+      "exitCode": 0
+    },
+    {
+      "name": "square",
+      "exitCode": 0
+    },
+    {
+      "name": "clover",
+      "exitCode": 0
+    },
+    {
+      "name": "loyalty-discounts",
+      "exitCode": 0
+    },
+    {
+      "name": "financial-refunds",
+      "exitCode": 0
+    }
+  ]
+}

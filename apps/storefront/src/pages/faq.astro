@@ -1,0 +1,91 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import ClosingInvitation from '../components/ClosingInvitation.astro';
+import { defaultFaq, faqAnswerParts } from '@market/theme/storefront';
+import { disclosureClassName } from '@market/ui/presentation';
+import '../styles/about-story.css';
+import '../styles/faq.css';
+const { storefront, editorPreview } = Astro.locals;
+// Starter content exists only in the private preview until explicitly saved.
+const config =
+  storefront?.appearance?.faq ?? (editorPreview ? defaultFaq : undefined);
+const enabled =
+  storefront?.kind === 'VENDOR' &&
+  !!config &&
+  (config.enabled || !!editorPreview);
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+if (!enabled) Astro.response.status = storefront ? 404 : 503;
+const appearance = storefront?.appearance;
+const available = (path: string) =>
+  path === '/policies'
+    ? !!appearance?.policies?.enabled
+    : path === '/about'
+      ? !!appearance?.about.enabled
+      : path === '/find-us'
+        ? !!appearance?.findUs?.enabled
+        : path === '/contact'
+          ? !!appearance?.contact?.enabled
+          : path === '/faq'
+            ? !!config?.enabled
+            : true;
+const questions =
+  config?.questions.filter(
+    (q) => q.visible && q.question.trim() && q.answer.trim(),
+  ) ?? [];
+---
+
+<SiteLayout
+  context={storefront}
+  path="/faq"
+  title={enabled ? config!.title : 'Page unavailable'}
+  noindex={!enabled}
+>
+  {enabled && config ? (
+    <article class="faq-page" aria-label={config.title}>
+      <section class="faq-intro" data-editor-section="faq-intro">
+        <h1>{config.heading}</h1>
+        {config.description && <p>{config.description}</p>}
+      </section>
+      <div class="faq-list" data-editor-section="faq-questions">
+        {questions.map((q) => (
+          <details
+            class={disclosureClassName('faq-row')}
+            data-editor-section={`faq:${q.id}`}
+          >
+            <summary>{q.question}</summary>
+            <div class="ui-disclosure-content faq-answer">
+              <p>
+                {faqAnswerParts(q.answer).map((part) =>
+                  part.href && available(part.href) ? (
+                    <a href={part.href}>{part.text}</a>
+                  ) : (
+                    <span>{part.text}</span>
+                  ),
+                )}
+              </p>
+            </div>
+          </details>
+        ))}
+        {editorPreview && !questions.length && (
+          <p>Add a complete, visible question to preview it here.</p>
+        )}
+      </div>
+      {appearance?.contact?.enabled && (
+        <ClosingInvitation
+          cta={{ ...config.cta, destination: '/contact' }}
+          section="faq-cta"
+        />
+      )}
+      {editorPreview && !appearance?.contact?.enabled && (
+        <p data-editor-section="faq-cta">
+          Enable Contact to show the closing invitation.
+        </p>
+      )}
+    </article>
+  ) : (
+    <section>
+      <h1>Page unavailable</h1>
+      <p>This FAQ page is not available.</p>
+    </section>
+  )}
+</SiteLayout>

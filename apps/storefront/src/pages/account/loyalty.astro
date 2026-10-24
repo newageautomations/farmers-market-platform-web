@@ -1,0 +1,39 @@
+---
+import CustomerLayout from '../../layouts/CustomerLayout.astro';
+import CustomerLoyalty from '../../components/CustomerMarketChallenges';
+import { marketChallengeApi } from '../../lib/market-loyalty';
+import type { MarketChallenge } from '@market/api';
+import {
+  customerApi,
+  customerAuthenticationError,
+} from '../../lib/customer-dashboard';
+import { customerLoyalty } from '../../lib/loyalty';
+import { temporaryUnavailableResponse } from '@market/config';
+const api = customerApi(Astro);
+let profile, wallets;
+let challenges: MarketChallenge[] = [],
+  unavailable = false;
+try {
+  profile = await api.profile();
+  if (!profile) return Astro.redirect(api.login);
+  wallets = await customerLoyalty(Astro);
+  try {
+    challenges = await marketChallengeApi(Astro, Astro.response.headers).my();
+  } catch {
+    unavailable = true;
+  }
+} catch (error) {
+  return customerAuthenticationError(error)
+    ? Astro.redirect(api.login)
+    : temporaryUnavailableResponse();
+}
+---
+
+<CustomerLayout title="Loyalty" path="/account/loyalty">
+  <CustomerLoyalty
+    wallets={wallets}
+    challenges={challenges}
+    unavailable={unavailable}
+    client:load
+  />
+</CustomerLayout>

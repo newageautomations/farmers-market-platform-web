@@ -6,6 +6,7 @@ import {
   statusBadgeClassName,
 } from '@market/ui/presentation';
 import { vendorOrderStatus } from './order-presentation';
+import { PosOrderPayment } from './pos-payments';
 import { useCallback, useState } from 'react';
 import { mayCommand } from '@market/admin-core';
 import { formatMoney } from '@market/config';
@@ -57,6 +58,7 @@ export function Orders({
               <option value="all">All contexts</option>
               <option value="DIRECT_VENDOR">Direct</option>
               <option value="MARKET_OCCURRENCE">Market</option>
+              <option value="IN_PERSON">In-person</option>
             </Select>
           </Field>
           <ReadState {...query} retry={query.refresh} />
@@ -78,7 +80,9 @@ export function Orders({
                     <td>
                       {o.portion.kind === 'MARKET_OCCURRENCE'
                         ? o.portion.marketName
-                        : 'Direct Vendor'}
+                        : o.portion.kind === 'IN_PERSON'
+                          ? 'In-person sale'
+                          : 'Direct Vendor'}
                       {o.portion.occurrenceStartsAt && (
                         <small>
                           {date(o.portion.occurrenceStartsAt)} (UTC)
@@ -166,6 +170,13 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
       <ReadState {...query} retry={query.refresh} />
       {query.data && (
         <div key={JSON.stringify(query.data)}>
+          {query.data.portion.kind === 'IN_PERSON' && service.pos && (
+            <PosOrderPayment
+              api={service.pos}
+              orderId={id}
+              canRefund={mayCommand(service.context, 'RequestOwnVendorRefund')}
+            />
+          )}
           <p>Order {query.data.portion.operationalOrderId}</p>
           <Card as="section" aria-label="Order status and context">
             <dl className="facts">
@@ -203,7 +214,9 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
                 <dd>
                   {query.data.portion.kind === 'MARKET_OCCURRENCE'
                     ? `Market occurrence · ${query.data.portion.marketName}`
-                    : 'Direct Vendor'}
+                    : query.data.portion.kind === 'IN_PERSON'
+                      ? 'In-person sale'
+                      : 'Direct Vendor'}
                 </dd>
               </div>
             </dl>
@@ -237,7 +250,12 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
               <p>Occurrence reference {query.data.context.occurrenceId}</p>
             )}
           </Card>
-          {query.data.portion.pickupPromise ? (
+          {query.data.portion.kind === 'IN_PERSON' ? (
+            <p>
+              Merchandise handed directly to the customer.{' '}
+              {query.data.portion.marketName ?? 'Independent Sale'}.
+            </p>
+          ) : query.data.portion.pickupPromise ? (
             <Card as="section" aria-label="Pickup promise">
               <h2 className="ui-section-title-dashboard">Pickup promise</h2>
               <p>
@@ -276,11 +294,14 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
               </tr>
             ))}
           </DataTable>
-          <p>
-            Operational cancellation does not move money. Refunds and payment
-            administration are unavailable here.
-          </p>
+          {query.data.portion.kind !== 'IN_PERSON' && (
+            <p>
+              Operational cancellation does not move money. Refunds and payment
+              administration are unavailable here.
+            </p>
+          )}
           {can &&
+            query.data.portion.kind !== 'IN_PERSON' &&
             [
               'PaymentSettled',
               'PartiallyShipped',

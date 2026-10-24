@@ -119,6 +119,7 @@ type Query {
   ownMarketOperations(section: MarketOperationsSection!, occurrenceId: Int): JSON!
   ownVendorBoothAssignments: JSON!
   ownVendorLinkRequests: JSON!
+  ownVendorTaxSettings: VendorTaxSettings!
   ownCommercePortion(orderId: ID!): CommercePortion!
   ownCommercePortions(options: OwnOperationalOrderOptions): OwnOperationalOrderPage!
   ownOccurrenceOperations(occurrenceId: ID!): [CommercePortion!]!
@@ -137,6 +138,28 @@ type Query {
   ownVendorStorefront(id: ID!): VendorStorefront!
   ownVendorMemberships(vendorId: ID): [VendorMembership!]!
   ownResourceIdentity(type: IdentityResourceType!, id: ID!): ResourceIdentity!
+  ownVendorCategories: JSON!
+  ownVendorCategoryAssets(skip: Int): JSON!
+  authorizeStorefrontPreview(token: String!, host: String!, config: JSON!): JSON!
+  ownStorefrontProducts(search: String): JSON!
+  ownStorefrontLinks: JSON!
+  ownStorefrontAppearance: JSON!
+  ownFinanceOptions(timezone: String): JSON!
+  ownFinanceReport(input: JSON!): JSON!
+  ownFinanceExport(input: JSON!): JSON!
+  ownFinanceExpense(id: String!): JSON!
+  ownProductionCost(variantId: ID!): JSON!
+  ownPosCatalog(input: JSON): JSON!
+  ownPosContexts: JSON!
+  ownPosDrafts: JSON!
+  ownPosDraft(id: String!): JSON!
+  ownPosPaymentMethods: JSON!
+  ownPosPayment(draftId: String!): JSON
+  ownPosRecoverablePayments: JSON!
+  ownPosLatestSale: JSON
+  ownPosOrderPayment(orderId: ID!): JSON
+  ownSquareIntegration: JSON!
+  ownCloverIntegration: JSON!
   ownMarketEligibleVendors(options: OwnMarketVendorDirectoryOptions): OwnMarketEligibleVendorPage!
   ownMarketVendorMemberships(options: OwnMarketVendorOptions): OwnMarketMembershipPage!
   ownMarketMembership(id: ID!): MarketOrganizerMembership!
@@ -199,6 +222,8 @@ type Query {
   ownVendorProduct(productId: ID!): OwnCatalogProduct!
   ownOperationalInventory(take: Int, after: ID, search: String): OwnOperationalInventoryPage!
   ownListingPublication(listingId: ID!): OwnListingPublication!
+  vendorContactSubmissions(skip: Int!): JSON!
+  vendorContactSubmission(id: String!): JSON!
 }
 
 type Mutation {
@@ -723,6 +748,7 @@ type Mutation {
   marketOperationsCommand(input: MarketOperationsCommand!): JSON!
   respondToVendorLink(id: Int!, expectedRevision: Int!, confirm: Boolean!): JSON!
   correctMarketVendorLink(marketId: Int!, directoryId: Int!, expectedRevision: Int!, vendorId: Int, reason: String!): JSON!
+  saveOwnVendorTaxSettings(input: VendorTaxSettingsInput!): VendorTaxSettings!
   createOwnCatalogProduct(input: OwnCatalogProductInput!): CatalogCommandResult!
   createOwnCatalogVariant(input: OwnCatalogVariantInput!): CatalogCommandResult!
   updateOwnCatalogProduct(id: ID!, input: OwnCatalogProductInput!): CatalogCommandResult!
@@ -756,6 +782,43 @@ type Mutation {
   provisionVendorStorefront(vendorId: ID!, channelId: ID!, input: ConfigureVendorStorefrontInput!): VendorStorefront!
   assignProtectedOwnership(type: OwnershipAssignmentType!, resourceId: ID!, vendorId: ID!, purpose: String!): Boolean!
   setProtectedCanonicalSource(variantId: ID!, sourceId: ID!, purpose: String!): Boolean!
+  saveOwnVendorCategory(input: JSON!): JSON!
+  deleteOwnVendorCategory(id: ID!): Boolean!
+  uploadOwnVendorCategoryImage(input: JSON!, file: Upload!): JSON!
+  startStorefrontPreview(id: ID!): JSON!
+  saveOwnStorefrontAppearance(id: ID!, version: Int!, config: JSON!): JSON!
+  publishOwnStorefrontAppearance(id: ID!, version: Int!): JSON!
+  saveOwnFinanceExpense(input: JSON!): JSON!
+  setOwnProductionCost(input: JSON!): JSON!
+  createOwnCostedVariant(input: JSON!): JSON!
+  uploadOwnFinanceReceipt(input: JSON!, file: Upload!): JSON!
+  downloadOwnFinanceReceipt(id: String!): JSON!
+  startOwnPosDraft(key: String!, occurrenceId: ID, variantId: ID): JSON!
+  commandOwnPosDraft(id: String!, version: Int!, key: String!, input: JSON!): JSON!
+  setOwnPosFavorite(productId: ID!, value: Boolean!): Boolean!
+  payOwnPosSale(input: JSON!): JSON!
+  reconcileOwnPosPayment(id: String!): JSON!
+  refundOwnPosSale(id: String!, input: JSON!): JSON!
+  retryOwnPosRefund(id: String!, refundId: ID!): JSON!
+  beginOwnSquareConnection: JSON!
+  completeOwnSquareConnection(state: String!, code: String!): JSON!
+  importOwnSquareSandbox: JSON!
+  disconnectOwnSquare: JSON!
+  selectOwnSquareLocation(id: String!): JSON!
+  addOwnSquareTerminal(input: JSON!): JSON!
+  commandOwnSquareTerminal(id: String!, action: String!): JSON!
+  cancelOwnSquarePayment(id: String!): JSON!
+  reconcileOwnSquareMobileCallback(state: String!, transactionId: String): JSON!
+  beginOwnCloverConnection: JSON!
+  finishOwnCloverConnection(state: String!): JSON!
+  completeOwnCloverConnection(state: String!, code: String!, merchantId: String!, clientId: String!): JSON!
+  disconnectOwnClover: JSON!
+  addOwnCloverDevice(input: JSON!): JSON!
+  commandOwnCloverDevice(id: String!, action: String!): JSON!
+  cancelOwnCloverPayment(id: String!): JSON!
+  controlOwnCloverPayment(id: String!, outcome: String!): JSON!
+  createOwnPosNativeHandoff(input: JSON!): JSON!
+  ownPosNativeAction(input: JSON!): JSON!
   provisionMarket(input: ProvisionMarketInput!): MarketDomain!
   setMarketAdminMembership(marketId: ID!, principalId: ID!, status: VendorMembershipStatus!): MarketAdminMembership!
   configureOwnMarket(input: ConfigureMarketInput!): MarketDomain!
@@ -813,6 +876,7 @@ type Mutation {
   complianceDocumentCommand(input: ComplianceCommandInput!): JSON!
   downloadComplianceDocument(fileId: String!): JSON!
   setOwnNotificationPreferences(input: JSON!): JSON!
+  setVendorContactRead(id: String!, read: Boolean!): JSON!
 }
 
 type Address implements Node {
@@ -1342,6 +1406,7 @@ enum Permission {
   ManageOwnPaymentAccount
   ReadOwnPosIntegrations
   ManageOwnPosIntegrations
+  OperateOwnPos
   ReadOwnBilling
   ManageOwnBilling
   ManageBillingCatalog
@@ -7024,6 +7089,11 @@ input OwnCatalogProductInput {
   slug: String!
   description: String!
   enabled: Boolean!
+  collectTaxes: Boolean
+  taxOverride: Float
+  categoryIds: [ID!]
+  productInformation: String
+  assetIds: [ID!]
 }
 
 input OwnCatalogVariantInput {
@@ -7063,6 +7133,30 @@ type InventoryCommandReceipt {
   orderId: ID
   orderLineId: ID
   fulfillmentId: ID
+}
+
+type VendorTaxMarket {
+  id: ID!
+  name: String!
+  rate: Float
+}
+
+type VendorTaxSettings {
+  defaultRate: Float
+  version: Int!
+  markets: [VendorTaxMarket!]!
+  newProductCollectTaxes: Boolean!
+}
+
+input VendorTaxMarketInput {
+  marketId: ID!
+  rate: Float
+}
+
+input VendorTaxSettingsInput {
+  defaultRate: Float
+  version: Int!
+  markets: [VendorTaxMarketInput!]!
 }
 
 type CommercePickupPromise {
@@ -7156,6 +7250,7 @@ type OwnedPickupOption {
 enum OwnOperationalOrderKind {
   DIRECT_VENDOR
   MARKET_OCCURRENCE
+  IN_PERSON
 }
 
 input OwnOperationalOrderOptions {
@@ -8649,12 +8744,23 @@ type OwnCatalogVariant {
   optionIds: [ID!]!
 }
 
+type OwnCatalogAsset {
+  id: ID!
+  name: String!
+  preview: String!
+}
+
 type OwnCatalogProduct {
+  productInformation: String
+  assetIds: [ID!]
   id: ID!
   name: String!
   slug: String!
   description: String!
   enabled: Boolean!
+  collectTaxes: Boolean
+  taxOverride: Float
+  taxConfigured: Boolean!
   currency: CurrencyCode!
   variants: [OwnCatalogVariant!]!
   optionGroups: [OwnCatalogOptionGroup!]!

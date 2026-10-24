@@ -400,6 +400,7 @@ export function AdminApp({
       documentConnection={{
         endpoint,
         channelToken: session.channel.token,
+        channelId: session.channel.id,
         onAuthorityFailure: () => refreshSession(session.channel.id),
       }}
       onLogout={() => void logout()}

@@ -565,6 +565,11 @@ query MarketIdentity {
 }
 
 fragment OwnedCatalogProduct on OwnCatalogProduct {
+  productInformation
+  assetIds
+  collectTaxes
+  taxOverride
+  taxConfigured
   id
   name
   slug
@@ -649,5 +654,30 @@ mutation SaveOwnDashboardPalette($input: SettingsStoreInput!) {
     key
     result
     error
+  }
+}
+
+query VendorTaxSettings {
+  ownVendorTaxSettings {
+    defaultRate
+    version
+    newProductCollectTaxes
+    markets {
+      id
+      name
+      rate
+    }
+  }
+}
+mutation SaveVendorTaxSettings($input: VendorTaxSettingsInput!) {
+  saveOwnVendorTaxSettings(input: $input) {
+    defaultRate
+    version
+    newProductCollectTaxes
+    markets {
+      id
+      name
+      rate
+    }
   }
 }

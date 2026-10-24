@@ -2,30 +2,62 @@
 import { buttonClassName } from '@market/ui/presentation';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { Checkout } from '../../components/ResilientSurfaces';
-import { requestCheckout } from '../../lib/shop';
+import { requestCheckout, requestShop } from '../../lib/shop';
+import { vendorPreorder } from '../../lib/vendor-preorder';
+import { VendorCheckout } from '../../components/VendorCheckout';
+import '../../styles/vendor-cart.css';
+import '../../styles/preorder-banner.css';
+import '../../styles/vendor-checkout.css';
 import { safeError } from '@market/api';
 const { storefront } = Astro.locals;
-let view, error;
+let view, error, cart, preorder;
 try {
-  view = await requestCheckout(Astro, Astro.response.headers).status();
+  if (!Astro.locals.editorPreview) {
+    view = await requestCheckout(Astro, Astro.response.headers).status();
+    if (storefront?.kind === 'VENDOR') {
+      cart = (await requestShop(Astro, Astro.response.headers).bootstrap())
+        .cart;
+      if (cart?.id !== view?.orderId) cart = null;
+      preorder = await vendorPreorder(
+        Astro,
+        cart?.lines.map((line) => line.productVariant.id) ?? [],
+        cart,
+      );
+    }
+  }
 } catch (e) {
   error = safeError(e);
   Astro.response.status = error.kind === 'forbidden' ? 403 : 503;
 }
+Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 ---
 
 <SiteLayout context={storefront} path="/checkout" title="Checkout" noindex>
-  <section class="py-12">
-    <h1>Checkout</h1>
-    {error ? (
+  <section
+    class={storefront?.kind === 'VENDOR' ? 'vendor-checkout-page' : 'py-12'}
+  >
+    {(!preorder || !view?.groups.length) && <h1>Checkout</h1>}
+    {Astro.locals.editorPreview ? (
+      <p>Checkout preview is not available in the visual editor.</p>
+    ) : error ? (
       <p>Checkout is temporarily unavailable. Please try again later.</p>
     ) : view && view.groups.length ? (
-      <Checkout
-        initial={view}
-        storefrontId={storefront?.storefrontId ?? ''}
-        client:load
-      />
+      preorder ? (
+        <VendorCheckout
+          storefrontId={storefront?.storefrontId ?? ''}
+          initial={view}
+          initialCart={cart ?? null}
+          initialPreorder={preorder}
+          client:load
+        />
+      ) : (
+        <Checkout
+          initial={view}
+          storefrontId={storefront?.storefrontId ?? ''}
+          client:load
+        />
+      )
     ) : (
       <p>
         Your checkout is unavailable or your cart is empty.{' '}

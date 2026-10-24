@@ -10,3 +10,21 @@ playwright-report/
 *.log
 .runtime/
 .phase13h-tmp-*/
+
+# Owned disposable loyalty demo connection manifest
+.loyalty-demo/
+.loyalty-*.log
+
+# Owned disposable market challenge demo manifest
+.market-loyalty-demo/
+
+# Owned disposable in-person checkout manifest
+.pos-demo/
+.pos-stage-b-demo/
+
+.pos-stage-c-demo/
+.pos-browser-test/
+.pos-stage-d-demo/
+.pos-stage-e-demo/
+.pos-stage-g-demo/
+docs/financial-reporting/local-fixture.json

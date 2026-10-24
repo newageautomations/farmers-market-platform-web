@@ -1,0 +1,32 @@
+.faq-page {
+  width: 100%;
+  max-width: 68rem;
+  margin-inline: auto;
+  padding-block: clamp(2rem, 5vw, 5rem);
+  display: grid;
+  gap: clamp(2rem, 4vw, 3rem);
+  overflow-wrap: anywhere;
+}
+.faq-intro p {
+  white-space: pre-wrap;
+  line-height: 1.8;
+}
+.faq-list .faq-row {
+  border-radius: 0;
+  border-width: 0 0 1px;
+  box-shadow: none;
+  margin: 0;
+  background: transparent;
+  --ui-disclosure-radius: 0;
+}
+.faq-answer {
+  white-space: pre-wrap;
+  line-height: 1.8;
+}
+.faq-list .faq-row > .faq-answer {
+  border-top: 0;
+}
+
+.faq-answer p {
+  margin: 0;
+}

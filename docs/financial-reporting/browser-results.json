@@ -1,0 +1,59 @@
+{
+  "database": "vendure_test_pos_demo_1792526989882_c5c1fa",
+  "success": true,
+  "results": [
+    {
+      "name": "Native account login and vendor summary match the monthly fixture",
+      "status": "PASS"
+    },
+    {
+      "name": "Full-width responsive chart and readable labels at 1280, 768 and 390 pixels",
+      "status": "PASS"
+    },
+    {
+      "name": "Negative values, zero baseline, daily details and modal focus restoration",
+      "status": "PASS"
+    },
+    {
+      "name": "Market, independent, custom date and spending filters update together",
+      "status": "PASS"
+    },
+    {
+      "name": "Finance dashboard accessibility",
+      "status": "PASS"
+    },
+    {
+      "name": "Hover cards, donut shares, left-aligned controls and updates without navigation",
+      "status": "PASS"
+    },
+    {
+      "name": "Mobile expense create and edit change authoritative totals",
+      "status": "PASS"
+    },
+    {
+      "name": "Live local scanner upload and private receipt preview",
+      "status": "PASS"
+    },
+    {
+      "name": "Void, auditable compact logs and restored monthly totals",
+      "status": "PASS"
+    },
+    {
+      "name": "CSV export matches the selected month",
+      "status": "PASS"
+    },
+    {
+      "name": "Manager login, collections, event profitability and separate scope",
+      "status": "PASS"
+    },
+    {
+      "name": "No runtime page errors",
+      "status": "PASS"
+    },
+    {
+      "name": "Account settings persist the reporting time zone and restore the reference zone",
+      "status": "PASS"
+    }
+  ],
+  "errors": []
+}

@@ -1,3 +1,13 @@
+## Persistent test database
+
+- `vendure_demo_market_ops` is the persistent local test database. It contains the existing Boerne Market Manager, Manna Roots Vendor, other test accounts, and their saved test data.
+- When the user refers to "the test DB" or asks to migrate changes for manual testing, use `vendure_demo_market_ops`, not the ordinary configured `vendure` database or a disposable acceptance-test database.
+- Do not alter this persistent database while developing a new feature. Creating migration files or running automated tests does not authorize applying migrations, seeding records, or changing its schema or data.
+- Use the existing guarded disposable database mechanisms for automated feature qualification. Do not point destructive test harnesses at the persistent test database.
+- When the user explicitly requests migration for testing, verify the actual target is the local `vendure_demo_market_ops` database, inspect its pending migrations, and apply the required changes through the guarded demo migration command: `npm run demo:market-operations:migrate` from `E:\coding\farmers-market-platform-web`.
+- A migration request does not authorize resetting, dropping, truncating, reseeding, or replacing existing test data. Preserve the populated dataset unless the user explicitly requests those actions.
+- Start this environment through the web directory's `demo:market-operations:serve`, `demo:market-operations:worker`, `demo:market-operations:admin`, and `demo:market-operations:storefront` npm scripts. Do not substitute ordinary backend development commands that select `vendure`.
+
 ## Frontend Component Reuse
 
 1. Before creating any UI component, search the

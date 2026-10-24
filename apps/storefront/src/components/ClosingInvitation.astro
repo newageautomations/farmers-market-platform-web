@@ -1,0 +1,25 @@
+---
+import Button from './ui/Button.astro';
+interface Props {
+  cta: {
+    heading: string;
+    text: string;
+    label: string;
+    destination: '/products' | '/' | '/find-us' | '/contact';
+  };
+  section?: string;
+}
+const { cta, section = 'story-cta' } = Astro.props;
+---
+
+<section class="story-cta" data-editor-section={section}>
+  <div>
+    <h2 data-story-cta="heading">{cta.heading}</h2>
+    {(cta.text || Astro.locals.editorPreview) && (
+      <p data-story-cta="text">{cta.text}</p>
+    )}
+  </div>
+  <Button href={cta.destination}>
+    <span data-story-cta="label">{cta.label}</span>
+  </Button>
+</section>

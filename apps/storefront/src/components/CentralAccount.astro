@@ -12,6 +12,13 @@ const { account, embedded = false } = Astro.props as {
   embedded?: boolean;
 };
 const labels = { VENDOR: 'Vendor', MARKET_MANAGER: 'Market Manager' };
+const timezones = [
+  ...new Set([
+    'UTC',
+    account.profile.timezone ?? 'America/Chicago',
+    ...Intl.supportedValuesOf('timeZone'),
+  ]),
+];
 ---
 
 <section class="py-12 account-panel">
@@ -207,6 +214,25 @@ const labels = { VENDOR: 'Vendor', MARKET_MANAGER: 'Market Manager' };
         Change personal phone
       </a>
     </p>
+    <label class="field">
+      Time zone
+      <select
+        name="timezone"
+        class={selectClassName()}
+        data-account-timezone
+        data-detect-timezone={!account.profile.timezone ? 'true' : undefined}
+        required
+      >
+        {timezones.map((zone) => (
+          <option
+            value={zone}
+            selected={zone === (account.profile.timezone ?? 'America/Chicago')}
+          >
+            {zone.replaceAll('_', ' ')}
+          </option>
+        ))}
+      </select>
+    </label>
     <Button type="submit">Save personal profile</Button>
   </form>
   <details class="ui-disclosure">
@@ -299,6 +325,15 @@ const labels = { VENDOR: 'Vendor', MARKET_MANAGER: 'Market Manager' };
     Account recovery
   </a>
 </section>
+<script>
+  for (const select of document.querySelectorAll<HTMLSelectElement>(
+    'select[data-detect-timezone="true"]',
+  )) {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if ([...select.options].some((option) => option.value === zone))
+      select.value = zone;
+  }
+</script>
 <script>
   for (const picker of document.querySelectorAll('[data-business-picker]')) {
     const select = picker.querySelector<HTMLSelectElement>(

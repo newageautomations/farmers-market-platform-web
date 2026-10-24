@@ -17,6 +17,8 @@ export type AdminUser = NonNullable<admin.AdminSessionQuery['me']>;
 export type CustomerUser = NonNullable<shop.ShopCustomerSessionQuery['me']>;
 export type AdminChannel = AdminUser['channels'][number];
 export type Permission = admin.Permission;
+export * from './in-person';
+export * from './native-mobile';
 export type Entitlement =
   admin.TenantEntitlementsQuery['ownEntitlements'][number];
 export type BillingSubject = admin.BillingSubjectInput;
@@ -69,3 +71,17 @@ export * from './notifications';
 export type * from './compliance-phase3';
 
 export * from './dashboard-preferences';
+export * from './inbox';
+
+export * from './loyalty';
+export * from './market-loyalty';
+export * from './finance';
+export type * from './quickbooks';
+export { createAccountTimezoneApi } from './account-timezone';
+export * from './storefront-appearance';
+
+export * from './vendor-categories';
+
+export * from './product-information';
+
+export * from './contact';

@@ -1,0 +1,335 @@
+{
+  "squareDependencyClosure": [
+    {
+      "name": "square",
+      "version": "46.0.0",
+      "path": "node_modules/square"
+    },
+    {
+      "name": "form-data",
+      "version": "4.0.6",
+      "path": "node_modules/form-data"
+    },
+    {
+      "name": "asynckit",
+      "version": "0.4.0",
+      "path": "node_modules/asynckit"
+    },
+    {
+      "name": "combined-stream",
+      "version": "1.0.8",
+      "path": "node_modules/combined-stream"
+    },
+    {
+      "name": "delayed-stream",
+      "version": "1.0.0",
+      "path": "node_modules/delayed-stream"
+    },
+    {
+      "name": "es-set-tostringtag",
+      "version": "2.1.0",
+      "path": "node_modules/es-set-tostringtag"
+    },
+    {
+      "name": "es-errors",
+      "version": "1.3.0",
+      "path": "node_modules/es-errors"
+    },
+    {
+      "name": "get-intrinsic",
+      "version": "1.3.0",
+      "path": "node_modules/get-intrinsic"
+    },
+    {
+      "name": "call-bind-apply-helpers",
+      "version": "1.0.2",
+      "path": "node_modules/call-bind-apply-helpers"
+    },
+    {
+      "name": "function-bind",
+      "version": "1.1.2",
+      "path": "node_modules/function-bind"
+    },
+    {
+      "name": "es-define-property",
+      "version": "1.0.1",
+      "path": "node_modules/es-define-property"
+    },
+    {
+      "name": "es-object-atoms",
+      "version": "1.1.2",
+      "path": "node_modules/es-object-atoms"
+    },
+    {
+      "name": "get-proto",
+      "version": "1.0.1",
+      "path": "node_modules/get-proto"
+    },
+    {
+      "name": "dunder-proto",
+      "version": "1.0.1",
+      "path": "node_modules/dunder-proto"
+    },
+    {
+      "name": "gopd",
+      "version": "1.2.0",
+      "path": "node_modules/gopd"
+    },
+    {
+      "name": "has-symbols",
+      "version": "1.1.0",
+      "path": "node_modules/has-symbols"
+    },
+    {
+      "name": "hasown",
+      "version": "2.0.4",
+      "path": "node_modules/hasown"
+    },
+    {
+      "name": "math-intrinsics",
+      "version": "1.1.0",
+      "path": "node_modules/math-intrinsics"
+    },
+    {
+      "name": "has-tostringtag",
+      "version": "1.0.2",
+      "path": "node_modules/has-tostringtag"
+    },
+    {
+      "name": "mime-types",
+      "version": "2.1.35",
+      "path": "node_modules/form-data/node_modules/mime-types"
+    },
+    {
+      "name": "mime-db",
+      "version": "1.52.0",
+      "path": "node_modules/form-data/node_modules/mime-db"
+    },
+    {
+      "name": "formdata-node",
+      "version": "6.0.3",
+      "path": "node_modules/formdata-node"
+    },
+    {
+      "name": "node-fetch",
+      "version": "2.7.0",
+      "path": "node_modules/node-fetch"
+    },
+    {
+      "name": "whatwg-url",
+      "version": "5.0.0",
+      "path": "node_modules/whatwg-url"
+    },
+    {
+      "name": "tr46",
+      "version": "0.0.3",
+      "path": "node_modules/tr46"
+    },
+    {
+      "name": "webidl-conversions",
+      "version": "3.0.1",
+      "path": "node_modules/webidl-conversions"
+    },
+    {
+      "name": "readable-stream",
+      "version": "4.8.0",
+      "path": "node_modules/square/node_modules/readable-stream"
+    },
+    {
+      "name": "abort-controller",
+      "version": "3.0.0",
+      "path": "node_modules/abort-controller"
+    },
+    {
+      "name": "event-target-shim",
+      "version": "5.0.1",
+      "path": "node_modules/event-target-shim"
+    },
+    {
+      "name": "buffer",
+      "version": "6.0.3",
+      "path": "node_modules/square/node_modules/buffer"
+    },
+    {
+      "name": "base64-js",
+      "version": "1.5.1",
+      "path": "node_modules/base64-js"
+    },
+    {
+      "name": "ieee754",
+      "version": "1.2.1",
+      "path": "node_modules/ieee754"
+    },
+    {
+      "name": "events",
+      "version": "3.3.0",
+      "path": "node_modules/events"
+    },
+    {
+      "name": "process",
+      "version": "0.11.10",
+      "path": "node_modules/process"
+    },
+    {
+      "name": "string_decoder",
+      "version": "1.3.0",
+      "path": "node_modules/string_decoder"
+    },
+    {
+      "name": "safe-buffer",
+      "version": "5.2.1",
+      "path": "node_modules/safe-buffer"
+    },
+    {
+      "name": "form-data-encoder",
+      "version": "4.1.0",
+      "path": "node_modules/form-data-encoder"
+    },
+    {
+      "name": "square",
+      "version": "39.1.1",
+      "path": "node_modules/square-legacy"
+    },
+    {
+      "name": "@apimatic/authentication-adapters",
+      "version": "0.5.14",
+      "path": "node_modules/@apimatic/authentication-adapters"
+    },
+    {
+      "name": "@apimatic/core-interfaces",
+      "version": "0.2.14",
+      "path": "node_modules/@apimatic/core-interfaces"
+    },
+    {
+      "name": "@apimatic/file-wrapper",
+      "version": "0.3.9",
+      "path": "node_modules/@apimatic/file-wrapper"
+    },
+    {
+      "name": "tslib",
+      "version": "2.8.1",
+      "path": "node_modules/tslib"
+    },
+    {
+      "name": "@apimatic/json-bigint",
+      "version": "1.2.0",
+      "path": "node_modules/@apimatic/json-bigint"
+    },
+    {
+      "name": "@apimatic/http-headers",
+      "version": "0.3.8",
+      "path": "node_modules/@apimatic/http-headers"
+    },
+    {
+      "name": "@apimatic/http-query",
+      "version": "0.3.9",
+      "path": "node_modules/@apimatic/http-query"
+    },
+    {
+      "name": "@apimatic/axios-client-adapter",
+      "version": "0.3.21",
+      "path": "node_modules/@apimatic/axios-client-adapter"
+    },
+    {
+      "name": "@apimatic/convert-to-stream",
+      "version": "0.1.9",
+      "path": "node_modules/@apimatic/convert-to-stream"
+    },
+    {
+      "name": "@apimatic/proxy",
+      "version": "0.1.4",
+      "path": "node_modules/@apimatic/proxy"
+    },
+    {
+      "name": "http-proxy-agent",
+      "version": "7.0.2",
+      "path": "node_modules/http-proxy-agent"
+    },
+    {
+      "name": "agent-base",
+      "version": "7.1.4",
+      "path": "node_modules/agent-base"
+    },
+    {
+      "name": "debug",
+      "version": "4.4.3",
+      "path": "node_modules/debug"
+    },
+    {
+      "name": "ms",
+      "version": "2.1.3",
+      "path": "node_modules/ms"
+    },
+    {
+      "name": "https-proxy-agent",
+      "version": "7.0.6",
+      "path": "node_modules/https-proxy-agent"
+    },
+    {
+      "name": "axios",
+      "version": "1.20.0",
+      "path": "node_modules/axios"
+    },
+    {
+      "name": "follow-redirects",
+      "version": "1.16.0",
+      "path": "node_modules/follow-redirects"
+    },
+    {
+      "name": "https-proxy-agent",
+      "version": "5.0.1",
+      "path": "node_modules/axios/node_modules/https-proxy-agent"
+    },
+    {
+      "name": "agent-base",
+      "version": "6.0.2",
+      "path": "node_modules/axios/node_modules/agent-base"
+    },
+    {
+      "name": "proxy-from-env",
+      "version": "2.1.0",
+      "path": "node_modules/proxy-from-env"
+    },
+    {
+      "name": "detect-browser",
+      "version": "5.3.0",
+      "path": "node_modules/detect-browser"
+    },
+    {
+      "name": "detect-node",
+      "version": "2.1.0",
+      "path": "node_modules/detect-node"
+    },
+    {
+      "name": "lodash.flatmap",
+      "version": "4.5.0",
+      "path": "node_modules/lodash.flatmap"
+    },
+    {
+      "name": "tiny-warning",
+      "version": "1.0.3",
+      "path": "node_modules/tiny-warning"
+    },
+    {
+      "name": "@apimatic/core",
+      "version": "0.10.30",
+      "path": "node_modules/@apimatic/core"
+    },
+    {
+      "name": "@apimatic/schema",
+      "version": "0.7.21",
+      "path": "node_modules/@apimatic/schema"
+    },
+    {
+      "name": "lodash.defaultsdeep",
+      "version": "4.6.1",
+      "path": "node_modules/lodash.defaultsdeep"
+    },
+    {
+      "name": "@types/node",
+      "version": "14.18.63",
+      "path": "node_modules/square-legacy/node_modules/@types/node"
+    }
+  ],
+  "advisories": []
+}

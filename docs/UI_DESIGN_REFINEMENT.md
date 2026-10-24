@@ -1,5 +1,13 @@
 # Shared UI design refinement
 
+## Loyalty foundation presentation
+
+The requested loyalty extension adds an eligibility state composed on the approved Button: a restrained outward shadow pulse only when a reward is usable, enabled and not loading. Existing geometry, semantic fills, focus, hover and disabled behavior stay with Button. Reduced motion removes the pulse. This is a bounded feature state, not a competing button standard.
+
+The refined `LoyaltyProgressRing` fills one primary arc toward the next higher milestone. After an achieved milestone, its entire remaining track uses a stronger 38% primary tint against the surface; the initial track stays at 12%. The centered SVG animates on load; reduced motion shows the final position. Customer cards have a plain left-aligned icon/name heading, next-reward copy and one eligible Redeem action. Its explicitly requested bounce and slow glow/brightness flash keep text continuously readable, stopping under reduced motion, loading or disabled states.
+
+Customer history retains the approved Dropdown but uses disclosure Buttons and green/red signed-point Badges rather than a table. Vendor leaders use full gold/silver/bronze tinted RecordCards with upper-right trophy/medal icons and no visible numbers; accessible place labels remain. Clicking a card opens shared details. Vendor graph detail Buttons open shared date-range Dialogs using existing forms and the SVG composition. These bounded refinements do not approve new card, button or chart categories.
+
 Implemented locally on 2026-10-16. Developer visual review is pending. Functional checks use the existing test framework; screenshots were stopped at the developer's request.
 
 ## Selected site-wide button rollout

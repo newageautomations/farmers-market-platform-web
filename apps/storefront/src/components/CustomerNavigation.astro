@@ -6,7 +6,15 @@ const { path } = Astro.props as { path: string };
 
 <nav aria-label="Customer navigation">
   {customerNavigation.map((item) => (
-    <a href={item.href} aria-current={path === item.href ? 'page' : undefined}>
+    <a
+      href={item.href}
+      aria-current={
+        path === item.href ||
+        (item.href === '/notifications' && path.startsWith('/notifications/'))
+          ? 'page'
+          : undefined
+      }
+    >
       <svg
         class="navigation-icon"
         viewBox="0 0 24 24"
@@ -20,8 +28,10 @@ const { path } = Astro.props as { path: string };
         <path
           d={
             navigationIconPaths[
-              (item.href.split('/')[2] ??
-                'overview') as keyof typeof navigationIconPaths
+              (item.href === '/notifications'
+                ? 'notifications'
+                : (item.href.split('/')[2] ??
+                  'overview')) as keyof typeof navigationIconPaths
             ]
           }
         />

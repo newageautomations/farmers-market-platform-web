@@ -1,6 +1,9 @@
 import { navigationIconPaths } from '@market/ui/presentation';
 const paths: Record<string, string> = {
   ...navigationIconPaths,
+  storefront: navigationIconPaths.markets,
+  finances: 'M4 3v18h17M8 16v-4m5 4V8m5 8V5',
+  pos: 'M4 4h16v10H4V4Zm3 13h10l3 4H4l3-4Zm1-9h2m4 0h2',
   documents: 'M6 3h8l5 5v13H6V3Zm8 0v6h5M9 13h7m-7 4h7',
 
   applications: 'M7 3h10v3h3v15H4V6h3m0-3v5h10V3M8 12h8m-8 4h5',
@@ -13,24 +16,32 @@ const paths: Record<string, string> = {
   assignments: 'M3 3h8v8H3V3Zm10 10h8v8h-8v-8M3 17h6m-3-3v6m9-14 2 2 4-4',
   billing: 'M5 3h14v18l-3-2-4 2-4-2-3 2V3Zm3 5h8m-8 4h8m-8 4h5',
   day: 'M12 3v2m0 14v2M3 12h2m14 0h2M6 6l1 1m10 10 1 1M6 18l1-1M17 7l1-1M17 12a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z',
+  loyalty:
+    'M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z',
   analytics: 'M4 3v18h17M8 17v-5m5 5V8m5 9V5',
 
   products: 'M4 3h10l7 7-11 11-7-7V4Zm4 3h.01',
+  categories: 'M3 3h7v7H3V3Zm11 0h7v7h-7V3ZM3 14h7v7H3v-7Zm11 0h7v7h-7v-7Z',
   inventory: 'M3 5h18v4H3V5Zm2 4v12h14V9m-10 4h6',
 
   integrations: 'M8 3v5m8-5v5M5 8h14v3a7 7 0 0 1-7 7v3m0-3a7 7 0 0 1-7-7V8',
 };
 export function NavigationIcon({ path }: { path: string }) {
   const segments = path.split('/').filter(Boolean);
-  const name = segments[1] ?? 'overview';
+  const name =
+    segments[0] === 'notifications'
+      ? 'notifications'
+      : (segments[1] ?? 'overview');
   const key =
-    name === 'application-submissions'
-      ? 'applications'
-      : name === 'booth-billing' || name === 'payments'
-        ? 'billing'
-        : name === 'customers' || name === 'tenants'
-          ? 'vendors'
-          : name;
+    name === 'contact-submissions'
+      ? 'notifications'
+      : name === 'application-submissions'
+        ? 'applications'
+        : name === 'booth-billing' || name === 'payments'
+          ? 'billing'
+          : name === 'customers' || name === 'tenants'
+            ? 'vendors'
+            : name;
   return (
     <svg
       className="navigation-icon"

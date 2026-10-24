@@ -205,6 +205,7 @@ export const POST: APIRoute = async (context) => {
             firstName: form.get('firstName') ?? '',
             lastName: form.get('lastName') ?? '',
             phoneNumber: '',
+            ...(form.has('timezone') ? { timezone: form.get('timezone') } : {}),
           });
           location = '/account/settings?saved=1';
           break;

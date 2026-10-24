@@ -1,4 +1,6 @@
 import { marketPath } from '@market/admin-core';
+import { Finances } from '../finance/Finances';
+import { MarketLoyalty } from './loyalty';
 import type { MarketService } from './service';
 import { MarketAnalytics } from './analytics';
 import { MarketOccurrences } from './occurrences';
@@ -15,6 +17,23 @@ export function MarketRoutes({
   path: string;
 }) {
   const canonical = marketPath(path);
+  if (canonical.startsWith('/market/finances'))
+    return (
+      <Finances
+        key={`${service.readKey}:${canonical}`}
+        api={service.finance}
+        path={canonical}
+        manager
+      />
+    );
+  if (canonical.startsWith('/market/loyalty'))
+    return (
+      <MarketLoyalty
+        key={`${service.readKey}:${canonical}`}
+        service={service}
+        path={canonical}
+      />
+    );
   if (
     /^\/market\/(applications|application-submissions|directory|rentals|layouts|assignments|booth-billing|day)(\/|$)/.test(
       canonical,

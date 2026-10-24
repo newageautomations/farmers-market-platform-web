@@ -1,0 +1,49 @@
+{
+  "kind": "CONTROLLED_LOCAL_TESTS",
+  "results": [
+    {
+      "name": "stage-b",
+      "exitCode": 0
+    },
+    {
+      "name": "stage-a",
+      "exitCode": 0
+    },
+    {
+      "name": "stage-c",
+      "exitCode": 0
+    },
+    {
+      "name": "stage-d",
+      "exitCode": 0
+    },
+    {
+      "name": "stage-e",
+      "exitCode": 0
+    },
+    {
+      "name": "inventory-capacity",
+      "exitCode": 0
+    },
+    {
+      "name": "financial-refunds",
+      "exitCode": 0
+    },
+    {
+      "name": "identity",
+      "exitCode": 0
+    },
+    {
+      "name": "vendor-loyalty",
+      "exitCode": 0
+    },
+    {
+      "name": "market-loyalty",
+      "exitCode": 0
+    },
+    {
+      "name": "native-commerce",
+      "exitCode": 0
+    }
+  ]
+}

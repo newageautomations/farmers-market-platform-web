@@ -155,19 +155,6 @@
     padding: 0.6rem 0.8rem;
   }
 }
-@supports (interpolate-size: allow-keywords) {
-  .ui-disclosure::details-content {
-    interpolate-size: allow-keywords;
-    block-size: 0;
-    overflow: clip;
-    transition:
-      block-size 180ms,
-      content-visibility 180ms allow-discrete;
-  }
-  .ui-disclosure[open]::details-content {
-    block-size: auto;
-  }
-}
 @keyframes market-enter {
   from {
     opacity: 0;

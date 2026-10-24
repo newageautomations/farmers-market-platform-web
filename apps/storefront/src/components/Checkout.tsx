@@ -1,46 +1,55 @@
+import { checkoutFieldError } from '../lib/checkout-contact';
+import CheckoutLoyalty from './CheckoutLoyalty';
 import { buttonClassName } from '@market/ui/presentation';
-import { Button, Input, Select } from '@market/ui';
+import { Button, FormError, Input, Select } from '@market/ui';
 import { PhoneInput } from '@market/ui';
 import { useRef, useState } from 'react';
 import type { CheckoutView, PickupOption } from '@market/api';
 import { formatMoney } from '@market/config';
 import { shopCall } from './shop-client';
 
-export function CheckoutSummary({ view }: { view: CheckoutView }) {
+export function CheckoutSummary({
+  view,
+  totalsOnly = false,
+}: {
+  view: CheckoutView;
+  totalsOnly?: boolean;
+}) {
   return (
     <div className="checkout-summary">
-      {view.occurrenceId && (
+      {!totalsOnly && view.occurrenceId && (
         <p>
           Market pickup: {view.pickupPromise.venue}{' '}
           {view.pickupPromise.startsAt &&
             new Date(view.pickupPromise.startsAt).toLocaleString()}
         </p>
       )}
-      {view.contact && (
+      {!totalsOnly && view.contact && (
         <p>
           {view.contact.firstName} {view.contact.lastName} ·{' '}
           {view.contact.emailAddress}
           {view.contact.phoneNumber && ` · ${view.contact.phoneNumber}`}
         </p>
       )}
-      {view.groups.map((group) => (
-        <section key={group.vendorId} aria-label={group.vendorName}>
-          <h2 className="ui-section-title-consumer">{group.vendorName}</h2>
-          <ul>
-            {group.lines.map((line) => (
-              <li key={line.id}>
-                {line.name} × {line.quantity}{' '}
-                <span>{formatMoney(line.total, view.currency)}</span>
-              </li>
+      {!totalsOnly &&
+        view.groups.map((group) => (
+          <section key={group.vendorId} aria-label={group.vendorName}>
+            <h2 className="ui-section-title-consumer">{group.vendorName}</h2>
+            <ul>
+              {group.lines.map((line) => (
+                <li key={line.id}>
+                  {line.name} × {line.quantity}{' '}
+                  <span>{formatMoney(line.total, view.currency)}</span>
+                </li>
+              ))}
+            </ul>
+            {group.pickup.map((pickup, i) => (
+              <p key={i}>
+                {pickup.name} · {formatMoney(pickup.fee, view.currency)}
+              </p>
             ))}
-          </ul>
-          {group.pickup.map((pickup, i) => (
-            <p key={i}>
-              {pickup.name} · {formatMoney(pickup.fee, view.currency)}
-            </p>
-          ))}
-        </section>
-      ))}
+          </section>
+        ))}
       <dl className="checkout-totals">
         <div>
           <dt>Subtotal including tax</dt>
@@ -54,7 +63,7 @@ export function CheckoutSummary({ view }: { view: CheckoutView }) {
         ))}
         {view.taxes.map((item, i) => (
           <div key={`tax-${i}`}>
-            <dt>{item.name}</dt>
+            <dt>{item.name} (included)</dt>
             <dd>{formatMoney(item.total, view.currency)}</dd>
           </div>
         ))}
@@ -73,9 +82,11 @@ export function CheckoutSummary({ view }: { view: CheckoutView }) {
 export function Checkout({
   storefrontId,
   initial,
+  onViewChange,
 }: {
   storefrontId: string;
   initial: CheckoutView;
+  onViewChange?: (view: CheckoutView) => void;
 }) {
   const [view, setView] = useState(initial),
     [stage, setStage] = useState(initial.attempt ? 'Payment' : 'Contact'),
@@ -84,6 +95,10 @@ export function Checkout({
     [error, setError] = useState(''),
     [paymentMethod, setPaymentMethod] = useState(''),
     [paymentUncertain, setPaymentUncertain] = useState(false);
+  const [contactErrors, setContactErrors] = useState<Record<string, string>>(
+    {},
+  );
+  const [contactSubmitted, setContactSubmitted] = useState(false);
   const lock = useRef(false),
     heading = useRef<HTMLHeadingElement>(null);
   const contact = view.contact ?? view.profile;
@@ -111,6 +126,7 @@ export function Checkout({
       { orderId: view.orderId },
     );
     setView(current);
+    onViewChange?.(current);
     return current;
   }
   function go(next: string) {
@@ -119,6 +135,13 @@ export function Checkout({
   }
   return (
     <div className="checkout-shell" aria-busy={pending}>
+      {stage !== 'Confirmation' && !view.committed && view.profile && (
+        <CheckoutLoyalty
+          vendors={view.groups.map((g) => g.vendorId)}
+          onApplied={refresh}
+          disabled={pending || !!view.attempt || stage === 'Payment'}
+        />
+      )}
       <nav aria-label="Checkout progress">
         <ol className="checkout-progress">
           {['Contact', 'Pickup', 'Review', 'Payment', 'Confirmation'].map(
@@ -153,8 +176,44 @@ export function Checkout({
         </p>
       ) : stage === 'Contact' ? (
         <form
+          noValidate
+          onBlurCapture={(event) => {
+            if (
+              !(event.target instanceof HTMLInputElement) ||
+              !['firstName', 'lastName', 'emailAddress'].includes(
+                event.target.name,
+              )
+            )
+              return;
+            const input = event.target;
+            input.value = input.value.trim();
+            setContactErrors((previous) => ({
+              ...previous,
+              [input.name]: checkoutFieldError(input),
+            }));
+          }}
           onSubmit={(e) => {
             e.preventDefault();
+            setContactSubmitted(true);
+            const fields = Array.from(
+              e.currentTarget.querySelectorAll<HTMLInputElement>(
+                'input:not([type="hidden"])',
+              ),
+            );
+            const errors = Object.fromEntries(
+              fields.map((input) => [
+                input.name || input.id,
+                checkoutFieldError(input),
+              ]),
+            );
+            setContactErrors(errors);
+            const invalid = fields.find(
+              (input) => errors[input.name || input.id],
+            );
+            if (invalid) {
+              invalid.focus();
+              return;
+            }
             const data = new FormData(e.currentTarget);
             void run(async () => {
               await shopCall(
@@ -174,6 +233,10 @@ export function Checkout({
           <div className="field">
             <label htmlFor="firstName">First name</label>
             <Input
+              aria-invalid={!!contactErrors.firstName}
+              aria-describedby={
+                contactErrors.firstName ? 'firstName-error' : undefined
+              }
               id="firstName"
               name="firstName"
               autoComplete="given-name"
@@ -182,10 +245,19 @@ export function Checkout({
               defaultValue={contact?.firstName ?? ''}
               disabled={pending}
             />
+            {contactErrors.firstName && (
+              <FormError id="firstName-error">
+                {contactErrors.firstName}
+              </FormError>
+            )}
           </div>
           <div className="field">
             <label htmlFor="lastName">Last name</label>
             <Input
+              aria-invalid={!!contactErrors.lastName}
+              aria-describedby={
+                contactErrors.lastName ? 'lastName-error' : undefined
+              }
               id="lastName"
               name="lastName"
               autoComplete="family-name"
@@ -194,10 +266,19 @@ export function Checkout({
               defaultValue={contact?.lastName ?? ''}
               disabled={pending}
             />
+            {contactErrors.lastName && (
+              <FormError id="lastName-error">
+                {contactErrors.lastName}
+              </FormError>
+            )}
           </div>
           <div className="field">
             <label htmlFor="emailAddress">Email</label>
             <Input
+              aria-invalid={!!contactErrors.emailAddress}
+              aria-describedby={
+                contactErrors.emailAddress ? 'emailAddress-error' : undefined
+              }
               id="emailAddress"
               name="emailAddress"
               type="email"
@@ -208,12 +289,20 @@ export function Checkout({
               readOnly={!!view.profile}
               disabled={pending}
             />
+            {contactErrors.emailAddress && (
+              <FormError id="emailAddress-error">
+                {contactErrors.emailAddress}
+              </FormError>
+            )}
           </div>
           <div className="field">
             <PhoneInput
               id="phoneNumber"
               name="phoneNumber"
-              label="Phone (optional pickup contact)"
+              label="Phone number"
+              required
+              validationMode="blur"
+              showValidation={contactSubmitted}
               defaultValue={contact?.phoneNumber ?? ''}
             />
           </div>

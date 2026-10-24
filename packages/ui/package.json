@@ -8,7 +8,11 @@
     "./presentation": "./src/presentation.ts",
     "./styles.css": "./src/styles.css",
     "./documents": "./src/documents.tsx",
-    "./document-status": "./src/document-status.ts"
+    "./notifications": "./src/notifications.tsx",
+    "./notifications.css": "./src/notifications.css",
+    "./document-status": "./src/document-status.ts",
+    "./loyalty": "./src/loyalty.tsx",
+    "./loyalty.css": "./src/loyalty.css"
   },
   "dependencies": {
     "@market/api": "0.1.0",

@@ -189,6 +189,13 @@ for (const api of ['shop', 'admin'] as const) {
   );
   if (api === 'shop')
     extensions.push(
+      extract(
+        'src/plugins/marketplace-commerce/product-information.ts',
+        'productInformationShopSchema',
+      ),
+    );
+  if (api === 'shop')
+    extensions.push(
       extract('src/plugins/documents-compliance/api.ts', 'documentsShopSchema'),
     );
   if (api === 'shop')
@@ -216,6 +223,38 @@ for (const api of ['shop', 'admin'] as const) {
     extensions.push(
       extract('src/plugins/platform-identity/api.ts', 'identityAdminSchema'),
       extract(
+        'src/plugins/marketplace-commerce/vendor-categories.ts',
+        'vendorCategorySchema',
+      ),
+      extract(
+        'src/plugins/farmers-market/api/storefront-appearance.ts',
+        'storefrontAppearanceSchema',
+      ),
+      extract(
+        'src/plugins/financial-reporting/api.ts',
+        'financialReportingSchema',
+      ),
+      extract(
+        'src/plugins/marketplace-commerce/in-person/api.ts',
+        'inPersonAdminSchema',
+      ),
+      extract(
+        'src/plugins/marketplace-commerce/in-person/payment-api.ts',
+        'inPersonPaymentSchema',
+      ),
+      extract(
+        'src/plugins/marketplace-commerce/in-person/square/api.ts',
+        'squareSchema',
+      ),
+      extract(
+        'src/plugins/marketplace-commerce/in-person/clover/api.ts',
+        'cloverSchema',
+      ),
+      extract(
+        'src/plugins/marketplace-commerce/in-person/mobile/api.ts',
+        'nativeMobileSchema',
+      ),
+      extract(
         'src/plugins/farmers-market/api/admin-api.ts',
         'marketAdminSchema',
       ),
@@ -236,6 +275,12 @@ for (const api of ['shop', 'admin'] as const) {
         'ownedReadsAdminSchema',
       ),
     );
+  extensions.push(
+    extract(
+      'src/plugins/platform-notifications/contact.ts',
+      api === 'shop' ? 'contactShopSchema' : 'contactAdminSchema',
+    ),
+  );
   extensions.push(`extend enum Permission { ${permissionNames.join(' ')} }`);
   const schema = gql.extendSchema(
     built,

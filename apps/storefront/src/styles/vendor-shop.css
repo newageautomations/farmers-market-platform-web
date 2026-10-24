@@ -1,0 +1,144 @@
+.vendor-shop {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  padding-block: clamp(2rem, 4vw, 4rem);
+  align-items: start;
+}
+.shop-categories.ui-card {
+  border-radius: var(--storefront-card-radius);
+}
+.shop-categories h2 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+.shop-categories nav {
+  display: grid;
+  gap: 0.35rem;
+}
+.shop-categories a {
+  padding: 0.75rem;
+  min-height: 44px;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  border-radius: calc(var(--storefront-card-radius) * 0.5);
+}
+.shop-categories a[aria-current='page'],
+.shop-categories a:hover,
+.shop-categories a:focus-visible {
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--brand-surface)
+  );
+  color: var(--brand-primary);
+}
+.shop-categories a[aria-current='page'] {
+  font-weight: 600;
+}
+.shop-catalog {
+  min-width: 0;
+}
+.shop-market-slot {
+  grid-column: 1 / -1;
+}
+.shop-market-slot .shop-market-banner {
+  margin-bottom: 0;
+}
+.shop-catalog-controls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 1.25rem;
+}
+.shop-catalog-heading {
+  display: flex;
+  flex: 1 1 180px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.shop-catalog-heading h1 {
+  font-size: clamp(1.6rem, 2.6vw, 2rem);
+  margin: 0;
+}
+.shop-catalog-heading span {
+  color: var(--brand-muted);
+  font-size: 0.9rem;
+}
+.shop-catalog-controls .field {
+  margin: 0;
+  min-width: 0;
+}
+.shop-sort {
+  width: 180px;
+}
+.shop-mobile-categories {
+  display: none;
+}
+.shop-products.catalog-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+.shop-products h2 {
+  font-size: 1.1rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.shop-products .product-card {
+  gap: 0.65rem;
+}
+.shop-products .product-media {
+  margin-bottom: 0.75rem;
+}
+.shop-products .product-card > p {
+  margin: 0;
+}
+.shop-products .shop-product-unavailable .product-media {
+  filter: grayscale(0.55);
+  opacity: 0.65;
+}
+.shop-products .product-card > .button,
+.shop-products .featured-purchase {
+  margin-top: auto;
+}
+.shop-products .featured-purchase .ui-button {
+  width: 100%;
+}
+.shop-products .shop-availability {
+  font-size: 0.85rem;
+}
+@media (max-width: 1200px) {
+  .shop-products.catalog-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1000px) {
+  .shop-products.catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .vendor-shop {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .shop-categories {
+    display: none;
+  }
+  .shop-mobile-categories {
+    display: block;
+    flex: 1 1 180px;
+  }
+  .shop-catalog-heading {
+    flex-basis: 100%;
+  }
+  .shop-sort {
+    flex: 1 1 160px;
+  }
+}
+@media (max-width: 440px) {
+  .shop-products.catalog-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

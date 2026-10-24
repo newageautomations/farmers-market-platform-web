@@ -1,0 +1,39 @@
+---
+import { editorOrigin } from '../lib/editor-preview-server';
+const state = Astro.locals.editorPreview;
+---
+
+<script
+  type="application/json"
+  id="storefront-editor-state"
+  set:html={JSON.stringify({
+    parent: editorOrigin(),
+    state,
+    name: Astro.locals.storefront?.name,
+  }).replace(/</g, '\\u003c')}
+/>
+<script>
+  import '../lib/editor-preview-client';
+</script>
+<style is:global>
+  html[data-editor-inspect='true'] [data-editor-section] {
+    cursor: crosshair;
+  }
+  html[data-editor-inspect='true'] [data-editor-selected] {
+    outline: 2px solid #365c6e;
+    outline-offset: -2px;
+    position: relative;
+  }
+  html[data-editor-inspect='true'] [data-editor-selected]::after {
+    content: attr(data-editor-selected);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 20;
+    background: #365c6e;
+    color: white;
+    padding: 4px 10px;
+    font: 13px system-ui;
+    pointer-events: none;
+  }
+</style>

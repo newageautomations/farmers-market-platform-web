@@ -1,0 +1,245 @@
+{
+  "range": {
+    "from": "2026-09-01",
+    "through": "2026-09-30",
+    "market": "ALL",
+    "currency": "USD"
+  },
+  "summary": {
+    "gross": 220950,
+    "discounts": 1315,
+    "refunds": 850,
+    "netSales": 218785,
+    "productionCosts": 86310,
+    "processingFees": 0,
+    "platformFees": 0,
+    "marketFees": 0,
+    "deductibleExpenses": 90750,
+    "recordedSpending": 117750,
+    "totalExpenses": 177060,
+    "profit": 41725,
+    "orders": 27,
+    "missingCostUnits": 2,
+    "unknownFeeSales": 6
+  },
+  "markets": [
+    {
+      "id": "1",
+      "name": "Boerne Farmers Market",
+      "gross": 62300,
+      "discounts": 1315,
+      "refunds": 850,
+      "netSales": 60135,
+      "productionCosts": 23340,
+      "processingFees": 0,
+      "platformFees": 0,
+      "marketFees": 0,
+      "deductibleExpenses": 15800,
+      "recordedSpending": 15800,
+      "totalExpenses": 39140,
+      "profit": 20995,
+      "orders": 8,
+      "missingCostUnits": 2,
+      "unknownFeeSales": 2
+    },
+    {
+      "id": "2",
+      "name": "Bulverde Farmers Market",
+      "gross": 63700,
+      "discounts": 0,
+      "refunds": 0,
+      "netSales": 63700,
+      "productionCosts": 25940,
+      "processingFees": 0,
+      "platformFees": 0,
+      "marketFees": 0,
+      "deductibleExpenses": 18000,
+      "recordedSpending": 18000,
+      "totalExpenses": 43940,
+      "profit": 19760,
+      "orders": 8,
+      "missingCostUnits": 0,
+      "unknownFeeSales": 2
+    },
+    {
+      "id": "3",
+      "name": "Pearl Farmers Market",
+      "gross": 77100,
+      "discounts": 0,
+      "refunds": 0,
+      "netSales": 77100,
+      "productionCosts": 31540,
+      "processingFees": 0,
+      "platformFees": 0,
+      "marketFees": 0,
+      "deductibleExpenses": 22000,
+      "recordedSpending": 22000,
+      "totalExpenses": 53540,
+      "profit": 23560,
+      "orders": 8,
+      "missingCostUnits": 0,
+      "unknownFeeSales": 2
+    }
+  ],
+  "independent": {
+    "gross": 17850,
+    "discounts": 0,
+    "refunds": 0,
+    "netSales": 17850,
+    "productionCosts": 5490,
+    "processingFees": 0,
+    "platformFees": 0,
+    "marketFees": 0,
+    "deductibleExpenses": 2200,
+    "recordedSpending": 2200,
+    "totalExpenses": 7690,
+    "profit": 10160,
+    "orders": 3,
+    "missingCostUnits": 0,
+    "unknownFeeSales": 0
+  },
+  "manager": {
+    "gross": 14000,
+    "totalExpenses": 8800,
+    "profit": 5200,
+    "outstanding": 1500,
+    "payments": 4,
+    "eventProfit": 2300,
+    "unallocatedOperatingExpenses": 4000
+  },
+  "products": [
+    {
+      "id": "9",
+      "name": "Green Garden Juice",
+      "units": 110,
+      "gross": 94350,
+      "discounts": 595,
+      "refunds": 850,
+      "revenue": 92905,
+      "productionCosts": 27750,
+      "contribution": 65155,
+      "missingCostUnits": 0
+    },
+    {
+      "id": "10",
+      "name": "Carrot Sunrise Juice",
+      "units": 48,
+      "gross": 38400,
+      "discounts": 160,
+      "refunds": 0,
+      "revenue": 38240,
+      "productionCosts": 31200,
+      "contribution": 7040,
+      "missingCostUnits": 0
+    },
+    {
+      "id": "11",
+      "name": "Berry Beet Juice",
+      "units": 48,
+      "gross": 43200,
+      "discounts": 360,
+      "refunds": 0,
+      "revenue": 42840,
+      "productionCosts": 14400,
+      "contribution": 28440,
+      "missingCostUnits": 0
+    },
+    {
+      "id": "12",
+      "name": "Ginger Citrus Shot",
+      "units": 108,
+      "gross": 43200,
+      "discounts": 200,
+      "refunds": 0,
+      "revenue": 43000,
+      "productionCosts": 12960,
+      "contribution": 30040,
+      "missingCostUnits": 0
+    },
+    {
+      "id": "13",
+      "name": "Pineapple Mint Juice",
+      "units": 2,
+      "gross": 1800,
+      "discounts": 0,
+      "refunds": 0,
+      "revenue": 1800,
+      "productionCosts": 0,
+      "contribution": 1800,
+      "missingCostUnits": 2
+    },
+    {
+      "id": "14",
+      "name": "Watermelon Lime Juice",
+      "units": 0,
+      "gross": 0,
+      "discounts": 0,
+      "refunds": 0,
+      "revenue": 0,
+      "productionCosts": 0,
+      "contribution": 0,
+      "missingCostUnits": 0
+    }
+  ],
+  "categories": [
+    {
+      "name": "Production costs",
+      "spending": 0,
+      "deducted": 86310
+    },
+    {
+      "name": "Payment processing",
+      "spending": 1250,
+      "deducted": 1250
+    },
+    {
+      "name": "Market booth fees",
+      "spending": 54000,
+      "deducted": 54000
+    },
+    {
+      "name": "Transportation",
+      "spending": 4000,
+      "deducted": 4000
+    },
+    {
+      "name": "Advertising",
+      "spending": 4000,
+      "deducted": 4000
+    },
+    {
+      "name": "Equipment",
+      "spending": 27500,
+      "deducted": 27500
+    },
+    {
+      "name": "Packaging",
+      "spending": 9000,
+      "deducted": 0
+    },
+    {
+      "name": "Ingredients/supplies",
+      "spending": 18000,
+      "deducted": 0
+    }
+  ],
+  "negativeDays": [
+    {
+      "date": "2026-09-08",
+      "profit": -27500
+    },
+    {
+      "date": "2026-09-14",
+      "profit": -850
+    },
+    {
+      "date": "2026-09-22",
+      "profit": -4000
+    },
+    {
+      "date": "2026-09-30",
+      "profit": -1250
+    }
+  ],
+  "dataPolicy": "Fictional activity in an isolated native database; Manna Roots identity and catalog reused from existing testing fixtures."
+}

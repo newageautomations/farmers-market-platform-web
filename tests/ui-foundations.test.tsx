@@ -99,6 +99,7 @@ describe('BTN-01 native behavior', () => {
         </a>
         <Button className="secondary">Legacy alternate</Button>
         <Button variant="destructive">Archive</Button>
+        <Button variant="destructive-outline">Remove item</Button>
         <Button variant="tertiary">Quiet action</Button>
         <Button variant="secondary" size="compact" iconOnly aria-label="Close">
           ×
@@ -115,6 +116,12 @@ describe('BTN-01 native behavior', () => {
     ).toHaveClass('secondary');
     expect(screen.getByRole('button', { name: 'Archive' })).toHaveClass(
       'button-destructive',
+    );
+    expect(screen.getByRole('button', { name: 'Remove item' })).toHaveClass(
+      'button-destructive-outline',
+    );
+    expect(buttonClassName({ variant: 'destructive-outline' })).toContain(
+      'button-destructive-outline',
     );
     expect(screen.getByRole('button', { name: 'Quiet action' })).toHaveClass(
       'ui-button',

@@ -1,6 +1,11 @@
+import { ProductImages } from './ProductImages';
+import { ProductInformationFields } from './ProductInformationFields';
+import { ProductCategories } from './categories';
+import { parseTaxPercent, TaxRateField } from './tax';
 import { EmptyState } from '@market/ui';
 import { Badge } from '@market/ui';
 import { cardClassName, disclosureClassName } from '@market/ui/presentation';
+import { ProductionCost } from '../finance/ProductionCost';
 import { useCallback, useId, useState } from 'react';
 import { mayCommand } from '@market/admin-core';
 import { AppError, type ProductInput } from '@market/api';
@@ -42,11 +47,48 @@ function productInput(data: FormData): ProductInput {
     description.length > 10000
   )
     throw new AppError('validation');
-  return { name, slug, description, enabled: data.has('enabled') };
+  if (data.getAll('categoryImagePending').some((v) => v === 'true'))
+    throw new AppError('validation');
+  return {
+    name,
+    slug,
+    description,
+    enabled: data.has('enabled'),
+    productInformation: String(data.get('productInformation') ?? ''),
+    ...(data.has('productAssetsLoaded')
+      ? { assetIds: data.getAll('assetIds').map(String).filter(Boolean) }
+      : {}),
+    ...(data.has('categoriesLoaded')
+      ? { categoryIds: data.getAll('categoryIds').map(String) }
+      : {}),
+    ...(data.has('taxChanged')
+      ? {
+          collectTaxes: data.has('collectTaxes'),
+          taxOverride: data.has('overrideTax')
+            ? parseTaxPercent(data.get('taxOverride'))
+            : null,
+        }
+      : {}),
+  };
 }
-function ProductFields({ product }: { product?: CatalogProduct }) {
+function ProductFields({
+  product,
+  service,
+}: {
+  product?: CatalogProduct;
+  service: VendorService;
+}) {
+  const [changed, setChanged] = useState(false);
+  const [override, setOverride] = useState(product?.taxOverride != null);
+  const read = useCallback(() => service.taxSettings(), [service]);
+  const defaults = useRead('new-product-tax-default', read, !product);
+  const initial =
+    product?.collectTaxes ?? defaults.data?.newProductCollectTaxes ?? false;
   return (
     <>
+      {(changed || product?.taxConfigured) && (
+        <input type="hidden" name="taxChanged" value="true" />
+      )}
       <TextField
         name="name"
         label="Product name"
@@ -68,6 +110,68 @@ function ProductFields({ product }: { product?: CatalogProduct }) {
           rows={4}
         />
       </Field>
+      <Field id="collectTaxes" label="Collect taxes">
+        <Checkbox
+          key={String(initial)}
+          id="collectTaxes"
+          name="collectTaxes"
+          disabled={!product && !defaults.data}
+          defaultChecked={initial}
+          onChange={() => setChanged(true)}
+        />
+      </Field>
+      {!product && <ReadState {...defaults} retry={defaults.refresh} />}
+      {product && !product.taxConfigured && (
+        <p>
+          {product.collectTaxes == null
+            ? 'Variants have different existing tax settings. Those settings remain until you change these tax controls.'
+            : 'Existing variant tax settings remain until you change these tax controls.'}
+        </p>
+      )}
+      <details className={disclosureClassName()}>
+        <summary>Advanced Settings</summary>
+        <div className="stack">
+          <Field id="overrideTax" label="Override tax rate">
+            <Checkbox
+              id="overrideTax"
+              name="overrideTax"
+              checked={override}
+              onChange={(e) => {
+                setOverride(e.currentTarget.checked);
+                setChanged(true);
+              }}
+            />
+          </Field>
+          {override && (
+            <div onChange={() => setChanged(true)}>
+              <TaxRateField
+                name="taxOverride"
+                label="Custom rate (%)"
+                value={product?.taxOverride ?? null}
+                required
+              />
+            </div>
+          )}
+        </div>
+      </details>
+      {service.categories && (
+        <ProductCategories
+          key={`${service.vendorId}:${product?.id ?? 'new'}`}
+          service={service}
+          productId={product?.id}
+        />
+      )}
+      {service.categories && (
+        <ProductImages
+          key={`images-${product?.id ?? 'new'}`}
+          api={service.categories}
+          ids={product?.assetIds}
+        />
+      )}
+      <ProductInformationFields
+        key={product?.id ?? 'new'}
+        value={product?.productInformation}
+      />
       <Field id="enabled" label="Enabled">
         <Checkbox
           id="enabled"
@@ -106,7 +210,7 @@ export function Products({
           onDone={() => undefined}
           submitLabel="Create product"
         >
-          <ProductFields />
+          <ProductFields service={service} />
         </CommandForm>
       </>
     );
@@ -230,7 +334,7 @@ function ProductDetail({
               run={(data) => service.updateProduct(id, productInput(data))}
               onDone={query.refresh}
             >
-              <ProductFields product={query.data} />
+              <ProductFields product={query.data} service={service} />
             </CommandForm>
           )}
           <DataTable
@@ -261,9 +365,14 @@ function ProductDetail({
               submitLabel="Add variant"
               validate={(data) => {
                 parsePrice(text(data, 'price'), query.data!.currency);
+                if (data.get('production-cost'))
+                  parsePrice(
+                    String(data.get('production-cost')),
+                    query.data!.currency,
+                  );
               }}
-              run={(data) =>
-                service.createVariant({
+              run={(data) => {
+                const input = {
                   productId: id,
                   name: text(data, 'variant-name'),
                   sku: text(data, 'sku'),
@@ -271,8 +380,17 @@ function ProductDetail({
                   optionIds: query.data!.optionGroups.map((group) =>
                     text(data, `option-${group.id}`),
                   ),
-                })
-              }
+                };
+                return service.finance && data.get('production-cost')
+                  ? service.finance.createVariant(
+                      input,
+                      parsePrice(
+                        String(data.get('production-cost')),
+                        query.data!.currency,
+                      ),
+                    )
+                  : service.createVariant(input);
+              }}
               onDone={query.refresh}
             >
               <TextField
@@ -285,6 +403,16 @@ function ProductDetail({
                 name="price"
                 label={`Initial price (${query.data.currency})`}
               />
+              {service.finance &&
+                service.context.permissions.includes(
+                  'ReadOwnVendorFinance',
+                ) && (
+                  <TextField
+                    name="production-cost"
+                    label={`Cost to produce (${query.data.currency}, optional)`}
+                    required={false}
+                  />
+                )}
               {query.data.optionGroups.map((group) => (
                 <Field
                   key={group.id}
@@ -376,6 +504,14 @@ function VariantEditor({
             Vendor currency.
           </p>
         </CommandForm>
+        {service.finance &&
+          service.context.permissions.includes('ReadOwnVendorFinance') && (
+            <ProductionCost
+              api={service.finance}
+              variantId={v.id}
+              currency={v.currency}
+            />
+          )}
       </div>
     </details>
   );

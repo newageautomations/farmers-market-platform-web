@@ -1,0 +1,160 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import ClosingInvitation from '../components/ClosingInvitation.astro';
+import { ContactForm } from '../components/ContactForm';
+import { UtilityIcon, formatPublicPhone } from '@market/ui';
+import {
+  defaultContact,
+  contactDetails,
+  contactEntryTypes,
+  contactHref,
+} from '@market/theme/storefront';
+import { requestCheckout } from '../lib/shop';
+import '../styles/about-story.css';
+import '../styles/contact.css';
+const { storefront, editorPreview } = Astro.locals;
+const config = storefront?.appearance?.contact ?? defaultContact;
+const enabled =
+  storefront?.kind === 'VENDOR' && (config.enabled || !!editorPreview);
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+if (!enabled) Astro.response.status = storefront ? 404 : 503;
+let profile = null;
+if (enabled && !editorPreview && storefront?.source === 'backend') {
+  try {
+    profile = await requestCheckout(Astro, Astro.response.headers).profile();
+  } catch {
+    /* Guests and unavailable profiles keep the form editable. */
+  }
+}
+const details = contactDetails(config);
+const entries = contactEntryTypes
+  .filter((type) => details[type].trim())
+  .map((type) => ({ type, value: details[type] }));
+const business = entries.filter(
+  (e) => e.type === 'email' || e.type === 'phone' || e.type === 'address',
+);
+const social = entries.filter(
+  (e) => e.type === 'instagram' || e.type === 'facebook',
+);
+---
+
+<SiteLayout
+  context={storefront}
+  path="/contact"
+  title={enabled ? config.title : 'Page unavailable'}
+  noindex={!enabled}
+>
+  {enabled ? (
+    <article class="contact-page" aria-label={config.title}>
+      <section class="contact-intro" data-editor-section="contact-intro">
+        <h1>{config.heading}</h1>
+        <p>{config.description}</p>
+      </section>
+      <div
+        class:list={[
+          'contact-layout',
+          entries.length > 0 && 'contact-layout-split',
+        ]}
+      >
+        <section data-editor-section="contact-form">
+          <ContactForm
+            initial={profile}
+            preview={!!editorPreview}
+            client:load
+          />
+        </section>
+        {entries.length > 0 && (
+          <aside
+            class="contact-information"
+            data-editor-section="contact-information"
+          >
+            {business.length > 0 && (
+              <div>
+                <h2>{config.informationHeading}</h2>
+                <ul>
+                  {business.map((e) => (
+                    <li>
+                      {!contactHref(e.type, e.value) ? (
+                        <span class="contact-detail">
+                          <UtilityIcon name={e.type} />
+                          <span>
+                            {e.type === 'phone'
+                              ? formatPublicPhone(e.value)
+                              : e.value}
+                          </span>
+                        </span>
+                      ) : (
+                        <a
+                          class="contact-detail"
+                          href={contactHref(e.type, e.value)}
+                        >
+                          <UtilityIcon name={e.type} />
+                          <span>
+                            {e.type === 'phone'
+                              ? formatPublicPhone(e.value)
+                              : e.value}
+                          </span>
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {social.length > 0 && (
+              <div>
+                <h2>{config.socialHeading}</h2>
+                <ul>
+                  {social.map((e) => (
+                    <li>
+                      {contactHref(e.type, e.value) ? (
+                        <a
+                          class="contact-detail"
+                          href={contactHref(e.type, e.value)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <UtilityIcon name={e.type} />
+                          <span>
+                            {e.type === 'instagram'
+                              ? 'Follow us on Instagram'
+                              : 'Follow us on Facebook'}
+                          </span>
+                        </a>
+                      ) : (
+                        <span class="contact-detail">
+                          <UtilityIcon name={e.type} />
+                          <span>
+                            {e.type === 'instagram'
+                              ? 'Follow us on Instagram'
+                              : 'Follow us on Facebook'}
+                          </span>
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </aside>
+        )}
+      </div>
+      {storefront?.appearance?.findUs?.enabled && (
+        <ClosingInvitation
+          cta={{ ...config.cta, destination: '/find-us' }}
+          section="contact-cta"
+        />
+      )}
+      {editorPreview && !storefront?.appearance?.findUs?.enabled && (
+        <p data-editor-section="contact-cta">
+          Enable Find Us to show the closing invitation.
+        </p>
+      )}
+    </article>
+  ) : (
+    <section>
+      <h1>Page unavailable</h1>
+      <p>This contact page is not available.</p>
+    </section>
+  )}
+</SiteLayout>

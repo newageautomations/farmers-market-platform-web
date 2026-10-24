@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./fixtures": "./src/fixtures.ts",
+    "./catalog": "./src/catalog.ts",
     "./market": "./src/market.ts"
   },
   "dependencies": {

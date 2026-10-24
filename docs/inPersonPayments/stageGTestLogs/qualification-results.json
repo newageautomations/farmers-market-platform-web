@@ -1,0 +1,81 @@
+{
+  "scope": "CONTROLLED_LOCAL_DISPOSABLE_DATABASES",
+  "functionalSuites": {
+    "stage-a": {
+      "exitCode": 0,
+      "source": "stage-a.log"
+    },
+    "stage-g": {
+      "exitCode": 0,
+      "source": "stage-g-final.log"
+    },
+    "stage-b": {
+      "exitCode": 0,
+      "source": "stage-b.log"
+    },
+    "stage-c": {
+      "exitCode": 0,
+      "source": "stage-c-loyalty.log"
+    },
+    "stage-e": {
+      "exitCode": 0,
+      "source": "stage-e-loyalty.log"
+    },
+    "stage-d": {
+      "exitCode": 0,
+      "source": "stage-d-loyalty.log"
+    },
+    "inventory-capacity": {
+      "exitCode": 0,
+      "source": "inventory-capacity.log"
+    },
+    "financial-refunds": {
+      "exitCode": 0,
+      "source": "financial-refunds.log"
+    },
+    "identity": {
+      "exitCode": 0,
+      "source": "identity.log"
+    },
+    "vendor-loyalty": {
+      "exitCode": 0,
+      "source": "vendor-loyalty.log"
+    },
+    "market-loyalty": {
+      "exitCode": 0,
+      "source": "market-loyalty.log"
+    },
+    "native-commerce": {
+      "exitCode": 0,
+      "source": "native-commerce.log"
+    }
+  },
+  "allLatestFunctionalSuitesPassed": true,
+  "frontend": {
+    "tests": 579,
+    "files": 46,
+    "source": "frontend-all.log"
+  },
+  "browserAndReadOnlyAudit": {
+    "exitCode": 0,
+    "source": "browser-final.log"
+  },
+  "builds": {
+    "backend": "backend-build-explicit-local.log",
+    "frontend": "frontend-build.log"
+  },
+  "types": {
+    "backend": "backend-types-final.log",
+    "frontend": "frontend-types.log"
+  },
+  "lint": {
+    "eslintAndBoundaries": "PASS",
+    "fullRepositoryFormatting": "FAIL: pre-existing modified packages/ui/package.json",
+    "source": "lint-all.log"
+  },
+  "earlierFailure": "Original broad regression native shutdown failure is retained; final native run passes after awaiting outstanding job writes.",
+  "protectedDatabasesChanged": false,
+  "physicalQualification": "Stage F explicitly deferred",
+  "externalProviderCalls": 0,
+  "generatedMedia": false
+}

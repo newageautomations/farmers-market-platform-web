@@ -1,26 +1,97 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { VendorCart, MarketCart } from '../components/ResilientSurfaces';
-import { ShopSignIn } from '../components/ShopSignIn';
+import ProductCards from '../components/ProductCards.astro';
+import { cartRelatedProducts } from '@market/storefront-core';
+import { storefrontText } from '@market/theme/storefront';
 import { requestShop, requestMarketShop } from '../lib/shop';
+import { vendorPreorder } from '../lib/vendor-preorder';
+import '../styles/preorder-banner.css';
+import '../styles/vendor-cart.css';
+import '../styles/vendor-shop.css';
+import '../styles/product-details.css';
 import {
   safeError,
   type CartBootstrap,
   type MarketBootstrap,
+  type PublicCatalog,
 } from '@market/api';
 import { ErrorState } from '@market/ui';
 const { storefront, storefrontError } = Astro.locals;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+const preferredReward = Astro.url.searchParams.get('loyalty');
+if (
+  preferredReward &&
+  /^[1-9]\d*$/.test(preferredReward) &&
+  Number(preferredReward) <= 2147483647
+) {
+  Astro.cookies.set('loyalty-preselection', preferredReward, {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: Astro.url.protocol === 'https:',
+    maxAge: 86400,
+  });
+  const clean = new URL(Astro.url);
+  clean.searchParams.delete('loyalty');
+  clean.searchParams.delete('loyaltyVendor');
+  return Astro.redirect(clean.pathname + clean.search, 303);
+}
 let error = storefrontError,
   bootstrap: CartBootstrap = { cart: null, signedIn: false };
 let marketBootstrap: MarketBootstrap = { cart: null, signedIn: false };
+let related: PublicCatalog['items'] = [];
+let preorder: Awaited<ReturnType<typeof vendorPreorder>> = {
+  occurrences: [],
+  selected: undefined,
+  availability: [],
+  unavailable: false,
+  orderOccurrence: undefined,
+};
 try {
-  if (storefront?.kind === 'MARKET' && storefront.source === 'backend')
+  if (Astro.locals.editorPreview) {
+    // Cart is intentionally outside editor preview and never reads a session.
+  } else if (storefront?.kind === 'MARKET' && storefront.source === 'backend')
     marketBootstrap = await requestMarketShop(
       Astro,
       Astro.response.headers,
     ).bootstrap();
-  else if (storefront?.source === 'backend')
+  else if (storefront?.source === 'backend') {
     bootstrap = await requestShop(Astro, Astro.response.headers).bootstrap();
+    if (storefront.appearance?.vendor?.relatedEnabled !== false) {
+      try {
+        const api = requestShop(Astro);
+        let catalog: PublicCatalog['items'] = [];
+        for (let skip = 0; ; skip += 100) {
+          const { products } = await api.catalog({
+            options: { skip, take: 100, sort: { id: 'ASC' } },
+          });
+          catalog = [...catalog, ...products.items];
+          if (catalog.length >= products.totalItems) break;
+          if (!products.items.length || skip >= 9900)
+            throw new Error('Catalog unavailable');
+        }
+        related = cartRelatedProducts(
+          bootstrap.cart?.lines.map(
+            (line) => line.productVariant.product.slug,
+          ) ?? [],
+          catalog,
+        );
+      } catch {
+        // Optional suggestions never prevent viewing or correcting the cart.
+      }
+    }
+    preorder = await vendorPreorder(
+      Astro,
+      [
+        ...(bootstrap.cart?.lines.map((line) => line.productVariant.id) ?? []),
+        ...related.flatMap((product) =>
+          product.variants.map((variant) => variant.id),
+        ),
+      ],
+      bootstrap.cart,
+    );
+  }
 } catch (e) {
   error = safeError(e);
 }
@@ -29,10 +100,15 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 ---
 
 <SiteLayout context={storefront} path="/cart" title="Your cart" noindex>
-  <section class="py-12">
-    <h1>Your cart</h1>
+  <section class={storefront?.kind === 'VENDOR' ? 'vendor-cart-page' : 'py-12'}>
+    {(storefront?.kind !== 'VENDOR' ||
+      error ||
+      storefront.source === 'fixture' ||
+      Astro.locals.editorPreview) && <h1>Your cart</h1>}
     {error ? (
       <ErrorState error={error} />
+    ) : Astro.locals.editorPreview ? (
+      <p>Cart preview is not available in the visual editor.</p>
     ) : storefront?.source === 'fixture' ? (
       <p>Fixture preview. Cart editing requires a connected Shop session.</p>
     ) : (
@@ -48,16 +124,27 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
           <VendorCart
             storefrontId={storefront?.storefrontId ?? ''}
             initialCart={bootstrap.cart}
+            initialPreorder={preorder}
             client:load
           />
         )}
-        {!(storefront?.kind === 'MARKET'
-          ? marketBootstrap.signedIn
-          : bootstrap.signedIn) && (
-          <ShopSignIn
-            storefrontId={storefront?.storefrontId ?? ''}
-            client:load
-          />
+        {related.length > 0 && (
+          <section
+            class="product-related"
+            aria-label={storefrontText(
+              storefront?.appearance,
+              'relatedHeading',
+            )}
+          >
+            <h2>{storefrontText(storefront?.appearance, 'relatedHeading')}</h2>
+            <ProductCards
+              items={related}
+              storefrontId={storefront?.storefrontId}
+              shop
+              occurrenceId={preorder.selected?.id}
+              availability={preorder.availability}
+            />
+          </section>
         )}
       </>
     )}

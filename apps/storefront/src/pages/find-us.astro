@@ -1,0 +1,271 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+
+import ClosingInvitation from '../components/ClosingInvitation.astro';
+
+import { buttonClassName, disclosureClassName } from '@market/ui/presentation';
+
+import { AppearancePreorder } from '../components/AppearancePreorder';
+
+import { defaultFindUs } from '@market/theme/storefront';
+
+import type { VendorMarketAppearance } from '@market/api';
+
+import { requestShop } from '../lib/shop';
+
+import '../styles/about-story.css';
+
+import '../styles/find-us.css';
+
+const { storefront, editorPreview } = Astro.locals;
+
+const config = storefront?.appearance?.findUs ?? defaultFindUs;
+
+const enabled =
+  storefront?.kind === 'VENDOR' && (config.enabled || !!editorPreview);
+
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+
+if (!enabled) Astro.response.status = storefront ? 404 : 503;
+
+let rows: readonly VendorMarketAppearance[] = [],
+  failed = false;
+
+if (enabled && storefront?.source === 'backend') {
+  try {
+    rows = await requestShop(Astro).appearances();
+  } catch {
+    failed = true;
+  }
+}
+
+const [featured, ...remaining] = rows;
+
+const intro = config.introduction;
+
+const format = (
+  row: VendorMarketAppearance,
+  options: Intl.DateTimeFormatOptions,
+) =>
+  new Intl.DateTimeFormat('en-US', {
+    ...options,
+    timeZone: row.timezone,
+  }).format(new Date(row.startsAt));
+
+const hours = (row: VendorMarketAppearance) =>
+  `${format(row, { hour: 'numeric', minute: '2-digit' })} to ${new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: row.timezone }).format(new Date(row.endsAt))}`;
+
+// The authoritative venue is the saved address field. Avoid sending bare venue names or fixture placeholders to Maps.
+
+const directions = (row: VendorMarketAppearance) =>
+  /\d+\s+\S+/.test(row.venue) && !/fixture|test location/i.test(row.venue)
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.venue)}`
+    : undefined;
+
+const groups = new Map<string, VendorMarketAppearance[]>();
+
+for (const row of remaining) {
+  const month = format(row, { month: 'long', year: 'numeric' });
+  groups.set(month, [...(groups.get(month) ?? []), row]);
+}
+---
+
+<SiteLayout
+  context={storefront}
+  path="/find-us"
+  title={enabled ? config.title : 'Page unavailable'}
+  noindex={!enabled}
+>
+  {enabled ? (
+    <article class="find-page" aria-label={config.title}>
+      <section
+        class:list={['story-section', intro.image && 'story-split']}
+        data-editor-section="find-intro"
+        data-image-position={intro.imagePosition}
+        data-image-size={intro.imageSize ?? 'small'}
+        data-text-align={intro.textAlign ?? 'left'}
+      >
+        <div class="story-copy">
+          <h1>{intro.heading || config.title}</h1>
+          {intro.body && <p>{intro.body}</p>}
+        </div>
+
+        {intro.image && (
+          <div class="story-image-column">
+            <div class="story-image-frame" data-story-shape={intro.shape}>
+              <img
+                src={intro.image}
+                alt={intro.alt}
+                data-hero-shape={intro.shape}
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+          </div>
+        )}
+      </section>
+
+      <div data-editor-section="find-markets">
+        {failed ? (
+          <section role="status">
+            <h2>Market dates are temporarily unavailable.</h2>
+            <p>Please check back soon.</p>
+          </section>
+        ) : featured ? (
+          <>
+            <section class="find-featured" aria-label="Next confirmed market">
+              {featured.image && (
+                <img
+                  class="find-market-image"
+                  src={featured.image}
+                  alt="Illustrative market photography"
+                  loading="lazy"
+                  width="800"
+                  height="600"
+                />
+              )}
+
+              <div class="find-market-copy">
+                <h2>{featured.marketName}</h2>
+                <div class="find-featured-details">
+                  <p>
+                    <time datetime={featured.startsAt}>
+                      {format(featured, {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </time>
+                  </p>
+                  <p>{hours(featured)}</p>
+                  {featured.venue && <p>{featured.venue}</p>}
+                  <p>Attendance confirmed.</p>
+                  <div class="find-actions">
+                    {directions(featured) && (
+                      <a
+                        class={buttonClassName({ variant: 'secondary' })}
+                        href={directions(featured)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Get Directions
+                      </a>
+                    )}
+                    {featured.marketWebsite && (
+                      <a
+                        class={buttonClassName({ variant: 'secondary' })}
+                        href={featured.marketWebsite}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Visit Market Website
+                      </a>
+                    )}
+                    {featured.preorderAvailable && (
+                      <AppearancePreorder
+                        storefrontId={storefront!.storefrontId ?? ''}
+                        occurrenceId={featured.id}
+                        preview={!!editorPreview}
+                        client:load
+                      />
+                    )}
+                  </div>
+                  {featured.pickupInstructions && (
+                    <p>{featured.pickupInstructions}</p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {remaining.length > 0 && (
+              <section class="find-schedule">
+                <h2>Upcoming Markets</h2>
+                {[...groups].map(([month, appearances]) => (
+                  <div class="find-month">
+                    <h3>{month}</h3>
+                    <div class="find-month-entries">
+                      {appearances.map((row) => (
+                        <details
+                          class={disclosureClassName('find-row')}
+                          data-disclosure-icon="plus"
+                        >
+                          <summary>
+                            <time class="find-date" datetime={row.startsAt}>
+                              <span>{format(row, { month: 'short' })}</span>
+                              <strong>{format(row, { day: 'numeric' })}</strong>
+                            </time>
+                            <span>
+                              <strong>{row.marketName}</strong>
+                              <span>
+                                {format(row, { weekday: 'long' })} ·{' '}
+                                {hours(row)}
+                              </span>
+                              <span>{row.venue}</span>
+                            </span>
+                          </summary>
+                          <div class="ui-disclosure-content find-row-detail">
+                            <p>Attendance confirmed.</p>
+                            {row.pickupInstructions && (
+                              <p>{row.pickupInstructions}</p>
+                            )}
+                            <div class="find-actions">
+                              {directions(row) && (
+                                <a
+                                  class={buttonClassName({
+                                    variant: 'secondary',
+                                  })}
+                                  href={directions(row)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  Get Directions
+                                </a>
+                              )}
+                              {row.marketWebsite && (
+                                <a
+                                  class={buttonClassName({
+                                    variant: 'secondary',
+                                  })}
+                                  href={row.marketWebsite}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  Visit Market Website
+                                </a>
+                              )}
+                              {row.preorderAvailable && (
+                                <AppearancePreorder
+                                  storefrontId={storefront!.storefrontId ?? ''}
+                                  occurrenceId={row.id}
+                                  preview={!!editorPreview}
+                                  client:load
+                                />
+                              )}
+                            </div>
+                          </div>
+                        </details>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </section>
+            )}
+          </>
+        ) : (
+          <section>
+            <h2>No upcoming markets announced yet.</h2>
+            <p>Check back soon to see where we'll be next!</p>
+          </section>
+        )}
+      </div>
+
+      <ClosingInvitation cta={config.cta} section="find-cta" />
+    </article>
+  ) : (
+    <section>
+      <h1>Page unavailable</h1>
+      <a href="/">Return to the storefront</a>
+    </section>
+  )}
+</SiteLayout>

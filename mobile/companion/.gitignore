@@ -1,0 +1,9 @@
+/node_modules/
+/.expo/
+/android/
+/ios/
+/.stage-e-bundle/
+modules/clover-go/android/build/
+modules/clover-go/ios/Pods/
+*.local
+*.local.*

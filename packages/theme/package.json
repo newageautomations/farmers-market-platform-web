@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./storefront": "./src/storefront.ts",
+    "./storefront.css": "./src/storefront.css"
   },
   "dependencies": {
     "zod": "4.6.5"

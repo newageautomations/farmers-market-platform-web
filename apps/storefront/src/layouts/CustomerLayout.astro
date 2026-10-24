@@ -18,6 +18,8 @@ import '@market/ui/styles.css';
 import '../styles/customer-dashboard.css';
 import { platformTheme, themeStyle } from '@market/theme';
 import CustomerNavigation from '../components/CustomerNavigation.astro';
+import CustomerNotifications from '../components/CustomerNotifications';
+import '@market/ui/notifications.css';
 const {
   title,
   path = '/account',
@@ -94,6 +96,7 @@ try {
           </svg>
         </Button>
         <span class="brand">{name}</span>
+        <CustomerNotifications view="bell" client:load />
         <DashboardMenu>
           <CustomerNavigation slot="navigation" path={path} />
           <div class="account-mode-controls customer-account-mode">

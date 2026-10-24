@@ -5,6 +5,8 @@ export async function shopCall<T>(
   action: StorefrontAction,
   input: Record<string, unknown> = {},
 ): Promise<T> {
+  if (document.documentElement.dataset.editorPreview === 'true')
+    throw new AppError('forbidden');
   let response: Response;
   try {
     response = await fetch('/api/shop', {

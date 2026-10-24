@@ -10,6 +10,7 @@ import {
   type RecordDetailsColumns,
 } from './record-details';
 export { PhoneInput } from './PhoneInput';
+export { formatPublicPhone } from './phone-format';
 export { SearchSelect, SearchableMultiSelect } from './SearchSelect';
 export { TimezoneField, usTimezones } from './TimezoneField';
 export { fieldLimits, inputContract } from './input-validation';
@@ -140,6 +141,7 @@ export function Select({
 export function SelectField({
   label,
   info,
+  infoOnClick,
   error,
   id,
   children,
@@ -147,12 +149,19 @@ export function SelectField({
 }: ComponentProps<typeof Select> & {
   label: ReactNode;
   info?: string;
+  infoOnClick?: () => void;
   error?: string;
 }) {
   const generatedId = useId();
   const fieldId = id ?? generatedId;
   return (
-    <Field id={fieldId} label={label} info={info} error={error}>
+    <Field
+      id={fieldId}
+      label={label}
+      info={info}
+      infoOnClick={infoOnClick}
+      error={error}
+    >
       <Select
         {...props}
         id={fieldId}
@@ -180,19 +189,21 @@ export function Field({
   error,
   children,
   info,
+  infoOnClick,
 }: {
   id: string;
   label: ReactNode;
   error?: string;
   children: ReactNode;
   info?: string;
+  infoOnClick?: () => void;
 }) {
   return (
     <div className="field">
       {info ? (
         <div className="field-title">
           <label htmlFor={id}>{label}</label>
-          <InfoTip label={String(label)} text={info} />
+          <InfoTip label={String(label)} text={info} onClick={infoOnClick} />
         </div>
       ) : (
         <label htmlFor={id}>{label}</label>
@@ -209,8 +220,31 @@ export function FormError({ children, ...props }: ComponentProps<'p'>) {
     </p>
   );
 }
-export function InfoTip({ text, label }: { text: string; label: string }) {
+export function InfoTip({
+  text,
+  label,
+  onClick,
+}: {
+  text: string;
+  label: string;
+  onClick?: () => void;
+}) {
   const id = useId();
+  if (onClick)
+    return (
+      <span className="info-tip">
+        <Button
+          variant="tertiary"
+          iconOnly
+          type="button"
+          aria-label={`About ${label}`}
+          aria-haspopup="dialog"
+          onClick={onClick}
+        >
+          i
+        </Button>
+      </span>
+    );
   return (
     <span className="info-tip">
       <Tooltip label={text} id={id}>
@@ -383,12 +417,17 @@ export { Dialog, Drawer, type DialogProps } from './dialog';
 export function Dropdown({
   label,
   children,
+  defaultOpen = false,
 }: {
-  label: string;
+  label: ReactNode;
   children: ReactNode;
+  defaultOpen?: boolean;
 }) {
   return (
-    <details className={disclosureClassName('dropdown')}>
+    <details
+      className={disclosureClassName('dropdown')}
+      open={defaultOpen || undefined}
+    >
       <summary>{label}</summary>
       <div className="ui-disclosure-content">{children}</div>
     </details>

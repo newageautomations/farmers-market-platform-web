@@ -1,5 +1,6 @@
 import { AppError } from '@market/api';
 import type { Theme } from '@market/theme';
+import type { StorefrontAppearance } from '@market/theme/storefront';
 export type StorefrontKind = 'VENDOR' | 'MARKET'; // Backend uses mutually exclusive vendorId / marketId, not a GraphQL enum.
 export type Template = 'community' | 'minimal' | 'modern';
 export interface StorefrontContext {
@@ -14,6 +15,8 @@ export interface StorefrontContext {
   source: 'fixture' | 'backend';
   channelToken?: string;
   timezone?: string;
+  appearance?: StorefrontAppearance;
+  appearancePublishedAt?: string;
 }
 export interface RequestContext {
   url: URL;
@@ -94,4 +97,5 @@ export const unavailableStorefrontResolver: BackendStorefrontResolver = {
 };
 export * from './backend';
 export * from './catalog';
+export * from './vendor-shop';
 export * from './market';

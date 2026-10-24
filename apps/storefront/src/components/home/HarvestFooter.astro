@@ -1,0 +1,56 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { storefrontText } from '@market/theme/storefront';
+interface Props {
+  context: StorefrontContext;
+}
+const { context } = Astro.props;
+---
+
+<footer class="harvest-footer" data-editor-section="footer">
+  <div>
+    <a href="/" class="harvest-brand">
+      {context.name}
+    </a>
+    <p data-storefront-text="footerTagline">
+      {context.kind === 'MARKET'
+        ? 'Make a little room for local.'
+        : storefrontText(context.appearance, 'footerTagline')}
+    </p>
+  </div>
+  <nav aria-label="Footer navigation">
+    <a href={context.kind === 'MARKET' ? '/#occurrences' : '/products'}>
+      <span data-storefront-text="footerShopLabel">
+        {context.kind === 'MARKET'
+          ? 'Plan a visit'
+          : storefrontText(context.appearance, 'footerShopLabel')}
+      </span>
+    </a>
+    {context.kind === 'VENDOR' && context.appearance?.faq?.enabled && (
+      <a href="/faq">{context.appearance.faq.title}</a>
+    )}
+    {context.kind === 'VENDOR' && context.appearance?.policies?.enabled && (
+      <a href="/policies">{context.appearance.policies.title}</a>
+    )}
+    {context.kind === 'VENDOR' && context.appearance?.contact?.enabled && (
+      <a href="/contact">{context.appearance.contact.title}</a>
+    )}
+    {context.kind === 'VENDOR' && context.appearance?.findUs?.enabled && (
+      <a href="/find-us">Find Us</a>
+    )}
+    {context.appearance?.about.enabled && (
+      <a href="/about">
+        <span data-storefront-text="footerAboutLabel">
+          {storefrontText(context.appearance, 'footerAboutLabel')}
+        </span>
+      </a>
+    )}
+    <a href="/account">Your account</a>
+  </nav>
+  <div class="harvest-footer-bottom">
+    <span>
+      © {new Date().getFullYear()} {context.name}
+    </span>
+    <span>Powered by Market platform</span>
+  </div>
+</footer>

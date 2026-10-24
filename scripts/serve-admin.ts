@@ -19,6 +19,16 @@ const policy = [
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
 ].join('; ');
+// Explicit origin allowlist, scoped to the full-document vendor editor route only.
+const previewOrigins = (process.env.STOREFRONT_PREVIEW_ORIGINS ?? '')
+  .split(',')
+  .filter(Boolean)
+  .map((value) => {
+    const url = new URL(value.trim());
+    if (url.protocol !== 'https:' || url.origin !== value.trim())
+      throw new Error('Preview origins require exact HTTPS origins');
+    return url.origin;
+  });
 const server = createServer(
   {
     key: readFileSync(process.env.SERVER_KEY_PATH),
@@ -27,7 +37,18 @@ const server = createServer(
   (request, response) => {
     for (const [key, value] of Object.entries(responseSecurityHeaders(true)))
       response.setHeader(key, value);
-    response.setHeader('Content-Security-Policy', policy);
+    const editorRoute =
+      new URL(request.url!, process.env.ADMIN_ORIGIN).pathname ===
+      '/vendor/storefront';
+    response.setHeader(
+      'Content-Security-Policy',
+      editorRoute && previewOrigins.length
+        ? policy.replace(
+            "frame-src 'none'",
+            `frame-src ${previewOrigins.join(' ')}`,
+          )
+        : policy,
+    );
     response.setHeader('X-Robots-Tag', 'noindex, nofollow');
     response.setHeader('X-Request-Id', crypto.randomUUID());
     if (request.headers.host !== new URL(process.env.ADMIN_ORIGIN!).host) {

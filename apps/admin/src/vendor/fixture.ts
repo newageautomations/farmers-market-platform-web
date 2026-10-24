@@ -59,7 +59,12 @@ export function createFixtureVendorService(
     name: `${tag} Product ${i + 1}`,
     slug: `synthetic-${vendorId}-${i + 1}`,
     description: 'Development fixture product description',
+    productInformation: null,
+    assetIds: [],
     enabled: i !== 2,
+    collectTaxes: false,
+    taxOverride: null,
+    taxConfigured: false,
     currency: 'USD',
     optionGroups: [],
     variants: [
@@ -394,6 +399,18 @@ export function createFixtureVendorService(
   }
   const publicationState = new Set<string>();
   const api: VendorApi = {
+    taxSettings: async () => ({
+      version: 0,
+      defaultRate: null,
+      newProductCollectTaxes: false,
+      markets: [],
+    }),
+    saveTaxSettings: async (input) => ({
+      ...input,
+      defaultRate: input.defaultRate ?? null,
+      newProductCollectTaxes: false,
+      markets: [],
+    }),
     catalogRead: async (options) => ({
       totalItems: products.length,
       items: clone(
@@ -452,6 +469,11 @@ export function createFixtureVendorService(
         ...products,
         {
           ...input,
+          productInformation: input.productInformation ?? null,
+          assetIds: input.assetIds ?? [],
+          collectTaxes: input.collectTaxes ?? false,
+          taxOverride: input.taxOverride ?? null,
+          taxConfigured: input.collectTaxes != null,
           name: input.name.trim(),
           slug: input.slug.trim().toLowerCase(),
           id,
@@ -469,6 +491,13 @@ export function createFixtureVendorService(
           ? {
               ...p,
               ...input,
+              collectTaxes: input.collectTaxes ?? p.collectTaxes,
+              taxOverride:
+                input.taxOverride === undefined
+                  ? p.taxOverride
+                  : input.taxOverride,
+              taxConfigured:
+                input.collectTaxes == null ? p.taxConfigured : true,
               name: input.name.trim(),
               slug: input.slug.trim().toLowerCase(),
             }

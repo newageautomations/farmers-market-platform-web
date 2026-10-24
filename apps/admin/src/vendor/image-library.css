@@ -1,0 +1,38 @@
+.image-library-trigger {
+  width: 100%;
+  justify-content: space-between;
+  text-align: left;
+}
+.image-library-trigger > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.image-library-trigger > svg {
+  flex-shrink: 0;
+}
+.image-library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 1rem;
+}
+.image-library-option {
+  flex-direction: column;
+  min-width: 0;
+  white-space: normal;
+}
+.image-library-option img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--ui-button-radius);
+}
+.image-library-option span {
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}

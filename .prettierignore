@@ -7,3 +7,8 @@ package-lock.json
 docs/evidence
 test-results
 playwright-report
+mobile/companion/android
+mobile/companion/ios
+mobile/companion/.expo
+mobile/companion/.stage-e-bundle
+mobile/companion/modules/clover-go/android/build

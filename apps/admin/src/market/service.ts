@@ -1,4 +1,6 @@
 import {
+  createFinanceApi,
+  type FinanceApi,
   AppError,
   createMarketOperationsApi,
   type MarketOperationsApi,
@@ -8,6 +10,10 @@ import {
   safeError,
   type MarketApi,
   type Permission,
+  createMarketDayChecklistApi,
+  createMarketLoyaltyApi,
+  type MarketLoyaltyApi,
+  type MarketDayChecklist,
 } from '@market/api';
 import { mayMarketCommand, type AdminContext } from '@market/admin-core';
 
@@ -15,6 +21,9 @@ export type MarketAvailability =
   'ALLOWED' | 'DENIED' | 'UNKNOWN' | 'UNCONFIGURED';
 let serviceGeneration = 0;
 export interface MarketService extends MarketApi {
+  finance?: FinanceApi;
+  loyalty?: MarketLoyaltyApi;
+  checklist?: (occurrenceId: string) => Promise<MarketDayChecklist>;
   notifications?: NotificationsApi;
   phase14?: MarketOperationsApi;
   readKey: string;
@@ -148,6 +157,41 @@ export function createLiveMarketService(
     onAuthorityFailure,
   );
   const operations = createMarketOperationsApi({ endpoint, channelToken });
+  service.finance = createFinanceApi({
+    endpoint,
+    channelToken,
+    onAuthorityFailure,
+  });
+  const loyalty = createMarketLoyaltyApi({ endpoint, channelToken }, 'admin');
+  service.loyalty = new Proxy(loyalty, {
+    get(target, key: keyof MarketLoyaltyApi) {
+      return async (...args: unknown[]) => {
+        if (
+          !context.permissions.includes(
+            key === 'overview' ? 'ReadOwnMarket' : 'ManageOwnMarketSchedule',
+          )
+        )
+          throw new AppError('forbidden');
+        try {
+          return await Reflect.apply(target[key], target, args);
+        } catch (error) {
+          if (['authentication', 'forbidden'].includes(safeError(error).kind))
+            onAuthorityFailure();
+          throw error;
+        }
+      };
+    },
+  });
+  const checklist = createMarketDayChecklistApi({ endpoint, channelToken });
+  service.checklist = async (id) => {
+    try {
+      return await checklist(id);
+    } catch (error) {
+      if (['authentication', 'forbidden'].includes(safeError(error).kind))
+        onAuthorityFailure();
+      throw error;
+    }
+  };
   service.notifications = createNotificationsApi({
     endpoint,
     channelToken,

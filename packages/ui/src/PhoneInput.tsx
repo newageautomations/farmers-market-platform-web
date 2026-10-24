@@ -1,3 +1,4 @@
+import { fieldLimits } from './input-validation';
 import { inputClassName } from './presentation';
 import { SearchSelect } from './SearchSelect';
 import { countryNames } from './phone-countries';
@@ -48,6 +49,9 @@ export function PhoneInput({
   defaultValue = '',
   onChange,
   required = false,
+  validationMode = 'immediate',
+  advisory = false,
+  showValidation = false,
   disabled = false,
   'aria-describedby': describedBy,
 }: {
@@ -58,6 +62,10 @@ export function PhoneInput({
   defaultValue?: string;
   onChange?: (value: string) => void;
   required?: boolean;
+  validationMode?: 'immediate' | 'blur';
+  /** Storefront appearance editor only: preserve incomplete text and never block a form. */
+  advisory?: boolean;
+  showValidation?: boolean;
   disabled?: boolean;
   'aria-describedby'?: string;
 }) {
@@ -75,6 +83,8 @@ export function PhoneInput({
     display(initial, parsed?.country ?? 'US'),
   );
   const [rejected, setRejected] = useState('');
+  const [touched, setTouched] = useState(false);
+  const reveal = validationMode === 'immediate' || touched || showValidation;
   const nextCursor = useRef<number | null>(null);
   const input = useRef<HTMLInputElement>(null),
     emitted = useRef(initial),
@@ -84,6 +94,7 @@ export function PhoneInput({
     ? !required
     : /^[\d () .-]+$/.test(national) &&
       !rejected &&
+      (!advisory || national.length <= fieldLimits.phoneNumber) &&
       (!['US', 'CA'].includes(country) ||
         national.replace(/\D/g, '').length === 10) &&
       !!parsedNational?.isValid() &&
@@ -97,6 +108,9 @@ export function PhoneInput({
         : `+${getCountryCallingCode(country)}${national.replace(/\D/g, '')}`
     : '';
   const message =
+    (advisory && national.length > fieldLimits.phoneNumber
+      ? `Recommended maximum: ${fieldLimits.phoneNumber} characters. Your text is kept as entered.`
+      : '') ||
     rejected ||
     (valid
       ? ''
@@ -112,8 +126,8 @@ export function PhoneInput({
     setNational(display(value, c));
   }, [value, country]);
   useEffect(() => {
-    input.current?.setCustomValidity(message);
-  }, [message]);
+    input.current?.setCustomValidity(advisory ? '' : message);
+  }, [message, advisory]);
   useLayoutEffect(() => {
     if (nextCursor.current !== null) {
       input.current?.setSelectionRange(nextCursor.current, nextCursor.current);
@@ -129,7 +143,9 @@ export function PhoneInput({
       ? ''
       : /^[\d () .-]+$/.test(text) && p?.isValid() && p.country === c && !p.ext
         ? String(p.number)
-        : `+${getCountryCallingCode(c)}${text.replace(/\D/g, '')}`;
+        : advisory
+          ? text
+          : `+${getCountryCallingCode(c)}${text.replace(/\D/g, '')}`;
     emitted.current = v;
     onChange?.(v);
   }
@@ -166,13 +182,19 @@ export function PhoneInput({
           required={required}
           disabled={disabled || !hydrated}
           aria-label={label ? undefined : 'National phone number'}
-          aria-invalid={!valid && !!national}
+          onBlur={() => setTouched(true)}
+          aria-invalid={
+            validationMode === 'immediate'
+              ? !valid && !!national
+              : reveal && !valid
+          }
           aria-describedby={[describedBy, `${inputId}-feedback`]
             .filter(Boolean)
             .join(' ')}
           onBeforeInput={(e) => {
             const native = e.nativeEvent as InputEvent;
             if (
+              !advisory &&
               native.inputType === 'insertText' &&
               native.data &&
               !/^[0-9]+$/.test(native.data)
@@ -184,6 +206,7 @@ export function PhoneInput({
           }}
           onKeyDown={(e) => {
             if (
+              !advisory &&
               !e.ctrlKey &&
               !e.metaKey &&
               !e.altKey &&
@@ -194,9 +217,24 @@ export function PhoneInput({
             deleting.current = e.key === 'Backspace' || e.key === 'Delete';
           }}
           onChange={(e) => {
+            if (advisory) {
+              const raw = e.target.value,
+                parsed = raw.startsWith('+')
+                  ? parsePhoneNumberFromString(raw)
+                  : undefined;
+              if (parsed?.isValid() && parsed.country && !parsed.ext)
+                publish(parsed.formatNational(), parsed.country);
+              else publish(raw, country);
+              return;
+            }
             let raw = e.target.value,
               caret = e.target.selectionStart ?? raw.length,
               c = country;
+            if (raw.length > fieldLimits.phoneNumber) {
+              e.target.value = national;
+              setRejected('This field is too long. Please shorten it.');
+              return;
+            }
             if (
               !/^[+\d () .-]*$/.test(raw) ||
               (raw.includes('+') && !/^\+[^+]*$/.test(raw))
@@ -273,9 +311,11 @@ export function PhoneInput({
       <small
         id={`${inputId}-feedback`}
         aria-live="polite"
-        hidden={!!national && valid}
+        hidden={!reveal || (!!national && valid)}
       >
-        {rejected || (national && !valid)
+        {rejected ||
+        (national && !valid) ||
+        (validationMode === 'blur' && required && !valid)
           ? message
           : national
             ? ''

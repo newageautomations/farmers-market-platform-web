@@ -1,0 +1,354 @@
+.pos-register,
+.pos-cart-content,
+.pos-variants {
+  --ui-control-height: 44px;
+}
+.pos-register {
+  min-width: 0;
+  padding-bottom: 1rem;
+}
+.pos-payment-dialog,
+.pos-payment-record,
+.square-integration,
+.clover-integration {
+  --ui-control-height: 44px;
+}
+.square-integration dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+.pos-payment-sections {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+.pos-payment-sections > p,
+.pos-payment-sections > div > p:first-child {
+  margin-top: 0;
+}
+.pos-payment-sections > p {
+  margin-bottom: 0;
+}
+.pos-payment-actions,
+.pos-payment-record > .ui-actions {
+  margin-top: 1.5rem;
+}
+.pos-payment-amount {
+  font-size: 1.4rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.pos-receipt-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.pos-receipt-items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.pos-receipt-items li > span:first-child {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.pos-refund-units {
+  margin: 0;
+  padding: 1rem;
+  min-width: 0;
+  display: grid;
+  gap: 1rem;
+}
+.pos-refund-units label,
+.pos-cash-return {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  min-height: 44px;
+}
+.pos-payment-dialog .ui-modal-actions {
+  margin-top: 1.5rem;
+}
+.pos-toolbar,
+.pos-cart-top,
+.pos-line-heading,
+.pos-pages {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.pos-toolbar h1 {
+  margin: 0;
+}
+.pos-toolbar p {
+  margin: 0.35rem 0 1rem;
+}
+.pos-saved,
+.pos-dialog-actions,
+.pos-variants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.pos-setup.ui-control-row.ui-control-row,
+.pos-coupon.ui-control-row.ui-control-row {
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+.pos-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem);
+  align-items: start;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+.pos-catalog {
+  min-width: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+.pos-category-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.pos-category-divider {
+  align-self: stretch;
+  width: 1px;
+  flex: none;
+  margin: 0.4rem;
+  background: var(--brand-muted);
+}
+.pos-categories {
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding: 0.35rem 0;
+}
+.pos-categories::-webkit-scrollbar {
+  display: none;
+}
+.pos-category-list {
+  display: flex;
+  width: max-content;
+  gap: 0.4rem;
+}
+.pos-category-list > button {
+  flex-shrink: 0;
+  min-height: 44px;
+}
+.pos-category-arrows {
+  display: flex;
+  flex: none;
+  gap: 0.25rem;
+}
+.pos-heart-button svg {
+  width: 28.5px;
+  height: 28.5px;
+}
+.pos-category-bar .pos-heart-button svg {
+  width: 19px;
+  height: 19px;
+}
+.pos-feedback {
+  min-height: 1.4rem;
+  font-size: 0.9rem;
+}
+.pos-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 0.8rem;
+}
+.pos-product {
+  position: relative;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.pos-product-trigger {
+  width: 100%;
+  height: auto;
+  min-height: 215px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: start;
+  gap: 0.45rem;
+  padding: 0.7rem;
+  text-align: left;
+  white-space: normal;
+}
+.pos-product-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 112px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--brand-primary) 8%, var(--brand-surface));
+}
+.pos-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pos-product-image svg {
+  width: 40px;
+  height: 40px;
+  opacity: 0.55;
+}
+.pos-product-name {
+  font-weight: 650;
+  padding-right: 1.5rem;
+}
+.pos-variant-hint,
+.pos-unit-price,
+.pos-save-state {
+  font-size: 0.85rem;
+}
+.button.ui-button.pos-favorite {
+  --ui-control-height: 35.2px;
+  --button-hover-transform: scale(1.06);
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+}
+.pos-desktop-cart {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+}
+.pos-cart-content {
+  display: grid;
+  gap: 0.8rem;
+}
+.pos-cart-content > p {
+  margin: 0;
+}
+.pos-cart-lines {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 1rem;
+}
+.pos-cart-lines li {
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--brand-foreground) 18%, transparent);
+  padding-bottom: 1rem;
+}
+.pos-line-heading {
+  align-items: start;
+}
+.pos-line-heading strong {
+  overflow-wrap: anywhere;
+}
+.pos-line-heading span {
+  white-space: nowrap;
+}
+.pos-quantity {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.pos-quantity button {
+  min-height: 44px;
+  min-width: 44px;
+}
+.pos-quantity .ui-input.ui-input {
+  width: 4.5rem;
+  min-height: 44px;
+  text-align: center;
+}
+.pos-customer {
+  display: grid;
+  gap: 0.4rem;
+}
+.pos-loyalty {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pos-totals {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+.pos-totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.pos-totals dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.pos-total {
+  font-size: 1.4rem;
+  font-weight: 700;
+  padding-top: 0.5rem;
+}
+.pos-mobile-summary {
+  display: none;
+}
+@media (max-width: 1000px) {
+  .pos-workspace {
+    grid-template-columns: minmax(0, 1fr) 19rem;
+    gap: 0.8rem;
+  }
+  .pos-product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .pos-category-arrows {
+    display: none;
+  }
+  .pos-register {
+    padding-bottom: 6.5rem;
+  }
+  .pos-workspace {
+    display: block;
+  }
+  .pos-desktop-cart {
+    display: none;
+  }
+  .pos-product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+  .pos-mobile-summary {
+    position: fixed;
+    inset: auto 0.6rem 0.6rem;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-radius: 12px;
+    background: var(--brand-surface);
+    border: 1px solid
+      color-mix(in srgb, var(--brand-foreground) 18%, transparent);
+    box-shadow: 0 4px 24px #0002;
+  }
+  .pos-toolbar {
+    align-items: start;
+  }
+  .pos-toolbar h1 {
+    font-size: 1.5rem;
+  }
+}

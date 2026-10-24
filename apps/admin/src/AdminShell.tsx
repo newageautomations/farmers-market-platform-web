@@ -64,6 +64,17 @@ import './phase15b.css';
 import './market/dashboard.css';
 import { NavigationIcon, Chevron } from './NavigationIcon';
 import { NotificationPreferences } from './notifications/NotificationPreferences';
+import { AccountTimezoneSettings } from './AccountTimezoneSettings';
+import {
+  StorefrontAppearanceSettings,
+  ViewStorefront,
+} from './StorefrontAppearance';
+import { NotificationCenter } from '@market/ui/notifications';
+import '@market/ui/notifications.css';
+const notificationAccountOrigin =
+  typeof __PLATFORM_ACCOUNT_ORIGIN__ === 'undefined'
+    ? undefined
+    : __PLATFORM_ACCOUNT_ORIGIN__ || undefined;
 const DocumentsWorkspace = lazy(() =>
   import('./documents/DocumentsWorkspace').then((module) => ({
     default: module.DocumentsWorkspace,
@@ -87,6 +98,7 @@ function Shell({
   documentConnection?: {
     endpoint: string;
     channelToken: string;
+    channelId?: string;
     onAuthorityFailure?: () => void;
   };
 }) {
@@ -127,6 +139,8 @@ function Shell({
     .find(
       (item) =>
         item.path === path ||
+        (item.path === '/notifications' &&
+          path.startsWith('/notifications/')) ||
         (context.scope === 'PLATFORM' &&
           ((path === '/' && item.path === '/platform') ||
             (item.path !== '/platform' && path.startsWith(item.path + '/')))) ||
@@ -151,8 +165,19 @@ function Shell({
     )
       return;
     event.preventDefault();
+    if (
+      next !== path &&
+      (next === '/vendor/storefront' || path === '/vendor/storefront')
+    ) {
+      const destination = new URL(next, window.location.origin);
+      if (documentConnection?.channelId)
+        destination.searchParams.set('channel', documentConnection.channelId);
+      window.location.assign(destination.pathname + destination.search);
+      return;
+    }
     window.history.pushState(null, '', next);
-    setPath(next);
+    setPath(window.location.pathname);
+    window.dispatchEvent(new PopStateEvent('popstate'));
     document.querySelector<HTMLElement>('#main')?.focus();
   }
   const links = (rail = false) => (
@@ -161,6 +186,29 @@ function Shell({
         .filter((item) => !item.parent)
         .map((item) => {
           const children = items.filter((child) => child.parent === item.path);
+          const financeApi =
+            context.scope === 'MARKET'
+              ? marketService?.finance
+              : vendorService?.finance;
+          if (
+            item.path === '/vendor/finances' ||
+            item.path === '/market/finances'
+          ) {
+            for (const [suffix, label] of [
+              ...(financeApi?.quickbooks
+                ? [['/quickbooks', 'QuickBooks Online']]
+                : []),
+              ['/expenses?action=add-expense', 'Add Expense'],
+              ['/transactions', 'View Transactions'],
+              ['/expenses', 'Manage Expenses'],
+            ])
+              children.push({
+                ...item,
+                path: item.path + suffix,
+                label: label!,
+                parent: item.path,
+              });
+          }
           const isExpanded =
             current?.path === item.path || current?.parent === item.path;
           return (
@@ -270,9 +318,36 @@ function Shell({
               )}
               {context.name}
             </span>
+            {documentConnection && (
+              <NotificationCenter
+                view="bell"
+                connection={documentConnection}
+                personalOrigin={notificationAccountOrigin}
+              />
+            )}
             <DashboardMenu navigation={links()}>
+              {documentConnection &&
+                context.scope !== 'PLATFORM' &&
+                context.subject && (
+                  <ViewStorefront
+                    key={`${context.scope}:${documentConnection.channelToken}`}
+                    connection={documentConnection}
+                  />
+                )}
               {controls}
-              <Button className="secondary" onClick={onLogout}>
+              <Button
+                className="secondary"
+                onClick={() => {
+                  if (
+                    window.dispatchEvent(
+                      new Event('storefront-editor:before-exit', {
+                        cancelable: true,
+                      }),
+                    )
+                  )
+                    onLogout();
+                }}
+              >
                 Sign out
               </Button>
             </DashboardMenu>
@@ -287,7 +362,21 @@ function Shell({
             </>
           ) : (
             <>
-              <PageHeader title={current?.label ?? 'Overview'}>
+              <PageHeader
+                title={
+                  path.startsWith('/notifications')
+                    ? path.endsWith('/settings')
+                      ? 'Notification settings'
+                      : path.endsWith('/unsubscribed')
+                        ? 'Unsubscribed notifications'
+                        : 'Notifications'
+                    : path === '/vendor/settings/payments'
+                      ? 'Payment Integrations'
+                      : path === '/vendor/pos/square-return'
+                        ? 'Check Square payment'
+                        : (current?.label ?? 'Overview')
+                }
+              >
                 {context.scope === 'PLATFORM' && (
                   <p>
                     {context.scope === 'PLATFORM'
@@ -301,6 +390,17 @@ function Shell({
                 '/market/settings',
                 '/platform/settings',
               ].includes(path) && <DashboardAppearanceSettings />}
+              {[
+                '/vendor/settings',
+                '/market/settings',
+                '/platform/settings',
+              ].includes(path) &&
+                documentConnection && (
+                  <AccountTimezoneSettings
+                    key={documentConnection.channelToken}
+                    connection={documentConnection}
+                  />
+                )}
               {['/vendor/settings', '/market/settings'].includes(path) &&
                 (marketService?.notifications ||
                   vendorService?.notifications) && (
@@ -313,7 +413,29 @@ function Shell({
                     }
                   />
                 )}
-              {['/vendor/documents', '/market/documents'].includes(path) ? (
+              {['/vendor/storefront', '/market/storefront'].includes(path) ? (
+                <StorefrontAppearanceSettings
+                  key={`${context.scope}:${documentConnection?.channelToken}`}
+                  connection={documentConnection}
+                  market={context.scope === 'MARKET'}
+                />
+              ) : path.startsWith('/notifications') ? (
+                documentConnection ? (
+                  <NotificationCenter
+                    connection={documentConnection}
+                    personalOrigin={notificationAccountOrigin}
+                    view={
+                      path.endsWith('/settings')
+                        ? 'settings'
+                        : path.endsWith('/unsubscribed')
+                          ? 'unsubscribed'
+                          : 'inbox'
+                    }
+                  />
+                ) : (
+                  <EmptyState title="Connect to the backend to view notifications" />
+                )
+              ) : ['/vendor/documents', '/market/documents'].includes(path) ? (
                 documentConnection ? (
                   <Suspense fallback={<Spinner label="Loading documents" />}>
                     <DocumentsWorkspace

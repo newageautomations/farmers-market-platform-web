@@ -7,6 +7,8 @@ import {
   createPreferenceApi,
   createPublicMarketOperationsApi,
   createApplicationDocumentsApi,
+  createInboxApi,
+  createPublicContactApi,
 } from '@market/api';
 import type { APIContext } from 'astro';
 
@@ -23,7 +25,9 @@ function requestOptions(
   )
     throw new AppError('forbidden');
   // Request-local cookie transport. Vendure owns session, context, prices and active Order.
-  let cookie = context.request.headers.get('cookie') ?? '';
+  let cookie = context.locals.editorPreview
+    ? ''
+    : (context.request.headers.get('cookie') ?? '');
   const requestFetch: typeof fetch = async (input, init) => {
     const headers = new Headers(init?.headers);
     if (process.env.PLATFORM_ACCOUNT_BRIDGE_KEY)
@@ -56,6 +60,15 @@ function requestOptions(
     channelToken: storefront.channelToken,
     fetch: requestFetch,
   };
+}
+export function requestInbox(
+  context: Pick<APIContext, 'locals' | 'request'>,
+  responseHeaders?: Headers,
+) {
+  return createInboxApi({
+    ...requestOptions(context, responseHeaders),
+    api: 'shop',
+  });
 }
 export function requestCheckout(
   context: Pick<APIContext, 'locals' | 'request'>,
@@ -113,5 +126,20 @@ export function requestApplicationDocuments(
   return createApplicationDocumentsApi({
     ...requestOptions(context),
     application,
+  });
+}
+
+export const loyaltyTransport = requestOptions;
+
+export function requestContact(context: APIContext, headers: Headers) {
+  const options = requestOptions(context, headers);
+  return createPublicContactApi({
+    ...options,
+    fetch: (url, init) => {
+      const outbound = new Headers(init?.headers);
+      outbound.set('origin', context.locals.storefront!.canonicalOrigin);
+      outbound.set('x-contact-client', context.clientAddress);
+      return options.fetch(url, { ...init, headers: outbound });
+    },
   });
 }

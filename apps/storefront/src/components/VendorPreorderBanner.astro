@@ -1,0 +1,8 @@
+---
+import { VendorPreorderBanner } from './VendorPreorderBanner';
+import type { ComponentProps } from 'react';
+import '../styles/preorder-banner.css';
+type Props = ComponentProps<typeof VendorPreorderBanner>;
+---
+
+<VendorPreorderBanner {...Astro.props} client:load />

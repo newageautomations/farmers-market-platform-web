@@ -26,6 +26,11 @@ export interface NavItem {
 }
 export const navigation: readonly NavItem[] = [
   {
+    label: 'Notifications',
+    path: '/notifications',
+    scopes: ['VENDOR', 'MARKET', 'PLATFORM'],
+  },
+  {
     label: 'Documents',
     path: '/market/documents',
     scopes: ['MARKET'],
@@ -142,8 +147,20 @@ export const navigation: readonly NavItem[] = [
     scopes: ['VENDOR'],
   },
   {
+    label: 'In-Person Checkout',
+    path: '/vendor/pos',
+    scopes: ['VENDOR'],
+    permission: 'OperateOwnPos',
+  },
+  {
     label: 'Products',
     path: '/vendor/products',
+    scopes: ['VENDOR'],
+    permission: 'ManageOwnCatalog',
+  },
+  {
+    label: 'Categories',
+    path: '/vendor/categories',
     scopes: ['VENDOR'],
     permission: 'ManageOwnCatalog',
   },
@@ -158,6 +175,12 @@ export const navigation: readonly NavItem[] = [
     path: '/vendor/orders',
     scopes: ['VENDOR'],
     permission: 'ReadOwnVendorIdentity',
+  },
+  {
+    label: 'Contact Submissions',
+    path: '/vendor/contact-submissions',
+    scopes: ['VENDOR'],
+    permission: 'ReadOwnCRM',
   },
   {
     label: 'Customers',
@@ -238,6 +261,12 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnBilling',
   },
   {
+    label: 'Storefront Appearance',
+    path: '/vendor/storefront',
+    scopes: ['VENDOR'],
+    permission: 'ManageOwnStorefront',
+  },
+  {
     label: 'Settings',
     path: '/vendor/settings',
     scopes: ['VENDOR'],
@@ -250,10 +279,34 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnBilling',
   },
   {
+    label: 'Loyalty',
+    path: '/market/loyalty',
+    scopes: ['MARKET'],
+    permission: 'ReadOwnMarket',
+  },
+  {
+    label: 'Loyalty',
+    path: '/vendor/loyalty',
+    scopes: ['VENDOR'],
+    permission: 'ReadOwnCRM',
+  },
+  {
     label: 'Analytics',
     path: '/vendor/analytics',
     scopes: ['VENDOR'],
     permission: 'ReadOwnVendorAnalytics',
+  },
+  {
+    label: 'Finances',
+    path: '/vendor/finances',
+    scopes: ['VENDOR'],
+    permission: 'ReadOwnVendorFinance',
+  },
+  {
+    label: 'Finances',
+    path: '/market/finances',
+    scopes: ['MARKET'],
+    permission: 'ReadOwnMarketBilling',
   },
   {
     label: 'Analytics',
@@ -280,6 +333,12 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnMarket',
   },
   {
+    label: 'Storefront Appearance',
+    path: '/market/storefront',
+    scopes: ['MARKET'],
+    permission: 'ManageMarketStorefront',
+  },
+  {
     label: 'Settings',
     path: '/market/settings',
     scopes: ['MARKET'],
@@ -295,6 +354,7 @@ export function visibleNavigation(context: AdminContext) {
   return context.scope === 'MARKET'
     ? [
         'Overview',
+        'Notifications',
         'Occurrences',
         'Vendors',
         'Operations',
@@ -304,10 +364,13 @@ export function visibleNavigation(context: AdminContext) {
         'Layouts',
         'Assignments',
         'Booth billing',
+        'Finances',
         'Market Day',
         'Documents',
+        'Loyalty',
         'Analytics',
         'Billing',
+        'Storefront Appearance',
         'Settings',
         'Submitted applications',
         'Add external business',
@@ -322,6 +385,14 @@ export function visibleNavigation(context: AdminContext) {
     : items;
 }
 export function routeAllowed(context: AdminContext, path: string) {
+  if (
+    [
+      '/notifications',
+      '/notifications/settings',
+      '/notifications/unsubscribed',
+    ].includes(path)
+  )
+    return true;
   if (context.scope === 'PLATFORM') {
     const canonical = path === '/' ? '/platform' : path;
     return (
@@ -342,6 +413,18 @@ export function routeAllowed(context: AdminContext, path: string) {
   }
   if (context.scope === 'MARKET') {
     const canonical = marketPath(path);
+    if (
+      /^\/market\/finances(?:\/(?:transactions|expenses|quickbooks))?$/.test(
+        canonical,
+      )
+    )
+      return context.permissions.includes('ReadOwnMarketBilling');
+    if (
+      /^\/market\/loyalty(?:\/(?:challenges(?:\/(?:new|[1-9][0-9]*(?:\/(?:edit|replace))?))?|rewards))?$/.test(
+        canonical,
+      )
+    )
+      return context.permissions.includes('ReadOwnMarket');
     if (/^\/market\/assignments\/[1-9][0-9]*\/edit-layout$/.test(canonical))
       return context.permissions.includes('ReadOwnMarketAssignments');
     if (
@@ -374,6 +457,34 @@ export function routeAllowed(context: AdminContext, path: string) {
     );
   }
   const canonical = vendorPath(path);
+  if (
+    context.scope === 'VENDOR' &&
+    /^\/vendor\/finances(?:\/(?:transactions|expenses|quickbooks))?$/.test(
+      canonical,
+    )
+  )
+    return (
+      context.membershipRole === 'owner' &&
+      context.permissions.includes('ReadOwnVendorFinance')
+    );
+  if (
+    context.scope === 'VENDOR' &&
+    canonical === '/vendor/settings/clover-return'
+  )
+    return mayCommand(context, 'ManageOwnPosIntegrations');
+  if (context.scope === 'VENDOR' && canonical === '/vendor/settings/taxes')
+    return mayCommand(context, 'ManageOwnCatalog');
+  if (context.scope === 'VENDOR' && canonical === '/vendor/settings/payments')
+    return mayCommand(context, 'ManageOwnPosIntegrations');
+  if (context.scope === 'VENDOR' && canonical === '/vendor/pos/square-return')
+    return context.permissions.includes('OperateOwnPos');
+  if (
+    context.scope === 'VENDOR' &&
+    /^\/vendor\/loyalty(?:\/(?:rewards(?:\/(?:new|[1-9][0-9]*\/edit))?|leaderboard|redemptions))?$/.test(
+      canonical,
+    )
+  )
+    return context.permissions.includes('ReadOwnCRM');
   if (context.scope === 'VENDOR' && canonical === '/vendor/booths')
     return context.permissions.includes('ReadOwnVendorIdentity');
   if (context.scope === 'VENDOR' && canonical === '/vendor/products/new')

@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { AppError, safeError } from '@market/api';
 import { boundedBody } from '@market/config';
+import { preorderCookie, vendorPreorder } from '../../lib/vendor-preorder';
 import {
   requestShop,
   requestMarketShop,
@@ -51,10 +52,41 @@ export const POST: APIRoute = async (context) => {
         throw new AppError('validation');
       return Number(input.quantity);
     };
+    const rememberOccurrence = () =>
+      context.cookies.set(
+        preorderCookie(storefront.storefrontId ?? ''),
+        id(input.occurrenceId),
+        {
+          path: '/',
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: context.url.protocol === 'https:',
+          maxAge: 60 * 60 * 24 * 30,
+        },
+      );
     let result: unknown;
     const checkout = requestCheckout(context, headers);
     stage = 'shop-operation';
     switch (input.action) {
+      case 'product-availability': {
+        if (
+          storefront.kind !== 'VENDOR' ||
+          !Array.isArray(input.variantIds) ||
+          input.variantIds.length > 1000
+        )
+          throw new AppError('validation');
+        const ids = [...new Set(input.variantIds.map(id))];
+        const facts = [];
+        for (let skip = 0; skip < ids.length; skip += 20)
+          facts.push(
+            ...(await requestShop(context, headers).availability(
+              id(input.occurrenceId),
+              ids.slice(skip, skip + 20),
+            )),
+          );
+        result = facts;
+        break;
+      }
       case 'communication-settings':
       case 'communication-change': {
         if (
@@ -168,6 +200,20 @@ export const POST: APIRoute = async (context) => {
         result = await checkout.logout();
         break;
       case 'cart':
+        if (input.includePreorder === true && storefront.kind === 'VENDOR') {
+          const bootstrap = await requestShop(context, headers).bootstrap();
+          result = {
+            ...bootstrap,
+            preorder: await vendorPreorder(
+              context,
+              bootstrap.cart?.lines.map((line) => line.productVariant.id) ?? [],
+              bootstrap.cart,
+            ),
+          };
+          break;
+        }
+        result = await api.bootstrap();
+        break;
       case 'session':
         result = await api.bootstrap();
         break;
@@ -193,10 +239,28 @@ export const POST: APIRoute = async (context) => {
               : await requestShop(context, headers).add(
                   id(input.variantId),
                   quantity(),
+                  id(input.occurrenceId),
                 ),
         };
+        if (storefront.kind === 'VENDOR') rememberOccurrence();
         break;
       case 'select-occurrence':
+        if (storefront.kind === 'VENDOR') {
+          if (
+            input.requireAvailable === true &&
+            !(await requestShop(context, headers).appearances()).some(
+              (row) =>
+                row.id === id(input.occurrenceId) && row.preorderAvailable,
+            )
+          )
+            throw new AppError('validation', 'PREORDER_OCCURRENCE_REQUIRED');
+          await requestShop(context, headers).select(id(input.occurrenceId));
+          rememberOccurrence();
+          result = {
+            cart: (await requestShop(context, headers).bootstrap()).cart,
+          };
+          break;
+        }
         result = {
           cart: await requestMarketShop(context, headers).select(
             id(input.occurrenceId),

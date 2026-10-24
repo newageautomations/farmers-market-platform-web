@@ -13,7 +13,19 @@ if (!npm) throw new Error('Run this helper through its npm script.');
 const env = { ...process.env };
 // All three servers must receive the same ignored development configuration.
 // Forward only account settings to the backend, never frontend DB/provider values.
-if (['admin', 'storefront', 'serve'].includes(action))
+if (
+  [
+    'admin',
+    'storefront',
+    'serve',
+    'worker',
+    'migrate',
+    'storefront-fixtures',
+    'storefront-shop-fixtures',
+    'willow-fixtures',
+    'grant-willow-crm',
+  ].includes(action)
+)
   Object.assign(
     env,
     localAccountEnvironment(loadEnv('development', root, ''), process.env),
@@ -39,8 +51,14 @@ if (['admin', 'storefront'].includes(action)) {
       'seed',
       'showcase',
       'serve',
+      'worker',
+      'migrate',
       'start-day',
       'verify',
+      'storefront-fixtures',
+      'storefront-shop-fixtures',
+      'willow-fixtures',
+      'grant-willow-crm',
       'test',
     ].includes(action)
   )

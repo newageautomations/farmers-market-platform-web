@@ -1,0 +1,300 @@
+.loyalty-ring {
+  text-align: center;
+  width: 100%;
+}
+.loyalty-ring svg {
+  display: block;
+  margin-inline: auto;
+  width: min(100%, 200px);
+  height: auto;
+  overflow: visible;
+}
+.loyalty-ring circle {
+  fill: none;
+  stroke-width: 9;
+}
+.loyalty-ring-track {
+  stroke: color-mix(
+    in srgb,
+    var(--brand-primary, #28744d) 12%,
+    var(--brand-surface, white)
+  );
+}
+.loyalty-ring-current {
+  stroke: var(--brand-primary, #28744d);
+  animation: loyalty-ring-fill 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.loyalty-ring[data-milestone-reached='true'] .loyalty-ring-track {
+  stroke: color-mix(
+    in srgb,
+    var(--brand-primary, #28744d) 38%,
+    var(--brand-surface, white)
+  );
+}
+@keyframes loyalty-ring-fill {
+  from {
+    stroke-dashoffset: 100;
+  }
+}
+.loyalty-ring-value {
+  fill: var(--brand-foreground, #172b20);
+  font-size: 19px;
+  font-weight: 700;
+}
+.loyalty-ring-caption {
+  fill: var(--brand-foreground, #172b20);
+  font-size: 8px;
+}
+.loyalty-ring p {
+  font-size: 0.9rem;
+  margin: 0.25rem 0;
+}
+.loyalty-wallet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 1.25rem;
+}
+.loyalty-rewards {
+  display: grid;
+  gap: 1rem;
+  margin-block: 1rem;
+}
+.loyalty-reward {
+  border-top: 1px solid var(--border, #d4ded7);
+  padding-top: 1rem;
+}
+.loyalty-redeem-ready {
+  animation:
+    loyalty-redeem-bounce 2.8s ease-out infinite,
+    loyalty-redeem-flash 2.8s ease-in-out infinite;
+}
+@keyframes loyalty-redeem-bounce {
+  0%,
+  60%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  70% {
+    transform: translateY(-6px);
+  }
+  90% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes loyalty-redeem-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0
+      color-mix(in srgb, var(--brand-primary, #28744d) 22%, transparent);
+    filter: brightness(1);
+  }
+  75% {
+    box-shadow: 0 0 0 10px transparent;
+    filter: brightness(1.2);
+  }
+}
+.loyalty-trend {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-block: 1rem;
+  overflow: visible;
+}
+.loyalty-trend rect {
+  fill: var(--brand-primary);
+}
+.loyalty-trend line {
+  stroke: color-mix(in srgb, var(--brand-foreground) 16%, var(--brand-surface));
+}
+.loyalty-trend text {
+  fill: var(--brand-muted);
+  font-size: 12px;
+}
+.loyalty-date-range {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 1rem;
+}
+.loyalty-daily-values {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  gap: 1rem;
+}
+.loyalty-daily-values dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.loyalty-type-option {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  cursor: pointer;
+}
+.loyalty-type-option input[type='radio'] {
+  margin: 0;
+  flex: none;
+}
+.loyalty-top-customers {
+  list-style: none;
+  padding: 0;
+}
+.loyalty-rank {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid var(--loyalty-medal, var(--brand-muted));
+  border-radius: 20px;
+  background: color-mix(
+    in srgb,
+    var(--loyalty-medal, var(--brand-muted)) 18%,
+    var(--brand-surface)
+  );
+  color: var(--brand-foreground);
+  font-weight: 600;
+}
+[data-loyalty-rank='1'] {
+  --loyalty-medal: #b78a20;
+}
+[data-loyalty-rank='2'] {
+  --loyalty-medal: #8996a4;
+}
+[data-loyalty-rank='3'] {
+  --loyalty-medal: #ad7148;
+}
+.loyalty-top-customers > li {
+  min-width: 0;
+}
+.loyalty-leader-card.card.ui-card {
+  background: color-mix(
+    in srgb,
+    var(--loyalty-medal) 55%,
+    var(--brand-surface)
+  );
+  border-color: var(--loyalty-medal);
+  height: 100%;
+  padding-right: 3.5rem;
+}
+.loyalty-leader-card.card.ui-card:hover {
+  background: color-mix(
+    in srgb,
+    var(--loyalty-medal) 65%,
+    var(--brand-surface)
+  );
+}
+.loyalty-leader-award {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+.loyalty-leader-award svg {
+  width: 28px;
+  height: 28px;
+}
+.loyalty-vendor-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 1.25rem;
+  margin: 0;
+}
+.loyalty-vendor-heading svg {
+  flex: none;
+}
+.loyalty-wallet:not(:has(.loyalty-wallet-redeem)) {
+  cursor: default;
+}
+.loyalty-wallet .loyalty-wallet-redeem.ui-record-trigger {
+  order: 1;
+  align-self: center;
+  width: auto;
+  font-size: 1rem;
+  color: var(--brand-on-primary);
+  justify-content: center;
+}
+.loyalty-activity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.loyalty-activity-list > li + li {
+  border-top: 1px solid
+    color-mix(in srgb, var(--brand-foreground) 15%, transparent);
+}
+.loyalty-activity-row.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  margin-block: 0.4rem;
+}
+.loyalty-activity-row .ui-status {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.loyalty-reward-options {
+  display: grid;
+  gap: 1rem;
+}
+.loyalty-reward-options > label {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.loyalty-reward-options input[type='radio'] {
+  flex: none;
+  margin: 0;
+}
+.loyalty-reward-options p {
+  margin-block: 0.25rem;
+}
+.loyalty-cart-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+.loyalty-cart-actions p {
+  margin: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .loyalty-ring-current {
+    animation: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loyalty-redeem-ready {
+    animation: none;
+  }
+}
+.market-challenge-multiline {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.market-challenge-wizard-actions {
+  padding-block-start: 1.5rem;
+}
+.market-loyalty-help-link {
+  text-decoration: underline;
+}
+.market-challenge-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block-start: 1rem;
+}
+.market-challenge-heading h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.market-loyalty-record .ui-record-trigger.sr-only {
+  position: absolute;
+}
+.market-loyalty-record-body {
+  min-width: 0;
+}
