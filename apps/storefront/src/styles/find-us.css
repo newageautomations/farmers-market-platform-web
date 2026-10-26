@@ -75,9 +75,15 @@
   font-weight: 500;
 }
 .find-row > summary {
+  /* The summary fill sits inside the card's border, including rounded corners. */
+  border-radius: max(0px, calc(var(--ui-disclosure-radius) - 1px));
   justify-content: flex-start;
   gap: 0.85rem;
   cursor: pointer;
+}
+.find-row[open] > summary {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 .find-row > summary > span {
   min-width: 0;

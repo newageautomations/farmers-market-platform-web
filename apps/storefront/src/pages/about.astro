@@ -1,4 +1,6 @@
 ---
+import PremiumContent from '../components/modern-farmhouse/Content.astro';
+import { isFarmhouse } from '@market/theme/storefront';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import ClosingInvitation from '../components/ClosingInvitation.astro';
 import {
@@ -28,7 +30,13 @@ if (!enabled)
   title={enabled ? about.title : 'Page unavailable'}
   noindex={!enabled}
 >
-  {enabled && storefront?.kind === 'VENDOR' ? (
+  {enabled && storefront && isFarmhouse(storefront.appearance) ? (
+    <PremiumContent
+      context={storefront}
+      page="about"
+      preview={!!Astro.locals.editorPreview}
+    />
+  ) : enabled && storefront?.kind === 'VENDOR' ? (
     <article class="story-page" aria-label={about.title}>
       <h1 class="sr-only" data-story-title>
         {about.title}

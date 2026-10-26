@@ -1,4 +1,5 @@
 ---
+import { isFarmhouse } from '@market/theme/storefront';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import ClosingInvitation from '../components/ClosingInvitation.astro';
 import { ContactForm } from '../components/ContactForm';
@@ -26,6 +27,7 @@ if (enabled && !editorPreview && storefront?.source === 'backend') {
     /* Guests and unavailable profiles keep the form editable. */
   }
 }
+const premium = !!storefront && isFarmhouse(storefront.appearance);
 const details = contactDetails(config);
 const entries = contactEntryTypes
   .filter((type) => details[type].trim())
@@ -45,7 +47,14 @@ const social = entries.filter(
   noindex={!enabled}
 >
   {enabled ? (
-    <article class="contact-page" aria-label={config.title}>
+    <article
+      class:list={[
+        'contact-page',
+        premium && 'farmhouse-space farmhouse-contact',
+      ]}
+      data-farmhouse-component={premium ? 'contact' : undefined}
+      aria-label={config.title}
+    >
       <section class="contact-intro" data-editor-section="contact-intro">
         <h1>{config.heading}</h1>
         <p>{config.description}</p>

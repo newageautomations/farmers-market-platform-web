@@ -10,6 +10,7 @@ export function VendorPreorderBanner({
   hasItems = false,
   disabled = false,
   scheduleFormat = 'full',
+  headingStyle = 'preorder',
   onBusyChange,
 }: {
   storefrontId: string;
@@ -22,6 +23,7 @@ export function VendorPreorderBanner({
   hasItems?: boolean;
   disabled?: boolean;
   scheduleFormat?: 'full' | 'compact';
+  headingStyle?: 'preorder' | 'pickup';
   onBusyChange?: (busy: boolean) => void;
 }) {
   const { selected, orderOccurrence } = preorder;
@@ -31,7 +33,9 @@ export function VendorPreorderBanner({
       <div>
         <h2 className="ui-section-title-consumer">
           {selected
-            ? `Preordering for ${selected.marketName}`
+            ? headingStyle === 'pickup'
+              ? `Pickup at ${selected.marketName}`
+              : `Preordering for ${selected.marketName}`
             : preorder.unavailable
               ? 'Market availability is temporarily unavailable'
               : hasItems || orderOccurrence

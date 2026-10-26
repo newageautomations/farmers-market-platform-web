@@ -1,5 +1,7 @@
 ---
 import { buttonClassName } from '@market/ui/presentation';
+import { Success as PremiumSuccess } from '../../components/modern-farmhouse/Success';
+import { isFarmhouse } from '@market/theme/storefront';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { PurchaseSuccess } from '../../components/ResilientSurfaces';
 import '../../styles/vendor-checkout.css';
@@ -21,10 +23,22 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   title="Order confirmation"
   noindex
 >
-  <section class="checkout-confirmation-page">
-    <h1>Order confirmation</h1>
+  <section
+    class={
+      isFarmhouse(storefront?.appearance)
+        ? 'farmhouse-success-route'
+        : 'checkout-confirmation-page'
+    }
+  >
+    {!isFarmhouse(storefront?.appearance) && <h1>Order confirmation</h1>}
     {Astro.locals.editorPreview ? (
       <p>Order confirmation preview is not available in the visual editor.</p>
+    ) : isFarmhouse(storefront?.appearance) ? (
+      <PremiumSuccess
+        view={view ?? undefined}
+        storefrontId={storefront?.storefrontId ?? ''}
+        client:load
+      />
     ) : view?.committed ? (
       <PurchaseSuccess
         view={view}

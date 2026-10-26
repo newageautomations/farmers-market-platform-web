@@ -1,4 +1,7 @@
 ---
+import PremiumShop from '../../components/modern-farmhouse/Shop.astro';
+import { isFarmhouse } from '@market/theme/storefront';
+import { farmhouseCatalog } from '../../lib/farmhouse-catalog';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import ProductCards from '../../components/ProductCards.astro';
 import Button from '../../components/ui/Button.astro';
@@ -17,6 +20,7 @@ import {
   shopCategories,
   shopProducts,
   productPreorder,
+  safeAsset,
 } from '@market/storefront-core';
 import '../../styles/vendor-shop.css';
 const { storefront, storefrontError } = Astro.locals;
@@ -36,7 +40,9 @@ const category = Astro.url.searchParams.get('category') ?? '',
 try {
   if (storefront?.kind === 'MARKET') throw new AppError('not-found');
   page = catalogInputs(Astro.url.searchParams).page;
-  if (storefront?.source === 'fixture' && import.meta.env.DEV) {
+  if (isFarmhouse(storefront?.appearance)) {
+    items = (await farmhouseCatalog(Astro)).items;
+  } else if (storefront?.source === 'fixture' && import.meta.env.DEV) {
     const { fixtureCatalog } = await import('@market/storefront-core/fixtures');
     items = fixtureCatalog({
       search: '',
@@ -60,7 +66,19 @@ try {
   error = safeError(e);
 }
 const categories = shopCategories(items),
-  filtered = shopProducts(items, category, sort),
+  filtered = shopProducts(items, category, sort).filter(
+    (product) =>
+      !isFarmhouse(storefront?.appearance) ||
+      !Astro.url.searchParams.get('search') ||
+      product.name
+        .toLocaleLowerCase()
+        .includes(
+          Astro.url.searchParams
+            .get('search')!
+            .toLocaleLowerCase()
+            .slice(0, 100),
+        ),
+  ),
   skip = (page - 1) * 12,
   visible = filtered.slice(skip, skip + 12);
 if (!error)
@@ -77,6 +95,10 @@ const link = (next: { category?: string; page?: number }) =>
   new URLSearchParams({
     ...(selected ? { occurrence: selected.id } : {}),
     sort,
+    ...(isFarmhouse(storefront?.appearance) &&
+    Astro.url.searchParams.get('search')
+      ? { search: Astro.url.searchParams.get('search')!.slice(0, 100) }
+      : {}),
     ...((next.category ?? category)
       ? { category: next.category ?? category }
       : {}),
@@ -98,166 +120,211 @@ const noneAvailable =
   context={storefront}
   path="/products"
   title="Shop"
+  imageHero={!error && isFarmhouse(storefront?.appearance)}
   noindex={!!error || !items.length}
 >
-  <section
-    class="vendor-shop"
-    data-composition="vendor"
-    aria-label="Shop products for market pickup"
-  >
-    {error ? (
-      <>
-        <h1>Shop unavailable</h1>
-        <ErrorState error={error} />
-      </>
-    ) : (
-      <>
-        <div class="shop-market-slot">
-          <VendorPreorderBanner
-            preorder={preorder}
-            storefrontId={storefront?.storefrontId ?? ''}
-            preview={!!Astro.locals.editorPreview}
-          />
-        </div>
-        <aside
-          class={cardClassName({
-            className: 'shop-categories',
-            spacing: 'contained',
-            padding: 'default',
-            surface: 'card',
-          })}
-        >
-          <h2 class="ui-section-title-consumer">Product Categories</h2>
-          <nav aria-label="Product categories">
-            <a
-              href={link({ category: '' })}
-              aria-current={!category ? 'page' : undefined}
-            >
-              All Products
-            </a>
-            {categories.map((c) => (
-              <a
-                href={link({ category: c.id })}
-                aria-current={category === c.id ? 'page' : undefined}
-              >
-                {c.name}
-              </a>
-            ))}
-          </nav>
-        </aside>
-        <div class="shop-catalog">
-          <form method="get" class="shop-catalog-controls">
-            {selected && (
-              <input type="hidden" name="occurrence" value={selected.id} />
-            )}
-            <div class="shop-catalog-heading">
-              <h1>{heading}</h1>
-              <span>
-                {filtered.length}{' '}
-                {filtered.length === 1 ? 'product' : 'products'}
-              </span>
+  {storefront && isFarmhouse(storefront.appearance) && !error ? (
+    <PremiumShop
+      context={storefront}
+      categories={categories}
+      category={category}
+      sort={sort}
+      page={page}
+      visible={visible}
+      total={filtered.length}
+      preorder={preorder}
+      link={link}
+      preview={!!Astro.locals.editorPreview}
+    />
+  ) : (
+    <section
+      class="vendor-shop"
+      data-composition="vendor"
+      aria-label="Shop products for market pickup"
+    >
+      {error ? (
+        <>
+          <h1>Shop unavailable</h1>
+          <ErrorState error={error} />
+        </>
+      ) : (
+        <>
+          {storefront?.appearance?.theme === 'modern-farmhouse' && (
+            <div class="mf-shop-intro">
+              <div>
+                <h1>{heading}</h1>
+                <p>
+                  Find your next market favorite. Choose a pickup market to see
+                  what is available.
+                </p>
+              </div>
+              {safeAsset(visible[0]?.featuredAsset?.preview) && (
+                <img
+                  class="product-media"
+                  src={safeAsset(visible[0]?.featuredAsset?.preview)}
+                  alt=""
+                  width="960"
+                  height="640"
+                  fetchpriority="high"
+                />
+              )}
             </div>
-            <div class="field shop-mobile-categories">
-              <label for="shop-category">Product category</label>
-              <select
-                id="shop-category"
-                name="category"
-                class={selectClassName()}
-              >
-                <option value="" selected={!category}>
-                  All Products
-                </option>
-                {categories.map((c) => (
-                  <option value={c.id} selected={category === c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div class="field shop-sort">
-              <label for="shop-sort">Sort by</label>
-              <select id="shop-sort" name="sort" class={selectClassName()}>
-                <option value="default" selected={sort === 'default'}>
-                  Catalog order
-                </option>
-                <option value="name" selected={sort === 'name'}>
-                  Name A to Z
-                </option>
-              </select>
-            </div>
-            <Button type="submit" variant="secondary">
-              Apply
-            </Button>
-          </form>
-          {preorder.unavailable && selected && (
-            <p class="ui-alert ui-alert-info" role="status">
-              Availability could not be confirmed. Purchasing is paused until
-              you refresh the page.
-            </p>
           )}
-          {noneAvailable && (
-            <p class="ui-alert ui-alert-info" role="status">
-              These products cannot currently be preordered for this market.
-              Preordering may be closed or products may be sold out. Choose
-              another market or check back later.
-            </p>
-          )}
-          {visible.length ? (
-            <ProductCards
-              items={visible}
-              shop
-              storefrontId={storefront?.storefrontId}
-              occurrenceId={selected?.id}
-              availability={preorder.availability}
+          <div class="shop-market-slot">
+            <VendorPreorderBanner
+              preorder={preorder}
+              storefrontId={storefront?.storefrontId ?? ''}
               preview={!!Astro.locals.editorPreview}
             />
-          ) : (
-            <div class="empty-state">
-              <h2 class="ui-section-title-consumer">
-                {!items.length ? 'No products yet' : 'No products in this view'}
-              </h2>
-              <p>
-                {!items.length
-                  ? 'This vendor has not published any products yet. Please check back soon.'
-                  : 'Choose All Products or return to the first page.'}
-              </p>
-              {!!items.length && (
-                <Button
-                  href={link({ category: '', page: 1 })}
-                  variant="secondary"
-                >
-                  All Products
-                </Button>
-              )}
-            </div>
-          )}
-          {filtered.length > 12 && (
-            <nav class="ui-pagination pagination" aria-label="Shop pages">
-              {page > 1 && (
+          </div>
+          <aside
+            class={cardClassName({
+              className: 'shop-categories',
+              spacing: 'contained',
+              padding: 'default',
+              surface:
+                storefront?.appearance?.theme === 'modern-farmhouse'
+                  ? 'embedded'
+                  : 'card',
+            })}
+          >
+            <h2 class="ui-section-title-consumer">Product Categories</h2>
+            <nav aria-label="Product categories">
+              <a
+                href={link({ category: '' })}
+                aria-current={!category ? 'page' : undefined}
+              >
+                All Products
+              </a>
+              {categories.map((c) => (
                 <a
-                  class={buttonClassName({ variant: 'secondary' })}
-                  href={link({ page: page - 1 })}
+                  href={link({ category: c.id })}
+                  aria-current={category === c.id ? 'page' : undefined}
                 >
-                  Previous page
+                  {c.name}
                 </a>
-              )}
-              <span>
-                Page {page} · {visible.length ? skip + 1 : 0} to{' '}
-                {visible.length ? skip + visible.length : 0} of{' '}
-                {filtered.length} products
-              </span>
-              {skip + 12 < filtered.length && (
-                <a
-                  class={buttonClassName({ variant: 'secondary' })}
-                  href={link({ page: page + 1 })}
-                >
-                  Next page
-                </a>
-              )}
+              ))}
             </nav>
-          )}
-        </div>
-      </>
-    )}
-  </section>
+          </aside>
+          <div class="shop-catalog">
+            <form method="get" class="shop-catalog-controls">
+              {selected && (
+                <input type="hidden" name="occurrence" value={selected.id} />
+              )}
+              <div class="shop-catalog-heading">
+                {storefront?.appearance?.theme !== 'modern-farmhouse' && (
+                  <h1>{heading}</h1>
+                )}
+                <span>
+                  {filtered.length}{' '}
+                  {filtered.length === 1 ? 'product' : 'products'}
+                </span>
+              </div>
+              <div class="field shop-mobile-categories">
+                <label for="shop-category">Product category</label>
+                <select
+                  id="shop-category"
+                  name="category"
+                  class={selectClassName()}
+                >
+                  <option value="" selected={!category}>
+                    All Products
+                  </option>
+                  {categories.map((c) => (
+                    <option value={c.id} selected={category === c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div class="field shop-sort">
+                <label for="shop-sort">Sort by</label>
+                <select id="shop-sort" name="sort" class={selectClassName()}>
+                  <option value="default" selected={sort === 'default'}>
+                    Catalog order
+                  </option>
+                  <option value="name" selected={sort === 'name'}>
+                    Name A to Z
+                  </option>
+                </select>
+              </div>
+              <Button type="submit" variant="secondary">
+                Apply
+              </Button>
+            </form>
+            {preorder.unavailable && selected && (
+              <p class="ui-alert ui-alert-info" role="status">
+                Availability could not be confirmed. Purchasing is paused until
+                you refresh the page.
+              </p>
+            )}
+            {noneAvailable && (
+              <p class="ui-alert ui-alert-info" role="status">
+                These products cannot currently be preordered for this market.
+                Preordering may be closed or products may be sold out. Choose
+                another market or check back later.
+              </p>
+            )}
+            {visible.length ? (
+              <ProductCards
+                theme={storefront?.appearance?.theme}
+                items={visible}
+                shop
+                storefrontId={storefront?.storefrontId}
+                occurrenceId={selected?.id}
+                availability={preorder.availability}
+                preview={!!Astro.locals.editorPreview}
+              />
+            ) : (
+              <div class="empty-state">
+                <h2 class="ui-section-title-consumer">
+                  {!items.length
+                    ? 'No products yet'
+                    : 'No products in this view'}
+                </h2>
+                <p>
+                  {!items.length
+                    ? 'This vendor has not published any products yet. Please check back soon.'
+                    : 'Choose All Products or return to the first page.'}
+                </p>
+                {!!items.length && (
+                  <Button
+                    href={link({ category: '', page: 1 })}
+                    variant="secondary"
+                  >
+                    All Products
+                  </Button>
+                )}
+              </div>
+            )}
+            {filtered.length > 12 && (
+              <nav class="ui-pagination pagination" aria-label="Shop pages">
+                {page > 1 && (
+                  <a
+                    class={buttonClassName({ variant: 'secondary' })}
+                    href={link({ page: page - 1 })}
+                  >
+                    Previous page
+                  </a>
+                )}
+                <span>
+                  Page {page} · {visible.length ? skip + 1 : 0} to{' '}
+                  {visible.length ? skip + visible.length : 0} of{' '}
+                  {filtered.length} products
+                </span>
+                {skip + 12 < filtered.length && (
+                  <a
+                    class={buttonClassName({ variant: 'secondary' })}
+                    href={link({ page: page + 1 })}
+                  >
+                    Next page
+                  </a>
+                )}
+              </nav>
+            )}
+          </div>
+        </>
+      )}
+    </section>
+  )}
 </SiteLayout>

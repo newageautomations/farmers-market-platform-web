@@ -1,0 +1,130 @@
+---
+import type { PublicCatalog, VendorPreorderAvailability } from '@market/api';
+import { FeaturedAdd } from '../FeaturedAdd';
+import Button from '../ui/Button.astro';
+import {
+  safeAsset,
+  priceLabel,
+  productPreorder,
+} from '@market/storefront-core';
+const {
+  items,
+  occurrenceId,
+  availability = [],
+  preview = false,
+  featured = false,
+  carousel = false,
+  shop = false,
+  storefrontId,
+  fixture = false,
+} = Astro.props as {
+  items: PublicCatalog['items'];
+  occurrenceId?: string;
+  availability?: VendorPreorderAvailability;
+  preview?: boolean;
+  featured?: boolean;
+  carousel?: boolean;
+  shop?: boolean;
+  storefrontId?: string;
+  fixture?: boolean;
+};
+---
+
+<div
+  class="farmhouse-product-grid"
+  data-farmhouse-component="product-cards"
+  data-carousel-track={carousel ? true : undefined}
+  role={carousel ? 'group' : undefined}
+  tabindex={carousel ? 0 : undefined}
+  aria-label={carousel ? 'Featured products' : undefined}
+>
+  {items.map((product) => {
+    const url = `/products/${encodeURIComponent(product.slug)}${occurrenceId && !preview ? '?occurrence=' + encodeURIComponent(occurrenceId) : ''}`;
+    const image = safeAsset(product.featuredAsset?.preview);
+    const status = productPreorder(product.variants, availability);
+    return (
+      <article
+        class:list={[
+          'farmhouse-product-card',
+          featured && 'farmhouse-product-card-overlay',
+        ]}
+      >
+        <a href={url}>
+          <div class="farmhouse-product-photo">
+            {image ? (
+              <img
+                src={image}
+                alt={product.name}
+                width="800"
+                height="1000"
+                loading="lazy"
+              />
+            ) : (
+              <span>Photograph coming soon</span>
+            )}
+            <span
+              class:list={[
+                'farmhouse-product-arrow',
+                featured && 'farmhouse-circle',
+              ]}
+              aria-hidden="true"
+            >
+              <span>↗</span>
+            </span>
+            {featured && (
+              <div class="farmhouse-product-caption">
+                <h3>{product.name}</h3>
+                <span>{priceLabel(product.variants)}</span>
+              </div>
+            )}
+          </div>
+          {!featured && (
+            <div class="farmhouse-product-caption">
+              <h2>{product.name}</h2>
+              <span>{priceLabel(product.variants)}</span>
+            </div>
+          )}
+        </a>
+        {shop && (
+          <div class="farmhouse-card-purchase">
+            {status.available &&
+            occurrenceId &&
+            storefrontId &&
+            !preview &&
+            !fixture ? (
+              <FeaturedAdd
+                storefrontId={storefrontId}
+                variantId={status.variantId}
+                variantOptions={product.variants
+                  .filter((v) =>
+                    availability.some(
+                      (a) => a.variantId === v.id && a.available,
+                    ),
+                  )
+                  .map((v) => ({ id: v.id, name: v.name }))}
+                productName={product.name}
+                occurrenceId={occurrenceId}
+                className="farmhouse-button"
+                client:load
+              />
+            ) : (
+              <Button
+                class="farmhouse-button"
+                disabled
+                title={
+                  preview
+                    ? 'Cart actions are disabled in the editor preview.'
+                    : !occurrenceId
+                      ? 'Choose an upcoming pickup market to add this product.'
+                      : status.reason
+                }
+              >
+                {preview && status.available ? 'Preview only' : 'Unavailable'}
+              </Button>
+            )}
+          </div>
+        )}
+      </article>
+    );
+  })}
+</div>

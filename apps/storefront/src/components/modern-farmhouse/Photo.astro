@@ -1,0 +1,43 @@
+---
+import type { FarmhouseSection } from '@market/theme/storefront';
+import { safeAsset } from '@market/storefront-core';
+const {
+  photo,
+  fallback = '',
+  eager = false,
+  class: className = '',
+} = Astro.props as {
+  photo: FarmhouseSection['photo'];
+  fallback?: string;
+  eager?: boolean;
+  class?: string;
+};
+const url = safeAsset(photo.url || fallback);
+---
+
+<div
+  class:list={['farmhouse-photo', className]}
+  style={`--photo-desktop:${photo.desktop};--photo-mobile:${photo.mobile}`}
+>
+  {url ? (
+    <img
+      src={url}
+      alt={photo.alt}
+      width="1600"
+      height="1100"
+      loading={eager ? 'eager' : 'lazy'}
+      fetchpriority={eager ? 'high' : 'auto'}
+      decoding="async"
+    />
+  ) : (
+    <div class="farmhouse-photo-empty" aria-hidden="true">
+      <svg viewBox="0 0 400 240" fill="none">
+        <path
+          d="M-20 220Q120 90 420 180M-20 190Q150 80 420 140M-20 160Q160 50 420 100M-20 130Q170 20 420 60"
+          stroke="currentColor"
+        />
+        <circle cx="305" cy="56" r="22" stroke="currentColor" />
+      </svg>
+    </div>
+  )}
+</div>

@@ -1,0 +1,53 @@
+---
+import { readProductInformation } from '@market/api';
+import { occurrenceLabel } from '@market/storefront-core';
+import { disclosureClassName } from '@market/ui/presentation';
+import type { VendorPreorderState } from '../../lib/vendor-preorder';
+const { info, preorder } = Astro.props as {
+  info: ReturnType<typeof readProductInformation>;
+  preorder: Pick<VendorPreorderState, 'selected'>;
+};
+const entries = [
+  { title: 'Ingredients', ...info.ingredients },
+  { title: 'Allergens', ...info.allergens },
+  { title: 'Storage and care', ...info.storage },
+  ...info.custom,
+].filter(
+  (entry) => entry.enabled && entry.title.trim() && entry.content.trim(),
+);
+---
+
+<div
+  class="farmhouse-information"
+  data-editor-section="information"
+  aria-label="Product information"
+>
+  {entries.map((entry) => (
+    <details class={disclosureClassName()} data-disclosure-icon="plus">
+      <summary>{entry.title}</summary>
+      <div class="ui-disclosure-content">
+        <p>{entry.content}</p>
+      </div>
+    </details>
+  ))}
+  {info.pickupEnabled &&
+    (preorder.selected ||
+      (info.pickup.enabled && info.pickup.content.trim())) && (
+      <details class={disclosureClassName()} data-disclosure-icon="plus">
+        <summary>Pickup information</summary>
+        <div class="ui-disclosure-content">
+          {preorder.selected && (
+            <p>
+              {preorder.selected.marketName} ·{' '}
+              {occurrenceLabel(preorder.selected)}
+              <br />
+              {preorder.selected.venue}
+              <br />
+              {preorder.selected.pickupInstructions}
+            </p>
+          )}
+          {info.pickup.enabled && <p>{info.pickup.content}</p>}
+        </div>
+      </details>
+    )}
+</div>

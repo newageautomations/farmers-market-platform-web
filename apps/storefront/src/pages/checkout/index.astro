@@ -1,5 +1,7 @@
 ---
 import { buttonClassName } from '@market/ui/presentation';
+import { Checkout as PremiumCheckout } from '../../components/modern-farmhouse/Checkout';
+import { isFarmhouse } from '@market/theme/storefront';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { Checkout } from '../../components/ResilientSurfaces';
 import { requestCheckout, requestShop } from '../../lib/shop';
@@ -35,7 +37,13 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 
 <SiteLayout context={storefront} path="/checkout" title="Checkout" noindex>
   <section
-    class={storefront?.kind === 'VENDOR' ? 'vendor-checkout-page' : 'py-12'}
+    class={
+      isFarmhouse(storefront?.appearance)
+        ? 'farmhouse-checkout-route'
+        : storefront?.kind === 'VENDOR'
+          ? 'vendor-checkout-page'
+          : 'py-12'
+    }
   >
     {(!preorder || !view?.groups.length) && <h1>Checkout</h1>}
     {Astro.locals.editorPreview ? (
@@ -43,7 +51,15 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     ) : error ? (
       <p>Checkout is temporarily unavailable. Please try again later.</p>
     ) : view && view.groups.length ? (
-      preorder ? (
+      preorder && isFarmhouse(storefront?.appearance) ? (
+        <PremiumCheckout
+          storefrontId={storefront?.storefrontId ?? ''}
+          initial={view}
+          initialCart={cart ?? null}
+          initialPreorder={preorder}
+          client:load
+        />
+      ) : preorder ? (
         <VendorCheckout
           storefrontId={storefront?.storefrontId ?? ''}
           initial={view}

@@ -1,0 +1,82 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { shopCategories } from '@market/storefront-core';
+import { contactDetails, contactHref } from '@market/theme/storefront';
+import { farmhouseLinks } from './navigation';
+import { farmhouseCatalog } from '../../lib/farmhouse-catalog';
+const { context } = Astro.props as { context: StorefrontContext };
+const links = farmhouseLinks(context);
+const site = [
+  { href: '/products', label: 'Shop' },
+  { href: '/about', label: 'Our Story' },
+  { href: '/find-us', label: 'Find Us' },
+  { href: '/contact', label: 'Contact' },
+  { href: '/faq', label: 'FAQ' },
+].filter((link) => links.some((enabled) => enabled.href === link.href));
+let categories: Array<{ id: string; name: string }> = [];
+try {
+  categories = shopCategories((await farmhouseCatalog(Astro)).items);
+} catch {
+  /* Catalog failure must not hide page navigation. */
+}
+const details = context.appearance?.contact?.enabled
+  ? contactDetails(context.appearance.contact)
+  : undefined;
+---
+
+<footer
+  class="farmhouse-footer"
+  data-editor-section="footer"
+  data-farmhouse-component="footer"
+>
+  <div class="farmhouse-footer-inner">
+    <div class="farmhouse-footer-grid">
+      <div class="farmhouse-footer-identity">
+        <a href="/" class="farmhouse-footer-brand">
+          {context.name}
+        </a>
+        {details &&
+          (['instagram', 'facebook'] as const).map(
+            (type) =>
+              details[type] &&
+              contactHref(type, details[type]) && (
+                <a
+                  href={contactHref(type, details[type])}
+                  rel="noopener noreferrer"
+                >
+                  {type === 'instagram' ? 'Instagram' : 'Facebook'} ↗
+                </a>
+              ),
+          )}
+      </div>
+      <nav aria-label="Site">
+        <h2>Site</h2>
+        {site.map((link) => (
+          <a href={link.href}>{link.label}</a>
+        ))}
+      </nav>
+      <nav aria-label="Products">
+        <h2>Products</h2>
+        {categories.map((category) => (
+          <a href={'/products?category=' + encodeURIComponent(category.id)}>
+            {category.name}
+          </a>
+        ))}
+      </nav>
+      <nav aria-label="Legal">
+        <h2>Legal</h2>
+        {links.some((link) => link.href === '/policies') && (
+          <a href="/policies">Policies</a>
+        )}
+        <span aria-disabled="true">Terms &amp; Conditions</span>
+      </nav>
+    </div>
+    <div class="farmhouse-colophon">
+      <span>
+        © {new Date().getFullYear()} {context.name}
+      </span>
+      <span>Powered by Market platform</span>
+      <a href="/account">Your account</a>
+    </div>
+  </div>
+</footer>

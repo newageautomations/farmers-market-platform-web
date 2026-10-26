@@ -1,4 +1,4 @@
-/** HTTP-only real Astro SSR qualification. No browser, captures or database. */
+/** Real Astro SSR qualification, with opt-in isolated Chromium checks. No database. */
 import assert from 'node:assert/strict';
 import { createServer, request, type IncomingHttpHeaders } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -8,8 +8,12 @@ import { once } from 'node:events';
 import { resolve, dirname, join } from 'node:path';
 import {
   defaultStorefrontAppearance,
+  farmhouseDefaults,
   defaultAboutCta,
   defaultFindUs,
+  defaultContact,
+  defaultFaq,
+  defaultPolicies,
   vendorAppearanceDefaults,
   type AboutSection,
 } from '@market/theme/storefront';
@@ -17,6 +21,71 @@ import {
   fixtureCatalog,
   fixtureProduct,
 } from '@market/storefront-core/fixtures';
+import type { CheckoutView, PublicCart } from '@market/api';
+
+let commerce = false;
+const testCart: PublicCart = {
+  id: '71',
+  code: 'THEME-TEST',
+  state: 'AddingItems',
+  currencyCode: 'USD',
+  subTotalWithTax: 1000,
+  totalWithTax: 1000,
+  shippingWithTax: 0,
+  discounts: [],
+  surcharges: [],
+  taxSummary: [],
+  lines: [
+    {
+      id: '81',
+      quantity: 1,
+      unitPriceWithTax: 1000,
+      discountedLinePriceWithTax: 1000,
+      featuredAsset: { preview: '/assets/vendor-mark.svg' },
+      productVariant: {
+        id: '1',
+        name: 'Standard',
+        product: { name: 'Synthetic Harvest Box', slug: 'synthetic-produce-1' },
+      },
+    },
+  ],
+};
+const testCheckout: CheckoutView = {
+  orderId: '71',
+  code: 'THEME-TEST',
+  kind: 'DIRECT_VENDOR',
+  occurrenceId: '21',
+  currency: 'USD',
+  total: 1000,
+  subtotal: 1000,
+  shipping: 0,
+  frozen: false,
+  committed: false,
+  paymentStatus: 'NONE',
+  pickupPromise: {
+    mode: 'VENDOR_BOOTH_PICKUP',
+    venue: '106 City Park Road',
+    instructions: 'Collect at our booth.',
+    startsAt: '2026-10-31T14:00:00Z',
+    endsAt: '2026-10-31T19:00:00Z',
+  },
+  contact: null,
+  profile: null,
+  groups: [
+    {
+      vendorId: '1',
+      vendorName: 'The Garden Farm',
+      lines: [
+        { id: '81', name: 'Synthetic Harvest Box', quantity: 1, total: 1000 },
+      ],
+      pickup: [],
+    },
+  ],
+  taxes: [],
+  discounts: [],
+  availability: { state: 'UNCONFIGURED', mode: 'PROVIDER' },
+  attempt: null,
+};
 
 const vendorConfig = structuredClone(defaultStorefrontAppearance);
 vendorConfig.palette = 'terracotta';
@@ -80,8 +149,78 @@ const backend = createServer(async (req, res) => {
     variables?: Record<string, unknown>;
   };
   const query = String(parsed.query);
+  if (query.includes('currentCheckoutStatus')) {
+    res.end(
+      JSON.stringify({
+        data: {
+          currentCheckoutStatus: commerce
+            ? {
+                ...testCheckout,
+                committed: !!parsed.variables?.orderId,
+                paymentStatus: parsed.variables?.orderId ? 'SUCCEEDED' : 'NONE',
+              }
+            : null,
+        },
+      }),
+    );
+    return;
+  }
+  if (query.includes('customerAccountProfile')) {
+    res.end(JSON.stringify({ data: { customerAccountProfile: null } }));
+    return;
+  }
+  if (query.includes('marketActiveCart')) {
+    res.end(
+      JSON.stringify({
+        data: { marketActiveCart: commerce ? { id: '71', occurrence } : null },
+      }),
+    );
+    return;
+  }
+  if (query.includes('activeOrder')) {
+    res.end(
+      JSON.stringify({ data: { activeOrder: commerce ? testCart : null } }),
+    );
+    return;
+  }
+  if (/\bme\s*\{/.test(query)) {
+    res.end(JSON.stringify({ data: { me: null } }));
+    return;
+  }
+  if (query.includes('vendorPreorderAvailability')) {
+    res.end(
+      JSON.stringify({
+        data: {
+          vendorPreorderAvailability: (
+            (parsed.variables?.variantIds as string[]) ?? []
+          ).map((id) => ({
+            variantId: id,
+            available: true,
+            quantity: 10,
+            reason: 'Available',
+          })),
+        },
+      }),
+    );
+    return;
+  }
   if (query.includes('vendorPreorderOccurrences')) {
-    res.end(JSON.stringify({ data: { vendorPreorderOccurrences: [] } }));
+    res.end(
+      JSON.stringify({
+        data: {
+          vendorPreorderOccurrences: commerce
+            ? [
+                {
+                  ...occurrence,
+                  marketId: '11',
+                  marketName: 'Oak Bend Saturday Market',
+                  pickupInstructions: 'Collect at our booth.',
+                },
+              ]
+            : [],
+        },
+      }),
+    );
     return;
   }
   if (query.includes('vendorStorefrontCategories')) {
@@ -176,7 +315,22 @@ const backend = createServer(async (req, res) => {
       data: {
         products: empty
           ? { totalItems: 0, items: [] }
-          : fixtureCatalog({ skip: 0, take: 3, search: '', sort: 'asc' }),
+          : fixtureCatalog({
+              skip: Number(
+                (parsed.variables?.options as { skip?: number })?.skip ?? 0,
+              ),
+              take: Number(
+                (parsed.variables?.options as { take?: number })?.take ?? 3,
+              ),
+              search: (
+                (
+                  parsed.variables?.options as {
+                    filter?: { name?: { contains?: string } };
+                  }
+                )?.filter?.name?.contains ?? ''
+              ).replace(/\\([\\%_])/g, '$1'),
+              sort: 'asc',
+            }),
       },
     }),
   );
@@ -570,8 +724,372 @@ try {
   empty = true;
   assert.match((await read('vendor')).html, /Good things are on their way/);
   assert.match((await read('market')).html, /Your next visit is in the making/);
+
+  // Both themes use exactly the same mock backend and actual Astro route controllers.
+  empty = false;
+  aboutEnabled = true;
+  commerce = true;
+  vendorConfig.homepage.title = 'Theme compatibility';
+  vendorConfig.homepage.image = 'https://assets.example.test/hero.jpg';
+  vendorConfig.contact = { ...structuredClone(defaultContact), enabled: true };
+  vendorConfig.faq = {
+    ...structuredClone(defaultFaq),
+    enabled: true,
+    questions: [
+      {
+        id: 'pickup',
+        question: 'Where do I collect?',
+        answer: 'At the market. [Contact](/contact)',
+        visible: true,
+      },
+    ],
+  };
+  vendorConfig.policies = {
+    ...structuredClone(defaultPolicies),
+    enabled: true,
+    policies: [
+      {
+        id: 'collection',
+        title: 'Collection policy',
+        content: 'Please collect at the agreed market.',
+        visible: true,
+      },
+    ],
+  };
+  const routes = [
+    '/',
+    '/products',
+    '/products/synthetic-produce-1?variant=1',
+    '/cart',
+    '/checkout',
+    '/checkout/success?order=71',
+    '/about',
+    '/find-us',
+    '/contact',
+    '/faq',
+    '/policies',
+  ];
+  for (const theme of ['harvest', 'modern-farmhouse'] as const) {
+    vendorConfig.theme = theme;
+    for (const path of routes) {
+      const result = await read('vendor', path);
+      assert.equal(
+        result.status,
+        200,
+        `${theme} ${path}: ${result.html}${output}`,
+      );
+      assert.ok(
+        result.html.includes(`data-storefront-theme="${theme}"`),
+        `${theme} ${path}`,
+      );
+      assert.ok(
+        result.html.includes(
+          theme === 'harvest' ? 'class="harvest-header' : 'class="mf-header',
+        ),
+        path,
+      );
+      if (path === '/')
+        assert.ok(
+          result.html.includes(
+            theme === 'harvest' ? 'harvest-hero' : 'mf-hero',
+          ),
+        );
+      if (path === '/products')
+        assert.ok(
+          result.html.includes(
+            theme === 'harvest' ? 'harvest-products' : 'mf-shop-intro',
+          ),
+        );
+      if (path.startsWith('/products/')) {
+        assert.ok(
+          result.html.includes(
+            theme === 'harvest'
+              ? 'class="product-detail"'
+              : 'class="mf-product-layout"',
+          ),
+        );
+        assert.match(result.html, /id="product-variant"/);
+        assert.match(result.html, /id="product-quantity"/);
+        assert.match(result.html, /Add to cart/);
+      }
+      if (path === '/cart') assert.match(result.html, /vendor-cart-layout/);
+      if (path === '/checkout') {
+        assert.match(result.html, /checkout-contact-grid/);
+        assert.match(result.html, /checkout-payment-placeholder/);
+      }
+      if (path.startsWith('/checkout/success'))
+        assert.match(result.html, /Thank you for your order/);
+      if (path === '/contact') assert.match(result.html, /contact-layout/);
+      if (path === '/faq') assert.match(result.html, /Where do I collect\?/);
+      if (path === '/policies') assert.match(result.html, /Collection policy/);
+    }
+    if (process.env.FRONTEND_QUALIFY_FARMHOUSE_BROWSER === 'true') {
+      const { qualifyMarketPickerInstances } =
+        await import('./qualify-farmhouse-shop-browser');
+      await qualifyMarketPickerInstances(
+        `http://vendor.localhost:${port}`,
+        theme,
+      );
+    }
+    const unsavedTheme = {
+      ...vendorConfig,
+      theme: theme === 'harvest' ? 'modern-farmhouse' : 'harvest',
+    };
+    const actualPreview = await read(
+      'vendor',
+      '/storefront-editor-preview/render',
+      { ...previewPayload, config: unsavedTheme },
+    );
+    assert.equal(actualPreview.status, 200, actualPreview.html + output);
+    assert.ok(
+      actualPreview.html.includes(
+        `data-storefront-theme="${unsavedTheme.theme}"`,
+      ),
+    );
+    assert.ok(
+      (await read('vendor')).html.includes(`data-storefront-theme="${theme}"`),
+    );
+    for (const blocked of ['/cart', '/checkout', '/checkout/success'])
+      assert.ok(
+        (
+          await read('vendor', '/storefront-editor-preview/render', {
+            ...previewPayload,
+            config: unsavedTheme,
+            path: blocked,
+          })
+        ).status >= 400,
+      );
+  }
+
+  // New version-two template uses actual Astro SSR on the same public routes.
+  vendorConfig.theme = 'modern-farmhouse';
+  vendorConfig.template = {
+    id: 'modern-farmhouse',
+    version: 2,
+    settings: farmhouseDefaults(),
+  };
+  vendorConfig.template.settings.header.logo = {
+    assetId: '1',
+    url: 'https://example.test/vendor-logo.jpg',
+    alt: 'Farm logo',
+    desktop: 'center',
+    mobile: 'center',
+  };
+  vendorConfig.template.settings.scrollFade = true;
+  vendorConfig.template.settings.palette = 'blue';
+  vendorConfig.template.settings.typography = 'friendly';
+  vendorConfig.buttonShape = 'soft';
+  const expectedComponents = [
+    'home',
+    'shop',
+    'product-detail',
+    'cart',
+    'checkout',
+    'success',
+    'about',
+    'find-us',
+    'contact',
+    'faq',
+    'policies',
+  ];
+  for (const [index, path] of routes.entries()) {
+    const response = await read('vendor', path);
+    assert.equal(response.status, 200, path + response.html + output);
+    assert.match(response.html, /data-template-version="2"/);
+    assert.match(response.html, /data-farmhouse-component="masthead"/);
+    assert.ok(
+      response.html.includes(
+        'data-farmhouse-component="' + expectedComponents[index] + '"',
+      ),
+      path,
+    );
+    assert.ok(
+      !/class="(?:mf-header|mf-hero|harvest-header)/.test(response.html),
+      path,
+    );
+    if (path === '/') {
+      assert.match(response.html, /farmhouse:cinematic/);
+      assert.match(response.html, /data-farmhouse-carousel/);
+      assert.match(response.html, /data-carousel-track/);
+      assert.ok(!response.html.includes('vendor-logo.jpg'));
+      assert.match(
+        response.html,
+        /class="farmhouse-header-search ui-search-select"/,
+      );
+      assert.match(response.html, /name="search"/);
+      assert.match(response.html, /data-scroll-fade="true"/);
+      const masthead = response.html.slice(
+        response.html.indexOf('<header'),
+        response.html.indexOf('</header>'),
+      );
+      assert.ok(!masthead.includes('href="/faq"'));
+      assert.ok(!masthead.includes('href="/policies"'));
+      const footer = response.html.slice(
+        response.html.indexOf('<footer'),
+        response.html.indexOf('</footer>'),
+      );
+      for (const label of [
+        'Site',
+        'Products',
+        'Legal',
+        'Shop',
+        'Our Story',
+        'Find Us',
+        'FAQ',
+        'Terms &amp; Conditions',
+      ])
+        assert.ok(footer.includes(label), label);
+      assert.ok(footer.includes('href="/products?category=1"'));
+      assert.ok(!footer.includes('farmhouse-footer-invitation'));
+      assert.ok(
+        !footer.includes(vendorConfig.template!.settings.footer.tagline),
+      );
+      assert.match(response.html, /--farmhouse-ink:#365C6E/);
+      assert.match(response.html, /Trebuchet MS/);
+      assert.ok(!response.html.includes('<span>Menu</span>'));
+    }
+    if (path === '/products' || path.startsWith('/products/'))
+      assert.match(response.html, /farmhouse-product-/);
+    if (path === '/products') {
+      assert.match(
+        response.html,
+        /data-editor-section="farmhouse:shop-settings"/,
+      );
+      assert.match(response.html, /farmhouse-cinematic farmhouse-page-hero/);
+      assert.match(
+        response.html,
+        /farmhouse-product-card farmhouse-product-card-overlay/,
+      );
+      assert.match(response.html, /farmhouse-card-purchase/);
+      assert.match(response.html, /Add to cart/);
+      assert.match(response.html, /Preordering for/);
+      assert.match(response.html, /data-catalog-sort/);
+      assert.match(response.html, /#farmhouse-catalog/);
+      assert.match(response.html, />\s*Default\s*</);
+      assert.ok(!/>\s*Apply\s*</.test(response.html));
+    }
+  }
+  commerce = false;
+  const unavailableShop = await read('vendor', '/products');
+  assert.equal(unavailableShop.status, 200);
+  assert.match(unavailableShop.html, /No upcoming pickup markets/);
+  assert.match(
+    unavailableShop.html,
+    /<button[^>]*disabled[^>]*>\s*Unavailable\s*<\/button>/,
+  );
+  commerce = true;
+  if (process.env.FRONTEND_QUALIFY_FARMHOUSE_BROWSER === 'true') {
+    const { qualifyFarmhouseShopBrowser, qualifyMarketPickerInstances } =
+      await import('./qualify-farmhouse-shop-browser');
+    await qualifyMarketPickerInstances(
+      `http://vendor.localhost:${port}`,
+      'modern-farmhouse-v2',
+    );
+    await qualifyFarmhouseShopBrowser(`http://vendor.localhost:${port}`);
+  }
+  const suggestions = await read('vendor', '/api/product-search?q=hArVeSt');
+  assert.equal(suggestions.status, 200);
+  assert.deepEqual(JSON.parse(suggestions.html).items, [
+    { name: 'Synthetic Harvest Box', href: '/products/synthetic-produce-1' },
+  ]);
+  assert.equal(suggestions.headers['cache-control'], 'private, no-store');
+  assert.deepEqual(
+    JSON.parse(
+      (await read('vendor', '/api/product-search?q=no-such-product')).html,
+    ).items,
+    [],
+  );
+  assert.deepEqual(
+    JSON.parse((await read('vendor', '/api/product-search?q=%25')).html).items,
+    [],
+  );
+  assert.deepEqual(
+    JSON.parse((await read('vendor', '/api/product-search?q=')).html).items,
+    [],
+  );
+  assert.equal((await read('market', '/api/product-search?q=box')).status, 404);
+  assert.equal(
+    JSON.parse((await read('vendor', '/api/product-search?q=produce')).html)
+      .items.length,
+    8,
+  );
+  const searched = await read('vendor', '/products?search=Harvest%20Box');
+  assert.equal(searched.status, 200);
+  assert.match(
+    searched.html,
+    /href="\/products\/synthetic-produce-1(?:\?|["])/,
+  );
+  assert.doesNotMatch(
+    searched.html,
+    /href="\/products\/synthetic-produce-2(?:\?|["])/,
+  );
+  const noMatches = await read('vendor', '/products?search=no-such-product');
+  assert.equal(noMatches.status, 200);
+  assert.doesNotMatch(
+    noMatches.html,
+    /href="\/products\/synthetic-produce-1(?:\?|["])/,
+  );
+  const premiumUnsaved = structuredClone(vendorConfig);
+  premiumUnsaved.template!.settings.sections[0]!.heading =
+    'Unpublished premium headline';
+  const premiumPreview = await read(
+    'vendor',
+    '/storefront-editor-preview/render',
+    { ...previewPayload, config: premiumUnsaved },
+  );
+  assert.equal(premiumPreview.status, 200, premiumPreview.html + output);
+  assert.match(premiumPreview.html, /Unpublished premium headline/);
+  assert.ok(!premiumPreview.html.includes('data-scroll-fade="true"'));
+  assert.ok(
+    !(await read('vendor')).html.includes('Unpublished premium headline'),
+  );
+  for (const path of ['/cart', '/checkout', '/checkout/success'])
+    assert.ok(
+      (
+        await read('vendor', '/storefront-editor-preview/render', {
+          ...previewPayload,
+          config: premiumUnsaved,
+          path,
+        })
+      ).status >= 400,
+    );
+  const sparse = {
+    ...structuredClone(defaultStorefrontAppearance),
+    theme: 'modern-farmhouse' as const,
+    template: {
+      id: 'modern-farmhouse' as const,
+      version: 2 as const,
+      settings: farmhouseDefaults(),
+    },
+  };
+  for (const path of ['/find-us', '/contact', '/faq', '/policies']) {
+    const result = await read('vendor', '/storefront-editor-preview/render', {
+      ...previewPayload,
+      config: sparse,
+      path,
+    });
+    assert.equal(result.status, 200, path + result.html + output);
+    assert.match(result.html, /data-template-version="2"/);
+  }
+  delete vendorConfig.template;
+
+  vendorConfig.theme = 'modern-farmhouse';
+  vendorConfig.contact.enabled = false;
+  vendorConfig.faq.enabled = false;
+  vendorConfig.policies.enabled = false;
+  vendorConfig.findUs.enabled = false;
+  aboutEnabled = false;
+  const minimalPremium = (await read('vendor')).html;
+  for (const hidden of ['/contact', '/faq', '/policies', '/find-us', '/about'])
+    assert.ok(!minimalPremium.includes(`href="${hidden}"`), hidden);
+  assert.ok(
+    !(await read('vendor', '/checkout/success')).html.includes(
+      'Thank you for your order',
+    ),
+  );
+  assert.match((await read('market')).html, /class="harvest-header/);
   console.log(
-    'HTTP SSR passed: vendor/market homepages, real About sections, shared shell, layouts/order/visibility, shapes/positions, safe escaping, CTA, legacy/Unicode preservation, unsaved preview, isolation and preview security. No browser or captures.',
+    'HTTP SSR passed: Harvest, retired v1 and premium v2 on all 11 vendor routes, populated cart/checkout/verified success, disabled links, unsaved theme rendering, public isolation, commerce preview denial, unchanged market shell, About shapes/positions, escaping, Unicode and preview security. No captures or database changes.',
   );
 } catch (error) {
   console.error(output);

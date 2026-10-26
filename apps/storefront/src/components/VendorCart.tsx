@@ -1,18 +1,16 @@
 import { CartTotals } from './CartTotals';
 import { buttonClassName } from '@market/ui/presentation';
 import { Card, Button, Input, EmptyState } from '@market/ui';
-import { useEffect, useRef, useState } from 'react';
-import { cartMessage, type PublicCart } from '@market/api';
+import { useVendorCart } from '../lib/use-vendor-cart';
+import type { PublicCart } from '@market/api';
 import { occurrenceLabel } from '@market/storefront-core/market';
 import { safeAsset } from '@market/storefront-core/catalog';
 import { formatMoney } from '@market/config';
-import { shopCall } from './shop-client';
 import { VendorPreorderBanner } from './VendorPreorderBanner';
 import type { VendorPreorderState } from '../lib/vendor-preorder';
-import { cartCheckoutIssue, cartLineIssue } from '../lib/vendor-cart';
+import { cartLineIssue } from '../lib/vendor-cart';
 import CheckoutLoyalty from './CheckoutLoyalty';
 
-type Snapshot = { cart: PublicCart | null; preorder: VendorPreorderState };
 export function VendorCart({
   storefrontId,
   initialCart,
@@ -22,145 +20,24 @@ export function VendorCart({
   initialCart: PublicCart | null;
   initialPreorder: VendorPreorderState;
 }) {
-  const [snapshot, setSnapshot] = useState<Snapshot>({
-    cart: initialCart,
-    preorder: initialPreorder,
-  });
-  const [pending, setPending] = useState(false),
-    [error, setError] = useState(''),
-    [message, setMessage] = useState(''),
-    [uncertain, setUncertain] = useState(false),
-    [affectedLine, setAffectedLine] = useState('');
-  const lock = useRef(false);
-  const refreshQueued = useRef(false);
-  const { cart, preorder } = snapshot;
-  const count =
-    cart?.lines.reduce((total, line) => total + line.quantity, 0) ?? 0;
-  const shopHref = preorder.selected
-    ? `/products?occurrence=${encodeURIComponent(preorder.selected.id)}`
-    : '/products';
-  const issue = uncertain
-    ? 'The latest cart could not be confirmed. Refresh the cart before continuing.'
-    : cartCheckoutIssue(cart, preorder);
-  function releaseRequest() {
-    lock.current = false;
-    setPending(false);
-    if (refreshQueued.current) {
-      refreshQueued.current = false;
-      void refresh();
-    }
-  }
-  async function read() {
-    const result = await shopCall<Snapshot>(storefrontId, 'cart', {
-      includePreorder: true,
-    });
-    setSnapshot(result);
-    setUncertain(false);
-    return result;
-  }
-  async function refresh() {
-    if (lock.current) return;
-    lock.current = true;
-    setPending(true);
-    try {
-      await read();
-    } catch {
-      setUncertain(true);
-    } finally {
-      releaseRequest();
-    }
-  }
-  useEffect(() => {
-    const onFocus = () => {
-      void refresh();
-    };
-    const onCartUpdated = (event: Event) => {
-      if (
-        !(event instanceof CustomEvent) ||
-        event.detail?.storefrontId !== storefrontId
-      )
-        return;
-      if (lock.current) refreshQueued.current = true;
-      else void refresh();
-    };
-    window.addEventListener('focus', onFocus);
-    window.addEventListener('pageshow', onFocus);
-    window.addEventListener('vendor-cart-updated', onCartUpdated);
-    return () => {
-      window.removeEventListener('focus', onFocus);
-      window.removeEventListener('pageshow', onFocus);
-      window.removeEventListener('vendor-cart-updated', onCartUpdated);
-    };
-    // Refresh uses only this mounted storefront's session.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storefrontId]);
-  async function change(
-    action: 'adjust' | 'remove',
-    lineId: string,
-    quantity?: number,
-  ) {
-    if (lock.current) return;
-    if (
-      action === 'adjust' &&
-      cart?.lines.find((line) => line.id === lineId)?.quantity === quantity
-    )
-      return;
-    if (
-      action === 'adjust' &&
-      (!Number.isSafeInteger(quantity) ||
-        quantity! < 1 ||
-        quantity! > 2147483647)
-    ) {
-      setAffectedLine(lineId);
-      setError('Enter a positive whole quantity.');
-      return;
-    }
-    lock.current = true;
-    setPending(true);
-    setError('');
-    setMessage('');
-    setAffectedLine(lineId);
-    try {
-      const result = await shopCall<{ cart: PublicCart | null }>(
-        storefrontId,
-        action,
-        { lineId, quantity },
-      );
-      setSnapshot((previous) => ({ ...previous, cart: result.cart }));
-      await read();
-      setMessage(
-        action === 'remove'
-          ? 'Item removed from your cart.'
-          : 'Quantity and order totals updated.',
-      );
-    } catch (e) {
-      setError(cartMessage(e as { kind?: string; code?: string }));
-      try {
-        await read();
-      } catch {
-        setUncertain(true);
-      }
-    } finally {
-      releaseRequest();
-    }
-  }
-  async function checkout() {
-    if (lock.current || issue) return;
-    lock.current = true;
-    setPending(true);
-    setError('');
-    setAffectedLine('');
-    try {
-      const current = await read();
-      if (!cartCheckoutIssue(current.cart, current.preorder)) {
-        window.location.assign('/checkout');
-      }
-    } catch {
-      setUncertain(true);
-    } finally {
-      releaseRequest();
-    }
-  }
+  const {
+    pending,
+    error,
+    message,
+    uncertain,
+    affectedLine,
+    cart,
+    preorder,
+    count,
+    shopHref,
+    issue,
+    refresh,
+    change,
+    checkout,
+    setExternalBusy,
+    read,
+    setUncertain,
+  } = useVendorCart({ storefrontId, initialCart, initialPreorder });
   return (
     <div className="vendor-cart" aria-busy={pending}>
       <VendorPreorderBanner
@@ -169,14 +46,7 @@ export function VendorCart({
         preorder={preorder}
         hasItems={!!cart?.lines.length}
         disabled={pending}
-        onBusyChange={(busy) => {
-          if (!busy) {
-            releaseRequest();
-            return;
-          }
-          lock.current = busy;
-          setPending(busy);
-        }}
+        onBusyChange={setExternalBusy}
       />
       <div
         className="vendor-cart-feedback"
@@ -481,14 +351,7 @@ export function VendorCart({
                   throw error;
                 }
               }}
-              onBusyChange={(busy) => {
-                if (!busy) {
-                  releaseRequest();
-                  return;
-                }
-                lock.current = busy;
-                setPending(busy);
-              }}
+              onBusyChange={setExternalBusy}
             />
             {issue && (
               <p id="vendor-cart-blocked" className="ui-alert ui-alert-warning">

@@ -1,4 +1,6 @@
 ---
+import PremiumContent from '../components/modern-farmhouse/Content.astro';
+import { isFarmhouse } from '@market/theme/storefront';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import ClosingInvitation from '../components/ClosingInvitation.astro';
 import { defaultFaq, faqAnswerParts } from '@market/theme/storefront';
@@ -40,7 +42,13 @@ const questions =
   title={enabled ? config!.title : 'Page unavailable'}
   noindex={!enabled}
 >
-  {enabled && config ? (
+  {enabled && storefront && isFarmhouse(storefront.appearance) ? (
+    <PremiumContent
+      context={storefront}
+      page="faq"
+      preview={!!Astro.locals.editorPreview}
+    />
+  ) : enabled && config ? (
     <article class="faq-page" aria-label={config.title}>
       <section class="faq-intro" data-editor-section="faq-intro">
         <h1>{config.heading}</h1>

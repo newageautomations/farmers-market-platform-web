@@ -1,0 +1,198 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { farmhouseLinks } from './navigation';
+const { context, overlay = false } = Astro.props as {
+  context: StorefrontContext;
+  overlay?: boolean;
+};
+const links = farmhouseLinks(context).filter(
+  (link) => !['/faq', '/policies'].includes(link.href),
+);
+---
+
+<header
+  class:list={['farmhouse-header', overlay && 'farmhouse-header-overlay']}
+  data-editor-section="header"
+  data-farmhouse-component="masthead"
+>
+  <div class="farmhouse-masthead">
+    <form
+      class="farmhouse-header-search ui-search-select"
+      action="/products"
+      method="get"
+      role="search"
+      aria-label="Product search"
+    >
+      <label class="sr-only" for="farmhouse-product-search">
+        Search products
+      </label>
+      <input
+        id="farmhouse-product-search"
+        type="text"
+        inputmode="search"
+        enterkeyhint="search"
+        autocomplete="off"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded="false"
+        aria-controls="farmhouse-product-options"
+        name="search"
+        placeholder="Search products"
+        maxlength="100"
+        value={Astro.url.searchParams.get('search') ?? ''}
+      />
+      <button type="submit" aria-label="Search products">
+        <svg
+          viewBox="0 0 24 24"
+          width="22"
+          height="22"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          aria-hidden="true"
+        >
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path d="m16 16 5 5" />
+        </svg>
+      </button>
+      <div
+        id="farmhouse-product-options"
+        class="market-select-options"
+        role="listbox"
+        aria-label="Matching products"
+        hidden
+      ></div>
+      <p class="sr-only" role="status" data-search-status></p>
+    </form>
+    <details class="farmhouse-mobile-menu" data-farmhouse-menu>
+      <summary aria-label="Open navigation menu">
+        <span aria-hidden="true">☰</span>
+      </summary>
+      <nav aria-label="Mobile navigation">
+        {links.map((link) => (
+          <a
+            href={link.href}
+            aria-current={Astro.url.pathname === link.href ? 'page' : undefined}
+          >
+            {link.label}
+            <span aria-hidden="true">↗</span>
+          </a>
+        ))}
+        <a href="/account">Your account</a>
+        <a href="/cart">Shopping bag</a>
+      </nav>
+    </details>
+    <a class="farmhouse-brand" href="/" aria-label={context.name}>
+      <svg
+        class="farmhouse-brand-arc"
+        viewBox="0 0 480 108"
+        width="480"
+        height="108"
+        aria-hidden="true"
+      >
+        <defs>
+          <path id="farmhouse-brand-curve" d="M 12 82 Q 240 26 468 82" />
+        </defs>
+        <text
+          font-size={context.name.length > 35 ? 27 : 34}
+          text-anchor="middle"
+        >
+          <textPath
+            href="#farmhouse-brand-curve"
+            startOffset="50%"
+            textLength={context.name.length > 26 ? 420 : undefined}
+            lengthAdjust="spacingAndGlyphs"
+          >
+            {context.name}
+          </textPath>
+        </text>
+      </svg>
+    </a>
+    <div class="farmhouse-tools">
+      <a href="/account" aria-label="Your account">
+        <svg
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.4"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="7" r="3.5" />
+          <path d="M4 21v-3a8 8 0 0 1 16 0v3Z" />
+        </svg>
+      </a>
+      <a href="/cart" aria-label="Your shopping bag">
+        <svg
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.4"
+          aria-hidden="true"
+        >
+          <path d="M4 7h16l1 14H3L4 7ZM8 7V5a4 4 0 0 1 8 0v2" />
+        </svg>
+      </a>
+    </div>
+  </div>
+  <nav class="farmhouse-desktop-nav" aria-label="Main navigation">
+    {links.map((link) => (
+      <a
+        href={link.href}
+        aria-current={Astro.url.pathname === link.href ? 'page' : undefined}
+      >
+        {link.label}
+      </a>
+    ))}
+  </nav>
+</header>
+<script>
+  import { mountStorefrontMenu } from '../../lib/storefront-menu';
+  import { mountFarmhouseSearch } from '../../lib/farmhouse-search';
+  const search = document.querySelector<HTMLElement>(
+    '.farmhouse-header-search',
+  );
+  if (search) {
+    mountFarmhouseSearch(search);
+    search.setAttribute('data-focus-tracking', '');
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Tab') search.setAttribute('data-keyboard-focus', '');
+    });
+    document.addEventListener(
+      'pointerdown',
+      () => {
+        search.removeAttribute('data-keyboard-focus');
+      },
+      { passive: true },
+    );
+  }
+  document
+    .querySelectorAll<HTMLDetailsElement>('[data-farmhouse-menu]')
+    .forEach(mountStorefrontMenu);
+  const header = document.querySelector<HTMLElement>(
+    '.farmhouse-refined .farmhouse-header',
+  );
+  if (header) {
+    const measure = () => {
+      header.style.setProperty(
+        '--farmhouse-header-height',
+        `${header.getBoundingClientRect().height}px`,
+      );
+      header
+        .closest<HTMLElement>('.farmhouse-refined')
+        ?.style.setProperty(
+          '--farmhouse-header-height',
+          `${header.getBoundingClientRect().height}px`,
+        );
+    };
+    const scroll = () =>
+      header.toggleAttribute('data-scrolled', window.scrollY > 32);
+    new ResizeObserver(measure).observe(header);
+    measure();
+    scroll();
+    window.addEventListener('scroll', scroll, { passive: true });
+  }
+</script>

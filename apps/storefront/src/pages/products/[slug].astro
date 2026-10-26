@@ -1,6 +1,12 @@
 ---
 import { buttonClassName } from '@market/ui/presentation';
+import PremiumInformation from '../../components/modern-farmhouse/ProductInformation.astro';
+import PremiumLayout from '../../components/modern-farmhouse/ProductLayout.astro';
+import PremiumGallery from '../../components/modern-farmhouse/Gallery.astro';
+import PremiumCards from '../../components/modern-farmhouse/ProductCards.astro';
+import { isFarmhouse } from '@market/theme/storefront';
 import ProductGallery from '../../components/ProductGallery.astro';
+import ProductLayout from '../../components/legacy-modern-farmhouse/ProductLayout.astro';
 import ProductCards from '../../components/ProductCards.astro';
 import VendorPreorderBanner from '../../components/VendorPreorderBanner.astro';
 import { disclosureClassName } from '@market/ui/presentation';
@@ -10,6 +16,7 @@ import { relatedProducts, shopCategories } from '@market/storefront-core';
 import '../../styles/vendor-shop.css';
 import '../../styles/product-details.css';
 import SiteLayout from '../../layouts/SiteLayout.astro';
+import { Purchase as PremiumPurchase } from '../../components/modern-farmhouse/Purchase';
 import { ProductPurchase } from '../../components/ProductPurchase';
 import { requestShop } from '../../lib/shop';
 import { vendorPreorder } from '../../lib/vendor-preorder';
@@ -23,6 +30,10 @@ import {
   seo,
 } from '@market/storefront-core';
 const { storefront, storefrontError } = Astro.locals;
+const premium = isFarmhouse(storefront?.appearance);
+const Layout = premium ? PremiumLayout : ProductLayout;
+const Gallery = premium ? PremiumGallery : ProductGallery;
+const Cards = premium ? PremiumCards : ProductCards;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 let product: PublicProduct | null = null,
   error = storefrontError,
@@ -128,7 +139,7 @@ const structured =
       set:html={JSON.stringify(structured).replace(/</g, '\\u003c')}
     />
   )}
-  <section class="vendor-product">
+  <section class={premium ? 'farmhouse-product-route' : 'vendor-product'}>
     {error || !product ? (
       <>
         <h1>
@@ -143,18 +154,19 @@ const structured =
       </>
     ) : (
       <>
-        <VendorPreorderBanner
-          preorder={preorder}
-          storefrontId={storefront?.storefrontId ?? ''}
-          preview={!!Astro.locals.editorPreview}
-        />
-        <div
-          class="product-detail"
-          data-composition="vendor"
-          data-editor-section="product"
-        >
-          <ProductGallery product={product} />
-          <div class="product-summary">
+        <Layout theme={storefront?.appearance?.theme}>
+          <VendorPreorderBanner
+            slot="market"
+            preorder={preorder}
+            storefrontId={storefront?.storefrontId ?? ''}
+            preview={!!Astro.locals.editorPreview}
+          />
+          <Gallery
+            slot="gallery"
+            product={product}
+            layout={storefront?.appearance?.template?.settings.pages.gallery}
+          />
+          <Fragment slot="summary">
             {shopCategories([product]).length > 0 && (
               <p>
                 {shopCategories([product])
@@ -181,7 +193,10 @@ const structured =
             <p class="product-description">
               {plainDescription(product.description)}
             </p>
-            <ProductPurchase
+          </Fragment>
+          {premium ? (
+            <PremiumPurchase
+              slot="purchase"
               priceTarget="product-current-price"
               priceFallback={priceLabel(product.variants)}
               initialVariantId={
@@ -196,80 +211,110 @@ const structured =
               preview={!!Astro.locals.editorPreview}
               client:load
             />
-          </div>
-        </div>
-        <div
-          class="product-information"
-          data-editor-section="information"
-          aria-label="Product information"
-        >
-          {(
-            [
-              ['Ingredients', info.ingredients],
-              ['Allergens', info.allergens],
-              ['Storage & Care', info.storage],
-            ] as const
-          ).map(
-            ([title, entry]) =>
-              entry.enabled &&
-              entry.content.trim() && (
-                <details class={disclosureClassName()}>
-                  <summary>{title}</summary>
-                  <div class="ui-disclosure-content product-information-text">
-                    {entry.content}
-                  </div>
-                </details>
-              ),
+          ) : (
+            <ProductPurchase
+              slot="purchase"
+              priceTarget="product-current-price"
+              priceFallback={priceLabel(product.variants)}
+              initialVariantId={
+                Astro.url.searchParams.get('variant') ?? undefined
+              }
+              storefrontId={storefront?.storefrontId ?? ''}
+              variants={product.variants}
+              signedIn={signedIn}
+              fixture={storefront?.source === 'fixture'}
+              occurrenceId={preorder.selected?.id}
+              availability={preorder.availability}
+              preview={!!Astro.locals.editorPreview}
+              client:load
+            />
           )}
-          {info.pickupEnabled &&
-            (preorder.selected ||
-              (info.pickup.enabled && info.pickup.content.trim())) && (
-              <details class={disclosureClassName()}>
-                <summary>Pickup Information</summary>
-                <div class="ui-disclosure-content">
-                  {preorder.selected && (
-                    <>
-                      <p>
-                        {preorder.selected.marketName} ·{' '}
-                        {occurrenceLabel(preorder.selected)}
-                      </p>
-                      {preorder.selected.venue && (
-                        <p>{preorder.selected.venue}</p>
-                      )}
-                    </>
+          <Fragment slot="information">
+            {premium ? (
+              <PremiumInformation info={info} preorder={preorder} />
+            ) : (
+              <div
+                class="product-information"
+                data-editor-section="information"
+                aria-label="Product information"
+              >
+                {(
+                  [
+                    ['Ingredients', info.ingredients],
+                    ['Allergens', info.allergens],
+                    ['Storage & Care', info.storage],
+                  ] as const
+                ).map(
+                  ([title, entry]) =>
+                    entry.enabled &&
+                    entry.content.trim() && (
+                      <details class={disclosureClassName()}>
+                        <summary>{title}</summary>
+                        <div class="ui-disclosure-content product-information-text">
+                          {entry.content}
+                        </div>
+                      </details>
+                    ),
+                )}
+                {info.pickupEnabled &&
+                  (preorder.selected ||
+                    (info.pickup.enabled && info.pickup.content.trim())) && (
+                    <details class={disclosureClassName()}>
+                      <summary>Pickup Information</summary>
+                      <div class="ui-disclosure-content">
+                        {preorder.selected && (
+                          <>
+                            <p>
+                              {preorder.selected.marketName} ·{' '}
+                              {occurrenceLabel(preorder.selected)}
+                            </p>
+                            {preorder.selected.venue && (
+                              <p>{preorder.selected.venue}</p>
+                            )}
+                          </>
+                        )}
+                        {preorder.selected?.pickupInstructions && (
+                          <p class="product-information-text">
+                            {preorder.selected.pickupInstructions}
+                          </p>
+                        )}
+                        {info.pickup.enabled && (
+                          <p class="product-information-text">
+                            {info.pickup.content}
+                          </p>
+                        )}
+                      </div>
+                    </details>
                   )}
-                  {preorder.selected?.pickupInstructions && (
-                    <p class="product-information-text">
-                      {preorder.selected.pickupInstructions}
-                    </p>
-                  )}
-                  {info.pickup.enabled && (
-                    <p class="product-information-text">
-                      {info.pickup.content}
-                    </p>
-                  )}
-                </div>
-              </details>
+                {info.custom
+                  .filter(
+                    (v) => v.enabled && v.title.trim() && v.content.trim(),
+                  )
+                  .map((entry) => (
+                    <details class={disclosureClassName()}>
+                      <summary>{entry.title}</summary>
+                      <div class="ui-disclosure-content product-information-text">
+                        {entry.content}
+                      </div>
+                    </details>
+                  ))}
+              </div>
             )}
-          {info.custom
-            .filter((v) => v.enabled && v.title.trim() && v.content.trim())
-            .map((entry) => (
-              <details class={disclosureClassName()}>
-                <summary>{entry.title}</summary>
-                <div class="ui-disclosure-content product-information-text">
-                  {entry.content}
-                </div>
-              </details>
-            ))}
-        </div>
+          </Fragment>
+        </Layout>
         {related.length > 0 &&
           storefront?.appearance?.vendor?.relatedEnabled !== false && (
-            <section class="product-related" data-editor-section="related">
+            <section
+              class:list={['product-related', premium && 'farmhouse-refined']}
+              data-editor-section="related"
+            >
               <h2 data-storefront-text="relatedHeading">
                 {storefrontText(storefront?.appearance, 'relatedHeading')}
               </h2>
-              <ProductCards
+              <Cards
+                theme={storefront?.appearance?.theme}
                 items={related}
+                featured={premium}
                 storefrontId={storefront?.storefrontId}
                 shop
                 occurrenceId={preorder.selected?.id}

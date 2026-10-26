@@ -261,7 +261,7 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnBilling',
   },
   {
-    label: 'Storefront Appearance',
+    label: 'Website Library',
     path: '/vendor/storefront',
     scopes: ['VENDOR'],
     permission: 'ManageOwnStorefront',

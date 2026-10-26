@@ -40,7 +40,7 @@ export function AppearancePreorder({
           }
         }}
       >
-        Preorder for This Market
+        Preorder
       </Button>
       {error && (
         <p role="alert">

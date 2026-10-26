@@ -1,0 +1,39 @@
+---
+import type { StorefrontThemeId } from '@market/theme/storefront';
+interface Props {
+  theme?: StorefrontThemeId;
+}
+const { theme = 'harvest' } = Astro.props;
+---
+
+{theme === 'modern-farmhouse' ? (
+  <div
+    class="mf-product-layout"
+    data-composition="vendor"
+    data-editor-section="product"
+  >
+    <slot name="gallery" />
+    <div class="product-summary">
+      <slot name="summary" />
+      <slot name="market" />
+      <slot name="purchase" />
+      <slot name="information" />
+    </div>
+  </div>
+) : (
+  <>
+    <slot name="market" />
+    <div
+      class="product-detail"
+      data-composition="vendor"
+      data-editor-section="product"
+    >
+      <slot name="gallery" />
+      <div class="product-summary">
+        <slot name="summary" />
+        <slot name="purchase" />
+      </div>
+    </div>
+    <slot name="information" />
+  </>
+)}

@@ -1,0 +1,23 @@
+.website-library {
+  display: grid;
+  gap: 1.5rem;
+}
+.website-library-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+}
+.website-library-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.website-library-card-title h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.website-library .ui-actions {
+  align-items: center;
+}

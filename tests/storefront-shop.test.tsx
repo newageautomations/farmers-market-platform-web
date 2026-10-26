@@ -218,16 +218,11 @@ it('explains a cart compatibility failure without navigating or changing the sel
     <ShopMarketSelection
       storefrontId="1"
       selectedId="7"
-      occurrences={[o, { ...o, id: '8' }]}
+      occurrences={[o, { ...o, id: '8', marketName: 'Other Market' }]}
     />,
   );
   fireEvent.click(screen.getByText('Change Market'));
-  fireEvent.change(screen.getByLabelText('Pickup market and date'), {
-    target: { value: '8' },
-  });
-  fireEvent.submit(
-    screen.getByRole('button', { name: 'Shop this market' }).closest('form')!,
-  );
+  fireEvent.click(screen.getByRole('button', { name: /^Other Market/ }));
   await waitFor(() =>
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Remove the current items',

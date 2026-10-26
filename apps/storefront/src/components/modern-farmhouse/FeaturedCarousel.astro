@@ -1,0 +1,40 @@
+---
+import type { PublicCatalog } from '@market/api';
+import { UtilityIcon } from '@market/ui';
+import ProductCards from './ProductCards.astro';
+const { items } = Astro.props as { items: PublicCatalog['items'] };
+---
+
+<div
+  class="farmhouse-carousel"
+  data-farmhouse-carousel
+  role="region"
+  aria-label="Featured products carousel"
+  aria-roledescription="carousel"
+>
+  <button
+    type="button"
+    class="farmhouse-circle farmhouse-carousel-control farmhouse-carousel-previous"
+    data-carousel-direction="previous"
+    aria-label="Previous featured products"
+    hidden
+  >
+    <UtilityIcon name="chevron-left" />
+  </button>
+  <ProductCards items={items} featured carousel />
+  <button
+    type="button"
+    class="farmhouse-circle farmhouse-carousel-control farmhouse-carousel-next"
+    data-carousel-direction="next"
+    aria-label="Next featured products"
+    hidden
+  >
+    <UtilityIcon name="chevron-right" />
+  </button>
+</div>
+<script>
+  import { mountFarmhouseCarousel } from '../../lib/farmhouse-carousel';
+  document
+    .querySelectorAll<HTMLElement>('[data-farmhouse-carousel]')
+    .forEach(mountFarmhouseCarousel);
+</script>

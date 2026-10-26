@@ -1,0 +1,85 @@
+---
+import { safeAsset } from '@market/storefront-core';
+import type { PublicProduct } from '@market/api';
+const { product, layout = 'mosaic' } = Astro.props as {
+  product: PublicProduct;
+  layout?: 'mosaic' | 'rail';
+};
+const assets = [
+  product.featuredAsset,
+  ...product.assets,
+  ...product.variants.flatMap((v) => [v.featuredAsset, ...v.assets]),
+]
+  .filter((a): a is NonNullable<typeof a> => !!a && !!safeAsset(a.preview))
+  .filter((a, i, all) => all.findIndex((v) => v.id === a.id) === i);
+const variant =
+  product.variants.length === 1
+    ? product.variants[0]
+    : product.variants.find(
+        (v) => v.id === Astro.url.searchParams.get('variant'),
+      );
+const primary =
+  assets.find(
+    (a) => a.id === (variant?.featuredAsset ?? variant?.assets[0])?.id,
+  ) ?? assets[0];
+---
+
+<div
+  class="farmhouse-gallery"
+  data-layout={layout}
+  data-product-gallery
+  data-farmhouse-component="gallery"
+>
+  <figure>
+    {primary ? (
+      <img
+        data-gallery-main
+        src={safeAsset(primary.preview)}
+        alt={product.name}
+        width="1200"
+        height="1100"
+        fetchpriority="high"
+      />
+    ) : (
+      <div
+        class="farmhouse-photo-empty"
+        role="img"
+        aria-label={`${product.name}: photograph unavailable`}
+      >
+        Photograph coming soon
+      </div>
+    )}
+  </figure>
+  {assets.length > 1 && (
+    <div
+      class="farmhouse-gallery-support"
+      role="group"
+      aria-label="Product photographs"
+    >
+      {assets.map((asset, index) => (
+        <button
+          type="button"
+          data-gallery-id={asset.id}
+          data-gallery-src={safeAsset(asset.preview)}
+          data-gallery-alt={`${product.name}, photograph ${index + 1}`}
+          aria-label={`View ${product.name}, photograph ${index + 1}`}
+          aria-pressed={asset.id === primary?.id}
+        >
+          <img
+            src={safeAsset(asset.preview)}
+            alt=""
+            width="600"
+            height="500"
+            loading="lazy"
+          />
+        </button>
+      ))}
+    </div>
+  )}
+</div>
+<script>
+  import { mountProductGallery } from '../../lib/product-gallery';
+  document
+    .querySelectorAll<HTMLElement>('.farmhouse-gallery')
+    .forEach(mountProductGallery);
+</script>

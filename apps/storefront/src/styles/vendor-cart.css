@@ -120,7 +120,7 @@
   padding-inline: 0.65rem;
 }
 .vendor-cart-summary.ui-card {
-  border-radius: var(--storefront-card-radius);
+  border-radius: var(--ui-card-radius, var(--storefront-card-radius));
 }
 .vendor-cart-summary h2 {
   margin-top: 0;

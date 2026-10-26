@@ -2,6 +2,7 @@
 import { cardClassName } from '@market/ui/presentation';
 import type { PublicCatalog, VendorPreorderAvailability } from '@market/api';
 import { FeaturedAdd } from './FeaturedAdd';
+import type { StorefrontThemeId } from '@market/theme/storefront';
 import Button from './ui/Button.astro';
 import HarvestArtwork from './home/HarvestArtwork.astro';
 import {
@@ -18,6 +19,7 @@ interface Props {
   occurrenceId?: string;
   availability?: VendorPreorderAvailability;
   preview?: boolean;
+  theme?: StorefrontThemeId;
 }
 const {
   items,
@@ -27,6 +29,7 @@ const {
   occurrenceId,
   availability = [],
   preview = false,
+  theme = 'harvest',
 } = Astro.props;
 const productLink = (slug: string) =>
   `/products/${encodeURIComponent(slug)}${occurrenceId && !preview ? `?occurrence=${encodeURIComponent(occurrenceId)}` : ''}`;
@@ -35,7 +38,8 @@ const productLink = (slug: string) =>
 <div
   class:list={[
     'catalog-grid',
-    (featured || shop) && 'harvest-products',
+    theme === 'harvest' && (featured || shop) && 'harvest-products',
+    theme === 'modern-farmhouse' && 'mf-products',
     shop && 'shop-products',
   ]}
 >
@@ -47,7 +51,7 @@ const productLink = (slug: string) =>
           className: `product-card card${shop && !status.available ? ' shop-product-unavailable' : ''}`,
           spacing: 'contained',
           padding: 'default',
-          surface: 'card',
+          surface: theme === 'modern-farmhouse' ? 'embedded' : 'card',
         })}
       >
         <a class="product-card-link" href={productLink(product.slug)}>
@@ -62,7 +66,11 @@ const productLink = (slug: string) =>
             />
           ) : (
             <div class="product-media product-placeholder" aria-hidden="true">
-              {featured || shop ? <HarvestArtwork /> : 'No image'}
+              {theme === 'harvest' && (featured || shop) ? (
+                <HarvestArtwork />
+              ) : (
+                'No image'
+              )}
             </div>
           )}
           {featured ? (

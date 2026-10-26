@@ -1,3 +1,4 @@
+import { FarmhouseEditor } from './FarmhouseEditor';
 import { PoliciesEditor } from './PoliciesEditor';
 import { FaqEditor } from './FaqEditor';
 import { ContactEditor } from './ContactEditor';
@@ -31,6 +32,7 @@ import {
   storefrontAppearanceSchema,
   storefrontEditorSections,
   storefrontPalettes,
+  storefrontThemes,
   storefrontPreviewPath,
   storefrontTextFields,
   aboutSections,
@@ -53,12 +55,16 @@ export function VisualStorefrontEditor({
   onSaved,
   onDirty,
   dashboardHref = '/vendor',
+  backLabel = 'Back to dashboard',
+  initialMode = 'inspect',
 }: {
   record: StorefrontAppearanceRecord;
   api: StorefrontAppearanceApi;
   onSaved: (record: StorefrontAppearanceRecord) => void;
   onDirty?: (dirty: boolean) => void;
   dashboardHref?: string;
+  backLabel?: string;
+  initialMode?: 'inspect' | 'browse';
 }) {
   const [history, setHistory] = useState<{
     past: StorefrontAppearance[];
@@ -69,7 +75,7 @@ export function VisualStorefrontEditor({
   const [section, setSection] = useState<StorefrontEditorSection>('hero');
   const [structure, setStructure] = useState(true);
   const [path, setPath] = useState('/');
-  const [mode, setMode] = useState<'inspect' | 'browse'>('inspect');
+  const [mode, setMode] = useState<'inspect' | 'browse'>(initialMode);
   const [viewport, setViewport] = useState('desktop');
   const [expanded, setExpanded] = useState(false);
   useEffect(() => {
@@ -92,6 +98,7 @@ export function VisualStorefrontEditor({
   const mounted = useRef(true);
   const dirty = JSON.stringify(draft) !== JSON.stringify(record.draft);
   const unpublished =
+    record.isLive === false ||
     JSON.stringify(record.draft) !== JSON.stringify(record.published);
   const valid = useMemo(
     () => storefrontAppearanceSchema.safeParse(draft),
@@ -281,7 +288,7 @@ export function VisualStorefrontEditor({
           className={buttonClassName({ variant: 'tertiary' })}
           href={dashboardHref}
         >
-          Back to dashboard
+          {backLabel}
         </a>
         <strong>{record.name}</strong>
         {liveUrl && (
@@ -377,6 +384,27 @@ export function VisualStorefrontEditor({
             </Button>
           </div>
           <nav aria-label="Page sections" className="visual-editor-sections">
+            {draft.template && (
+              <FarmhouseEditor
+                appearance={draft}
+                onAppearanceChange={update}
+                page={page}
+                collapsed={structure}
+                collapse={() => setStructure(true)}
+                selected={section}
+                choose={choose}
+                value={draft.template.settings}
+                onChange={(settings) =>
+                  update({
+                    template: { id: 'modern-farmhouse', version: 2, settings },
+                  })
+                }
+                api={api}
+                busy={busy}
+                products={products}
+                loadProducts={() => setLoadProducts(true)}
+              />
+            )}
             {[
               ...(page === 'policies'
                 ? (['header', 'footer', 'theme', 'policies-settings'] as const)
@@ -407,432 +435,452 @@ export function VisualStorefrontEditor({
               ...(['about', 'find', 'contact', 'faq', 'policies'].includes(page)
                 ? []
                 : ['theme' as const]),
-            ].map((id) =>
-              id === 'policies-settings' ? (
-                <PoliciesEditor
-                  key={id}
-                  value={draft.policies ?? defaultPolicies}
-                  selected={section}
-                  selectionRequest={scrollRequest}
-                  collapsed={structure}
-                  collapse={() => setStructure(true)}
-                  choose={choose}
-                  onChange={(policies) => update({ policies })}
-                  busy={busy}
-                  validationError={
-                    !valid.success
-                      ? valid.error.issues
-                          .map(
-                            (issue) =>
-                              `${issue.path.join('.')}: ${issue.message}`,
-                          )
-                          .join(' ')
-                      : undefined
-                  }
-                />
-              ) : id === 'faq-settings' ? (
-                <FaqEditor
-                  collapsed={structure}
-                  collapse={() => setStructure(true)}
-                  key={id}
-                  value={draft.faq ?? defaultFaq}
-                  selected={section}
-                  choose={choose}
-                  onChange={(faq) => update({ faq })}
-                  busy={busy}
-                />
-              ) : id === 'contact-settings' ? (
-                <ContactEditor
-                  key={id}
-                  value={draft.contact}
-                  selected={section}
-                  collapsed={structure}
-                  choose={choose}
-                  collapse={() => setStructure(true)}
-                  onChange={(contact) => update({ contact })}
-                  busy={busy}
-                />
-              ) : id === 'find-settings' ? (
-                <FindUsEditor
-                  key={id}
-                  textSizes={draft.textSizes}
-                  onTextSizeChange={(id, value) =>
-                    update({ textSizes: { ...draft.textSizes, [id]: value } })
-                  }
-                  value={draft.findUs}
-                  api={api}
-                  selected={section}
-                  collapsed={structure}
-                  choose={choose}
-                  collapse={() => setStructure(true)}
-                  onChange={(findUs) => update({ findUs })}
-                  busy={busy}
-                />
-              ) : id === 'story-settings' ? (
-                <AboutStoryEditor
-                  key={id}
-                  textSizes={draft.textSizes}
-                  onTextSizeChange={(id, value) =>
-                    update({ textSizes: { ...draft.textSizes, [id]: value } })
-                  }
-                  about={draft.about}
-                  api={api}
-                  selected={section}
-                  collapsed={structure}
-                  choose={choose}
-                  collapse={() => setStructure(true)}
-                  onChange={(about, sizes) =>
-                    update({
-                      about,
-                      textSizes: Object.fromEntries(
-                        Object.entries(sizes ?? draft.textSizes ?? {}).filter(
-                          ([id]) =>
-                            !id.startsWith('story:') ||
-                            about.sections?.some(
-                              (item) => `story:${item.id}` === id,
-                            ),
-                        ),
-                      ),
-                    })
-                  }
-                  busy={busy}
-                />
-              ) : (
-                <details
-                  key={id}
-                  className={disclosureClassName('dropdown')}
-                  open={!structure && section === id}
-                >
-                  <summary
-                    role="button"
-                    aria-expanded={!structure && section === id}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      if (!structure && section === id) setStructure(true);
-                      else choose(id);
-                    }}
-                  >
-                    {
-                      storefrontEditorSections[
-                        id as keyof typeof storefrontEditorSections
-                      ]
+            ]
+              .filter(
+                (id) =>
+                  !draft.template ||
+                  [
+                    'policies-settings',
+                    'faq-settings',
+                    'contact-settings',
+                    'find-settings',
+                    'story-settings',
+                  ].includes(id),
+              )
+              .map((id) =>
+                id === 'policies-settings' ? (
+                  <PoliciesEditor
+                    key={id}
+                    value={draft.policies ?? defaultPolicies}
+                    selected={section}
+                    selectionRequest={scrollRequest}
+                    collapsed={structure}
+                    collapse={() => setStructure(true)}
+                    choose={choose}
+                    onChange={(policies) => update({ policies })}
+                    busy={busy}
+                    validationError={
+                      !valid.success
+                        ? valid.error.issues
+                            .map(
+                              (issue) =>
+                                `${issue.path.join('.')}: ${issue.message}`,
+                            )
+                            .join(' ')
+                        : undefined
                     }
-                    {id === 'related' && draft.vendor?.relatedEnabled === false
-                      ? ' (hidden)'
-                      : ''}
-                    {id === 'about' &&
-                    !(draft.vendor?.aboutEnabled ?? !!draft.homepage.story)
-                      ? ' (hidden)'
-                      : ''}
-                  </summary>
-                  {!structure && section === id && (
-                    <div className="ui-disclosure-content visual-editor-section-content">
-                      <form
-                        onSubmit={(event) => {
-                          event.preventDefault();
-                          void persist(false);
-                        }}
-                      >
-                        <fieldset disabled={busy}>
-                          {!editable ? (
-                            <p>
-                              Descriptions, photographs and information sections
-                              are edited in Products. Select Related products to
-                              customize this template.
-                            </p>
-                          ) : (
-                            <>
-                              {[
-                                'hero',
-                                'featured',
-                                'about',
-                                'closing',
-                                'footer',
-                                'related',
-                              ].includes(section) && (
-                                <TextSizeControls
-                                  value={draft.textSizes?.[section]}
-                                  heading={section !== 'footer'}
-                                  paragraph={
-                                    !['featured', 'related'].includes(section)
-                                  }
-                                  onChange={(value) =>
-                                    update({
-                                      textSizes: {
-                                        ...draft.textSizes,
-                                        [section]: value,
-                                      },
-                                    })
-                                  }
-                                />
-                              )}
-                              {section === 'theme' && (
-                                <>
-                                  <p>
-                                    Harvest theme. These choices apply across
-                                    your storefront.
-                                  </p>
-                                  <VendorTypography
-                                    value={vendor}
+                  />
+                ) : id === 'faq-settings' ? (
+                  <FaqEditor
+                    collapsed={structure}
+                    collapse={() => setStructure(true)}
+                    key={id}
+                    value={draft.faq ?? defaultFaq}
+                    selected={section}
+                    choose={choose}
+                    onChange={(faq) => update({ faq })}
+                    busy={busy}
+                  />
+                ) : id === 'contact-settings' ? (
+                  <ContactEditor
+                    key={id}
+                    value={draft.contact}
+                    selected={section}
+                    collapsed={structure}
+                    choose={choose}
+                    collapse={() => setStructure(true)}
+                    onChange={(contact) => update({ contact })}
+                    busy={busy}
+                  />
+                ) : id === 'find-settings' ? (
+                  <FindUsEditor
+                    key={id}
+                    textSizes={draft.textSizes}
+                    onTextSizeChange={(id, value) =>
+                      update({ textSizes: { ...draft.textSizes, [id]: value } })
+                    }
+                    value={draft.findUs}
+                    api={api}
+                    selected={section}
+                    collapsed={structure}
+                    choose={choose}
+                    collapse={() => setStructure(true)}
+                    onChange={(findUs) => update({ findUs })}
+                    busy={busy}
+                  />
+                ) : id === 'story-settings' ? (
+                  <AboutStoryEditor
+                    key={id}
+                    textSizes={draft.textSizes}
+                    onTextSizeChange={(id, value) =>
+                      update({ textSizes: { ...draft.textSizes, [id]: value } })
+                    }
+                    about={draft.about}
+                    api={api}
+                    selected={section}
+                    collapsed={structure}
+                    choose={choose}
+                    collapse={() => setStructure(true)}
+                    onChange={(about, sizes) =>
+                      update({
+                        about,
+                        textSizes: Object.fromEntries(
+                          Object.entries(sizes ?? draft.textSizes ?? {}).filter(
+                            ([id]) =>
+                              !id.startsWith('story:') ||
+                              about.sections?.some(
+                                (item) => `story:${item.id}` === id,
+                              ),
+                          ),
+                        ),
+                      })
+                    }
+                    busy={busy}
+                  />
+                ) : (
+                  <details
+                    key={id}
+                    className={disclosureClassName('dropdown')}
+                    open={!structure && section === id}
+                  >
+                    <summary
+                      role="button"
+                      aria-expanded={!structure && section === id}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        if (!structure && section === id) setStructure(true);
+                        else choose(id);
+                      }}
+                    >
+                      {
+                        storefrontEditorSections[
+                          id as keyof typeof storefrontEditorSections
+                        ]
+                      }
+                      {id === 'related' &&
+                      draft.vendor?.relatedEnabled === false
+                        ? ' (hidden)'
+                        : ''}
+                      {id === 'about' &&
+                      !(draft.vendor?.aboutEnabled ?? !!draft.homepage.story)
+                        ? ' (hidden)'
+                        : ''}
+                    </summary>
+                    {!structure && section === id && (
+                      <div className="ui-disclosure-content visual-editor-section-content">
+                        <form
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            void persist(false);
+                          }}
+                        >
+                          <fieldset disabled={busy}>
+                            {!editable ? (
+                              <p>
+                                Descriptions, photographs and information
+                                sections are edited in Products. Select Related
+                                products to customize this template.
+                              </p>
+                            ) : (
+                              <>
+                                {[
+                                  'hero',
+                                  'featured',
+                                  'about',
+                                  'closing',
+                                  'footer',
+                                  'related',
+                                ].includes(section) && (
+                                  <TextSizeControls
+                                    value={draft.textSizes?.[section]}
+                                    heading={section !== 'footer'}
+                                    paragraph={
+                                      !['featured', 'related'].includes(section)
+                                    }
                                     onChange={(value) =>
-                                      update({ vendor: value })
-                                    }
-                                  />
-                                  <SelectField
-                                    id="storefront-palette"
-                                    label="Color palette"
-                                    className="ui-palette-select"
-                                    value={draft.palette}
-                                    onChange={(e) =>
                                       update({
-                                        palette: e.target
-                                          .value as StorefrontAppearance['palette'],
+                                        textSizes: {
+                                          ...draft.textSizes,
+                                          [section]: value,
+                                        },
                                       })
                                     }
-                                  >
-                                    {Object.entries(storefrontPalettes).map(
-                                      ([key, p]) => (
-                                        <option key={key} value={key}>
-                                          <span className="ui-palette-option">
-                                            <span className="ui-palette-option-label">
-                                              {p.label}
-                                            </span>
-                                            <span
-                                              className="ui-palette-swatches"
-                                              aria-hidden="true"
-                                            >
-                                              {(
-                                                [
-                                                  'primary',
-                                                  'secondary',
-                                                  'background',
-                                                  'surface',
-                                                ] as const
-                                              ).map((token) => (
-                                                <span
-                                                  key={token}
-                                                  className="ui-palette-swatch"
-                                                  style={{
-                                                    backgroundColor: p[token],
-                                                  }}
-                                                />
-                                              ))}
-                                            </span>
-                                          </span>
-                                        </option>
-                                      ),
-                                    )}
-                                  </SelectField>
-                                  <SelectField
-                                    id="storefront-shape"
-                                    label="Button shape"
-                                    value={draft.buttonShape}
-                                    onChange={(e) =>
-                                      update({
-                                        buttonShape: e.target
-                                          .value as StorefrontAppearance['buttonShape'],
-                                      })
-                                    }
-                                  >
-                                    <option value="square">
-                                      Square / minimal
-                                    </option>
-                                    <option value="soft">Softly rounded</option>
-                                    <option value="pill">Pill-shaped</option>
-                                  </SelectField>
-                                  <SelectField
-                                    id="storefront-hover"
-                                    label="Button hover effect"
-                                    value={draft.buttonHover}
-                                    onChange={(e) =>
-                                      update({
-                                        buttonHover: e.target
-                                          .value as StorefrontAppearance['buttonHover'],
-                                      })
-                                    }
-                                  >
-                                    <option value="lift">Subtle lift</option>
-                                    <option value="darken">Darken</option>
-                                    <option value="outline">
-                                      Outline transition
-                                    </option>
-                                  </SelectField>
-                                  <Button
-                                    variant="secondary"
-                                    onClick={() => {
-                                      setPath('/about');
-                                      choose('story-settings');
-                                    }}
-                                  >
-                                    Edit Our Story page
-                                  </Button>
-                                </>
-                              )}
-                              {section === 'hero' && (
-                                <>
-                                  <TextSetting
-                                    id="home-title"
-                                    label="Hero heading"
-                                    value={draft.homepage.title}
-                                    max={160}
-                                    placeholder={record.name}
-                                    onChange={(title) => updateHome({ title })}
                                   />
-                                  <TextSetting
-                                    id="home-introduction"
-                                    label="Introduction"
-                                    value={draft.homepage.introduction}
-                                    max={600}
-                                    multiline
-                                    onChange={(introduction) =>
-                                      updateHome({ introduction })
-                                    }
-                                  />
-                                  <Field
-                                    id="home-image"
-                                    label="Hero image URL"
-                                    info="Use an HTTPS image or a local development asset. Blank uses the existing product image or illustration."
-                                  >
-                                    <Input
-                                      id="home-image"
-                                      type="url"
-                                      maxLength={2000}
-                                      value={draft.homepage.image}
+                                )}
+                                {section === 'theme' && (
+                                  <>
+                                    <p>
+                                      {storefrontThemes[draft.theme].label}.
+                                      Create a separate website in your library
+                                      to use another template.
+                                    </p>
+                                    <VendorTypography
+                                      value={vendor}
+                                      onChange={(value) =>
+                                        update({ vendor: value })
+                                      }
+                                    />
+                                    <SelectField
+                                      id="storefront-palette"
+                                      label="Color palette"
+                                      className="ui-palette-select"
+                                      value={draft.palette}
                                       onChange={(e) =>
-                                        updateHome({ image: e.target.value })
+                                        update({
+                                          palette: e.target
+                                            .value as StorefrontAppearance['palette'],
+                                        })
+                                      }
+                                    >
+                                      {Object.entries(storefrontPalettes).map(
+                                        ([key, p]) => (
+                                          <option key={key} value={key}>
+                                            <span className="ui-palette-option">
+                                              <span className="ui-palette-option-label">
+                                                {p.label}
+                                              </span>
+                                              <span
+                                                className="ui-palette-swatches"
+                                                aria-hidden="true"
+                                              >
+                                                {(
+                                                  [
+                                                    'primary',
+                                                    'secondary',
+                                                    'background',
+                                                    'surface',
+                                                  ] as const
+                                                ).map((token) => (
+                                                  <span
+                                                    key={token}
+                                                    className="ui-palette-swatch"
+                                                    style={{
+                                                      backgroundColor: p[token],
+                                                    }}
+                                                  />
+                                                ))}
+                                              </span>
+                                            </span>
+                                          </option>
+                                        ),
+                                      )}
+                                    </SelectField>
+                                    <SelectField
+                                      id="storefront-shape"
+                                      label="Button shape"
+                                      value={draft.buttonShape}
+                                      onChange={(e) =>
+                                        update({
+                                          buttonShape: e.target
+                                            .value as StorefrontAppearance['buttonShape'],
+                                        })
+                                      }
+                                    >
+                                      <option value="square">
+                                        Square / minimal
+                                      </option>
+                                      <option value="soft">
+                                        Softly rounded
+                                      </option>
+                                      <option value="pill">Pill-shaped</option>
+                                    </SelectField>
+                                    <SelectField
+                                      id="storefront-hover"
+                                      label="Button hover effect"
+                                      value={draft.buttonHover}
+                                      onChange={(e) =>
+                                        update({
+                                          buttonHover: e.target
+                                            .value as StorefrontAppearance['buttonHover'],
+                                        })
+                                      }
+                                    >
+                                      <option value="lift">Subtle lift</option>
+                                      <option value="darken">Darken</option>
+                                      <option value="outline">
+                                        Outline transition
+                                      </option>
+                                    </SelectField>
+                                    <Button
+                                      variant="secondary"
+                                      onClick={() => {
+                                        setPath('/about');
+                                        choose('story-settings');
+                                      }}
+                                    >
+                                      Edit Our Story page
+                                    </Button>
+                                  </>
+                                )}
+                                {section === 'hero' && (
+                                  <>
+                                    <TextSetting
+                                      id="home-title"
+                                      label="Hero heading"
+                                      value={draft.homepage.title}
+                                      max={160}
+                                      placeholder={record.name}
+                                      onChange={(title) =>
+                                        updateHome({ title })
+                                      }
+                                    />
+                                    <TextSetting
+                                      id="home-introduction"
+                                      label="Introduction"
+                                      value={draft.homepage.introduction}
+                                      max={600}
+                                      multiline
+                                      onChange={(introduction) =>
+                                        updateHome({ introduction })
+                                      }
+                                    />
+                                    <Field
+                                      id="home-image"
+                                      label="Hero image URL"
+                                      info="Use an HTTPS image or a local development asset. Blank uses the existing product image or illustration."
+                                    >
+                                      <Input
+                                        id="home-image"
+                                        type="url"
+                                        maxLength={2000}
+                                        value={draft.homepage.image}
+                                        onChange={(e) =>
+                                          updateHome({ image: e.target.value })
+                                        }
+                                      />
+                                    </Field>
+                                    <ImageShapeField
+                                      id="hero-shape"
+                                      label="Hero image shape"
+                                      value={vendor.heroShape}
+                                      onChange={(heroShape) =>
+                                        update({
+                                          vendor: { ...vendor, heroShape },
+                                        })
+                                      }
+                                    />
+                                    <p>
+                                      Buttons keep their existing Shop and About
+                                      destinations. The secondary button appears
+                                      when the About page is enabled.
+                                    </p>
+                                  </>
+                                )}
+                                {(
+                                  Object.entries(storefrontTextFields) as Array<
+                                    [
+                                      StorefrontTextKey,
+                                      (typeof storefrontTextFields)[StorefrontTextKey],
+                                    ]
+                                  >
+                                )
+                                  .filter(
+                                    ([, field]) => field.section === section,
+                                  )
+                                  .map(([key, field]) => (
+                                    <TextSetting
+                                      key={key}
+                                      id={`editor-text-${key}`}
+                                      label={field.label}
+                                      value={vendor.text?.[key] ?? ''}
+                                      max={field.max}
+                                      placeholder={
+                                        key === 'aboutHeading'
+                                          ? `Meet ${record.name}`
+                                          : field.fallback
+                                      }
+                                      multiline={
+                                        key === 'closingText' ||
+                                        key === 'closingHeading'
+                                      }
+                                      onChange={(value) =>
+                                        update({
+                                          vendor: {
+                                            ...vendor,
+                                            text: {
+                                              ...vendor.text,
+                                              [key]: value,
+                                            },
+                                          },
+                                        })
+                                      }
+                                    />
+                                  ))}
+                                {section === 'related' && (
+                                  <Field
+                                    id="related-enabled"
+                                    label="Show related products"
+                                  >
+                                    <Checkbox
+                                      id="related-enabled"
+                                      checked={vendor.relatedEnabled !== false}
+                                      onChange={(e) =>
+                                        update({
+                                          vendor: {
+                                            ...vendor,
+                                            relatedEnabled: e.target.checked,
+                                          },
+                                        })
                                       }
                                     />
                                   </Field>
-                                  <ImageShapeField
-                                    id="hero-shape"
-                                    label="Hero image shape"
-                                    value={vendor.heroShape}
-                                    onChange={(heroShape) =>
-                                      update({
-                                        vendor: { ...vendor, heroShape },
-                                      })
-                                    }
-                                  />
-                                  <p>
-                                    Buttons keep their existing Shop and About
-                                    destinations. The secondary button appears
-                                    when the About page is enabled.
-                                  </p>
-                                </>
-                              )}
-                              {(
-                                Object.entries(storefrontTextFields) as Array<
-                                  [
-                                    StorefrontTextKey,
-                                    (typeof storefrontTextFields)[StorefrontTextKey],
-                                  ]
-                                >
-                              )
-                                .filter(
-                                  ([, field]) => field.section === section,
-                                )
-                                .map(([key, field]) => (
-                                  <TextSetting
-                                    key={key}
-                                    id={`editor-text-${key}`}
-                                    label={field.label}
-                                    value={vendor.text?.[key] ?? ''}
-                                    max={field.max}
-                                    placeholder={
-                                      key === 'aboutHeading'
-                                        ? `Meet ${record.name}`
-                                        : field.fallback
-                                    }
-                                    multiline={
-                                      key === 'closingText' ||
-                                      key === 'closingHeading'
-                                    }
+                                )}
+                                {(section === 'featured' ||
+                                  section === 'about') && (
+                                  <VendorHomepageOptions
+                                    section={section}
+                                    value={vendor}
+                                    api={api}
                                     onChange={(value) =>
                                       update({
                                         vendor: {
-                                          ...vendor,
-                                          text: {
-                                            ...vendor.text,
-                                            [key]: value,
-                                          },
+                                          ...value,
+                                          ...(value.aboutBlurb !==
+                                          vendor.aboutBlurb
+                                            ? { aboutUseLegacyStory: false }
+                                            : {}),
                                         },
                                       })
                                     }
-                                  />
-                                ))}
-                              {section === 'related' && (
-                                <Field
-                                  id="related-enabled"
-                                  label="Show related products"
-                                >
-                                  <Checkbox
-                                    id="related-enabled"
-                                    checked={vendor.relatedEnabled !== false}
-                                    onChange={(e) =>
-                                      update({
-                                        vendor: {
-                                          ...vendor,
-                                          relatedEnabled: e.target.checked,
-                                        },
-                                      })
-                                    }
-                                  />
-                                </Field>
-                              )}
-                              {(section === 'featured' ||
-                                section === 'about') && (
-                                <VendorHomepageOptions
-                                  section={section}
-                                  value={vendor}
-                                  api={api}
-                                  onChange={(value) =>
-                                    update({
-                                      vendor: {
-                                        ...value,
-                                        ...(value.aboutBlurb !==
-                                        vendor.aboutBlurb
-                                          ? { aboutUseLegacyStory: false }
-                                          : {}),
-                                      },
-                                    })
-                                  }
-                                />
-                              )}
-                              {section === 'about' &&
-                                (!draft.vendor ||
-                                  draft.vendor.aboutUseLegacyStory) && (
-                                  <TextSetting
-                                    id="home-story"
-                                    label="Legacy homepage story"
-                                    value={draft.homepage.story}
-                                    max={3000}
-                                    multiline
-                                    onChange={(story) => updateHome({ story })}
                                   />
                                 )}
-                              {section === 'header' && (
-                                <p>
-                                  Branding comes from your business identity.
-                                  Account, cart and platform navigation remain
-                                  protected.
-                                </p>
-                              )}
-                              {section === 'footer' && (
-                                <p>
-                                  Your business name, account link and platform
-                                  attribution are shared across all vendor
-                                  pages.
-                                </p>
-                              )}
-                            </>
-                          )}
-                        </fieldset>
-                      </form>
-                    </div>
-                  )}
-                </details>
-              ),
-            )}
+                                {section === 'about' &&
+                                  (!draft.vendor ||
+                                    draft.vendor.aboutUseLegacyStory) && (
+                                    <TextSetting
+                                      id="home-story"
+                                      label="Legacy homepage story"
+                                      value={draft.homepage.story}
+                                      max={3000}
+                                      multiline
+                                      onChange={(story) =>
+                                        updateHome({ story })
+                                      }
+                                    />
+                                  )}
+                                {section === 'header' && (
+                                  <p>
+                                    Branding comes from your business identity.
+                                    Account, cart and platform navigation remain
+                                    protected.
+                                  </p>
+                                )}
+                                {section === 'footer' && (
+                                  <p>
+                                    Your business name, account link and
+                                    platform attribution are shared across all
+                                    vendor pages.
+                                  </p>
+                                )}
+                              </>
+                            )}
+                          </fieldset>
+                        </form>
+                      </div>
+                    )}
+                  </details>
+                ),
+              )}
           </nav>
           {page !== 'home' && page !== 'about' && page !== 'find' && (
             <p>

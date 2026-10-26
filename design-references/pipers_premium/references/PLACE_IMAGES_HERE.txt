@@ -1,0 +1,1 @@
+Run ../download_references.ps1 on your Windows computer or save the images manually from reference_gallery.html. External screenshots are reference-only, not production assets.

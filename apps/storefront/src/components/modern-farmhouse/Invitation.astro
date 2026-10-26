@@ -1,0 +1,14 @@
+---
+const { cta, section = 'closing' } = Astro.props as {
+  cta: { heading: string; text: string; label: string; destination: string };
+  section?: string;
+};
+---
+
+<section class="farmhouse-invitation" data-editor-section={section}>
+  <h2>{cta.heading}</h2>
+  <p>{cta.text}</p>
+  <a class="farmhouse-button" href={cta.destination}>
+    {cta.label} <span aria-hidden="true">↗</span>
+  </a>
+</section>

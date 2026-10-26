@@ -1,0 +1,82 @@
+/* Shared calendar composition using theme tokens and shared control contracts. */
+.market-pickup-calendar {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  color: var(--brand-foreground);
+  font: 1rem/1.5 var(--font-body);
+}
+.market-calendar-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+.market-calendar-month {
+  font-weight: 700;
+  text-align: center;
+}
+.market-calendar-grid {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0.2rem;
+}
+.market-calendar-grid th {
+  padding-block: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--brand-muted);
+  text-align: center;
+}
+.market-calendar-grid td {
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+.market-calendar-grid .ui-tooltip-anchor {
+  width: 100%;
+  justify-content: center;
+}
+.market-calendar-day.button {
+  width: min(100%, var(--ui-control-height));
+  min-height: var(--ui-control-height);
+  height: var(--ui-control-height);
+  padding: 0;
+}
+.market-calendar-empty-day {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  color: var(--brand-muted);
+}
+.market-pickup-calendar .market-calendar-help {
+  font-size: 0.85rem;
+  color: var(--brand-muted);
+  margin: 0;
+}
+.market-calendar-events {
+  display: grid;
+  gap: 0.65rem;
+}
+.market-calendar-date-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.market-pickup-calendar .market-calendar-date {
+  font-weight: 600;
+  margin: 0;
+}
+.market-calendar-event.button {
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  white-space: normal;
+}
+.market-calendar-event > span:last-child {
+  font-size: 0.85rem;
+  font-weight: 400;
+}

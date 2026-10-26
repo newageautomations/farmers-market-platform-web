@@ -1,0 +1,77 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import {
+  contactDetails,
+  contactHref,
+  storefrontText,
+} from '@market/theme/storefront';
+interface Props {
+  context: StorefrontContext;
+}
+const { context } = Astro.props;
+const appearance = context.appearance;
+const contact = appearance?.contact?.enabled
+  ? contactDetails(appearance.contact)
+  : undefined;
+const socials = (['instagram', 'facebook'] as const).flatMap((type) => {
+  const href = contact && contactHref(type, contact[type]);
+  return href
+    ? [{ href, label: type === 'instagram' ? 'Instagram' : 'Facebook' }]
+    : [];
+});
+---
+
+<footer class="mf-footer" data-editor-section="footer">
+  <div class="mf-footer-top">
+    <div class="mf-footer-intro">
+      <a class="mf-footer-brand" href="/">
+        {context.name}
+      </a>
+      <p data-storefront-text="footerTagline">
+        {storefrontText(appearance, 'footerTagline')}
+      </p>
+    </div>
+    <nav aria-label="Footer navigation">
+      <a href="/products">
+        <span data-storefront-text="footerShopLabel">
+          {storefrontText(appearance, 'footerShopLabel')}
+        </span>
+      </a>
+      {appearance?.about.enabled && (
+        <a href="/about">
+          <span data-storefront-text="footerAboutLabel">
+            {storefrontText(appearance, 'footerAboutLabel')}
+          </span>
+        </a>
+      )}
+      {appearance?.findUs?.enabled && (
+        <a href="/find-us">{appearance.findUs.title}</a>
+      )}
+      {appearance?.contact?.enabled && (
+        <a href="/contact">{appearance.contact.title}</a>
+      )}
+      <a href="/account">Your account</a>
+    </nav>
+    {(appearance?.faq?.enabled ||
+      appearance?.policies?.enabled ||
+      socials.length > 0) && (
+      <nav aria-label="Information and social links">
+        {appearance?.faq?.enabled && <a href="/faq">{appearance.faq.title}</a>}
+        {appearance?.policies?.enabled && (
+          <a href="/policies">{appearance.policies.title}</a>
+        )}
+        {socials.map((social) => (
+          <a href={social.href} target="_blank" rel="noopener noreferrer">
+            {social.label} <span aria-hidden="true">↗</span>
+          </a>
+        ))}
+      </nav>
+    )}
+  </div>
+  <div class="mf-footer-bottom">
+    <span>
+      © {new Date().getFullYear()} {context.name}
+    </span>
+    <span>Powered by Market platform</span>
+  </div>
+</footer>

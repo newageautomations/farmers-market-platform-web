@@ -1,0 +1,200 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { safeAsset, shopCategories } from '@market/storefront-core';
+import type { PublicCatalog, AppError } from '@market/api';
+import { ErrorState, SectionHeader } from '@market/ui';
+import {
+  storefrontText,
+  vendorHeroIntroduction,
+} from '@market/theme/storefront';
+import ProductCards from '../ProductCards.astro';
+import EmptyState from '../ui/EmptyState.astro';
+import Button from '../ui/Button.astro';
+interface Props {
+  context: StorefrontContext;
+  catalog?: PublicCatalog;
+  error?: AppError;
+}
+const { context, catalog, error } = Astro.props;
+const appearance = context.appearance;
+const vendor = appearance?.vendor;
+const hero =
+  safeAsset(appearance?.homepage.image) ??
+  catalog?.items.map((p) => safeAsset(p.featuredAsset?.preview)).find(Boolean);
+const aboutBlurb = vendor?.aboutUseLegacyStory
+  ? appearance?.homepage.story
+  : (vendor?.aboutBlurb ?? appearance?.homepage.story);
+const aboutEnabled = vendor?.aboutEnabled ?? !!appearance?.homepage.story;
+const aboutImage = safeAsset(vendor?.aboutImage);
+// Only the already loaded featured catalog is used. No independent collection CMS or extra query.
+const tiles = shopCategories(catalog?.items ?? [])
+  .flatMap((category) => {
+    const product = catalog?.items.find(
+      (p) =>
+        p.facetValues.some((v) => v.id === category.id) &&
+        safeAsset(p.featuredAsset?.preview),
+    );
+    const image = safeAsset(product?.featuredAsset?.preview);
+    return image ? [{ ...category, image }] : [];
+  })
+  .slice(0, 3);
+---
+
+<div class="mf-home" data-composition="vendor" data-template="modern-farmhouse">
+  <section
+    class:list={['mf-hero', !hero && 'mf-hero-no-image']}
+    data-editor-section="hero"
+    aria-labelledby="home-title"
+  >
+    {hero && (
+      <img
+        class="mf-hero-image product-media"
+        src={hero}
+        alt=""
+        width="1920"
+        height="1200"
+        fetchpriority="high"
+      />
+    )}
+    <div class="mf-hero-copy">
+      <h1 id="home-title" data-home-text="title">
+        {appearance?.homepage.title || context.name}
+      </h1>
+      <p data-home-text="introduction">
+        {appearance?.homepage.introduction || vendorHeroIntroduction}
+      </p>
+      <div class="mf-hero-actions">
+        <Button href="/products">
+          <span data-storefront-text="heroPrimaryLabel">
+            {storefrontText(appearance, 'heroPrimaryLabel')}
+          </span>
+          <span aria-hidden="true">↗</span>
+        </Button>
+        {appearance?.about.enabled && (
+          <Button href="/about" variant="secondary">
+            <span data-storefront-text="heroSecondaryLabel">
+              {storefrontText(appearance, 'heroSecondaryLabel')}
+            </span>
+          </Button>
+        )}
+      </div>
+    </div>
+  </section>
+  {tiles.length > 0 && (
+    <nav class="mf-discovery" aria-label="Explore product categories">
+      {tiles.map((tile) => (
+        <a
+          class="mf-discovery-tile"
+          href={`/products?category=${encodeURIComponent(tile.id)}`}
+        >
+          <div class="mf-photo-frame">
+            <img
+              class="product-media"
+              src={tile.image}
+              alt=""
+              width="800"
+              height="1000"
+              loading="lazy"
+            />
+          </div>
+          <div class="mf-discovery-caption">
+            <span>{tile.name}</span>
+            <span class="mf-circle-arrow" aria-hidden="true">
+              ↗
+            </span>
+          </div>
+        </a>
+      ))}
+    </nav>
+  )}
+  <section
+    class="mf-featured"
+    data-editor-section="featured"
+    aria-label="Featured collection"
+  >
+    <SectionHeader
+      title={storefrontText(appearance, 'featuredHeading')}
+      variant="consumer"
+    >
+      <a href="/products">
+        <span data-storefront-text="featuredLinkLabel">
+          {storefrontText(appearance, 'featuredLinkLabel')}
+        </span>{' '}
+        <span aria-hidden="true">↗</span>
+      </a>
+    </SectionHeader>
+    {error ? (
+      <ErrorState error={error} />
+    ) : catalog?.items.length ? (
+      <ProductCards
+        items={catalog.items}
+        featured
+        theme="modern-farmhouse"
+        storefrontId={
+          context.source === 'backend' ? context.storefrontId : undefined
+        }
+      />
+    ) : (
+      <EmptyState title="Good things are on their way" level={3}>
+        <p>
+          Our collection will appear here when products are available. Come back
+          soon.
+        </p>
+      </EmptyState>
+    )}
+  </section>
+  {aboutEnabled && aboutBlurb && (
+    <section
+      class:list={['mf-about', !aboutImage && 'mf-about-text']}
+      data-editor-section="about"
+    >
+      {aboutImage && (
+        <div class="mf-about-image">
+          <img
+            class="product-media"
+            src={aboutImage}
+            alt={vendor?.aboutAlt || context.name}
+            data-hero-shape={vendor?.aboutShape ?? 'rounded'}
+            width="960"
+            height="960"
+            loading="lazy"
+          />
+        </div>
+      )}
+      <div class="mf-about-copy">
+        <h2 data-storefront-text="aboutHeading">
+          {storefrontText(appearance, 'aboutHeading', context.name)}
+        </h2>
+        <p data-about-blurb>{aboutBlurb}</p>
+        {appearance?.about.enabled && (
+          <Button href="/about" variant="secondary">
+            <span data-storefront-text="aboutLinkLabel">
+              {storefrontText(appearance, 'aboutLinkLabel')}
+            </span>
+            <span aria-hidden="true">↗</span>
+          </Button>
+        )}
+      </div>
+    </section>
+  )}
+  <section
+    class="mf-closing"
+    data-editor-section="closing"
+    aria-label="Explore the collection"
+  >
+    <div>
+      <h2 data-storefront-text="closingHeading">
+        {storefrontText(appearance, 'closingHeading')}
+      </h2>
+      <p data-storefront-text="closingText">
+        {storefrontText(appearance, 'closingText')}
+      </p>
+    </div>
+    <Button href="/products">
+      <span data-storefront-text="closingLabel">
+        {storefrontText(appearance, 'closingLabel')}
+      </span>
+      <span aria-hidden="true">↗</span>
+    </Button>
+  </section>
+</div>

@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./storefront": "./src/storefront.ts",
-    "./storefront.css": "./src/storefront.css"
+    "./storefront.css": "./src/storefront.css",
+    "./farmhouse-presentation": "./src/farmhouse-presentation.ts"
   },
   "dependencies": {
     "zod": "4.6.5"

@@ -1,0 +1,165 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { safeAsset } from '@market/storefront-core';
+import { disclosureClassName } from '@market/ui/presentation';
+import {
+  aboutSections,
+  defaultAboutCta,
+  faqAnswerParts,
+  policyContentParts,
+  publishedPolicyEntries,
+  defaultFaq,
+  defaultPolicies,
+  defaultContact,
+} from '@market/theme/storefront';
+import Invitation from './Invitation.astro';
+import { farmhouseDestination } from './navigation';
+const {
+  context,
+  page,
+  preview = false,
+} = Astro.props as {
+  context: StorefrontContext;
+  page: 'about' | 'faq' | 'policies';
+  preview?: boolean;
+};
+const appearance = context.appearance!;
+const about = appearance.about;
+const faq = appearance.faq ?? (preview ? defaultFaq : undefined);
+const policies = appearance.policies ?? (preview ? defaultPolicies : undefined);
+const contact = appearance.contact ?? (preview ? defaultContact : undefined);
+const pieces = (value: string, policy = false) =>
+  policy ? policyContentParts(value) : faqAnswerParts(value);
+const published =
+  context.appearancePublishedAt &&
+  Number.isFinite(Date.parse(context.appearancePublishedAt))
+    ? new Date(context.appearancePublishedAt)
+    : undefined;
+---
+
+<article
+  class:list={['farmhouse-content', `farmhouse-${page}`]}
+  data-story-layout={appearance.template!.settings.pages.storyLayout}
+  data-farmhouse-component={page}
+>
+  {page === 'about' ? (
+    <>
+      <header class="farmhouse-page-heading">
+        <h1>{about.title}</h1>
+      </header>
+      {aboutSections(about)
+        .filter((s) => s.visible)
+        .map((s, index) => (
+          <section
+            class:list={[
+              'farmhouse-story-spread',
+              s.layout === 'text' && 'farmhouse-prose-only',
+              s.layout === 'image' && 'farmhouse-image-only',
+            ]}
+            data-image-side={s.imagePosition}
+            data-editor-section={`story:${s.id}`}
+          >
+            <div style={`text-align:${s.textAlign ?? 'left'}`}>
+              <h2>{s.heading}</h2>
+              <p>{s.body}</p>
+            </div>
+            {s.layout !== 'text' && safeAsset(s.image) && (
+              <figure data-size={s.imageSize}>
+                <img
+                  data-story-shape={s.shape}
+                  src={safeAsset(s.image)}
+                  alt={s.alt}
+                  width="1200"
+                  height="1000"
+                  loading={index ? 'lazy' : 'eager'}
+                />
+              </figure>
+            )}
+          </section>
+        ))}
+      <Invitation cta={about.cta ?? defaultAboutCta} section="story-cta" />
+    </>
+  ) : page === 'faq' && faq ? (
+    <>
+      <header class="farmhouse-page-heading" data-editor-section="faq-intro">
+        <h1>{faq.heading}</h1>
+        <p>{faq.description}</p>
+      </header>
+      <div class="farmhouse-questions" data-editor-section="faq-questions">
+        {faq.questions
+          .filter((q) => q.visible && q.question.trim() && q.answer.trim())
+          .map((q) => (
+            <details
+              class={disclosureClassName()}
+              data-disclosure-icon="plus"
+              data-editor-section={`faq:${q.id}`}
+            >
+              <summary>{q.question}</summary>
+              <div class="ui-disclosure-content">
+                <p>
+                  {pieces(q.answer).map((part) =>
+                    part.href && farmhouseDestination(context, part.href) ? (
+                      <a href={part.href}>{part.text}</a>
+                    ) : (
+                      <span>{part.text}</span>
+                    ),
+                  )}
+                </p>
+              </div>
+            </details>
+          ))}
+      </div>
+      {contact?.enabled && (
+        <Invitation
+          cta={{ ...faq.cta, destination: '/contact' }}
+          section="faq-cta"
+        />
+      )}
+    </>
+  ) : page === 'policies' && policies ? (
+    <>
+      <header
+        class="farmhouse-page-heading"
+        data-editor-section="policies-intro"
+      >
+        <h1>{policies.heading}</h1>
+        <p>{policies.description}</p>
+        {published && (
+          <p>
+            Published{' '}
+            <time datetime={published.toISOString()}>
+              {published.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+                timeZone: 'UTC',
+              })}
+            </time>
+          </p>
+        )}
+      </header>
+      <div class="farmhouse-policy-list" data-editor-section="policies-list">
+        {publishedPolicyEntries(policies).map((policy) => (
+          <section data-editor-section={`policy:${policy.id}`}>
+            <h2>{policy.title}</h2>
+            <p>
+              {pieces(policy.content, true).map((part) =>
+                part.href && farmhouseDestination(context, part.href) ? (
+                  <a href={part.href}>{part.text}</a>
+                ) : (
+                  <span>{part.text}</span>
+                ),
+              )}
+            </p>
+          </section>
+        ))}
+      </div>
+      {contact?.enabled && (
+        <Invitation
+          cta={{ ...policies.cta, destination: '/contact' }}
+          section="policies-cta"
+        />
+      )}
+    </>
+  ) : null}
+</article>

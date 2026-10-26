@@ -35,7 +35,9 @@ function startEditorPreview() {
     );
 
   function structural(value: StorefrontAppearance) {
+    if (value.template) return JSON.stringify(value);
     return JSON.stringify({
+      theme: value.theme,
       findUs: value.findUs,
       contact: value.contact,
       faq: value.faq,
@@ -66,14 +68,25 @@ function startEditorPreview() {
   }
   function select(section: StorefrontEditorSection, scroll = false) {
     selected = section;
+    document.querySelectorAll('[data-editor-selected]').forEach((node) => {
+      node.removeAttribute('data-editor-selected');
+      node.removeAttribute('data-editor-position-static');
+    });
     document
-      .querySelectorAll('[data-editor-selected]')
-      .forEach((node) => node.removeAttribute('data-editor-selected'));
+      .querySelectorAll('.storefront-editor-selection-label')
+      .forEach((label) => label.remove());
     const element = document.querySelector<HTMLElement>(
       `[data-editor-section="${section}"]`,
     );
     if (element) {
       element.dataset.editorSelected = storefrontEditorSectionLabel(section);
+      if (window.getComputedStyle(element).position === 'static')
+        element.dataset.editorPositionStatic = 'true';
+      const label = document.createElement('span');
+      label.className = 'storefront-editor-selection-label';
+      label.textContent = storefrontEditorSectionLabel(section);
+      label.setAttribute('aria-hidden', 'true');
+      element.append(label);
       if (scroll)
         element.scrollIntoView({
           behavior: window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -85,6 +98,7 @@ function startEditorPreview() {
     }
   }
   function patch(value: StorefrontAppearance) {
+    if (value.template) return;
     for (const [key, token] of Object.entries(storefrontThemeVariables(value)))
       document.documentElement.style.setProperty(key, token);
     document.documentElement.dataset.storefrontHover = value.buttonHover;
@@ -116,8 +130,9 @@ function startEditorPreview() {
     );
     const hero = document.querySelector<HTMLElement>('.harvest-hero-visual');
     if (hero) hero.dataset.heroShape = value.vendor?.heroShape ?? 'dome';
-    const aboutImage =
-      document.querySelector<HTMLImageElement>('.vendor-about img');
+    const aboutImage = document.querySelector<HTMLImageElement>(
+      '[data-editor-section="about"] img',
+    );
     if (aboutImage) {
       aboutImage.dataset.heroShape = value.vendor?.aboutShape ?? 'rounded';
       aboutImage.alt = value.vendor?.aboutAlt || embedded.name;
@@ -255,6 +270,12 @@ function startEditorPreview() {
           else send({ type: 'navigate', path: url.pathname });
         } else send({ type: 'blocked' });
       } else if (event.target.closest('button')) {
+        if (
+          event.target.closest(
+            '[data-farmhouse-carousel] [data-carousel-direction]',
+          )
+        )
+          return;
         event.preventDefault();
         event.stopImmediatePropagation();
         send({ type: 'blocked' });

@@ -22,10 +22,11 @@ const state = Astro.locals.editorPreview;
   html[data-editor-inspect='true'] [data-editor-selected] {
     outline: 2px solid #365c6e;
     outline-offset: -2px;
+  }
+  html[data-editor-inspect='true'] [data-editor-position-static] {
     position: relative;
   }
-  html[data-editor-inspect='true'] [data-editor-selected]::after {
-    content: attr(data-editor-selected);
+  html[data-editor-inspect='true'] .storefront-editor-selection-label {
     position: absolute;
     top: 0;
     left: 0;

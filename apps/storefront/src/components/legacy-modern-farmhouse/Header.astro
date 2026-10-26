@@ -1,0 +1,99 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { storefrontText } from '@market/theme/storefront';
+import Button from '../ui/Button.astro';
+import { UtilityIcon } from '@market/ui';
+import { VendorCartLink } from './VendorCartLink';
+interface Props {
+  context: StorefrontContext;
+}
+const { context } = Astro.props;
+const appearance = context.appearance;
+const links = [
+  {
+    href: '/products',
+    label: storefrontText(appearance, 'headerShopLabel'),
+    binding: 'headerShopLabel',
+  },
+  ...(appearance?.about.enabled
+    ? [
+        {
+          href: '/about',
+          label: storefrontText(appearance, 'headerAboutLabel'),
+          binding: 'headerAboutLabel',
+        },
+      ]
+    : []),
+  ...(appearance?.findUs?.enabled
+    ? [{ href: '/find-us', label: appearance.findUs.title }]
+    : []),
+  ...(appearance?.contact?.enabled
+    ? [{ href: '/contact', label: appearance.contact.title }]
+    : []),
+];
+const active = (href: string) =>
+  Astro.url.pathname === href ||
+  (href === '/products' && Astro.url.pathname.startsWith('/products/'))
+    ? ('page' as const)
+    : undefined;
+---
+
+<header class="mf-header" data-editor-section="header">
+  <a class="mf-brand" href="/" aria-label={`${context.name} home`}>
+    {context.theme.logo && (
+      <img src={context.theme.logo} alt="" width="44" height="44" />
+    )}
+    <span>{context.name}</span>
+  </a>
+  <nav class="mf-desktop-nav" aria-label="Main navigation">
+    {links.map((link) => (
+      <a href={link.href} aria-current={active(link.href)}>
+        <span data-storefront-text={link.binding}>{link.label}</span>
+      </a>
+    ))}
+  </nav>
+  <div class="mf-header-actions">
+    <Button
+      href="/account"
+      variant="tertiary"
+      iconOnly
+      aria-label="Your account"
+    >
+      <UtilityIcon name="user" />
+    </Button>
+    {context.source === 'backend' && !Astro.locals.editorPreview ? (
+      <VendorCartLink storefrontId={context.storefrontId ?? ''} client:load />
+    ) : (
+      <Button href="/cart" variant="secondary">
+        Cart
+      </Button>
+    )}
+    <details class="mf-mobile-menu">
+      <summary aria-label="Open navigation menu">
+        <UtilityIcon name="menu" />
+        <span>Menu</span>
+      </summary>
+      <nav aria-label="Mobile navigation">
+        <a href="/" aria-current={active('/')}>
+          Home
+        </a>
+        {links.map((link) => (
+          <a href={link.href} aria-current={active(link.href)}>
+            <span data-storefront-text={link.binding}>{link.label}</span>
+          </a>
+        ))}
+        {appearance?.faq?.enabled && <a href="/faq">{appearance.faq.title}</a>}
+        {appearance?.policies?.enabled && (
+          <a href="/policies">{appearance.policies.title}</a>
+        )}
+        <a href="/account">Your account</a>
+      </nav>
+    </details>
+  </div>
+</header>
+<script>
+  import { mountStorefrontMenu } from '../../lib/storefront-menu';
+  document
+    .querySelectorAll<HTMLDetailsElement>('.mf-mobile-menu')
+    .forEach(mountStorefrontMenu);
+</script>

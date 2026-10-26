@@ -1,5 +1,11 @@
 import { it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import {
   storefrontAppearanceSchema,
   defaultStorefrontAppearance,
@@ -67,6 +73,48 @@ it('adds the explicit variant through the existing shop bridge and blocks duplic
   await waitFor(() =>
     expect(screen.getByText('Added to your cart.')).toBeInTheDocument(),
   );
+  vi.unstubAllGlobals();
+});
+
+it('requires an explicit product option before adding a card with multiple variants', async () => {
+  const fetcher = vi.fn(
+    async (_url: RequestInfo | URL, _init?: RequestInit) =>
+      new Response(JSON.stringify({ result: {} })),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  render(
+    <FeaturedAdd
+      storefrontId="1"
+      occurrenceId="7"
+      productName="Market box"
+      variantOptions={[
+        { id: '42', name: 'Small' },
+        { id: '43', name: 'Large' },
+      ]}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Add to cart' }));
+  const dialog = screen.getByRole('dialog', {
+    name: 'Choose options for Market box',
+  });
+  expect(fetcher).not.toHaveBeenCalled();
+  expect(
+    within(dialog).getByRole('button', { name: 'Add to cart' }),
+  ).toBeDisabled();
+  fireEvent.change(within(dialog).getByLabelText('Product option'), {
+    target: { value: '43' },
+  });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Add to cart' }));
+  await waitFor(() =>
+    expect(screen.getByText('Added to your cart.')).toBeInTheDocument(),
+  );
+  expect(fetcher).toHaveBeenCalledOnce();
+  expect(JSON.parse(fetcher.mock.calls[0]![1]!.body as string)).toMatchObject({
+    action: 'add',
+    variantId: '43',
+    quantity: 1,
+    occurrenceId: '7',
+  });
   vi.unstubAllGlobals();
 });
 

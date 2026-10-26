@@ -7,7 +7,8 @@
   padding: 1.25rem;
   margin-bottom: 1.5rem;
   border-radius: var(--storefront-card-radius);
-  background: color-mix(in srgb, var(--brand-primary) 9%, var(--brand-surface));
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
 }
 .shop-market-banner > div {
   flex: 1 1 260px;
@@ -24,16 +25,11 @@
 .shop-market-picker {
   max-width: 100%;
 }
-.shop-market-picker[open] {
-  flex-basis: 100%;
+.shop-market-banner > .shop-market-picker {
+  flex: 0 1 auto;
 }
-.shop-market-picker form {
-  display: grid;
-  gap: 1rem;
-}
-.shop-market-picker .ui-select {
-  max-width: 100%;
-}
-.shop-market-picker .ui-button {
-  justify-self: start;
+.shop-market-picker > .button.ui-button {
+  --button-fill: var(--brand-on-primary);
+  --button-ink: var(--brand-primary);
+  --button-edge: var(--brand-on-primary);
 }

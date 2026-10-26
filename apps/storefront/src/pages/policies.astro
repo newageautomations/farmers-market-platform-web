@@ -1,4 +1,6 @@
 ---
+import PremiumContent from '../components/modern-farmhouse/Content.astro';
+import { isFarmhouse } from '@market/theme/storefront';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import ClosingInvitation from '../components/ClosingInvitation.astro';
 import {
@@ -45,7 +47,13 @@ const date =
   title={enabled ? config!.title : 'Page unavailable'}
   noindex={!enabled}
 >
-  {enabled && config ? (
+  {enabled && storefront && isFarmhouse(storefront.appearance) ? (
+    <PremiumContent
+      context={storefront}
+      page="policies"
+      preview={!!Astro.locals.editorPreview}
+    />
+  ) : enabled && config ? (
     <article class="story-page policies-page" aria-label={config.title}>
       <section data-editor-section="policies-intro">
         <h1>{config.heading}</h1>

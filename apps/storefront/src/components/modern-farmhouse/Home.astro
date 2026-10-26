@@ -1,0 +1,170 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { shopCategories, safeAsset } from '@market/storefront-core';
+import type { PublicCatalog } from '@market/api';
+import { farmhouseDestination } from './navigation';
+import Photo from './Photo.astro';
+import FeaturedCarousel from './FeaturedCarousel.astro';
+const { context, catalog, error } = Astro.props as {
+  context: StorefrontContext;
+  catalog?: PublicCatalog;
+  error?: unknown;
+};
+const settings = context.appearance!.template!.settings;
+const products = catalog?.items ?? [];
+const categories = shopCategories(products);
+const destination = (href: string) =>
+  farmhouseDestination(context, href) ? href : '/products';
+const productImage = (index: number) =>
+  safeAsset(products[index]?.featuredAsset?.preview) ?? '';
+---
+
+<div class="farmhouse-home" data-farmhouse-component="home">
+  {settings.sections
+    .filter((section) => section.visible)
+    .map((section) => {
+      const selected = section.productIds.length
+        ? section.productIds.flatMap((id) =>
+            products.filter((p) => p.id === id),
+          )
+        : products.slice(0, 4);
+      return section.id === 'cinematic' ? (
+        <section
+          class="farmhouse-cinematic"
+          data-editor-section="farmhouse:cinematic"
+        >
+          <Photo photo={section.photo} fallback={productImage(0)} eager />
+          <div class="farmhouse-hero-copy">
+            <h1>{section.heading}</h1>
+            <p>{section.body}</p>
+            <a
+              class="farmhouse-button farmhouse-button-light"
+              href={destination(section.destination)}
+            >
+              {section.label}
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </section>
+      ) : section.id === 'discovery' ? (
+        <section
+          class="farmhouse-discovery farmhouse-space"
+          data-editor-section="farmhouse:discovery"
+        >
+          <div class="farmhouse-section-intro">
+            <h2>{section.heading}</h2>
+            <p>{section.body}</p>
+          </div>
+          <div class="farmhouse-tile-grid">
+            {(section.tiles.length
+              ? section.tiles
+              : categories.slice(0, 3).map((category, index) => ({
+                  title: category.name,
+                  body: '',
+                  destination:
+                    '/products?category=' + encodeURIComponent(category.id),
+                  photo: { ...section.photo, url: productImage(index) },
+                }))
+            )
+              .filter((tile) => farmhouseDestination(context, tile.destination))
+              .map((tile) => (
+                <a class="farmhouse-editorial-tile" href={tile.destination}>
+                  <Photo photo={tile.photo} />
+                  <div>
+                    <h3>
+                      {tile.title}
+                      <span class="farmhouse-circle" aria-hidden="true">
+                        <span>→</span>
+                      </span>
+                    </h3>
+                    <p>{tile.body}</p>
+                  </div>
+                </a>
+              ))}
+          </div>
+          {!categories.length && !section.tiles.length && (
+            <a class="farmhouse-text-link" href="/products">
+              Explore the full shop ↗
+            </a>
+          )}
+        </section>
+      ) : section.id === 'products' ? (
+        <section
+          class="farmhouse-featured"
+          data-editor-section="farmhouse:products"
+        >
+          <div class="farmhouse-space">
+            <div class="farmhouse-section-intro">
+              <h2>{section.heading}</h2>
+              <p>{section.body}</p>
+              <a
+                href={destination(section.destination)}
+                class="farmhouse-text-link"
+              >
+                {section.label} ↗
+              </a>
+            </div>
+            {selected.length ? (
+              <FeaturedCarousel items={selected} />
+            ) : (
+              <p>
+                {error
+                  ? 'The collection is temporarily unavailable. Please try the shop again shortly.'
+                  : 'Our collection will appear here when products are published.'}
+              </p>
+            )}
+          </div>
+        </section>
+      ) : section.id === 'story' ? (
+        <section
+          class="farmhouse-story-feature"
+          data-editor-section="farmhouse:story"
+        >
+          <Photo photo={section.photo} fallback={productImage(1)} />
+          <div>
+            <h2>{section.heading}</h2>
+            <p>{section.body}</p>
+            {farmhouseDestination(context, section.destination) && (
+              <a href={section.destination} class="farmhouse-text-link">
+                {section.label} ↗
+              </a>
+            )}
+          </div>
+        </section>
+      ) : section.id === 'collection' ? (
+        selected[0] && (
+          <section
+            class="farmhouse-collection farmhouse-space"
+            data-editor-section="farmhouse:collection"
+          >
+            <div>
+              <h2>{section.heading}</h2>
+              <p>{section.body}</p>
+              <a
+                href={`/products/${encodeURIComponent(selected[0].slug)}`}
+                class="farmhouse-text-link"
+              >
+                {section.label}: {selected[0].name} ↗
+              </a>
+            </div>
+            <Photo
+              photo={section.photo}
+              fallback={safeAsset(selected[0].featuredAsset?.preview) ?? ''}
+            />
+          </section>
+        )
+      ) : (
+        <section
+          class="farmhouse-invitation"
+          data-editor-section="farmhouse:invitation"
+        >
+          <h2>{section.heading}</h2>
+          <p>{section.body}</p>
+          <a class="farmhouse-button" href={destination(section.destination)}>
+            {section.label}
+            <span aria-hidden="true">↗</span>
+          </a>
+        </section>
+      );
+    })}
+</div>

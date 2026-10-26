@@ -10,6 +10,9 @@ import { Button } from './index';
 import { navigationIconPaths } from './presentation';
 
 const utilityPaths = {
+  plus: 'M12 5v14M5 12h14',
+  user: 'M20 21v-2a7 7 0 0 0-14 0v2M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
+  menu: 'M4 6h16M4 12h16M4 18h16',
   check: 'm5 12 4 4L19 6',
   email: 'M3 5h18v14H3zM3 5l9 7 9-7',
   phone:

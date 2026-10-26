@@ -1,8 +1,12 @@
 ---
+import PremiumHome from '../components/modern-farmhouse/Home.astro';
+import { isFarmhouse } from '@market/theme/storefront';
+import { farmhouseCatalog } from '../lib/farmhouse-catalog';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import MarketHome from '../components/MarketHome.astro';
 import MarketPublicHome from '../components/MarketPublicHome.astro';
 import VendorHome from '../components/VendorHome.astro';
+import FarmhouseHome from '../components/legacy-modern-farmhouse/Home.astro';
 import { composition } from '@market/storefront-core';
 import { ErrorState } from '@market/ui';
 import {
@@ -56,8 +60,21 @@ if (storefront?.kind === 'MARKET' && storefront.source === 'backend') {
 }
 if (storefront?.kind === 'VENDOR') {
   try {
-    const selected = storefront.appearance?.vendor?.featuredIds;
+    const premiumIds = [
+      ...new Set(
+        storefront.appearance?.template?.settings.sections.flatMap(
+          (section) => section.productIds,
+        ) ?? [],
+      ),
+    ];
+    const selected = isFarmhouse(storefront.appearance)
+      ? premiumIds.length
+        ? premiumIds
+        : null
+      : storefront.appearance?.vendor?.featuredIds;
     if (selected?.length === 0) catalog = { items: [], totalItems: 0 };
+    else if (isFarmhouse(storefront.appearance))
+      catalog = await farmhouseCatalog(Astro);
     else if (import.meta.env.DEV && storefront.source === 'fixture') {
       const { fixtureCatalog } =
         await import('@market/storefront-core/fixtures');
@@ -67,7 +84,9 @@ if (storefront?.kind === 'VENDOR') {
         await requestShop(Astro).catalog({
           options: {
             skip: 0,
-            take: 3,
+            take: isFarmhouse(storefront.appearance)
+              ? Math.max(12, premiumIds.length)
+              : 3,
             sort: { name: 'ASC' },
             ...(selected ? { filter: { id: { in: selected } } } : {}),
           },
@@ -113,6 +132,18 @@ if (storefrontError)
       ) : (
         <MarketHome context={storefront} />
       )
+    ) : isFarmhouse(storefront.appearance) ? (
+      <PremiumHome
+        context={storefront}
+        catalog={catalog}
+        error={catalogError}
+      />
+    ) : storefront.appearance?.theme === 'modern-farmhouse' ? (
+      <FarmhouseHome
+        context={storefront}
+        catalog={catalog}
+        error={catalogError}
+      />
     ) : (
       <VendorHome context={storefront} catalog={catalog} error={catalogError} />
     )

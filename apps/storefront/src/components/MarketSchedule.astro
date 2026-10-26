@@ -1,0 +1,115 @@
+---
+import type { VendorMarketAppearance } from '@market/api';
+import { buttonClassName, disclosureClassName } from '@market/ui/presentation';
+import { AppearancePreorder } from './AppearancePreorder';
+import '../styles/find-us.css';
+
+const {
+  rows,
+  storefrontId,
+  preview = false,
+  heading = 'Upcoming Markets',
+  class: className,
+} = Astro.props as {
+  rows: readonly VendorMarketAppearance[];
+  storefrontId: string;
+  preview?: boolean;
+  heading?: string;
+  class?: string;
+};
+
+const format = (
+  row: VendorMarketAppearance,
+  options: Intl.DateTimeFormatOptions,
+) =>
+  new Intl.DateTimeFormat('en-US', {
+    ...options,
+    timeZone: row.timezone,
+  }).format(new Date(row.startsAt));
+
+const hours = (row: VendorMarketAppearance) =>
+  `${format(row, { hour: 'numeric', minute: '2-digit' })} to ${new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: row.timezone }).format(new Date(row.endsAt))}`;
+
+// The authoritative venue is the saved address field. Avoid sending bare venue names or fixture placeholders to Maps.
+
+const directions = (row: VendorMarketAppearance) =>
+  /\d+\s+\S+/.test(row.venue) && !/fixture|test location/i.test(row.venue)
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.venue)}`
+    : undefined;
+
+const groups = new Map<string, VendorMarketAppearance[]>();
+
+for (const row of rows) {
+  const month = format(row, { month: 'long', year: 'numeric' });
+  groups.set(month, [...(groups.get(month) ?? []), row]);
+}
+---
+
+<section class:list={['find-schedule', className]}>
+  <h2>{heading}</h2>
+  {[...groups].map(([month, appearances]) => (
+    <div class="find-month">
+      <h3>{month}</h3>
+      <div class="find-month-entries">
+        {appearances.map((row) => (
+          <details
+            class={disclosureClassName('find-row')}
+            data-disclosure-icon="plus"
+          >
+            <summary>
+              <time class="find-date" datetime={row.startsAt}>
+                <span>{format(row, { month: 'short' })}</span>
+                <strong>{format(row, { day: 'numeric' })}</strong>
+              </time>
+              <span>
+                <strong>{row.marketName}</strong>
+                <span>
+                  {format(row, { weekday: 'long' })} · {hours(row)}
+                </span>
+                <span>{row.venue}</span>
+              </span>
+            </summary>
+            <div class="ui-disclosure-content find-row-detail">
+              <p>Attendance confirmed.</p>
+              {row.pickupInstructions && <p>{row.pickupInstructions}</p>}
+              <div class="find-actions">
+                {directions(row) && (
+                  <a
+                    class={buttonClassName({
+                      variant: 'secondary',
+                    })}
+                    href={directions(row)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Get Directions
+                  </a>
+                )}
+                {row.marketWebsite && (
+                  <a
+                    class={buttonClassName({
+                      variant: 'secondary',
+                    })}
+                    href={row.marketWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Visit Market Website
+                  </a>
+                )}
+                {row.preorderAvailable && (
+                  <AppearancePreorder
+                    storefrontId={storefrontId}
+                    occurrenceId={row.id}
+                    preview={preview}
+                    client:load
+                  />
+                )}
+              </div>
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+  ))}
+</section>

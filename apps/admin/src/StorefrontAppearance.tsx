@@ -42,6 +42,7 @@ import {
 import '@market/theme/storefront.css';
 import './storefront-appearance.css';
 import { VisualStorefrontEditor } from './VisualStorefrontEditor';
+import { WebsiteLibrary } from './WebsiteLibrary';
 
 export interface StorefrontConnection {
   endpoint: string;
@@ -140,7 +141,11 @@ export function StorefrontAppearanceSettings(
         </EmptyState>
       </div>
       <div hidden={restricted}>
-        <DesktopAppearanceSettings {...props} />
+        {!props.market && props.connection && !props.api ? (
+          <WebsiteLibrary connection={props.connection} />
+        ) : (
+          <DesktopAppearanceSettings {...props} />
+        )}
       </div>
     </>
   );

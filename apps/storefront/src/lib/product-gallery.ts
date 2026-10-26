@@ -6,6 +6,14 @@ export function mountProductGallery(gallery: HTMLElement) {
     if (main) main.hidden = false;
     fallback?.remove();
     fallback = undefined;
+    if (
+      main &&
+      gallery.closest('[data-storefront-theme="modern-farmhouse"]') &&
+      window.matchMedia('(prefers-reduced-motion: no-preference)').matches &&
+      main.animate
+    ) {
+      main.animate([{ opacity: 0.5 }, { opacity: 1 }], { duration: 220 });
+    }
   }
   function showError() {
     if (!main) return;

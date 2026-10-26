@@ -424,9 +424,10 @@ input[type='radio'] {
 }
 /* DDN-03 native disclosure/card surface, extracted from booth-list-item. */
 .ui-disclosure {
-  border: 1px solid #d5dfd8;
+  border: solid var(--ui-disclosure-border-color, #d5dfd8);
+  border-width: var(--ui-disclosure-border-width, 1px);
   border-radius: var(--ui-disclosure-radius, 8px);
-  background: var(--brand-surface);
+  background: var(--ui-disclosure-background, var(--brand-surface));
   margin-block: 1rem;
   min-width: 0;
 }
@@ -436,7 +437,7 @@ input[type='radio'] {
   justify-content: space-between;
   gap: 0.75rem;
   min-height: 3.5rem;
-  padding: 0.85rem 1rem;
+  padding: var(--ui-disclosure-summary-padding, 0.85rem 1rem);
   border-radius: var(--ui-disclosure-radius, 8px);
   list-style: none;
   font-weight: 600;
@@ -446,10 +447,9 @@ input[type='radio'] {
   display: none;
 }
 .ui-disclosure > summary:is(:hover, :focus-visible) {
-  background: color-mix(
-    in srgb,
-    var(--brand-primary) 10%,
-    var(--brand-surface)
+  background: var(
+    --ui-disclosure-hover-background,
+    color-mix(in srgb, var(--brand-primary) 10%, var(--brand-surface))
   );
 }
 .ui-disclosure > summary::after {
@@ -474,8 +474,8 @@ input[type='radio'] {
 .ui-disclosure > .ui-disclosure-content {
   display: grid;
   gap: 1rem;
-  padding: 1rem;
-  border-top: 1px solid #d5dfd8;
+  padding: var(--ui-disclosure-content-padding, 1rem);
+  border-top: var(--ui-disclosure-content-border-width, 1px) solid #d5dfd8;
 }
 .ui-disclosure-content > .ui-disclosure {
   margin: 0;
@@ -1359,13 +1359,13 @@ td {
 /* CRD-02: source geometry from the approved market dashboard surface. */
 .card.ui-card {
   min-width: 0;
-  padding: clamp(1rem, 2.5vw, 1.5rem);
+  padding: var(--ui-card-padding, clamp(1rem, 2.5vw, 1.5rem));
   margin-block: 1.25rem;
   margin-inline: 0;
-  background: var(--brand-surface);
-  border: 1px solid #d5dfd8;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px #17392505;
+  background: var(--ui-card-background, var(--brand-surface));
+  border: var(--ui-card-border, 1px solid #d5dfd8);
+  border-radius: var(--ui-card-radius, 10px);
+  box-shadow: var(--ui-card-shadow, 0 2px 6px #17392505);
 }
 .card.ui-card > :last-child:not(dialog) {
   margin-bottom: 0;

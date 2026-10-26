@@ -1,4 +1,7 @@
 ---
+import { Cart as PremiumCart } from '../components/modern-farmhouse/Cart';
+import PremiumCards from '../components/modern-farmhouse/ProductCards.astro';
+import { isFarmhouse } from '@market/theme/storefront';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { VendorCart, MarketCart } from '../components/ResilientSurfaces';
 import ProductCards from '../components/ProductCards.astro';
@@ -18,6 +21,8 @@ import {
 } from '@market/api';
 import { ErrorState } from '@market/ui';
 const { storefront, storefrontError } = Astro.locals;
+const premium = isFarmhouse(storefront?.appearance);
+const Cards = premium ? PremiumCards : ProductCards;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 const preferredReward = Astro.url.searchParams.get('loyalty');
 if (
@@ -100,7 +105,15 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 ---
 
 <SiteLayout context={storefront} path="/cart" title="Your cart" noindex>
-  <section class={storefront?.kind === 'VENDOR' ? 'vendor-cart-page' : 'py-12'}>
+  <section
+    class={
+      premium
+        ? 'farmhouse-cart-route'
+        : storefront?.kind === 'VENDOR'
+          ? 'vendor-cart-page'
+          : 'py-12'
+    }
+  >
     {(storefront?.kind !== 'VENDOR' ||
       error ||
       storefront.source === 'fixture' ||
@@ -120,6 +133,13 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
             initialCart={marketBootstrap.cart}
             client:load
           />
+        ) : premium ? (
+          <PremiumCart
+            storefrontId={storefront?.storefrontId ?? ''}
+            initialCart={bootstrap.cart}
+            initialPreorder={preorder}
+            client:load
+          />
         ) : (
           <VendorCart
             storefrontId={storefront?.storefrontId ?? ''}
@@ -137,7 +157,8 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
             )}
           >
             <h2>{storefrontText(storefront?.appearance, 'relatedHeading')}</h2>
-            <ProductCards
+            <Cards
+              theme={storefront?.appearance?.theme}
               items={related}
               storefrontId={storefront?.storefrontId}
               shop

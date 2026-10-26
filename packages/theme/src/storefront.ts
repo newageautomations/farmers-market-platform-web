@@ -1,4 +1,6 @@
 import { policiesSchema } from './policies';
+import { farmhouseTemplateSchema } from './modern-farmhouse';
+export * from './modern-farmhouse';
 export {
   policiesSchema,
   defaultPolicies,
@@ -31,6 +33,24 @@ export {
 } from './contact';
 import { z } from 'zod';
 import { platformTheme, themeVariables } from './index';
+
+/** Presentation identities only. Billing and tenant access remain backend owned. */
+export const storefrontThemes = {
+  harvest: {
+    label: 'Harvest',
+    available: true,
+    description: 'Our basic storefront theme.',
+    premium: false,
+  },
+  'modern-farmhouse': {
+    label: 'Modern Farmhouse',
+    available: true,
+    description:
+      'An editorial, photographic storefront. Premium template, version 2.',
+    premium: true,
+  },
+} as const;
+export type StorefrontThemeId = keyof typeof storefrontThemes;
 
 const text = (max: number) =>
   z
@@ -86,12 +106,19 @@ export type StorefrontTextSizes = z.infer<typeof storefrontTextSizesSchema>;
 /** Bounded percentages retain each section's responsive theme sizes and font families. */
 export function storefrontTextSizeCss(config: {
   textSizes?: StorefrontTextSizes;
+  theme?: StorefrontThemeId;
 }) {
   const checked = storefrontTextSizesSchema.safeParse(config.textSizes ?? {});
   if (!checked.success) return '';
   return Object.entries(checked.data)
     .map(([id, size]) => {
-      const scope = `[data-storefront-theme] [data-editor-section="${id}"]`;
+      // Premium type rules include the themed root. Keep authored percentages
+      // authoritative while retaining Harvest's existing selector contract.
+      const root =
+        config.theme === 'modern-farmhouse'
+          ? "html:root[data-storefront-theme='modern-farmhouse']"
+          : '[data-storefront-theme]';
+      const scope = `${root} [data-editor-section="${id}"]`;
       const heading =
         id === 'hero'
           ? '[data-home-text="title"]'
@@ -327,6 +354,7 @@ const storefrontTextSchema = z
   .strict();
 export const storefrontAppearanceSchema = z
   .object({
+    template: farmhouseTemplateSchema.optional(),
     vendor: z
       .object({
         text: storefrontTextSchema.optional(),
@@ -366,7 +394,7 @@ export const storefrontAppearanceSchema = z
     contact: contactSchema.optional(),
     policies: policiesSchema.optional(),
     faq: faqSchema.optional(),
-    theme: z.literal('harvest'),
+    theme: z.enum(['harvest', 'modern-farmhouse']),
     palette: z.enum(['sage', 'terracotta', 'blue', 'charcoal']),
     buttonShape: z.enum(['square', 'soft', 'pill']),
     buttonHover: z.enum(['lift', 'darken', 'outline']),
@@ -397,6 +425,9 @@ export const storefrontAppearanceSchema = z
       .strict(),
   })
   .strict()
+  .refine((value) => !value.template || value.theme === 'modern-farmhouse', {
+    message: 'Template identity does not match appearance.',
+  })
   .refine(
     (value) => !value.vendor?.aboutUseLegacyStory || !!value.homepage.story,
     { message: 'Legacy homepage story is required.' },
@@ -447,19 +478,24 @@ export function isStorefrontEditorSection(
   return (
     typeof value === 'string' &&
     (Object.hasOwn(storefrontEditorSections, value) ||
+      /^farmhouse:(?:cinematic|discovery|products|story|collection|invitation|shop-settings|story-layout|gallery)$/.test(
+        value,
+      ) ||
       /^(?:story|faq|policy):[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(value))
   );
 }
 export function storefrontEditorSectionLabel(value: StorefrontEditorSection) {
-  return value.startsWith('policy:')
-    ? 'Policy'
-    : value.startsWith('faq:')
-      ? 'Question'
-      : value.startsWith('story:')
-        ? 'Story section'
-        : storefrontEditorSections[
-            value as keyof typeof storefrontEditorSections
-          ];
+  return value.startsWith('farmhouse:')
+    ? 'Modern Farmhouse section'
+    : value.startsWith('policy:')
+      ? 'Policy'
+      : value.startsWith('faq:')
+        ? 'Question'
+        : value.startsWith('story:')
+          ? 'Story section'
+          : storefrontEditorSections[
+              value as keyof typeof storefrontEditorSections
+            ];
 }
 export function storefrontText(
   config: StorefrontAppearance | undefined,
@@ -508,7 +544,8 @@ export type StorefrontEditorSection =
   | keyof typeof storefrontEditorSections
   | `story:${string}`
   | `faq:${string}`
-  | `policy:${string}`;
+  | `policy:${string}`
+  | `farmhouse:${string}`;
 /** Only existing, read-only storefront routes can be browsed inside the editor. */
 export function storefrontPreviewPath(value: unknown): value is string {
   return (

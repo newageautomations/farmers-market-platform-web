@@ -165,10 +165,7 @@ function Shell({
     )
       return;
     event.preventDefault();
-    if (
-      next !== path &&
-      (next === '/vendor/storefront' || path === '/vendor/storefront')
-    ) {
+    if (next === '/vendor/storefront' || path === '/vendor/storefront') {
       const destination = new URL(next, window.location.origin);
       if (documentConnection?.channelId)
         destination.searchParams.set('channel', documentConnection.channelId);

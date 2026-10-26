@@ -138,7 +138,7 @@ it('protects the direct appearance action against duplicate clicks and surfaces 
   vi.stubGlobal('fetch', fetch);
   render(<AppearancePreorder storefrontId="11" occurrenceId="9" />);
   const button = screen.getByRole('button', {
-    name: 'Preorder for This Market',
+    name: 'Preorder',
   });
   fireEvent.click(button);
   fireEvent.click(button);

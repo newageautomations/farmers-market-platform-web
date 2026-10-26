@@ -1,0 +1,23 @@
+---
+---
+
+<article
+  class="farmhouse-product-detail farmhouse-space"
+  data-farmhouse-component="product-detail"
+>
+  <div class="farmhouse-product-context">
+    <slot name="market" />
+  </div>
+  <div class="farmhouse-product-editorial">
+    <div>
+      <slot name="gallery" />
+    </div>
+    <div class="farmhouse-purchase-column">
+      <slot name="summary" />
+      <slot name="purchase" />
+      <div class="farmhouse-product-information">
+        <slot name="information" />
+      </div>
+    </div>
+  </div>
+</article>

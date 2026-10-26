@@ -1,0 +1,157 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { safeAsset } from '@market/storefront-core';
+import type { VendorMarketAppearance } from '@market/api';
+import { AppearancePreorder } from '../AppearancePreorder';
+import { buttonClassName } from '@market/ui/presentation';
+import MarketSchedule from '../MarketSchedule.astro';
+import Invitation from './Invitation.astro';
+import { defaultFindUs } from '@market/theme/storefront';
+const { context, rows, failed, preview } = Astro.props as {
+  context: StorefrontContext;
+  rows: readonly VendorMarketAppearance[];
+  failed: boolean;
+  preview: boolean;
+};
+const config = context.appearance!.findUs ?? defaultFindUs;
+const [next, ...upcoming] = rows;
+const date = (row: VendorMarketAppearance) =>
+  new Intl.DateTimeFormat('en-US', {
+    timeZone: row.timezone,
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(row.startsAt));
+const time = (row: VendorMarketAppearance) =>
+  [row.startsAt, row.endsAt]
+    .map((value) =>
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: row.timezone,
+        hour: 'numeric',
+        minute: '2-digit',
+      }).format(new Date(value)),
+    )
+    .join(' to ');
+const directions = (row: VendorMarketAppearance) =>
+  /\d+\s+\S+/.test(row.venue) && !/fixture|test location/i.test(row.venue)
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.venue)}`
+    : undefined;
+---
+
+<article
+  class="farmhouse-content farmhouse-space farmhouse-find"
+  data-farmhouse-component="find-us"
+>
+  <section
+    class:list={[
+      'farmhouse-find-introduction',
+      safeAsset(config.introduction.image) && 'farmhouse-story-spread',
+    ]}
+    data-editor-section="find-intro"
+    data-image-side={config.introduction.imagePosition}
+  >
+    <header
+      class="farmhouse-page-heading"
+      style={`text-align:${config.introduction.textAlign ?? 'left'}`}
+    >
+      <h1>{config.introduction.heading || config.title}</h1>
+      <p>{config.introduction.body}</p>
+    </header>
+    {safeAsset(config.introduction.image) && (
+      <figure data-size={config.introduction.imageSize}>
+        <img
+          data-story-shape={config.introduction.shape}
+          src={safeAsset(config.introduction.image)}
+          alt={config.introduction.alt}
+          width="1600"
+          height="650"
+          loading="eager"
+        />
+      </figure>
+    )}
+  </section>
+  <div data-editor-section="find-markets">
+    {failed ? (
+      <div class="farmhouse-empty">
+        <h2>Market dates are temporarily unavailable.</h2>
+        <p>Please check back shortly.</p>
+      </div>
+    ) : next ? (
+      <>
+        <section class="farmhouse-find-feature">
+          {safeAsset(next.image) && (
+            <img
+              src={safeAsset(next.image)}
+              alt={next.marketName}
+              width="1000"
+              height="850"
+              loading="eager"
+            />
+          )}
+          <div>
+            <h2>{next.marketName}</h2>
+            <div class="farmhouse-find-feature-details">
+              <p>
+                <time datetime={next.startsAt}>{date(next)}</time>
+                <br />
+                {time(next)}
+              </p>
+              <p>{next.venue}</p>
+              <p>Attendance confirmed.</p>
+              <p>{next.pickupInstructions}</p>
+              <div class="ui-actions">
+                {directions(next) && (
+                  <a
+                    class="farmhouse-button"
+                    href={directions(next)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Directions ↗
+                  </a>
+                )}
+                {next.preorderAvailable && (
+                  <AppearancePreorder
+                    storefrontId={context.storefrontId ?? ''}
+                    occurrenceId={next.id}
+                    preview={preview}
+                    client:load
+                  />
+                )}
+                {next.marketWebsite && (
+                  <a
+                    class={buttonClassName({ variant: 'secondary' })}
+                    href={next.marketWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Visit market website ↗
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+        {upcoming.length > 0 && (
+          <MarketSchedule
+            class="farmhouse-find-dates"
+            heading="More days to gather"
+            rows={upcoming}
+            storefrontId={context.storefrontId ?? ''}
+            preview={preview}
+          />
+        )}
+      </>
+    ) : (
+      <div class="farmhouse-empty">
+        <h2>Our next market visit</h2>
+        <p>
+          There are no confirmed upcoming appearances to show. Please check back
+          soon.
+        </p>
+      </div>
+    )}
+  </div>
+  <Invitation cta={config.cta} section="find-cta" />
+</article>

@@ -1,5 +1,5 @@
 import { checkoutFieldError } from '../lib/checkout-contact';
-import { useEffect, useRef, useState } from 'react';
+import { useVendorCheckout } from '../lib/use-vendor-checkout';
 import type { CheckoutView, PublicCart } from '@market/api';
 import {
   Button,
@@ -14,15 +14,12 @@ import { buttonClassName } from '@market/ui/presentation';
 import { safeAsset } from '@market/storefront-core/catalog';
 import { formatMoney } from '@market/config';
 import type { VendorPreorderState } from '../lib/vendor-preorder';
-import { cartCheckoutIssue } from '../lib/vendor-cart';
-import { shopCall } from './shop-client';
 import { VendorPreorderBanner } from './VendorPreorderBanner';
 import { CartTotals } from './CartTotals';
 import { Checkout, CheckoutSummary } from './Checkout';
 import { CheckoutPickup } from './CheckoutPickup';
 import { CheckoutPaymentPlaceholder } from './CheckoutPaymentPlaceholder';
 
-type Snapshot = { cart: PublicCart | null; preorder: VendorPreorderState };
 export function VendorCheckout({
   storefrontId,
   initial,
@@ -34,69 +31,27 @@ export function VendorCheckout({
   initialCart: PublicCart | null;
   initialPreorder: VendorPreorderState;
 }) {
-  const [snapshot, setSnapshot] = useState<Snapshot>({
-    cart: initialCart,
-    preorder: initialPreorder,
+  const {
+    cart,
+    preorder,
+    view,
+    setView,
+    pending,
+    validated,
+    feedback,
+    errors,
+    setErrors,
+    contact,
+    legacy,
+    issue,
+    refresh,
+    submitDetails,
+  } = useVendorCheckout({
+    storefrontId,
+    initial,
+    initialCart,
+    initialPreorder,
   });
-  const [view, setView] = useState(initial);
-  const [stale, setStale] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [validated, setValidated] = useState(false);
-  const [feedback, setFeedback] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const lock = useRef(false);
-  const { cart, preorder } = snapshot;
-  const contact = initial.contact ?? initial.profile;
-  const legacy =
-    view.committed ||
-    !!view.attempt ||
-    initial.availability.state === 'AVAILABLE';
-  const issue = stale
-    ? 'The latest order could not be confirmed. Refresh before continuing.'
-    : cartCheckoutIssue(cart, preorder);
-  async function refresh() {
-    if (lock.current) return;
-    lock.current = true;
-    setPending(true);
-    try {
-      const current = await shopCall<CheckoutView>(
-        storefrontId,
-        'checkout-status',
-        { orderId: initial.orderId },
-      );
-      const next = await shopCall<Snapshot>(storefrontId, 'cart', {
-        includePreorder: true,
-      });
-      if (
-        next.cart?.id !== initial.orderId ||
-        current.orderId !== initial.orderId
-      )
-        throw new Error('Order changed');
-      setSnapshot(next);
-      setView(current);
-      setStale(false);
-    } catch {
-      setStale(true);
-    } finally {
-      lock.current = false;
-      setPending(false);
-    }
-  }
-  useEffect(() => {
-    const update = () => {
-      void refresh();
-    };
-    window.addEventListener('focus', update);
-    window.addEventListener('pageshow', update);
-    window.addEventListener('vendor-cart-updated', update);
-    return () => {
-      window.removeEventListener('focus', update);
-      window.removeEventListener('pageshow', update);
-      window.removeEventListener('vendor-cart-updated', update);
-    };
-    // This island remains bound to the original session order.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storefrontId, initial.orderId]);
   return (
     <div className="vendor-checkout" aria-busy={pending}>
       <VendorPreorderBanner
@@ -122,32 +77,7 @@ export function VendorCheckout({
               onViewChange={setView}
             />
           ) : (
-            <form
-              noValidate
-              onSubmit={(event) => {
-                event.preventDefault();
-                const inputs = Array.from(
-                  event.currentTarget.querySelectorAll<
-                    HTMLInputElement | HTMLTextAreaElement
-                  >('input:not([type="hidden"]), textarea'),
-                );
-                const next = Object.fromEntries(
-                  inputs.map((input) => [input.id, checkoutFieldError(input)]),
-                );
-                setErrors(next);
-                setValidated(true);
-                const invalid = inputs.find((input) => next[input.id]);
-                if (invalid) {
-                  setFeedback('Please check your contact information.');
-                  invalid.focus();
-                } else {
-                  setFeedback(
-                    'Your details are valid. Payments are not configured, so your order has not been placed.',
-                  );
-                  void refresh();
-                }
-              }}
-            >
+            <form noValidate onSubmit={submitDetails}>
               <section
                 className="checkout-section"
                 aria-labelledby="contact-title"

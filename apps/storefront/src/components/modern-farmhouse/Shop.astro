@@ -1,0 +1,196 @@
+---
+import type { PublicCatalog } from '@market/api';
+import type { StorefrontContext } from '@market/storefront-core';
+import type { vendorPreorder } from '../../lib/vendor-preorder';
+import ProductCards from './ProductCards.astro';
+import Photo from './Photo.astro';
+import { safeAsset } from '@market/storefront-core';
+import { selectClassName } from '@market/ui/presentation';
+import VendorPreorderBanner from '../VendorPreorderBanner.astro';
+const {
+  context,
+  categories,
+  category,
+  sort,
+  page,
+  visible,
+  total,
+  preorder,
+  link,
+  preview,
+} = Astro.props as {
+  context: StorefrontContext;
+  categories: Array<{ id: string; name: string }>;
+  category: string;
+  sort: string;
+  page: number;
+  visible: PublicCatalog['items'];
+  total: number;
+  preorder: Awaited<ReturnType<typeof vendorPreorder>>;
+  link: (next: { category?: string; page?: number }) => string;
+  preview: boolean;
+};
+const settings = context.appearance!.template!.settings.pages;
+const hero = context.appearance!.template!.settings.sections.find(
+  (section) => section.id === 'cinematic',
+)!;
+---
+
+<article class="farmhouse-shop" data-farmhouse-component="shop">
+  <header
+    class="farmhouse-cinematic farmhouse-page-hero"
+    data-editor-section="farmhouse:shop-settings"
+  >
+    <Photo
+      photo={hero.photo}
+      fallback={safeAsset(visible[0]?.featuredAsset?.preview) ?? ''}
+      eager
+    />
+    <div class="farmhouse-hero-copy">
+      <h1>{settings.shopHeading}</h1>
+      <p>{settings.shopIntroduction}</p>
+    </div>
+  </header>
+  <div
+    id="farmhouse-catalog"
+    class="farmhouse-space farmhouse-shop-pickup"
+    tabindex="-1"
+    role="region"
+    aria-label="Pickup market"
+  >
+    <VendorPreorderBanner
+      preorder={preorder}
+      storefrontId={context.storefrontId ?? ''}
+      preview={preview}
+    />
+  </div>
+  <div class="farmhouse-space farmhouse-shop-content">
+    <section tabindex="-1" aria-label="Products" data-farmhouse-catalog>
+      <div class="farmhouse-shop-toolbar">
+        <nav aria-label="Product categories">
+          <a
+            class="farmhouse-text-link"
+            href={link({ category: '' }) + '#farmhouse-catalog'}
+            data-catalog-link
+            aria-current={!category ? 'page' : undefined}
+          >
+            Everything
+          </a>
+          {categories.map((c) => (
+            <a
+              class="farmhouse-text-link"
+              href={link({ category: c.id }) + '#farmhouse-catalog'}
+              data-catalog-link
+              aria-current={category === c.id ? 'page' : undefined}
+            >
+              {c.name}
+            </a>
+          ))}
+        </nav>
+        <form
+          method="get"
+          action="/products#farmhouse-catalog"
+          data-catalog-sort
+        >
+          {Astro.url.searchParams.get('search') && (
+            <input
+              type="hidden"
+              name="search"
+              value={Astro.url.searchParams.get('search')!.slice(0, 100)}
+            />
+          )}
+          {category && <input type="hidden" name="category" value={category} />}{' '}
+          {preorder.selected && (
+            <input
+              type="hidden"
+              name="occurrence"
+              value={preorder.selected.id}
+            />
+          )}
+          <label for="farmhouse-sort">Sort</label>
+          <select id="farmhouse-sort" name="sort" class={selectClassName()}>
+            <option value="default" selected={sort === 'default'}>
+              Default
+            </option>
+            <option value="name" selected={sort === 'name'}>
+              Name A to Z
+            </option>
+          </select>
+          <noscript>
+            <button class="farmhouse-button" type="submit">
+              Update sorting
+            </button>
+          </noscript>
+        </form>
+      </div>
+      {preorder.unavailable && (
+        <p role="status">
+          Availability could not be confirmed. Purchasing is paused until you
+          refresh.
+        </p>
+      )}
+      {visible.length ? (
+        <ProductCards
+          items={visible}
+          availability={preorder.availability}
+          occurrenceId={preorder.selected?.id}
+          preview={preview}
+          featured
+          shop
+          storefrontId={context.storefrontId}
+          fixture={context.source === 'fixture'}
+        />
+      ) : (
+        <div class="farmhouse-empty">
+          <h2>A little more to discover</h2>
+          <p>No products are published in this view yet.</p>
+          <a
+            class="farmhouse-text-link"
+            href={link({ category: '', page: 1 }) + '#farmhouse-catalog'}
+            data-catalog-link
+          >
+            Explore everything ↗
+          </a>
+        </div>
+      )}
+      {total > 12 && (
+        <nav class="farmhouse-pagination" aria-label="Shop pages">
+          {page > 1 && (
+            <a
+              class="farmhouse-text-link"
+              href={link({ page: page - 1 }) + '#farmhouse-catalog'}
+              data-catalog-link
+            >
+              ← Previous
+            </a>
+          )}
+          <span>
+            Page {page} of {Math.ceil(total / 12)}
+          </span>
+          {page * 12 < total && (
+            <a
+              class="farmhouse-text-link"
+              href={link({ page: page + 1 }) + '#farmhouse-catalog'}
+              data-catalog-link
+            >
+              Next →
+            </a>
+          )}
+        </nav>
+      )}
+    </section>
+    <p
+      class="farmhouse-catalog-status"
+      data-catalog-status
+      role="status"
+      aria-live="polite"
+    ></p>
+  </div>
+</article>
+<script>
+  import { mountFarmhouseShop } from '../../lib/farmhouse-shop';
+  const shop = document.querySelector<HTMLElement>(
+    '[data-farmhouse-component="shop"]',
+  );
+  if (shop) mountFarmhouseShop(shop);
+</script>

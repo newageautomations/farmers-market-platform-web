@@ -1,0 +1,115 @@
+{
+  "notice": "External design screenshots for private inspiration/reference only. Not licensed as deployable theme imagery. Photos are hosted by respective publishers.",
+  "references": [
+    {
+      "id": "P01",
+      "file": "p01-hero-forest.jpg",
+      "group": "Original Pipers Farm",
+      "title": "Photographic hero + transparent overlay header",
+      "image": "https://a.storyblok.com/f/162198/4210x2106/8be16dfb51/pipers-farm-min.jpg",
+      "source": "https://blubolt.com/case-study/pipers-farm-shopify-blubolt",
+      "purpose": "Homepage hero, announcement strip, navigation over photographic imagery; strong contrast via scrim",
+      "priority": "Essential"
+    },
+    {
+      "id": "P02",
+      "file": "p02-hero-centered.png",
+      "group": "Original Pipers Farm",
+      "title": "Centered text-on-photo seasonal campaign",
+      "image": "https://assets.awwwards.com/awards/submissions/2021/10/615d9791ec7c5072863310.png",
+      "source": "https://www.awwwards.com/sites/pipers-farm",
+      "purpose": "Alternate hero overlay typography, CTA border, typography hierarchy",
+      "priority": "Essential"
+    },
+    {
+      "id": "P03",
+      "file": "p03-editorial-tiles.jpg",
+      "group": "Original Pipers Farm",
+      "title": "Desktop editorial category/promo tiles",
+      "image": "https://a.storyblok.com/f/162198/1176x600/472bfa31ef/after-2.jpeg/m/2000x0/",
+      "source": "https://blubolt.com/case-study/pipers-farm-shopify-blubolt",
+      "purpose": "Homepage/category photography-led tiles, offset text blocks and circular arrows",
+      "priority": "Essential"
+    },
+    {
+      "id": "P04",
+      "file": "p04-mobile-tiles.jpg",
+      "group": "Original Pipers Farm",
+      "title": "Mobile editorial cards and circular arrows",
+      "image": "https://a.storyblok.com/f/162198/376x812/fa241c11f6/phone-1-2.jpeg/m/560x0/",
+      "source": "https://blubolt.com/case-study/pipers-farm-shopify-blubolt",
+      "purpose": "Mobile tile stacking, generous typography and clickable arrow affordances",
+      "priority": "Essential"
+    },
+    {
+      "id": "P05",
+      "file": "p05-product-detail.jpg",
+      "group": "Original Pipers Farm",
+      "title": "Product detail: gallery, purchase column, accordions",
+      "image": "https://a.storyblok.com/f/162198/1632x2067/14f7ff47a8/pdp-2.jpeg/m/1400x0/",
+      "source": "https://blubolt.com/case-study/pipers-farm-shopify-blubolt",
+      "purpose": "Product detail layout, image gallery, quantity stepper, purchase action, disclosure dividers",
+      "priority": "Essential"
+    },
+    {
+      "id": "P06",
+      "file": "p06-product-gallery.jpg",
+      "group": "Original Pipers Farm",
+      "title": "Product storytelling photographic gallery",
+      "image": "https://assets.awwwards.com/awards/external/2021/11/618528574c90e243927581.jpg",
+      "source": "https://www.awwwards.com/inspiration/cranberry-port-sauce-pipers-farm-pipers-farm",
+      "purpose": "Gallery hierarchy, close-up lifestyle product photography, generous edge-aligned crops",
+      "priority": "Useful"
+    },
+    {
+      "id": "P07",
+      "file": "p07-home-overlay.jpg",
+      "group": "Original Pipers Farm \u2014 different era",
+      "title": "Image-overlaid copy card, editorial positioning",
+      "image": "https://mycodelesswebsite.com/wp-content/uploads/2024/06/Pipers-Farm-Farm-Websites.jpg",
+      "source": "https://mycodelesswebsite.com/farm-websites/",
+      "purpose": "Secondary hero composition with floating light copy panel, not a mandatory design",
+      "priority": "Useful"
+    },
+    {
+      "id": "P08",
+      "file": "p08-older-category-mosaic.jpg",
+      "group": "Original Pipers Farm \u2014 older design",
+      "title": "Image-first product category mosaic",
+      "image": "https://web-tips.co.uk/media/2019/10/pipers-farm-referral-code-discont-first-order-coupon.jpg",
+      "source": "https://web-tips.co.uk/pipers-farm-referral-code-10-off-discount/",
+      "purpose": "Optional category-image mosaic; ignore the promotional popup and older header design",
+      "priority": "Optional"
+    },
+    {
+      "id": "C01",
+      "file": "c01-footer-real-noni.jpg",
+      "group": "Complementary \u2014 NOT Pipers Farm",
+      "title": "Warm cream + dark forest green footer system",
+      "image": "https://assets.awwwards.com/awards/element/2023/02/63fd4d090023b365668416.jpg",
+      "source": "https://www.awwwards.com/inspiration/footer-logo-design-real-noni",
+      "purpose": "Footer column rhythm, social/legal links, oversized brand wordmark treatment; adapt to existing real links",
+      "priority": "Essential"
+    },
+    {
+      "id": "C02",
+      "file": "c02-cart-checkout-farm.jpg",
+      "group": "Complementary \u2014 NOT Pipers Farm",
+      "title": "Warm farm-to-table cart and checkout",
+      "image": "https://mir-s3-cdn-cf.behance.net/project_modules/2800_opt_1/85dd10143577455.627d3aea1e3a2.png",
+      "source": "https://www.behance.net/gallery/143577455/Farm-To-Table-Website-Design",
+      "purpose": "Cart/checkout grouping, warm neutrals, tidy order summary and inputs; do not copy fake checkout logic",
+      "priority": "Essential"
+    },
+    {
+      "id": "C03",
+      "file": "c03-shop-grid-agricom.png",
+      "group": "Complementary \u2014 NOT Pipers Farm",
+      "title": "Shop: product grids and filters",
+      "image": "https://mir-s3-cdn-cf.behance.net/project_modules/max_632_webp/1f3e9150222875.625979263f532.png",
+      "source": "https://www.behance.net/gallery/50222875/Agricom-Agriculture-Organic-Food-WordPress-Theme",
+      "purpose": "Functional category/filter positioning and image-centric product grid; premium styling comes from Pipers sources",
+      "priority": "Useful"
+    }
+  ]
+}

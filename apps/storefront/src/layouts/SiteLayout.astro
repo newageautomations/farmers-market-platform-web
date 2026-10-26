@@ -16,6 +16,14 @@ import '../styles/homepage.css';
 import HarvestHeader from '../components/home/HarvestHeader.astro';
 import HarvestFooter from '../components/home/HarvestFooter.astro';
 import EditorBridge from '../components/EditorBridge.astro';
+import PremiumHeader from '../components/modern-farmhouse/Header.astro';
+import PremiumFooter from '../components/modern-farmhouse/Footer.astro';
+import { farmhousePresentationStyle } from '@market/theme/farmhouse-presentation';
+import farmhouseStyles from '../styles/farmhouse-v2.css?url';
+import { isFarmhouse, farmhouseTextSizeCss } from '@market/theme/storefront';
+import FarmhouseHeader from '../components/legacy-modern-farmhouse/Header.astro';
+import FarmhouseFooter from '../components/legacy-modern-farmhouse/Footer.astro';
+import '../styles/legacy-modern-farmhouse.css';
 interface Props {
   context?: StorefrontContext;
   path?: string;
@@ -23,6 +31,7 @@ interface Props {
   description?: string;
   noindex?: boolean;
   homepage?: boolean;
+  imageHero?: boolean;
 }
 const {
   context,
@@ -31,11 +40,22 @@ const {
   description,
   noindex = false,
   homepage = false,
+  imageHero = false,
 } = Astro.props;
 const appearance = context?.appearance ?? defaultStorefrontAppearance;
 const sharedVendor = context?.kind === 'VENDOR';
+const premium = sharedVendor && isFarmhouse(appearance);
+const premiumSettings = appearance.template?.settings;
+const farmhouse =
+  sharedVendor && appearance.theme === 'modern-farmhouse' && !premium;
+const overlay =
+  premium &&
+  (imageHero ||
+    (homepage &&
+      premiumSettings?.sections[0]?.id === 'cinematic' &&
+      premiumSettings?.sections[0]?.visible));
 const appearanceStyle = context
-  ? `${storefrontThemeStyle(appearance)}${homepage || sharedVendor ? '' : `;--font-heading:${fonts[context.theme.headingFont]}`}`
+  ? `${storefrontThemeStyle(appearance)};${premium ? farmhousePresentationStyle(appearance) : ''}${homepage || sharedVendor ? '' : `;--font-heading:${fonts[context.theme.headingFont]}`}`
   : themeStyle(platformTheme);
 const metadata = context ? seo(context, path) : undefined;
 const pageTitle = title
@@ -51,16 +71,31 @@ const pageDescription =
 <html
   lang="en"
   style={appearanceStyle}
-  data-storefront-theme={context ? appearance.theme : undefined}
+  data-storefront-theme={
+    context ? (premium ? 'modern-farmhouse-v2' : appearance.theme) : undefined
+  }
+  data-scroll-fade={
+    premium && premiumSettings?.scrollFade && !Astro.locals.editorPreview
+      ? 'true'
+      : undefined
+  }
+  data-template-version={premium ? '2' : undefined}
+  data-farmhouse-palette={premium ? premiumSettings?.palette : undefined}
+  data-farmhouse-type={premium ? premiumSettings?.typography : undefined}
   data-storefront-hover={appearance.buttonHover}
   data-editor-preview={Astro.locals.editorPreview ? 'true' : undefined}
 >
   <head>
     <meta charset="UTF-8" />
+    {premium && <link rel="stylesheet" href={farmhouseStyles} />}
     <style
       id="storefront-text-sizes"
       is:inline
-      set:html={storefrontTextSizeCss(appearance)}
+      set:html={
+        premium
+          ? farmhouseTextSizeCss(appearance)
+          : storefrontTextSizeCss(appearance)
+      }
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
@@ -99,9 +134,20 @@ const pageDescription =
       </aside>
     )}
     <div
-      class:list={['container', (homepage || sharedVendor) && 'harvest-home']}
+      class:list={[
+        !premium && 'container',
+        premium && 'farmhouse-site',
+        premium && homepage && 'farmhouse-homepage',
+        premium && (homepage || path === '/products') && 'farmhouse-refined',
+        !farmhouse && !premium && (homepage || sharedVendor) && 'harvest-home',
+        farmhouse && 'mf-site',
+      ]}
     >
-      {context && (homepage || sharedVendor) && (
+      {context && premium && (
+        <PremiumHeader context={context} overlay={!!overlay} />
+      )}
+      {context && farmhouse && <FarmhouseHeader context={context} />}
+      {context && !farmhouse && !premium && (homepage || sharedVendor) && (
         <HarvestHeader context={context} />
       )}
       {context && !homepage && !sharedVendor && (
@@ -137,7 +183,11 @@ const pageDescription =
       <main id="main" tabindex="-1">
         <slot />
       </main>
-      {context && (homepage || sharedVendor) ? (
+      {context && premium ? (
+        <PremiumFooter context={context} />
+      ) : context && farmhouse ? (
+        <FarmhouseFooter context={context} />
+      ) : context && (homepage || sharedVendor) ? (
         <HarvestFooter context={context} />
       ) : (
         <footer class="site-footer">
@@ -153,10 +203,18 @@ const pageDescription =
   </body>
   <script>
     import '../lib/account-form';
+    import { mountFarmhouseMedia } from '../lib/farmhouse-media';
+    mountFarmhouseMedia();
+    import { mountFarmhouseScrollFade } from '../lib/farmhouse-scroll-fade';
+    mountFarmhouseScrollFade();
     function missingImage(image: HTMLImageElement) {
       if (!image.classList.contains('product-media')) return;
       // The gallery keeps its main image mounted so another thumbnail can recover.
       if (image.hasAttribute('data-gallery-main')) return;
+      if (image.classList.contains('mf-hero-image')) {
+        image.hidden = true;
+        return;
+      }
       const fallback = document.createElement('div');
       fallback.className = 'product-media product-placeholder';
       fallback.textContent = 'Image unavailable';

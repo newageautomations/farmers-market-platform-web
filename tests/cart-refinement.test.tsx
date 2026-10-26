@@ -164,7 +164,9 @@ describe('vendor cart commerce presentation', () => {
       expect(
         screen.getByRole('button', { name: 'Remove Large bag' }),
       ).toBeDisabled();
-      expect(screen.getByLabelText('Pickup market and date')).toBeDisabled();
+      expect(
+        screen.getByRole('button', { name: /^Next Market/ }),
+      ).toBeDisabled();
       complete({ cart: changed });
       await waitFor(() =>
         expect(container.querySelector('[data-cart-total]')).toHaveTextContent(
@@ -420,7 +422,10 @@ describe('vendor cart commerce presentation', () => {
     await waitFor(() =>
       expect(screen.getByText('Preordering for Next Market')).toBeVisible(),
     );
-    expect(screen.getByLabelText('Pickup market and date')).toHaveValue('8');
+    fireEvent.click(screen.getByRole('button', { name: 'Change Market' }));
+    expect(
+      screen.getByRole('button', { name: /^Next Market \(current\)/ }),
+    ).toHaveAttribute('aria-pressed', 'true');
   });
 });
 describe('shared market banner', () => {
@@ -432,21 +437,18 @@ describe('shared market banner', () => {
     expect(screen.getByText(/^Market hours:/)).toBeVisible();
     expect(screen.getByText('Collect at the booth.')).toBeVisible();
     expect(
-      screen.getByRole('button', { name: 'Shop this market' }),
+      screen.getByRole('button', { name: /^Garden Market \(current\)/ }),
     ).toBeDisabled();
-    expect(screen.getByLabelText('Pickup market and date')).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: /^Friday, October 30/ }),
+    ).toBeDisabled();
   });
   it('surfaces protected switching and links to the actual cart while retaining the banner context', async () => {
     call.mockRejectedValueOnce(
       new AppError('conflict', 'NONEMPTY_CONTEXT_SWITCH_DENIED'),
     );
     mount();
-    fireEvent.change(screen.getByLabelText('Pickup market and date'), {
-      target: { value: '8' },
-    });
-    fireEvent.submit(
-      screen.getByRole('button', { name: 'Shop this market' }).closest('form')!,
-    );
+    fireEvent.click(screen.getByRole('button', { name: /^Next Market/ }));
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(
         'Remove the current items',
@@ -484,9 +486,7 @@ describe('shared market banner', () => {
       expect(source).toContain('SiteLayout');
       expect(source).not.toContain('<ShopMarketSelection');
       expect(source.indexOf('<VendorPreorderBanner')).toBeLessThan(
-        source.indexOf(
-          file.includes('[slug]') ? 'class="product-detail"' : '<aside',
-        ),
+        source.indexOf(file.includes('[slug]') ? '<Gallery' : '<aside'),
       );
     }
     const css = readFileSync(
@@ -567,7 +567,10 @@ it('refreshes totals after a suggested-product add and ignores another storefron
 it('keeps suggestions below the cart, reuses product cards and omits the account prompt', () => {
   const source = readFileSync('apps/storefront/src/pages/cart.astro', 'utf8');
   expect(source).not.toContain('ShopSignIn');
-  expect(source).toContain('<ProductCards');
+  expect(source).toContain(
+    'const Cards = premium ? PremiumCards : ProductCards',
+  );
+  expect(source).toContain('<Cards');
   expect(source.indexOf('class="product-related"')).toBeGreaterThan(
     source.indexOf('<VendorCart'),
   );
