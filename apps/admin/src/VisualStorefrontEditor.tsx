@@ -1,4 +1,5 @@
 import { FarmhouseEditor } from './FarmhouseEditor';
+import { EditorialMarketEditor } from './EditorialMarketEditor';
 import { PoliciesEditor } from './PoliciesEditor';
 import { FaqEditor } from './FaqEditor';
 import { ContactEditor } from './ContactEditor';
@@ -72,7 +73,11 @@ export function VisualStorefrontEditor({
     future: StorefrontAppearance[];
   }>({ past: [], value: record.draft, future: [] });
   const draft = history.value;
-  const [section, setSection] = useState<StorefrontEditorSection>('hero');
+  const [section, setSection] = useState<StorefrontEditorSection>(() =>
+    record.draft.template?.id === 'editorial-market'
+      ? 'editorial:hero'
+      : 'hero',
+  );
   const [structure, setStructure] = useState(true);
   const [path, setPath] = useState('/');
   const [mode, setMode] = useState<'inspect' | 'browse'>(initialMode);
@@ -384,7 +389,7 @@ export function VisualStorefrontEditor({
             </Button>
           </div>
           <nav aria-label="Page sections" className="visual-editor-sections">
-            {draft.template && (
+            {draft.template?.id === 'modern-farmhouse' && (
               <FarmhouseEditor
                 appearance={draft}
                 onAppearanceChange={update}
@@ -397,6 +402,29 @@ export function VisualStorefrontEditor({
                 onChange={(settings) =>
                   update({
                     template: { id: 'modern-farmhouse', version: 2, settings },
+                  })
+                }
+                api={api}
+                busy={busy}
+                products={products}
+                loadProducts={() => setLoadProducts(true)}
+              />
+            )}
+            {draft.template?.id === 'editorial-market' && (
+              <EditorialMarketEditor
+                page={page}
+                collapsed={structure}
+                collapse={() => setStructure(true)}
+                selected={section}
+                choose={choose}
+                value={draft.template.settings}
+                onChange={(settings) =>
+                  update({
+                    template: {
+                      id: 'editorial-market',
+                      version: 1,
+                      settings,
+                    },
                   })
                 }
                 api={api}
@@ -507,6 +535,7 @@ export function VisualStorefrontEditor({
                     collapse={() => setStructure(true)}
                     onChange={(findUs) => update({ findUs })}
                     busy={busy}
+                    themeId={draft.theme}
                   />
                 ) : id === 'story-settings' ? (
                   <AboutStoryEditor
@@ -536,6 +565,7 @@ export function VisualStorefrontEditor({
                       })
                     }
                     busy={busy}
+                    themeId={draft.theme}
                   />
                 ) : (
                   <details

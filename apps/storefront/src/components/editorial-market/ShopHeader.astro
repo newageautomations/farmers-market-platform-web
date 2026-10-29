@@ -1,0 +1,224 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import type { VendorPreorderOccurrence } from '@market/api';
+import { isEditorialMarket } from '@market/theme/storefront';
+import { safeAsset } from '@market/storefront-core';
+import { selectClassName } from '@market/ui/presentation';
+
+interface Props {
+  context: StorefrontContext;
+  occurrences: readonly VendorPreorderOccurrence[];
+  selectedId?: string;
+  search?: string;
+}
+
+const { context, occurrences, selectedId = '', search = '' } = Astro.props;
+if (!isEditorialMarket(context.appearance))
+  throw new Error(
+    'Editorial Market shop header requires its theme configuration.',
+  );
+const settings = context.appearance.template.settings;
+const logo = safeAsset(context.theme.logo);
+const links = [
+  { href: '/products', label: settings.header.shopLabel, enabled: true },
+  {
+    href: '/about',
+    label: settings.header.storyLabel,
+    enabled: context.appearance.about.enabled,
+  },
+  {
+    href: '/find-us',
+    label: settings.header.findUsLabel,
+    enabled: context.appearance.findUs?.enabled,
+  },
+  {
+    href: '/contact',
+    label: settings.header.contactLabel,
+    enabled: context.appearance.contact?.enabled,
+  },
+  {
+    href: '/faq',
+    label: context.appearance.faq?.title ?? 'FAQ',
+    enabled: context.appearance.faq?.enabled,
+  },
+].filter((link) => link.enabled);
+const active = (href: string) =>
+  Astro.url.pathname === href ||
+  (href === '/products' && Astro.url.pathname.startsWith('/products/'))
+    ? ('page' as const)
+    : undefined;
+---
+
+<div class="em-shop-chrome" data-announcement={!!settings.header.announcement}>
+  {settings.header.announcement && (
+    <a class="em-shop-announcement" href="/products">
+      <span>{settings.header.announcement}</span>
+      <span aria-hidden="true">→</span>
+    </a>
+  )}
+  <div class="em-shop-floating-shell">
+    <div class="em-shop-progressive-blur" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <header class="em-shop-header">
+      <details class="em-shop-menu">
+        <summary aria-label="Open navigation menu">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </summary>
+        <nav aria-label="Mobile navigation">
+          {links.map((link) => (
+            <a href={link.href} aria-current={active(link.href)}>
+              {link.label}
+            </a>
+          ))}
+          <a href="/account">Account</a>
+        </nav>
+      </details>
+
+      <a class="em-shop-brand" href="/" aria-label={`${context.name} home`}>
+        {logo ? (
+          <img src={logo} alt="" width="42" height="42" />
+        ) : (
+          <span class="em-shop-brand-mark" aria-hidden="true">
+            ❦
+          </span>
+        )}
+        <span>{context.name}</span>
+      </a>
+
+      <nav class="em-shop-desktop-nav" aria-label="Main navigation">
+        {links.map((link) => (
+          <a href={link.href} aria-current={active(link.href)}>
+            {link.label}
+          </a>
+        ))}
+      </nav>
+
+      <form
+        class="em-shop-header-search"
+        action="/products"
+        method="get"
+        role="search"
+      >
+        {selectedId && (
+          <input type="hidden" name="occurrence" value={selectedId} />
+        )}
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="m16 16 4 4"></path>
+        </svg>
+        <label class="sr-only" for="em-shop-header-search">
+          Search products
+        </label>
+        <input
+          id="em-shop-header-search"
+          name="search"
+          type="search"
+          value={search}
+          maxlength="100"
+          placeholder="Search fresh food..."
+        />
+      </form>
+
+      {occurrences.length ? (
+        <form class="em-shop-market-form" action="/products" method="get">
+          {search && <input type="hidden" name="search" value={search} />}
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path>
+            <circle cx="12" cy="10" r="2.5"></circle>
+          </svg>
+          <label class="sr-only" for="em-shop-market">
+            Pickup market
+          </label>
+          <select
+            class={selectClassName()}
+            id="em-shop-market"
+            name="occurrence"
+            data-shop-market-select
+          >
+            <button type="button">
+              <selectedcontent></selectedcontent>
+            </button>
+            {occurrences.map((occurrence) => (
+              <option
+                value={occurrence.id}
+                selected={occurrence.id === selectedId}
+              >
+                {occurrence.marketName}
+              </option>
+            ))}
+          </select>
+          <noscript>
+            <button type="submit">Choose market</button>
+          </noscript>
+        </form>
+      ) : (
+        <span class="em-shop-market-empty">No upcoming market</span>
+      )}
+
+      <div class="em-shop-account-actions">
+        <a href="/account" aria-label="Account">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M4 21c.7-5 3.3-7 8-7s7.3 2 8 7"></path>
+          </svg>
+        </a>
+        <a href="/cart" aria-label="Cart">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.6L20.5 8H6"></path>
+            <circle cx="10" cy="20" r="1"></circle>
+            <circle cx="18" cy="20" r="1"></circle>
+          </svg>
+        </a>
+      </div>
+    </header>
+  </div>
+</div>
+
+<script>
+  for (const chrome of document.querySelectorAll<HTMLElement>(
+    '.em-shop-chrome',
+  )) {
+    const update = () => {
+      chrome.toggleAttribute('data-scrolled', window.scrollY > 40);
+      const banner = chrome.querySelector<HTMLElement>('.em-shop-announcement');
+      chrome.style.setProperty(
+        '--announcement-offset',
+        `${Math.max(0, banner?.getBoundingClientRect().bottom ?? 0)}px`,
+      );
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    const menu = chrome.querySelector<HTMLDetailsElement>('.em-shop-menu');
+    const summary = menu?.querySelector('summary');
+    summary?.setAttribute('aria-expanded', String(!!menu?.open));
+    menu?.addEventListener('toggle', () => {
+      summary?.setAttribute('aria-expanded', String(menu.open));
+      summary?.setAttribute(
+        'aria-label',
+        menu.open ? 'Close navigation menu' : 'Open navigation menu',
+      );
+    });
+    chrome.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && menu?.open) {
+        menu.open = false;
+        summary?.focus();
+      }
+    });
+    window.addEventListener('resize', () => {
+      update();
+      if (window.innerWidth > 820 && menu) menu.open = false;
+    });
+  }
+  for (const select of document.querySelectorAll<HTMLSelectElement>(
+    '[data-shop-market-select]',
+  )) {
+    select.addEventListener('change', () => select.form?.requestSubmit());
+  }
+</script>

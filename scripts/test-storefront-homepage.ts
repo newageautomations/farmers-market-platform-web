@@ -1030,6 +1030,9 @@ try {
     /href="\/products\/synthetic-produce-1(?:\?|["])/,
   );
   const premiumUnsaved = structuredClone(vendorConfig);
+  assert.equal(premiumUnsaved.template?.id, 'modern-farmhouse');
+  if (premiumUnsaved.template?.id !== 'modern-farmhouse')
+    throw new Error('Expected the Modern Farmhouse fixture');
   premiumUnsaved.template!.settings.sections[0]!.heading =
     'Unpublished premium headline';
   const premiumPreview = await read(

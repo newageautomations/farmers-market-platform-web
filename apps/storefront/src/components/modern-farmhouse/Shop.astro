@@ -7,6 +7,7 @@ import Photo from './Photo.astro';
 import { safeAsset } from '@market/storefront-core';
 import { selectClassName } from '@market/ui/presentation';
 import VendorPreorderBanner from '../VendorPreorderBanner.astro';
+import type { FarmhouseSettings } from '@market/theme/storefront';
 const {
   context,
   categories,
@@ -30,8 +31,10 @@ const {
   link: (next: { category?: string; page?: number }) => string;
   preview: boolean;
 };
-const settings = context.appearance!.template!.settings.pages;
-const hero = context.appearance!.template!.settings.sections.find(
+const farmhouseSettings = context.appearance!.template!
+  .settings as FarmhouseSettings;
+const settings = farmhouseSettings.pages;
+const hero = farmhouseSettings.sections.find(
   (section) => section.id === 'cinematic',
 )!;
 ---

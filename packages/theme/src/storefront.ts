@@ -1,6 +1,8 @@
 import { policiesSchema } from './policies';
 import { farmhouseTemplateSchema } from './modern-farmhouse';
+import { editorialMarketTemplateSchema } from './editorial-market';
 export * from './modern-farmhouse';
+export * from './editorial-market';
 export {
   policiesSchema,
   defaultPolicies,
@@ -48,6 +50,13 @@ export const storefrontThemes = {
     description:
       'An editorial, photographic storefront. Premium template, version 2.',
     premium: true,
+  },
+  'editorial-market': {
+    label: 'Editorial Market',
+    available: true,
+    description:
+      'A bright illustrated market storefront with an editorial homepage.',
+    premium: false,
   },
 } as const;
 export type StorefrontThemeId = keyof typeof storefrontThemes;
@@ -354,7 +363,9 @@ const storefrontTextSchema = z
   .strict();
 export const storefrontAppearanceSchema = z
   .object({
-    template: farmhouseTemplateSchema.optional(),
+    template: z
+      .union([farmhouseTemplateSchema, editorialMarketTemplateSchema])
+      .optional(),
     vendor: z
       .object({
         text: storefrontTextSchema.optional(),
@@ -394,7 +405,7 @@ export const storefrontAppearanceSchema = z
     contact: contactSchema.optional(),
     policies: policiesSchema.optional(),
     faq: faqSchema.optional(),
-    theme: z.enum(['harvest', 'modern-farmhouse']),
+    theme: z.enum(['harvest', 'modern-farmhouse', 'editorial-market']),
     palette: z.enum(['sage', 'terracotta', 'blue', 'charcoal']),
     buttonShape: z.enum(['square', 'soft', 'pill']),
     buttonHover: z.enum(['lift', 'darken', 'outline']),
@@ -425,7 +436,7 @@ export const storefrontAppearanceSchema = z
       .strict(),
   })
   .strict()
-  .refine((value) => !value.template || value.theme === 'modern-farmhouse', {
+  .refine((value) => !value.template || value.theme === value.template.id, {
     message: 'Template identity does not match appearance.',
   })
   .refine(
@@ -478,7 +489,7 @@ export function isStorefrontEditorSection(
   return (
     typeof value === 'string' &&
     (Object.hasOwn(storefrontEditorSections, value) ||
-      /^farmhouse:(?:cinematic|discovery|products|story|collection|invitation|shop-settings|story-layout|gallery)$/.test(
+      /^(?:farmhouse:(?:cinematic|discovery|products|story|collection|invitation|shop-settings|story-layout|gallery)|editorial:(?:header|hero|categories|products|impact|footer|shop-settings))$/.test(
         value,
       ) ||
       /^(?:story|faq|policy):[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(value))
@@ -487,15 +498,17 @@ export function isStorefrontEditorSection(
 export function storefrontEditorSectionLabel(value: StorefrontEditorSection) {
   return value.startsWith('farmhouse:')
     ? 'Modern Farmhouse section'
-    : value.startsWith('policy:')
-      ? 'Policy'
-      : value.startsWith('faq:')
-        ? 'Question'
-        : value.startsWith('story:')
-          ? 'Story section'
-          : storefrontEditorSections[
-              value as keyof typeof storefrontEditorSections
-            ];
+    : value.startsWith('editorial:')
+      ? 'Editorial Market section'
+      : value.startsWith('policy:')
+        ? 'Policy'
+        : value.startsWith('faq:')
+          ? 'Question'
+          : value.startsWith('story:')
+            ? 'Story section'
+            : storefrontEditorSections[
+                value as keyof typeof storefrontEditorSections
+              ];
 }
 export function storefrontText(
   config: StorefrontAppearance | undefined,
@@ -545,7 +558,8 @@ export type StorefrontEditorSection =
   | `story:${string}`
   | `faq:${string}`
   | `policy:${string}`
-  | `farmhouse:${string}`;
+  | `farmhouse:${string}`
+  | `editorial:${string}`;
 /** Only existing, read-only storefront routes can be browsed inside the editor. */
 export function storefrontPreviewPath(value: unknown): value is string {
   return (

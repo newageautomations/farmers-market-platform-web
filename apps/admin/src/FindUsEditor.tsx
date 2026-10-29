@@ -20,6 +20,7 @@ export function FindUsEditor({
   busy,
   textSizes,
   onTextSizeChange,
+  themeId,
 }: {
   value?: StorefrontAppearance['findUs'];
   api: StorefrontAppearanceApi;
@@ -34,6 +35,7 @@ export function FindUsEditor({
     id: string,
     value: { heading: number; paragraph: number },
   ) => void;
+  themeId?: string;
 }) {
   const patch = (v: Partial<typeof value>) => onChange({ ...value, ...v });
   const intro = value.introduction;
@@ -114,6 +116,7 @@ export function FindUsEditor({
                   {api.media && (
                     <CategoryImageField
                       api={api.media}
+                      themeId={themeId}
                       value={intro.imageAssetId}
                       preview={intro.image}
                       label="Introduction photograph"

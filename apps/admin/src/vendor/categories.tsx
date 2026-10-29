@@ -15,6 +15,7 @@ import {
   Input,
   SearchSelect,
   SearchableMultiSelect,
+  Tabs,
   UtilityIcon,
 } from '@market/ui';
 import './image-library.css';
@@ -39,8 +40,11 @@ export function CategoryImageField({
   onChange,
   onImageChange,
   presentation = 'inline',
+  themeId,
 }: {
-  api: Pick<VendorCategoryApi, 'images' | 'upload'>;
+  api: Pick<VendorCategoryApi, 'images' | 'upload'> & {
+    themeImages?: (themeId: string) => Promise<CategoryImage[]>;
+  };
   value?: string | null;
   preview?: string | null;
   name?: string;
@@ -48,6 +52,7 @@ export function CategoryImageField({
   onChange?: () => void;
   onImageChange?: (image: CategoryImage | null) => void;
   presentation?: 'inline' | 'library';
+  themeId?: string;
 }) {
   const read = useCallback(() => api.images(), [api]);
   const images = useRead('category-images', read);
@@ -60,6 +65,9 @@ export function CategoryImageField({
   const [extra, setExtra] = useState<CategoryImage[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState<boolean>();
+  const [themeImages, setThemeImages] = useState<CategoryImage[]>([]);
+  const [themeLoading, setThemeLoading] = useState(false);
+  const [themeError, setThemeError] = useState<AppError>();
   const options = [
     ...uploaded,
     ...[...(images.data ?? []), ...extra].filter(
@@ -80,6 +88,24 @@ export function CategoryImageField({
       mounted.current = false;
     };
   }, []);
+  useEffect(() => {
+    if (!libraryOpen || !themeId || !api.themeImages) return;
+    let active = true;
+    void api
+      .themeImages(themeId)
+      .then((rows) => {
+        if (active) setThemeImages(rows);
+      })
+      .catch((error) => {
+        if (active) setThemeError(safeError(error));
+      })
+      .finally(() => {
+        if (active) setThemeLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api, libraryOpen, themeId]);
   const chooseImage = (image: CategoryImage | null) => {
     setSelected(image?.id ?? '');
     onChange?.();
@@ -132,7 +158,13 @@ export function CategoryImageField({
               aria-label={label}
               aria-haspopup="dialog"
               aria-expanded={libraryOpen}
-              onClick={() => setLibraryOpen(true)}
+              onClick={() => {
+                setLibraryOpen(true);
+                if (themeId && api.themeImages) {
+                  setThemeLoading(true);
+                  setThemeError(undefined);
+                }
+              }}
             >
               <span>
                 {options.find((image) => image.id === selectedId)?.name ||
@@ -149,70 +181,137 @@ export function CategoryImageField({
             onClose={() => setLibraryOpen(false)}
           >
             <div className="stack">
-              {uploadField}
-              <ReadState {...images} retry={images.refresh} />
-              <div className="image-library-grid">
-                <Button
-                  variant="secondary"
-                  disabled={busy}
-                  onClick={() => chooseImage(null)}
-                >
-                  No image
-                </Button>
-                {options.map((image) => (
-                  <Button
-                    key={image.id}
-                    variant="secondary"
-                    className="image-library-option button-selection-fill"
-                    aria-label={`Choose ${image.name?.trim() || `Image ${image.id}`}`}
-                    aria-pressed={selectedId === image.id}
-                    disabled={busy}
-                    onClick={() => chooseImage(image)}
-                  >
-                    {image.preview && (
-                      <img
-                        src={image.preview}
-                        alt=""
-                        width="160"
-                        height="160"
-                        loading="lazy"
-                      />
-                    )}
-                    <span>{image.name?.trim() || `Image ${image.id}`}</span>
-                  </Button>
-                ))}
-              </div>
-              {!images.loading && !options.length && (
-                <p>
-                  Your image library is empty. Upload a PNG or JPEG to get
-                  started.
-                </p>
-              )}
-              {(hasMore ?? images.data?.length === 100) && (
-                <Button
-                  variant="secondary"
-                  loading={loadingMore}
-                  disabled={busy || loadingMore}
-                  onClick={async () => {
-                    setLoadingMore(true);
-                    setError(undefined);
-                    try {
-                      const page = await api.images(
-                        (images.data?.length ?? 0) + extra.length,
-                      );
-                      if (!mounted.current) return;
-                      setExtra((previous) => [...previous, ...page]);
-                      setHasMore(page.length === 100);
-                    } catch (error) {
-                      if (mounted.current) setError(safeError(error));
-                    } finally {
-                      if (mounted.current) setLoadingMore(false);
-                    }
-                  }}
-                >
-                  Load more images
-                </Button>
-              )}
+              <Tabs
+                items={[
+                  {
+                    label: 'My Images',
+                    content: (
+                      <div className="stack">
+                        {uploadField}
+                        <ReadState {...images} retry={images.refresh} />
+                        <div className="image-library-grid">
+                          <Button
+                            variant="secondary"
+                            disabled={busy}
+                            onClick={() => chooseImage(null)}
+                          >
+                            No image
+                          </Button>
+                          {options.map((image) => (
+                            <Button
+                              key={image.id}
+                              variant="secondary"
+                              className="image-library-option button-selection-fill"
+                              aria-label={`Choose ${image.name?.trim() || `Image ${image.id}`}`}
+                              aria-pressed={selectedId === image.id}
+                              disabled={busy}
+                              onClick={() => chooseImage(image)}
+                            >
+                              {image.preview && (
+                                <img
+                                  src={image.preview}
+                                  alt=""
+                                  width="160"
+                                  height="160"
+                                  loading="lazy"
+                                />
+                              )}
+                              <span>
+                                {image.name?.trim() || `Image ${image.id}`}
+                              </span>
+                            </Button>
+                          ))}
+                        </div>
+                        {!images.loading && !options.length && (
+                          <p>
+                            Your image library is empty. Upload a PNG or JPEG to
+                            get started.
+                          </p>
+                        )}
+                        {(hasMore ?? images.data?.length === 100) && (
+                          <Button
+                            variant="secondary"
+                            loading={loadingMore}
+                            disabled={busy || loadingMore}
+                            onClick={async () => {
+                              setLoadingMore(true);
+                              setError(undefined);
+                              try {
+                                const page = await api.images(
+                                  (images.data?.length ?? 0) + extra.length,
+                                );
+                                if (!mounted.current) return;
+                                setExtra((previous) => [...previous, ...page]);
+                                setHasMore(page.length === 100);
+                              } catch (error) {
+                                if (mounted.current) setError(safeError(error));
+                              } finally {
+                                if (mounted.current) setLoadingMore(false);
+                              }
+                            }}
+                          >
+                            Load more images
+                          </Button>
+                        )}
+                      </div>
+                    ),
+                  },
+                  {
+                    label: 'Theme Images',
+                    disabled: !themeId || !api.themeImages,
+                    content: (
+                      <div className="stack">
+                        <p>
+                          These read-only images belong to the selected theme
+                          and remain available across website drafts.
+                        </p>
+                        {themeLoading && (
+                          <p role="status">Loading theme images...</p>
+                        )}
+                        {themeError && <ErrorState error={themeError} />}
+                        <div className="image-library-grid">
+                          <Button
+                            variant="secondary"
+                            disabled={busy}
+                            onClick={() => chooseImage(null)}
+                          >
+                            No image
+                          </Button>
+                          {themeImages.map((image) => (
+                            <Button
+                              key={image.id}
+                              variant="secondary"
+                              className="image-library-option button-selection-fill"
+                              aria-label={`Choose ${image.name?.trim() || `Image ${image.id}`}`}
+                              aria-pressed={selectedId === image.id}
+                              disabled={busy}
+                              onClick={() => chooseImage(image)}
+                            >
+                              {image.preview && (
+                                <img
+                                  src={image.preview}
+                                  alt=""
+                                  width="160"
+                                  height="160"
+                                  loading="lazy"
+                                />
+                              )}
+                              <span>
+                                {image.name?.trim() || `Image ${image.id}`}
+                              </span>
+                            </Button>
+                          ))}
+                        </div>
+                        {!themeLoading &&
+                          !themeError &&
+                          !themeImages.length && (
+                            <p>No images are registered for this theme.</p>
+                          )}
+                      </div>
+                    ),
+                  },
+                ]}
+              />
             </div>
           </Dialog>
         </>

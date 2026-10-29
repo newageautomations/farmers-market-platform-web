@@ -1,0 +1,258 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { safeAsset } from '@market/storefront-core';
+import { disclosureClassName } from '@market/ui/presentation';
+import {
+  aboutSections,
+  defaultAboutCta,
+  defaultContact,
+  defaultFaq,
+  defaultPolicies,
+  faqAnswerParts,
+  isEditorialMarket,
+  policyContentParts,
+  publishedPolicyEntries,
+} from '@market/theme/storefront';
+import ClosingInvitation from '../ClosingInvitation.astro';
+
+interface Props {
+  context: StorefrontContext;
+  page: 'about' | 'faq' | 'policies';
+  preview?: boolean;
+}
+
+const { context, page, preview = false } = Astro.props;
+if (!isEditorialMarket(context.appearance))
+  throw new Error('Editorial Market content requires its theme configuration.');
+
+const appearance = context.appearance;
+const about = appearance.about;
+const faq = appearance.faq ?? (preview ? defaultFaq : undefined);
+const policies = appearance.policies ?? (preview ? defaultPolicies : undefined);
+const contact = appearance.contact ?? (preview ? defaultContact : undefined);
+const storySections = aboutSections(about).filter((section) => section.visible);
+const questions =
+  faq?.questions.filter(
+    (question) =>
+      question.visible && question.question.trim() && question.answer.trim(),
+  ) ?? [];
+const policyEntries = policies ? publishedPolicyEntries(policies) : [];
+const available = (path: string) =>
+  path === '/about'
+    ? about.enabled
+    : path === '/find-us'
+      ? !!appearance.findUs?.enabled
+      : path === '/contact'
+        ? !!contact?.enabled
+        : path === '/faq'
+          ? !!faq?.enabled
+          : path === '/policies'
+            ? !!policies?.enabled
+            : true;
+const publishedAt = context.appearancePublishedAt;
+const published =
+  publishedAt && Number.isFinite(Date.parse(publishedAt))
+    ? new Date(publishedAt)
+    : undefined;
+---
+
+<article
+  class:list={['em-content-page', `em-content-${page}`]}
+  data-template={`editorial-market-${page}`}
+>
+  {page === 'about' ? (
+    <>
+      <header
+        class="em-content-hero em-story-hero"
+        data-editor-section="story-settings"
+      >
+        <picture class="em-story-hero-art">
+          <source
+            media="(max-width: 699px)"
+            srcset="/assets/editorial-market/mobile-about-hero.png"
+            width="1536"
+            height="1024"
+          />
+          <img
+            src="/assets/editorial-market/desktop-about-hero.png"
+            alt=""
+            width="2172"
+            height="724"
+            fetchpriority="high"
+          />
+        </picture>
+        <div class="em-story-hero-copy">
+          <h1>{about.title}</h1>
+          {about.sectionsVersion === 1 && about.content && (
+            <p>{about.content}</p>
+          )}
+        </div>
+      </header>
+      <div class="em-story-sections">
+        {storySections.map((section, index) => {
+          const image = safeAsset(section.image);
+          const hasCopy =
+            section.layout !== 'image' &&
+            !!(section.heading.trim() || section.body.trim());
+          const hasImage = section.layout !== 'text' && !!image;
+          if (!hasCopy && !hasImage && !preview) return null;
+          return (
+            <section
+              class:list={[
+                'em-story-section',
+                hasCopy && hasImage && 'em-story-section-split',
+                hasImage && !hasCopy && 'em-story-section-image-only',
+              ]}
+              data-image-position={section.imagePosition}
+              data-text-align={section.textAlign ?? 'left'}
+              data-editor-section={`story:${section.id}`}
+            >
+              {hasCopy && (
+                <div
+                  class="em-story-copy"
+                  style={`text-align:${section.textAlign ?? 'left'}`}
+                >
+                  {section.heading.trim() &&
+                    !(index === 0 && section.heading === about.title) && (
+                      <h2 data-story-field="heading">{section.heading}</h2>
+                    )}
+                  {section.body.trim() && (
+                    <p data-story-field="body">{section.body}</p>
+                  )}
+                </div>
+              )}
+              {hasImage && (
+                <figure
+                  class="em-story-image"
+                  data-story-shape={section.shape}
+                  data-image-size={section.imageSize ?? 'medium'}
+                >
+                  <img
+                    src={image}
+                    alt={section.alt}
+                    data-hero-shape={section.shape}
+                    width="1200"
+                    height="900"
+                    loading={index ? 'lazy' : 'eager'}
+                    decoding="async"
+                  />
+                </figure>
+              )}
+              {preview && !hasCopy && !hasImage && (
+                <p>Add content in the section settings.</p>
+              )}
+            </section>
+          );
+        })}
+      </div>
+      <ClosingInvitation cta={about.cta ?? defaultAboutCta} />
+    </>
+  ) : page === 'faq' && faq ? (
+    <>
+      <header class="em-content-hero" data-editor-section="faq-intro">
+        <h1>{faq.heading}</h1>
+        {faq.description && <p>{faq.description}</p>}
+      </header>
+      <div class="em-content-columns">
+        {!!questions.length && (
+          <nav class="em-content-index" aria-label="FAQ questions">
+            <h2>Questions</h2>
+            {questions.map((question) => (
+              <a href={`#faq-${question.id}`}>{question.question}</a>
+            ))}
+          </nav>
+        )}
+        <div class="em-faq-list" data-editor-section="faq-questions">
+          {questions.map((question) => (
+            <details
+              id={`faq-${question.id}`}
+              class={disclosureClassName('em-faq-row')}
+              data-disclosure-icon="plus"
+              data-editor-section={`faq:${question.id}`}
+            >
+              <summary>{question.question}</summary>
+              <div class="ui-disclosure-content">
+                <p>
+                  {faqAnswerParts(question.answer).map((part) =>
+                    part.href && available(part.href) ? (
+                      <a href={part.href}>{part.text}</a>
+                    ) : (
+                      <span>{part.text}</span>
+                    ),
+                  )}
+                </p>
+              </div>
+            </details>
+          ))}
+          {preview && !questions.length && (
+            <p>Add a complete, visible question to preview it here.</p>
+          )}
+        </div>
+      </div>
+      {contact?.enabled && (
+        <ClosingInvitation
+          cta={{ ...faq.cta, destination: '/contact' }}
+          section="faq-cta"
+        />
+      )}
+    </>
+  ) : page === 'policies' && policies ? (
+    <>
+      <header class="em-content-hero" data-editor-section="policies-intro">
+        <h1>{policies.heading}</h1>
+        {policies.description && <p>{policies.description}</p>}
+        {published && (
+          <p class="em-published-date">
+            Last updated{' '}
+            <time datetime={published.toISOString()}>
+              {published.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+                timeZone: 'UTC',
+              })}
+            </time>
+          </p>
+        )}
+      </header>
+      <div class="em-content-columns">
+        {!!policyEntries.length && (
+          <nav class="em-content-index" aria-label="Policy sections">
+            <h2>Policies</h2>
+            {policyEntries.map((policy) => (
+              <a href={`#policy-${policy.id}`}>{policy.title}</a>
+            ))}
+          </nav>
+        )}
+        <div class="em-policy-list" data-editor-section="policies-list">
+          {policyEntries.map((policy) => (
+            <section
+              id={`policy-${policy.id}`}
+              data-editor-section={`policy:${policy.id}`}
+            >
+              <h2>{policy.title}</h2>
+              <p>
+                {policyContentParts(policy.content).map((part) =>
+                  part.href && available(part.href) ? (
+                    <a href={part.href}>{part.text}</a>
+                  ) : (
+                    <span>{part.text}</span>
+                  ),
+                )}
+              </p>
+            </section>
+          ))}
+          {preview && !policyEntries.length && (
+            <p>Add a complete, visible policy to preview it here.</p>
+          )}
+        </div>
+      </div>
+      {contact?.enabled && (
+        <ClosingInvitation
+          cta={{ ...policies.cta, destination: '/contact' }}
+          section="policies-cta"
+        />
+      )}
+    </>
+  ) : null}
+</article>

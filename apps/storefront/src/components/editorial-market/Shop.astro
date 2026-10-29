@@ -1,0 +1,452 @@
+---
+import type {
+  PublicCatalog,
+  VendorPreorderAvailability,
+  VendorPreorderOccurrence,
+} from '@market/api';
+import type { StorefrontContext } from '@market/storefront-core';
+import { isEditorialMarket } from '@market/theme/storefront';
+import { productPreorder, safeAsset } from '@market/storefront-core';
+import { selectClassName, buttonClassName } from '@market/ui/presentation';
+import ProductCards from '../ProductCards.astro';
+import ShopHeader from './ShopHeader.astro';
+import { categoryArt } from './category-art';
+
+interface Props {
+  context: StorefrontContext;
+  categories: Array<{ id: string; name: string }>;
+  category: string;
+  search: string;
+  sort: string;
+  availabilityFilter: string;
+  page: number;
+  visible: PublicCatalog['items'];
+  total: number;
+  skip: number;
+  occurrences: readonly VendorPreorderOccurrence[];
+  selectedId?: string;
+  storefrontId?: string;
+  availability: VendorPreorderAvailability;
+  unavailable: boolean;
+  preview: boolean;
+  link: (next: {
+    category?: string;
+    page?: number;
+    availability?: string;
+  }) => string;
+}
+
+const {
+  context,
+  categories,
+  category,
+  search,
+  sort,
+  availabilityFilter,
+  page,
+  visible,
+  total,
+  skip,
+  occurrences,
+  selectedId,
+  storefrontId,
+  availability,
+  unavailable,
+  preview,
+  link,
+} = Astro.props;
+if (!isEditorialMarket(context.appearance))
+  throw new Error('Editorial Market shop requires its theme configuration.');
+const settings = context.appearance.template.settings;
+const desktopFooter = safeAsset(settings.assets.desktopFooter.url);
+const mobileFooter = safeAsset(settings.assets.mobileFooter.url);
+const selectedCategory = categories.find((item) => item.id === category)?.name;
+const noneAvailable =
+  visible.length > 0 &&
+  selectedId &&
+  !unavailable &&
+  visible.every(
+    (product) => !productPreorder(product.variants, availability).available,
+  );
+---
+
+<ShopHeader
+  context={context}
+  occurrences={occurrences}
+  selectedId={selectedId}
+  search={search}
+/>
+
+<div class="em-shop" data-template="editorial-market-shop">
+  <section class="em-shop-hero" data-editor-section="editorial:shop-settings">
+    <picture aria-hidden="true">
+      <source
+        media="(max-width: 700px)"
+        srcset="/assets/editorial-market/mobile-shop-hero.png"
+      />
+      <img
+        src="/assets/editorial-market/desktop-shop-hero.png"
+        alt=""
+        width="2007"
+        height="784"
+        fetchpriority="high"
+      />
+    </picture>
+    <div class="em-shop-hero-copy">
+      <h1>{settings.pages.shopHeading}</h1>
+      <p>{settings.pages.shopIntroduction}</p>
+    </div>
+  </section>
+
+  <form
+    class="em-shop-mobile-search"
+    action="/products"
+    method="get"
+    role="search"
+  >
+    {selectedId && <input type="hidden" name="occurrence" value={selectedId} />}
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="7"></circle>
+      <path d="m16 16 4 4"></path>
+    </svg>
+    <label class="sr-only" for="em-shop-mobile-search">
+      Search products
+    </label>
+    <input
+      id="em-shop-mobile-search"
+      name="search"
+      type="search"
+      value={search}
+      maxlength="100"
+      placeholder="Search fresh food..."
+    />
+  </form>
+
+  <section class="em-shop-categories" aria-label="Product categories">
+    <a
+      class="em-shop-category"
+      href={link({ category: '', page: 1 })}
+      aria-current={!category ? 'page' : undefined}
+    >
+      <span
+        class="em-shop-category-art em-shop-category-all"
+        aria-hidden="true"
+      >
+        ❦
+      </span>
+      <span>All Products</span>
+    </a>
+    {categories.map((item) => {
+      const image = categoryArt(
+        item.name,
+        safeAsset(settings.categories.images[item.id]?.url),
+      );
+      return (
+        <a
+          class="em-shop-category"
+          href={link({ category: item.id, page: 1 })}
+          aria-current={category === item.id ? 'page' : undefined}
+        >
+          <span class="em-shop-category-art">
+            {image ? (
+              <img src={image} alt="" width="120" height="120" loading="lazy" />
+            ) : (
+              <span aria-hidden="true">✦</span>
+            )}
+          </span>
+          <span>{item.name}</span>
+        </a>
+      );
+    })}
+  </section>
+
+  <section class="em-shop-content" aria-label="Shop products for market pickup">
+    <form class="em-shop-controls" action="/products" method="get">
+      {selectedId && (
+        <input type="hidden" name="occurrence" value={selectedId} />
+      )}
+      {category && <input type="hidden" name="category" value={category} />}
+      {search && <input type="hidden" name="search" value={search} />}
+
+      <details class="em-shop-filter-menu">
+        <summary>
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M4 6h16M7 12h10M10 18h4"></path>
+          </svg>
+          Filters{availabilityFilter === 'available' ? ' (1)' : ''}
+        </summary>
+        <div>
+          <p>Categories</p>
+          <a
+            href={link({ category: '', page: 1 })}
+            aria-current={!category ? 'page' : undefined}
+          >
+            All Products
+          </a>
+          {categories.map((item) => (
+            <a
+              href={link({ category: item.id, page: 1 })}
+              aria-current={category === item.id ? 'page' : undefined}
+            >
+              {item.name}
+            </a>
+          ))}
+          <p>Availability</p>
+          <a
+            href={link({ availability: 'all', page: 1 })}
+            aria-current={availabilityFilter === 'all' ? 'page' : undefined}
+          >
+            All products
+          </a>
+          <a
+            href={link({ availability: 'available', page: 1 })}
+            aria-current={
+              availabilityFilter === 'available' ? 'page' : undefined
+            }
+          >
+            Available now
+          </a>
+        </div>
+      </details>
+
+      <div class="em-shop-select-control">
+        <label class="sr-only" for="em-shop-availability">
+          Availability
+        </label>
+        <select
+          id="em-shop-availability"
+          name="availability"
+          class={selectClassName()}
+          data-shop-auto-submit
+        >
+          <button type="button">
+            <selectedcontent></selectedcontent>
+          </button>
+          <option value="all" selected={availabilityFilter === 'all'}>
+            All products
+          </option>
+          <option
+            value="available"
+            selected={availabilityFilter === 'available'}
+          >
+            Available now
+          </option>
+        </select>
+      </div>
+
+      <div class="em-shop-sort-control">
+        <label for="em-shop-sort">Sort by</label>
+        <select
+          id="em-shop-sort"
+          name="sort"
+          class={selectClassName()}
+          data-shop-auto-submit
+        >
+          <button type="button">
+            <selectedcontent></selectedcontent>
+          </button>
+          <option value="default" selected={sort === 'default'}>
+            Featured
+          </option>
+          <option value="name" selected={sort === 'name'}>
+            Name A to Z
+          </option>
+        </select>
+      </div>
+
+      <noscript>
+        <button class={buttonClassName({ variant: 'secondary' })} type="submit">
+          Apply
+        </button>
+      </noscript>
+    </form>
+
+    <div class="em-shop-results-heading">
+      <p>
+        {total} {total === 1 ? 'product' : 'products'}
+        {selectedCategory ? ` in ${selectedCategory}` : ''}
+        {search ? ` matching “${search}”` : ''}
+      </p>
+    </div>
+
+    {unavailable && selectedId && (
+      <p class="ui-alert ui-alert-info" role="status">
+        Availability could not be confirmed. Purchasing is paused until you
+        refresh the page.
+      </p>
+    )}
+    {noneAvailable && (
+      <p class="ui-alert ui-alert-info" role="status">
+        These products cannot currently be preordered for this market. Choose
+        another market or check back later.
+      </p>
+    )}
+
+    {visible.length ? (
+      <ProductCards
+        theme="editorial-market"
+        items={visible}
+        shop
+        sellerName={context.name}
+        storefrontId={storefrontId}
+        occurrenceId={selectedId}
+        availability={availability}
+        preview={preview}
+      />
+    ) : (
+      <div class="em-shop-empty">
+        <h2>No products in this view</h2>
+        <p>Try another category, availability option, or search.</p>
+        <a class={buttonClassName({ variant: 'secondary' })} href="/products">
+          View all products
+        </a>
+      </div>
+    )}
+
+    {total > 12 && (
+      <nav class="em-shop-pagination" aria-label="Shop pages">
+        {page > 1 ? (
+          <a
+            class={buttonClassName({ variant: 'secondary' })}
+            href={link({ page: page - 1 })}
+          >
+            Previous
+          </a>
+        ) : (
+          <span></span>
+        )}
+        <p>
+          Page {page} · {visible.length ? skip + 1 : 0} to{' '}
+          {visible.length ? skip + visible.length : 0} of {total}
+        </p>
+        {skip + 12 < total ? (
+          <a
+            class={buttonClassName({ variant: 'secondary' })}
+            href={link({ page: page + 1 })}
+          >
+            Next
+          </a>
+        ) : (
+          <span></span>
+        )}
+      </nav>
+    )}
+  </section>
+
+  {(desktopFooter || mobileFooter) && (
+    <section class="em-shop-closing" aria-label="Local market community">
+      <picture>
+        {mobileFooter && (
+          <source media="(max-width: 699px)" srcset={mobileFooter} />
+        )}
+        <img
+          src={desktopFooter ?? mobileFooter}
+          alt={settings.impact.imageAlt}
+          width="2172"
+          height="724"
+          loading="lazy"
+          decoding="async"
+        />
+      </picture>
+    </section>
+  )}
+</div>
+
+<script>
+  let pending: AbortController | undefined;
+  async function updateShop(url: URL, history = true) {
+    pending?.abort();
+    const controller = new AbortController();
+    pending = controller;
+    const current = document.querySelector<HTMLElement>('.em-shop-content');
+    current?.setAttribute('aria-busy', 'true');
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) throw new Error('Shop request failed');
+      const documentNext = new DOMParser().parseFromString(
+        await response.text(),
+        'text/html',
+      );
+      const next = documentNext.querySelector('.em-shop-content');
+      if (!next || controller.signal.aborted) return;
+      current?.replaceWith(document.importNode(next, true));
+      const categories = documentNext.querySelector('.em-shop-categories');
+      if (categories)
+        document
+          .querySelector('.em-shop-categories')
+          ?.replaceWith(document.importNode(categories, true));
+      if (history) window.history.pushState({}, '', url);
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        const message = document.createElement('p');
+        message.setAttribute('role', 'status');
+        message.textContent =
+          'Products could not be updated. Please try again.';
+        current?.prepend(message);
+      }
+    } finally {
+      if (pending === controller)
+        document
+          .querySelector('.em-shop-content')
+          ?.removeAttribute('aria-busy');
+    }
+  }
+  document.addEventListener('change', (event) => {
+    const select = event.target;
+    if (
+      !(select instanceof HTMLSelectElement) ||
+      !select.matches('[data-shop-auto-submit]')
+    )
+      return;
+    select.blur();
+    select.form?.requestSubmit();
+  });
+  document.addEventListener('submit', (event) => {
+    const form = event.target;
+    if (
+      !(form instanceof HTMLFormElement) ||
+      !form.matches(
+        '.em-shop-controls, .em-shop-header-search, .em-shop-mobile-search, .em-shop-market-form',
+      )
+    )
+      return;
+    event.preventDefault();
+    const url = new URL(form.action);
+    new FormData(form).forEach((value, key) =>
+      url.searchParams.set(key, String(value)),
+    );
+    void updateShop(url);
+  });
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    for (const details of document.querySelectorAll<HTMLDetailsElement>(
+      '.em-shop-filter-menu[open]',
+    )) {
+      if (!details.contains(target)) details.open = false;
+    }
+    for (const select of document.querySelectorAll<HTMLSelectElement>(
+      '.em-shop-chrome select, .em-shop select',
+    )) {
+      if (!select.contains(target)) select.blur();
+    }
+    const anchor = target.closest<HTMLAnchorElement>(
+      '.em-shop-categories a, .em-shop-filter-menu a, .em-shop-pagination a',
+    );
+    if (
+      !anchor ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    event.preventDefault();
+    void updateShop(new URL(anchor.href));
+  });
+  window.addEventListener(
+    'popstate',
+    () => void updateShop(new URL(location.href), false),
+  );
+</script>

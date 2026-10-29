@@ -1,6 +1,7 @@
 ---
 import PremiumContent from '../components/modern-farmhouse/Content.astro';
-import { isFarmhouse } from '@market/theme/storefront';
+import EditorialContent from '../components/editorial-market/Content.astro';
+import { isEditorialMarket, isFarmhouse } from '@market/theme/storefront';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import ClosingInvitation from '../components/ClosingInvitation.astro';
 import {
@@ -49,6 +50,12 @@ const date =
 >
   {enabled && storefront && isFarmhouse(storefront.appearance) ? (
     <PremiumContent
+      context={storefront}
+      page="policies"
+      preview={!!Astro.locals.editorPreview}
+    />
+  ) : enabled && storefront && isEditorialMarket(storefront.appearance) ? (
+    <EditorialContent
       context={storefront}
       page="policies"
       preview={!!Astro.locals.editorPreview}

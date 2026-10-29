@@ -20,6 +20,7 @@ interface Props {
   availability?: VendorPreorderAvailability;
   preview?: boolean;
   theme?: StorefrontThemeId;
+  sellerName?: string;
 }
 const {
   items,
@@ -30,6 +31,7 @@ const {
   availability = [],
   preview = false,
   theme = 'harvest',
+  sellerName,
 } = Astro.props;
 const productLink = (slug: string) =>
   `/products/${encodeURIComponent(slug)}${occurrenceId && !preview ? `?occurrence=${encodeURIComponent(occurrenceId)}` : ''}`;
@@ -40,6 +42,7 @@ const productLink = (slug: string) =>
     'catalog-grid',
     theme === 'harvest' && (featured || shop) && 'harvest-products',
     theme === 'modern-farmhouse' && 'mf-products',
+    theme === 'editorial-market' && 'em-shop-products',
     shop && 'shop-products',
   ]}
 >
@@ -55,30 +58,39 @@ const productLink = (slug: string) =>
         })}
       >
         <a class="product-card-link" href={productLink(product.slug)}>
-          {safeAsset(product.featuredAsset?.preview) ? (
-            <img
-              class="product-media"
-              src={safeAsset(product.featuredAsset?.preview)}
-              alt=""
-              width="640"
-              height="480"
-              loading="lazy"
-            />
-          ) : (
-            <div class="product-media product-placeholder" aria-hidden="true">
-              {theme === 'harvest' && (featured || shop) ? (
-                <HarvestArtwork />
-              ) : (
-                'No image'
-              )}
-            </div>
-          )}
+          <span
+            class:list={[
+              theme === 'editorial-market'
+                ? 'em-shop-image-frame'
+                : 'product-image-contents',
+            ]}
+          >
+            {safeAsset(product.featuredAsset?.preview) ? (
+              <img
+                class="product-media"
+                src={safeAsset(product.featuredAsset?.preview)}
+                alt=""
+                width="640"
+                height="480"
+                loading="lazy"
+              />
+            ) : (
+              <div class="product-media product-placeholder" aria-hidden="true">
+                {theme === 'harvest' && (featured || shop) ? (
+                  <HarvestArtwork />
+                ) : (
+                  'No image'
+                )}
+              </div>
+            )}
+          </span>
           {featured ? (
             <h3>{product.name}</h3>
           ) : (
             <h2 class="ui-section-title-consumer">{product.name}</h2>
           )}
         </a>
+        {sellerName && <p class="product-seller">{sellerName}</p>}
         <p>{priceLabel(product.variants)}</p>
         {!shop && <p>{plainDescription(product.description).slice(0, 160)}</p>}
         {shop && (

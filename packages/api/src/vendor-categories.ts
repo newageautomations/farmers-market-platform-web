@@ -14,6 +14,8 @@ export interface CategoryImage {
   id: string;
   name: string;
   preview: string;
+  source?: string;
+  placement?: string;
 }
 export interface CategoryInput {
   id?: string;

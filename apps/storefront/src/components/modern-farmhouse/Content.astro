@@ -11,6 +11,7 @@ import {
   defaultFaq,
   defaultPolicies,
   defaultContact,
+  type FarmhouseSettings,
 } from '@market/theme/storefront';
 import Invitation from './Invitation.astro';
 import { farmhouseDestination } from './navigation';
@@ -24,6 +25,7 @@ const {
   preview?: boolean;
 };
 const appearance = context.appearance!;
+const farmhouseSettings = appearance.template!.settings as FarmhouseSettings;
 const about = appearance.about;
 const faq = appearance.faq ?? (preview ? defaultFaq : undefined);
 const policies = appearance.policies ?? (preview ? defaultPolicies : undefined);
@@ -39,7 +41,7 @@ const published =
 
 <article
   class:list={['farmhouse-content', `farmhouse-${page}`]}
-  data-story-layout={appearance.template!.settings.pages.storyLayout}
+  data-story-layout={farmhouseSettings.pages.storyLayout}
   data-farmhouse-component={page}
 >
   {page === 'about' ? (

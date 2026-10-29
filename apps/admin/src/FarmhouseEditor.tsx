@@ -117,6 +117,7 @@ export function FarmhouseEditor({
       {api.media && (
         <CategoryImageField
           api={api.media}
+          themeId="modern-farmhouse"
           value={v.assetId}
           preview={v.url}
           label="Photograph"

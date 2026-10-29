@@ -4,7 +4,13 @@ import PremiumInformation from '../../components/modern-farmhouse/ProductInforma
 import PremiumLayout from '../../components/modern-farmhouse/ProductLayout.astro';
 import PremiumGallery from '../../components/modern-farmhouse/Gallery.astro';
 import PremiumCards from '../../components/modern-farmhouse/ProductCards.astro';
-import { isFarmhouse } from '@market/theme/storefront';
+import EditorialProduct from '../../components/editorial-market/Product.astro';
+import ShopHeader from '../../components/editorial-market/ShopHeader.astro';
+import {
+  isEditorialMarket,
+  isFarmhouse,
+  type FarmhouseSettings,
+} from '@market/theme/storefront';
 import ProductGallery from '../../components/ProductGallery.astro';
 import ProductLayout from '../../components/legacy-modern-farmhouse/ProductLayout.astro';
 import ProductCards from '../../components/ProductCards.astro';
@@ -31,6 +37,11 @@ import {
 } from '@market/storefront-core';
 const { storefront, storefrontError } = Astro.locals;
 const premium = isFarmhouse(storefront?.appearance);
+const editorial = isEditorialMarket(storefront?.appearance);
+const premiumGallery = premium
+  ? (storefront!.appearance!.template!.settings as FarmhouseSettings).pages
+      .gallery
+  : undefined;
 const Layout = premium ? PremiumLayout : ProductLayout;
 const Gallery = premium ? PremiumGallery : ProductGallery;
 const Cards = premium ? PremiumCards : ProductCards;
@@ -139,7 +150,22 @@ const structured =
       set:html={JSON.stringify(structured).replace(/</g, '\\u003c')}
     />
   )}
-  <section class={premium ? 'farmhouse-product-route' : 'vendor-product'}>
+  {editorial && storefront && (
+    <ShopHeader
+      context={storefront}
+      occurrences={preorder.occurrences}
+      selectedId={preorder.selected?.id}
+    />
+  )}
+  <section
+    class={
+      premium
+        ? 'farmhouse-product-route'
+        : editorial
+          ? 'em-product-route'
+          : 'vendor-product'
+    }
+  >
     {error || !product ? (
       <>
         <h1>
@@ -152,6 +178,16 @@ const structured =
           Browse products
         </a>
       </>
+    ) : editorial && storefront ? (
+      <EditorialProduct
+        context={storefront}
+        product={product}
+        related={related}
+        info={info}
+        preorder={preorder}
+        signedIn={signedIn}
+        preview={!!Astro.locals.editorPreview}
+      />
     ) : (
       <>
         <Layout theme={storefront?.appearance?.theme}>
@@ -161,11 +197,7 @@ const structured =
             storefrontId={storefront?.storefrontId ?? ''}
             preview={!!Astro.locals.editorPreview}
           />
-          <Gallery
-            slot="gallery"
-            product={product}
-            layout={storefront?.appearance?.template?.settings.pages.gallery}
-          />
+          <Gallery slot="gallery" product={product} layout={premiumGallery} />
           <Fragment slot="summary">
             {shopCategories([product]).length > 0 && (
               <p>

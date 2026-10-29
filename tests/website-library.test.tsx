@@ -124,6 +124,9 @@ it('offers only available templates, names the deletion target, and does not del
   expect(
     screen.getByRole('option', { name: /Modern Farmhouse/ }),
   ).toBeInTheDocument();
+  expect(
+    screen.getByRole('option', { name: 'Editorial Market · Free' }),
+  ).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
   const drafts = screen.getByRole('region', { name: 'Draft Websites' });
   fireEvent.click(within(drafts).getByRole('button', { name: 'Delete' }));

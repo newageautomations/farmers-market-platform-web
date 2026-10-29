@@ -1,6 +1,7 @@
 ---
 import PremiumShop from '../../components/modern-farmhouse/Shop.astro';
-import { isFarmhouse } from '@market/theme/storefront';
+import EditorialShop from '../../components/editorial-market/Shop.astro';
+import { isEditorialMarket, isFarmhouse } from '@market/theme/storefront';
 import { farmhouseCatalog } from '../../lib/farmhouse-catalog';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import ProductCards from '../../components/ProductCards.astro';
@@ -36,7 +37,13 @@ let preorder: Awaited<ReturnType<typeof vendorPreorder>> = {
   orderOccurrence: undefined,
 };
 const category = Astro.url.searchParams.get('category') ?? '',
-  sort = Astro.url.searchParams.get('sort') === 'name' ? 'name' : 'default';
+  sort = Astro.url.searchParams.get('sort') === 'name' ? 'name' : 'default',
+  search = (Astro.url.searchParams.get('search') ?? '').slice(0, 100),
+  availabilityFilter =
+    isEditorialMarket(storefront?.appearance) &&
+    Astro.url.searchParams.get('availability') !== 'all'
+      ? 'available'
+      : 'all';
 try {
   if (storefront?.kind === 'MARKET') throw new AppError('not-found');
   page = catalogInputs(Astro.url.searchParams).page;
@@ -65,23 +72,39 @@ try {
 } catch (e) {
   error = safeError(e);
 }
-const categories = shopCategories(items),
-  filtered = shopProducts(items, category, sort).filter(
+const categories = shopCategories(items);
+let filtered = shopProducts(items, category, sort).filter(
+  (product) =>
+    (!isFarmhouse(storefront?.appearance) &&
+      !isEditorialMarket(storefront?.appearance)) ||
+    !search ||
+    product.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
+);
+if (
+  !error &&
+  isEditorialMarket(storefront?.appearance) &&
+  availabilityFilter === 'available'
+) {
+  preorder = await vendorPreorder(
+    Astro,
+    filtered.flatMap((product) =>
+      product.variants.map((variant) => variant.id),
+    ),
+  );
+  filtered = filtered.filter(
     (product) =>
-      !isFarmhouse(storefront?.appearance) ||
-      !Astro.url.searchParams.get('search') ||
-      product.name
-        .toLocaleLowerCase()
-        .includes(
-          Astro.url.searchParams
-            .get('search')!
-            .toLocaleLowerCase()
-            .slice(0, 100),
-        ),
-  ),
-  skip = (page - 1) * 12,
-  visible = filtered.slice(skip, skip + 12);
-if (!error)
+      productPreorder(product.variants, preorder.availability).available,
+  );
+}
+const skip = (page - 1) * 12;
+const visible = filtered.slice(skip, skip + 12);
+if (
+  !error &&
+  !(
+    isEditorialMarket(storefront?.appearance) &&
+    availabilityFilter === 'available'
+  )
+)
   preorder = await vendorPreorder(
     Astro,
     visible.flatMap((p) => p.variants.map((v) => v.id)),
@@ -90,14 +113,19 @@ const selected = preorder.selected;
 const heading =
   categories.find((c) => c.id === category)?.name ??
   (category ? 'Products' : 'All Products');
-const link = (next: { category?: string; page?: number }) =>
+const link = (next: {
+  category?: string;
+  page?: number;
+  availability?: string;
+}) =>
   '/products?' +
   new URLSearchParams({
     ...(selected ? { occurrence: selected.id } : {}),
     sort,
-    ...(isFarmhouse(storefront?.appearance) &&
-    Astro.url.searchParams.get('search')
-      ? { search: Astro.url.searchParams.get('search')!.slice(0, 100) }
+    ...(isFarmhouse(storefront?.appearance) && search ? { search } : {}),
+    ...(isEditorialMarket(storefront?.appearance) && search ? { search } : {}),
+    ...(isEditorialMarket(storefront?.appearance)
+      ? { availability: next.availability ?? availabilityFilter }
       : {}),
     ...((next.category ?? category)
       ? { category: next.category ?? category }
@@ -136,6 +164,26 @@ const noneAvailable =
       link={link}
       preview={!!Astro.locals.editorPreview}
     />
+  ) : storefront && isEditorialMarket(storefront.appearance) && !error ? (
+    <EditorialShop
+      context={storefront}
+      categories={categories}
+      category={category}
+      search={search}
+      sort={sort}
+      availabilityFilter={availabilityFilter}
+      page={page}
+      visible={visible}
+      total={filtered.length}
+      skip={skip}
+      occurrences={preorder.occurrences}
+      selectedId={selected?.id}
+      storefrontId={storefront.storefrontId}
+      availability={preorder.availability}
+      unavailable={preorder.unavailable}
+      preview={!!Astro.locals.editorPreview}
+      link={link}
+    />
   ) : (
     <section
       class="vendor-shop"
@@ -168,6 +216,19 @@ const noneAvailable =
                   fetchpriority="high"
                 />
               )}
+            </div>
+          )}
+          {storefront && isEditorialMarket(storefront.appearance) && (
+            <div
+              class="em-shop-intro"
+              data-editor-section="editorial:shop-settings"
+            >
+              <h1>
+                {storefront.appearance.template.settings.pages.shopHeading}
+              </h1>
+              <p>
+                {storefront.appearance.template.settings.pages.shopIntroduction}
+              </p>
             </div>
           )}
           <div class="shop-market-slot">
@@ -212,9 +273,10 @@ const noneAvailable =
                 <input type="hidden" name="occurrence" value={selected.id} />
               )}
               <div class="shop-catalog-heading">
-                {storefront?.appearance?.theme !== 'modern-farmhouse' && (
-                  <h1>{heading}</h1>
-                )}
+                {storefront?.appearance?.theme !== 'modern-farmhouse' &&
+                  !isEditorialMarket(storefront?.appearance) && (
+                    <h1>{heading}</h1>
+                  )}
                 <span>
                   {filtered.length}{' '}
                   {filtered.length === 1 ? 'product' : 'products'}

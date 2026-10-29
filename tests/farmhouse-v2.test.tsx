@@ -263,10 +263,17 @@ it('keeps premium edits inside editor undo, redo and draft save without showing 
   expect(screen.queryByLabelText('Hero heading')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
   await waitFor(() => expect(save).toHaveBeenCalled());
-  expect(save.mock.calls[0]![2].template!.settings.sections[0]!.heading).toBe(
-    'An independent opening',
-  );
-  expect(draft.template.settings.sections[0]!.heading).toBe(
+  const saved = save.mock.calls[0]![2];
+  expect(
+    saved.template?.id === 'modern-farmhouse'
+      ? saved.template.settings.sections[0]!.heading
+      : undefined,
+  ).toBe('An independent opening');
+  expect(
+    draft.template.id === 'modern-farmhouse'
+      ? draft.template.settings.sections[0]!.heading
+      : undefined,
+  ).toBe(
     'Good food. A little closer.',
   );
 });

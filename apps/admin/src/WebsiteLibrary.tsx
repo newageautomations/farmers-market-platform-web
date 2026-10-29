@@ -235,6 +235,10 @@ export function WebsiteLibrary({
               !(
                 record.templateId === 'modern-farmhouse' &&
                 record.templateVersion === 2
+              ) &&
+              !(
+                record.templateId === 'editorial-market' &&
+                record.templateVersion === 1
               ))
           }
           onClick={() =>

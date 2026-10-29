@@ -41,6 +41,7 @@ export function AboutStoryEditor({
   busy,
   textSizes,
   onTextSizeChange,
+  themeId,
 }: {
   about: StorefrontAppearance['about'];
   api: StorefrontAppearanceApi;
@@ -58,6 +59,7 @@ export function AboutStoryEditor({
     id: string,
     value: { heading: number; paragraph: number },
   ) => void;
+  themeId?: string;
 }) {
   const sections = aboutSections(about);
   const [adding, setAdding] = useState(false);
@@ -175,6 +177,28 @@ export function AboutStoryEditor({
                           onChange={(e) => patch({ title: e.target.value })}
                         />
                       </Field>
+                      {themeId === 'editorial-market' && (
+                        <Field
+                          id="story-hero-subheading"
+                          label="Hero subheading"
+                        >
+                          <Textarea
+                            id="story-hero-subheading"
+                            value={
+                              about.sectionsVersion === 1 ? about.content : ''
+                            }
+                            maxLength={600}
+                            rows={3}
+                            onChange={(event) =>
+                              patch({
+                                content: event.target.value,
+                                sectionsVersion: 1,
+                                sections,
+                              })
+                            }
+                          />
+                        </Field>
+                      )}
                       <p>
                         The page and navigation link appear after publishing.
                         Disabling preserves your content.
@@ -256,6 +280,7 @@ export function AboutStoryEditor({
                             <CategoryImageField
                               key={item.id}
                               api={api.media}
+                              themeId={themeId}
                               value={item.imageAssetId}
                               preview={item.image}
                               label="Section image"

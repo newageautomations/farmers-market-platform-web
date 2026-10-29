@@ -5,12 +5,13 @@ import type { PublicCatalog } from '@market/api';
 import { farmhouseDestination } from './navigation';
 import Photo from './Photo.astro';
 import FeaturedCarousel from './FeaturedCarousel.astro';
+import type { FarmhouseSettings } from '@market/theme/storefront';
 const { context, catalog, error } = Astro.props as {
   context: StorefrontContext;
   catalog?: PublicCatalog;
   error?: unknown;
 };
-const settings = context.appearance!.template!.settings;
+const settings = context.appearance!.template!.settings as FarmhouseSettings;
 const products = catalog?.items ?? [];
 const categories = shopCategories(products);
 const destination = (href: string) =>

@@ -24,6 +24,7 @@ if (
     'storefront-shop-fixtures',
     'willow-fixtures',
     'grant-willow-crm',
+    'editorial-assets',
   ].includes(action)
 )
   Object.assign(
@@ -59,6 +60,7 @@ if (['admin', 'storefront'].includes(action)) {
       'storefront-shop-fixtures',
       'willow-fixtures',
       'grant-willow-crm',
+      'editorial-assets',
       'test',
     ].includes(action)
   )

@@ -1,0 +1,83 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import {
+  contactDetails,
+  contactHref,
+  isEditorialMarket,
+} from '@market/theme/storefront';
+
+interface Props {
+  context: StorefrontContext;
+}
+const { context } = Astro.props;
+if (!isEditorialMarket(context.appearance))
+  throw new Error('Editorial Market footer requires its theme configuration.');
+const settings = context.appearance.template.settings;
+const details = context.appearance.contact?.enabled
+  ? contactDetails(context.appearance.contact)
+  : undefined;
+---
+
+<footer class="em-footer" data-editor-section="editorial:footer">
+  <div class="em-footer-art" aria-hidden="true"></div>
+  <div class="em-footer-content">
+    <div class="em-footer-identity">
+      <a class="em-brand em-footer-brand" href="/">
+        <span class="em-brand-mark" aria-hidden="true">
+          ❦
+        </span>
+        <span>{context.name}</span>
+      </a>
+      <p>{settings.footer.tagline}</p>
+      <div class="em-footer-socials">
+        {details?.instagram && contactHref('instagram', details.instagram) && (
+          <a
+            href={contactHref('instagram', details.instagram)}
+            rel="noopener noreferrer"
+          >
+            Instagram
+          </a>
+        )}
+        {details?.facebook && contactHref('facebook', details.facebook) && (
+          <a
+            href={contactHref('facebook', details.facebook)}
+            rel="noopener noreferrer"
+          >
+            Facebook
+          </a>
+        )}
+      </div>
+    </div>
+    <nav aria-label="Shop">
+      <h2>{settings.footer.shopLabel}</h2>
+      <a href="/products">All products</a>
+    </nav>
+    <nav aria-label="About">
+      <h2>About</h2>
+      {context.appearance.about.enabled && (
+        <a href="/about">{settings.footer.storyLabel}</a>
+      )}
+      {context.appearance.findUs?.enabled && (
+        <a href="/find-us">{context.appearance.findUs.title}</a>
+      )}
+      {context.appearance.faq?.enabled && (
+        <a href="/faq">{context.appearance.faq.title}</a>
+      )}
+      {context.appearance.policies?.enabled && (
+        <a href="/policies">{context.appearance.policies.title}</a>
+      )}
+    </nav>
+    <nav aria-label="Get in touch">
+      <h2>Get in touch</h2>
+      {context.appearance.contact?.enabled && (
+        <a href="/contact">{context.appearance.contact.title}</a>
+      )}
+      {details?.email && contactHref('email', details.email) && (
+        <a href={contactHref('email', details.email)}>{details.email}</a>
+      )}
+    </nav>
+    <p class="em-footer-meta">
+      © {new Date().getFullYear()} {context.name} · Powered by Market platform
+    </p>
+  </div>
+</footer>

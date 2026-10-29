@@ -1,0 +1,189 @@
+---
+import type { PublicCatalog } from '@market/api';
+import type { StorefrontContext } from '@market/storefront-core';
+import { isEditorialMarket } from '@market/theme/storefront';
+import { priceLabel, safeAsset, shopCategories } from '@market/storefront-core';
+import { ErrorState } from '@market/ui';
+import Button from '../ui/Button.astro';
+import { FeaturedAdd } from '../FeaturedAdd';
+import { categoryArt } from './category-art';
+
+interface Props {
+  context: StorefrontContext;
+  catalog?: PublicCatalog;
+  error?: unknown;
+}
+const { context, catalog, error } = Astro.props;
+if (!isEditorialMarket(context.appearance))
+  throw new Error(
+    'Editorial Market homepage requires its theme configuration.',
+  );
+const settings = context.appearance.template.settings;
+const categories = shopCategories(catalog?.items ?? []).slice(
+  0,
+  settings.categories.limit,
+);
+const selectedProducts = settings.products.productIds.length
+  ? settings.products.productIds.flatMap((id) =>
+      (catalog?.items ?? []).filter((product) => product.id === id),
+    )
+  : (catalog?.items ?? []).slice(0, 4);
+const desktopHero = safeAsset(settings.assets.desktopHero.url);
+const mobileHero = safeAsset(settings.assets.mobileHero.url);
+const desktopFooter = safeAsset(settings.assets.desktopFooter.url);
+const mobileFooter = safeAsset(settings.assets.mobileFooter.url);
+---
+
+<div class="em-home" data-template="editorial-market">
+  <section class="em-hero" data-editor-section="editorial:hero">
+    {(desktopHero || mobileHero) && (
+      <picture class="em-hero-art" aria-hidden="true">
+        {mobileHero && (
+          <source media="(max-width: 960px)" srcset={mobileHero} />
+        )}
+        <img
+          src={desktopHero ?? mobileHero}
+          alt=""
+          width="1680"
+          height="945"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </picture>
+    )}
+    <div class="em-hero-copy">
+      <h1>{settings.hero.heading}</h1>
+      <p>{settings.hero.introduction}</p>
+      <Button href="/products">
+        {settings.hero.buttonLabel} <span aria-hidden="true">→</span>
+      </Button>
+    </div>
+  </section>
+
+  {settings.categories.visible && (
+    <section
+      class="em-section em-category-section"
+      data-editor-section="editorial:categories"
+    >
+      <div class="em-section-heading">
+        <h2>{settings.categories.heading}</h2>
+        <a href="/products">
+          {settings.categories.linkLabel} <span aria-hidden="true">→</span>
+        </a>
+      </div>
+      {categories.length ? (
+        <div class="em-categories">
+          {categories.map((category) => {
+            const image = settings.categories.images[category.id];
+            const imageUrl = categoryArt(category.name, safeAsset(image?.url));
+            return (
+              <a href={`/products?category=${encodeURIComponent(category.id)}`}>
+                <span class="em-category-image">
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt=""
+                      width="180"
+                      height="180"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <span class="em-category-placeholder" aria-hidden="true">
+                      ✦
+                    </span>
+                  )}
+                </span>
+                <span>{category.name}</span>
+              </a>
+            );
+          })}
+        </div>
+      ) : (
+        <p class="em-empty">
+          Product categories will appear here when they are available.
+        </p>
+      )}
+    </section>
+  )}
+
+  {settings.products.visible && (
+    <section
+      class="em-section em-product-section"
+      data-editor-section="editorial:products"
+    >
+      <div class="em-section-heading">
+        <h2>{settings.products.heading}</h2>
+        <a href="/products">
+          {settings.products.linkLabel} <span aria-hidden="true">→</span>
+        </a>
+      </div>
+      {error ? (
+        <ErrorState error={error} />
+      ) : selectedProducts.length ? (
+        <div class="em-products">
+          {selectedProducts.map((product) => (
+            <article class="em-product-card">
+              <a href={`/products/${encodeURIComponent(product.slug)}`}>
+                <span class="em-product-image">
+                  {safeAsset(product.featuredAsset?.preview) ? (
+                    <img
+                      class="product-media"
+                      src={safeAsset(product.featuredAsset?.preview)}
+                      alt=""
+                      width="640"
+                      height="480"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span class="em-product-placeholder" aria-hidden="true">
+                      ✦
+                    </span>
+                  )}
+                </span>
+                <h3>{product.name}</h3>
+              </a>
+              <p>{priceLabel(product.variants)}</p>
+              {product.variants.length === 1 && context.storefrontId ? (
+                <FeaturedAdd
+                  storefrontId={context.storefrontId}
+                  variantId={product.variants[0]!.id}
+                  client:load
+                />
+              ) : (
+                <Button
+                  href={`/products/${encodeURIComponent(product.slug)}`}
+                  variant="secondary"
+                >
+                  View product
+                </Button>
+              )}
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p class="em-empty">
+          Featured products will appear here when the catalog is ready.
+        </p>
+      )}
+    </section>
+  )}
+
+  {settings.impact.visible && (desktopFooter || mobileFooter) && (
+    <section class="em-impact" data-editor-section="editorial:impact">
+      <picture>
+        {mobileFooter && (
+          <source media="(max-width: 699px)" srcset={mobileFooter} />
+        )}
+        <img
+          src={desktopFooter ?? mobileFooter}
+          alt={settings.impact.imageAlt}
+          width="2172"
+          height="724"
+          loading="lazy"
+          decoding="async"
+        />
+      </picture>
+    </section>
+  )}
+</div>

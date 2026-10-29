@@ -11,68 +11,108 @@ import { transport, type TransportOptions } from './transport';
 import { AppError } from './errors';
 import { createVendorCategoryApi } from './vendor-categories';
 export interface StorefrontAppearanceConfig {
-  template?: {
-    id: 'modern-farmhouse';
-    version: 2;
-    settings: {
-      version: 2;
-      scrollFade?: boolean;
-      palette:
-        | 'evergreen'
-        | 'clay'
-        | 'charcoal'
-        | 'sage'
-        | 'terracotta'
-        | 'blue'
-        | 'harvest-charcoal';
-      typography:
-        | 'literary'
-        | 'classic'
-        | 'editorial'
-        | 'minimal'
-        | 'warm'
-        | 'friendly'
-        | 'refined';
-      header: {
-        logo?: FarmhousePhoto;
-        overlay: boolean;
-        message: string;
-        shopLabel: string;
-        storyLabel: string;
+  template?:
+    | {
+        id: 'modern-farmhouse';
+        version: 2;
+        settings: {
+          version: 2;
+          scrollFade?: boolean;
+          palette:
+            | 'evergreen'
+            | 'clay'
+            | 'charcoal'
+            | 'sage'
+            | 'terracotta'
+            | 'blue'
+            | 'harvest-charcoal';
+          typography:
+            | 'literary'
+            | 'classic'
+            | 'editorial'
+            | 'minimal'
+            | 'warm'
+            | 'friendly'
+            | 'refined';
+          header: {
+            logo?: FarmhousePhoto;
+            overlay: boolean;
+            message: string;
+            shopLabel: string;
+            storyLabel: string;
+          };
+          footer: { invitation: string; tagline: string };
+          pages: {
+            shopHeading: string;
+            shopIntroduction: string;
+            storyLayout: 'alternating' | 'image-first';
+            gallery: 'mosaic' | 'rail';
+          };
+          sections: Array<{
+            id:
+              | 'cinematic'
+              | 'discovery'
+              | 'products'
+              | 'story'
+              | 'collection'
+              | 'invitation';
+            visible: boolean;
+            heading: string;
+            body: string;
+            label: string;
+            destination: string;
+            photo: FarmhousePhoto;
+            tiles: Array<{
+              title: string;
+              body: string;
+              destination: string;
+              photo: FarmhousePhoto;
+            }>;
+            productIds: string[];
+          }>;
+        };
+      }
+    | {
+        id: 'editorial-market';
+        version: 1;
+        settings: {
+          version: 1;
+          assets: Record<
+            'desktopHero' | 'mobileHero' | 'desktopFooter' | 'mobileFooter',
+            {
+              assetId: string | null;
+              url: string;
+              alt: string;
+            }
+          >;
+          header: {
+            announcement: string;
+            shopLabel: string;
+            storyLabel: string;
+            findUsLabel: string;
+            contactLabel: string;
+          };
+          hero: { heading: string; introduction: string; buttonLabel: string };
+          categories: {
+            visible: boolean;
+            heading: string;
+            linkLabel: string;
+            limit: number;
+            images: Record<string, { assetId: string; url: string }>;
+          };
+          products: {
+            visible: boolean;
+            heading: string;
+            linkLabel: string;
+            productIds: string[];
+          };
+          impact: { visible: boolean; imageAlt: string };
+          footer: { tagline: string; shopLabel: string; storyLabel: string };
+          pages: { shopHeading: string; shopIntroduction: string };
+        };
       };
-      footer: { invitation: string; tagline: string };
-      pages: {
-        shopHeading: string;
-        shopIntroduction: string;
-        storyLayout: 'alternating' | 'image-first';
-        gallery: 'mosaic' | 'rail';
-      };
-      sections: Array<{
-        id:
-          | 'cinematic'
-          | 'discovery'
-          | 'products'
-          | 'story'
-          | 'collection'
-          | 'invitation';
-        visible: boolean;
-        heading: string;
-        body: string;
-        label: string;
-        destination: string;
-        photo: FarmhousePhoto;
-        tiles: Array<{
-          title: string;
-          body: string;
-          destination: string;
-          photo: FarmhousePhoto;
-        }>;
-        productIds: string[];
-      }>;
-    };
-  };
   textSizes?: Record<string, { heading: number; paragraph: number }>;
-  theme: 'harvest' | 'modern-farmhouse';
+  theme: 'harvest' | 'modern-farmhouse' | 'editorial-market';
   palette: 'sage' | 'terracotta' | 'blue' | 'charcoal';
   buttonShape: 'square' | 'soft' | 'pill';
   buttonHover: 'lift' | 'darken' | 'outline';
@@ -381,12 +421,39 @@ export function createStorefrontAppearanceApi(options: TransportOptions) {
     },
     { id: string }
   >;
+  const themeAssets = parse(
+    'query StorefrontThemeAssets($themeId: String!) { ownStorefrontThemeAssets(themeId: $themeId) }',
+  ) as TypedDocumentNode<
+    {
+      ownStorefrontThemeAssets: Array<{
+        id: string;
+        name: string;
+        preview: string;
+        source?: string;
+        placement?: string;
+      }>;
+    },
+    { themeId: string }
+  >;
   return {
     media: options.channelToken
-      ? createVendorCategoryApi({
-          ...options,
-          channelToken: options.channelToken,
-        })
+      ? {
+          ...createVendorCategoryApi({
+            ...options,
+            channelToken: options.channelToken,
+          }),
+          themeImages: async (themeId: string) =>
+            (
+              await execute(
+                { api: 'admin', document: themeAssets },
+                { themeId },
+              )
+            ).ownStorefrontThemeAssets.filter(
+              (image) =>
+                themeId !== 'editorial-market' ||
+                image.placement?.startsWith('category-library-'),
+            ),
+        }
       : undefined,
     preview: async (id: string) =>
       (await execute({ api: 'admin', document: preview }, { id }))
@@ -414,9 +481,22 @@ export type StorefrontAppearanceApi = Omit<
   Partial<
     Pick<
       ReturnType<typeof createStorefrontAppearanceApi>,
-      'products' | 'preview' | 'media'
+      'products' | 'preview'
     >
-  >;
+  > & {
+    media?: Omit<
+      NonNullable<ReturnType<typeof createStorefrontAppearanceApi>['media']>,
+      'themeImages'
+    > &
+      Partial<
+        Pick<
+          NonNullable<
+            ReturnType<typeof createStorefrontAppearanceApi>['media']
+          >,
+          'themeImages'
+        >
+      >;
+  };
 export function safeStorefrontUrl(value: string | null): string | undefined {
   if (!value) return;
   try {

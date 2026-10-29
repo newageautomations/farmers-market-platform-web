@@ -1,0 +1,153 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { safeAsset } from '@market/storefront-core';
+import Button from '../ui/Button.astro';
+import { isEditorialMarket } from '@market/theme/storefront';
+
+interface Props {
+  context: StorefrontContext;
+  homepage?: boolean;
+}
+const { context, homepage = false } = Astro.props;
+if (!isEditorialMarket(context.appearance))
+  throw new Error('Editorial Market header requires its theme configuration.');
+const settings = context.appearance.template.settings;
+const logo = safeAsset(context.theme.logo);
+const links = [
+  { href: '/products', label: settings.header.shopLabel, enabled: true },
+  {
+    href: '/about',
+    label: settings.header.storyLabel,
+    enabled: context.appearance.about.enabled,
+  },
+  {
+    href: '/find-us',
+    label: settings.header.findUsLabel,
+    enabled: context.appearance.findUs?.enabled,
+  },
+  {
+    href: '/contact',
+    label: settings.header.contactLabel,
+    enabled: context.appearance.contact?.enabled,
+  },
+  {
+    href: '/faq',
+    label: context.appearance.faq?.title ?? 'FAQ',
+    enabled: context.appearance.faq?.enabled,
+  },
+].filter((link) => link.enabled);
+const active = (path: string) =>
+  Astro.url.pathname === path ||
+  (path === '/products' && Astro.url.pathname.startsWith('/products/'))
+    ? ('page' as const)
+    : undefined;
+---
+
+<header
+  class="em-floating-header"
+  data-solid={!homepage ? 'true' : undefined}
+  data-editor-section="editorial:header"
+>
+  <div class="em-header-inner">
+    <a class="em-brand" href="/" aria-label={`${context.name} home`}>
+      <span class="em-logo-circle">
+        {logo ? (
+          <img src={logo} alt="" width="44" height="44" />
+        ) : (
+          <span aria-hidden="true">❦</span>
+        )}
+      </span>
+      <span class="em-brand-name">{context.name}</span>
+    </a>
+    <nav class="em-nav" aria-label="Main navigation">
+      {links.map((link) => (
+        <a href={link.href} aria-current={active(link.href)}>
+          {link.label}
+        </a>
+      ))}
+    </nav>
+    <div class="em-header-actions">
+      <a href="/account">Account</a>
+      <Button href="/cart">
+        Cart <span aria-hidden="true">↗</span>
+      </Button>
+    </div>
+    <details class="em-menu">
+      <summary
+        aria-label="Open navigation menu"
+        aria-controls="em-mobile-navigation"
+      >
+        <span class="em-menu-lines" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+      </summary>
+      <nav id="em-mobile-navigation" aria-label="Mobile navigation">
+        {links.map((link) => (
+          <a href={link.href} aria-current={active(link.href)}>
+            {link.label}
+            <span aria-hidden="true">↗</span>
+          </a>
+        ))}
+        <a href="/account">
+          Account <span aria-hidden="true">↗</span>
+        </a>
+        <Button href="/cart">
+          Cart <span aria-hidden="true">↗</span>
+        </Button>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<script>
+  for (const header of document.querySelectorAll<HTMLElement>(
+    '.em-floating-header',
+  )) {
+    const menu = header.querySelector<HTMLDetailsElement>('.em-menu');
+    const summary = menu?.querySelector('summary');
+    let previousOverflow = '';
+    const scroll = () =>
+      header.toggleAttribute('data-scrolled', window.scrollY > 40);
+    scroll();
+    window.addEventListener('scroll', scroll, { passive: true });
+    summary?.setAttribute('aria-expanded', 'false');
+    menu?.addEventListener('toggle', () => {
+      header.toggleAttribute('data-menu-open', menu.open);
+      summary?.setAttribute('aria-expanded', String(menu.open));
+      summary?.setAttribute(
+        'aria-label',
+        menu.open ? 'Close navigation menu' : 'Open navigation menu',
+      );
+      if (menu.open) {
+        previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+      } else document.body.style.overflow = previousOverflow;
+    });
+    header.addEventListener('keydown', (event) => {
+      if (!menu?.open) return;
+      if (event.key === 'Escape') {
+        menu.open = false;
+        summary?.focus();
+      }
+      if (event.key === 'Tab') {
+        const items = [
+          ...header.querySelectorAll<HTMLElement>('a[href], summary'),
+        ].filter((item) => item.getClientRects().length);
+        const first = items[0],
+          last = items.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    });
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 1100 && menu?.open) menu.open = false;
+    });
+  }
+</script>

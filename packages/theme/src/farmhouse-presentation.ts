@@ -62,7 +62,7 @@ export const farmhouseFonts = {
 };
 /** Approved palette/font contracts are shared, while the premium layout stays independent. */
 export function farmhousePresentationStyle(config: StorefrontAppearance) {
-  if (!config.template) return '';
+  if (config.template?.id !== 'modern-farmhouse') return '';
   const palette = farmhousePalettes[config.template.settings.palette];
   const font = farmhouseFonts[config.template.settings.typography];
   return Object.entries({

@@ -10,6 +10,7 @@ import {
   defaultStorefrontAppearance,
   storefrontTextSizeCss,
   storefrontThemeStyle,
+  type FarmhouseSettings,
 } from '@market/theme/storefront';
 import '@market/theme/storefront.css';
 import '../styles/homepage.css';
@@ -21,6 +22,11 @@ import PremiumFooter from '../components/modern-farmhouse/Footer.astro';
 import { farmhousePresentationStyle } from '@market/theme/farmhouse-presentation';
 import farmhouseStyles from '../styles/farmhouse-v2.css?url';
 import { isFarmhouse, farmhouseTextSizeCss } from '@market/theme/storefront';
+import { isEditorialMarket } from '@market/theme/storefront';
+import EditorialShopHeader from '../components/editorial-market/ShopHeader.astro';
+import { vendorPreorder } from '../lib/vendor-preorder';
+import EditorialFooter from '../components/editorial-market/Footer.astro';
+import editorialStyles from '../styles/editorial-market.css?url';
 import FarmhouseHeader from '../components/legacy-modern-farmhouse/Header.astro';
 import FarmhouseFooter from '../components/legacy-modern-farmhouse/Footer.astro';
 import '../styles/legacy-modern-farmhouse.css';
@@ -44,8 +50,11 @@ const {
 } = Astro.props;
 const appearance = context?.appearance ?? defaultStorefrontAppearance;
 const sharedVendor = context?.kind === 'VENDOR';
-const premium = sharedVendor && isFarmhouse(appearance);
-const premiumSettings = appearance.template?.settings;
+const premiumSettings = isFarmhouse(appearance)
+  ? (appearance.template!.settings as FarmhouseSettings)
+  : undefined;
+const premium = sharedVendor && !!premiumSettings;
+const editorial = sharedVendor && isEditorialMarket(appearance);
 const farmhouse =
   sharedVendor && appearance.theme === 'modern-farmhouse' && !premium;
 const overlay =
@@ -65,6 +74,9 @@ const pageTitle = title
   : (metadata?.title ?? 'Storefront unavailable');
 const pageDescription =
   description ?? metadata?.description ?? 'Storefront service unavailable.';
+const editorialShop = editorial && path.startsWith('/products');
+const editorialHeaderPreorder =
+  editorial && !editorialShop ? await vendorPreorder(Astro, []) : undefined;
 ---
 
 <!doctype html>
@@ -88,6 +100,7 @@ const pageDescription =
   <head>
     <meta charset="UTF-8" />
     {premium && <link rel="stylesheet" href={farmhouseStyles} />}
+    {editorial && <link rel="stylesheet" href={editorialStyles} />}
     <style
       id="storefront-text-sizes"
       is:inline
@@ -135,21 +148,35 @@ const pageDescription =
     )}
     <div
       class:list={[
-        !premium && 'container',
+        !premium && !editorial && 'container',
         premium && 'farmhouse-site',
         premium && homepage && 'farmhouse-homepage',
         premium && (homepage || path === '/products') && 'farmhouse-refined',
-        !farmhouse && !premium && (homepage || sharedVendor) && 'harvest-home',
+        editorial && 'editorial-market-site',
+        !editorial &&
+          !farmhouse &&
+          !premium &&
+          (homepage || sharedVendor) &&
+          'harvest-home',
         farmhouse && 'mf-site',
       ]}
     >
       {context && premium && (
         <PremiumHeader context={context} overlay={!!overlay} />
       )}
-      {context && farmhouse && <FarmhouseHeader context={context} />}
-      {context && !farmhouse && !premium && (homepage || sharedVendor) && (
-        <HarvestHeader context={context} />
+      {context && editorial && !editorialShop && (
+        <EditorialShopHeader
+          context={context}
+          occurrences={editorialHeaderPreorder?.occurrences ?? []}
+          selectedId={editorialHeaderPreorder?.selected?.id}
+        />
       )}
+      {context && farmhouse && <FarmhouseHeader context={context} />}
+      {context &&
+        !editorial &&
+        !farmhouse &&
+        !premium &&
+        (homepage || sharedVendor) && <HarvestHeader context={context} />}
       {context && !homepage && !sharedVendor && (
         <header class="site-header">
           <a class="brand" href="/">
@@ -180,11 +207,17 @@ const pageDescription =
           </nav>
         </header>
       )}
-      <main id="main" tabindex="-1">
+      <main
+        id="main"
+        tabindex="-1"
+        class:list={[editorial && !homepage && 'em-page']}
+      >
         <slot />
       </main>
       {context && premium ? (
         <PremiumFooter context={context} />
+      ) : context && editorial ? (
+        <EditorialFooter context={context} />
       ) : context && farmhouse ? (
         <FarmhouseFooter context={context} />
       ) : context && (homepage || sharedVendor) ? (

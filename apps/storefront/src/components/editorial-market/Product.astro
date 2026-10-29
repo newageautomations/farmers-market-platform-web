@@ -1,0 +1,111 @@
+---
+import type { PublicCatalog, PublicProduct } from '@market/api';
+import type { StorefrontContext } from '@market/storefront-core';
+import { plainDescription, priceLabel } from '@market/storefront-core';
+import type { readProductInformation } from '@market/api';
+import type { VendorPreorderState } from '../../lib/vendor-preorder';
+import ProductGallery from '../ProductGallery.astro';
+import ProductCards from '../ProductCards.astro';
+import { ProductPurchase } from '../ProductPurchase';
+import { ProductInformationTabs } from './ProductInformationTabs';
+import { ProductMarketSelector } from './ProductMarketSelector';
+
+interface Props {
+  context: StorefrontContext;
+  product: PublicProduct;
+  related: PublicCatalog['items'];
+  info: ReturnType<typeof readProductInformation>;
+  preorder: Pick<
+    VendorPreorderState,
+    'occurrences' | 'selected' | 'availability' | 'unavailable'
+  >;
+  signedIn: boolean;
+  preview: boolean;
+}
+
+const { context, product, related, info, preorder, signedIn, preview } =
+  Astro.props;
+const description = plainDescription(product.description);
+const information = [
+  ...(info.ingredients.enabled
+    ? [{ label: 'Ingredients', content: info.ingredients.content }]
+    : []),
+  ...(info.allergens.enabled
+    ? [{ label: 'Allergens', content: info.allergens.content }]
+    : []),
+  ...(info.storage.enabled
+    ? [{ label: 'Storage & Care', content: info.storage.content }]
+    : []),
+  ...info.custom
+    .filter((entry) => entry.enabled)
+    .map((entry) => ({ label: entry.title, content: entry.content })),
+];
+---
+
+<div class="em-shop em-product-page" data-template="editorial-market-product">
+  <section class="em-product-primary" data-editor-section="product">
+    <ProductGallery product={product} />
+    <div class="em-product-summary">
+      <h1>{product.name}</h1>
+      <p class="em-product-vendor">From {context.name}</p>
+      <p id="product-current-price" class="product-price" aria-live="polite">
+        {priceLabel(
+          product.variants.filter(
+            (variant) => variant.id === Astro.url.searchParams.get('variant'),
+          ).length
+            ? product.variants.filter(
+                (variant) =>
+                  variant.id === Astro.url.searchParams.get('variant'),
+              )
+            : product.variants,
+        )}
+      </p>
+      <p class="product-description">{description}</p>
+      <ProductPurchase
+        presentation="editorial-market"
+        priceTarget="product-current-price"
+        priceFallback={priceLabel(product.variants)}
+        initialVariantId={Astro.url.searchParams.get('variant') ?? undefined}
+        storefrontId={context.storefrontId ?? ''}
+        variants={product.variants}
+        signedIn={signedIn}
+        fixture={context.source === 'fixture'}
+        occurrenceId={preorder.selected?.id}
+        availability={preorder.availability}
+        preview={preview}
+        client:load
+      />
+      <ProductMarketSelector
+        storefrontId={context.storefrontId ?? ''}
+        occurrences={preorder.occurrences}
+        selected={preorder.selected}
+        unavailable={preorder.unavailable}
+        preview={preview}
+        client:load
+      />
+    </div>
+  </section>
+
+  <ProductInformationTabs
+    description={description}
+    fields={information}
+    client:load
+  />
+
+  {related.length > 0 &&
+    context.appearance?.vendor?.relatedEnabled !== false && (
+      <section class="em-product-related" data-editor-section="related">
+        <h2>You might also like</h2>
+        <ProductCards
+          theme="editorial-market"
+          items={related}
+          shop
+          sellerName={context.name}
+          storefrontId={context.storefrontId}
+          occurrenceId={preorder.selected?.id}
+          availability={preorder.availability}
+          preview={preview}
+        />
+      </section>
+    )}
+</div>

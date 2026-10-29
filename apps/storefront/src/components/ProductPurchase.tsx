@@ -18,6 +18,7 @@ export function ProductPurchase({
   priceTarget,
   priceFallback = '',
   preview = false,
+  presentation = 'default',
 }: {
   storefrontId: string;
   variants: PublicProduct['variants'];
@@ -29,6 +30,7 @@ export function ProductPurchase({
   priceTarget?: string;
   priceFallback?: string;
   preview?: boolean;
+  presentation?: 'default' | 'editorial-market';
 }) {
   const {
     variantId,
@@ -58,9 +60,14 @@ export function ProductPurchase({
     priceFallback,
     preview,
   });
+  const editorial = presentation === 'editorial-market';
   return (
-    <form className="purchase-form" aria-busy={pending} onSubmit={submit}>
-      <div className="field">
+    <form
+      className={`purchase-form${editorial ? ' em-product-purchase' : ''}`}
+      aria-busy={pending}
+      onSubmit={submit}
+    >
+      <div className="field" hidden={editorial && variants.length === 1}>
         <label htmlFor="product-variant">Product option</label>
         <Select
           id="product-variant"
@@ -97,24 +104,60 @@ export function ProductPurchase({
           {formatMoney(selected.priceWithTax, selected.currencyCode)}
         </p>
       )}
-      <div className="field">
+      <div className="field em-product-quantity-field">
         <label htmlFor="product-quantity">Quantity</label>
-        <Input
-          id="product-quantity"
-          type="number"
-          inputMode="numeric"
-          min="1"
-          max={Math.max(1, maximum)}
-          step="1"
-          required
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          disabled={pending}
-        />
+        {editorial ? (
+          <div className="em-product-quantity vendor-cart-quantity">
+            <Button
+              className="em-product-quantity-button"
+              variant="secondary"
+              aria-label="Decrease quantity"
+              disabled={pending || Number(quantity) <= 1}
+              onClick={() => setQuantity(String(Number(quantity) - 1))}
+            >
+              −
+            </Button>
+            <Input
+              id="product-quantity"
+              type="number"
+              inputMode="numeric"
+              min="1"
+              max={Math.max(1, maximum)}
+              step="1"
+              required
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              disabled={pending}
+            />
+            <Button
+              className="em-product-quantity-button"
+              variant="secondary"
+              aria-label="Increase quantity"
+              disabled={pending || Number(quantity) >= maximum}
+              onClick={() => setQuantity(String(Number(quantity) + 1))}
+            >
+              +
+            </Button>
+          </div>
+        ) : (
+          <Input
+            id="product-quantity"
+            type="number"
+            inputMode="numeric"
+            min="1"
+            max={Math.max(1, maximum)}
+            step="1"
+            required
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            disabled={pending}
+          />
+        )}
       </div>
       <Button
         type="submit"
         variant="primary"
+        className={editorial ? 'em-product-add' : undefined}
         disabled={
           pending ||
           !selected ||
@@ -153,7 +196,7 @@ export function ProductPurchase({
           </a>
         </p>
       )}
-      {eligible && (
+      {eligible && !editorial && (
         <p role="status">
           Available for this market
           {maximum < 2147483647 ? `, up to ${maximum} available` : ''}.

@@ -11,7 +11,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "test:storefront:websites": "vitest run tests/website-library.test.tsx --reporter=default",
+    "test:storefront:websites": "vitest run tests/website-library.test.tsx tests/editorial-market.test.tsx --reporter=default",
     "demo:market-operations:website-audit": "npm --prefix ../farmers-market-platform run demo:market-operations:website-audit --",
     "test:storefront:shop": "tsx scripts/test-storefront-shop.ts",
     "demo:market-operations:storefront-shop-fixtures": "tsx scripts/demo-market-operations.ts storefront-shop-fixtures",
@@ -74,6 +74,7 @@
     "demo:market-operations:serve": "tsx scripts/demo-market-operations.ts serve",
     "demo:market-operations:worker": "tsx scripts/demo-market-operations.ts worker",
     "demo:market-operations:migrate": "tsx scripts/demo-market-operations.ts migrate",
+    "demo:market-operations:editorial-assets": "tsx scripts/demo-market-operations.ts editorial-assets",
     "demo:market-operations:manna-pos": "tsx scripts/manna-roots-pos.ts",
     "demo:market-operations:start-day": "tsx scripts/demo-market-operations.ts start-day",
     "demo:market-operations:verify": "tsx scripts/demo-market-operations.ts verify",
@@ -187,4 +188,3 @@
     "vitest": "5.0.3"
   }
 }
-
