@@ -40,8 +40,8 @@ const timezones = [
     <form method="post" action="/api/account">
       <input type="hidden" name="action" value="requestEmailProof" />
       <p>
-        Verify your email to enable email recovery and private email
-        notifications.
+        Optional email verification allows recovery without an additional SMS
+        code. Your verified personal phone can also protect password recovery.
       </p>
       <Button type="submit">Send optional email verification</Button>
     </form>
@@ -51,77 +51,17 @@ const timezones = [
       Check your email for a verification link.
     </p>
   )}
-  <nav
-    class={cardClassName({ className: 'account-modes' })}
-    aria-label="Account modes"
-  >
-    <a
-      class={buttonClassName({
-        variant: 'secondary',
-        className: 'button secondary',
-      })}
-      href="/account"
-      aria-current="page"
-    >
-      Customer
-    </a>
+  <div class={cardClassName({ className: 'account-modes' })}>
+    <p>Use the account menu to switch among your authorized workspaces.</p>
     {(['VENDOR', 'MARKET_MANAGER'] as const).map((role) => {
       const businesses = account.contexts.affiliations.filter(
         (a) => a.mode === role,
       );
       return (
         <div>
-          {businesses.length && process.env.ADMIN_ORIGIN ? (
-            <div>
-              <p>{labels[role]}</p>
-              {businesses.length > 1 && (
-                <div data-business-picker>
-                  <label for={`account-business-${role}`}>
-                    {role === 'VENDOR'
-                      ? 'Vendor business'
-                      : 'Market organization'}
-                  </label>
-                  <select
-                    id={`account-business-${role}`}
-                    class={selectClassName()}
-                    data-business-choice
-                  >
-                    {businesses.map((a) => (
-                      <option
-                        value={`${process.env.ADMIN_ORIGIN}/${role === 'VENDOR' ? 'vendor' : 'market'}?channel=${encodeURIComponent(a.channelId)}`}
-                      >
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                  <a
-                    class={buttonClassName({
-                      variant: 'primary',
-                      className: 'button',
-                    })}
-                    data-selected-workspace
-                    href={`${process.env.ADMIN_ORIGIN}/${role === 'VENDOR' ? 'vendor' : 'market'}?channel=${encodeURIComponent(businesses[0]!.channelId)}`}
-                  >
-                    Open selected {labels[role]} mode
-                  </a>
-                </div>
-              )}
-              {businesses.map((a) => (
-                <a
-                  class={buttonClassName({
-                    variant: 'secondary',
-                    className: 'button secondary',
-                  })}
-                  href={`${process.env.ADMIN_ORIGIN}/${role === 'VENDOR' ? 'vendor' : 'market'}?channel=${encodeURIComponent(a.channelId)}`}
-                >
-                  Open {labels[role]} mode: {a.name}
-                </a>
-              ))}
-            </div>
-          ) : businesses.length ? (
+          {businesses.length ? (
             <p>
-              {labels[role]} access is authorized. Dashboard routing is
-              currently unavailable.
+              {labels[role]} access: {businesses.map((a) => a.name).join(', ')}
             </p>
           ) : (
             <a
@@ -161,7 +101,7 @@ const timezones = [
         </div>
       );
     })}
-  </nav>
+  </div>
   {Astro.url.searchParams.has('saved') && (
     <p class="alert ui-alert ui-alert-info" role="status">
       Your changes were saved.
@@ -332,18 +272,5 @@ const timezones = [
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if ([...select.options].some((option) => option.value === zone))
       select.value = zone;
-  }
-</script>
-<script>
-  for (const picker of document.querySelectorAll('[data-business-picker]')) {
-    const select = picker.querySelector<HTMLSelectElement>(
-      '[data-business-choice]',
-    );
-    const link = picker.querySelector<HTMLAnchorElement>(
-      '[data-selected-workspace]',
-    );
-    select?.addEventListener('change', () => {
-      if (link) link.href = select.value;
-    });
   }
 </script>

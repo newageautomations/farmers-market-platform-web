@@ -25,6 +25,15 @@ if (
     'willow-fixtures',
     'grant-willow-crm',
     'editorial-assets',
+    'phase-a-fixtures',
+    'packing-preorders',
+    'attendance-today',
+    'attendance-fixtures',
+    'scheduling-fixtures',
+    'phase-d-fixtures',
+    'phase-c-fixtures',
+    'phase-b-fixtures',
+    'inspect',
   ].includes(action)
 )
   Object.assign(
@@ -61,6 +70,15 @@ if (['admin', 'storefront'].includes(action)) {
       'willow-fixtures',
       'grant-willow-crm',
       'editorial-assets',
+      'phase-a-fixtures',
+      'packing-preorders',
+      'attendance-today',
+      'attendance-fixtures',
+    'scheduling-fixtures',
+      'phase-d-fixtures',
+      'phase-c-fixtures',
+      'phase-b-fixtures',
+      'inspect',
       'test',
     ].includes(action)
   )

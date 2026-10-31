@@ -1,3 +1,4 @@
+import { safeAdminDestination } from '@market/config';
 import type { APIContext } from 'astro';
 import { randomBytes } from 'node:crypto';
 import { AppError } from '@market/api';
@@ -14,11 +15,14 @@ export interface CentralAccountData {
     needsPassword?: boolean;
   };
   contexts: {
+    platformAdministrator?: boolean;
+    principalId?: string;
     affiliations: Array<{
       mode: 'VENDOR' | 'MARKET_MANAGER';
       id: number;
       name: string;
       channelId: string;
+      canApply?: boolean;
     }>;
     onboarding: Array<{
       role: string;
@@ -133,17 +137,26 @@ export async function accountBridge<T>(
   }
   return response.json() as Promise<T>;
 }
-export function setCentral(context: APIContext, value: string) {
-  context.cookies.set('platform-account', value, {
-    httpOnly: true,
-    secure: new URL(accountOrigin()).protocol === 'https:',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 604800,
-  });
-}
 export function safeAccountReturn(value: string | null | undefined) {
-  return value && /^\/(account|apply(?:\/[a-zA-Z0-9-]{1,80})?)$/.test(value)
+  if (
+    value &&
+    value.length <= 1024 &&
+    /^\/(?:account(?:\/(?:orders(?:\/[1-9]\d*)?|settings|communications|markets|vendors|loyalty|workspaces|onboarding\/(?:vendor|market)))?|notifications)(?:\?[A-Za-z0-9_%=&.+:-]*)?$/.test(
+      value,
+    )
+  )
+    return value;
+  if (
+    value &&
+    /^\/vendor\/application-return\?(?:draft=[1-9]\d*|claim=[1-9]\d*|slug=[a-zA-Z0-9-]{1,80})(?:&vendor=[1-9]\d*)?$/.test(
+      value,
+    )
+  )
+    return value;
+  return value &&
+    /^\/(account|apply(?:\/[a-zA-Z0-9-]{1,80})?)(?:\?draft=[1-9]\d*)?$/.test(
+      value,
+    )
     ? value
     : '/account';
 }
@@ -158,33 +171,46 @@ export function setUnifiedCentral(context: APIContext, value: string) {
 }
 /** Admin authority stays with the existing handoff. A denied workspace return
  * can still use its validated personal account, without acquiring Admin grants. */
+export async function defaultAccountDestination(central: string) {
+  const account = await accountBridge<CentralAccountData>({
+    action: 'centralProfile',
+    central,
+  });
+  if (!account.profile.phoneVerified) return '/account/phone';
+  return account.contexts.affiliations.length ||
+    account.contexts.platformAdministrator
+    ? '/account/workspaces'
+    : '/account';
+}
 export async function authorizeUnifiedAccount(
   central: string,
   origin: string,
   correlation: string,
+  destination = '/',
+  principal = '',
 ) {
+  if (origin === process.env.ADMIN_ORIGIN && destination === '/')
+    return { central, callback: await defaultAccountDestination(central) };
+  if (origin === process.env.ADMIN_ORIGIN && !safeAdminDestination(destination))
+    throw new Error('Invalid destination');
   try {
     return await accountBridge<{ central: string; callback: string }>({
       action: 'unifiedAuthorize',
       central,
       origin,
       correlation,
+      destination,
+      principal,
     });
   } catch (error) {
     if (
       origin !== process.env.ADMIN_ORIGIN ||
-      !/^[A-Za-z0-9_-]{43}$/.test(correlation) ||
       !(error instanceof AccountBridgeError) ||
-      error.status !== 400 ||
-      error.code !== 'ACCOUNT_LINK_INVALID_OR_UNAVAILABLE'
+      error.status !== 400
     )
       throw error;
-    const account = await accountBridge<CentralAccountData>({
-      action: 'centralProfile',
-      central,
-    });
-    if (!account.profile.phoneVerified) throw error;
-    return { central, callback: '/account' };
+    await accountBridge({ action: 'centralProfile', central });
+    return { central, callback: '/account/workspaces?unavailable=1' };
   }
 }
 export async function centralSignIn(
@@ -193,31 +219,36 @@ export async function centralSignIn(
       storefront?: import('@market/storefront-core').StorefrontContext;
     };
   },
-  unified = false,
   returnTo = '/account',
+  entry: 'login' | 'signup' | 'vendor-applications' = 'login',
 ) {
   const origin = context.locals.storefront?.canonicalOrigin;
   if (!origin) throw new AppError('forbidden');
   const correlation = randomBytes(32).toString('base64url');
+  const continuationAge =
+    entry !== 'login' ||
+    returnTo.startsWith('/apply') ||
+    returnTo.startsWith('/account/applications')
+      ? 1800
+      : 120;
   context.cookies.set('account-correlation', correlation, {
     httpOnly: true,
     secure: context.url.protocol === 'https:',
     sameSite: 'lax',
     path: '/auth/callback',
-    maxAge: 120,
+    maxAge: continuationAge,
   });
-  if (unified)
-    context.cookies.set('account-return', safeAccountReturn(returnTo), {
-      httpOnly: true,
-      secure: context.url.protocol === 'https:',
-      sameSite: 'lax',
-      path: '/auth/callback',
-      maxAge: 120,
-    });
-  const target = new URL(
-    unified ? '/account/login' : '/account/sign-in',
-    accountOrigin(),
-  );
+  context.cookies.set('account-return', safeAccountReturn(returnTo), {
+    httpOnly: true,
+    secure: context.url.protocol === 'https:',
+    sameSite: 'lax',
+    path: '/auth/callback',
+    maxAge: continuationAge,
+  });
+  const target = new URL(`/account/${entry}`, accountOrigin());
+  const requestedRole = context.url.searchParams.get('context');
+  if (requestedRole === 'vendor' || requestedRole === 'market')
+    target.searchParams.set('context', requestedRole);
   target.searchParams.set('origin', origin);
   target.searchParams.set('correlation', correlation);
   return target.toString();

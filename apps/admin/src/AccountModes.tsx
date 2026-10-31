@@ -11,14 +11,14 @@ export function AccountModes({
   endpoint,
   channelToken,
   context,
-  onSwitch,
   customerOrigin,
   accountOrigin,
+  principalId,
 }: {
   endpoint: string;
   channelToken: string;
   context: AdminContext;
-  onSwitch: (channelId: string) => void;
+  principalId?: string;
   customerOrigin?: string;
   accountOrigin?: string;
 }) {
@@ -38,6 +38,7 @@ export function AccountModes({
     };
   }, [endpoint, channelToken]);
   const personalOrigin = accountOrigin ?? customerOrigin;
+  const expectedPrincipal = account?.principalId ?? principalId;
   if (!account)
     return personalOrigin ? (
       <a
@@ -45,7 +46,13 @@ export function AccountModes({
           variant: 'secondary',
           className: 'button secondary',
         })}
-        href={new URL('/account/login', personalOrigin).toString()}
+        href={new URL(
+          '/account/login?returnTo=/account' +
+            (expectedPrincipal
+              ? '&principal=' + encodeURIComponent(expectedPrincipal!)
+              : ''),
+          personalOrigin,
+        ).toString()}
       >
         Your account
       </a>
@@ -70,13 +77,9 @@ export function AccountModes({
       )
     )
       return;
-    window.history.replaceState(
-      null,
-      '',
-      `/${business.mode === 'VENDOR' ? 'vendor' : 'market'}?channel=${encodeURIComponent(channelId)}`,
+    window.location.assign(
+      `/${business.mode === 'VENDOR' ? 'vendor' : 'market'}?channel=${encodeURIComponent(channelId)}&account=1&principal=${encodeURIComponent(expectedPrincipal ?? '')}`,
     );
-    window.dispatchEvent(new PopStateEvent('popstate'));
-    onSwitch(channelId);
   }
   return (
     <div className="account-mode-controls">
@@ -86,7 +89,13 @@ export function AccountModes({
             variant: 'secondary',
             className: 'button secondary',
           })}
-          href={new URL('/account/login', personalOrigin).toString()}
+          href={new URL(
+            '/account/login?returnTo=/account' +
+              (expectedPrincipal
+                ? '&principal=' + encodeURIComponent(expectedPrincipal!)
+                : ''),
+            personalOrigin,
+          ).toString()}
         >
           Your account
         </a>
@@ -101,7 +110,7 @@ export function AccountModes({
           ...(account.affiliations.some((a) => a.mode === 'MARKET_MANAGER')
             ? [{ value: 'MARKET_MANAGER', label: 'Market Manager' }]
             : []),
-          ...(context.scope === 'PLATFORM'
+          ...(account.platformAdministrator
             ? [{ value: 'PLATFORM', label: 'Platform' }]
             : []),
         ]}
@@ -116,7 +125,28 @@ export function AccountModes({
             )
               return;
             window.location.assign(
-              new URL('/account/login', personalOrigin).toString(),
+              new URL(
+                '/account/login?returnTo=/account' +
+                  (expectedPrincipal
+                    ? '&principal=' + encodeURIComponent(expectedPrincipal!)
+                    : ''),
+                personalOrigin,
+              ).toString(),
+            );
+            return;
+          }
+          if (value === 'PLATFORM' && account.platformAdministrator) {
+            if (
+              !window.dispatchEvent(
+                new Event('storefront-editor:before-exit', {
+                  cancelable: true,
+                }),
+              )
+            )
+              return;
+            window.location.assign(
+              '/platform?account=1&principal=' +
+                encodeURIComponent(expectedPrincipal ?? ''),
             );
             return;
           }

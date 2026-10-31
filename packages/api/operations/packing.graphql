@@ -1,0 +1,9 @@
+query VendorPackingOccurrences {
+  ownPackingOccurrences
+}
+query VendorMarketPacking($occurrenceId: Int!) {
+  ownMarketPacking(occurrenceId: $occurrenceId)
+}
+mutation UpdateVendorMarketPacking($input: VendorPackingCommandInput!) {
+  updateOwnMarketPacking(input: $input)
+}

@@ -66,10 +66,17 @@ Astro.response.headers.set('Cache-Control', 'private, no-store');
               type="password"
               autocomplete="new-password"
               minlength="12"
-              maxlength="128"
+              maxlength="72"
               required
             />
           </label>
+        )}
+        {account.profile.needsPassword && (
+          <p>
+            Use 12 to 72 English letters, numbers and keyboard symbols,
+            including an uppercase letter, a number and a special character,
+            without spaces.
+          </p>
         )}
         <Button type="submit" variant="primary">
           Verify personal phone

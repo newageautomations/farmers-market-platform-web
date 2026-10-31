@@ -4,9 +4,8 @@ import {
   type AdminUser,
   type Permission,
   createAdminApi,
-  createShopApi,
+  createPlatformAccountApi,
   safeError,
-  type CustomerUser,
 } from '@market/api';
 export type SessionState =
   | { status: 'loading' }
@@ -44,43 +43,9 @@ export function createAdminSession(endpoint: string) {
         throw safe;
       }
     },
-    async login(username: string, password: string) {
-      const result = await createAdminApi({ endpoint }).login({
-        username,
-        password,
-        rememberMe: false,
-      });
-      if (result.login.__typename !== 'CurrentUser')
-        throw new AppError('authentication');
-      return authenticatedSession(result.login);
-    },
-    async logout() {
-      const result = await createAdminApi({ endpoint }).logout();
-      if (!result.logout.success) throw new AppError('unknown');
-    },
-  };
-}
-export type CustomerSessionState =
-  | { status: 'loading' }
-  | { status: 'anonymous' }
-  | { status: 'authenticated'; user: CustomerUser }
-  | { status: 'error'; error: AppError };
-export function createCustomerSession(endpoint: string, channelToken: string) {
-  const api = createShopApi({ endpoint, channelToken });
-  const state = (user: CustomerUser | null): CustomerSessionState =>
-    user ? { status: 'authenticated', user } : { status: 'anonymous' };
-  return {
-    async restore() {
-      return state((await api.session()).me);
-    },
-    async login(username: string, password: string) {
-      const result = await api.login({ username, password, rememberMe: false });
-      if (result.login.__typename !== 'CurrentUser')
-        throw new AppError('authentication');
-      return state(result.login);
-    },
-    async logout() {
-      if (!(await api.logout()).logout.success) throw new AppError('unknown');
+    async logout(everywhere = true) {
+      if (!(await createPlatformAccountApi({ endpoint }).signOut(everywhere)))
+        throw new AppError('unknown');
     },
   };
 }

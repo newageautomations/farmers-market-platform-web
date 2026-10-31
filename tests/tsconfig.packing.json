@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "../apps/admin/src/vendor/packing.tsx",
+    "../apps/admin/src/vendor/VendorRoutes.tsx",
+    "../tests/packing.test.tsx",
+    "../tests/setup.ts"
+  ],
+  "exclude": ["../node_modules", "../**/dist"]
+}

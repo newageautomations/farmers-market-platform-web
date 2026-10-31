@@ -1,0 +1,301 @@
+.attendance-workspace {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+  --ui-control-height: 44px;
+}
+.attendance-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0fr);
+  column-gap: 0;
+  row-gap: 1.5rem;
+  transition:
+    grid-template-columns 220ms ease,
+    column-gap 220ms ease;
+  min-width: 0;
+  align-items: start;
+}
+.attendance-columns.has-selection {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  column-gap: 1.5rem;
+}
+.attendance-columns > *,
+.attendance-inspector {
+  min-width: 0;
+}
+.attendance-inspector,
+.attendance-appearance {
+  padding: clamp(1rem, 2vw, 1.75rem);
+  overflow-wrap: anywhere;
+}
+.attendance-inspector,
+.attendance-inspector fieldset {
+  display: grid;
+  gap: 1rem;
+}
+.attendance-inspector fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.attendance-workspace .ui-actions {
+  flex-wrap: wrap;
+}
+.attendance-workspace h2 {
+  margin: 0;
+  text-transform: none;
+}
+.attendance-workspace dl {
+  margin: 0;
+}
+.attendance-workspace dt {
+  font-weight: 500;
+}
+.attendance-workspace dd {
+  margin: 0.5rem 0 0;
+  font-size: 1.75rem;
+}
+.attendance-workspace dl > div {
+  padding: 1.25rem;
+}
+.attendance-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+}
+.attendance-filters > .field {
+  flex: 1 1 10rem;
+}
+@media (max-width: 1100px) {
+  .attendance-columns,
+  .attendance-columns.has-selection {
+    transition: none;
+    column-gap: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .attendance-inspector {
+    grid-row: 1;
+  }
+}
+
+.attendance-sort {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.attendance-sort:hover,
+.attendance-sort:focus-visible,
+.attendance-sort[aria-pressed='true'] {
+  text-decoration: underline;
+}
+.attendance-workspace td:first-child .button {
+  justify-content: flex-start;
+  text-align: left;
+}
+.attendance-record-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.attendance-record-grid > * {
+  min-width: 0;
+  padding: 1rem;
+}
+.attendance-record-grid > article > .button,
+.attendance-record-grid > li > .button {
+  width: 100%;
+  text-align: left;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.attendance-map-card,
+.attendance-vendors-card {
+  padding: 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+}
+@media (max-width: 700px) {
+  .attendance-record-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.attendance-map-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.attendance-workspace .attendance-table .attendance-sort.ui-button,
+.attendance-workspace
+  .attendance-table
+  .attendance-sort.ui-button:is(:hover, :focus-visible) {
+  position: relative;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  min-height: 0;
+  height: auto;
+  transform: none;
+  color: inherit;
+  text-decoration: none;
+}
+.attendance-sort::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.2rem;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s ease;
+}
+.attendance-sort:is(:hover, :focus-visible, [aria-pressed='true'])::after {
+  transform: scaleX(1);
+}
+.attendance-workspace .attendance-table :is(th, td) {
+  padding-block: 0.35rem;
+}
+.attendance-workspace .attendance-check-in {
+  min-height: 0;
+  height: auto;
+  padding: 0.3rem 0.7rem;
+  line-height: 1.35;
+  font-size: 0.85rem;
+}
+.attendance-workspace td:first-child .button {
+  min-height: 0;
+  height: auto;
+  padding-block: 0.22rem;
+}
+.attendance-workspace .attendance-table-message {
+  height: 7rem;
+  text-align: center;
+  vertical-align: middle;
+}
+.attendance-table-message .progress {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+.attendance-workspace > .application-quick-views {
+  margin-bottom: -1rem;
+  display: flex;
+}
+.attendance-reveal {
+  animation: attendance-table-reveal 240ms ease-out;
+  transform-origin: top;
+}
+@keyframes attendance-table-reveal {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+.attendance-assignment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  grid-column: 1 / -1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .attendance-sort::after {
+    transition: none;
+  }
+  .attendance-reveal {
+    animation: none;
+  }
+}
+
+.attendance-business-selector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+.attendance-business-selector > .ops-field {
+  flex: 1 1 18rem;
+}
+
+.attendance-record-grid .booth-state {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.attendance-record-grid .booth-state.unassigned {
+  background: var(--status-danger-bg);
+  color: var(--status-danger-fg);
+}
+
+.attendance-detail-shell {
+  min-width: 0;
+  overflow: clip;
+  animation: attendance-panel-open 220ms ease-out both;
+}
+.attendance-detail-shell.is-closing {
+  animation: attendance-panel-close 220ms ease-in both;
+  pointer-events: none;
+}
+.attendance-inspector > .ui-actions:first-child {
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+.attendance-inspector > .ui-actions:first-child > h2 {
+  min-width: 0;
+}
+@keyframes attendance-panel-open {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes attendance-panel-close {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+@media (max-width: 1100px) {
+  .attendance-columns > .attendance-detail-shell {
+    grid-row: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .attendance-detail-shell,
+  .attendance-detail-shell.is-closing {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attendance-columns {
+    transition: none;
+  }
+}

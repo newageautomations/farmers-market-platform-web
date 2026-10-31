@@ -221,6 +221,7 @@ for (const api of ['shop', 'admin'] as const) {
     );
   if (api === 'admin')
     extensions.push(
+      extract('src/plugins/market-operations/packing.api.ts', 'packingSchema'),
       extract('src/plugins/platform-identity/api.ts', 'identityAdminSchema'),
       extract(
         'src/plugins/marketplace-commerce/vendor-categories.ts',

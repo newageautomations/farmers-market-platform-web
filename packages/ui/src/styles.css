@@ -949,7 +949,7 @@ td {
   padding: clamp(1rem, 3vw, 2rem);
   min-width: 0;
 }
-.ops-workspace button:not(.ui-button),
+.ops-workspace button:not(.ui-button):where(:not([role='tab'])),
 .ops-public button:not(.ui-button),
 .ops-map button:not(.ui-button) {
   min-height: 44px;
@@ -961,7 +961,7 @@ td {
   cursor: pointer;
   font: inherit;
 }
-.ops-workspace button:not(.ui-button):disabled,
+.ops-workspace button:not(.ui-button):where(:not([role='tab'])):disabled,
 .ops-public button:not(.ui-button):disabled {
   opacity: 0.6;
   cursor: default;
@@ -2488,4 +2488,12 @@ select:not([multiple]):is([size='0'], [size='1']):open {
 /* Fill-only selection for editor tools; retain pressed semantics and shared focus. */
 .button.button-selection-fill[aria-pressed='true'] {
   text-decoration: none;
+}
+
+/* Applicant feature layout only. Surfaces, fields and actions retain shared contracts. */
+.applicant-applications,
+.applicant-application-list {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
 }

@@ -9,6 +9,7 @@ import {
   AccountBridgeError,
   accountBridge,
   isCentral,
+  safeAccountReturn,
   type CentralAccountData,
 } from './account';
 import { requestCheckout, requestCustomerDashboard } from './shop';
@@ -59,7 +60,11 @@ export function customerApi(
     accountBridge<T>({ action, central: capability, ...data });
   const merchant = () => requestCustomerDashboard(context, headers);
   const checkout = () => requestCheckout(context, headers);
-  let login = '/account/login';
+  const login =
+    '/account/login?returnTo=' +
+    encodeURIComponent(
+      safeAccountReturn(context.url.pathname + context.url.search),
+    );
   return {
     get login() {
       return login;
@@ -67,7 +72,6 @@ export function customerApi(
     profile: async () => {
       if (!central) return checkout().profile();
       const data = await bridge<CentralAccountData>('centralProfile');
-      if (!data.profile.phoneVerified) login = '/account/phone';
       return data.profile.phoneVerified ? data.profile : null;
     },
     contexts: async () =>

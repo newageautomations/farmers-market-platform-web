@@ -8,6 +8,8 @@ export interface Viewport extends Point {
   scale: number;
 }
 export interface Drawing {
+  physicalBoothIds?: Record<string, number | null>;
+  confirmPhysicalBoothChanges?: boolean;
   definition: MapDefinition;
   spaces: Record<string, SpaceDetails>;
 }
@@ -147,6 +149,7 @@ export function geometry(d: Drawing, changed: MapElement[]): Drawing {
         depthFeet: e.height / d.definition.pixelsPerFoot,
       };
   return {
+    ...d,
     definition: {
       ...d.definition,
       elements: d.definition.elements.map((e) => updates.get(e.id) ?? e),
@@ -270,6 +273,7 @@ export function remove(d: Drawing, ids: string[]): Drawing {
     .filter((e) => ids.includes(e.id) && !e.locked)
     .map((e) => e.id);
   return {
+    ...d,
     definition: {
       ...d.definition,
       elements: d.definition.elements.filter((e) => !allowed.includes(e.id)),
@@ -277,6 +281,15 @@ export function remove(d: Drawing, ids: string[]): Drawing {
     spaces: Object.fromEntries(
       Object.entries(d.spaces).filter(([id]) => !allowed.includes(id)),
     ),
+    ...(d.physicalBoothIds
+      ? {
+          physicalBoothIds: Object.fromEntries(
+            Object.entries(d.physicalBoothIds).filter(
+              ([id]) => !allowed.includes(id),
+            ),
+          ),
+        }
+      : {}),
   };
 }
 export function group(d: Drawing, ids: string[], groupId?: string): Drawing {
@@ -441,6 +454,7 @@ export function copies(
     });
   return {
     drawing: {
+      ...target,
       definition: {
         ...target.definition,
         elements: [...target.definition.elements, ...elements],
@@ -499,7 +513,7 @@ export function syncBooths(
     spaces[e.id] = s;
     return next;
   });
-  return { definition: { ...d.definition, elements }, spaces };
+  return { ...d, definition: { ...d.definition, elements }, spaces };
 }
 export function pathElement(
   points: Point[],

@@ -1,0 +1,118 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import { buttonClassName, selectClassName } from '@market/ui/presentation';
+import {
+  accountBridge,
+  isCentral,
+  accountOrigin,
+  type CentralAccountData,
+} from '../../lib/account';
+if (!isCentral(Astro.url))
+  return Astro.redirect(
+    new URL('/account/vendor-applications', accountOrigin()).toString(),
+  );
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+const origin = Astro.url.searchParams.get('origin'),
+  correlation = Astro.url.searchParams.get('correlation');
+if (origin && correlation && /^[A-Za-z0-9_-]{43}$/.test(correlation)) {
+  try {
+    await accountBridge({ action: 'unifiedTarget', origin });
+    Astro.cookies.delete('account-signup-return', { path: '/' });
+    Astro.cookies.set(
+      'vendor-application-continuation',
+      JSON.stringify({ origin, correlation }),
+      {
+        httpOnly: true,
+        secure: Astro.url.protocol === 'https:',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 1800,
+      },
+    );
+  } catch {
+    return new Response('Vendor application access unavailable.', {
+      status: 400,
+    });
+  }
+}
+const pending = Astro.cookies.get('vendor-application-continuation')?.value;
+let account: CentralAccountData | null = null;
+try {
+  account = await accountBridge<CentralAccountData>({
+    action: 'centralProfile',
+    central: Astro.cookies.get('platform-unified-account')?.value ?? '',
+  });
+} catch {
+  /* Offer the established sign-in and signup actions. */
+}
+const vendors = (account?.contexts.affiliations ?? []).filter(
+  (a) => a.mode === 'VENDOR' && a.canApply,
+);
+---
+
+<SiteLayout title="Vendor application access" noindex>
+  <section class="py-12 account-panel">
+    <h1>Continue with a Vendor business</h1>
+    {!pending ? (
+      <p>
+        Return to the market invitation or resume your draft from Vendor
+        Applications.
+      </p>
+    ) : !account ? (
+      <>
+        <p>
+          Create a verified account and complete Vendor onboarding, or sign in
+          to select an existing authorized business.
+        </p>
+        <div class="actions">
+          <a
+            class={buttonClassName({ variant: 'primary' })}
+            href="/account/signup?context=vendor"
+          >
+            Create a Vendor account
+          </a>
+          <a
+            class={buttonClassName({ variant: 'secondary' })}
+            href="/account/login?context=vendor"
+          >
+            Sign in with my Vendor account
+          </a>
+        </div>
+      </>
+    ) : !account.profile.phoneVerified ? (
+      <a class={buttonClassName({ variant: 'primary' })} href="/account/phone">
+        Verify your account
+      </a>
+    ) : vendors.length ? (
+      <form method="post" action="/api/vendor-application-access">
+        <label class="field">
+          Vendor business
+          <select class={selectClassName()} name="vendorId" required>
+            {vendors.map((v) => (
+              <option value={v.id}>{v.name}</option>
+            ))}
+          </select>
+        </label>
+        <Button type="submit" variant="primary">
+          Continue with this Vendor
+        </Button>
+      </form>
+    ) : (
+      <>
+        <p>
+          Your account does not own an active authorized Vendor business.
+          Complete Vendor onboarding before managing or claiming applications.
+          Your anonymous application remains submitted.
+        </p>
+        <a
+          class={buttonClassName({ variant: 'primary' })}
+          href="/account/onboarding/vendor"
+        >
+          Complete Vendor onboarding
+        </a>
+      </>
+    )}
+  </section>
+</SiteLayout>

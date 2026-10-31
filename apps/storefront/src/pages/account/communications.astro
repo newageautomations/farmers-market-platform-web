@@ -15,7 +15,8 @@ try {
 } catch (e) {
   error = safeError(e);
 }
-if (!profile) return Astro.redirect('/account/login');
+if (!profile)
+  return Astro.redirect('/account/login?returnTo=/account/communications');
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 ---

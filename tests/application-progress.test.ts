@@ -96,3 +96,42 @@ it('refuses a different account, origin, destination and expired draft', () => {
   expect(() => saveProgressBinding(c, '//foreign.invalid', '7')).toThrow();
   expect(safeAccountReturn('/apply/season?redirect=foreign')).toBe('/account');
 });
+it('allows only bounded applicant and draft continuation destinations', () => {
+  expect(safeAccountReturn('/account/applications/claim/42')).toBe('/account');
+  expect(safeAccountReturn('/account/applications/drafts/42')).toBe('/account');
+  expect(safeAccountReturn('/apply/season?draft=42')).toBe(
+    '/apply/season?draft=42',
+  );
+  for (const path of [
+    '//foreign.invalid',
+    '/account/applications/claim/0',
+    '/apply/season?draft=42&redirect=foreign',
+    '/account/applications/../settings',
+  ])
+    expect(safeAccountReturn(path)).toBe('/account');
+});
+
+it('preserves only bounded Vendor continuation destinations', () => {
+  expect(
+    safeAccountReturn('/vendor/application-return?draft=42&vendor=4'),
+  ).toBe('/vendor/application-return?draft=42&vendor=4');
+  expect(safeAccountReturn('/vendor/application-return?claim=42')).toBe(
+    '/vendor/application-return?claim=42',
+  );
+  expect(
+    safeAccountReturn(
+      '/vendor/application-return?draft=42&redirect=https://evil.invalid',
+    ),
+  ).toBe('/account');
+});
+import { safeAdminReturn } from '../apps/admin/src/account-login';
+it('keeps the Vendor draft continuation through Admin sign-in without permitting external returns', () => {
+  const destination =
+    '/vendor/applications/continue?draft=42&channel=35&origin=http%3A%2F%2Fmarket.localhost%3A4321&correlation=abc';
+  expect(safeAdminReturn(destination)).toBe(destination);
+  expect(safeAdminReturn('/vendor/applications/9?channel=35')).toBe(
+    '/vendor/applications/9?channel=35',
+  );
+  expect(safeAdminReturn('//foreign.invalid')).toBeNull();
+  expect(safeAdminReturn('/account/applications')).toBeNull();
+});

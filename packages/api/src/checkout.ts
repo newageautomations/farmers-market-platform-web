@@ -119,7 +119,10 @@ export function createCheckoutApi(
           { orderId },
         )
       ).myPurchase,
-    logout: () =>
-      execute({ api: 'shop', document: shop.CustomerSignOutDocument }, {}),
+    logout: (everywhere = true) =>
+      execute(
+        { api: 'shop', document: shop.CustomerSignOutDocument },
+        { everywhere },
+      ),
   };
 }

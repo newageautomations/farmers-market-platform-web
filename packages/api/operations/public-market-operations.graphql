@@ -10,3 +10,10 @@ query PublicMarketOccurrenceMap($occurrenceId: Int!) {
 mutation SubmitMarketApplication($input: MarketApplicationSubmissionInput!) {
   submitMarketApplication(input: $input)
 }
+
+query ApplicantApplications($input: JSON) {
+  applicantApplications(input: $input)
+}
+mutation ApplicantApplicationCommand($action: String!, $input: JSON!) {
+  applicantApplicationCommand(action: $action, input: $input)
+}

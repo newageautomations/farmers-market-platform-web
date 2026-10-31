@@ -2,6 +2,7 @@ import * as shop from './generated/shop';
 import * as admin from './generated/admin';
 import { transport, type TransportOptions } from './transport';
 export * from './vendor';
+export * from './packing';
 export * from './market';
 export * from './storefront';
 export * from './market-storefront';
@@ -31,10 +32,6 @@ export function createShopApi(
   return {
     session: () =>
       execute({ api: 'shop', document: shop.ShopCustomerSessionDocument }, {}),
-    login: (variables: shop.ShopLoginMutationVariables) =>
-      execute({ api: 'shop', document: shop.ShopLoginDocument }, variables),
-    logout: () =>
-      execute({ api: 'shop', document: shop.ShopLogoutDocument }, {}),
     marketCatalog: (variables: shop.MarketCatalogQueryVariables) =>
       execute({ api: 'shop', document: shop.MarketCatalogDocument }, variables),
     vendorProducts: (variables: shop.VendorProductsQueryVariables) =>
@@ -51,10 +48,6 @@ export function createAdminApi(options: TransportOptions) {
   return {
     session: () =>
       execute({ api: 'admin', document: admin.AdminSessionDocument }, {}),
-    login: (variables: admin.AdminLoginMutationVariables) =>
-      execute({ api: 'admin', document: admin.AdminLoginDocument }, variables),
-    logout: () =>
-      execute({ api: 'admin', document: admin.AdminLogoutDocument }, {}),
     vendorIdentity: () =>
       execute({ api: 'admin', document: admin.VendorIdentityDocument }, {}),
     marketIdentity: () =>
@@ -85,3 +78,8 @@ export * from './vendor-categories';
 export * from './product-information';
 
 export * from './contact';
+
+export * from './applicant-applications';
+export * from './application-rules';
+
+export * from './attendance';

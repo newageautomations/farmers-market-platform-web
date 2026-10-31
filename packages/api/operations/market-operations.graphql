@@ -1,8 +1,13 @@
 query OwnMarketOperations(
   $section: MarketOperationsSection!
   $occurrenceId: Int
+  $input: JSON
 ) {
-  ownMarketOperations(section: $section, occurrenceId: $occurrenceId)
+  ownMarketOperations(
+    section: $section
+    occurrenceId: $occurrenceId
+    input: $input
+  )
 }
 mutation MarketOperationsCommand($input: MarketOperationsCommand!) {
   marketOperationsCommand(input: $input)
@@ -60,4 +65,32 @@ mutation ReviewPlatformRoleOnboarding(
 }
 mutation ExchangePlatformAdminHandoff($code: String!, $correlation: String!) {
   exchangePlatformAdminHandoff(code: $code, correlation: $correlation)
+}
+
+query ApplicantApplications($input: JSON) {
+  applicantApplications(input: $input)
+}
+mutation ApplicantApplicationCommand($action: String!, $input: JSON!) {
+  applicantApplicationCommand(action: $action, input: $input)
+}
+
+query MarketAttendance($input: JSON) {
+  ownMarketAttendance(input: $input)
+}
+query VendorMarketDayAttendance($input: JSON) {
+  ownVendorAttendance(input: $input)
+}
+mutation AttendanceCommand($input: JSON!) {
+  marketAttendanceCommand(input: $input)
+}
+
+mutation VendorSelfCheckIn($occurrenceId: Int!, $expectedRevision: Int!) {
+  vendorSelfCheckIn(
+    occurrenceId: $occurrenceId
+    expectedRevision: $expectedRevision
+  )
+}
+
+mutation PlatformSignOut($everywhere: Boolean) {
+  platformSignOut(everywhere: $everywhere)
 }

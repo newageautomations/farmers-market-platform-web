@@ -10,6 +10,7 @@ afterEach(() => {
   sessionStorage.clear();
 });
 const application: PublicApplication = {
+  marketId: 1,
   slug: 'season',
   name: 'Season application',
   versionId: 1,
@@ -158,7 +159,7 @@ it('requires the permanent question before any custom questions and cannot submi
   fireEvent.submit(document.querySelector('form')!);
   await screen.findByRole('alert');
   fireEvent.click(screen.getByLabelText('Yes'));
-  await screen.findByRole('button', { name: 'Sign in to my platform account' });
+  await screen.findByRole('button', { name: 'Sign in with my Vendor account' });
   fireEvent.submit(document.querySelector('form')!);
   expect(
     fetcher.mock.calls.some(([url]) => url === '/api/market-application'),
@@ -168,14 +169,16 @@ it('requires the permanent question before any custom questions and cannot submi
 it('shows the optional invitation after submission and dismisses it without losing success', async () => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(
     async (url) =>
-      new Response('{}', {
+      new Response(JSON.stringify({ submitted: true, submissionId: 42 }), {
         status: url === '/api/application-applicant' ? 401 : 200,
       }),
   );
   const user = userEvent.setup();
   render(<MarketApplication application={application} />);
   expect(
-    screen.queryByRole('link', { name: 'Claim My Free Account' }),
+    screen.queryByRole('link', {
+      name: 'Create a Vendor account to track your application',
+    }),
   ).toBeNull();
   await user.click(screen.getByLabelText('No'));
   await user.type(
@@ -188,12 +191,18 @@ it('shows the optional invitation after submission and dismisses it without losi
     name: 'Application submitted successfully.',
   });
   expect(
-    screen.getByRole('link', { name: 'Claim My Free Account' }),
-  ).toHaveAttribute('href', '/account/signup');
-  await user.click(screen.getByRole('button', { name: 'Maybe Later' }));
+    screen.getByRole('link', {
+      name: 'Create a Vendor account to track your application',
+    }),
+  ).toHaveAttribute('href', '/vendor/application-continue?claim=42');
+  await user.click(
+    screen.getByRole('button', { name: 'Finish without creating an account' }),
+  );
   expect(success).toBeVisible();
   expect(
-    screen.queryByRole('link', { name: 'Claim My Free Account' }),
+    screen.queryByRole('link', {
+      name: 'Create a Vendor account to track your application',
+    }),
   ).toBeNull();
 });
 
@@ -257,6 +266,129 @@ it('offers only current businesses and autofills empty semantic fields while kee
     answers: { business: 'Edited Orchard', products: ['Flowers'] },
   });
   expect(
-    screen.queryByRole('link', { name: 'Claim My Free Account' }),
+    screen.queryByRole('link', {
+      name: 'Create a Vendor account to track your application',
+    }),
   ).toBeNull();
+});
+it('saves incomplete drafts and submits the saved revision through the draft endpoint', async () => {
+  const fetcher = vi
+    .spyOn(globalThis, 'fetch')
+    .mockImplementation(async (url, init) => {
+      if (url === '/api/application-applicant')
+        return new Response(
+          JSON.stringify({
+            authenticated: true,
+            principalId: '7',
+            profile: { email: 'vendor@example.test' },
+            vendors: [{ id: 4, name: 'Verified Orchard', channelId: '35' }],
+          }),
+        );
+      if (url === '/api/applicant-applications') {
+        const body = JSON.parse(String(init?.body));
+        return new Response(
+          JSON.stringify(
+            body.action === 'SAVE_DRAFT'
+              ? {
+                  id: 42,
+                  revision: body.input.revision + 1,
+                  updatedAt: '2026-10-29T15:00:00Z',
+                }
+              : { submitted: true, submissionId: 77 },
+          ),
+        );
+      }
+      return new Response(null, { status: 204 });
+    });
+  const user = userEvent.setup();
+  render(
+    <MarketApplication
+      application={application}
+      vendorOrigin="http://localhost:4322"
+      initialDraft={{
+        vendor: { id: 4, name: 'Verified Orchard', channelId: '35' },
+        marketId: 1,
+        current: true,
+        origin: 'http://market.localhost',
+        marketName: 'Local market',
+        name: application.name,
+        definition: application.definition,
+        application,
+        draft: {
+          id: 42,
+          revision: 1,
+          templateVersionId: 1,
+          vendorId: 4,
+          updatedAt: '2026-10-28T15:00:00Z',
+          progress: { answers: {}, occurrenceIds: [], rentals: [] },
+        },
+      }}
+    />,
+  );
+  await user.click(await screen.findByRole('button', { name: 'Save draft' }));
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeEnabled(),
+  );
+  expect(
+    JSON.parse(
+      String(
+        fetcher.mock.calls.find(
+          ([url]) => url === '/api/applicant-applications',
+        )?.[1]?.body,
+      ),
+    ),
+  ).toMatchObject({
+    action: 'SAVE_DRAFT',
+    input: { id: 42, revision: 1, answers: {} },
+  });
+  await user.type(
+    screen.getByLabelText('Business name (required)'),
+    'New Farm',
+  );
+  await user.click(screen.getByLabelText('Produce'));
+  await user.click(screen.getByRole('button', { name: 'Submit application' }));
+  await screen.findByRole('heading', {
+    name: 'Application submitted successfully.',
+  });
+  const commands = fetcher.mock.calls
+    .filter(([url]) => url === '/api/applicant-applications')
+    .map(([, init]) => JSON.parse(String(init?.body)));
+  expect(commands.at(-1)).toEqual({
+    action: 'SUBMIT_DRAFT',
+    input: { id: 42, revision: 3, vendorId: 4 },
+  });
+  expect(
+    fetcher.mock.calls.some(([url]) => url === '/api/market-application'),
+  ).toBe(false);
+  expect(
+    screen.getByRole('link', { name: 'View application' }),
+  ).toHaveAttribute(
+    'href',
+    'http://localhost:4322/vendor/applications/77?channel=35',
+  );
+});
+it('Customer-only accounts must onboard a Vendor and cannot choose account-only management', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) =>
+    url === '/api/application-applicant'
+      ? new Response(
+          JSON.stringify({
+            authenticated: true,
+            principalId: '7',
+            profile: { email: 'customer@example.test' },
+            vendors: [],
+          }),
+        )
+      : new Response(null, { status: 204 }),
+  );
+  const user = userEvent.setup();
+  render(<MarketApplication application={application} />);
+  await user.click(screen.getByLabelText('Yes'));
+  expect(
+    await screen.findByRole('link', { name: 'Complete Vendor onboarding' }),
+  ).toHaveAttribute('href', '/vendor/application-continue?slug=season');
+  expect(screen.queryByRole('button', { name: 'Save draft' })).toBeNull();
+  expect(
+    screen.getByRole('button', { name: 'Submit application' }),
+  ).toBeDisabled();
+  expect(screen.queryByText('Apply with my account only')).toBeNull();
 });

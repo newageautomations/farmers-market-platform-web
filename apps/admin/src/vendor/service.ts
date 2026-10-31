@@ -1,3 +1,13 @@
+import {
+  createPackingApi,
+  type PackingApi,
+  createAttendanceApi,
+  type AttendanceApi,
+} from '@market/api';
+import {
+  createApplicantApplicationsApi,
+  type ApplicantApplicationsApi,
+} from '@market/api';
 import { createVendorContactApi, type VendorContactApi } from '@market/api';
 import { createVendorCategoryApi, type VendorCategoryApi } from '@market/api';
 import {
@@ -46,6 +56,9 @@ export interface OrderPage {
 }
 export type Availability = 'allowed' | 'denied' | 'unknown' | 'unconfigured';
 export interface VendorService extends VendorApi {
+  packing?: PackingApi;
+  marketAttendance?: AttendanceApi;
+  applications?: ApplicantApplicationsApi;
   contact?: VendorContactApi;
   categories?: VendorCategoryApi;
   finance?: FinanceApi;
@@ -161,6 +174,12 @@ export function createLiveVendorService(
   });
   return {
     ...guarded,
+    marketAttendance: createAttendanceApi({ endpoint, channelToken }),
+    packing: createPackingApi({ endpoint, channelToken }),
+    applications: createApplicantApplicationsApi(
+      { endpoint, channelToken },
+      'admin',
+    ),
     categories: createVendorCategoryApi({ endpoint, channelToken }),
     finance: createFinanceApi({ endpoint, channelToken, onAuthorityFailure }),
     pos: createInPersonApi({ endpoint, channelToken }),

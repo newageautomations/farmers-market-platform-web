@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "../apps/admin/src/market/phase14/Attendance.tsx",
+    "../apps/admin/src/market/phase14/OperationsRoutes.tsx",
+    "../apps/admin/src/vendor/VendorRoutes.tsx",
+    "../tests/attendance.test.tsx",
+    "../tests/setup.ts"
+  ],
+  "exclude": ["../node_modules", "../**/dist"]
+}

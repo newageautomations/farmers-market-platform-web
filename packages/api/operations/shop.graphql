@@ -10,36 +10,6 @@ query ShopCustomerSession {
     }
   }
 }
-mutation ShopLogin(
-  $username: String!
-  $password: String!
-  $rememberMe: Boolean!
-) {
-  login: authenticate(
-    input: { platformShop: { username: $username, password: $password } }
-    rememberMe: $rememberMe
-  ) {
-    __typename
-    ... on CurrentUser {
-      id
-      identifier
-      channels {
-        id
-        code
-        token
-        permissions
-      }
-    }
-    ... on ErrorResult {
-      errorCode
-    }
-  }
-}
-mutation ShopLogout {
-  logout {
-    success
-  }
-}
 query MarketCatalog($occurrenceId: ID!, $options: OccurrenceCatalogOptions) {
   marketOccurrenceCatalog(occurrenceId: $occurrenceId, options: $options) {
     occurrenceId

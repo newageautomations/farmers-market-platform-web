@@ -90,10 +90,22 @@ export function transport<K extends ApiKind>(
               typeof first === 'object' &&
               'message' in first &&
               first.message === 'STALE_DOMAIN_VERSION';
-            throw backendError(
+            const error = backendError(
               staleDomain ? 'STALE_DOMAIN_VERSION' : code,
               response.status,
             );
+            if (
+              ['APPLICATION_CLOSED', 'APPLICATION_NOT_YET_OPEN'].includes(
+                String(code),
+              ) &&
+              ext &&
+              typeof ext === 'object' &&
+              'applicationMessage' in ext &&
+              typeof ext.applicationMessage === 'string' &&
+              ext.applicationMessage.length <= 240
+            )
+              error.message = ext.applicationMessage;
+            throw error;
           }
           if (!response.ok) throw backendError(undefined, response.status);
           if (

@@ -1,0 +1,26 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { buttonClassName } from '@market/ui/presentation';
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+
+<SiteLayout
+  context={Astro.locals.storefront}
+  title="Vendor application access"
+  noindex
+>
+  <div class="ops-public">
+    <h1>Vendor application access</h1>
+    <p>
+      Open Vendor Applications, select the business that owns the draft, and
+      choose Resume Application. If your session expired, use the existing
+      Vendor sign-in. Customer-only accounts cannot manage applications.
+    </p>
+    <a
+      class={buttonClassName({ variant: 'primary' })}
+      href={`${process.env.ADMIN_ORIGIN}/vendor/applications`}
+    >
+      Vendor Applications
+    </a>
+  </div>
+</SiteLayout>

@@ -1,0 +1,193 @@
+.packing-workspace,
+.packing-list-content,
+.packing-forms,
+.packing-forms form {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+.packing-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.packing-list {
+  display: grid;
+  gap: 1rem;
+}
+.packing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+}
+.packing-row > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.packing-row > .packing-item-name {
+  flex: 1;
+}
+.packing-row > .packing-item-progress {
+  display: grid;
+  gap: 0.65rem;
+  flex: 0 1 17rem;
+}
+.packing-item-progress > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+.packing-product-image {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  flex: 0 0 4rem;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  color: var(--brand-muted);
+  background: var(--brand-background);
+}
+.packing-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.packing-item-controls {
+  display: grid;
+  gap: 1rem;
+}
+.packing-customer-item {
+  margin: 0;
+  --ui-disclosure-summary-padding: 1rem;
+}
+.packing-customer-item > summary > .packing-row {
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.packing-customer-item > summary .packing-item-progress {
+  flex: 1 1 100%;
+  font-variant-numeric: tabular-nums;
+}
+.packing-save-status {
+  min-height: 1.6em;
+  margin: 0;
+}
+.packing-available-summary {
+  min-height: 1.6em;
+}
+.packing-existing-units {
+  display: grid;
+  gap: 0.35rem;
+}
+.packing-existing-units > p {
+  margin: 0;
+}
+.packing-quantity-stepper {
+  display: grid;
+  grid-template-columns: var(--ui-control-height) minmax(4rem, 7rem) var(
+      --ui-control-height
+    );
+  align-items: center;
+  gap: 0.6rem;
+}
+.packing-quantity-stepper input {
+  width: 100%;
+  text-align: center;
+  appearance: textfield;
+}
+.packing-quantity-stepper input::-webkit-inner-spin-button,
+.packing-quantity-stepper input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.button.ui-button.packing-step-button {
+  --button-hover-transform: none;
+  border-radius: 50%;
+  font-size: 1.4rem;
+}
+.button.ui-button.packing-step-increase {
+  --button-fill: var(--status-success-fg);
+  --button-ink: #fff;
+  --button-hover-fill: color-mix(in srgb, var(--status-success-fg), black 20%);
+  --button-hover-ink: #fff;
+  --button-shadow-color: var(--status-success-fg);
+}
+.packing-row small {
+  display: block;
+  flex-basis: 100%;
+}
+.packing-item-card .ui-record-trigger.sr-only {
+  position: absolute;
+}
+.packing-inspector {
+  max-height: calc(100dvh - 6rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  overflow-anchor: none;
+}
+.packing-inspector-customer {
+  max-height: calc(75dvh - 4.5rem);
+}
+.packing-forms input[type='number'] {
+  max-width: 8rem;
+}
+.packing-card-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+.packing-progress {
+  --packing-progress-color: var(--status-danger-fg);
+  width: 100%;
+  height: 0.65rem;
+  overflow: hidden;
+  border-radius: var(--ui-button-radius);
+  background: color-mix(in srgb, var(--brand-foreground) 12%, transparent);
+}
+.packing-progress[data-tone='orange'] {
+  --packing-progress-color: #e27822;
+}
+.packing-progress[data-tone='yellow'] {
+  --packing-progress-color: #d5b51b;
+}
+.packing-progress[data-tone='green'] {
+  --packing-progress-color: var(--status-success-fg);
+}
+.packing-progress > span {
+  display: block;
+  height: 100%;
+  width: var(--packing-progress);
+  border-radius: inherit;
+  background: var(--packing-progress-color);
+  transition:
+    width 350ms ease,
+    background-color 350ms ease;
+}
+@starting-style {
+  .packing-progress > span {
+    width: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .packing-progress > span {
+    transition: none;
+  }
+}
+@media (max-width: 700px) {
+  .packing-row {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .packing-row > .packing-item-progress {
+    flex: 1 1 100%;
+  }
+}

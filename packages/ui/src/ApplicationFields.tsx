@@ -1,24 +1,29 @@
+import { Card } from './index';
 import { selectClassName } from './presentation';
 import { Textarea, Input } from './form-controls';
 import { PhoneInput } from './PhoneInput';
 import { fieldLimits } from './input-validation';
 import { useId } from 'react';
 import type { ApplicationDefinition } from '@market/api';
+import { applicationQuestionVisible } from '@market/api';
 export function ApplicationFields({
   definition,
   answers,
   onAnswer,
   readOnly = false,
+  compact = false,
 }: {
   definition: ApplicationDefinition;
   answers: Record<string, unknown>;
   onAnswer?: (id: string, value: unknown) => void;
   readOnly?: boolean;
+  /** Compact read-only layout; editable consumers retain their fieldsets. */
+  compact?: boolean;
 }) {
   const prefix = useId();
   const visibleQuestions = definition.questions.filter(
     (q) =>
-      !q.hidden &&
+      applicationQuestionVisible(q, answers) &&
       !(
         readOnly &&
         !q.required &&
@@ -31,12 +36,58 @@ export function ApplicationFields({
             !(answers[q.id] as unknown[]).length))
       ),
   );
+  if (readOnly && compact)
+    return (
+      <div className="application-answer-sections">
+        {definition.sections
+          .filter((section) =>
+            visibleQuestions.some((q) => q.section === section),
+          )
+          .map((section) => (
+            <Card as="section" key={section} aria-label={section}>
+              <h3>{section}</h3>
+              <dl className="application-answer-grid">
+                {visibleQuestions
+                  .filter((q) => q.section === section)
+                  .map((q) => {
+                    const value = answers[q.id];
+                    return (
+                      <div
+                        key={q.id}
+                        className={
+                          q.type === 'LONG_TEXT' || q.type === 'INFO'
+                            ? 'application-answer-wide'
+                            : undefined
+                        }
+                      >
+                        <dt>{q.label}</dt>
+                        <dd>
+                          {q.type !== 'INFO' && (
+                            <span>
+                              {Array.isArray(value)
+                                ? value.join(', ')
+                                : typeof value === 'boolean'
+                                  ? value
+                                    ? 'Yes'
+                                    : 'No'
+                                  : String(value ?? 'No answer')}
+                            </span>
+                          )}
+                          {q.help && <p className="field-help">{q.help}</p>}
+                        </dd>
+                      </div>
+                    );
+                  })}
+              </dl>
+            </Card>
+          ))}
+      </div>
+    );
   return (
     <>
       {definition.sections
-        .filter(
-          (section) =>
-            visibleQuestions.some((q) => q.section === section) || !readOnly,
+        .filter((section) =>
+          visibleQuestions.some((q) => q.section === section),
         )
         .map((section) => (
           <fieldset key={section} className="ops-section">

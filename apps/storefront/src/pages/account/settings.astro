@@ -21,27 +21,28 @@ if (central) {
       central: Astro.cookies.get('platform-unified-account')?.value ?? '',
     });
   } catch {
-    return Astro.redirect('/account/login');
+    return Astro.redirect('/account/login?returnTo=/account/settings');
   }
 }
 if (centralAccount && !centralAccount.profile.phoneVerified)
-  return Astro.redirect('/account/phone');
+  return Astro.redirect('/account/login?returnTo=/account/settings');
 const api = central
   ? undefined
   : requestCheckout(Astro, Astro.response.headers);
-let profile, purchases, accountContexts;
+let profile, purchases, principalId;
 try {
   if (api) profile = await api.profile();
   if (profile) {
     purchases = await api!.purchases(0, 3);
-    accountContexts = await api!.accountContexts();
+    principalId = (await api!.accountContexts()).principalId;
   }
 } catch (error) {
   const kind = safeError(error).kind;
   if (kind !== 'authentication' && kind !== 'forbidden')
     return temporaryUnavailableResponse();
 }
-if (!profile && !centralAccount) return Astro.redirect('/account/login');
+if (!profile && !centralAccount)
+  return Astro.redirect('/account/login?returnTo=/account/settings');
 Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 ---
@@ -68,36 +69,15 @@ Astro.response.headers.set('Cache-Control', 'private, no-store');
               variant: 'secondary',
               className: 'button secondary',
             })}
-            href={new URL('/account', accountOrigin()).toString()}
+            href={new URL(
+              '/account/login?returnTo=/account&principal=' +
+                encodeURIComponent(principalId ?? ''),
+              accountOrigin(),
+            ).toString()}
           >
             Your platform account and onboarding
           </a>
         </p>
-        {accountContexts?.affiliations.length && process.env.ADMIN_ORIGIN && (
-          <nav aria-label="Account modes">
-            <a
-              class={buttonClassName({
-                variant: 'secondary',
-                className: 'button secondary',
-              })}
-              href="/account"
-              aria-current="page"
-            >
-              Customer
-            </a>
-            {accountContexts.affiliations.map((a) => (
-              <a
-                class={buttonClassName({
-                  variant: 'secondary',
-                  className: 'button secondary',
-                })}
-                href={`${process.env.ADMIN_ORIGIN}/${a.mode === 'VENDOR' ? 'vendor' : 'market'}?channel=${encodeURIComponent(a.channelId)}`}
-              >
-                {a.mode === 'VENDOR' ? 'Vendor' : 'Market Manager'}: {a.name}
-              </a>
-            ))}
-          </nav>
-        )}
         <p>
           <a
             class={buttonClassName({

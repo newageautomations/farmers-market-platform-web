@@ -24,6 +24,7 @@ import {
 import { recurrenceInput } from '../apps/admin/src/market/schedule';
 
 import { data, definition } from './fixtures/phase15-data';
+import { applicationReviewApi } from './fixtures/application-review-api';
 async function builder() {
   const user = userEvent.setup(),
     run = vi.fn(async (_command: OperationsCommand) => data.versions![0]);
@@ -142,9 +143,13 @@ test('submitted application opens in a modal and omits blank optional answers', 
       run={async () => undefined}
       canManage={false}
       view="submissions"
+      api={applicationReviewApi(data)}
     />,
   );
-  await user.click(screen.getByRole('button', { name: 'Open Local Orchard' }));
+  await user.click(
+    await screen.findByRole('button', { name: 'Open Local Orchard' }),
+  );
+  await screen.findByLabelText('Original submitted answers');
   const dialog = screen.getByRole('dialog');
   expect(within(dialog).queryByText('Setup notes')).toBeNull();
   expect(within(dialog).queryByText('Products sold')).toBeNull();

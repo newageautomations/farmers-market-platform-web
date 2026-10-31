@@ -3,20 +3,18 @@ import { Button } from '@market/ui';
 import { useState } from 'react';
 import {
   type MarketOperationsData,
+  type MarketOperationsApi,
   type OperationsCommand,
   type ApplicationVersion,
 } from '@market/api';
-import { ApplicationReview } from './ApplicationReview';
+import { ApplicationSubmissions } from './ApplicationSubmissions';
 import { DataTable } from '../common';
-import {
-  MarketDialog as Dialog,
-  StatusBadge,
-  friendlyLabel,
-} from '../presentation';
+import { StatusBadge, friendlyLabel } from '../presentation';
 
 import { ApplicationBuilder } from './ApplicationBuilder';
-import { DocumentStatus } from '@market/ui/documents';
+
 export function Applications({
+  api,
   data,
   run,
   canManage,
@@ -25,6 +23,7 @@ export function Applications({
   canRequestDocuments = false,
   view = 'templates',
 }: {
+  api?: MarketOperationsApi;
   data: MarketOperationsData;
   run: (c: OperationsCommand) => Promise<unknown>;
   canManage: boolean;
@@ -34,10 +33,8 @@ export function Applications({
   view?: 'templates' | 'submissions';
 }) {
   const [selected, setSelected] = useState<number | null>(null);
-  const [review, setReview] = useState<number | null>(null);
-  const [reviewBusy, setReviewBusy] = useState(false);
   const version = data.versions?.find((v) => v.id === selected);
-  const submission = data.submissions?.find((s) => s.id === review);
+
   return (
     <div>
       {view === 'templates' ? (
@@ -149,98 +146,19 @@ export function Applications({
             </DataTable>
           )}
         </>
+      ) : api ? (
+        <ApplicationSubmissions
+          key={data.marketId}
+          api={api}
+          data={data}
+          run={run}
+          canManage={canManage}
+          canConfirmDates={canConfirmDates}
+          canBilling={canBilling}
+          canRequestDocuments={canRequestDocuments}
+        />
       ) : (
-        <>
-          <p>
-            Open a submission to review the applicant's answers, requested
-            dates, and rentals.
-          </p>
-          <DataTable
-            label="Application submissions"
-            recordDetails={{
-              status: 2,
-              onOpen: (index) => setReview(data.submissions![index]!.id),
-            }}
-            headings={[
-              'Business',
-              'Email',
-              'Status',
-              'Documentation',
-              'Review',
-            ]}
-          >
-            {data.submissions?.map((s) => (
-              <tr key={s.id}>
-                <td>{s.applicant.businessName}</td>
-                <td>{s.applicant.email}</td>
-                <td>
-                  <StatusBadge>{s.status}</StatusBadge>
-                  {s.conditionalAcceptance && (
-                    <span>Conditional acceptance</span>
-                  )}
-                </td>
-                <td>
-                  {s.documentation && (
-                    <>
-                      <DocumentStatus value={s.documentation.status} />
-                      <span>
-                        {s.documentation.complete} of {s.documentation.total}{' '}
-                        complete
-                      </span>
-                    </>
-                  )}
-                </td>
-                <td>
-                  <Button
-                    variant="secondary"
-                    size="compact"
-                    type="button"
-                    onClick={() => setReview(s.id)}
-                  >
-                    Review {s.applicant.businessName}
-                  </Button>
-                </td>
-              </tr>
-            ))}
-            {!data.submissions?.length && (
-              <tr>
-                <td colSpan={5}>
-                  <EmptyState title="No submissions yet">
-                    <p>No submissions yet.</p>
-                  </EmptyState>
-                </td>
-              </tr>
-            )}
-          </DataTable>
-          <Dialog
-            open={!!submission}
-            busy={reviewBusy}
-            focusTitle
-            onClose={() => setReview(null)}
-            title={
-              submission
-                ? `Application from ${submission.applicant.businessName}`
-                : 'Application review'
-            }
-          >
-            {() =>
-              submission && (
-                <ApplicationReview
-                  key={submission.id}
-                  submission={submission}
-                  onSaved={() => setReview(null)}
-                  onBusy={setReviewBusy}
-                  data={data}
-                  run={run}
-                  canManage={canManage}
-                  canConfirmDates={canConfirmDates}
-                  canBilling={canBilling}
-                  canRequestDocuments={canRequestDocuments}
-                />
-              )
-            }
-          </Dialog>
-        </>
+        <p>Application review connection is unavailable.</p>
       )}
     </div>
   );

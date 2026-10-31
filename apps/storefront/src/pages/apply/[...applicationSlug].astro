@@ -3,13 +3,56 @@ import SiteLayout from '../../layouts/SiteLayout.astro';
 import { MarketApplication } from '../../components/MarketApplication';
 import { requestPublicMarketOperations } from '../../lib/shop';
 import { safeError, type PublicApplication } from '@market/api';
+import { applicantApplicationsApi } from '../../lib/applicant-applications';
+import type { ApplicantDraftDetail } from '@market/api';
 import { ErrorState } from '@market/ui';
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+const vendorId = Number(Astro.url.searchParams.get('vendor'));
+let initialDraft: ApplicantDraftDetail | undefined;
 let application: PublicApplication | null = null,
   error = null;
 try {
+  if (Astro.url.searchParams.has('draft')) {
+    const draftId = Number(Astro.url.searchParams.get('draft'));
+    if (!Number.isSafeInteger(draftId) || draftId <= 0)
+      return new Response('Not found', { status: 404 });
+    if (!Number.isSafeInteger(vendorId) || vendorId <= 0)
+      return Astro.redirect('/vendor/application-help');
+    try {
+      initialDraft = await applicantApplicationsApi(
+        Astro,
+      ).read<ApplicantDraftDetail>({ draftId, vendorId });
+    } catch {
+      try {
+        await requestPublicMarketOperations(Astro).applicant();
+        return new Response(
+          'This draft is unavailable to your account. Return to Vendor Applications to choose the draft for your selected business.',
+          { status: 404, headers: { 'Cache-Control': 'private, no-store' } },
+        );
+      } catch {
+        return Astro.redirect(
+          `/vendor/application-continue?draft=${draftId}&vendor=${vendorId}`,
+        );
+      }
+    }
+    if (initialDraft.draft.submissionId)
+      return Astro.redirect(
+        `${process.env.ADMIN_ORIGIN}/vendor/applications/${initialDraft.draft.submissionId}?channel=${initialDraft.vendor.channelId}`,
+      );
+    if (!initialDraft.current)
+      return Astro.redirect(
+        `${process.env.ADMIN_ORIGIN}/vendor/applications/drafts/${draftId}?channel=${initialDraft.vendor.channelId}`,
+      );
+  }
   application = await requestPublicMarketOperations(Astro).application(
     Astro.params.applicationSlug,
   );
+  if (
+    initialDraft &&
+    (initialDraft.marketId !== application.marketId ||
+      initialDraft.draft.templateVersionId !== application.versionId)
+  )
+    return new Response('This draft belongs to another form.', { status: 404 });
 } catch (e) {
   error = safeError(e);
   Astro.response.status = error.kind === 'forbidden' ? 404 : 503;
@@ -24,7 +67,15 @@ try {
   <div class="ops-public">
     <h1>{application?.name ?? 'Vendor application'}</h1>
     {application ? (
-      <MarketApplication application={application} client:load />
+      <MarketApplication
+        application={application}
+        initialDraft={initialDraft}
+        initialVendorId={
+          Number.isSafeInteger(vendorId) && vendorId > 0 ? vendorId : undefined
+        }
+        vendorOrigin={process.env.ADMIN_ORIGIN}
+        client:load
+      />
     ) : (
       <ErrorState error={error} />
     )}

@@ -104,14 +104,26 @@ describe('customer authentication transport', () => {
       body: 'action=unifiedLogin&email=customer%40test.invalid&password=Synthetic-only-1!',
     });
     Object.assign(ctx, { clientAddress: '127.0.0.1' });
-    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          central: 'issued-central',
-          phoneVerificationRequired: false,
-        }),
-      ),
-    );
+    const fetcher = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            central: 'issued-central',
+            phoneVerificationRequired: false,
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            profile: { phoneVerified: true },
+            contexts: { affiliations: [] },
+          }),
+        ),
+      );
+    vi.mocked(ctx.cookies.get).mockReturnValue(undefined);
+    Object.assign(ctx.cookies, { has: vi.fn(() => false) });
     const response = await POST(ctx);
     expect(response.status).toBe(303);
     expect(response.headers.get('Location')).toBe('/account');
@@ -127,6 +139,24 @@ describe('customer authentication transport', () => {
       }),
     );
     expect(response.headers.get('Location')).not.toContain('issued-central');
+  });
+  it('Sign out requests global server revocation even without a scope field', async () => {
+    environment();
+    const ctx = context('/api/account');
+    ctx.request = new Request(ctx.url, {
+      method: 'POST',
+      headers: { origin: ctx.url.origin },
+      body: 'action=logout',
+    });
+    Object.assign(ctx, { clientAddress: '127.0.0.1' });
+    const fetcher = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify({ success: true })));
+    expect((await POST(ctx)).status).toBe(303);
+    expect(JSON.parse(String(fetcher.mock.calls[0]![1]?.body))).toMatchObject({
+      action: 'unifiedLogout',
+      everywhere: true,
+    });
   });
   it('rejects foreign-origin authentication posts before invoking the bridge', async () => {
     environment();

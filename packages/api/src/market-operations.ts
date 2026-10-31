@@ -1,3 +1,4 @@
+import { createAttendanceApi, type AttendanceApi } from './attendance';
 import { transport, type TransportOptions } from './transport';
 import { AppError } from './errors';
 import {
@@ -8,6 +9,7 @@ import {
   RespondToVendorLinkDocument,
   VendorRequestMarketRelationshipDocument,
   OwnPlatformAccountContextsDocument,
+  PlatformSignOutDocument,
   ExchangePlatformAdminHandoffDocument,
 } from './generated/admin';
 import {
@@ -18,14 +20,27 @@ import {
 } from './generated/shop';
 
 export type OperationsSection =
-  'APPLICATIONS' | 'DIRECTORY' | 'LAYOUTS' | 'ASSIGNMENTS' | 'BILLING' | 'DAY';
+  | 'APPLICATIONS'
+  | 'DIRECTORY'
+  | 'LAYOUTS'
+  | 'ASSIGNMENTS'
+  | 'BILLING'
+  | 'DAY'
+  | 'SCHEDULE';
 export type OperationsAction =
+  | 'PREVIEW_SCHEDULE_RULE'
+  | 'SAVE_SCHEDULE_RULE'
+  | 'SCHEDULE_CHANGE'
+  | 'CANCEL_PARTICIPATION'
   | 'CREATE_APPLICATION'
   | 'SAVE_APPLICATION'
   | 'CLONE_APPLICATION'
   | 'PUBLISH_APPLICATION'
   | 'RETIRE_APPLICATION'
   | 'REVIEW_APPLICATION'
+  | 'SEND_INFORMATION_REQUEST'
+  | 'RESOLVE_INFORMATION_REQUEST'
+  | 'CANCEL_INFORMATION_REQUEST'
   | 'ACCEPT_ASSIGN'
   | 'SAVE_DIRECTORY'
   | 'REQUEST_VENDOR_LINK'
@@ -33,6 +48,7 @@ export type OperationsAction =
   | 'REVIEW_OCCURRENCE'
   | 'SAVE_RENTAL'
   | 'CREATE_LAYOUT'
+  | 'RETIRE_PHYSICAL_BOOTH'
   | 'SAVE_LAYOUT'
   | 'CLONE_LAYOUT'
   | 'PUBLISH_LAYOUT'
@@ -77,8 +93,14 @@ export interface ApplicationQuestion {
   maxLength?: number;
   minimum?: number;
   maximum?: number;
+  condition?: {
+    questionId: string;
+    comparison: 'IS' | 'INCLUDES';
+    value: string | boolean;
+  };
 }
 export interface ApplicationDefinition {
+  schedule?: { timeZone: string; opensAt?: string; closesAt?: string };
   sections: string[];
   questions: ApplicationQuestion[];
   occurrenceIds: number[];
@@ -176,6 +198,13 @@ export interface ApplicationVersion extends OperationsRecord {
   definition: ApplicationDefinition;
 }
 export interface ApplicationSubmission extends OperationsRecord {
+  createdAt?: string;
+  templateName?: string;
+  history?: ApplicationHistoryEvent[];
+  onboarding?: ApplicationOnboardingSummary | null;
+  informationRequests?: import('./applicant-applications').ApplicationInformationRequest[];
+  responseVendorId?: number | null;
+  documentOptions?: Array<{ id: string; title: string; status: string }>;
   documentation?: import('./documents').DocumentationReadiness;
   conditionalAcceptance?: boolean;
   accountAnswer?: 'YES' | 'NO' | null;
@@ -199,7 +228,50 @@ export interface ApplicationSubmission extends OperationsRecord {
     foodTruck: boolean;
   };
 }
+export interface ApplicationHistoryEvent {
+  id: string;
+  at: string;
+  event: string;
+  status: string;
+  actorId: number | null;
+  occurrenceId?: number | null;
+}
+export interface ApplicationOnboardingSummary {
+  platformVendorId: number | null;
+  membershipStatus: string | null;
+  consentVerified: boolean;
+  steps: Array<{
+    key: string;
+    label: string;
+    state: string;
+    detail: string;
+    href: string | null;
+  }>;
+}
+export interface ApplicationReviewInput {
+  quickView?: 'ALL' | 'REVIEW' | 'VENDOR';
+  mode: 'CONTEXT' | 'PAGE' | 'DETAIL';
+  submissionId?: number;
+  search?: string;
+  status?: string;
+  templateId?: number;
+  category?: string;
+  occurrenceId?: number;
+  sort?: 'NEWEST' | 'OLDEST' | 'BUSINESS';
+  skip?: number;
+  take?: number;
+}
+export interface ApplicationSubmissionPage {
+  items: Array<{ id: number; businessName: string; status: string }>;
+  totalItems: number;
+  skip: number;
+  take: number;
+  templates: Array<{ id: number; name: string }>;
+  categories: string[];
+  dates: Array<{ id: number; startsAt: string; venue: string }>;
+}
 export interface DirectoryEntry extends OperationsRecord {
+  status?: 'ACTIVE' | 'INACTIVE';
   linkState?:
     | 'EXTERNAL'
     | 'LINK_PENDING'
@@ -225,7 +297,12 @@ export interface LayoutVersion extends OperationsRecord {
   status: 'DRAFT' | 'PUBLISHED' | 'RETIRED';
   definition: MapDefinition;
 }
+export interface PhysicalBooth extends OperationsRecord {
+  name: string;
+  retiredAt: string | null;
+}
 export interface MarketSpace extends OperationsRecord {
+  physicalBoothId?: number;
   layoutVersionId: number;
   elementId: string;
   details: SpaceDetails;
@@ -253,6 +330,7 @@ export interface OccurrenceApproval extends OperationsRecord {
   managerNotes: string;
 }
 export interface SpaceAssignment extends OperationsRecord {
+  recurringRuleId?: number | null;
   verifiedVendorId?: number | null;
   occurrenceId: number;
   spaceId: number;
@@ -291,7 +369,49 @@ export interface BoothInvoice extends OperationsRecord {
   dueAt: string | null;
   recipientSnapshot: ApplicantContact;
 }
+export interface BoothRecurringRule extends OperationsRecord {
+  directoryId: number;
+  physicalBoothId: number;
+  fromDate: string;
+  throughDate: string;
+}
+export interface ScheduleCell {
+  physicalBoothId: number;
+  occurrenceId: number;
+  spaceId: number | null;
+  label: string;
+  assignmentId: number | null;
+  status: 'ASSIGNED' | 'AVAILABLE' | 'UNAVAILABLE';
+  reason: string | null;
+}
+export interface SchedulePreview {
+  previewToken: string;
+  preview: Array<{
+    occurrenceId: number;
+    startsAt: string;
+    status: string;
+    change: string;
+  }>;
+}
 export interface MarketOperationsData {
+  rules?: BoothRecurringRule[];
+  cells?: ScheduleCell[];
+  exceptions?: Array<{
+    occurrenceId: number;
+    directoryId: number;
+    kind: string;
+    note: string;
+  }>;
+  ruleResults?: Array<{ ruleId: number; occurrenceId: number; status: string }>;
+  billingRestrictions?: Array<{
+    assignmentId: number;
+    issued: boolean;
+    draft: boolean;
+  }>;
+
+  applicationPage?: ApplicationSubmissionPage;
+  submissionDetail?: ApplicationSubmission;
+  timeZone?: string;
   linkRequests?: Array<
     OperationsRecord & {
       directoryId: number;
@@ -306,6 +426,7 @@ export interface MarketOperationsData {
   fundsFlowPolicy: 'NOT_CONFIGURED';
   occurrences: Array<{
     id: number;
+    scheduleDate?: string;
     startsAt: string;
     endsAt: string;
     venue: string;
@@ -320,6 +441,7 @@ export interface MarketOperationsData {
   layouts?: Layout[];
   archivedLayouts?: Layout[];
   layoutVersions?: LayoutVersion[];
+  physicalBooths?: PhysicalBooth[];
   spaces?: MarketSpace[];
   plans?: OccurrencePlan[];
   assignments?: SpaceAssignment[];
@@ -370,6 +492,13 @@ export interface PublicOccurrenceMap {
   }>;
 }
 export interface PublicApplication {
+  availability?: {
+    state: 'OPEN' | 'CLOSED' | 'NOT_YET_OPEN';
+    timeZone?: string;
+    opensAt: string | null;
+    closesAt: string | null;
+  };
+  marketId: number;
   documentRequirements?: Array<{
     id: string;
     title: string;
@@ -436,6 +565,7 @@ function object<T>(value: unknown): T {
 export function createMarketOperationsApi(options: TransportOptions) {
   const execute = transport('admin', options);
   return {
+    attendance: createAttendanceApi(options),
     requestRelationship: async (marketId: string, expectedVersion?: number) =>
       (
         await execute(
@@ -467,12 +597,18 @@ export function createMarketOperationsApi(options: TransportOptions) {
           { id, expectedRevision, confirm },
         )
       ).respondToVendorLink,
-    read: async (section: OperationsSection, occurrenceId?: number) =>
+    read: async (
+      section: OperationsSection,
+      occurrenceId?: number,
+      input?:
+        | ApplicationReviewInput
+        | { mode: 'SCHEDULE'; from: string; through: string },
+    ) =>
       object<MarketOperationsData>(
         (
           await execute(
             { api: 'admin', document: OwnMarketOperationsDocument },
-            { section, occurrenceId: occurrenceId ?? null },
+            { section, occurrenceId: occurrenceId ?? null, input },
           )
         ).ownMarketOperations,
       ),
@@ -504,7 +640,7 @@ export function createMarketOperationsApi(options: TransportOptions) {
 export type MarketOperationsApi = Pick<
   ReturnType<typeof createMarketOperationsApi>,
   'read' | 'command' | 'vendorAssignments'
->;
+> & { attendance?: AttendanceApi };
 export function createPublicMarketOperationsApi(options: TransportOptions) {
   const execute = transport('shop', options);
   return {
@@ -536,6 +672,7 @@ export function createPublicMarketOperationsApi(options: TransportOptions) {
         ).publicMarketOccurrenceMap,
       ),
     submit: async (input: {
+      claimSecret?: string;
       accountAnswer: 'YES' | 'NO';
       vendorId?: number | null;
       slug: string;
@@ -545,7 +682,7 @@ export function createPublicMarketOperationsApi(options: TransportOptions) {
       rentals: Array<{ optionId: number; quantity: number }>;
       idempotencyKey: string;
     }) =>
-      object<{ submitted: boolean }>(
+      object<{ submitted: boolean; submissionId: number }>(
         (
           await execute(
             { api: 'shop', document: SubmitMarketApplicationDocument },
@@ -564,10 +701,12 @@ export interface ApplicationApplicant {
     email?: string;
     phone?: string;
   };
-  vendors: Array<{ id: number; name: string }>;
+  vendors: Array<{ id: number; name: string; channelId?: string }>;
 }
 export interface PlatformAccountContexts {
   customer: true;
+  platformAdministrator?: boolean;
+  principalId?: string;
   affiliations: Array<{
     mode: 'VENDOR' | 'MARKET_MANAGER';
     id: number;
@@ -589,6 +728,13 @@ export function createPlatformAccountApi(options: TransportOptions) {
           )
         ).ownPlatformAccountContexts,
       ),
+    signOut: async (everywhere = false) =>
+      (
+        await execute(
+          { api: 'admin', document: PlatformSignOutDocument },
+          { everywhere },
+        )
+      ).platformSignOut,
     handoff: async (code: string, correlation: string) =>
       (
         await execute(

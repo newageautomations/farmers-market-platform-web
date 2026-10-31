@@ -149,15 +149,6 @@ export function createStorefrontApi(
       const order = await snapshot();
       return { signedIn: !!user.me, cart: order.activeOrder };
     },
-    async login(username: string, password: string) {
-      const result = await execute(
-        { api: 'shop', document: shop.ShopLoginDocument },
-        { username, password, rememberMe: false },
-      );
-      if (result.login.__typename !== 'CurrentUser')
-        throw new AppError('authentication');
-      return { signedIn: true };
-    },
     async add(variantId: string, quantity: number, occurrenceId?: string) {
       if (!occurrenceId)
         throw new AppError('validation', 'PREORDER_OCCURRENCE_REQUIRED');

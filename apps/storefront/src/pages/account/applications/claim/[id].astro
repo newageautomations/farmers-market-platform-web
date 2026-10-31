@@ -1,0 +1,6 @@
+---
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+if (!/^[1-9]\d*$/.test(Astro.params.id ?? ''))
+  return new Response('Not found', { status: 404 });
+return Astro.redirect(`/vendor/application-continue?claim=${Astro.params.id}`);
+---

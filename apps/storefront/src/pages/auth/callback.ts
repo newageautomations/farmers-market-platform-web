@@ -23,19 +23,36 @@ export const GET: APIRoute = async (context) => {
       correlation,
     );
     context.cookies.delete('account-correlation', { path: '/auth/callback' });
-    const returnTo = safeAccountReturn(
+    let returnTo = safeAccountReturn(
       context.cookies.get('account-return')?.value,
     );
-    bindProgressAfterLogin(
-      context,
-      returnTo,
-      result.exchangeCustomerHandoff.principalId,
-    );
+    if (returnTo.startsWith('/vendor/application-return?')) {
+      const vendor = context.url.searchParams.get('vendor');
+      if (vendor && /^[1-9]\d*$/.test(vendor)) {
+        const next = new URL(returnTo, context.url.origin);
+        next.searchParams.set('vendor', vendor);
+        returnTo = next.pathname + next.search;
+      }
+    }
+    if (!returnTo.startsWith('/vendor/'))
+      bindProgressAfterLogin(
+        context,
+        returnTo,
+        result.exchangeCustomerHandoff.principalId,
+      );
     context.cookies.delete('account-return', { path: '/auth/callback' });
     headers.set('Location', returnTo);
     return new Response(null, { status: 303, headers });
   } catch {
-    headers.set('Location', '/account/sign-in?retry=1');
+    headers.set(
+      'Location',
+      context.cookies.get('account-return')?.value.startsWith('/vendor/')
+        ? '/vendor/application-help'
+        : '/account/login?retry=1&returnTo=' +
+            encodeURIComponent(
+              safeAccountReturn(context.cookies.get('account-return')?.value),
+            ),
+    );
     return new Response(null, { status: 303, headers });
   }
 };

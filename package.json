@@ -157,7 +157,17 @@
     "demo:market-operations:willow-fixtures": "tsx scripts/demo-market-operations.ts willow-fixtures",
     "test:storefront:contact": "vitest run tests/storefront-contact.test.tsx --reporter=default",
     "test:storefront:contact:http": "tsx scripts/test-storefront-contact.ts",
-    "demo:market-operations:grant-willow-crm": "tsx scripts/demo-market-operations.ts grant-willow-crm"
+    "demo:market-operations:grant-willow-crm": "tsx scripts/demo-market-operations.ts grant-willow-crm",
+    "demo:market-operations:phase-b-fixtures": "tsx scripts/demo-market-operations.ts phase-b-fixtures",
+    "demo:market-operations:phase-a-fixtures": "tsx scripts/demo-market-operations.ts phase-a-fixtures",
+    "demo:market-operations:inspect": "tsx scripts/demo-market-operations.ts inspect",
+    "demo:market-operations:phase-d-fixtures": "tsx scripts/demo-market-operations.ts phase-d-fixtures",
+    "demo:market-operations:phase-c-fixtures": "tsx scripts/demo-market-operations.ts phase-c-fixtures",
+    "demo:market-operations:scheduling-fixtures": "tsx scripts/demo-market-operations.ts scheduling-fixtures",
+    "demo:market-operations:attendance-fixtures": "tsx scripts/demo-market-operations.ts attendance-fixtures",
+    "test:attendance": "vitest run tests/attendance.test.tsx",
+    "demo:market-operations:packing-preorders": "tsx scripts/demo-market-operations.ts packing-preorders",
+    "demo:market-operations:attendance-today": "tsx scripts/demo-market-operations.ts attendance-today"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",

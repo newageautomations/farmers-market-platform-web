@@ -5,17 +5,17 @@ import {
   accountBridge,
   accountOrigin,
   isCentral,
-  setCentral,
   setUnifiedCentral,
   AccountBridgeError,
   authorizeUnifiedAccount,
+  defaultAccountDestination,
+  safeAccountReturn,
 } from '../../lib/account';
 import { validPassword } from '@market/ui';
 import { requestCheckout } from '../../lib/shop';
 const enhancedActions = new Set([
   'register',
   'requestPersonalPhone',
-  'requestAdministratorPhone',
   'updateProfile',
   'saveOnboarding',
   'requestEmailProof',
@@ -23,6 +23,24 @@ const enhancedActions = new Set([
   'resendPhoneRegistration',
   'verifyPhoneRegistration',
 ]);
+function accountNavigation(callback: string, headers: Headers) {
+  const target = callback.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
+        c
+      ]!,
+  );
+  headers.set('Content-Type', 'text/html; charset=utf-8');
+  return new Response(
+    '<!doctype html><html lang="en"><head><meta name="robots" content="noindex,nofollow"><meta http-equiv="refresh" content="0;url=' +
+      target +
+      '"><title>Continue to your account</title></head><body><main><h1>Continue to your account</h1><a href="' +
+      target +
+      '">Continue</a></main></body></html>',
+    { status: 200, headers },
+  );
+}
 export const POST: APIRoute = async (context) => {
   const headers = new Headers({
     'Cache-Control': 'private, no-store',
@@ -31,6 +49,7 @@ export const POST: APIRoute = async (context) => {
   });
   let verificationRetry = '';
   let formAction = '';
+  let loginRetry = '';
   try {
     if (context.request.headers.get('origin') !== context.url.origin)
       throw new Error('Denied');
@@ -51,8 +70,7 @@ export const POST: APIRoute = async (context) => {
     if (isCentral(context.url)) {
       switch (action) {
         case 'register':
-        case 'requestPersonalPhone':
-        case 'requestAdministratorPhone': {
+        case 'requestPersonalPhone': {
           if (action === 'register') {
             if (form.get('password') !== form.get('confirmPassword'))
               throw new AccountBridgeError('PASSWORD_MISMATCH', 400);
@@ -79,11 +97,7 @@ export const POST: APIRoute = async (context) => {
             maxAge: 600,
           });
           location =
-            action === 'register'
-              ? '/account/verify'
-              : action === 'requestAdministratorPhone'
-                ? '/account/admin-phone?sent=1'
-                : '/account/phone?sent=1';
+            action === 'register' ? '/account/verify' : '/account/phone?sent=1';
           break;
         }
         case 'resendPhoneRegistration': {
@@ -107,17 +121,13 @@ export const POST: APIRoute = async (context) => {
           break;
         }
         case 'verifyPhoneRegistration':
-        case 'verifyPersonalPhone':
-        case 'verifyAdministratorPhone': {
+        case 'verifyPersonalPhone': {
           verificationRetry =
             action === 'verifyPhoneRegistration'
               ? '/account/verify?error=1'
-              : action === 'verifyAdministratorPhone'
-                ? '/account/admin-phone?sent=1&error=1'
-                : '/account/phone?sent=1&error=1';
+              : '/account/phone?sent=1&error=1';
           const verified = await accountBridge<{
             central?: string;
-            storefrontCentral?: string;
             callback?: string;
           }>({
             action,
@@ -134,35 +144,39 @@ export const POST: APIRoute = async (context) => {
           });
           if (verified.central) setUnifiedCentral(context, verified.central);
           context.cookies.delete('phone-challenge', { path: '/' });
-          if (verified.storefrontCentral && verified.callback) {
-            setCentral(context, verified.storefrontCentral);
-            const target = verified.callback.replace(
-              /[&<>"']/g,
-              (c) =>
-                ({
-                  '&': '&amp;',
-                  '<': '&lt;',
-                  '>': '&gt;',
-                  '"': '&quot;',
-                  "'": '&#39;',
-                })[c]!,
-            );
-            headers.set('Content-Type', 'text/html; charset=utf-8');
-            return new Response(
-              '<!doctype html><html lang="en"><head><meta http-equiv="refresh" content="0;url=' +
-                target +
-                '"><title>Continue to your orders</title></head><body><main><h1>Continue to your orders</h1><a href="' +
-                target +
-                '">Continue</a></main></body></html>',
-              { status: 200, headers },
-            );
+          if (verified.callback)
+            return accountNavigation(verified.callback, headers);
+          if (action === 'verifyPhoneRegistration') {
+            const saved = context.cookies.get('account-signup-return')?.value;
+            if (saved) {
+              const continuation = JSON.parse(saved);
+              // Registration verifies the phone but does not create a login session.
+              // Retain the validated origin/correlation for the existing password sign-in.
+              location =
+                '/account/login?verified=1&origin=' +
+                encodeURIComponent(continuation.origin) +
+                '&correlation=' +
+                encodeURIComponent(continuation.correlation) +
+                '&destination=' +
+                encodeURIComponent(continuation.destination ?? '/');
+              context.cookies.delete('account-signup-return', { path: '/' });
+              break;
+            }
+          }
+          if (
+            action === 'verifyPersonalPhone' &&
+            context.cookies.has('account-login-return')
+          ) {
+            location =
+              '/account/login?' +
+              (context.cookies.get('account-login-return')?.value ?? '');
+            context.cookies.delete('account-login-return', { path: '/' });
+            break;
           }
           location =
             action === 'verifyPhoneRegistration'
               ? '/account/login?verified=1'
-              : action === 'verifyAdministratorPhone'
-                ? '/account/admin-phone?verified=1'
-                : '/account?saved=1';
+              : '/account?saved=1';
           break;
         }
         case 'requestEmailProof':
@@ -188,14 +202,44 @@ export const POST: APIRoute = async (context) => {
             (r.deliveryAvailable ? '' : '&delivery=unavailable');
           break;
         }
+        case 'requestRecoveryPhone': {
+          const token = context.cookies.get('account-recovery')?.value ?? '';
+          const result = await accountBridge<{ challenge: string }>({
+            action,
+            token,
+            boundary,
+          });
+          context.cookies.set('recovery-phone-challenge', result.challenge, {
+            httpOnly: true,
+            secure: context.url.protocol === 'https:',
+            sameSite: 'strict',
+            path: '/',
+            maxAge: 300,
+          });
+          location = '/account/reset?sent=1';
+          break;
+        }
+        case 'verifyRecoveryPhone':
+          await accountBridge({
+            action,
+            token: context.cookies.get('account-recovery')?.value ?? '',
+            challenge:
+              context.cookies.get('recovery-phone-challenge')?.value ?? '',
+            code: form.get('code') ?? '',
+            boundary,
+          });
+          context.cookies.delete('recovery-phone-challenge', { path: '/' });
+          location = '/account/reset';
+          break;
         case 'resetPassword':
           await accountBridge({
             action,
-            token: form.get('token') ?? '',
+            token: context.cookies.get('account-recovery')?.value ?? '',
             password: form.get('password') ?? '',
             boundary,
           });
           context.cookies.delete('platform-unified-account', { path: '/' });
+          context.cookies.delete('account-recovery', { path: '/' });
           location = '/account/login?security=1';
           break;
         case 'updateProfile':
@@ -225,12 +269,16 @@ export const POST: APIRoute = async (context) => {
             ),
           });
           location =
-            result.state === 'COMPLETED'
-              ? '/account?onboarded=' +
-                (role === 'VENDOR' ? 'vendor' : 'market')
-              : '/account/onboarding/' +
-                (role === 'VENDOR' ? 'vendor' : 'market') +
-                '?saved=1';
+            result.state === 'COMPLETED' &&
+            role === 'VENDOR' &&
+            context.cookies.has('vendor-application-continuation')
+              ? '/account/vendor-applications'
+              : result.state === 'COMPLETED'
+                ? '/account?onboarded=' +
+                  (role === 'VENDOR' ? 'vendor' : 'market')
+                : '/account/onboarding/' +
+                  (role === 'VENDOR' ? 'vendor' : 'market') +
+                  '?saved=1';
           break;
         }
         case 'rolePreference':
@@ -258,6 +306,18 @@ export const POST: APIRoute = async (context) => {
           location = '/account/login?security=1';
           break;
         case 'unifiedLogin': {
+          const retry = new URLSearchParams({ error: '1' });
+          for (const key of [
+            'origin',
+            'correlation',
+            'destination',
+            'principal',
+            'returnTo',
+          ]) {
+            const value = form.get(key);
+            if (value) retry.set(key, value);
+          }
+          loginRetry = '/account/login?' + retry.toString();
           const result = await accountBridge<{
             central: string;
             phoneVerificationRequired: boolean;
@@ -269,60 +329,65 @@ export const POST: APIRoute = async (context) => {
               .update(context.clientAddress)
               .digest('hex'),
           });
+          if (form.get('principal')) {
+            const account = await accountBridge<
+              import('../../lib/account').CentralAccountData
+            >({ action: 'centralProfile', central: result.central });
+            if (account.contexts.principalId !== form.get('principal'))
+              throw new Error('Account identity does not match');
+          }
           if (result.phoneVerificationRequired) {
             setUnifiedCentral(context, result.central);
+            context.cookies.set(
+              'account-login-return',
+              new URLSearchParams({
+                origin: form.get('origin') ?? '',
+                correlation: form.get('correlation') ?? '',
+                destination: form.get('destination') ?? '/',
+                principal: form.get('principal') ?? '',
+                returnTo: form.get('returnTo') ?? '',
+              }).toString(),
+              {
+                httpOnly: true,
+                secure: context.url.protocol === 'https:',
+                sameSite: 'lax',
+                path: '/',
+                maxAge: 1800,
+              },
+            );
             location = '/account/phone';
             break;
           }
           if (!form.get('origin')) {
             setUnifiedCentral(context, result.central);
-            location = '/account';
+            location = context.cookies.has('vendor-application-continuation')
+              ? '/account/vendor-applications'
+              : context.cookies.has('account-signup-role')
+                ? '/account/onboarding/' +
+                  context.cookies.get('account-signup-role')!.value
+                : form.get('returnTo')
+                  ? safeAccountReturn(form.get('returnTo'))
+                  : await defaultAccountDestination(result.central);
+            context.cookies.delete('account-signup-role', { path: '/' });
+            break;
+          }
+          if (context.cookies.has('account-signup-role')) {
+            setUnifiedCentral(context, result.central);
+            location =
+              '/account/onboarding/' +
+              context.cookies.get('account-signup-role')!.value;
+            context.cookies.delete('account-signup-role', { path: '/' });
             break;
           }
           const r = await authorizeUnifiedAccount(
             result.central,
             form.get('origin') ?? '',
             form.get('correlation') ?? '',
+            form.get('destination') ?? '/',
+            form.get('principal') ?? '',
           );
           setUnifiedCentral(context, r.central);
-          const target = r.callback.replace(
-            /[&<>"']/g,
-            (character) =>
-              ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#39;',
-              })[character]!,
-          );
-          headers.set('Content-Type', 'text/html; charset=utf-8');
-          return new Response(
-            '<!doctype html><html lang="en"><head><meta name="robots" content="noindex,nofollow"><meta http-equiv="refresh" content="0;url=' +
-              target +
-              '"><title>Continue to your account</title></head><body><main><h1>Continue to your account</h1><a href="' +
-              target +
-              '">Continue</a></main></body></html>',
-            { status: 200, headers },
-          );
-        }
-        case 'request': {
-          const origin = form.get('origin') ?? '';
-          const receipt = await accountBridge<{ deliveryAvailable: boolean }>({
-            action: 'request',
-            email: form.get('email') ?? '',
-            origin,
-            boundary: createHash('sha256')
-              .update(context.clientAddress)
-              .digest('hex'),
-          });
-          const next = new URL('/account/sign-in', accountOrigin());
-          next.searchParams.set('origin', origin);
-          next.searchParams.set('requested', '1');
-          if (!receipt.deliveryAvailable)
-            next.searchParams.set('delivery', 'unavailable');
-          location = next.toString();
-          break;
+          return accountNavigation(r.callback, headers);
         }
         case 'claim': {
           const r = await accountBridge<{
@@ -335,30 +400,8 @@ export const POST: APIRoute = async (context) => {
           });
           if (r.phoneVerificationRequired)
             setUnifiedCentral(context, r.central);
-          else setCentral(context, r.central);
-          // Complete the same-origin form navigation before the deliberate top-level
-          // merchant navigation. CSP form-action otherwise also governs cross-origin
-          // HTTP redirect chains. The bridge owns and validates this canonical target.
-          const target = r.callback.replace(
-            /[&<>"']/g,
-            (character) =>
-              ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#39;',
-              })[character]!,
-          );
-          headers.set('Content-Type', 'text/html; charset=utf-8');
-          return new Response(
-            '<!doctype html><html lang="en"><head><meta name="robots" content="noindex,nofollow"><meta http-equiv="refresh" content="0;url=' +
-              target +
-              '"><title>Continue to your orders</title></head><body><main><h1>Continue to your orders</h1><a href="' +
-              target +
-              '">Continue</a></main></body></html>',
-            { status: 200, headers },
-          );
+          else if (r.central) setUnifiedCentral(context, r.central);
+          return accountNavigation(r.callback, headers);
         }
         case 'logout': {
           const unified = context.cookies.get(
@@ -368,16 +411,9 @@ export const POST: APIRoute = async (context) => {
             await accountBridge({
               action: 'unifiedLogout',
               central: unified,
-              everywhere: form.get('everywhere') === 'true',
+              everywhere: true,
             });
           context.cookies.delete('platform-unified-account', { path: '/' });
-          const central = context.cookies.get('platform-account')?.value;
-          if (central)
-            await accountBridge({
-              action: 'logout',
-              central,
-              everywhere: form.get('everywhere') === 'true',
-            });
           context.cookies.delete('platform-account', { path: '/' });
           location = '/auth/signed-out';
           break;
@@ -388,9 +424,9 @@ export const POST: APIRoute = async (context) => {
     } else {
       if (action !== 'logout' || !context.locals.storefront)
         throw new Error('Denied');
-      await requestCheckout(context, headers).logout();
+      await requestCheckout(context, headers).logout(true);
       // Explicit top-level central logout also ends the remembered central session.
-      location = new URL('/auth/logout', accountOrigin()).toString();
+      location = new URL('/auth/signed-out', accountOrigin()).toString();
     }
     if (
       context.request.headers.get('x-account-form') === 'json' &&
@@ -405,6 +441,10 @@ export const POST: APIRoute = async (context) => {
     headers.set('Location', location);
     return new Response(null, { status: 303, headers });
   } catch (caught) {
+    if (loginRetry) {
+      headers.set('Location', loginRetry);
+      return new Response(null, { status: 303, headers });
+    }
     if (
       context.request.headers.get('x-account-form') === 'json' &&
       enhancedActions.has(formAction)
@@ -414,16 +454,12 @@ export const POST: APIRoute = async (context) => {
           ? caught.message
           : formAction === 'saveOnboarding'
             ? 'Check the business name, contact name, email and timezone. If this draft changed elsewhere, reload its latest version. Your entries are still here.'
-            : [
-                  'register',
-                  'requestPersonalPhone',
-                  'requestAdministratorPhone',
-                ].includes(formAction)
+            : ['register', 'requestPersonalPhone'].includes(formAction)
               ? 'Check your phone number, country and any required credentials. SMS delivery may be unavailable. Your entries are still here.'
               : formAction === 'updateProfile'
                 ? 'Enter a first and last name of up to 100 characters. Your entries are still here.'
                 : formAction === 'changePassword'
-                  ? 'Check your current password and use a new password between 12 and 128 characters. Your entries are still here.'
+                  ? 'Check your current password and use a new password between 12 and 72 characters with an uppercase letter, a number and a special character. Your entries are still here.'
                   : 'The request could not be completed. Your entries are still here. Please try again.';
       headers.set('Content-Type', 'application/json');
       return new Response(
@@ -438,6 +474,14 @@ export const POST: APIRoute = async (context) => {
           headers,
         },
       );
+    }
+    if (
+      ['requestRecoveryPhone', 'verifyRecoveryPhone', 'resetPassword'].includes(
+        formAction,
+      )
+    ) {
+      headers.set('Location', '/account/reset?error=1');
+      return new Response(null, { status: 303, headers });
     }
     if (verificationRetry) {
       headers.set(

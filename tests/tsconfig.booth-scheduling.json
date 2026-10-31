@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "../apps/admin/src/market/phase14/BoothSchedule.tsx",
+    "../apps/admin/src/market/phase14/OperationsRoutes.tsx",
+    "./booth-scheduling.test.tsx",
+    "./setup.ts"
+  ],
+  "exclude": ["../node_modules", "../**/dist"]
+}

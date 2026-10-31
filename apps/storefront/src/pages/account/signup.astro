@@ -4,29 +4,90 @@ import Button from '../../components/ui/Button.astro';
 import { PhoneInput } from '@market/ui';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { platformName } from '@market/config';
-import { accountOrigin, isCentral } from '../../lib/account';
+import { isCentral, centralSignIn, accountBridge } from '../../lib/account';
 import { SignupPasswords } from '../../components/SignupPasswords';
 if (!isCentral(Astro.url)) {
   try {
-    return Astro.redirect(
-      new URL('/account/signup', accountOrigin()).toString(),
-    );
+    return Astro.redirect(await centralSignIn(Astro, '/account', 'signup'));
   } catch {
     return new Response('Account registration is temporarily unavailable.', {
       status: 503,
     });
   }
 }
+const origin = Astro.url.searchParams.get('origin'),
+  correlation = Astro.url.searchParams.get('correlation');
+if (origin && correlation && /^[A-Za-z0-9_-]{43}$/.test(correlation)) {
+  try {
+    const { accountBridge } = await import('../../lib/account');
+    await accountBridge({ action: 'unifiedTarget', origin });
+    Astro.cookies.set(
+      'account-signup-return',
+      JSON.stringify({
+        origin,
+        correlation,
+        destination: Astro.url.searchParams.get('destination') ?? '/',
+      }),
+      {
+        httpOnly: true,
+        secure: Astro.url.protocol === 'https:',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 1800,
+      },
+    );
+  } catch {
+    return new Response('Account signup is temporarily unavailable.', {
+      status: 503,
+    });
+  }
+}
+const destination = Astro.url.searchParams.get('destination') ?? '';
+const role =
+  destination.startsWith('/vendor') ||
+  Astro.url.searchParams.get('context') === 'vendor'
+    ? 'vendor'
+    : destination.startsWith('/market') ||
+        Astro.url.searchParams.get('context') === 'market'
+      ? 'market'
+      : '';
+if (role)
+  Astro.cookies.set('account-signup-role', role, {
+    httpOnly: true,
+    secure: Astro.url.protocol === 'https:',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 1800,
+  });
+const existing = Astro.cookies.get('platform-unified-account')?.value;
+if (existing) {
+  try {
+    await accountBridge({ action: 'centralProfile', central: existing });
+    return Astro.redirect(
+      role ? `/account/onboarding/${role}` : '/account/workspaces',
+    );
+  } catch {
+    /* Expired sessions may register. */
+  }
+}
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 const requested = Astro.url.searchParams.has('requested');
+const vendorContext =
+  Astro.cookies.has('vendor-application-continuation') ||
+  Astro.url.searchParams.get('context') === 'vendor';
 ---
 
 <SiteLayout title={`Create your free ${platformName} account`} noindex>
   <section class="py-12 account-panel signup-panel">
-    <h1>Create your free account</h1>
+    <h1>
+      {vendorContext
+        ? 'Create your Vendor account'
+        : 'Create your free account'}
+    </h1>
     <p>
-      Use one account as a Customer, Vendor, or Market Manager. Add your
-      business or Market details whenever you need those dashboards.
+      {vendorContext
+        ? 'Verify your account, then complete Vendor onboarding to track applications with your authorized business.'
+        : 'Use one account as a Customer, Vendor, or Market Manager. Add your business or Market details whenever you need those dashboards.'}
     </p>
     {requested && (
       <p class="alert ui-alert ui-alert-info" role="status">
@@ -85,7 +146,11 @@ const requested = Astro.url.searchParams.has('requested');
           variant: 'secondary',
           className: 'button secondary',
         })}
-        href="/account/login"
+        href={
+          origin && correlation
+            ? `/account/login?origin=${encodeURIComponent(origin)}&correlation=${encodeURIComponent(correlation)}&destination=${encodeURIComponent(destination || '/')}`
+            : '/account/login'
+        }
       >
         Sign in to an existing account
       </a>
@@ -100,8 +165,9 @@ const requested = Astro.url.searchParams.has('requested');
       </a>
     </div>
     <p>
-      If you submitted a Market application anonymously, signup does not claim
-      or display that previous application. The Market can still review it.
+      Create an account to save drafts and track applications. After signup, use
+      the secure tracking invitation from the market where you just applied.
+      Older anonymous applications require help from the market.
     </p>
   </section>
 </SiteLayout>

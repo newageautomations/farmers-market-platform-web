@@ -93,7 +93,7 @@ export function PurchaseSuccess({
                 variant: 'secondary',
                 className: 'button secondary',
               })}
-              href="/account/sign-in"
+              href="/account/login"
             >
               Request a fresh account link later
             </a>

@@ -1,12 +1,14 @@
 ---
 import SiteLayout from '../../layouts/SiteLayout.astro';
-import { isCentral } from '../../lib/account';
-if (!isCentral(Astro.url)) return new Response('Not found', { status: 404 });
+Astro.response.headers.set('Cache-Control', 'private, no-store');
 ---
 
 <SiteLayout title="Signed out" noindex>
-  <section class="py-12">
+  <section class="py-12 account-panel">
     <h1>You are signed out</h1>
-    <p>Return to your Storefront to browse or request a fresh account link.</p>
+    <p>Your authenticated sessions have been signed out across the platform.</p>
+    <p>
+      <a href="/account/login">Sign in</a>
+    </p>
   </section>
 </SiteLayout>

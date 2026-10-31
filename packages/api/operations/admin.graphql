@@ -10,33 +10,6 @@ query AdminSession {
     }
   }
 }
-mutation AdminLogin(
-  $username: String!
-  $password: String!
-  $rememberMe: Boolean!
-) {
-  login(username: $username, password: $password, rememberMe: $rememberMe) {
-    __typename
-    ... on CurrentUser {
-      id
-      identifier
-      channels {
-        id
-        code
-        token
-        permissions
-      }
-    }
-    ... on ErrorResult {
-      errorCode
-    }
-  }
-}
-mutation AdminLogout {
-  logout {
-    success
-  }
-}
 query VendorIdentity {
   ownVendorIdentity {
     id

@@ -1,3 +1,5 @@
+import { BoothSchedule } from "./BoothSchedule";
+import { Attendance } from './Attendance';
 import { cardClassName } from '@market/ui/presentation';
 import { useCallback, useEffect, useState } from 'react';
 import type {
@@ -8,7 +10,7 @@ import type {
   NotificationsApi,
 } from '@market/api';
 import { safeError } from '@market/api';
-import { Select, ErrorState, Spinner } from '@market/ui';
+import { Select, ErrorState, Spinner, Tabs } from '@market/ui';
 import { Applications } from './Applications';
 import { Directory, Rentals } from './Directory';
 import { Layouts, LayoutScreen } from './Layouts';
@@ -39,6 +41,7 @@ export function Phase14Routes({
   permissions: readonly string[];
   notifications?: NotificationsApi;
 }) {
+  const [dayView, setDayView] = useState("Map and attendance");
   const segment = path.split('/')[2] ?? '',
     section = sections[segment] ?? 'APPLICATIONS';
   const [occurrenceId, setOccurrenceId] = useState(
@@ -49,7 +52,11 @@ export function Phase14Routes({
     [error, setError] = useState<ReturnType<typeof safeError> | null>(null),
     [pending, setPending] = useState(false);
   const load = useCallback(async () => {
-    let primary = await api.read(section, occurrenceId || undefined);
+    let primary = await api.read(
+      section,
+      occurrenceId || undefined,
+      section === 'APPLICATIONS' ? { mode: 'CONTEXT' } : undefined,
+    );
     if (!occurrenceId && ['ASSIGNMENTS', 'DAY', 'BILLING'].includes(section)) {
       const scheduled = primary.occurrences
         .filter((o) => o.status === 'scheduled')
@@ -63,17 +70,6 @@ export function Phase14Routes({
         scheduled.find((o) => Date.parse(o.startsAt) > Date.now()) ??
         scheduled[scheduled.length - 1];
       if (active) primary = await api.read(section, active.id);
-    }
-    if (
-      section === 'APPLICATIONS' &&
-      permissions.includes('ReadOwnMarketAssignments')
-    ) {
-      const p = await api.read('ASSIGNMENTS');
-      Object.assign(primary, {
-        plans: p.plans,
-        spaces: p.spaces,
-        assignments: p.assignments,
-      });
     }
     if (
       section === 'ASSIGNMENTS' &&
@@ -136,10 +132,7 @@ export function Phase14Routes({
       )?.id ||
       data.occurrences[0]?.id ||
       0;
-  return (
-    <div className="ops-workspace" aria-busy={pending || read.loading}>
-      {error && <ErrorState error={error} />}
-      {pending && <Spinner label="Saving changes" />}
+  const controls = (
       <fieldset className="ops-controls" disabled={pending || read.loading}>
         <legend className="sr-only">Market operation controls</legend>
         {active > 0 && ['DAY', 'ASSIGNMENTS'].includes(section) && (
@@ -170,6 +163,7 @@ export function Phase14Routes({
           )}
         {section === 'APPLICATIONS' && (
           <Applications
+            api={api}
             data={data}
             run={run}
             canManage={can('ManageOwnMarketApplications')}
@@ -223,6 +217,7 @@ export function Phase14Routes({
             canManage={can('ManageOwnMarketBilling')}
           />
         )}
+        {section === 'DAY' && active > 0 && api.attendance && !path.endsWith('/edit-layout') && <Attendance key={active} api={api.attendance} occurrenceId={active} />}
         {['DAY', 'ASSIGNMENTS'].includes(section) &&
           (path.endsWith('/edit-layout') ? (
             <OccurrenceLayoutScreen
@@ -242,12 +237,21 @@ export function Phase14Routes({
               day={section === 'DAY'}
               canAssign={can('ManageOwnMarketAssignments')}
               canEditLayout={can('ManageOwnMarketLayouts')}
-              canDay={can('OperateOwnMarketDay')}
+              canDay={false}
               canBill={can('ManageOwnMarketBilling')}
               commandError={error}
             />
           ))}
       </fieldset>
+  );
+  return (
+    <div className="ops-workspace" aria-busy={pending || read.loading}>
+      {error && <ErrorState error={error} />}
+      {pending && <Spinner label="Saving changes" />}
+      {section === 'DAY' && !path.endsWith('/edit-layout') && can('ReadOwnMarketAssignments') ? <Tabs items={[
+        { label: 'Map and attendance', content: controls },
+        { label: 'Schedule', content: dayView === 'Schedule' ? <BoothSchedule api={api} canManage={can('ManageOwnMarketAssignments')} canBill={can('ManageOwnMarketBilling')} /> : null },
+      ]} onChange={setDayView} /> : controls}
     </div>
   );
 }

@@ -98,15 +98,6 @@ export function createMarketStorefrontApi(
     },
     bootstrap,
     select,
-    async login(username: string, password: string) {
-      const result = await execute(
-        { api: 'shop', document: shop.ShopLoginDocument },
-        { username, password, rememberMe: false },
-      );
-      if (result.login.__typename !== 'CurrentUser')
-        throw new AppError('authentication');
-      return { signedIn: true };
-    },
     async add(occurrenceId: string, variantId: string, quantity: number) {
       await select(occurrenceId);
       accepted(

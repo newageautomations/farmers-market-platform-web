@@ -90,7 +90,7 @@ export function Success({
               Email me an account link
             </button>
             <p>
-              <a href="/account/sign-in">Request a fresh link later</a>
+              <a href="/account/login">Sign in to your account</a>
             </p>
           </>
         )}

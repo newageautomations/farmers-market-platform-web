@@ -1,6 +1,7 @@
+import { randomBytes } from 'node:crypto';
 import type { APIRoute } from 'astro';
 import { boundedBody } from '@market/config';
-import { AppError, safeError } from '@market/api';
+import { AppError, safeError, applicationErrorMessage } from '@market/api';
 import { requestPublicMarketOperations } from '../../lib/shop';
 export const POST: APIRoute = async (context) => {
   const headers = {
@@ -54,15 +55,48 @@ export const POST: APIRoute = async (context) => {
       !Array.isArray(input.rentals)
     )
       throw new AppError('validation');
+    let claimSecret: string | undefined;
+    if (input.accountAnswer === 'NO') {
+      // Keep one submission attempt's proof stable across transport retries.
+      const cookieName =
+        'application-attempt-' +
+        String(input.idempotencyKey)
+          .replace(/[^a-zA-Z0-9-]/g, '')
+          .slice(0, 100);
+      claimSecret = context.cookies.get(cookieName)?.value;
+      if (!claimSecret || !/^[A-Za-z0-9_-]{43}$/.test(claimSecret))
+        claimSecret = randomBytes(32).toString('base64url');
+      context.cookies.set(cookieName, claimSecret, {
+        httpOnly: true,
+        secure: context.url.protocol === 'https:',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 48 * 3600,
+      });
+      input.claimSecret = claimSecret;
+    }
     const result = await requestPublicMarketOperations(context).submit(
       input as unknown as Parameters<
         ReturnType<typeof requestPublicMarketOperations>['submit']
       >[0],
     );
+    if (claimSecret && result.submissionId)
+      context.cookies.set(
+        `application-claim-${result.submissionId}`,
+        claimSecret,
+        {
+          httpOnly: true,
+          secure: context.url.protocol === 'https:',
+          sameSite: 'lax',
+          path: '/',
+          maxAge: 48 * 3600,
+        },
+      );
     return new Response(JSON.stringify(result), { status: 200, headers });
   } catch (error) {
     return new Response(
       JSON.stringify({
+        message: applicationErrorMessage(safeError(error)),
         error:
           safeError(error).code === 'APPLICATION_DOCUMENTS_REQUIRED'
             ? 'APPLICATION_DOCUMENTS_REQUIRED'

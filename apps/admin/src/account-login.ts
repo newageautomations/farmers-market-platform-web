@@ -1,6 +1,8 @@
+import { safeAdminDestination } from '@market/config';
+import { AppError } from '@market/api';
 import { createPlatformAccountApi } from '@market/api';
 import { createAdminSession, type SessionState } from '@market/auth';
-function returnCookie(name: string, value: string, maxAge = 120) {
+function returnCookie(name: string, value: string, maxAge = 1800) {
   document.cookie = `${name}=${encodeURIComponent(value)}; Path=/auth/account; SameSite=Lax; Max-Age=${maxAge}${window.location.protocol === 'https:' ? '; Secure' : ''}`;
 }
 function consumeReturnCookie(name: string) {
@@ -15,28 +17,43 @@ export async function selectAuthorizedAccountContext(
   session: SessionState,
 ) {
   if (session.status !== 'authenticated') return session;
+  const url = new URL(window.location.href);
   if (
-    !new URL(window.location.href).searchParams.has('channel') &&
-    session.channel.permissions.some((p) =>
-      ['ReadOwnVendorIdentity', 'ReadOwnMarket', 'SuperAdmin'].includes(p),
-    )
+    url.searchParams.get('principal') &&
+    url.searchParams.get('principal') !== session.user.id
   )
-    return session;
+    throw new AppError('forbidden');
   const account = await createPlatformAccountApi({
     endpoint,
     channelToken: session.channel.token,
   }).contexts();
-  const business =
-    account.affiliations.find(
-      (a) =>
-        a.channelId ===
-        new URL(window.location.href).searchParams.get('channel'),
-    ) ?? account.affiliations[0];
-  return business
-    ? createAdminSession(endpoint).restore(business.channelId)
-    : session;
+  if (url.pathname === '/platform' || url.pathname.startsWith('/platform/')) {
+    if (!account.platformAdministrator) throw new AppError('forbidden');
+    const channel = session.user.channels.find((c) =>
+      c.permissions.includes('SuperAdmin'),
+    );
+    if (!channel) throw new AppError('forbidden');
+    return createAdminSession(endpoint).restore(channel.id);
+  }
+  const mode = url.pathname.startsWith('/vendor')
+    ? 'VENDOR'
+    : url.pathname.startsWith('/market')
+      ? 'MARKET_MANAGER'
+      : null;
+  const matches = account.affiliations.filter(
+    (a) =>
+      a.mode === mode &&
+      (!url.searchParams.has('channel') ||
+        a.channelId === url.searchParams.get('channel')),
+  );
+  if (matches.length !== 1) throw new AppError('forbidden');
+  return createAdminSession(endpoint).restore(matches[0]!.channelId);
 }
-export function platformAccountLogin(origin: string) {
+export const safeAdminReturn = safeAdminDestination;
+export function platformAccountLogin(
+  origin: string,
+  expectedPrincipal?: string,
+) {
   const url = new URL('/account/login', origin);
   const correlation = btoa(
     String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))),
@@ -46,9 +63,13 @@ export function platformAccountLogin(origin: string) {
     .replaceAll('=', '');
   returnCookie('platform-admin-correlation', correlation);
   const path = window.location.pathname + window.location.search;
-  if (/^\/(vendor|market)(\?channel=\d+)?$/.test(path))
-    returnCookie('platform-admin-destination', path);
+  if (safeAdminReturn(path)) returnCookie('platform-admin-destination', path);
   else returnCookie('platform-admin-destination', '', 0);
+  url.searchParams.set('destination', safeAdminReturn(path) ?? '/');
+  const principal =
+    expectedPrincipal ??
+    new URL(window.location.href).searchParams.get('principal');
+  if (principal) url.searchParams.set('principal', principal);
   url.searchParams.set('origin', window.location.origin);
   url.searchParams.set('correlation', correlation);
   window.location.assign(url.toString());
@@ -70,16 +91,23 @@ export async function completePlatformAccountLogin(endpoint: string) {
   window.history.replaceState(
     null,
     '',
-    destination && /^\/(vendor|market)(\?channel=\d+)?$/.test(destination)
-      ? destination
-      : '/',
+    safeAdminReturn(current.searchParams.get('returnTo') ?? '') ??
+      (destination && safeAdminReturn(destination) ? destination : '/'),
   );
-  if (
-    !code ||
-    !correlation ||
-    !/^[A-Za-z0-9_-]{43}$/.test(code) ||
-    !/^[A-Za-z0-9_-]{43}$/.test(correlation)
-  )
-    throw new Error('Account return invalid');
-  await createPlatformAccountApi({ endpoint }).handoff(code, correlation);
+  try {
+    if (
+      !code ||
+      !correlation ||
+      !/^[A-Za-z0-9_-]{43}$/.test(code) ||
+      !/^[A-Za-z0-9_-]{43}$/.test(correlation)
+    )
+      throw new Error('Account return invalid');
+    await createPlatformAccountApi({ endpoint }).handoff(code, correlation);
+  } catch (error) {
+    // A failed return must never fall back to a different person's existing cookie on reload.
+    const retry = new URL(window.location.href);
+    retry.searchParams.set('account', '1');
+    window.history.replaceState(null, '', retry.pathname + retry.search);
+    throw error;
+  }
 }

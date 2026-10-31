@@ -1,5 +1,7 @@
 # Account switching and authentication architecture
 
+This is historical implementation evidence. The current authentication contract is [Unified authentication implementation](UNIFIED_AUTHENTICATION_IMPLEMENTATION.md). Native Administrator credential entry, general Customer email-link login, the legacy central cookie, and the logout/session semantics described below have been retired or replaced.
+
 ## A. Executive summary
 
 Investigated the current source, Phase 13F report, subsequent unified-account and phone-verification implementations, component registry, development commands and installed Astro behavior. Changes are local to this frontend repository. No backend source, secrets, persistent development records, commerce logic, dependencies, production routing or database migrations were changed.

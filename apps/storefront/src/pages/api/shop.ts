@@ -218,15 +218,13 @@ export const POST: APIRoute = async (context) => {
         result = await api.bootstrap();
         break;
       case 'login':
-        if (
-          typeof input.username !== 'string' ||
-          typeof input.password !== 'string' ||
-          input.username.length > 320 ||
-          input.password.length > 1024
-        )
-          throw new AppError('validation');
-        result = await api.login(input.username, input.password);
-        break;
+        return new Response(
+          JSON.stringify({
+            error: 'CENTRAL_ACCOUNT_REQUIRED',
+            login: '/account/login',
+          }),
+          { status: 410, headers },
+        );
       case 'add':
         result = {
           cart:

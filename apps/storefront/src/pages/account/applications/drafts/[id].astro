@@ -1,0 +1,7 @@
+---
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+return new Response(
+  'Application management requires an authorized Vendor business. Open Vendor Applications in your Vendor dashboard. Legacy account-only records are preserved.',
+  { status: 410, headers: { 'Cache-Control': 'private, no-store' } },
+);
+---

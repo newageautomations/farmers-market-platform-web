@@ -77,6 +77,7 @@ type Query {
 
   """Get active shipping methods"""
   activeShippingMethods: [PublicShippingMethod]!
+  applicantApplications(input: JSON): JSON!
   marketApplicationApplicant: JSON!
   publicMarketApplication(slug: String): JSON!
   publicMarketOccurrenceMap(occurrenceId: Int!): JSON!
@@ -266,6 +267,7 @@ type Mutation {
 
   """Resets a Customer's password based on the provided token"""
   resetPassword(token: String!, password: String!): ResetPasswordResult!
+  applicantApplicationCommand(action: String!, input: JSON!): JSON!
   submitMarketApplication(input: MarketApplicationSubmissionInput!): JSON!
   addVendorPreorderItem(occurrenceId: ID!, variantId: ID!, quantity: Int!): UpdateOrderItemsResult!
   selectCommerceContext(occurrenceId: ID): CommerceContext!
@@ -286,7 +288,7 @@ type Mutation {
   applicationCompliance(input: JSON!): JSON!
   uploadApplicationCompliance(input: JSON!, file: Upload!): JSON!
   setCustomerFollow(kind: String!, id: ID!, following: Boolean!): CustomerFollowResult!
-  customerSignOut: CustomerHandoffResult!
+  customerSignOut(everywhere: Boolean = false): CustomerHandoffResult!
   setCheckoutContact(input: CheckoutContactInput!): CheckoutContactView!
   requestPurchaseAccountLink(orderId: ID!, origin: String!): PurchaseAccountLinkReceipt!
   exchangeCustomerHandoff(code: String!, origin: String!, correlation: String!): CustomerHandoffResult!
@@ -4036,6 +4038,7 @@ input MarketApplicationRentalRequest {
 }
 
 input MarketApplicationSubmissionInput {
+  claimSecret: String
   accountAnswer: String!
   vendorId: Int
   slug: String!

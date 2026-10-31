@@ -177,6 +177,13 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnVendorIdentity',
   },
   {
+    label: 'Packing & Fulfillment',
+    path: '/vendor/orders/packing',
+    parent: '/vendor/orders',
+    scopes: ['VENDOR'],
+    permission: 'ReadOwnVendorIdentity',
+  },
+  {
     label: 'Contact Submissions',
     path: '/vendor/contact-submissions',
     scopes: ['VENDOR'],
@@ -187,6 +194,18 @@ export const navigation: readonly NavItem[] = [
     path: '/vendor/customers',
     scopes: ['VENDOR'],
     permission: 'ReadOwnCRM',
+  },
+  {
+    label: 'Applications',
+    path: '/vendor/applications',
+    scopes: ['VENDOR'],
+    permission: 'ReadOwnVendorIdentity',
+  },
+  {
+    label: 'Market Day',
+    path: '/vendor/day',
+    scopes: ['VENDOR'],
+    permission: 'ReadOwnVendorIdentity',
   },
   {
     label: 'Markets',
@@ -348,6 +367,8 @@ export const navigation: readonly NavItem[] = [
 export function visibleNavigation(context: AdminContext) {
   const items = navigation.filter(
     (item) =>
+      (item.path !== '/vendor/applications' ||
+        context.membershipRole === 'owner') &&
       item.scopes.includes(context.scope) &&
       (!item.permission || hasPermission(context.permissions, item.permission)),
   );
@@ -485,6 +506,16 @@ export function routeAllowed(context: AdminContext, path: string) {
     )
   )
     return context.permissions.includes('ReadOwnCRM');
+  if (
+    context.scope === 'VENDOR' &&
+    /^\/vendor\/applications(?:\/(?:continue|[1-9]\d*|drafts\/[1-9]\d*))?$/.test(
+      canonical,
+    )
+  )
+    return (
+      context.permissions.includes('ReadOwnVendorIdentity') &&
+      context.membershipRole === 'owner'
+    );
   if (context.scope === 'VENDOR' && canonical === '/vendor/booths')
     return context.permissions.includes('ReadOwnVendorIdentity');
   if (context.scope === 'VENDOR' && canonical === '/vendor/products/new')
@@ -500,6 +531,7 @@ export function routeAllowed(context: AdminContext, path: string) {
         '/vendor/orders',
         '/vendor/customers',
         '/vendor/markets',
+        '/vendor/applications',
       ].includes(item.path) &&
       new RegExp(`^${item.path}/[^/]+$`).test(canonical)
     );
@@ -546,10 +578,14 @@ export type OptionalFeatureSlot = 'analytics' | 'marketing' | 'pos';
 export async function resolveAdminContext(
   session: SessionState,
   endpoint: string,
+  requestedScope?: AdminScope,
 ): Promise<AdminContext> {
   if (session.status !== 'authenticated') throw new AppError('authentication');
   const permissions = session.channel.permissions;
-  if (permissions.includes('SuperAdmin')) {
+  if (
+    permissions.includes('SuperAdmin') &&
+    (!requestedScope || requestedScope === 'PLATFORM')
+  ) {
     const scope = await createManagementApi({
       endpoint,
       channelToken: session.channel.token,
@@ -563,7 +599,10 @@ export async function resolveAdminContext(
       source: 'backend',
     };
   }
-  if (permissions.includes('ReadOwnVendorIdentity')) {
+  if (
+    permissions.includes('ReadOwnVendorIdentity') &&
+    (!requestedScope || requestedScope === 'VENDOR')
+  ) {
     const result = await createAdminApi({
       endpoint,
       channelToken: session.channel.token,
@@ -591,7 +630,10 @@ export async function resolveAdminContext(
       membershipRole: membership.role as 'owner' | 'staff',
     };
   }
-  if (permissions.includes('ReadOwnMarket')) {
+  if (
+    permissions.includes('ReadOwnMarket') &&
+    (!requestedScope || requestedScope === 'MARKET')
+  ) {
     const result = await createAdminApi({
       endpoint,
       channelToken: session.channel.token,

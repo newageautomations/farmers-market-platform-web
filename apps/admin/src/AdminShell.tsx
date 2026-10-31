@@ -83,6 +83,7 @@ const DocumentsWorkspace = lazy(() =>
 function Shell({
   context,
   onLogout,
+  onLogoutEverywhere,
   controls,
   vendorService,
   marketService,
@@ -91,6 +92,7 @@ function Shell({
 }: {
   context: AdminContext;
   onLogout: () => void;
+  onLogoutEverywhere?: () => void;
   controls?: ReactNode;
   vendorService?: VendorService;
   marketService?: MarketService;
@@ -347,6 +349,23 @@ function Shell({
               >
                 Sign out
               </Button>
+              {onLogoutEverywhere && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    if (
+                      window.dispatchEvent(
+                        new Event('storefront-editor:before-exit', {
+                          cancelable: true,
+                        }),
+                      )
+                    )
+                      onLogoutEverywhere();
+                  }}
+                >
+                  Sign out everywhere
+                </Button>
+              )}
             </DashboardMenu>
           </header>
         }

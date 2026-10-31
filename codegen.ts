@@ -9,6 +9,7 @@ const config: CodegenConfig = {
           api === 'admin'
             ? [
                 'packages/api/operations/admin.graphql',
+                'packages/api/operations/packing.graphql',
                 'packages/api/operations/market.graphql',
                 'packages/api/operations/management.graphql',
                 'packages/api/operations/documents.graphql',

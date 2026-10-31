@@ -160,8 +160,8 @@ query AccountProfile {
 query PlatformShopAccountContexts {
   platformAccountContexts
 }
-mutation CustomerSignOut {
-  customerSignOut {
+mutation CustomerSignOut($everywhere: Boolean) {
+  customerSignOut(everywhere: $everywhere) {
     success
   }
 }

@@ -1,0 +1,162 @@
+---
+import { UtilityIcon, type AccountModeChoice } from '@market/ui';
+import { cardClassName, buttonClassName } from '@market/ui/presentation';
+import Button from '../../components/ui/Button.astro';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import {
+  accountBridge,
+  isCentral,
+  type CentralAccountData,
+} from '../../lib/account';
+if (!isCentral(Astro.url)) return Astro.redirect('/account/login');
+let account: CentralAccountData;
+try {
+  account = await accountBridge<CentralAccountData>({
+    action: 'centralProfile',
+    central: Astro.cookies.get('platform-unified-account')?.value ?? '',
+  });
+} catch {
+  return Astro.redirect('/account/login');
+}
+if (!account.profile.phoneVerified) return Astro.redirect('/account/phone');
+const choices: AccountModeChoice[] = [
+  { value: 'CUSTOMER', label: 'Customer', href: '/account' },
+];
+if (process.env.ADMIN_ORIGIN) {
+  for (const a of account.contexts.affiliations)
+    choices.push({
+      value: `${a.mode}:${a.channelId}`,
+      label: `${a.mode === 'VENDOR' ? 'Vendor' : 'Market Manager'}: ${a.name}`,
+      href: `${process.env.ADMIN_ORIGIN}/${a.mode === 'VENDOR' ? 'vendor' : 'market'}?channel=${encodeURIComponent(a.channelId)}&account=1&principal=${encodeURIComponent(account.contexts.principalId ?? '')}`,
+    });
+  if (account.contexts.platformAdministrator)
+    choices.push({
+      value: 'PLATFORM',
+      label: 'Platform administration',
+      href: `${process.env.ADMIN_ORIGIN}/platform?account=1&principal=${encodeURIComponent(account.contexts.principalId ?? '')}`,
+    });
+}
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+---
+
+<SiteLayout title="Choose your workspace" noindex>
+  <section class="py-12 account-panel">
+    <h1>Choose your workspace</h1>
+    {Astro.url.searchParams.has('unavailable') && (
+      <p class="alert ui-alert ui-alert-error" role="alert">
+        The requested workspace is unavailable for your account. Choose one of
+        your currently authorized workspaces.
+      </p>
+    )}
+    <p>
+      Signed in as {account.profile.emailAddress}. Select where you want to
+      continue.
+    </p>
+    <div class="workspace-cards">
+      {(
+        [
+          {
+            mode: 'CUSTOMER',
+            label: 'Customer',
+            icon: 'user',
+            description: 'Your orders, favorites and account.',
+          },
+          {
+            mode: 'VENDOR',
+            label: 'Vendor',
+            icon: 'store',
+            description: 'Manage your Vendor businesses.',
+          },
+          {
+            mode: 'MARKET_MANAGER',
+            label: 'Market Manager',
+            icon: 'calendar',
+            description: 'Manage your Markets.',
+          },
+          ...(account.contexts.platformAdministrator
+            ? [
+                {
+                  mode: 'PLATFORM',
+                  label: 'Platform administration',
+                  icon: 'panel' as const,
+                  description: 'Manage the platform.',
+                },
+              ]
+            : []),
+        ] as const
+      ).map((role) => {
+        const workspaces = choices.filter(
+          (choice) =>
+            choice.value === role.mode ||
+            choice.value.startsWith(role.mode + ':'),
+        );
+        return (
+          <article class={cardClassName({ className: 'workspace-card' })}>
+            <UtilityIcon name={role.icon} />
+            <p class="workspace-name">{role.label}</p>
+            <p>{role.description}</p>
+            <div class="workspace-links">
+              {workspaces.length ? (
+                workspaces.map((workspace) => (
+                  <a
+                    class={buttonClassName({ variant: 'secondary' })}
+                    href={workspace.href}
+                  >
+                    {role.mode === 'CUSTOMER'
+                      ? 'Open Customer account'
+                      : workspace.label.replace(role.label + ': ', '')}
+                  </a>
+                ))
+              ) : (
+                <p>No authorized workspace yet.</p>
+              )}
+            </div>
+          </article>
+        );
+      })}
+    </div>
+    <div class="ui-actions workspace-setup">
+      <Button href="/account/onboarding/vendor" variant="primary">
+        Set up a new Vendor business
+      </Button>
+      <Button href="/account/onboarding/market" variant="secondary">
+        Set up a new Market
+      </Button>
+    </div>
+  </section>
+</SiteLayout>
+<style>
+  .account-panel {
+    max-width: 68rem;
+  }
+  .workspace-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: 1rem;
+    margin-block: 2rem;
+  }
+  .workspace-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .workspace-card p {
+    margin: 0;
+  }
+  .workspace-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+  .workspace-links {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding-top: 0.75rem;
+  }
+  .workspace-setup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+</style>

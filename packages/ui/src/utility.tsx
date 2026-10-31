@@ -10,10 +10,17 @@ import { Button } from './index';
 import { navigationIconPaths } from './presentation';
 
 const utilityPaths = {
+  close: 'm6 6 12 12M18 6 6 18',
   plus: 'M12 5v14M5 12h14',
   user: 'M20 21v-2a7 7 0 0 0-14 0v2M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
   menu: 'M4 6h16M4 12h16M4 18h16',
   check: 'm5 12 4 4L19 6',
+  calendar:
+    'M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM16 2v4M8 2v4M3 10h18',
+  'document-check':
+    'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8ZM14 2v6h6M8 15l3 3 5-6',
+  notebook:
+    'M6 3h13a2 2 0 0 1 2 2v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM2 7h4M2 12h4M2 17h4M10 8h7M10 12h7M10 16h5',
   email: 'M3 5h18v14H3zM3 5l9 7 9-7',
   phone:
     'M22 16.9v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 3.1 5.2 2 2 0 0 1 5.1 3h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L9 11a16 16 0 0 0 4 4l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z',

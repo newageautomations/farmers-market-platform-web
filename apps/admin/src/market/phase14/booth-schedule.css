@@ -1,0 +1,72 @@
+.booth-schedule {
+  --ui-card-padding: 0.75rem clamp(1rem, 2.5vw, 1.5rem)
+    clamp(1rem, 2.5vw, 1.5rem);
+  display: grid;
+  gap: 1rem;
+}
+.booth-schedule .schedule-date-controls,
+.schedule-date-controls > .ops-field {
+  margin-block: 0;
+}
+.schedule-desktop {
+  overflow-x: auto;
+}
+.schedule-desktop table {
+  min-width: 100%;
+}
+.schedule-desktop th {
+  white-space: nowrap;
+}
+.schedule-desktop .ui-table :is(th, td) + :is(th, td) {
+  border-inline-start: 1px solid
+    color-mix(in srgb, var(--brand-foreground) 18%, var(--brand-surface));
+}
+.schedule-desktop td {
+  min-width: 10rem;
+  vertical-align: top;
+}
+.schedule-cell {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  text-align: left;
+  white-space: normal;
+}
+.schedule-cell small {
+  font-weight: normal;
+}
+.schedule-desktop td[data-state='AVAILABLE'] {
+  background: var(--status-success-bg);
+}
+.schedule-desktop td[data-state='UNAVAILABLE'] {
+  background: var(--status-neutral-bg);
+}
+.schedule-desktop td[data-state='ASSIGNED'] {
+  background: var(--status-info-bg);
+}
+.schedule-mobile {
+  display: none;
+}
+@media (max-width: 767px) {
+  .schedule-desktop {
+    display: none;
+  }
+  .schedule-mobile {
+    display: grid;
+    gap: 1rem;
+  }
+  .schedule-mobile ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1rem;
+  }
+  .schedule-mobile li {
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--brand-foreground) 15%, transparent);
+    padding-bottom: 1rem;
+  }
+}

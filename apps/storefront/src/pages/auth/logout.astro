@@ -8,17 +8,11 @@ if (!isCentral(Astro.url)) return new Response('Not found', { status: 404 });
 <SiteLayout title="Sign out" noindex>
   <section class="py-12 account-panel">
     <h1>Sign out</h1>
-    <p>
-      End the central account session to prevent automatic sign-in on another
-      Storefront.
-    </p>
+    <p>End your authenticated sessions across the platform.</p>
     <form method="post" action="/api/account">
       <input type="hidden" name="action" value="logout" />
       <Button type="submit" variant="primary">
-        Sign out of the central account
-      </Button>
-      <Button type="submit" variant="primary" name="everywhere" value="true">
-        Sign out everywhere
+        Sign out
       </Button>
     </form>
   </section>

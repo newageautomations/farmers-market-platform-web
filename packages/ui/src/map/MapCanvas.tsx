@@ -49,6 +49,7 @@ interface Gesture {
 }
 export function MapCanvas({
   definition,
+  navigationEnd,
   spaces = [],
   selectedIds = [],
   onSelection,
@@ -65,6 +66,7 @@ export function MapCanvas({
   spacing = 10,
   ref,
 }: {
+  navigationEnd?: import('react').ReactNode;
   definition: MapDefinition;
   spaces?: Space[];
   selectedIds?: string[];
@@ -541,6 +543,7 @@ export function MapCanvas({
         >
           Reset zoom
         </button>
+        {navigationEnd}
       </div>
       <div
         ref={container}

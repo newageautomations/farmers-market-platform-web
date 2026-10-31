@@ -1,3 +1,4 @@
+import { applicationErrorMessages } from './application-rules';
 export type ErrorKind =
   | 'network'
   | 'graphql'
@@ -22,6 +23,53 @@ export const safeMessages: Record<ErrorKind, string> = {
   unknown: 'Something went wrong. Please try again.',
 };
 const taxMessages: Record<string, string> = {
+  BOUNDED_SCHEDULE_RANGE_REQUIRED: 'Choose a valid bounded date range. Recurring rules can cover up to one year.',
+  SCHEDULE_RANGE_TOO_LARGE: 'Choose a shorter range. Recurring rule previews support up to 128 market dates.',
+  SCHEDULE_CONFIRM_REQUIRED: 'Review and confirm the proposed scheduling change.',
+  SCHEDULE_PREVIEW_CHANGED: 'Scheduling information changed. Review a fresh preview before confirming.',
+  RECURRING_RULE_CONFLICT: 'Another recurring rule already covers this vendor or physical booth in the selected range.',
+  RESOLVE_RULE_CONFLICTS_FIRST: 'Resolve the blocked changes to existing assignments before changing this recurring rule.',
+  RULE_VENDOR_IMMUTABLE: 'Choose the existing rule’s vendor, or create a separate recurring assignment.',
+  BOOTH_ABSENT_FROM_LAYOUT: 'This booth does not exist in the selected date’s layout.',
+  RESOLVE_ISSUED_INVOICES_FIRST: 'Resolve issued or paid invoices through Booth billing before releasing this assignment or cancelling participation. No refund is automatic.',
+  EXPLICIT_DRAFT_INVOICE_VOID_REQUIRED: 'A draft invoice must be explicitly voided before releasing this booth. A manager with billing permission can confirm that option.',
+  HISTORICAL_DATE_DECISION_IMMUTABLE: 'This market date has started or attendance is frozen. Use the existing attendance correction workflow.',
+  CONFIRMED_DATE_REQUIRED: 'Confirm the vendor’s participation for this market date before assigning a booth.',
+  BOOTH_ALREADY_ASSIGNED: 'This booth is occupied. Refresh the schedule and review its current assignment.',
+  BOOTH_SIZE_CONFLICT: 'This booth does not meet the vendor’s space requirements.',
+  BOOTH_AMENITY_CONFLICT: 'This booth does not provide the vendor’s required amenities.',
+  RENTAL_CAPACITY_CONFLICT: 'The requested rentals exceed capacity for this market date.',
+  PLATFORM_PARTICIPATION_UNAVAILABLE: 'This vendor needs approved market membership and confirmed participation for this date.',
+  PHYSICAL_BOOTH_IDENTITY_AUTOMATIC: 'Booth identity is managed automatically. Refresh the layout before saving.',
+  PHYSICAL_BOOTH_CONFIRMATION_REQUIRED: 'Confirm the physical booth identity change before saving.',
+  PHYSICAL_BOOTH_ALREADY_IN_LAYOUT: 'This physical booth already has a representation in this layout. Remove the duplicate before saving.',
+  ASSIGNED_BOOTH_IDENTITY_IMMUTABLE: 'This booth has assignment history. Keep its identity and resolve the replacement separately.',
+  ASSIGNED_BOOTH_CANNOT_BE_RETIRED: 'Resolve active booth assignments before retiring this physical booth.',
+  PHYSICAL_BOOTH_RETIRED: 'This physical booth is retired. Use an active booth or create a new booth.',
+
+  INVALID_PACKING_QUANTITY:
+    'Enter a whole number from zero to one million. Reusing packed units cannot exceed the available quantity.',
+  PACKING_CHECKLIST_INCOMPLETE:
+    'Check every required item before marking this customer packed.',
+  PACKING_OCCURRENCE_CANCELLED:
+    'This market occurrence is cancelled. Packing cannot be changed.',
+  ATTENDANCE_MARKET_NOT_ENDED:
+    'Attendance can be finalized after the market ends in its configured time zone.',
+  ATTENDANCE_WINDOW_CLOSED:
+    'Self check-in is available only during the scheduled market hours.',
+  ATTENDANCE_ALREADY_RECORDED:
+    'Attendance has already been recorded. Refresh to see the current status.',
+  ATTENDANCE_UNRESOLVED:
+    'Resolve each awaiting arrival record before finalizing attendance.',
+  ATTENDANCE_FINALIZED:
+    'Attendance is finalized. Use the correction workflow and enter a reason.',
+  ATTENDANCE_NOT_SCHEDULED:
+    'This vendor is no longer scheduled for this occurrence. Refresh attendance.',
+  OCCURRENCE_CANCELLED:
+    'This market occurrence is cancelled. Attendance cannot be changed.',
+  OCCURRENCE_NOT_STARTED:
+    'Attendance can be recorded once the market occurrence starts.',
+
   VENDOR_TAX_RATE_REQUIRED:
     'A taxable product has no configured rate. The vendor must set a default, market rate, or product override before checkout.',
   VENDOR_TAX_RATE_INVALID:
@@ -33,11 +81,33 @@ export class AppError extends Error {
     public readonly kind: ErrorKind,
     public readonly code?: string,
   ) {
-    super((code && taxMessages[code]) || safeMessages[kind]);
+    super(
+      (code &&
+        ((code.startsWith('APPLICATION_') && applicationErrorMessages[code]) ||
+          taxMessages[code])) ||
+        safeMessages[kind],
+    );
     this.name = 'AppError';
   }
 }
 const codes: Record<string, ErrorKind> = {
+  INVALID_PACKING_QUANTITY: 'validation',
+  PACKING_CHECKLIST_INCOMPLETE: 'validation',
+  PACKING_OCCURRENCE_CANCELLED: 'validation',
+  INVALID_PACKING_ACTION: 'validation',
+  ATTENDANCE_MARKET_NOT_ENDED: 'validation',
+  ATTENDANCE_WINDOW_CLOSED: 'validation',
+  ATTENDANCE_ALREADY_RECORDED: 'conflict',
+  ATTENDANCE_UNRESOLVED: 'validation',
+  ATTENDANCE_FINALIZED: 'conflict',
+  ATTENDANCE_NOT_SCHEDULED: 'validation',
+  OCCURRENCE_CANCELLED: 'validation',
+  OCCURRENCE_NOT_STARTED: 'validation',
+
+  APPLICATION_CLOSED: 'validation',
+  APPLICATION_NOT_YET_OPEN: 'validation',
+  APPLICATION_CONDITION_INVALID: 'validation',
+  APPLICATION_SCHEDULE_INVALID: 'validation',
   PREORDER_UNAVAILABLE: 'validation',
   NONEMPTY_CONTEXT_SWITCH_DENIED: 'conflict',
   PREORDER_OCCURRENCE_REQUIRED: 'validation',
@@ -102,8 +172,27 @@ const codes: Record<string, ErrorKind> = {
   ENTITLEMENT_DENIED: 'entitlement',
   VERSION_CONFLICT: 'conflict',
   STALE_DOMAIN_VERSION: 'conflict',
+  BOUNDED_SCHEDULE_RANGE_REQUIRED: 'validation',
+  SCHEDULE_RANGE_TOO_LARGE: 'validation',
+  SCHEDULE_CONFIRM_REQUIRED: 'validation',
+  SCHEDULE_PREVIEW_CHANGED: 'validation',
+  RECURRING_RULE_CONFLICT: 'validation',
+  RESOLVE_RULE_CONFLICTS_FIRST: 'validation',
+  RULE_VENDOR_IMMUTABLE: 'validation',
+  BOOTH_ABSENT_FROM_LAYOUT: 'validation',
+  RESOLVE_ISSUED_INVOICES_FIRST: 'validation',
+  EXPLICIT_DRAFT_INVOICE_VOID_REQUIRED: 'validation',
+  HISTORICAL_DATE_DECISION_IMMUTABLE: 'validation',
+  CONFIRMED_DATE_REQUIRED: 'validation',
+  PLATFORM_PARTICIPATION_UNAVAILABLE: 'validation',
   MARKET_OPERATIONS_UNAVAILABLE: 'unavailable',
   MARKET_OPERATIONS_INPUT_INVALID: 'validation',
+  PHYSICAL_BOOTH_IDENTITY_AUTOMATIC: 'validation',
+  PHYSICAL_BOOTH_CONFIRMATION_REQUIRED: 'validation',
+  PHYSICAL_BOOTH_ALREADY_IN_LAYOUT: 'conflict',
+  ASSIGNED_BOOTH_IDENTITY_IMMUTABLE: 'conflict',
+  ASSIGNED_BOOTH_CANNOT_BE_RETIRED: 'conflict',
+  PHYSICAL_BOOTH_RETIRED: 'validation',
   BOOTH_ALREADY_ASSIGNED: 'conflict',
   BOOTH_AMENITY_CONFLICT: 'validation',
   BOOTH_SIZE_CONFLICT: 'validation',

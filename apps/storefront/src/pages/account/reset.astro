@@ -2,12 +2,37 @@
 import { inputClassName, buttonClassName } from '@market/ui/presentation';
 import Button from '../../components/ui/Button.astro';
 import SiteLayout from '../../layouts/SiteLayout.astro';
-import { isCentral } from '../../lib/account';
+import { isCentral, accountBridge } from '../../lib/account';
 if (!isCentral(Astro.url))
   return new Response('Use your original account recovery link.', {
     status: 400,
   });
-const token = Astro.url.searchParams.get('token') ?? '';
+let available = false,
+  phoneRequired = false,
+  phoneProven = false;
+const fromLink = Astro.url.searchParams.get('token');
+const token = fromLink ?? Astro.cookies.get('account-recovery')?.value ?? '';
+try {
+  const result = await accountBridge<{
+    phoneRequired: boolean;
+    phoneProven: boolean;
+  }>({ action: 'recoveryStatus', token });
+  available = true;
+  phoneRequired = result.phoneRequired;
+  phoneProven = result.phoneProven;
+  if (fromLink) {
+    Astro.cookies.set('account-recovery', token, {
+      httpOnly: true,
+      secure: Astro.url.protocol === 'https:',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 900,
+    });
+    return Astro.redirect('/account/reset');
+  }
+} catch {
+  /* Invalid, consumed or expired tokens cannot start recovery. */
+}
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 ---
@@ -15,10 +40,53 @@ Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 <SiteLayout title="Reset your password" noindex>
   <section class="py-12 account-panel">
     <h1>Reset your password</h1>
-    {/^[A-Za-z0-9_-]{43}$/.test(token) && (
+    {Astro.url.searchParams.has('error') && (
+      <p class="alert ui-alert ui-alert-error" role="alert">
+        Recovery could not be completed. Check the code or request a new link if
+        it expired. SMS requests are rate limited.
+      </p>
+    )}
+    {!available && (
+      <p role="alert">
+        This recovery link is unavailable or expired. Request a new recovery
+        email.
+      </p>
+    )}
+    {available && phoneRequired && !phoneProven && (
+      <>
+        <p>
+          Confirm your existing verified personal phone before setting a
+          password. We will send a code only to that number.
+        </p>
+        <form method="post" action="/api/account">
+          <input type="hidden" name="action" value="requestRecoveryPhone" />
+          <Button type="submit" variant="secondary">
+            Send SMS code
+          </Button>
+        </form>
+        <form method="post" action="/api/account">
+          <input type="hidden" name="action" value="verifyRecoveryPhone" />
+          <label class="field">
+            SMS code
+            <input
+              class={inputClassName('text')}
+              name="code"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxlength="6"
+              required
+            />
+          </label>
+          <Button type="submit" variant="primary">
+            Verify code
+          </Button>
+        </form>
+      </>
+    )}
+    {available && (!phoneRequired || phoneProven) && (
       <form method="post" action="/api/account">
         <input type="hidden" name="action" value="resetPassword" />
-        <input type="hidden" name="token" value={token} />
         <label class="field">
           New password{' '}
           <input
@@ -54,6 +122,3 @@ Astro.response.headers.set('Referrer-Policy', 'no-referrer');
     </p>
   </section>
 </SiteLayout>
-<script>
-  history.replaceState(null, '', '/account/reset');
-</script>

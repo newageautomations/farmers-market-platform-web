@@ -19,6 +19,7 @@ import {
   Component,
   createElement,
   useSyncExternalStore,
+  useEffect,
   useId,
   useRef,
   useState,
@@ -418,15 +419,19 @@ export function Dropdown({
   label,
   children,
   defaultOpen = false,
+  open,
+  className = '',
 }: {
   label: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
+  open?: boolean;
+  className?: string;
 }) {
   return (
     <details
-      className={disclosureClassName('dropdown')}
-      open={defaultOpen || undefined}
+      className={disclosureClassName(`dropdown ${className}`)}
+      open={open ?? (defaultOpen || undefined)}
     >
       <summary>{label}</summary>
       <div className="ui-disclosure-content">{children}</div>
@@ -436,9 +441,14 @@ export function Dropdown({
 export function Tabs({
   items,
   initialTab,
+  onChange,
+  split = false,
 }: {
   items: readonly { label: string; content: ReactNode; disabled?: boolean }[];
+  /** Display both mounted panels as labelled regions in responsive workspaces. */
+  split?: boolean;
   initialTab?: string;
+  onChange?: (label: string) => void;
 }) {
   const [selected, setSelected] = useState(() =>
       initialTab &&
@@ -448,9 +458,23 @@ export function Tabs({
     ),
     id = useId();
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
+  const root = useRef<HTMLDivElement>(null);
+  const previousSplit = useRef(split);
+  useEffect(() => {
+    const returningToTabs = previousSplit.current && !split;
+    previousSplit.current = split;
+    const active = document.activeElement;
+    if (
+      returningToTabs &&
+      active &&
+      root.current?.contains(active) &&
+      active.closest('[hidden]')
+    )
+      refs.current[selected]?.focus();
+  }, [split, selected]);
   return (
-    <div>
-      <div role="tablist" className="ui-tabs" aria-label="Views">
+    <div ref={root}>
+      <div role="tablist" className="ui-tabs" aria-label="Views" hidden={split}>
         {items.map((item, index) => (
           <button
             type="button"
@@ -464,7 +488,10 @@ export function Tabs({
             aria-selected={selected === index}
             aria-controls={`${id}-panel-${index}`}
             tabIndex={selected === index ? 0 : -1}
-            onClick={() => setSelected(index)}
+            onClick={() => {
+              setSelected(index);
+              onChange?.(item.label);
+            }}
             onKeyDown={(event) => {
               const enabled = items
                 .map((item, index) => (item.disabled ? -1 : index))
@@ -481,6 +508,7 @@ export function Tabs({
               else return;
               event.preventDefault();
               setSelected(next);
+              onChange?.(items[next]!.label);
               refs.current[next]?.focus();
             }}
           >
@@ -492,9 +520,10 @@ export function Tabs({
         <div
           key={item.label}
           id={`${id}-panel-${index}`}
-          role="tabpanel"
-          aria-labelledby={`${id}-tab-${index}`}
-          hidden={selected !== index}
+          role={split ? 'region' : 'tabpanel'}
+          aria-label={split ? item.label : undefined}
+          aria-labelledby={split ? undefined : `${id}-tab-${index}`}
+          hidden={!split && selected !== index}
           tabIndex={0}
         >
           {item.content}
@@ -615,3 +644,8 @@ export {
   passwordMaximum,
   passwordSymbols,
 } from './password-policy';
+
+export { ApplicantApplications } from './ApplicantApplications';
+export { ApplicationOnboarding } from './ApplicationOnboarding';
+
+export * from './ApplicationInformation';

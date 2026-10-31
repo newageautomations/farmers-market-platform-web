@@ -32,10 +32,86 @@ import {
   type MapTool,
   type SyncCategory,
 } from '@market/ui';
+import { Control } from './common';
 import { LayoutInspector } from './LayoutInspector';
 import { LayoutLayers } from './LayoutLayers';
 import './designer.css';
 export { drawingHistory } from '@market/ui';
+// Feature composition shared by the library and editor copy actions.
+// Reuses the existing dialog and form controls; it adds no UI primitive.
+function CopyLayoutDialog({
+  version,
+  run,
+  onClose,
+  onCopied,
+}: {
+  version: LayoutVersion;
+  run: (c: OperationsCommand) => Promise<unknown>;
+  onClose: () => void;
+  onCopied: (version: LayoutVersion) => void;
+}) {
+  const [mode, setMode] = useState<'VARIATION' | 'INDEPENDENT'>('VARIATION');
+  const [busy, setBusy] = useState(false);
+  const copying = useRef(false);
+  return (
+    <MarketDialog
+      open
+      title="Copy layout"
+      busy={busy}
+      onClose={onClose}
+      actions={
+        <Button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            if (copying.current) return;
+            copying.current = true;
+            setBusy(true);
+            try {
+              const copied = (await run({
+                action: 'CLONE_LAYOUT',
+                id: version.id,
+                expectedRevision: version.revision,
+                data: { copyMode: mode },
+              })) as LayoutVersion | undefined;
+              if (copied) {
+                onClose();
+                onCopied(copied);
+              }
+            } finally {
+              copying.current = false;
+              setBusy(false);
+            }
+          }}
+        >
+          Create copy
+        </Button>
+      }
+    >
+      <Control label="Copy mode">
+        {(id) => (
+          <Select
+            id={id}
+            value={mode}
+            disabled={busy}
+            onChange={(event) =>
+              setMode(event.target.value as 'VARIATION' | 'INDEPENDENT')
+            }
+          >
+            <option value="VARIATION">Create a variation</option>
+            <option value="INDEPENDENT">Create an independent layout</option>
+          </Select>
+        )}
+      </Control>
+      <p>
+        Create a variation: Same physical booths, different arrangement.
+        Changes to this copy do not change the original layout.
+      </p>
+      <p>Create an independent layout: Separate booths with new identities.</p>
+      <p>Assignments are not copied. Existing layout-switch protections still apply.</p>
+    </MarketDialog>
+  );
+}
 export function currentLayoutVersion(
   data: MarketOperationsData,
   layoutId: number,
@@ -73,6 +149,7 @@ export function Layouts({
   run: (c: OperationsCommand) => Promise<unknown>;
   canManage: boolean;
 }) {
+  const [copyVersion, setCopyVersion] = useState<LayoutVersion | null>(null);
   const [archive, setArchive] = useState<
     NonNullable<MarketOperationsData['layouts']>[number] | null
   >(null);
@@ -142,15 +219,7 @@ export function Layouts({
                         size="compact"
                         aria-label={`Copy ${layout.name}`}
                         className="secondary"
-                        onClick={async () => {
-                          const copy = (await run({
-                            action: 'CLONE_LAYOUT',
-                            id: version.id,
-                            expectedRevision: version.revision,
-                            data: {},
-                          })) as LayoutVersion;
-                          if (copy) go(`/market/layouts/${copy.layoutId}/edit`);
-                        }}
+                        onClick={() => setCopyVersion(version)}
                       >
                         Copy
                       </Button>
@@ -170,6 +239,14 @@ export function Layouts({
           })}
         </div>
       </AnimatedDisclosure>
+      {copyVersion && (
+        <CopyLayoutDialog
+          version={copyVersion}
+          run={run}
+          onClose={() => setCopyVersion(null)}
+          onCopied={(v) => go(`/market/layouts/${v.layoutId}/edit`)}
+        />
+      )}
       <MarketDialog
         open={archive !== null}
         title={archive ? `Archive ${archive.name}?` : 'Archive layout'}
@@ -314,6 +391,11 @@ export function LayoutEditor({
 }) {
   const initial: Drawing = {
     definition: version.definition,
+    physicalBoothIds: Object.fromEntries(
+      (data.spaces ?? [])
+        .filter((s) => s.layoutVersionId === version.id && s.physicalBoothId)
+        .map((s) => [s.elementId, s.physicalBoothId!]),
+    ),
     spaces: Object.fromEntries(
       data.spaces
         ?.filter((s) => s.layoutVersionId === version.id)
@@ -344,7 +426,8 @@ export function LayoutEditor({
         'Market layout',
     ),
     [panel, setPanel] = useState<'inspector' | 'layers'>('inspector'),
-    [saving, setSaving] = useState(false);
+    [saving, setSaving] = useState(false),
+    [copyOpen, setCopyOpen] = useState(false);
   const canvas = useRef<MapCanvasHandle>(null),
     typing = useRef(''),
     pasteOffset = useRef(20);
@@ -498,6 +581,7 @@ export function LayoutEditor({
       ...path,
     };
     update({
+      ...drawing,
       definition: { ...definition, elements: [...definition.elements, e] },
       spaces:
         type === 'SPACE'
@@ -756,15 +840,7 @@ export function LayoutEditor({
               size="compact"
               type="button"
               disabled={dirty || saving}
-              onClick={async () => {
-                const v = (await run({
-                  action: 'CLONE_LAYOUT',
-                  id: version.id,
-                  expectedRevision: version.revision,
-                  data: {},
-                })) as LayoutVersion;
-                if (v) onClone?.(v);
-              }}
+              onClick={() => setCopyOpen(true)}
             >
               Copy Layout
             </Button>
@@ -1058,6 +1134,14 @@ export function LayoutEditor({
           )}
         </aside>
       </div>
+      {copyOpen && (
+        <CopyLayoutDialog
+          version={version}
+          run={run}
+          onClose={() => setCopyOpen(false)}
+          onCopied={(v) => onClone?.(v)}
+        />
+      )}
       <footer className="designer-footer">
         <span>
           {definition.elements.length} objects ·{' '}

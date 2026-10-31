@@ -1,15 +1,40 @@
+import { ApplicationInformationReview } from './ApplicationInformationReview';
 import { buttonClassName } from '@market/ui/presentation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   ApplicationSubmission,
   MarketOperationsData,
   OperationsCommand,
 } from '@market/api';
-import { Button, Card, Select, ApplicationFields } from '@market/ui';
+import {
+  Button,
+  Card,
+  Select,
+  SelectField,
+  Tabs,
+  Dropdown,
+  ApplicationFields,
+  ApplicationOnboarding,
+  UtilityIcon,
+} from '@market/ui';
 import { date } from '../common';
-import { friendlyLabel, SearchSelect, statusTone } from '../presentation';
+import {
+  friendlyLabel,
+  SearchSelect,
+  StatusBadge,
+  statusTone,
+  MarketDialog,
+} from '../presentation';
 import { Entry, Check } from './common';
 import { DocumentStatus } from '@market/ui/documents';
+
+function statusColors(value: string) {
+  const tone = statusTone(value);
+  return {
+    backgroundColor: `var(--status-${tone}-bg)`,
+    color: `var(--status-${tone}-fg)`,
+  };
+}
 
 export function ApplicationReview({
   submission: s,
@@ -21,6 +46,8 @@ export function ApplicationReview({
   canRequestDocuments = false,
   onSaved,
   onBusy,
+  onRefresh,
+  onDirty,
 }: {
   submission: ApplicationSubmission;
   data: MarketOperationsData;
@@ -29,9 +56,10 @@ export function ApplicationReview({
   canConfirmDates?: boolean;
   canBilling?: boolean;
   canRequestDocuments?: boolean;
+  onRefresh?: () => void;
   onSaved: () => void;
   onBusy: (busy: boolean) => void;
-  onClose?: () => void;
+  onDirty?: (dirty: boolean) => void;
 }) {
   const [status, setStatus] = useState(s.status),
     [notes, setNotes] = useState(s.managerNotes),
@@ -44,7 +72,59 @@ export function ApplicationReview({
   );
   const decisions =
     data.approvals?.filter((a) => a.submissionId === s.id) ?? [];
-  async function save() {
+  const documentVendorId =
+    s.onboarding?.platformVendorId ?? s.applicantVendorId;
+  const editable =
+    canManage &&
+    !['DECLINED', 'WITHDRAWN'].includes(s.status) &&
+    (s.status !== 'ACCEPTED' || status !== 'ACCEPTED');
+  const terminal = ['DECLINED', 'WITHDRAWN'].includes(s.status);
+  const activeRequest = s.informationRequests?.some((r) =>
+    ['AWAITING_RESPONSE', 'RESPONDED'].includes(r.status),
+  );
+  const [requestDirty, setRequestDirty] = useState(false);
+  const decisionDirty =
+    status !== s.status ||
+    directory !== String(s.directoryId ?? '') ||
+    conditional !== (s.conditionalAcceptance ?? false) ||
+    reviewed;
+  const dirty = notes !== s.managerNotes || decisionDirty || requestDirty;
+  useEffect(() => {
+    onDirty?.(dirty);
+  }, [dirty, onDirty]);
+  const [desktop, setDesktop] = useState(
+    () => window.matchMedia?.('(min-width: 1100px)').matches ?? true,
+  );
+  useEffect(() => {
+    const query = window.matchMedia?.('(min-width: 1100px)');
+    if (!query) return;
+    const change = () => setDesktop(query.matches);
+    query.addEventListener('change', change);
+    return () => query.removeEventListener('change', change);
+  }, []);
+  async function relatedCommand(command: OperationsCommand) {
+    const reviewDirty = notes !== s.managerNotes || decisionDirty;
+    if (
+      reviewDirty &&
+      !window.confirm(
+        'This action refreshes the application. Discard unsaved notes and decision changes and continue?',
+      )
+    )
+      return undefined;
+    setBusy(true);
+    onBusy(true);
+    try {
+      return await run(command);
+    } finally {
+      setBusy(false);
+      onBusy(false);
+      setConfirming(false);
+    }
+  }
+  const notesOnly = useRef(false);
+  const [confirming, setConfirming] = useState(false);
+  async function save(onlyNotes = false) {
+    notesOnly.current = onlyNotes;
     setBusy(true);
     onBusy(true);
     setFailed(false);
@@ -54,206 +134,449 @@ export function ApplicationReview({
         id: s.id,
         expectedRevision: s.revision,
         data: {
-          status,
-          conditionalAcceptance: conditional,
+          status: onlyNotes ? s.status : status,
+          conditionalAcceptance: onlyNotes
+            ? (s.conditionalAcceptance ?? false)
+            : conditional,
           managerNotes: notes,
-          directoryId: directory ? Number(directory) : null,
-          reviewedOccurrenceIds: reviewed
-            ? decisions.map((d) => d.occurrenceId)
-            : [],
+          directoryId: onlyNotes
+            ? s.directoryId
+            : directory
+              ? Number(directory)
+              : null,
+          reviewedOccurrenceIds:
+            !onlyNotes && reviewed ? decisions.map((d) => d.occurrenceId) : [],
         },
       });
-      if (result === undefined || result === null) setFailed(true);
-      else onSaved();
+      if (result == null) setFailed(true);
+      else {
+        onDirty?.(false);
+        onSaved();
+      }
     } catch {
       setFailed(true);
     } finally {
       setBusy(false);
       onBusy(false);
+      setConfirming(false);
     }
   }
   return (
-    <Card
-      as="section"
-      surface="embedded"
-      className="ops-editor"
-      aria-label="Application review"
-    >
-      <h2 className="ui-section-title-dashboard">{s.applicant.businessName}</h2>
-      <p>
-        {s.applicant.firstName} {s.applicant.lastName} · {s.applicant.email}
-      </p>
-      <p>Identity: {friendlyLabel(s.identityMode ?? 'LEGACY_UNKNOWN')}</p>
-      {s.documentation && (
-        <Card
-          as="section"
-          surface="embedded"
-          aria-label="Application documentation"
-        >
-          <DocumentStatus value={s.documentation.status} />
+    <div className="application-review-panels">
+      <Tabs
+        split={desktop}
+        items={[
+          { label: 'Submitted Answers', content: answersPanel() },
+          { label: 'Details & Actions', content: detailsPanel() },
+        ]}
+      />
+    </div>
+  );
+  function answersPanel() {
+    return (
+      <section aria-label="Original submitted answers">
+        <ApplicationFields
+          definition={s.definitionSnapshot}
+          answers={s.answers}
+          readOnly
+          compact
+        />
+      </section>
+    );
+  }
+  function detailsPanel() {
+    return (
+      <div className="application-review-inspector">
+        <Card as="section" aria-label="Applicant information">
+          <h3 className="application-review-card-heading">
+            <UtilityIcon name="user" />
+            <span>Applicant information</span>
+          </h3>
           <p>
-            Documents: {s.documentation.complete} of {s.documentation.total}{' '}
-            complete. Missing: {s.documentation.missing}. Awaiting review:{' '}
-            {s.documentation.pending}. Expired: {s.documentation.expired}.
-            Rejected: {s.documentation.rejected}.
+            {s.applicant.firstName} {s.applicant.lastName} · {s.applicant.email}
           </p>
-          {s.documentation.outstanding.length > 0 && (
-            <p>Outstanding: {s.documentation.outstanding.join(', ')}</p>
+          <p>{s.applicant.email}</p>
+          <p>Identity: {friendlyLabel(s.identityMode ?? 'LEGACY_UNKNOWN')}</p>
+          {s.applicant.category && (
+            <p>Vendor category: {s.applicant.category}</p>
           )}
+          {s.applicant.phone && <p>Phone: {s.applicant.phone}</p>}
           <p>
-            Documentation readiness is separate from acceptance and does not
-            change attendance.
+            {s.applicantVendorId
+              ? `Applicant Vendor: ${s.applicantVendorId}. A verified directory association and market membership are separate.`
+              : 'Submitted without a platform Vendor association.'}
           </p>
-          <a
-            className={buttonClassName({ variant: 'secondary' })}
-            href={`/market/documents?vendor=${s.applicantVendorId ?? ''}`}
-          >
-            Review documents
-          </a>
-          {canRequestDocuments && s.applicantVendorId && (
-            <a
-              className={buttonClassName({ variant: 'secondary' })}
-              href={`/market/documents?vendor=${s.applicantVendorId}&request=1`}
-            >
-              Request an additional document
-            </a>
+          {s.onboarding?.platformVendorId && (
+            <p>Verified linked Vendor: {s.onboarding.platformVendorId}</p>
+          )}
+          {s.directoryId && (
+            <p>
+              Market business:{' '}
+              {data.directory?.find((d) => d.id === s.directoryId)?.contact
+                .businessName ?? `Directory record ${s.directoryId}`}
+            </p>
           )}
         </Card>
-      )}
-      <ApplicationFields
-        definition={s.definitionSnapshot}
-        answers={s.answers}
-        readOnly
-      />
-      <p>
-        Acceptance approves the business for consideration. Confirm dates
-        separately, then assign compatible booths and review billing.
-      </p>
-      <fieldset
-        disabled={
-          !canManage || busy || ['DECLINED', 'WITHDRAWN'].includes(s.status)
-        }
-      >
-        <legend>Application decision</legend>
-        <Check
-          label="Accept conditionally while required documentation remains outstanding"
-          checked={conditional}
-          onChange={setConditional}
-        />
-        {s.status !== 'ACCEPTED' && (
-          <SearchSelect
-            label="Directory business"
-            value={directory}
-            onChange={setDirectory}
-            placeholder="Create a directory business"
-            allowClear
-            clearLabel="Create a directory business instead"
-            options={(data.directory ?? [])
-              .filter((d) =>
-                s.applicantVendorId
-                  ? d.linkedVendorId === s.applicantVendorId &&
-                    d.linkState === 'LINK_VERIFIED'
-                  : !d.linkedVendorId,
-              )
-              .map((d) => ({
-                value: String(d.id),
-                label: d.contact.businessName,
-              }))}
-          />
-        )}
-        <Entry
-          label="Private manager notes and decision reason"
-          value={notes}
-          onChange={setNotes}
-        />
-        <div className="ops-toolbar">
-          {[
-            'UNDER_REVIEW',
-            'NEEDS_INFO',
-            'WAITLISTED',
-            'ACCEPTED',
-            'DECLINED',
-            'WITHDRAWN',
-          ].map((value) => (
-            <Button
-              variant="secondary"
-              className="application-status-action"
-              data-tone={statusTone(value)}
-              size="compact"
-              type="button"
-              key={value}
-              aria-pressed={status === value}
-              onClick={() => setStatus(value)}
-            >
-              {value === 'ACCEPTED' ? 'Accept business' : friendlyLabel(value)}
-            </Button>
-          ))}
-        </div>
-        {s.status === 'ACCEPTED' && decisions.length > 0 && (
-          <Check
-            label="I reviewed the affected dates and their obligations. Historical records must stay intact."
-            checked={reviewed}
-            onChange={setReviewed}
-          />
-        )}
-      </fieldset>
-      <div className="ui-actions ui-modal-actions">
-        <Button
-          variant="primary"
-          type="button"
-          disabled={
-            !canManage ||
-            busy ||
-            ['DECLINED', 'WITHDRAWN'].includes(s.status) ||
-            (s.status === 'ACCEPTED' && status === 'ACCEPTED')
-          }
-          onClick={() => void save()}
-        >
-          {busy ? 'Saving' : 'Save'}
-        </Button>
-      </div>
-      {failed && (
-        <p className="alert ui-alert ui-alert-error" role="alert">
-          The decision could not be saved. Confirmed dates and active
-          obligations must be reviewed and resolved explicitly before
-          withdrawing acceptance.
-        </p>
-      )}
-      {s.status === 'ACCEPTED' && (
-        <>
-          <fieldset disabled={!canConfirmDates || busy}>
-            <legend>Requested dates</legend>
-            <p>
-              Date confirmation records attendance approval without reserving or
-              guaranteeing a booth. Booth compatibility and availability are
-              checked when assigning.
-            </p>
-            {s.requestedOccurrenceIds.map((id) => (
-              <DateDecision
-                key={id}
-                submission={s}
-                occurrenceId={id}
-                data={data}
-                run={run}
-                canBilling={canBilling}
-              />
-            ))}
-          </fieldset>
-          {canConfirmDates && (
-            <a
-              className={buttonClassName({
-                variant: 'secondary',
-                className: 'button secondary',
-              })}
-              href={`/market/assignments?directory=${s.directoryId}`}
-            >
-              Assign confirmed dates
-            </a>
+        <Card as="section">
+          <h3 className="application-review-card-heading">
+            <UtilityIcon name="calendar" />
+            <span>Requested dates and rentals</span>
+          </h3>
+          <section aria-label="Requested dates and rentals">
+            {s.requestedOccurrenceIds.length ? (
+              <ul>
+                {s.requestedOccurrenceIds.map((id) => (
+                  <li key={id}>
+                    {date(
+                      data.occurrences.find((o) => o.id === id)?.startsAt,
+                      data.timeZone,
+                    )}{' '}
+                    ·{' '}
+                    <StatusBadge>
+                      {decisions.find((d) => d.occurrenceId === id)?.decision ??
+                        'PENDING'}
+                    </StatusBadge>
+                    <p>
+                      {s.rentalRequests
+                        .filter((r) => r.quantity > 0)
+                        .map((r) => `${r.name}: ${r.quantity}`)
+                        .join(', ') || 'No rentals requested.'}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No dates requested.</p>
+            )}
+          </section>
+          {s.status === 'ACCEPTED' && (
+            <>
+              <fieldset disabled={!canConfirmDates || busy || requestDirty}>
+                <legend>Requested dates</legend>
+                <p>
+                  Date confirmation records attendance approval without
+                  reserving or guaranteeing a booth. Booth compatibility and
+                  availability are checked when assigning.
+                </p>
+                {s.requestedOccurrenceIds.map((id) => (
+                  <DateDecision
+                    key={id}
+                    submission={s}
+                    occurrenceId={id}
+                    data={data}
+                    run={relatedCommand}
+                    canBilling={canBilling}
+                  />
+                ))}
+              </fieldset>
+              {canConfirmDates && (
+                <a
+                  className={buttonClassName({
+                    variant: 'secondary',
+                    className: 'button secondary',
+                  })}
+                  href={`/market/assignments?directory=${s.directoryId}&channel=${new URLSearchParams(window.location.search).get('channel') ?? ''}`}
+                >
+                  Assign confirmed dates
+                </a>
+              )}
+            </>
           )}
-        </>
-      )}
-    </Card>
-  );
+        </Card>
+        <Card as="section" aria-label="Application documentation">
+          <h3 className="application-review-card-heading">
+            <UtilityIcon name="document-check" />
+            <span>Documents and compliance</span>
+          </h3>
+          {s.documentation && (
+            <>
+              <DocumentStatus value={s.documentation.status} />
+              {s.documentation.total > 0 && (
+                <p>
+                  Documents: {s.documentation.complete} of{' '}
+                  {s.documentation.total} complete. Missing:{' '}
+                  {s.documentation.missing}. Awaiting review:{' '}
+                  {s.documentation.pending}. Expired: {s.documentation.expired}.
+                  Rejected: {s.documentation.rejected}.
+                </p>
+              )}
+              {s.documentation.outstanding.length > 0 && (
+                <p>Outstanding: {s.documentation.outstanding.join(', ')}</p>
+              )}
+              <p>
+                Documentation readiness is separate from acceptance and does not
+                change attendance.
+              </p>
+              <a
+                className={buttonClassName({ variant: 'secondary' })}
+                href={`/market/documents?vendor=${documentVendorId ?? ''}&channel=${new URLSearchParams(window.location.search).get('channel') ?? ''}`}
+              >
+                Review document readiness
+              </a>
+              {canRequestDocuments && s.applicantVendorId && (
+                <a
+                  className={buttonClassName({ variant: 'secondary' })}
+                  href={`/market/documents?vendor=${s.applicantVendorId}&request=1`}
+                >
+                  Request an additional document
+                </a>
+              )}
+            </>
+          )}
+          {!s.documentation && <p>Document readiness unavailable.</p>}
+        </Card>
+        <Dropdown
+          label={
+            <span className="application-review-card-heading">
+              <UtilityIcon name="email" />
+              <span>Additional information requests and amendments</span>
+            </span>
+          }
+          open={s.informationRequests?.some((r) =>
+            ['AWAITING_RESPONSE', 'RESPONDED'].includes(r.status),
+          )}
+        >
+          <ApplicationInformationReview
+            onRefresh={onRefresh}
+            onDirty={setRequestDirty}
+            submission={s}
+            run={relatedCommand}
+            canManage={canManage}
+            canRequestDocuments={canRequestDocuments}
+            onBusy={(value) => {
+              setBusy(value);
+              onBusy(value);
+            }}
+          />
+        </Dropdown>
+        <Dropdown
+          label={
+            <span className="application-review-card-heading">
+              <UtilityIcon name="refresh" />
+              <span>Application history</span>
+            </span>
+          }
+        >
+          <section aria-label="Application history">
+            <p>
+              Internal notes stay in the private notes area. This timeline lists
+              application and date events.
+            </p>
+            <ul>
+              {s.history?.map((h) => (
+                <li key={h.id}>
+                  {date(h.at, data.timeZone)} · {friendlyLabel(h.event)}
+                  {h.status && h.status !== h.event
+                    ? ` · ${friendlyLabel(h.status)}`
+                    : ''}
+                  {h.occurrenceId ? ` · Market date ${h.occurrenceId}` : ''}
+                  {h.actorId ? ` · Actor ${h.actorId}` : ''}
+                </li>
+              ))}
+            </ul>
+          </section>
+        </Dropdown>
+        <Card as="section" aria-label="Private Manager Notes">
+          <h3 className="application-review-card-heading">
+            <UtilityIcon name="notebook" />
+            <span>Private manager notes</span>
+          </h3>
+          <p>
+            Private Manager Notes are visible only to authorized managers.
+            Applicants cannot see these notes or the private decision reason.
+          </p>
+          {editable ? (
+            <fieldset disabled={busy}>
+              <Entry
+                label="Private Manager Notes and decision reason"
+                value={notes}
+                onChange={setNotes}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={
+                  busy ||
+                  s.status === 'ACCEPTED' ||
+                  notes === s.managerNotes ||
+                  requestDirty ||
+                  decisionDirty
+                }
+                onClick={() => void save(true)}
+              >
+                Save notes
+              </Button>
+              {decisionDirty && (
+                <p>Save the decision below to include these notes.</p>
+              )}
+            </fieldset>
+          ) : (
+            <p>{s.managerNotes || 'No private notes recorded.'}</p>
+          )}
+        </Card>
+        {s.onboarding && (
+          <Dropdown
+            label={
+              <span className="application-review-card-heading">
+                <UtilityIcon name="check" />
+                <span>Next steps after acceptance</span>
+              </span>
+            }
+          >
+            <ApplicationOnboarding summary={s.onboarding} />
+          </Dropdown>
+        )}
+        <Card as="section" aria-label="Application decision">
+          <h3 className="application-review-card-heading">
+            <UtilityIcon name="check" />
+            <span>Application decision</span>
+          </h3>
+          {canManage && !terminal ? (
+            <fieldset disabled={busy || activeRequest || requestDirty}>
+              <p>
+                Acceptance approves the business for consideration. Confirm
+                dates separately, then assign compatible booths and review
+                billing.
+              </p>
+              {status === 'ACCEPTED' && (
+                <Check
+                  label="Accept conditionally while required documentation remains outstanding"
+                  checked={conditional}
+                  onChange={setConditional}
+                />
+              )}
+              {status === 'ACCEPTED' && s.status !== 'ACCEPTED' && (
+                <SearchSelect
+                  label="Existing Market Business"
+                  value={directory}
+                  onChange={setDirectory}
+                  placeholder="Create a directory business"
+                  allowClear
+                  clearLabel="Create a directory business instead"
+                  options={(data.directory ?? [])
+                    .filter((d) =>
+                      s.applicantVendorId
+                        ? d.linkedVendorId === s.applicantVendorId &&
+                          d.linkState === 'LINK_VERIFIED'
+                        : !d.linkedVendorId,
+                    )
+                    .map((d) => ({
+                      value: String(d.id),
+                      label: `${d.contact.businessName} (${d.linkState === 'LINK_VERIFIED' ? 'Verified platform Vendor' : 'External directory record'})`,
+                    }))}
+                />
+              )}
+              {status === 'ACCEPTED' && s.status !== 'ACCEPTED' && (
+                <p>
+                  Choose an existing market business record if this applicant is
+                  already in your market directory. Otherwise, a new record can
+                  be created during acceptance.
+                </p>
+              )}
+              <SelectField
+                label="Application status"
+                value={status}
+                style={statusColors(status)}
+                onChange={(e) => {
+                  setStatus(e.target.value as typeof status);
+                  setConfirming(false);
+                }}
+              >
+                <option value={s.status} style={statusColors(s.status)}>
+                  {friendlyLabel(s.status)}
+                </option>
+                {[
+                  'UNDER_REVIEW',
+                  'WAITLISTED',
+                  'ACCEPTED',
+                  'DECLINED',
+                  'WITHDRAWN',
+                ]
+                  .filter((value) => value !== s.status)
+                  .map((value) => (
+                    <option
+                      key={value}
+                      value={value}
+                      style={statusColors(value)}
+                    >
+                      {friendlyLabel(value)}
+                    </option>
+                  ))}
+              </SelectField>
+              {s.status === 'ACCEPTED' && decisions.length > 0 && (
+                <Check
+                  label="I reviewed the affected dates and their obligations. Historical records must stay intact."
+                  checked={reviewed}
+                  onChange={setReviewed}
+                />
+              )}
+              <Button
+                type="button"
+                disabled={
+                  busy ||
+                  status === s.status ||
+                  (s.status === 'ACCEPTED' && decisions.length > 0 && !reviewed)
+                }
+                onClick={() => setConfirming(true)}
+              >
+                Review decision
+              </Button>
+              <MarketDialog
+                open={confirming}
+                busy={busy}
+                title="Confirm application decision"
+                onClose={() => setConfirming(false)}
+              >
+                {() => (
+                  <>
+                    <p>
+                      Change {s.applicant.businessName} to{' '}
+                      {friendlyLabel(status)}? The private decision reason uses
+                      the manager notes above.
+                    </p>
+                    <div className="ui-actions">
+                      <Button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void save()}
+                      >
+                        Confirm decision
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setConfirming(false)}
+                      >
+                        Keep reviewing
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </MarketDialog>
+            </fieldset>
+          ) : (
+            <p>
+              <StatusBadge>{s.status}</StatusBadge> This application is
+              read-only.
+            </p>
+          )}
+          {(activeRequest || requestDirty) && (
+            <p>
+              Resolve or cancel the current information request and finish any
+              draft before changing the application decision.
+            </p>
+          )}
+          {failed && (
+            <p className="alert ui-alert ui-alert-error" role="alert">
+              {notesOnly.current
+                ? 'The private notes could not be saved.'
+                : 'The decision could not be saved. Confirmed dates and active obligations must be reviewed and resolved explicitly before withdrawing acceptance.'}
+            </p>
+          )}
+        </Card>
+      </div>
+    );
+  }
 }
 function DateDecision({
   submission,
@@ -301,7 +624,7 @@ function DateDecision({
   return (
     <Card as="div" className="ops-section">
       <p>
-        {date(occurrence?.startsAt)} ·{' '}
+        {date(occurrence?.startsAt, data.timeZone)} ·{' '}
         {friendlyLabel(approval?.decision ?? 'PENDING')}
       </p>
       <p>

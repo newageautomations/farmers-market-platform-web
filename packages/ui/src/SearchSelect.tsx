@@ -1,8 +1,14 @@
+import type { ReactNode } from 'react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Input } from './form-controls';
 import { Button, Checkbox } from './index';
 
-export type SearchOption = { value: string; label: string; disabled?: boolean };
+export type SearchOption = {
+  value: string;
+  label: string;
+  disabled?: boolean;
+  pinned?: boolean;
+};
 type SharedProps = {
   label: string;
   options: readonly SearchOption[];
@@ -11,6 +17,7 @@ type SharedProps = {
   allowClear?: boolean;
   clearLabel?: string;
   selectedLabel?: string;
+  renderOption?: (option: SearchOption) => ReactNode;
   onSearch?: (query: string) => void;
   loading?: boolean;
   searchHint?: string;
@@ -64,6 +71,7 @@ export function sortSearchOptions(
   const chosen = new Set(selected);
   return [...options].sort(
     (a, b) =>
+      Number(!!b.pinned) - Number(!!a.pinned) ||
       Number(chosen.has(b.value)) - Number(chosen.has(a.value)) ||
       collator.compare(a.label, b.label) ||
       a.value.localeCompare(b.value, 'en', { sensitivity: 'variant' }),
@@ -79,6 +87,7 @@ function SearchChoices({
   allowClear = false,
   clearLabel = 'Clear selection',
   selectedLabel,
+  renderOption,
   onSearch,
   loading = false,
   searchHint,
@@ -287,7 +296,10 @@ function SearchChoices({
             id={id + '-' + index}
             role="option"
             tabIndex={-1}
-            aria-selected={values.includes(option.value)}
+            aria-selected={
+              values.includes(option.value) ||
+              (!multiple && !values.length && option.value === '')
+            }
             aria-disabled={option.disabled || undefined}
             className={
               (active === option.value ? 'is-active ' : '') +
@@ -317,7 +329,7 @@ function SearchChoices({
                 disabled={option.disabled}
               />
             )}
-            {option.label}
+            {renderOption ? renderOption(option) : option.label}
           </div>
         ))}
         {loading ? (

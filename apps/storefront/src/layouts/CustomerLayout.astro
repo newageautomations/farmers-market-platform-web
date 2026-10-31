@@ -33,6 +33,12 @@ const choices: AccountModeChoice[] = [
 try {
   const contexts = await customerApi(Astro).contexts();
   if (process.env.ADMIN_ORIGIN) {
+    if (contexts.platformAdministrator)
+      choices.push({
+        value: 'PLATFORM',
+        label: 'Platform administration',
+        href: `${process.env.ADMIN_ORIGIN}/platform?account=1&principal=${encodeURIComponent(contexts.principalId ?? '')}`,
+      });
     for (const affiliation of contexts.affiliations) {
       const target = new URL(
         affiliation.mode === 'VENDOR' ? '/vendor' : '/market',
@@ -40,6 +46,8 @@ try {
       );
       target.searchParams.set('channel', affiliation.channelId);
       target.searchParams.set('account', '1');
+      if (contexts.principalId)
+        target.searchParams.set('principal', contexts.principalId);
       choices.push({
         value: `${affiliation.mode}:${affiliation.channelId}`,
         label: `${affiliation.mode === 'VENDOR' ? 'Vendor' : 'Market Manager'}: ${affiliation.name}`,

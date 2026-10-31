@@ -432,3 +432,148 @@
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
+
+.application-quick-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.admin-content .application-filter-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: end;
+  gap: 0.75rem;
+  margin-block: 0 0.75rem;
+}
+.application-filter-toolbar > .field {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.application-filter-toolbar > .field > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.application-filter-toolbar > .button {
+  flex: none;
+  height: var(--ui-control-height);
+  min-height: var(--ui-control-height);
+  margin: 0;
+}
+.application-filter-toolbar > .button span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.application-filter-card.ui-disclosure {
+  margin-block: 0 0.75rem;
+}
+.application-filter-card.ui-disclosure > summary {
+  display: none;
+}
+.application-filter-card.ui-disclosure > .ui-disclosure-content {
+  border-top: 0;
+}
+.application-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.application-filter-grid .field {
+  margin: 0;
+  min-width: 0;
+}
+.application-filter-card .ui-actions {
+  justify-content: flex-end;
+}
+@media (max-width: 600px) {
+  .application-filter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.application-filter-card:not([open]) {
+  display: none;
+}
+.application-filter-card::details-content {
+  overflow: visible;
+}
+
+.application-quick-views {
+  position: relative;
+  isolation: isolate;
+  flex-wrap: nowrap;
+  width: fit-content;
+  max-width: 100%;
+}
+.application-quick-backdrop {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: -1;
+  visibility: hidden;
+  border-radius: var(--ui-button-radius);
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--brand-surface)
+  );
+  transition:
+    transform 360ms cubic-bezier(0.22, 1.15, 0.36, 1),
+    width 360ms cubic-bezier(0.22, 1.15, 0.36, 1),
+    height 360ms ease;
+  pointer-events: none;
+}
+.application-quick-views .button.button-tertiary {
+  --button-fill: transparent;
+  --button-hover-fill: transparent;
+  text-decoration: none;
+}
+.application-filter-card[open] > .ui-disclosure-content {
+  animation: application-filter-reveal 240ms ease-out;
+}
+@keyframes application-filter-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+    max-height: 0;
+    overflow: clip;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 48rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .application-quick-backdrop {
+    transition: none;
+  }
+  .application-filter-card[open] > .ui-disclosure-content {
+    animation: none;
+  }
+}
+
+.application-filter-closing {
+  overflow: clip;
+  animation: application-filter-close 240ms ease-in forwards;
+}
+@keyframes application-filter-close {
+  from {
+    max-height: var(--filter-card-height);
+    opacity: 1;
+  }
+  to {
+    max-height: 0;
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .application-filter-closing {
+    animation-duration: 0ms;
+  }
+}

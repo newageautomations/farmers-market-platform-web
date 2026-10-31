@@ -38,6 +38,7 @@ const amenitiesLabel = (amenities: string[]) =>
   amenities.map((a) => a.toLowerCase().replaceAll('_', ' ')).join(', ');
 export function MarketMap({
   definition,
+  boothCards = false,
   spaces = [],
   editable = false,
   selectedId,
@@ -53,6 +54,7 @@ export function MarketMap({
   showBoothList = true,
   boothListLimit,
 }: {
+  boothCards?: boolean;
   definition: MapDefinition;
   spaces?: PublicOccurrenceMap['spaces'];
   editable?: boolean;
@@ -140,28 +142,29 @@ export function MarketMap({
   }
   return (
     <div className="ops-map">
-      <div className="ops-toolbar">
-        <label>
-          Area{' '}
-          <select
-            className={selectClassName()}
-            aria-label="Area"
-            value={shownArea}
-            onChange={(e) => {
-              setArea(e.target.value);
-              onAreaChange?.(e.target.value);
-            }}
-          >
-            {definition.areas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
       <div className="map-read-surface" ref={viewport}>
         <MapCanvas
+          navigationEnd={
+            <div style={{ marginLeft: 'auto' }}>
+              <label>
+                <select
+                  className={selectClassName()}
+                  aria-label="Area"
+                  value={shownArea}
+                  onChange={(e) => {
+                    setArea(e.target.value);
+                    onAreaChange?.(e.target.value);
+                  }}
+                >
+                  {definition.areas.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          }
           ref={canvas}
           definition={definition}
           spaces={spaces}
@@ -229,7 +232,7 @@ export function MarketMap({
       ) : showBoothList ? (
         <>
           <label className="ops-field">
-            Search Vendor or booth{' '}
+            {boothCards ? 'Search booth' : 'Search Vendor or booth'}{' '}
             <Input
               type="search"
               value={search}
@@ -237,9 +240,13 @@ export function MarketMap({
             />
           </label>
           <ul
-            className={`ops-map-list${boothListLimit ? ' ops-scroll-list' : ''}`}
+            className={
+              boothCards
+                ? 'attendance-record-grid'
+                : `ops-map-list${boothListLimit ? ' ops-scroll-list' : ''}`
+            }
             style={
-              boothListLimit
+              boothListLimit && !boothCards
                 ? {
                     maxHeight: `calc(${boothListLimit} * var(--ops-list-row-height, 3.5rem) + ${boothListLimit - 1} * 0.7rem)`,
                   }
@@ -254,77 +261,97 @@ export function MarketMap({
                 statuses[s.elementId] ?? (s.vendor ? 'assigned' : 'available');
               return (
                 <li key={s.elementId}>
-                  <details
-                    className="booth-list-item ui-disclosure"
-                    data-element={s.elementId}
-                    onToggle={(e) => {
-                      if (e.currentTarget.open) choose(s.elementId, false);
-                    }}
-                    onPointerEnter={() => {
-                      const e = definition.elements.find(
-                        (e) => e.id === s.elementId,
-                      );
-                      if (e)
-                        onHover(s.elementId, {
-                          x: 10,
-                          y: 10,
-                          width: e.width,
-                          height: e.height,
-                        });
-                    }}
-                    onPointerLeave={() => onHover(null)}
-                  >
-                    <summary>
+                  {boothCards ? (
+                    <button
+                      type="button"
+                      className={buttonClassName({ variant: 'disclosure' })}
+                      onClick={() => choose(s.elementId)}
+                    >
                       <span>
                         {s.label}
                         {s.vendor?.businessName
                           ? ` - ${s.vendor.businessName}`
                           : ''}
                       </span>
-                      <span className={`booth-state ${status}`}>
-                        {status === 'available'
-                          ? 'Available'
-                          : status === 'paid'
-                            ? 'Paid'
-                            : 'Assigned'}
-                      </span>
-                      <svg
-                        className="booth-chevron"
-                        aria-hidden="true"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                      >
-                        <path d="m4 6 4 4 4-4" />
-                      </svg>
-                    </summary>
-                    <div className="booth-list-details ui-disclosure-content">
-                      <p>
-                        {s.widthFeet} × {s.depthFeet} ft.{' '}
-                        {s.amenities.length > 0 &&
-                          `Amenities: ${amenitiesLabel(s.amenities)}`}
-                      </p>
-                      <p>{s.vendor?.businessName ?? 'No business assigned'}</p>
-                      {s.vendor?.description && <p>{s.vendor.description}</p>}
-                      {overlays[s.elementId] && <p>{overlays[s.elementId]}</p>}
-                      {renderSpaceDetails?.(s.elementId)}
-                      {onSelect && (
-                        <button
-                          className={buttonClassName({
-                            variant: 'secondary',
-                            size: 'compact',
-                          })}
-                          type="button"
-                          onClick={() => choose(s.elementId)}
+                      <span className={`booth-state ${status}`}>{status}</span>
+                    </button>
+                  ) : (
+                    <details
+                      className="booth-list-item ui-disclosure"
+                      data-element={s.elementId}
+                      onToggle={(e) => {
+                        if (e.currentTarget.open) choose(s.elementId, false);
+                      }}
+                      onPointerEnter={() => {
+                        const e = definition.elements.find(
+                          (e) => e.id === s.elementId,
+                        );
+                        if (e)
+                          onHover(s.elementId, {
+                            x: 10,
+                            y: 10,
+                            width: e.width,
+                            height: e.height,
+                          });
+                      }}
+                      onPointerLeave={() => onHover(null)}
+                    >
+                      <summary>
+                        <span>
+                          {s.label}
+                          {s.vendor?.businessName
+                            ? ` - ${s.vendor.businessName}`
+                            : ''}
+                        </span>
+                        <span className={`booth-state ${status}`}>
+                          {status === 'available'
+                            ? 'Available'
+                            : status === 'paid'
+                              ? 'Paid'
+                              : 'Assigned'}
+                        </span>
+                        <svg
+                          className="booth-chevron"
+                          aria-hidden="true"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
                         >
-                          {s.vendor
-                            ? 'Manage business assignment'
-                            : 'Add business to booth'}
-                        </button>
-                      )}
-                    </div>
-                  </details>
+                          <path d="m4 6 4 4 4-4" />
+                        </svg>
+                      </summary>
+                      <div className="booth-list-details ui-disclosure-content">
+                        <p>
+                          {s.widthFeet} × {s.depthFeet} ft.{' '}
+                          {s.amenities.length > 0 &&
+                            `Amenities: ${amenitiesLabel(s.amenities)}`}
+                        </p>
+                        <p>
+                          {s.vendor?.businessName ?? 'No business assigned'}
+                        </p>
+                        {s.vendor?.description && <p>{s.vendor.description}</p>}
+                        {overlays[s.elementId] && (
+                          <p>{overlays[s.elementId]}</p>
+                        )}
+                        {renderSpaceDetails?.(s.elementId)}
+                        {onSelect && (
+                          <button
+                            className={buttonClassName({
+                              variant: 'secondary',
+                              size: 'compact',
+                            })}
+                            type="button"
+                            onClick={() => choose(s.elementId)}
+                          >
+                            {s.vendor
+                              ? 'Manage business assignment'
+                              : 'Add business to booth'}
+                          </button>
+                        )}
+                      </div>
+                    </details>
+                  )}
                 </li>
               );
             })}

@@ -4,6 +4,9 @@ import { date, StatusBadge } from '../presentation';
 import { useState } from 'react';
 import {
   applicationQuestionTypes,
+  eligibleApplicationTriggers,
+  applicationConditionIssues,
+  applicationScheduleIssue,
   type ApplicationDefinition,
   type ApplicationQuestion,
   type ApplicationVersion,
@@ -55,12 +58,18 @@ export function ApplicationBuilder({
     version.definition.questions[0]?.id ?? '',
   );
   const [preview, setPreview] = useState(false);
+  const [previewChecked, setPreviewChecked] = useState(false);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [privateLink, setPrivateLink] = useState(
     template?.visibility === 'PRIVATE',
   );
   const [advertised, setAdvertised] = useState(template?.advertised ?? true);
   const editable = canManage && version.status === 'DRAFT';
+  const issues = [
+    ...applicationConditionIssues(definition),
+    applicationScheduleIssue(definition),
+  ].filter(Boolean);
+  const timeZone = definition.schedule?.timeZone ?? data.timeZone;
   const edit = (id: string, patch: Partial<ApplicationQuestion>) =>
     setDefinition((d) => ({
       ...d,
@@ -99,12 +108,14 @@ export function ApplicationBuilder({
     else if (source !== targetId) moveQuestion(source, targetId, section);
   }
   const save = () =>
-    run({
-      action: 'SAVE_APPLICATION',
-      id: version.id,
-      expectedRevision: version.revision,
-      data: { definition, name },
-    });
+    issues.length
+      ? Promise.resolve(undefined)
+      : run({
+          action: 'SAVE_APPLICATION',
+          id: version.id,
+          expectedRevision: version.revision,
+          data: { definition, name },
+        });
   return (
     <section
       className="ops-editor application-builder"
@@ -129,6 +140,85 @@ export function ApplicationBuilder({
           ? 'Click a question to edit it. Drag the dots to change the order.'
           : 'Create a new draft to make changes.'}
       </p>
+      {issues.length > 0 && (
+        <div role="alert">
+          {issues.map((issue) => (
+            <p key={issue}>{issue}</p>
+          ))}
+        </div>
+      )}
+      <fieldset className="ops-section" disabled={!editable || !timeZone}>
+        <legend>Application schedule</legend>
+        <p>
+          Times use the market timezone:{' '}
+          {timeZone ?? 'Unavailable. Reload the builder.'} These deadlines
+          control submissions, separately from market attendance dates. Leave a
+          time blank for no restriction. Times during an ambiguous or missing
+          daylight-saving hour cannot be saved.
+        </p>
+        {(['opensAt', 'closesAt'] as const).map((key) => (
+          <Control
+            key={key}
+            label={
+              key === 'opensAt'
+                ? 'Opening date and time'
+                : 'Closing date and time'
+            }
+          >
+            {(id) => (
+              <Input
+                id={id}
+                type="datetime-local"
+                value={definition.schedule?.[key] ?? ''}
+                onChange={(e) =>
+                  setDefinition((d) => ({
+                    ...d,
+                    schedule: {
+                      ...d.schedule,
+                      timeZone: data.timeZone!,
+                      [key]: e.target.value || undefined,
+                    },
+                  }))
+                }
+              />
+            )}
+          </Control>
+        ))}
+        <p>
+          {definition.schedule?.closesAt &&
+          definition.schedule.closesAt <=
+            new Intl.DateTimeFormat('sv-SE', {
+              timeZone,
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            })
+              .format(new Date())
+              .replace(' ', 'T')
+            ? 'Currently closed.'
+            : definition.schedule?.opensAt &&
+                definition.schedule.opensAt >
+                  new Intl.DateTimeFormat('sv-SE', {
+                    timeZone,
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                  })
+                    .format(new Date())
+                    .replace(' ', 'T')
+              ? `Opens on ${definition.schedule.opensAt.replace('T', ' at ')}.`
+              : 'Open for submissions.'}{' '}
+          {definition.schedule?.closesAt
+            ? `Closes on ${definition.schedule.closesAt.replace('T', ' at ')} (${timeZone}).`
+            : 'No closing restriction.'}
+        </p>
+      </fieldset>
       <div className="ops-toolbar">
         <Button
           variant="secondary"
@@ -144,6 +234,7 @@ export function ApplicationBuilder({
             size="compact"
             type="button"
             onClick={save}
+            disabled={issues.length > 0}
           >
             Save draft
           </Button>
@@ -167,11 +258,30 @@ export function ApplicationBuilder({
         )}
       </div>
       {preview ? (
-        <ApplicationFields
-          definition={definition}
-          answers={answers}
-          onAnswer={(id, v) => setAnswers((a) => ({ ...a, [id]: v }))}
-        />
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setPreviewChecked(true);
+          }}
+        >
+          <ApplicationFields
+            definition={definition}
+            answers={answers}
+            onAnswer={(id, v) => {
+              setPreviewChecked(false);
+              setAnswers((a) => ({ ...a, [id]: v }));
+            }}
+          />
+          <Button type="submit" variant="secondary">
+            Check preview answers
+          </Button>
+          {previewChecked && (
+            <p role="status">
+              Visible required questions are answered. This preview creates no
+              application or draft.
+            </p>
+          )}
+        </form>
       ) : (
         <div className="application-cards">
           {definition.sections.map((section, sectionIndex) => (
@@ -467,6 +577,167 @@ export function ApplicationBuilder({
                                 : 'This field supplies business or booth details. Its type is fixed; you can remove it or make it optional.'}
                             </p>
                           )}
+                          <Control label="Question visibility">
+                            {(id) => (
+                              <Select
+                                id={id}
+                                disabled={protectedField(q)}
+                                value={
+                                  q.hidden
+                                    ? 'HIDDEN'
+                                    : q.condition
+                                      ? 'CONDITIONAL'
+                                      : 'ALWAYS'
+                                }
+                                onChange={(e) =>
+                                  edit(q.id, {
+                                    hidden: e.target.value === 'HIDDEN',
+                                    condition:
+                                      e.target.value === 'CONDITIONAL'
+                                        ? {
+                                            questionId: '',
+                                            comparison: 'IS',
+                                            value: '',
+                                          }
+                                        : undefined,
+                                  })
+                                }
+                              >
+                                <option value="ALWAYS">Always show</option>
+                                <option value="CONDITIONAL">
+                                  Show only when a condition is met
+                                </option>
+                                <option value="HIDDEN">Hidden</option>
+                              </Select>
+                            )}
+                          </Control>
+                          {q.condition && (
+                            <>
+                              <Control label="Show this question when">
+                                {(id) => (
+                                  <Select
+                                    id={id}
+                                    value={q.condition!.questionId}
+                                    onChange={(e) => {
+                                      const trigger = definition.questions.find(
+                                        (p) => p.id === e.target.value,
+                                      );
+                                      edit(q.id, {
+                                        condition: {
+                                          questionId: e.target.value,
+                                          comparison:
+                                            trigger?.type === 'MULTI_SELECT'
+                                              ? 'INCLUDES'
+                                              : 'IS',
+                                          value:
+                                            trigger?.type === 'BOOLEAN'
+                                              ? true
+                                              : (trigger?.options[0] ?? ''),
+                                        },
+                                      });
+                                    }}
+                                  >
+                                    <option value="">
+                                      Choose an earlier question
+                                    </option>
+                                    {eligibleApplicationTriggers(
+                                      definition,
+                                      q.id,
+                                    ).map((p) => (
+                                      <option key={p.id} value={p.id}>
+                                        {p.label}
+                                      </option>
+                                    ))}
+                                  </Select>
+                                )}
+                              </Control>
+                              {(() => {
+                                const trigger = eligibleApplicationTriggers(
+                                  definition,
+                                  q.id,
+                                ).find((p) => p.id === q.condition!.questionId);
+                                if (!trigger)
+                                  return (
+                                    <p>
+                                      Choose an earlier always-visible Yes/No or
+                                      choice question. Conditional and hidden
+                                      questions cannot trigger other questions.
+                                    </p>
+                                  );
+                                return (
+                                  <>
+                                    <Control label="Comparison">
+                                      {(id) => (
+                                        <Select
+                                          id={id}
+                                          value={q.condition!.comparison}
+                                          onChange={() => {}}
+                                        >
+                                          <option
+                                            value={
+                                              trigger.type === 'MULTI_SELECT'
+                                                ? 'INCLUDES'
+                                                : 'IS'
+                                            }
+                                          >
+                                            {trigger.type === 'MULTI_SELECT'
+                                              ? 'Includes'
+                                              : 'Is'}
+                                          </option>
+                                        </Select>
+                                      )}
+                                    </Control>
+                                    <Control label="Expected answer">
+                                      {(id) => (
+                                        <Select
+                                          id={id}
+                                          value={String(q.condition!.value)}
+                                          onChange={(e) =>
+                                            edit(q.id, {
+                                              condition: {
+                                                ...q.condition!,
+                                                value:
+                                                  trigger.type === 'BOOLEAN'
+                                                    ? e.target.value === 'true'
+                                                    : e.target.value,
+                                              },
+                                            })
+                                          }
+                                        >
+                                          {(trigger.type === 'BOOLEAN'
+                                            ? ['true', 'false']
+                                            : trigger.options
+                                          ).map((value) => (
+                                            <option key={value} value={value}>
+                                              {trigger.type === 'BOOLEAN'
+                                                ? value === 'true'
+                                                  ? 'Yes'
+                                                  : 'No'
+                                                : value}
+                                            </option>
+                                          ))}
+                                        </Select>
+                                      )}
+                                    </Control>
+                                    <p>
+                                      This question will only appear when the
+                                      applicant’s answer to “{trigger.label}”{' '}
+                                      {q.condition!.comparison === 'INCLUDES'
+                                        ? 'includes'
+                                        : 'is'}{' '}
+                                      {typeof q.condition!.value === 'boolean'
+                                        ? q.condition!.value
+                                          ? 'Yes'
+                                          : 'No'
+                                        : q.condition!.value}
+                                      . Required validation applies only while
+                                      visible.
+                                    </p>
+                                  </>
+                                );
+                              })()}
+                            </>
+                          )}
                           <div className="question-footer">
                             <fieldset disabled={protectedField(q)}>
                               <Check
@@ -475,7 +746,6 @@ export function ApplicationBuilder({
                                 onChange={(v) =>
                                   edit(q.id, {
                                     required: v,
-                                    hidden: v ? false : q.hidden,
                                   })
                                 }
                               />
@@ -685,6 +955,7 @@ export function ApplicationBuilder({
             variant="secondary"
             size="compact"
             type="button"
+            disabled={issues.length > 0}
             onClick={async () => {
               const saved = (await save()) as ApplicationVersion;
               if (saved)

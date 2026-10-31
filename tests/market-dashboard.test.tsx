@@ -15,39 +15,54 @@ import {
   marketFixtureContext,
 } from '../apps/admin/src/market/fixture';
 import { managerData } from './fixtures/market-dashboard-data';
+import { applicationReviewApi } from './fixtures/application-review-api';
 
 it('keeps application edits local until save, including searched business and selected status', async () => {
   const run = vi.fn().mockResolvedValue({ id: 1 });
   render(
     <Applications
       data={managerData()}
+      api={applicationReviewApi(managerData())}
       run={run}
       canManage
       view="submissions"
     />,
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Open Orchard Farm' }));
-  const modal = screen.getByRole('dialog');
-  fireEvent.click(within(modal).getByRole('button', { name: 'Waitlisted' }));
-  expect(
-    within(modal).getByRole('button', { name: 'Waitlisted' }),
-  ).toHaveAttribute('aria-pressed', 'true');
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Open Orchard Farm' }),
+  );
+  await screen.findByLabelText('Private Manager Notes and decision reason');
+  const modal = screen.getByRole('region', { name: 'Orchard Farm' });
+  fireEvent.change(within(modal).getByLabelText('Application status'), {
+    target: { value: 'ACCEPTED' },
+  });
   const search = within(modal).getByRole('combobox', {
-    name: 'Directory business',
+    name: 'Existing Market Business',
   });
   fireEvent.focus(search);
   fireEvent.change(search, { target: { value: 'Meadow' } });
   fireEvent.click(
-    within(modal).getByRole('option', { name: 'Meadow Flowers' }),
+    within(modal).getByRole('option', {
+      name: 'Meadow Flowers (External directory record)',
+    }),
   );
   fireEvent.change(
-    within(modal).getByLabelText('Private manager notes and decision reason'),
+    within(modal).getByLabelText('Private Manager Notes and decision reason'),
     {
       target: { value: 'Follow up next week' },
     },
   );
   expect(run).not.toHaveBeenCalled();
-  fireEvent.click(within(modal).getByRole('button', { name: 'Save' }));
+  fireEvent.change(within(modal).getByLabelText('Application status'), {
+    target: { value: 'WAITLISTED' },
+  });
+  fireEvent.click(
+    within(modal).getByRole('button', { name: 'Review decision' }),
+  );
+  expect(run).not.toHaveBeenCalled();
+  fireEvent.click(
+    within(modal).getByRole('button', { name: 'Confirm decision' }),
+  );
   await waitFor(() => expect(run).toHaveBeenCalledTimes(1));
   expect(run).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -60,7 +75,9 @@ it('keeps application edits local until save, including searched business and se
       }),
     }),
   );
-  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  await waitFor(() =>
+    expect(screen.queryByRole('region', { name: 'Orchard Farm' })).toBeNull(),
+  );
 });
 
 it('discards application drafts when closed and keeps failed saves open', async () => {
@@ -68,24 +85,45 @@ it('discards application drafts when closed and keeps failed saves open', async 
   render(
     <Applications
       data={managerData()}
+      api={applicationReviewApi(managerData())}
       run={run}
       canManage
       view="submissions"
     />,
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Open Orchard Farm' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Declined' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Open Orchard Farm' }),
+  );
+  await screen.findByLabelText('Private Manager Notes and decision reason');
+  fireEvent.change(
+    screen.getByRole('combobox', { name: 'Application status' }),
+    {
+      target: { value: 'DECLINED' },
+    },
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Back to applications' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Discard changes and close' }),
+  );
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   expect(run).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Open Orchard Farm' }));
-  expect(screen.getByRole('button', { name: 'Under Review' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
+  await screen.findByLabelText('Private Manager Notes and decision reason');
+  expect(
+    screen.getByRole('combobox', { name: 'Application status' }),
+  ).toHaveValue('UNDER_REVIEW');
+  fireEvent.change(
+    screen.getByRole('combobox', { name: 'Application status' }),
+    {
+      target: { value: 'WAITLISTED' },
+    },
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Review decision' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm decision' }));
   await screen.findByRole('alert');
-  expect(screen.getByRole('dialog')).toBeInTheDocument();
+  expect(
+    screen.getByRole('region', { name: 'Orchard Farm' }),
+  ).toBeInTheDocument();
 });
 
 it('edits a directory business in a modal and discards unsaved changes', async () => {

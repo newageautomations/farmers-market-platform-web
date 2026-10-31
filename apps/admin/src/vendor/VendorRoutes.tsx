@@ -1,3 +1,11 @@
+import { AttendanceHistory } from '../market/phase14/Attendance';
+import { VendorPacking, PackingCardStatus } from './packing';
+import {
+  VendorApplicationContinuation,
+  VendorDraftPreview,
+} from './application-continuation';
+import { RouteLink } from './common';
+import { ApplicantApplications } from '@market/ui';
 import { ContactSubmissions } from './contact-submissions';
 import { Categories } from './categories';
 import { VendorTaxSettings } from './tax';
@@ -45,12 +53,55 @@ export function VendorRoutes({
   if (module === 'pos') return <VendorPos service={service} />;
   if (module === 'loyalty')
     return <VendorLoyalty service={service} path={path} />;
+  if (module === 'applications' && id === 'continue')
+    return <VendorApplicationContinuation service={service} />;
+  if (module === 'applications' && id === 'drafts')
+    return (
+      <VendorDraftPreview service={service} id={Number(path.split('/')[4])} />
+    );
+  if (module === 'applications')
+    return service.applications ? (
+      <ApplicantApplications
+        key={id ?? 'list'}
+        api={service.applications}
+        id={id ? Number(id) : undefined}
+        basePath="/vendor/applications"
+        vendorId={Number(service.vendorId)}
+        renderLink={(href, label) => <RouteLink to={href}>{label}</RouteLink>}
+        vendorOrigin={window.location.origin}
+      />
+    ) : (
+      <p>Applications are unavailable in this environment.</p>
+    );
+  if (module === 'day')
+    return service.marketAttendance ? (
+      <>
+        <p>Scheduled appearances reserve your market date. Market staff record physical attendance. Use the date filters to view upcoming dates or past attendance.</p>
+        <AttendanceHistory
+          key={service.vendorId}
+          api={service.marketAttendance}
+          vendor
+          renderVendorExtra={
+            service.packing
+              ? (row) => (
+                  <PackingCardStatus
+                    api={service.packing!}
+                    occurrenceId={row.occurrenceId}
+                  />
+                )
+              : undefined
+          }
+        />
+      </>
+    ) : <p>Market Day is unavailable in this environment.</p>;
   if (module === 'booths') return <VendorBooths service={service} />;
   // IDs remain opaque backend resource references. They never establish tenant context.
   if (module === 'categories')
     return <Categories key={service.vendorId} service={service} />;
   if (module === 'products') return <Products service={service} id={id} />;
   if (module === 'inventory') return <Inventory service={service} />;
+  if (module === 'orders' && id === 'packing')
+    return <VendorPacking key={service.vendorId} service={service} />;
   if (module === 'orders') return <Orders service={service} id={id} />;
   if (module === 'customers') return <Customers service={service} id={id} />;
   if (module === 'markets') return <Markets service={service} id={id} />;

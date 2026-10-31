@@ -6,7 +6,7 @@ import {
   within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { expect, it, vi } from 'vitest';
+import { expect, it, test, vi } from 'vitest';
 import {
   OccurrenceLayoutActions,
   OccurrenceLayoutScreen,
@@ -219,4 +219,140 @@ it('places edit to the right of change and shows booth vendor names with read-on
   expect(screen.queryByRole('button', { name: 'Change layout' })).toBeNull();
   expect(screen.queryByRole('button', { name: 'Edit layout' })).toBeNull();
   expect(command).not.toHaveBeenCalled();
+});
+
+test('physical identity selection requires confirmation and excludes identities already represented', async () => {
+  const { LayoutInspector } =
+    await import('../apps/admin/src/market/phase14/LayoutInspector');
+  const { baseSpace } = await import('../packages/ui/src/map/model');
+  const data = managerData(),
+    version = data.layoutVersions![0]!;
+  const element = {
+    ...version.definition.elements[0]!,
+    id: 'replacement',
+    type: 'SPACE' as const,
+  };
+  const drawing = {
+    definition: {
+      ...version.definition,
+      elements: [element, { ...element, id: 'occupied' }],
+    },
+    spaces: { replacement: baseSpace('A01'), occupied: baseSpace('A02') },
+    physicalBoothIds: { occupied: 20 },
+  };
+  data.physicalBooths = [
+    {
+      id: 10,
+      marketId: data.marketId,
+      revision: 1,
+      name: 'A01',
+      retiredAt: null,
+    },
+    {
+      id: 20,
+      marketId: data.marketId,
+      revision: 1,
+      name: 'A02',
+      retiredAt: null,
+    },
+    {
+      id: 30,
+      marketId: data.marketId,
+      revision: 1,
+      name: 'Retired',
+      retiredAt: '2026-01-01',
+    },
+  ];
+  data.assignments = [];
+  const update = vi.fn();
+  render(
+    <LayoutInspector
+      drawing={drawing}
+      selected={['replacement']}
+      editable
+      version={version}
+      data={data}
+      area={element.areaId}
+      name="Test"
+      setName={vi.fn()}
+      update={update}
+      geometry={vi.fn()}
+      booth={vi.fn()}
+      grid
+      setGrid={vi.fn()}
+      snap
+      setSnap={vi.fn()}
+      spacing={10}
+      setSpacing={vi.fn()}
+      sync={vi.fn()}
+    />,
+  );
+  const select = screen.getByLabelText('Physical booth identity');
+  expect(
+    within(select).getByRole('option', { name: 'New physical booth' }),
+  ).toBeInTheDocument();
+  expect(within(select).queryByRole('option', { name: /A02/ })).toBeNull();
+  expect(within(select).queryByRole('option', { name: /Retired/ })).toBeNull();
+  const user = userEvent.setup();
+  await user.selectOptions(select, '10');
+  expect(update).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(update).not.toHaveBeenCalled();
+  await user.selectOptions(select, '10');
+  await user.click(screen.getByRole('button', { name: 'Confirm identity' }));
+  expect(update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      physicalBoothIds: { occupied: 20, replacement: 10 },
+      confirmPhysicalBoothChanges: true,
+    }),
+  );
+});
+
+test('physical identity changes are disabled for an assigned representation', async () => {
+  const { LayoutInspector } =
+    await import('../apps/admin/src/market/phase14/LayoutInspector');
+  const data = managerData(),
+    version = data.layoutVersions![0]!,
+    space = data.spaces![0]!;
+  const drawing = {
+    definition: version.definition,
+    spaces: { [space.elementId]: space.details },
+    physicalBoothIds: { [space.elementId]: 10 },
+  };
+  data.physicalBooths = [
+    {
+      id: 10,
+      marketId: data.marketId,
+      revision: 1,
+      name: space.details.label,
+      retiredAt: null,
+    },
+  ];
+  render(
+    <LayoutInspector
+      drawing={drawing}
+      selected={[space.elementId]}
+      editable
+      version={version}
+      data={data}
+      area={version.definition.areas[0]!.id}
+      name="Test"
+      setName={vi.fn()}
+      update={vi.fn()}
+      geometry={vi.fn()}
+      booth={vi.fn()}
+      grid
+      setGrid={vi.fn()}
+      snap
+      setSnap={vi.fn()}
+      spacing={10}
+      setSpacing={vi.fn()}
+      sync={vi.fn()}
+      retire={vi.fn()}
+    />,
+  );
+  expect(screen.getByLabelText('Physical booth identity')).toBeDisabled();
+  expect(
+    screen.getByRole('button', { name: 'Retire physical booth' }),
+  ).toBeDisabled();
 });

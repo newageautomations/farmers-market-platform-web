@@ -1,0 +1,72 @@
+---
+import { bindProgressAfterLogin } from '../../lib/application-progress';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { ClaimApplication } from '../../components/ClaimApplication';
+import { applicantApplicationsApi } from '../../lib/applicant-applications';
+import { requestPublicMarketOperations } from '../../lib/shop';
+import type { ApplicantDraftDetail } from '@market/api';
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+const p = Astro.url.searchParams,
+  vendorId = Number(p.get('vendor'));
+let name = '',
+  channel = '';
+try {
+  const profile = await requestPublicMarketOperations(Astro).applicant();
+  const vendor = profile.vendors.find((v) => v.id === vendorId);
+  if (!vendor) throw new Error();
+  name = vendor.name;
+  channel = vendor.channelId ?? '';
+} catch {
+  return new Response(
+    'Sign in with an authorized Vendor business using the Vendor invitation or resume from Vendor Applications.',
+    { status: 403, headers: { 'Cache-Control': 'private, no-store' } },
+  );
+}
+if (p.has('draft')) {
+  const draft = await applicantApplicationsApi(
+    Astro,
+  ).read<ApplicantDraftDetail>({ draftId: Number(p.get('draft')), vendorId });
+  if (Astro.locals.storefront?.subjectId !== String(draft.marketId))
+    return new Response('Draft unavailable.', { status: 404 });
+  if (draft.draft.submissionId)
+    return Astro.redirect(
+      `${process.env.ADMIN_ORIGIN}/vendor/applications/${draft.draft.submissionId}?channel=${channel}`,
+    );
+  if (!draft.current)
+    return Astro.redirect(
+      `${process.env.ADMIN_ORIGIN}/vendor/applications/drafts/${draft.draft.id}?channel=${channel}`,
+    );
+  return Astro.redirect(
+    `/apply/${draft.application!.slug}?draft=${draft.draft.id}&vendor=${vendorId}`,
+  );
+}
+if (p.has('slug')) {
+  const profile = await requestPublicMarketOperations(Astro).applicant();
+  bindProgressAfterLogin(Astro, `/apply/${p.get('slug')}`, profile.principalId);
+  return Astro.redirect(
+    `/apply/${encodeURIComponent(p.get('slug')!)}?vendor=${vendorId}`,
+  );
+}
+const claim = Number(p.get('claim'));
+if (!Number.isSafeInteger(claim) || claim <= 0)
+  return new Response('Application unavailable.', { status: 404 });
+---
+
+<SiteLayout
+  context={Astro.locals.storefront}
+  title="Track your Vendor application"
+  noindex
+>
+  <div class="ops-public">
+    <h1>Track your Vendor application</h1>
+    <p>Selected business: {name}</p>
+    <ClaimApplication
+      id={claim}
+      vendorId={vendorId}
+      channel={channel}
+      vendorOrigin={process.env.ADMIN_ORIGIN ?? ''}
+      client:load
+    />
+  </div>
+</SiteLayout>

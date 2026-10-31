@@ -20,7 +20,7 @@ import {
 import { Check, Control, Entry, moneyLabel } from './common';
 import { Invoice } from './Billing';
 import { OccurrenceLayoutActions } from './OccurrenceLayoutActions';
-import { Chevron } from '../../NavigationIcon';
+
 type Run = (c: OperationsCommand) => Promise<unknown>;
 export function boothStatus(
   assignment: SpaceAssignment | undefined,
@@ -70,7 +70,8 @@ export function Assignments({
     } | null>(null),
     [search, setSearch] = useState(''),
     [mapSelection, setMapSelection] = useState(''),
-    [mapDirectory, setMapDirectory] = useState('');
+    [mapDirectory, setMapDirectory] = useState(''),
+    [vendorDetail, setVendorDetail] = useState<number | null>(null);
   const plan = data.plans?.find((p) => p.occurrenceId === occurrenceId),
     version = data.layoutVersions?.find((v) => v.id === plan?.layoutVersionId),
     assignments =
@@ -110,13 +111,13 @@ export function Assignments({
         );
       return [
         s?.elementId ?? '',
-        `${approval?.checkIn === 'CHECKED_IN' ? 'Checked in' : 'Awaiting arrival'} · ${approval?.attendance.toLowerCase().replaceAll('_', ' ') ?? 'not recorded'} · ${(invoice?.billingStatus ?? invoice?.status)?.toLowerCase().replaceAll('_', ' ') ?? 'No invoice'} · ${data.allocations?.filter((r) => r.assignmentId === a.id).reduce((n, r) => n + r.quantity, 0) ?? 0} rentals${approval?.managerNotes ? ' · Note' : ''}`,
+        `${(invoice?.billingStatus ?? invoice?.status)?.toLowerCase().replaceAll('_', ' ') ?? 'No invoice'} · ${data.allocations?.filter((r) => r.assignmentId === a.id).reduce((n, r) => n + r.quantity, 0) ?? 0} rentals${approval?.managerNotes ? ' · Note' : ''}`,
       ];
     }),
   );
   return (
     <>
-      {data.daySummary && (
+      {!day && data.daySummary && (
         <dl
           className="ops-day-summary ui-kpi-grid"
           aria-label="Occurrence summary"
@@ -128,25 +129,6 @@ export function Assignments({
             <dd className="ops-day-summary-detail">
               {data.daySummary.assigned} assigned · {data.daySummary.unassigned}{' '}
               unassigned
-            </dd>
-          </div>
-          <div>
-            <dt>Checked in</dt>
-            <dd>{data.daySummary.checkedIn}</dd>
-            <dd className="ops-day-summary-detail">
-              {data.daySummary.notCheckedIn} awaiting arrival
-            </dd>
-          </div>
-          <div>
-            <dt>Attendance</dt>
-            <dd className="ops-day-summary-detail">
-              {Object.entries(data.daySummary.attendance).map(
-                ([status, count]) => (
-                  <span key={status}>
-                    {count} {status.toLowerCase().replaceAll('_', ' ')}
-                  </span>
-                ),
-              )}
             </dd>
           </div>
           <div>
@@ -181,107 +163,116 @@ export function Assignments({
           )}
         </dl>
       )}
-      <OccurrenceLayoutActions
-        key={`occurrence-layout:${occurrenceId}`}
-        data={data}
-        occurrenceId={occurrenceId}
-        run={run}
-        canChange={canAssign}
-        canEdit={canAssign && canEditLayout}
-      />
-      {plan && (
-        <div className="ops-toolbar">
-          <p>
-            Map {plan.state.toLowerCase()} ·{' '}
-            {plan.operationsComplete
-              ? 'Day operations complete'
-              : 'Operations open'}
-          </p>
-          {canAssign && (
-            <Button
-              variant="secondary"
-              size="compact"
-              type="button"
-              onClick={() =>
-                run({
-                  action: 'PUBLISH_MAP',
-                  id: plan.id,
-                  expectedRevision: plan.revision,
-                  data: { published: plan.state !== 'PUBLISHED' },
-                })
-              }
-            >
-              {plan.state === 'PUBLISHED'
-                ? 'Unpublish map'
-                : 'Publish occurrence map'}
-            </Button>
+      <Card as="section" className="attendance-map-card">
+        <div className="attendance-map-actions">
+          <OccurrenceLayoutActions
+            key={`occurrence-layout:${occurrenceId}`}
+            data={data}
+            occurrenceId={occurrenceId}
+            run={run}
+            canChange={canAssign}
+            canEdit={canAssign && canEditLayout}
+          />
+          {plan && (
+            <div className="ops-toolbar">
+              <p>
+                Map {plan.state.toLowerCase()} ·{' '}
+                {plan.operationsComplete
+                  ? 'Day operations complete'
+                  : 'Operations open'}
+              </p>
+              {canAssign && (
+                <Button
+                  variant="secondary"
+                  size="compact"
+                  type="button"
+                  onClick={() =>
+                    run({
+                      action: 'PUBLISH_MAP',
+                      id: plan.id,
+                      expectedRevision: plan.revision,
+                      data: { published: plan.state !== 'PUBLISHED' },
+                    })
+                  }
+                >
+                  {plan.state === 'PUBLISHED' ? 'Unpublish map' : 'Publish map'}
+                </Button>
+              )}
+            </div>
           )}
         </div>
-      )}
-      {version && (
-        <MarketMap
-          key={`map:${version.id}`}
-          boothListLimit={10}
-          definition={version.definition}
-          spaces={mapSpaces}
-          overlays={overlays}
-          statuses={statuses}
-          renderSpaceDetails={(id) => {
-            const booth = spaces.find((s) => s.elementId === id)!;
-            return (
-              <dl className="facts">
-                <div>
-                  <dt>Booth type</dt>
-                  <dd>
-                    {booth.details.spaceType.toLowerCase().replaceAll('_', ' ')}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Booth fee</dt>
-                  <dd>
-                    {moneyLabel(booth.details.feeMinor, booth.details.currency)}
-                  </dd>
-                </div>
-                {booth.details.description && (
+        {version && (
+          <MarketMap
+            key={`map:${version.id}`}
+            boothListLimit={10}
+            boothCards
+            definition={version.definition}
+            spaces={mapSpaces}
+            overlays={overlays}
+            statuses={statuses}
+            renderSpaceDetails={(id) => {
+              const booth = spaces.find((s) => s.elementId === id)!;
+              return (
+                <dl className="facts">
                   <div>
-                    <dt>Description</dt>
-                    <dd>{booth.details.description}</dd>
-                  </div>
-                )}
-                {booth.details.managerNotes && (
-                  <div>
-                    <dt>Manager notes</dt>
-                    <dd>{booth.details.managerNotes}</dd>
-                  </div>
-                )}
-                {booth.details.preferredDirectoryId && (
-                  <div>
-                    <dt>Preferred business</dt>
+                    <dt>Booth type</dt>
                     <dd>
-                      {data.directory?.find(
-                        (d) => d.id === booth.details.preferredDirectoryId,
-                      )?.contact.businessName ?? 'Not available'}
+                      {booth.details.spaceType
+                        .toLowerCase()
+                        .replaceAll('_', ' ')}
                     </dd>
                   </div>
-                )}
-              </dl>
-            );
-          }}
-          selectedId={mapSelection}
-          onSelect={(id) => {
-            const booth = spaces.find((s) => s.elementId === id);
-            if (!booth) return;
-            setMapSelection(id);
-            setMapDirectory(
-              String(
-                assignments.find((a) => a.spaceId === booth?.id)?.directoryId ??
-                  booth?.details.preferredDirectoryId ??
-                  '',
-              ),
-            );
-          }}
-        />
-      )}
+                  <div>
+                    <dt>Booth fee</dt>
+                    <dd>
+                      {moneyLabel(
+                        booth.details.feeMinor,
+                        booth.details.currency,
+                      )}
+                    </dd>
+                  </div>
+                  {booth.details.description && (
+                    <div>
+                      <dt>Description</dt>
+                      <dd>{booth.details.description}</dd>
+                    </div>
+                  )}
+                  {booth.details.managerNotes && (
+                    <div>
+                      <dt>Manager notes</dt>
+                      <dd>{booth.details.managerNotes}</dd>
+                    </div>
+                  )}
+                  {booth.details.preferredDirectoryId && (
+                    <div>
+                      <dt>Preferred business</dt>
+                      <dd>
+                        {data.directory?.find(
+                          (d) => d.id === booth.details.preferredDirectoryId,
+                        )?.contact.businessName ?? 'Not available'}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              );
+            }}
+            selectedId={mapSelection}
+            onSelect={(id) => {
+              const booth = spaces.find((s) => s.elementId === id);
+              if (!booth) return;
+              setMapSelection(id);
+              setMapDirectory(
+                String(
+                  assignments.find((a) => a.spaceId === booth?.id)
+                    ?.directoryId ??
+                    booth?.details.preferredDirectoryId ??
+                    '',
+                ),
+              );
+            }}
+          />
+        )}
+      </Card>
       {selectedBooth && (
         <Dialog
           open
@@ -315,23 +306,30 @@ export function Assignments({
           )}
           {canAssign ? (
             <>
-              <Control label="Business for selected booth">
-                {(id) => (
-                  <Select
-                    id={id}
-                    value={mapDirectory}
-                    disabled={!!selectedAssignment}
-                    onChange={(e) => setMapDirectory(e.target.value)}
-                  >
-                    <option value="">Choose business</option>
-                    {data.directory?.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.contact.businessName}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </Control>
+              <div className="attendance-business-selector">
+                <Control label="Business for selected booth">
+                  {(id) => (
+                    <Select
+                      id={id}
+                      value={mapDirectory}
+                      onChange={(e) => setMapDirectory(e.target.value)}
+                    >
+                      <option value="">Choose business</option>
+                      {data.directory?.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.contact.businessName}
+                          {assignments.some((a) => a.directoryId === d.id)
+                            ? ` · Assigned to Booth ${assignments
+                                .filter((a) => a.directoryId === d.id)
+                                .map((a) => a.spaceSnapshot.label)
+                                .join(', ')}`
+                            : ' · Unassigned'}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </Control>
+              </div>
               {mapDirectory &&
                 !approvals.some(
                   (a) => a.directoryId === Number(mapDirectory),
@@ -416,6 +414,12 @@ export function Assignments({
                     .map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.contact.businessName}
+                        {assignments.some((a) => a.directoryId === d.id)
+                          ? ` · Assigned to Booth ${assignments
+                              .filter((a) => a.directoryId === d.id)
+                              .map((a) => a.spaceSnapshot.label)
+                              .join(', ')}`
+                          : ' · Unassigned'}
                       </option>
                     ))}
                 </Select>
@@ -509,60 +513,81 @@ export function Assignments({
           )}
         </>
       )}
-      <Entry
-        label="Search expected Vendors"
-        type="search"
-        value={search}
-        onChange={setSearch}
-      />
-      <div
-        className="ops-vendor-list ops-scroll-list"
-        role="region"
-        aria-label="Expected vendors"
-        // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- Keyboard users need to scroll the bounded vendor list.
-        tabIndex={0}
-      >
-        {approvals
-          .filter((a) =>
-            data.directory
-              ?.find((d) => d.id === a.directoryId)
-              ?.contact.businessName.toLowerCase()
-              .includes(search.toLowerCase()),
-          )
-          .map((a) => (
-            <details className="booth-list-item ui-disclosure" key={a.id}>
-              <summary>
-                <span>
-                  {data.directory?.find((d) => d.id === a.directoryId)?.contact
-                    .businessName ?? 'Unknown business'}
-                </span>
-                <span className="ops-vendor-booths">
-                  {assignments
-                    .filter((x) => x.approvalId === a.id)
-                    .map((x) => x.spaceSnapshot.label)
-                    .join(', ') || 'Needs a booth'}
-                </span>
-                <Chevron />
-              </summary>
-              <div className="booth-list-details ui-disclosure-content">
-                <AssignmentCard
-                  embedded
-                  key={`${a.id}:${a.revision}:${assignments
-                    .filter((x) => x.approvalId === a.id)
-                    .map((x) => x.revision)
-                    .join(':')}`}
-                  approval={a}
-                  data={data}
-                  assignments={assignments.filter((x) => x.approvalId === a.id)}
-                  run={run}
-                  canAssign={canAssign}
-                  canDay={canDay && day}
-                  canBill={canBill}
-                />
-              </div>
-            </details>
-          ))}
-      </div>
+      <Card as="section" className="attendance-vendors-card">
+        <Entry
+          label="Search vendors"
+          type="search"
+          value={search}
+          onChange={setSearch}
+        />
+        <ul
+          className="attendance-record-grid"
+          role="region"
+          aria-label="Expected vendors"
+          // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- Keyboard users need to scroll the bounded vendor list.
+          tabIndex={0}
+        >
+          {approvals
+            .filter((a) =>
+              data.directory
+                ?.find((d) => d.id === a.directoryId)
+                ?.contact.businessName.toLowerCase()
+                .includes(search.toLowerCase()),
+            )
+            .map((a) => (
+              <li key={a.id}>
+                <Button
+                  variant="disclosure"
+                  onClick={() => setVendorDetail(a.id)}
+                >
+                  <span>
+                    {assignments
+                      .filter((x) => x.approvalId === a.id)
+                      .map((x) => x.spaceSnapshot.label)
+                      .join(', ')}
+                    {assignments.some((x) => x.approvalId === a.id)
+                      ? ' - '
+                      : ''}
+                    {data.directory?.find((d) => d.id === a.directoryId)
+                      ?.contact.businessName ?? 'Unknown business'}
+                  </span>
+                  <span
+                    className={`booth-state ${assignments.some((x) => x.approvalId === a.id) ? 'assigned' : 'unassigned'}`}
+                  >
+                    {assignments.some((x) => x.approvalId === a.id)
+                      ? 'assigned'
+                      : 'unassigned'}
+                  </span>
+                </Button>
+                <Dialog
+                  open={vendorDetail === a.id}
+                  onClose={() => setVendorDetail(null)}
+                  title={
+                    data.directory?.find((d) => d.id === a.directoryId)?.contact
+                      .businessName ?? 'Vendor'
+                  }
+                >
+                  <AssignmentCard
+                    embedded
+                    key={`${a.id}:${a.revision}:${assignments
+                      .filter((x) => x.approvalId === a.id)
+                      .map((x) => x.revision)
+                      .join(':')}`}
+                    approval={a}
+                    data={data}
+                    assignments={assignments.filter(
+                      (x) => x.approvalId === a.id,
+                    )}
+                    run={run}
+                    canAssign={canAssign}
+                    canDay={canDay && day}
+                    canBill={canBill}
+                  />
+                </Dialog>
+              </li>
+            ))}
+        </ul>
+      </Card>
       {day && plan && canDay && (
         <Card as="section" className="ops-editor">
           <h2 className="ui-section-title-dashboard">Day closeout</h2>
@@ -663,9 +688,7 @@ function AssignmentCard({
       </h2>
       <p>
         {assignments.map((x) => x.spaceSnapshot.label).join(', ') ||
-          'Needs a booth'}{' '}
-        · {a.checkIn === 'CHECKED_IN' ? 'Checked in' : 'Not checked in'} ·{' '}
-        {a.attendance.toLowerCase().replaceAll('_', ' ')}
+          'Needs a booth'}
       </p>
       {canDay && (
         <>
@@ -857,7 +880,7 @@ function AssignmentCard({
             checked={multiple}
             onChange={setMultiple}
           />
-          <div className="actions">
+          <div className="ui-actions attendance-assignment-actions">
             <Button
               type="submit"
               variant="primary"

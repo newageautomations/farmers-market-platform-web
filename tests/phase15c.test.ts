@@ -326,3 +326,28 @@ test('freehand points remain normalized, bounded and capped without accepting SV
   expect(p.points!.every((n) => n >= 0 && n <= 1)).toBe(true);
   expect(p).toMatchObject({ x: 0, y: 0, width: 511, height: 1022 });
 });
+
+test('physical identity survives geometry, sync and history while duplicates and replacements start separately', () => {
+  const d = drawing([element('a', { type: 'SPACE' })]);
+  d.spaces = { a: baseSpace('A01') };
+  d.physicalBoothIds = { a: 17 };
+  const moved = geometry(d, [
+    { ...d.definition.elements[0]!, x: 800, rotation: 90, width: 200 },
+  ]);
+  expect(moved.physicalBoothIds).toEqual({ a: 17 });
+  expect(syncBooths(moved, 'a', [], ['amenities']).physicalBoothIds).toEqual({
+    a: 17,
+  });
+  const duplicate = copies(moved, moved, ['a'], 'main', () => 'copy').drawing;
+  expect(duplicate.physicalBoothIds?.a).toBe(17);
+  expect(duplicate.physicalBoothIds?.copy).toBeUndefined();
+  const removed = remove(duplicate, ['a']);
+  expect(removed.physicalBoothIds?.a).toBeUndefined();
+  const history = drawingHistory(
+    { present: moved, past: [], future: [] },
+    { type: 'EDIT', value: removed },
+  );
+  expect(
+    drawingHistory(history, { type: 'UNDO' }).present.physicalBoothIds?.a,
+  ).toBe(17);
+});

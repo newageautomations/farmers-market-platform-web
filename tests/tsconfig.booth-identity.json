@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "../apps/admin/src/market/phase14/LayoutInspector.tsx",
+    "../apps/admin/src/market/phase14/Layouts.tsx",
+    "../apps/admin/src/market/phase14/OccurrenceLayoutActions.tsx",
+    "../tests/occurrence-layouts.test.tsx",
+    "../tests/phase15c.test.ts",
+    "../tests/setup.ts"
+  ],
+  "exclude": ["../node_modules", "../**/dist"]
+}

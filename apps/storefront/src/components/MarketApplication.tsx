@@ -7,12 +7,22 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import type { PublicApplication, ApplicationApplicant } from '@market/api';
-import { AppError, documentErrorMessages } from '@market/api';
+import type {
+  PublicApplication,
+  ApplicationApplicant,
+  ApplicantDraftDetail,
+} from '@market/api';
+import {
+  AppError,
+  documentErrorMessages,
+  activeApplicationAnswers,
+  applicationAvailabilityMessage,
+} from '@market/api';
 import { ApplicationFields } from '@market/ui';
 import { formatMoney, platformName } from '@market/config';
 import { ApplicationDocuments } from './ApplicationDocuments';
 const subscribe = () => () => {};
+class ApplicationResponseError extends Error {}
 function submissionKey() {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
   const bytes = crypto.getRandomValues(new Uint8Array(16));
@@ -25,7 +35,13 @@ function submissionKey() {
 }
 export function MarketApplication({
   application: a,
+  initialDraft,
+  initialVendorId,
+  vendorOrigin,
 }: {
+  initialDraft?: ApplicantDraftDetail;
+  initialVendorId?: number;
+  vendorOrigin?: string;
   application: PublicApplication;
 }) {
   const hydrated = useSyncExternalStore(
@@ -33,10 +49,22 @@ export function MarketApplication({
     () => true,
     () => false,
   );
-  const [answers, setAnswers] = useState<Record<string, unknown>>({}),
-    [dates, setDates] = useState<number[]>([]),
+  const availabilityMessage = applicationAvailabilityMessage(a.availability);
+  const [answers, setAnswers] = useState<Record<string, unknown>>(
+      initialDraft?.draft.progress.answers ?? {},
+    ),
+    [dates, setDates] = useState<number[]>(
+      initialDraft?.draft.progress.occurrenceIds ?? [],
+    ),
     [rentals, setRentals] = useState<Record<number, number>>(
-      Object.fromEntries(a.rentals.map((r) => [r.id, r.defaultQuantity])),
+      initialDraft
+        ? Object.fromEntries(
+            initialDraft.draft.progress.rentals.map((r) => [
+              r.optionId,
+              r.quantity,
+            ]),
+          )
+        : Object.fromEntries(a.rentals.map((r) => [r.id, r.defaultQuantity])),
     ),
     [pending, setPending] = useState(false),
     [submitted, setSubmitted] = useState(false),
@@ -44,10 +72,24 @@ export function MarketApplication({
   const formId = useId();
   const key = useRef<string | null>(null);
   const submitting = useRef(false);
-  const [accountChoice, setAccountChoice] = useState<'YES' | 'NO' | ''>('');
+  const [accountChoice, setAccountChoice] = useState<'YES' | 'NO' | ''>(
+    initialDraft || initialVendorId ? 'YES' : '',
+  );
   const [applicant, setApplicant] = useState<ApplicationApplicant | null>(null);
-  const [vendorChoice, setVendorChoice] = useState('');
+  const [vendorChoice, setVendorChoice] = useState(
+    String(initialDraft?.draft.vendorId ?? initialVendorId ?? ''),
+  );
   const [identityLoading, setIdentityLoading] = useState(true);
+  const draftRef = useRef(
+    initialDraft
+      ? { id: initialDraft.draft.id, revision: initialDraft.draft.revision }
+      : null,
+  );
+  const [hasDraft, setHasDraft] = useState(!!initialDraft);
+  const [lastSaved, setLastSaved] = useState(
+    initialDraft?.draft.updatedAt ?? '',
+  );
+  const [submissionId, setSubmissionId] = useState<number | null>(null);
   const [invitation, setInvitation] = useState(true);
   useEffect(() => {
     let active = true;
@@ -60,7 +102,13 @@ export function MarketApplication({
         const profile = (await response.json()) as ApplicationApplicant;
         if (!active) return;
         setApplicant(profile);
-        if (!profile.vendors.length) setVendorChoice('account-only');
+        if (!initialDraft) {
+          const selected =
+            profile.vendors.find((v) => v.id === initialVendorId) ??
+            (profile.vendors.length === 1 ? profile.vendors[0] : undefined);
+          setVendorChoice(selected ? String(selected.id) : '');
+        }
+        if (initialDraft) return;
         {
           const restored = await fetch('/api/application-progress', {
             method: 'POST',
@@ -96,12 +144,12 @@ export function MarketApplication({
               key.current = saved.progress.key;
               setAccountChoice('YES');
               if (
-                saved.progress.vendorChoice === 'account-only' ||
                 profile.vendors.some(
                   (v) => String(v.id) === saved.progress.vendorChoice,
                 )
               )
-                setVendorChoice(saved.progress.vendorChoice);
+                if (!initialVendorId)
+                  setVendorChoice(saved.progress.vendorChoice);
             }
           } else if (active)
             setError(
@@ -117,7 +165,7 @@ export function MarketApplication({
     return () => {
       active = false;
     };
-  }, [a.slug, a.versionId]);
+  }, [a.slug, a.versionId, initialDraft, initialVendorId]);
   function autofill() {
     if (!applicant) return;
     const vendor = applicant.vendors.find((v) => String(v.id) === vendorChoice);
@@ -138,6 +186,53 @@ export function MarketApplication({
       }
       return next;
     });
+  }
+  async function saveDraft() {
+    if (!applicant || accountChoice !== 'YES' || !vendorChoice)
+      throw new Error();
+    key.current ??= submissionKey();
+    const response = await fetch('/api/applicant-applications', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        action: 'SAVE_DRAFT',
+        input: {
+          ...draftRef.current,
+          marketId: a.marketId,
+          slug: a.slug,
+          versionId: a.versionId,
+          clientKey: key.current,
+          answers,
+          occurrenceIds: dates,
+          rentals: a.rentals.map((r) => ({
+            optionId: r.id,
+            quantity: rentals[r.id] ?? 0,
+          })),
+          vendorId: Number(vendorChoice),
+        },
+      }),
+    });
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw new ApplicationResponseError(
+        result.error ||
+          'This draft could not be saved. Resume its latest copy from Vendor Applications.',
+      );
+    }
+    const saved = (await response.json()) as {
+      id: number;
+      revision: number;
+      updatedAt: string;
+    };
+    draftRef.current = { id: saved.id, revision: saved.revision };
+    setLastSaved(saved.updatedAt);
+    setHasDraft(true);
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}?draft=${saved.id}&vendor=${vendorChoice}`,
+    );
+    return saved;
   }
   async function signIn() {
     setPending(true);
@@ -162,8 +257,7 @@ export function MarketApplication({
       });
       if (!response.ok) throw new Error();
       window.location.assign(
-        '/account/login?returnTo=' +
-          encodeURIComponent(window.location.pathname),
+        '/vendor/application-continue?slug=' + encodeURIComponent(a.slug),
       );
     } catch {
       setError(
@@ -184,42 +278,67 @@ export function MarketApplication({
             payment has been taken.
           </p>
         </div>
-        {accountChoice === 'NO' && !applicant && invitation && (
-          <section aria-label="Optional free account invitation">
-            <h2 className="ui-section-title-consumer">
-              Claim your free {platformName} account
-            </h2>
+        {accountChoice === 'YES' && submissionId && (
+          <a
+            className={buttonClassName({ variant: 'primary' })}
+            href={`${vendorOrigin}/vendor/applications/${submissionId}?channel=${applicant?.vendors.find((v) => String(v.id) === vendorChoice)?.channelId ?? initialDraft?.vendor.channelId ?? ''}${initialDraft ? '' : '&account=1'}`}
+          >
+            View application
+          </a>
+        )}
+        {accountChoice === 'NO' && invitation && submissionId && (
+          <section aria-label="Track your application">
             <p>
-              Future free accounts are planned to make repeat applications
-              easier with saved business information, reusable documents, and
-              Market updates.
+              Create a Vendor account to track status and save drafts for future
+              applications. Your application is already submitted.
             </p>
-            <p>
-              Free account signup is coming. Your application is already
-              submitted.
-            </p>
-            <a
-              className={buttonClassName({
-                variant: 'primary',
-                className: 'button',
-              })}
-              href="/account/signup"
-            >
-              Claim My Free Account
-            </a>
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={() => setInvitation(false)}
-            >
-              Maybe Later
-            </Button>
+            <div className="actions">
+              <a
+                className={buttonClassName({ variant: 'primary' })}
+                href={`/vendor/application-continue?claim=${submissionId}`}
+              >
+                {applicant?.vendors.length
+                  ? 'Track this application with my Vendor business'
+                  : 'Create a Vendor account to track your application'}
+              </a>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => setInvitation(false)}
+              >
+                Finish without creating an account
+              </Button>
+            </div>
           </section>
         )}
       </div>
     );
+  const selected = applicant?.vendors.find(
+    (v) => String(v.id) === vendorChoice,
+  );
+  const dashboard = `${vendorOrigin}/vendor/applications?channel=${selected?.channelId ?? initialDraft?.vendor.channelId ?? ''}${initialDraft ? '' : '&account=1'}`;
   return (
     <>
+      {(hasDraft || selected) && (
+        <a
+          className={buttonClassName({ variant: 'secondary' })}
+          href={dashboard}
+        >
+          Return to Vendor Applications
+        </a>
+      )}
+      {!applicant && (
+        <p>
+          Create a Vendor account to save drafts and track your applications
+          across devices. You can still submit without an account.
+        </p>
+      )}
+      {lastSaved && (
+        <p role="status">
+          Last saved {new Date(lastSaved).toLocaleString()}. Changes after this
+          time are not saved until you save again.
+        </p>
+      )}
       <form
         id={formId}
         className="ops-application"
@@ -232,43 +351,70 @@ export function MarketApplication({
           setPending(true);
           setError('');
           try {
+            if (availabilityMessage) {
+              setError(availabilityMessage);
+              return;
+            }
             if (
               !accountChoice ||
               (accountChoice === 'YES' && (!applicant || !vendorChoice))
             )
               throw new Error();
             key.current ??= submissionKey();
-            const response = await fetch('/api/market-application', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({
-                slug: a.slug,
-                versionId: a.versionId,
-                answers,
-                occurrenceIds: dates,
-                rentals: a.rentals.map((r) => ({
-                  optionId: r.id,
-                  quantity: rentals[r.id] ?? 0,
-                })),
-                idempotencyKey: key.current,
-                accountAnswer: accountChoice,
-                vendorId:
-                  accountChoice === 'YES' && vendorChoice !== 'account-only'
-                    ? Number(vendorChoice)
-                    : null,
-              }),
-            });
+            const payload = {
+              slug: a.slug,
+              versionId: a.versionId,
+              answers: activeApplicationAnswers(a.definition, answers),
+              occurrenceIds: dates,
+              rentals: a.rentals.map((r) => ({
+                optionId: r.id,
+                quantity: rentals[r.id] ?? 0,
+              })),
+              idempotencyKey: key.current,
+              accountAnswer: accountChoice,
+              vendorId: accountChoice === 'YES' ? Number(vendorChoice) : null,
+            };
+            let response: Response;
+            if (draftRef.current) {
+              if (accountChoice !== 'YES') throw new Error();
+              const saved = await saveDraft();
+              response = await fetch('/api/applicant-applications', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'SUBMIT_DRAFT',
+                  input: {
+                    id: saved.id,
+                    revision: saved.revision,
+                    vendorId: Number(vendorChoice),
+                  },
+                }),
+              });
+            } else
+              response = await fetch('/api/market-application', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(payload),
+              });
             if (!response.ok) {
               const result = await response.json().catch(() => ({}));
+              if (result.message || (draftRef.current && result.error)) {
+                setError(result.message || result.error);
+                return;
+              }
               throw new AppError('validation', result.error);
             }
+            const result = await response.json();
+            setSubmissionId(result.submissionId);
             setSubmitted(true);
           } catch (failure) {
             setError(
-              failure instanceof AppError &&
-                failure.code === 'APPLICATION_DOCUMENTS_REQUIRED'
-                ? documentErrorMessages.APPLICATION_DOCUMENTS_REQUIRED!
-                : 'The application could not be submitted. Check your answers and dates, then try again. If the application changed, refresh this page.',
+              failure instanceof ApplicationResponseError
+                ? failure.message
+                : failure instanceof AppError &&
+                    failure.code === 'APPLICATION_DOCUMENTS_REQUIRED'
+                  ? documentErrorMessages.APPLICATION_DOCUMENTS_REQUIRED!
+                  : 'The application could not be submitted. Check your answers and dates, then try again. If the application changed, refresh this page.',
             );
           } finally {
             submitting.current = false;
@@ -289,12 +435,13 @@ export function MarketApplication({
                 name="platform-account"
                 value={value}
                 required
+                disabled={hasDraft && value === 'NO'}
                 checked={accountChoice === value}
                 onChange={() => {
                   setAccountChoice(value);
                   if (value === 'NO') setVendorChoice('');
-                  else if (!applicant?.vendors.length)
-                    setVendorChoice('account-only');
+                  else if (applicant?.vendors.length === 1)
+                    setVendorChoice(String(applicant.vendors[0]!.id));
                 }}
               />
               {value === 'YES' ? 'Yes' : 'No'}
@@ -314,13 +461,11 @@ export function MarketApplication({
                     Business for this application
                     <Select
                       required
+                      disabled={hasDraft}
                       value={vendorChoice}
                       onChange={(e) => setVendorChoice(e.target.value)}
                     >
                       <option value="">Choose or confirm a business</option>
-                      <option value="account-only">
-                        Apply with my account only
-                      </option>
                       {applicant.vendors.map((v) => (
                         <option key={v.id} value={v.id}>
                           {v.name}
@@ -330,9 +475,18 @@ export function MarketApplication({
                   </label>
                 ) : (
                   <p>
-                    Your account has no Vendor business you can apply for. You
-                    can use your personal contact details.
+                    Your account has no authorized Vendor business. You must
+                    complete Vendor onboarding to manage applications. You may
+                    still submit anonymously by choosing No.
                   </p>
+                )}
+                {!applicant.vendors.length && (
+                  <a
+                    className={buttonClassName({ variant: 'primary' })}
+                    href={`/vendor/application-continue?slug=${a.slug}`}
+                  >
+                    Complete Vendor onboarding
+                  </a>
                 )}
                 <Button variant="secondary" type="button" onClick={autofill}>
                   Fill empty fields from my account
@@ -349,7 +503,7 @@ export function MarketApplication({
                   type="button"
                   onClick={() => void signIn()}
                 >
-                  Sign in to my platform account
+                  Sign in with my Vendor account
                 </Button>
               </>
             ))}
@@ -361,7 +515,8 @@ export function MarketApplication({
           )}
         </Card>
         <p>
-          Apply as a business without creating a platform Vendor account. No
+          You can submit anonymously without a Vendor account. Saving drafts and
+          managing applications requires an authorized Vendor business. No
           payment is collected when you apply.
         </p>
         <ApplicationFields
@@ -427,18 +582,54 @@ export function MarketApplication({
           {error}
         </p>
       )}
-      <Button
-        variant="primary"
-        type="submit"
-        form={formId}
-        disabled={
-          pending ||
-          !hydrated ||
-          (accountChoice === 'YES' && (!applicant || !vendorChoice))
-        }
-      >
-        {pending ? 'Submitting application' : 'Submit application'}
-      </Button>
+      {availabilityMessage && (
+        <p className="alert ui-alert ui-alert-info" role="status">
+          {availabilityMessage} Saved drafts remain viewable in Vendor
+          Applications.
+        </p>
+      )}
+      <div className="actions">
+        {accountChoice === 'YES' && !!applicant?.vendors.length && (
+          <Button
+            variant="secondary"
+            type="button"
+            disabled={pending || !vendorChoice || !hydrated}
+            onClick={() => {
+              if (submitting.current) return;
+              submitting.current = true;
+              setPending(true);
+              setError('');
+              void saveDraft()
+                .catch((failure) =>
+                  setError(
+                    failure instanceof ApplicationResponseError
+                      ? failure.message
+                      : 'Draft could not be saved. Your answers are still here. If the form changed, contact the market. If saved in another session, resume the latest draft from Applications.',
+                  ),
+                )
+                .finally(() => {
+                  submitting.current = false;
+                  setPending(false);
+                });
+            }}
+          >
+            Save draft
+          </Button>
+        )}
+        <Button
+          variant="primary"
+          type="submit"
+          form={formId}
+          disabled={
+            !!availabilityMessage ||
+            pending ||
+            !hydrated ||
+            (accountChoice === 'YES' && (!applicant || !vendorChoice))
+          }
+        >
+          {pending ? 'Submitting application' : 'Submit application'}
+        </Button>
+      </div>
     </>
   );
 }

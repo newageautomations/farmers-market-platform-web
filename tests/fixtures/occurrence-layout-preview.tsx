@@ -219,6 +219,7 @@ function Preview() {
     return (
       <MarketApplication
         application={{
+          marketId: 1,
           slug: 'season',
           name: 'Season application',
           versionId: 1,
