@@ -34,6 +34,9 @@ if (
     'phase-c-fixtures',
     'phase-b-fixtures',
     'inspect',
+    'team-permissions-fixtures',
+    'team-invitations-fixtures',
+    'team-invitations-api',
   ].includes(action)
 )
   Object.assign(
@@ -74,11 +77,14 @@ if (['admin', 'storefront'].includes(action)) {
       'packing-preorders',
       'attendance-today',
       'attendance-fixtures',
-    'scheduling-fixtures',
+      'scheduling-fixtures',
       'phase-d-fixtures',
       'phase-c-fixtures',
       'phase-b-fixtures',
       'inspect',
+      'team-permissions-fixtures',
+      'team-invitations-fixtures',
+      'team-invitations-api',
       'test',
     ].includes(action)
   )

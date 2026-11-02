@@ -90,36 +90,6 @@
 .packing-existing-units > p {
   margin: 0;
 }
-.packing-quantity-stepper {
-  display: grid;
-  grid-template-columns: var(--ui-control-height) minmax(4rem, 7rem) var(
-      --ui-control-height
-    );
-  align-items: center;
-  gap: 0.6rem;
-}
-.packing-quantity-stepper input {
-  width: 100%;
-  text-align: center;
-  appearance: textfield;
-}
-.packing-quantity-stepper input::-webkit-inner-spin-button,
-.packing-quantity-stepper input::-webkit-outer-spin-button {
-  appearance: none;
-  margin: 0;
-}
-.button.ui-button.packing-step-button {
-  --button-hover-transform: none;
-  border-radius: 50%;
-  font-size: 1.4rem;
-}
-.button.ui-button.packing-step-increase {
-  --button-fill: var(--status-success-fg);
-  --button-ink: #fff;
-  --button-hover-fill: color-mix(in srgb, var(--status-success-fg), black 20%);
-  --button-hover-ink: #fff;
-  --button-shadow-color: var(--status-success-fg);
-}
 .packing-row small {
   display: block;
   flex-basis: 100%;

@@ -136,6 +136,10 @@ type Query {
   ownVendorEarningsPolicy(mode: StripeAccountMode!): OwnVendorEarningsPolicy!
   ownCommunicationCounts(vendorId: ID, marketId: ID, medium: CommunicationMedium!, purpose: CommunicationPurpose!): CommunicationCounts!
   platformRoleOnboardingReviewQueue: JSON!
+  ownBusinessTeamPolicy: BusinessTeamPolicy!
+  ownBusinessTeam(skip: Int): [BusinessTeamMember!]!
+  ownBusinessTeamMember(id: ID!): BusinessTeamMember
+  ownBusinessEmployeeInvitations(skip: Int): [BusinessEmployeeInvitation!]!
   ownPackingOccurrences: JSON!
   ownMarketPacking(occurrenceId: Int!): JSON!
   ownPlatformAccountContexts: JSON!
@@ -787,6 +791,10 @@ type Mutation {
   reviewPlatformRoleOnboarding(id: ID!, revision: Int!, decision: String!, slug: String!, note: String!): JSON!
   platformSignOut(everywhere: Boolean = false): Boolean!
   exchangePlatformAdminHandoff(code: String!, correlation: String!): Boolean!
+  inviteBusinessEmployee(input: InviteBusinessEmployeeInput!): BusinessEmployeeInvitation!
+  resendBusinessEmployeeInvitation(id: ID!): BusinessEmployeeInvitation!
+  cancelBusinessEmployeeInvitation(id: ID!): BusinessEmployeeInvitation!
+  changeBusinessEmployee(input: ChangeBusinessEmployeeInput!): Boolean!
   updateOwnMarketPacking(input: VendorPackingCommandInput!): JSON!
   provisionVendorIdentity(input: ProvisionVendorIdentityInput!): VendorIdentity!
   setVendorMembership(input: SetVendorMembershipInput!): VendorMembership!
@@ -1422,6 +1430,16 @@ enum Permission {
   ReadOwnPosIntegrations
   ManageOwnPosIntegrations
   OperateOwnPos
+  ReadOwnDocuments
+  ManageOwnDocuments
+  ConfigureOwnPosIntegrations
+  ReadOwnCatalog
+  ReadOwnInventory
+  ReadOwnOrders
+  FulfillOwnOrders
+  CancelOwnOrders
+  ReadOwnMarketOrders
+  ManageOwnMarketTeam
   ReadOwnBilling
   ManageOwnBilling
   ManageBillingCatalog
@@ -7528,6 +7546,64 @@ input CommunicationCampaignInput {
   announcement: String
 }
 
+type BusinessTeamMember {
+  id: ID!
+  name: String!
+  email: String
+  role: String!
+  status: String!
+  permissions: [String!]!
+  delegationCeiling: [String!]!
+  grantRevision: Int!
+  canManage: Boolean!
+}
+
+type BusinessTeamPreset {
+  role: String!
+  permissions: [String!]!
+}
+
+type BusinessTeamPolicy {
+  membershipId: ID!
+  owner: Boolean!
+  basePermission: String!
+  grantablePermissions: [String!]!
+  presets: [BusinessTeamPreset!]!
+}
+
+type BusinessEmployeeInvitation {
+  canManage: Boolean!
+  id: ID!
+  email: String!
+  role: String!
+  status: String!
+  expiresAt: DateTime!
+  createdAt: DateTime!
+  presetVersion: String!
+  deliveredAt: DateTime
+}
+
+enum BusinessEmployeeRole {
+  staff
+  lead
+  administrator
+}
+
+input InviteBusinessEmployeeInput {
+  email: String!
+  role: BusinessEmployeeRole!
+  permissions: [String!]
+}
+
+input ChangeBusinessEmployeeInput {
+  id: ID!
+  role: BusinessEmployeeRole!
+  permissions: [String!]!
+  delegationCeiling: [String!]
+  revoke: Boolean
+  expectedRevision: Int!
+}
+
 input VendorPackingCommandInput {
   occurrenceId: Int!
   expectedRevision: Int!
@@ -7599,6 +7675,8 @@ enum OwnershipAssignmentType {
 
 enum VendorMembershipRole {
   owner
+  administrator
+  lead
   staff
 }
 

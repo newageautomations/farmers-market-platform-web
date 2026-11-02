@@ -1,3 +1,5 @@
+import { createTeamService } from '../team/service';
+import type { TeamApi } from '@market/api';
 import {
   createPackingApi,
   type PackingApi,
@@ -56,6 +58,7 @@ export interface OrderPage {
 }
 export type Availability = 'allowed' | 'denied' | 'unknown' | 'unconfigured';
 export interface VendorService extends VendorApi {
+  team?: TeamApi;
   packing?: PackingApi;
   marketAttendance?: AttendanceApi;
   applications?: ApplicantApplicationsApi;
@@ -137,20 +140,28 @@ export function createLiveVendorService(
           property === 'featureAvailability'
             ? 'ReadOwnBilling'
             : property === 'inventory'
-              ? 'ManageOwnInventory'
-              : catalogCommands.includes(property)
-                ? 'ManageOwnCatalog'
-                : stockCommands.includes(property)
-                  ? 'ManageOwnInventory'
-                  : marketCommands.includes(property)
-                    ? 'ManageOwnMarketParticipation'
-                    : ['publish', 'unpublish'].includes(property)
-                      ? 'ManageCatalogPublication'
-                      : crmReads.includes(property)
-                        ? 'ReadOwnCRM'
-                        : analyticsReads.includes(property)
-                          ? 'ReadOwnVendorAnalytics'
-                          : 'ReadOwnVendorIdentity';
+              ? 'ReadOwnInventory'
+              : ['catalogRead', 'productRead'].includes(property)
+                ? 'ReadOwnCatalog'
+                : ['orderList', 'portion'].includes(property)
+                  ? 'ReadOwnOrders'
+                  : property === 'fulfill'
+                    ? 'FulfillOwnOrders'
+                    : ['cancelQuantity', 'cancelFulfillment'].includes(property)
+                      ? 'CancelOwnOrders'
+                      : catalogCommands.includes(property)
+                        ? 'ManageOwnCatalog'
+                        : stockCommands.includes(property)
+                          ? 'ManageOwnInventory'
+                          : marketCommands.includes(property)
+                            ? 'ManageOwnMarketParticipation'
+                            : ['publish', 'unpublish'].includes(property)
+                              ? 'ManageCatalogPublication'
+                              : crmReads.includes(property)
+                                ? 'ReadOwnCRM'
+                                : analyticsReads.includes(property)
+                                  ? 'ReadOwnVendorAnalytics'
+                                  : 'ReadOwnVendorIdentity';
         const command =
           catalogCommands.includes(property) ||
           stockCommands.includes(property) ||
@@ -208,6 +219,12 @@ export function createLiveVendorService(
       }
     },
     contact: createVendorContactApi({ endpoint, channelToken }),
+    team: createTeamService(
+      context,
+      endpoint,
+      channelToken,
+      onAuthorityFailure,
+    ),
     context,
     vendorId,
     availability: async () => {

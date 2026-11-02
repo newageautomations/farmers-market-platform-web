@@ -1,0 +1,96 @@
+dialog.ui-dialog.catalog-stock-dialog-edit {
+  width: min(640px, calc(100vw - 2rem));
+}
+.catalog-stock-stage {
+  animation: catalog-stock-stage-enter 220ms ease both;
+}
+.catalog-stock-identity {
+  margin-block: 0.5rem 1.5rem;
+}
+.catalog-stock-dialog .catalog-stock-product {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.catalog-stock-dialog .catalog-stock-sku {
+  margin: 0.35rem 0 0;
+  color: var(--brand-muted);
+  font-weight: 400;
+}
+.catalog-stock-facts {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-end: 1.5rem;
+}
+.catalog-stock-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.catalog-stock-cards dt {
+  color: var(--brand-muted);
+  font-size: 0.9rem;
+}
+.catalog-stock-cards dd {
+  margin: 0.4rem 0 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+.catalog-stock-change {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.catalog-stock-result {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.75rem;
+  min-height: 9rem;
+  text-align: center;
+}
+.catalog-stock-result p {
+  margin: 0;
+}
+.catalog-stock-result .progress {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+}
+.catalog-stock-result > svg,
+.catalog-stock-result .spinner {
+  width: 3rem;
+  height: 3rem;
+}
+.catalog-stock-result-success > svg {
+  color: var(--status-success-fg);
+}
+.catalog-stock-result-error > svg {
+  color: var(--status-danger-fg);
+}
+@keyframes catalog-stock-stage-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 420px) {
+  .catalog-stock-facts {
+    align-items: start;
+  }
+  .catalog-stock-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalog-stock-stage {
+    animation: none;
+  }
+}

@@ -138,6 +138,7 @@ export async function accountBridge<T>(
   return response.json() as Promise<T>;
 }
 export function safeAccountReturn(value: string | null | undefined) {
+  if (value === '/account/invitation') return value;
   if (
     value &&
     value.length <= 1024 &&

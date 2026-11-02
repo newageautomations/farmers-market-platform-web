@@ -1,0 +1,236 @@
+.admin-content:has(.team-workspace) {
+  width: calc(100% - 4rem);
+  max-width: none;
+}
+@media (max-width: 767px) {
+  .admin-content:has(.team-workspace) {
+    width: calc(100% - 2rem);
+  }
+}
+.team-workspace {
+  display: grid;
+  gap: 24px;
+  color: var(--brand-foreground);
+}
+.team-heading,
+.team-count,
+.team-member-top,
+.team-member-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.team-heading {
+  flex-wrap: wrap;
+}
+.team-heading h2 {
+  font-family: var(--font-heading);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin: 0 0 8px;
+  font-weight: 400;
+}
+.team-heading p,
+.team-muted,
+.team-member small {
+  color: var(--brand-muted);
+}
+.team-heading p {
+  margin: 0;
+}
+.team-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.28fr) minmax(320px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.team-directory {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.team-directory-header {
+  padding: 22px;
+}
+.team-count span,
+.team-muted,
+.team-access-form small {
+  font-size: 0.8rem;
+}
+.team-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 0.4fr);
+  gap: 10px;
+  align-items: end;
+}
+.team-members,
+.team-invitations {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.team-member {
+  padding: 18px 22px;
+  border-top: 1px solid
+    color-mix(in srgb, var(--brand-foreground) 15%, transparent);
+}
+.team-member-top {
+  justify-content: start;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+.team-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 16%,
+    var(--brand-surface)
+  );
+  color: var(--brand-primary);
+  font-family: var(--font-heading);
+}
+.team-identity {
+  flex: 1;
+  min-width: 100px;
+  overflow-wrap: anywhere;
+}
+.team-identity > button {
+  white-space: normal;
+  text-align: start;
+  padding-inline: 0;
+}
+.team-identity small {
+  display: block;
+}
+.team-member-bottom {
+  margin-top: 13px;
+  flex-wrap: wrap;
+}
+.team-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.team-invitations li {
+  padding-block: 18px;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--brand-foreground) 15%, transparent);
+  overflow-wrap: anywhere;
+}
+.team-invitations li > div:first-child {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.team-invitations .team-actions {
+  margin-top: 12px;
+}
+.team-invite-heading {
+  margin-bottom: 22px;
+}
+.team-access-form {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.team-access-form fieldset {
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.team-access-form legend {
+  font-weight: 600;
+  font-size: 0.8rem;
+  margin-bottom: 12px;
+}
+.team-roles > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.team-roles label {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--brand-foreground) 20%, transparent);
+  border-radius: 8px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.team-roles label[data-selected='true'] {
+  border-color: var(--brand-primary);
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--brand-surface)
+  );
+}
+.team-roles label > span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.team-permission-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.team-access-form > .team-muted {
+  margin: -10px 0 0;
+}
+.team-permissions {
+  display: grid;
+  gap: 10px;
+}
+.team-permission {
+  display: flex;
+  gap: 10px;
+  align-items: start;
+  margin-block: 10px;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.team-permission input {
+  flex-shrink: 0;
+}
+.team-permission small {
+  display: block;
+  color: var(--brand-muted);
+  margin-top: 4px;
+}
+.team-form-footer {
+  border-top: 1px solid
+    color-mix(in srgb, var(--brand-foreground) 15%, transparent);
+  padding-top: 18px;
+}
+.team-form-footer .team-actions {
+  justify-content: end;
+}
+@media (max-width: 1100px) {
+  .team-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .team-filters,
+  .team-roles > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .team-directory-header,
+  .team-member {
+    padding: 16px;
+  }
+}

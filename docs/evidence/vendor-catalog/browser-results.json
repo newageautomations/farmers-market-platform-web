@@ -1,0 +1,311 @@
+{
+  "geometry": {
+    "content": {
+      "width": 1296,
+      "height": 987.671875,
+      "radius": "0px",
+      "fontSize": "16px",
+      "color": "rgb(32, 53, 44)",
+      "background": "rgba(0, 0, 0, 0)",
+      "columns": "none"
+    },
+    "columns": {
+      "width": 1296,
+      "height": 916.875,
+      "radius": "0px",
+      "fontSize": "16px",
+      "color": "rgb(32, 53, 44)",
+      "background": "rgba(0, 0, 0, 0)",
+      "columns": "932px 340px"
+    },
+    "panel": {
+      "width": 932,
+      "height": 916.875,
+      "radius": "16px",
+      "fontSize": "16px",
+      "color": "rgb(32, 53, 44)",
+      "background": "rgb(255, 255, 255)",
+      "columns": "none"
+    },
+    "button": {
+      "width": 142.953125,
+      "height": 42,
+      "radius": "8px",
+      "fontSize": "15px",
+      "color": "rgb(255, 255, 255)",
+      "background": "rgb(49, 91, 64)",
+      "columns": "none"
+    },
+    "restock": {
+      "width": 91.09375,
+      "height": 32,
+      "radius": "8px",
+      "fontSize": "14px",
+      "color": "rgb(32, 53, 44)",
+      "background": "rgb(255, 255, 255)",
+      "columns": "none"
+    },
+    "search": {
+      "width": 642.140625,
+      "height": 38,
+      "radius": "8px",
+      "fontSize": "14px",
+      "color": "rgb(32, 53, 44)",
+      "background": "color(srgb 0.975765 0.980706 0.977529)",
+      "columns": "none"
+    },
+    "photo": {
+      "width": 42,
+      "height": 42,
+      "radius": "8px",
+      "fontSize": "16px",
+      "color": "rgb(49, 91, 64)",
+      "background": "rgba(0, 0, 0, 0)",
+      "columns": "none"
+    },
+    "row": {
+      "width": 930,
+      "height": 82,
+      "radius": "0px",
+      "fontSize": "16px",
+      "color": "rgb(32, 53, 44)",
+      "background": "rgb(255, 255, 255)",
+      "columns": "none"
+    },
+    "title": {
+      "width": 324.921875,
+      "height": 46.796875,
+      "radius": "0px",
+      "fontSize": "36px",
+      "color": "rgb(32, 53, 44)",
+      "background": "rgba(0, 0, 0, 0)",
+      "columns": "none"
+    },
+    "icons": [
+      {
+        "name": "farmstand-icon farmstand-icon-plus",
+        "width": 16,
+        "height": 16,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='16'%20height='16'%20viewBox='0%200%2016%2016'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='plus'%3e%3cpath%20id='Vector'%20d='M3.3328%208H8M8%208H12.6672M8%208V3.3328M8%208V12.6672'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='white'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-search",
+        "width": 15,
+        "height": 15,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='15'%20height='15'%20viewBox='0%200%2015%2015'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='search'%3e%3cpath%20id='Vector'%20d='M13.1251%2013.1251L10.4126%2010.4126M11.875%206.875C11.875%209.63642%209.63642%2011.875%206.875%2011.875C4.11358%2011.875%201.875%209.63642%201.875%206.875C1.875%204.11358%204.11358%201.875%206.875%201.875C9.63642%201.875%2011.875%204.11358%2011.875%206.875Z'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-down",
+        "width": 13,
+        "height": 13,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='13'%20height='13'%20viewBox='0%200%2013%2013'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-down'%3e%3cpath%20id='Vector'%20d='M3.25%204.875L6.5%208.125L9.75%204.875'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-down",
+        "width": 13,
+        "height": 13,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='13'%20height='13'%20viewBox='0%200%2013%2013'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-down'%3e%3cpath%20id='Vector'%20d='M3.25%204.875L6.5%208.125L9.75%204.875'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-plus-small",
+        "width": 13,
+        "height": 13,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='13'%20height='13'%20viewBox='0%200%2013%2013'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='plus'%3e%3cpath%20id='Vector'%20d='M2.7079%206.5H6.5M6.5%206.5H10.2921M6.5%206.5V2.7079M6.5%206.5V10.2921'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-right",
+        "width": 14,
+        "height": 14,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-right'%3e%3cpath%20id='Vector'%20d='M5.25%2010.5L8.75%207L5.25%203.5'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-plus-small",
+        "width": 13,
+        "height": 13,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='13'%20height='13'%20viewBox='0%200%2013%2013'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='plus'%3e%3cpath%20id='Vector'%20d='M2.7079%206.5H6.5M6.5%206.5H10.2921M6.5%206.5V2.7079M6.5%206.5V10.2921'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-right",
+        "width": 14,
+        "height": 14,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-right'%3e%3cpath%20id='Vector'%20d='M5.25%2010.5L8.75%207L5.25%203.5'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-plus-small",
+        "width": 13,
+        "height": 13,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='13'%20height='13'%20viewBox='0%200%2013%2013'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='plus'%3e%3cpath%20id='Vector'%20d='M2.7079%206.5H6.5M6.5%206.5H10.2921M6.5%206.5V2.7079M6.5%206.5V10.2921'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-right",
+        "width": 14,
+        "height": 14,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-right'%3e%3cpath%20id='Vector'%20d='M5.25%2010.5L8.75%207L5.25%203.5'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-plus-small",
+        "width": 13,
+        "height": 13,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='13'%20height='13'%20viewBox='0%200%2013%2013'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='plus'%3e%3cpath%20id='Vector'%20d='M2.7079%206.5H6.5M6.5%206.5H10.2921M6.5%206.5V2.7079M6.5%206.5V10.2921'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-right",
+        "width": 14,
+        "height": 14,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-right'%3e%3cpath%20id='Vector'%20d='M5.25%2010.5L8.75%207L5.25%203.5'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-plus-small",
+        "width": 13,
+        "height": 13,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='13'%20height='13'%20viewBox='0%200%2013%2013'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='plus'%3e%3cpath%20id='Vector'%20d='M2.7079%206.5H6.5M6.5%206.5H10.2921M6.5%206.5V2.7079M6.5%206.5V10.2921'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-right",
+        "width": 14,
+        "height": 14,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-right'%3e%3cpath%20id='Vector'%20d='M5.25%2010.5L8.75%207L5.25%203.5'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-plus-small",
+        "width": 13,
+        "height": 13,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='13'%20height='13'%20viewBox='0%200%2013%2013'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='plus'%3e%3cpath%20id='Vector'%20d='M2.7079%206.5H6.5M6.5%206.5H10.2921M6.5%206.5V2.7079M6.5%206.5V10.2921'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-right",
+        "width": 14,
+        "height": 14,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-right'%3e%3cpath%20id='Vector'%20d='M5.25%2010.5L8.75%207L5.25%203.5'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-plus-small",
+        "width": 13,
+        "height": 13,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='13'%20height='13'%20viewBox='0%200%2013%2013'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='plus'%3e%3cpath%20id='Vector'%20d='M2.7079%206.5H6.5M6.5%206.5H10.2921M6.5%206.5V2.7079M6.5%206.5V10.2921'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-right",
+        "width": 14,
+        "height": 14,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-right'%3e%3cpath%20id='Vector'%20d='M5.25%2010.5L8.75%207L5.25%203.5'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-plus-small",
+        "width": 13,
+        "height": 13,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='13'%20height='13'%20viewBox='0%200%2013%2013'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='plus'%3e%3cpath%20id='Vector'%20d='M2.7079%206.5H6.5M6.5%206.5H10.2921M6.5%206.5V2.7079M6.5%206.5V10.2921'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-right",
+        "width": 14,
+        "height": 14,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-right'%3e%3cpath%20id='Vector'%20d='M5.25%2010.5L8.75%207L5.25%203.5'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-arrow-up-right",
+        "width": 12,
+        "height": 12,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='12'%20height='12'%20viewBox='0%200%2012%2012'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='arrow-up-right'%3e%3cpath%20id='Vector'%20d='M8.4996%208.4996V3.5004H3.5004M8.4996%203.5004L3.5004%208.4996'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-plus-category",
+        "width": 16,
+        "height": 16,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='16'%20height='16'%20viewBox='0%200%2016%2016'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='plus'%3e%3cpath%20id='Vector'%20d='M3.3328%208H8M8%208H12.6672M8%208V3.3328M8%208V12.6672'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-carrot",
+        "width": 18,
+        "height": 18,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='18'%20height='18'%20viewBox='0%200%2018%2018'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='carrot'%20clip-path='url(%23clip0_0_12)'%3e%3cpath%20id='Vector'%20d='M6.48028%2010.5001L4.94279%208.97002M11.5053%2011.2502L11.4918%2011.2367M11.4918%2011.2367L9.66027%209.40505M11.4918%2011.2367C11.4163%2011.3303%2011.3357%2011.4199%2011.2503%2011.5052C9.10527%2013.6504%201.7028%2016.2756%201.7028%2016.2756C1.7028%2016.2756%204.32779%208.88001%206.48028%206.72734C6.79398%206.41411%207.16629%206.16574%207.57596%205.99642C7.98563%205.82709%208.42464%205.74011%208.86793%205.74046C9.31121%205.74081%209.75008%205.82847%2010.1595%205.99844C10.3597%206.08156%2010.5509%206.18357%2010.7307%206.30281M11.4918%2011.2367C11.6937%2010.9867%2011.8592%2010.7086%2011.9829%2010.4106C12.1528%2010.0012%2012.2405%209.56225%2012.2408%209.11893C12.2412%208.67561%2012.1542%208.23657%2011.9849%207.82686C11.9015%207.62517%2011.799%207.43253%2011.6791%207.25148M11.2506%206.74982C11.2506%206.74982%2011.2543%206.7459%2011.2613%206.73846M11.2506%206.74982C11.2506%206.74982%2011.4006%206.97533%2011.6791%207.25148M11.2506%206.74982C11.2506%206.74982%2011.0151%206.59319%2010.7307%206.30281M11.2506%206.74982C11.2506%206.74982%2011.2546%206.74619%2011.262%206.73915M11.2613%206.73846C11.2862%206.71235%2011.3534%206.6429%2011.4539%206.54744M11.2613%206.73846C11.2616%206.73868%2011.2618%206.73892%2011.262%206.73915M11.2613%206.73846C11.2589%206.736%2011.2565%206.73354%2011.254%206.73109C11.094%206.57079%2010.9186%206.42739%2010.7307%206.30281M11.4539%206.54744C11.885%206.13794%2012.9291%205.2497%2013.8756%205.2497C15.5031%205.2497%2016.5006%206.74982%2016.5006%206.74982C16.5006%206.74982%2015.5031%208.24994%2013.8756%208.24994C12.8791%208.24994%2012.1188%207.68757%2011.6791%207.25148M11.4539%206.54744C11.8637%206.11921%2012.7506%205.082%2012.7506%204.12461C12.7506%202.49698%2011.2506%201.4994%2011.2506%201.4994C11.2506%201.4994%209.75062%202.49698%209.75062%204.12461C9.75062%205.10731%2010.2974%205.86034%2010.7307%206.30281M11.4539%206.54744C11.358%206.64759%2011.2883%206.71443%2011.262%206.73915M11.6791%207.25148C11.5574%207.0679%2011.4178%206.89625%2011.262%206.73915'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3cdefs%3e%3cclipPath%20id='clip0_0_12'%3e%3crect%20width='18'%20height='18'%20fill='white'/%3e%3c/clipPath%3e%3c/defs%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-right",
+        "width": 14,
+        "height": 14,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-right'%3e%3cpath%20id='Vector'%20d='M5.25%2010.5L8.75%207L5.25%203.5'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-apple",
+        "width": 18,
+        "height": 18,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='18'%20height='18'%20viewBox='0%200%2018%2018'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='apple'%20clip-path='url(%23clip0_0_4)'%3e%3cpath%20id='Vector'%20d='M8.99994%204.89557V2.24944C8.99994%202.05052%209.07896%201.85974%209.21963%201.71908C9.36029%201.57842%209.55107%201.4994%209.75%201.4994M8.99994%204.89557C9.64746%204.31642%2010.4488%203.93697%2011.3072%203.80319C12.1656%203.66942%2013.0443%203.78695%2013.8374%204.1416C14.6304%204.49625%2015.3039%205.07285%2015.7765%205.80181C16.249%206.53077%2016.5005%207.38092%2016.5005%208.24965C16.5122%2011.0115%2015.5076%2013.6811%2013.678%2015.75C13.3422%2016.1257%2012.8901%2016.3778%2012.3939%2016.4659C11.8978%2016.554%2011.3865%2016.4731%2010.9418%2016.2361C10.3442%2015.9172%209.67731%2015.7504%208.99996%2015.7504C8.32261%2015.7504%207.65568%2015.9172%207.05807%2016.2361C6.61343%2016.4731%206.10209%2016.554%205.60597%2016.4659C5.10985%2016.3778%204.65767%2016.1257%204.32187%2015.75C2.49838%2013.6774%201.49468%2011.0102%201.49942%208.24965C1.49944%207.38092%201.7509%206.53077%202.22347%205.80181C2.69603%205.07285%203.36948%204.49625%204.16254%204.1416C4.95559%203.78695%205.83435%203.66942%206.69273%203.80319C7.55112%203.93697%208.35242%204.31642%208.99994%204.89557Z'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3cdefs%3e%3cclipPath%20id='clip0_0_4'%3e%3crect%20width='18'%20height='18'%20fill='white'/%3e%3c/clipPath%3e%3c/defs%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-right",
+        "width": 14,
+        "height": 14,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-right'%3e%3cpath%20id='Vector'%20d='M5.25%2010.5L8.75%207L5.25%203.5'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-egg",
+        "width": 18,
+        "height": 18,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='18'%20height='18'%20viewBox='0%200%2018%2018'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='egg'%3e%3cpath%20id='Vector'%20d='M9%201.4994C6.0003%201.4994%203.0006%205.99976%203.0006%2010.5001C3.0006%2012.0915%203.63268%2013.6178%204.75778%2014.7431C5.88289%2015.8684%207.40886%2016.5006%209%2016.5006C10.5911%2016.5006%2012.1171%2015.8684%2013.2422%2014.7431C14.3673%2013.6178%2014.9994%2012.0915%2014.9994%2010.5001C14.9994%205.99976%2011.9997%201.4994%209%201.4994Z'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-right",
+        "width": 14,
+        "height": 14,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-right'%3e%3cpath%20id='Vector'%20d='M5.25%2010.5L8.75%207L5.25%203.5'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-archive",
+        "width": 18,
+        "height": 18,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='18'%20height='18'%20viewBox='0%200%2018%2018'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='archive'%3e%3cpath%20id='Vector'%20d='M2.99952%206V14.25C2.99952%2014.6478%203.15757%2015.0294%203.43889%2015.3107C3.72022%2015.592%204.10178%2015.75%204.49964%2015.75H13.5004C13.8982%2015.75%2014.2798%2015.592%2014.5611%2015.3107C14.8424%2015.0294%2015.0005%2014.6478%2015.0005%2014.25V6M2.99952%206H15.0005M2.99952%206H2.24946C1.83521%206%201.4994%205.66421%201.4994%205.25V3C1.4994%202.58579%201.83521%202.25%202.24946%202.25H15.7505C16.1648%202.25%2016.5006%202.58579%2016.5006%203V5.25C16.5006%205.66421%2016.1648%206%2015.7505%206H15.0005M7.49988%209H10.5001'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-chevron-right",
+        "width": 14,
+        "height": 14,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='14'%20height='14'%20viewBox='0%200%2014%2014'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='chevron-right'%3e%3cpath%20id='Vector'%20d='M5.25%2010.5L8.75%207L5.25%203.5'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23788077'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-arrow-right",
+        "width": 13,
+        "height": 13,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='13'%20height='13'%20viewBox='0%200%2013%2013'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='arrow-right'%3e%3cpath%20id='Vector'%20d='M2.7079%206.5H10.2921M6.5%2010.2921L10.2921%206.5L6.5%202.7079'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23315B40'/%3e%3c/g%3e%3c/svg%3e\")"
+      },
+      {
+        "name": "farmstand-icon farmstand-icon-triangle-alert",
+        "width": 18,
+        "height": 18,
+        "mask": "url(\"data:image/svg+xml,%3csvg%20preserveAspectRatio='none'%20overflow='visible'%20style='display:%20block;'%20width='18'%20height='18'%20viewBox='0%200%2018%2018'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20id='triangle-alert'%3e%3cpath%20id='Vector'%20d='M8.99998%206.74945V9.74945M8.99998%2012.7495H9.00748M16.2978%2013.4996L10.2978%202.99962C10.167%202.76878%209.97725%202.57676%209.74799%202.44317C9.51873%202.30958%209.25814%202.2392%208.9928%202.2392C8.72746%202.2392%208.46686%202.30958%208.2376%202.44317C8.00834%202.57676%207.81862%202.76878%207.6878%202.99962L1.6878%2013.4996C1.55556%2013.7286%201.48622%2013.9885%201.4868%2014.253C1.48739%2014.5175%201.55788%2014.7771%201.69113%2015.0055C1.82438%2015.2339%202.01566%2015.4231%202.24557%2015.5537C2.47548%2015.6844%202.73585%2015.752%203.0003%2015.7496H15.0003C15.2635%2015.7494%2015.5219%2015.6798%2015.7498%2015.5481C15.9776%2015.4163%2016.1667%2015.2269%2016.2982%2014.999C16.4297%2014.771%2016.4988%2014.5124%2016.4988%2014.2492C16.4987%2013.9861%2016.4294%2013.7275%2016.2978%2013.4996Z'%20stroke-width='1.7'%20stroke-linecap='round'%20stroke='%23946D2C'/%3e%3c/g%3e%3c/svg%3e\")"
+      }
+    ]
+  },
+  "responsive": [
+    {
+      "viewport": 1280,
+      "page": 1280,
+      "content": 976,
+      "tableScroll": 974,
+      "tableWidth": 974
+    },
+    {
+      "viewport": 768,
+      "page": 768,
+      "content": 464,
+      "tableScroll": 900,
+      "tableWidth": 462
+    },
+    {
+      "viewport": 390,
+      "page": 390,
+      "content": 358,
+      "tableScroll": 900,
+      "tableWidth": 356
+    }
+  ],
+  "errors": [],
+  "checks": [
+    "desktop geometry",
+    "all exact Figma SVG masks",
+    "palette color response",
+    "1280/768/390 page overflow",
+    "SKU search",
+    "restock and refresh"
+  ]
+}

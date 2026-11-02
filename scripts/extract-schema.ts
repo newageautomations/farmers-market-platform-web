@@ -219,6 +219,14 @@ for (const api of ['shop', 'admin'] as const) {
         'customerAccountAdminSchema',
       ),
     );
+  extensions.push(
+    extract(
+      'src/plugins/marketplace-commerce/customer-account/employee-invitations.api.ts',
+      api === 'admin'
+        ? 'employeeTeamAdminSchema'
+        : 'employeeInvitationShopSchema',
+    ),
+  );
   if (api === 'admin')
     extensions.push(
       extract('src/plugins/market-operations/packing.api.ts', 'packingSchema'),

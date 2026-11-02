@@ -43,9 +43,10 @@ if (origin && correlation && /^[A-Za-z0-9_-]{43}$/.test(correlation)) {
   }
 }
 const destination = Astro.url.searchParams.get('destination') ?? '';
-const role =
-  destination.startsWith('/vendor') ||
-  Astro.url.searchParams.get('context') === 'vendor'
+const role = Astro.cookies.has('employee-invitation')
+  ? ''
+  : destination.startsWith('/vendor') ||
+      Astro.url.searchParams.get('context') === 'vendor'
     ? 'vendor'
     : destination.startsWith('/market') ||
         Astro.url.searchParams.get('context') === 'market'
@@ -64,7 +65,11 @@ if (existing) {
   try {
     await accountBridge({ action: 'centralProfile', central: existing });
     return Astro.redirect(
-      role ? `/account/onboarding/${role}` : '/account/workspaces',
+      Astro.cookies.has('employee-invitation')
+        ? '/account/invitation'
+        : role
+          ? `/account/onboarding/${role}`
+          : '/account/workspaces',
     );
   } catch {
     /* Expired sessions may register. */

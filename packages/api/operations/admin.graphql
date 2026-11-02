@@ -654,3 +654,71 @@ mutation SaveVendorTaxSettings($input: VendorTaxSettingsInput!) {
     }
   }
 }
+
+fragment TeamMemberFields on BusinessTeamMember {
+  id
+  name
+  email
+  role
+  status
+  permissions
+  delegationCeiling
+  grantRevision
+  canManage
+}
+fragment TeamInvitationFields on BusinessEmployeeInvitation {
+  id
+  email
+  role
+  status
+  expiresAt
+  createdAt
+  presetVersion
+  deliveredAt
+  canManage
+}
+query TeamPolicy {
+  ownBusinessTeamPolicy {
+    membershipId
+    owner
+    basePermission
+    grantablePermissions
+    presets {
+      role
+      permissions
+    }
+  }
+}
+query TeamMembers($skip: Int) {
+  ownBusinessTeam(skip: $skip) {
+    ...TeamMemberFields
+  }
+}
+query TeamMember($id: ID!) {
+  ownBusinessTeamMember(id: $id) {
+    ...TeamMemberFields
+  }
+}
+query TeamInvitations($skip: Int) {
+  ownBusinessEmployeeInvitations(skip: $skip) {
+    ...TeamInvitationFields
+  }
+}
+mutation TeamInvite($input: InviteBusinessEmployeeInput!) {
+  inviteBusinessEmployee(input: $input) {
+    ...TeamInvitationFields
+  }
+}
+mutation TeamResend($id: ID!) {
+  resendBusinessEmployeeInvitation(id: $id) {
+    ...TeamInvitationFields
+  }
+}
+mutation TeamCancel($id: ID!) {
+  cancelBusinessEmployeeInvitation(id: $id) {
+    ...TeamInvitationFields
+  }
+}
+mutation TeamChange($input: ChangeBusinessEmployeeInput!) {
+  changeBusinessEmployee(input: $input)
+}

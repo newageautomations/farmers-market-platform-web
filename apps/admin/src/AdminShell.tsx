@@ -152,6 +152,9 @@ function Shell({
               marketPath(path).startsWith(`${item.path}/`)))) ||
         (context.scope === 'VENDOR' && item.path === vendorPath(path)) ||
         (context.scope === 'VENDOR' &&
+          item.path === '/vendor/products' &&
+          vendorPath(path) === '/vendor/inventory') ||
+        (context.scope === 'VENDOR' &&
           vendorPath(path).startsWith(`${item.path}/`)) ||
         (context.scope === 'VENDOR' &&
           item.path === '/' &&
@@ -378,29 +381,36 @@ function Shell({
             </>
           ) : (
             <>
-              <PageHeader
-                title={
-                  path.startsWith('/notifications')
-                    ? path.endsWith('/settings')
-                      ? 'Notification settings'
-                      : path.endsWith('/unsubscribed')
-                        ? 'Unsubscribed notifications'
-                        : 'Notifications'
-                    : path === '/vendor/settings/payments'
-                      ? 'Payment Integrations'
-                      : path === '/vendor/pos/square-return'
-                        ? 'Check Square payment'
-                        : (current?.label ?? 'Overview')
-                }
-              >
-                {context.scope === 'PLATFORM' && (
-                  <p>
-                    {context.scope === 'PLATFORM'
-                      ? 'Shared platform administration'
-                      : 'Your Market workspace'}
-                  </p>
-                )}
-              </PageHeader>
+              {!(
+                context.scope === 'VENDOR' &&
+                ['/vendor/products', '/vendor/inventory'].includes(
+                  vendorPath(path),
+                )
+              ) && (
+                <PageHeader
+                  title={
+                    path.startsWith('/notifications')
+                      ? path.endsWith('/settings')
+                        ? 'Notification settings'
+                        : path.endsWith('/unsubscribed')
+                          ? 'Unsubscribed notifications'
+                          : 'Notifications'
+                      : path === '/vendor/settings/payments'
+                        ? 'Payment Integrations'
+                        : path === '/vendor/pos/square-return'
+                          ? 'Check Square payment'
+                          : (current?.label ?? 'Overview')
+                  }
+                >
+                  {context.scope === 'PLATFORM' && (
+                    <p>
+                      {context.scope === 'PLATFORM'
+                        ? 'Shared platform administration'
+                        : 'Your Market workspace'}
+                    </p>
+                  )}
+                </PageHeader>
+              )}
               {[
                 '/vendor/settings',
                 '/market/settings',

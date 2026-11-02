@@ -64,6 +64,8 @@ if (!isCentral(Astro.url)) {
           );
           return Astro.redirect('/account/phone');
         }
+        if (!origin && Astro.cookies.has('employee-invitation'))
+          return Astro.redirect('/account/invitation');
       } catch {
         /* The normal sign-in form handles expired authentication. */
       }

@@ -1,0 +1,101 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { cardClassName } from '@market/ui/presentation';
+import directory from '../data/test-storefronts.json';
+
+// A local testing aid, with no account session or privileged runtime data access.
+if (!import.meta.env.DEV) return new Response('Not found', { status: 404 });
+Astro.response.headers.set('Cache-Control', 'no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+const associated = new Set(
+  directory.markets.flatMap((market) => market.vendorIds),
+);
+const unassigned = directory.vendors.filter(
+  (vendor) => !associated.has(vendor.id),
+);
+const marketCount = directory.markets.filter(
+  (market) => market.urls.length,
+).length;
+const vendorCount = directory.vendors.filter(
+  (vendor) => vendor.urls.length,
+).length;
+---
+
+<SiteLayout title="Test storefront links" noindex>
+  <div class="storefront-directory">
+    <h1>Test storefront links</h1>
+    <p>
+      {marketCount} market storefronts and {vendorCount} vendor storefronts. No
+      sign-in needed. Only configured storefronts have links.
+    </p>
+    <p class="directory-note">Local database: {directory.database}</p>
+    {directory.markets.map((market) => (
+      <section class={cardClassName()} aria-labelledby={`market-${market.id}`}>
+        <h2 id={`market-${market.id}`}>
+          {market.urls.length ? (
+            <a href={market.urls[0]}>{market.name}</a>
+          ) : (
+            market.name
+          )}
+        </h2>
+        {!market.urls.length && (
+          <p class="directory-note">Market storefront not configured.</p>
+        )}
+        {market.vendorIds.length > 0 ? (
+          <ul class="directory-links">
+            {directory.vendors
+              .filter((vendor) => market.vendorIds.includes(vendor.id))
+              .map((vendor) => (
+                <li>
+                  {vendor.urls.length ? (
+                    <a href={vendor.urls[0]}>{vendor.name}</a>
+                  ) : (
+                    <span>
+                      {vendor.name}{' '}
+                      <span class="directory-note">(Not configured)</span>
+                    </span>
+                  )}
+                </li>
+              ))}
+          </ul>
+        ) : (
+          <p class="directory-note">No associated vendors.</p>
+        )}
+      </section>
+    ))}
+    {unassigned.length > 0 && (
+      <section class={cardClassName()} aria-labelledby="other-vendors">
+        <h2 id="other-vendors">Vendors without a market</h2>
+        <ul class="directory-links">
+          {unassigned.map((vendor) => (
+            <li>
+              {vendor.urls.length ? (
+                <a href={vendor.urls[0]}>{vendor.name}</a>
+              ) : (
+                <span>
+                  {vendor.name}{' '}
+                  <span class="directory-note">(Not configured)</span>
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </div>
+</SiteLayout>
+
+<style>
+  .storefront-directory {
+    max-width: 52rem;
+    margin: 2rem auto;
+  }
+  .directory-note {
+    color: var(--brand-muted);
+  }
+  .directory-links {
+    display: grid;
+    gap: 0.5rem;
+    padding-inline-start: 1.5rem;
+  }
+</style>

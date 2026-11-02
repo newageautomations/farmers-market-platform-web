@@ -163,20 +163,26 @@ export function Orders({
 function OrderDetail({ service, id }: { service: VendorService; id: string }) {
   const read = useCallback(() => service.order(id), [service, id]);
   const query = useRead(`order:${id}`, read);
-  const can = mayCommand(service.context, 'ManageOwnInventory');
+  const canFulfill = mayCommand(service.context, 'FulfillOwnOrders');
+  const canCancel = mayCommand(service.context, 'CancelOwnOrders');
   return (
     <>
       <RouteLink to="/vendor/orders">Orders</RouteLink>
       <ReadState {...query} retry={query.refresh} />
       {query.data && (
         <div key={JSON.stringify(query.data)}>
-          {query.data.portion.kind === 'IN_PERSON' && service.pos && (
-            <PosOrderPayment
-              api={service.pos}
-              orderId={id}
-              canRefund={mayCommand(service.context, 'RequestOwnVendorRefund')}
-            />
-          )}
+          {query.data.portion.kind === 'IN_PERSON' &&
+            service.pos &&
+            service.context.permissions.includes('ReadOwnVendorFinance') && (
+              <PosOrderPayment
+                api={service.pos}
+                orderId={id}
+                canRefund={mayCommand(
+                  service.context,
+                  'RequestOwnVendorRefund',
+                )}
+              />
+            )}
           <p>Order {query.data.portion.operationalOrderId}</p>
           <Card as="section" aria-label="Order status and context">
             <dl className="facts">
@@ -300,7 +306,7 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
               administration are unavailable here.
             </p>
           )}
-          {can &&
+          {(canFulfill || canCancel) &&
             query.data.portion.kind !== 'IN_PERSON' &&
             [
               'PaymentSettled',
@@ -318,39 +324,16 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
                 >
                   <summary>Manage {line.variantName}</summary>
                   <div className="ui-disclosure-content">
-                    <CommandForm
-                      embedded
-                      title="Fulfill quantity"
-                      validate={(d) => {
-                        if (integer(d.get('quantity')) > remaining)
-                          throw new AppError('validation');
-                      }}
-                      run={(d, operationKey) =>
-                        service.fulfill({
-                          operationKey,
-                          orderId: id,
-                          orderLineId: line.operationalLineId,
-                          quantity: integer(d.get('quantity')),
-                          fulfillmentId: null,
-                        })
-                      }
-                      onDone={query.refresh}
-                      submitLabel="Fulfill"
-                    >
-                      <TextField name="quantity" label="Quantity to fulfill" />
-                      <p>Remaining operational quantity: {remaining}.</p>
-                    </CommandForm>
-                    {line.fulfilledQuantity === 0 ? (
+                    {canFulfill && (
                       <CommandForm
                         embedded
-                        title="Cancel unfulfilled quantity"
-                        confirm="Cancel this unfulfilled operational quantity? The backend restores eligible allocations. Financial attribution and payments do not change."
+                        title="Fulfill quantity"
                         validate={(d) => {
                           if (integer(d.get('quantity')) > remaining)
                             throw new AppError('validation');
                         }}
                         run={(d, operationKey) =>
-                          service.cancelQuantity({
+                          service.fulfill({
                             operationKey,
                             orderId: id,
                             orderLineId: line.operationalLineId,
@@ -359,17 +342,49 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
                           })
                         }
                         onDone={query.refresh}
-                        submitLabel="Review cancellation"
+                        submitLabel="Fulfill"
                       >
-                        <TextField name="quantity" label="Quantity to cancel" />
+                        <TextField
+                          name="quantity"
+                          label="Quantity to fulfill"
+                        />
+                        <p>Remaining operational quantity: {remaining}.</p>
                       </CommandForm>
-                    ) : (
-                      <Unavailable>
-                        Unfulfilled cancellation on a mixed fulfilled line is
-                        not supported by the backend. Fulfillment cancellation
-                        is a separate command.
-                      </Unavailable>
                     )}
+                    {canCancel &&
+                      (line.fulfilledQuantity === 0 ? (
+                        <CommandForm
+                          embedded
+                          title="Cancel unfulfilled quantity"
+                          confirm="Cancel this unfulfilled operational quantity? The backend restores eligible allocations. Financial attribution and payments do not change."
+                          validate={(d) => {
+                            if (integer(d.get('quantity')) > remaining)
+                              throw new AppError('validation');
+                          }}
+                          run={(d, operationKey) =>
+                            service.cancelQuantity({
+                              operationKey,
+                              orderId: id,
+                              orderLineId: line.operationalLineId,
+                              quantity: integer(d.get('quantity')),
+                              fulfillmentId: null,
+                            })
+                          }
+                          onDone={query.refresh}
+                          submitLabel="Review cancellation"
+                        >
+                          <TextField
+                            name="quantity"
+                            label="Quantity to cancel"
+                          />
+                        </CommandForm>
+                      ) : (
+                        <Unavailable>
+                          Unfulfilled cancellation on a mixed fulfilled line is
+                          not supported by the backend. Fulfillment cancellation
+                          is a separate command.
+                        </Unavailable>
+                      ))}
                   </div>
                 </details>
               ) : null;
@@ -386,26 +401,28 @@ function OrderDetail({ service, id }: { service: VendorService; id: string }) {
                 </td>
                 <td>{f.lines.map((l) => `${l.quantity} units`).join(', ')}</td>
                 <td>
-                  {can && f.state !== 'Cancelled' && f.lines.length === 1 && (
-                    <CommandForm
-                      embedded
-                      title="Cancel fulfillment"
-                      confirm="Cancel this existing fulfillment? Eligible sold stock restoration is backend controlled. This is not a financial refund."
-                      run={(_d, operationKey) =>
-                        service.cancelFulfillment({
-                          operationKey,
-                          orderId: id,
-                          orderLineId: null,
-                          quantity: null,
-                          fulfillmentId: f.id,
-                        })
-                      }
-                      onDone={query.refresh}
-                      submitLabel="Review fulfillment cancellation"
-                    >
-                      <p>Cancel the entire selected fulfillment.</p>
-                    </CommandForm>
-                  )}
+                  {(canFulfill || canCancel) &&
+                    f.state !== 'Cancelled' &&
+                    f.lines.length === 1 && (
+                      <CommandForm
+                        embedded
+                        title="Cancel fulfillment"
+                        confirm="Cancel this existing fulfillment? Eligible sold stock restoration is backend controlled. This is not a financial refund."
+                        run={(_d, operationKey) =>
+                          service.cancelFulfillment({
+                            operationKey,
+                            orderId: id,
+                            orderLineId: null,
+                            quantity: null,
+                            fulfillmentId: f.id,
+                          })
+                        }
+                        onDone={query.refresh}
+                        submitLabel="Review fulfillment cancellation"
+                      >
+                        <p>Cancel the entire selected fulfillment.</p>
+                      </CommandForm>
+                    )}
                 </td>
               </tr>
             ))}

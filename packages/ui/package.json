@@ -12,7 +12,9 @@
     "./notifications.css": "./src/notifications.css",
     "./document-status": "./src/document-status.ts",
     "./loyalty": "./src/loyalty.tsx",
-    "./loyalty.css": "./src/loyalty.css"
+    "./loyalty.css": "./src/loyalty.css",
+    "./farmstand": "./src/farmstand.tsx",
+    "./farmstand.css": "./src/farmstand.css"
   },
   "dependencies": {
     "@market/api": "0.1.0",

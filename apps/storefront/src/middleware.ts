@@ -52,6 +52,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const requestId = crypto.randomUUID();
   const production = runtimeMode(process.env) === 'production';
   const headers = new Headers(responseSecurityHeaders(production));
+  if (
+    context.url.pathname === '/account/invitation' &&
+    context.url.searchParams.has('token')
+  )
+    headers.set('Referrer-Policy', 'no-referrer');
   headers.set('X-Request-Id', requestId);
   const privateRoute =
     /^\/(account|auth|checkout|api|notifications)(\/|$)/.test(

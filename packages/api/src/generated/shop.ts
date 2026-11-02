@@ -484,6 +484,8 @@ export type OccurrenceCatalogSort =
 export type Permission =
   /** Authenticated means simply that the user is logged in */
   | 'Authenticated'
+  | 'CancelOwnOrders'
+  | 'ConfigureOwnPosIntegrations'
   /** Grants permission to create Administrator */
   | 'CreateAdministrator'
   /** Grants permission to create ApiKey */
@@ -576,6 +578,7 @@ export type Permission =
   | 'DeleteTaxRate'
   /** Grants permission to delete Zone */
   | 'DeleteZone'
+  | 'FulfillOwnOrders'
   | 'ManageBillingCatalog'
   | 'ManageCatalogPublication'
   | 'ManageMarketIdentity'
@@ -583,6 +586,7 @@ export type Permission =
   | 'ManageOwnBilling'
   | 'ManageOwnCatalog'
   | 'ManageOwnCoupon'
+  | 'ManageOwnDocuments'
   | 'ManageOwnInventory'
   | 'ManageOwnMarketApplications'
   | 'ManageOwnMarketAssignments'
@@ -594,6 +598,7 @@ export type Permission =
   | 'ManageOwnMarketOfferings'
   | 'ManageOwnMarketParticipation'
   | 'ManageOwnMarketSchedule'
+  | 'ManageOwnMarketTeam'
   | 'ManageOwnPaymentAccount'
   | 'ManageOwnPosIntegrations'
   | 'ManageOwnStorefront'
@@ -629,12 +634,17 @@ export type Permission =
   | 'ReadOrder'
   | 'ReadOwnBilling'
   | 'ReadOwnCRM'
+  | 'ReadOwnCatalog'
+  | 'ReadOwnDocuments'
+  | 'ReadOwnInventory'
   | 'ReadOwnMarket'
   | 'ReadOwnMarketAnalytics'
   | 'ReadOwnMarketApplications'
   | 'ReadOwnMarketAssignments'
   | 'ReadOwnMarketBilling'
   | 'ReadOwnMarketLayouts'
+  | 'ReadOwnMarketOrders'
+  | 'ReadOwnOrders'
   | 'ReadOwnPaymentAccount'
   | 'ReadOwnPosIntegrations'
   | 'ReadOwnVendorAnalytics'

@@ -69,6 +69,38 @@ export const POST: APIRoute = async (context) => {
     let location = '/account';
     if (isCentral(context.url)) {
       switch (action) {
+        case 'acceptEmployeeInvitation':
+        case 'invitationSignOut': {
+          const csrf = context.cookies.get('employee-invitation-csrf')?.value;
+          if (
+            !csrf ||
+            !/^[A-Za-z0-9_-]{43}$/.test(csrf) ||
+            form.get('csrf') !== csrf
+          )
+            throw new Error('Denied');
+          if (action === 'invitationSignOut') {
+            if (central)
+              await accountBridge({
+                action: 'unifiedLogout',
+                central,
+                everywhere: true,
+              });
+            context.cookies.delete('platform-unified-account', { path: '/' });
+            location = '/account/login?returnTo=%2Faccount%2Finvitation';
+          } else {
+            await accountBridge({
+              action,
+              central,
+              token: context.cookies.get('employee-invitation')?.value ?? '',
+              boundary,
+              principal: form.get('principal') ?? '',
+            });
+            context.cookies.delete('employee-invitation', { path: '/' });
+            location = '/account/invitation?accepted=1';
+          }
+          context.cookies.delete('employee-invitation-csrf', { path: '/' });
+          break;
+        }
         case 'register':
         case 'requestPersonalPhone': {
           if (action === 'register') {
@@ -175,7 +207,9 @@ export const POST: APIRoute = async (context) => {
           }
           location =
             action === 'verifyPhoneRegistration'
-              ? '/account/login?verified=1'
+              ? context.cookies.has('employee-invitation')
+                ? '/account/login?verified=1&returnTo=%2Faccount%2Finvitation'
+                : '/account/login?verified=1'
               : '/account?saved=1';
           break;
         }
@@ -360,14 +394,16 @@ export const POST: APIRoute = async (context) => {
           }
           if (!form.get('origin')) {
             setUnifiedCentral(context, result.central);
-            location = context.cookies.has('vendor-application-continuation')
-              ? '/account/vendor-applications'
-              : context.cookies.has('account-signup-role')
-                ? '/account/onboarding/' +
-                  context.cookies.get('account-signup-role')!.value
-                : form.get('returnTo')
-                  ? safeAccountReturn(form.get('returnTo'))
-                  : await defaultAccountDestination(result.central);
+            location = context.cookies.has('employee-invitation')
+              ? '/account/invitation'
+              : context.cookies.has('vendor-application-continuation')
+                ? '/account/vendor-applications'
+                : context.cookies.has('account-signup-role')
+                  ? '/account/onboarding/' +
+                    context.cookies.get('account-signup-role')!.value
+                  : form.get('returnTo')
+                    ? safeAccountReturn(form.get('returnTo'))
+                    : await defaultAccountDestination(result.central);
             context.cookies.delete('account-signup-role', { path: '/' });
             break;
           }
@@ -441,6 +477,12 @@ export const POST: APIRoute = async (context) => {
     headers.set('Location', location);
     return new Response(null, { status: 303, headers });
   } catch (caught) {
+    if (
+      ['acceptEmployeeInvitation', 'invitationSignOut'].includes(formAction)
+    ) {
+      headers.set('Location', '/account/invitation?error=1');
+      return new Response(null, { status: 303, headers });
+    }
     if (loginRetry) {
       headers.set('Location', loginRetry);
       return new Response(null, { status: 303, headers });

@@ -25,6 +25,11 @@ export const fixtureContexts: Record<AdminScope, AdminContext> = {
     membershipRole: 'owner',
     permissions: [
       'ReadOwnVendorIdentity',
+      'ReadOwnCatalog',
+      'ReadOwnInventory',
+      'ReadOwnOrders',
+      'FulfillOwnOrders',
+      'CancelOwnOrders',
       'ManageOwnCatalog',
       'ManageOwnInventory',
       'ReadOwnCRM',

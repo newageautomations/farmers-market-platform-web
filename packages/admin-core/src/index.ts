@@ -14,7 +14,7 @@ export interface AdminContext {
   permissions: readonly Permission[];
   subject?: { vendorId: string } | { marketId: string };
   source: 'fixture' | 'backend';
-  membershipRole?: 'owner' | 'staff';
+  membershipRole?: 'owner' | 'administrator' | 'lead' | 'staff';
   marketStatus?: 'active' | 'suspended';
 }
 export interface NavItem {
@@ -25,6 +25,8 @@ export interface NavItem {
   parent?: string;
 }
 export const navigation: readonly NavItem[] = [
+  { label: 'Team', path: '/vendor/team', scopes: ['VENDOR'] },
+  { label: 'Team', path: '/market/team', scopes: ['MARKET'] },
   {
     label: 'Notifications',
     path: '/notifications',
@@ -34,7 +36,7 @@ export const navigation: readonly NavItem[] = [
     label: 'Documents',
     path: '/market/documents',
     scopes: ['MARKET'],
-    permission: 'ReadOwnMarket',
+    permission: 'ReadOwnDocuments',
   },
   {
     label: 'Submitted applications',
@@ -153,35 +155,30 @@ export const navigation: readonly NavItem[] = [
     permission: 'OperateOwnPos',
   },
   {
-    label: 'Products',
+    label: 'Products & Inventory',
     path: '/vendor/products',
     scopes: ['VENDOR'],
-    permission: 'ManageOwnCatalog',
+    permission: 'ReadOwnCatalog',
   },
   {
     label: 'Categories',
     path: '/vendor/categories',
+    parent: '/vendor/products',
     scopes: ['VENDOR'],
     permission: 'ManageOwnCatalog',
-  },
-  {
-    label: 'Inventory',
-    path: '/vendor/inventory',
-    scopes: ['VENDOR'],
-    permission: 'ManageOwnInventory',
   },
   {
     label: 'Orders',
     path: '/vendor/orders',
     scopes: ['VENDOR'],
-    permission: 'ReadOwnVendorIdentity',
+    permission: 'ReadOwnOrders',
   },
   {
     label: 'Packing & Fulfillment',
     path: '/vendor/orders/packing',
     parent: '/vendor/orders',
     scopes: ['VENDOR'],
-    permission: 'ReadOwnVendorIdentity',
+    permission: 'ReadOwnOrders',
   },
   {
     label: 'Contact Submissions',
@@ -198,8 +195,9 @@ export const navigation: readonly NavItem[] = [
   {
     label: 'Applications',
     path: '/vendor/applications',
+    parent: '/vendor/markets',
     scopes: ['VENDOR'],
-    permission: 'ReadOwnVendorIdentity',
+    permission: 'ManageOwnMarketParticipation',
   },
   {
     label: 'Market Day',
@@ -216,8 +214,9 @@ export const navigation: readonly NavItem[] = [
   {
     label: 'Documents',
     path: '/vendor/documents',
+    parent: '/vendor/markets',
     scopes: ['VENDOR'],
-    permission: 'ReadOwnVendorIdentity',
+    permission: 'ReadOwnDocuments',
   },
   {
     label: 'Occurrences',
@@ -264,12 +263,14 @@ export const navigation: readonly NavItem[] = [
   {
     label: 'Payments',
     path: '/vendor/integrations/payments',
+    parent: '/vendor/integrations',
     scopes: ['VENDOR'],
     permission: 'ReadOwnPaymentAccount',
   },
   {
     label: 'POS',
     path: '/vendor/integrations/pos',
+    parent: '/vendor/integrations',
     scopes: ['VENDOR'],
     permission: 'ReadOwnPosIntegrations',
   },
@@ -280,7 +281,7 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnBilling',
   },
   {
-    label: 'Website Library',
+    label: 'Website',
     path: '/vendor/storefront',
     scopes: ['VENDOR'],
     permission: 'ManageOwnStorefront',
@@ -306,6 +307,7 @@ export const navigation: readonly NavItem[] = [
   {
     label: 'Loyalty',
     path: '/vendor/loyalty',
+    parent: '/vendor/customers',
     scopes: ['VENDOR'],
     permission: 'ReadOwnCRM',
   },
@@ -349,7 +351,7 @@ export const navigation: readonly NavItem[] = [
     label: 'Operations',
     path: '/market/operations',
     scopes: ['MARKET'],
-    permission: 'ReadOwnMarket',
+    permission: 'ReadOwnMarketOrders',
   },
   {
     label: 'Storefront Appearance',
@@ -367,11 +369,56 @@ export const navigation: readonly NavItem[] = [
 export function visibleNavigation(context: AdminContext) {
   const items = navigation.filter(
     (item) =>
+      (!item.path.endsWith('/team') ||
+        context.membershipRole === 'owner' ||
+        (context.membershipRole === 'administrator' &&
+          context.permissions.includes(
+            context.scope === 'VENDOR'
+              ? 'ManageOwnVendorMembership'
+              : 'ManageOwnMarketTeam',
+          ))) &&
       (item.path !== '/vendor/applications' ||
-        context.membershipRole === 'owner') &&
+        context.permissions.includes('ManageOwnMarketParticipation')) &&
       item.scopes.includes(context.scope) &&
-      (!item.permission || hasPermission(context.permissions, item.permission)),
+      (!item.permission ||
+        hasPermission(context.permissions, item.permission) ||
+        (item.path === '/vendor/products' &&
+          hasPermission(context.permissions, 'ReadOwnInventory'))),
   );
+  if (context.scope === 'VENDOR') {
+    const order = [
+      '/',
+      '/notifications',
+      '/vendor/pos',
+      '/vendor/products',
+      '/vendor/categories',
+      '/vendor/orders',
+      '/vendor/orders/packing',
+      '/vendor/customers',
+      '/vendor/loyalty',
+      '/vendor/markets',
+      '/vendor/documents',
+      '/vendor/applications',
+      '/vendor/storefront',
+      '/vendor/finances',
+      '/vendor/settings',
+      '/vendor/integrations',
+      '/vendor/integrations/payments',
+      '/vendor/integrations/pos',
+      '/vendor/billing',
+    ];
+    const rank = (path: string) => {
+      const index = order.indexOf(path);
+      return index < 0 ? order.length : index;
+    };
+    return items
+      .map((item) =>
+        item.parent && !items.some((parent) => parent.path === item.parent)
+          ? { ...item, parent: undefined }
+          : item,
+      )
+      .sort((a, b) => rank(a.path) - rank(b.path));
+  }
   return context.scope === 'MARKET'
     ? [
         'Overview',
@@ -392,6 +439,7 @@ export function visibleNavigation(context: AdminContext) {
         'Analytics',
         'Billing',
         'Storefront Appearance',
+        'Team',
         'Settings',
         'Submitted applications',
         'Add external business',
@@ -406,6 +454,18 @@ export function visibleNavigation(context: AdminContext) {
     : items;
 }
 export function routeAllowed(context: AdminContext, path: string) {
+  if (path === `/${context.scope.toLowerCase()}/team`)
+    return (
+      context.scope !== 'PLATFORM' &&
+      (context.membershipRole === 'owner' ||
+        (context.membershipRole === 'administrator' &&
+          context.permissions.includes(
+            context.scope === 'VENDOR'
+              ? 'ManageOwnVendorMembership'
+              : 'ManageOwnMarketTeam',
+          )))
+    );
+
   if (
     [
       '/notifications',
@@ -484,10 +544,7 @@ export function routeAllowed(context: AdminContext, path: string) {
       canonical,
     )
   )
-    return (
-      context.membershipRole === 'owner' &&
-      context.permissions.includes('ReadOwnVendorFinance')
-    );
+    return context.permissions.includes('ReadOwnVendorFinance');
   if (
     context.scope === 'VENDOR' &&
     canonical === '/vendor/settings/clover-return'
@@ -512,14 +569,18 @@ export function routeAllowed(context: AdminContext, path: string) {
       canonical,
     )
   )
-    return (
-      context.permissions.includes('ReadOwnVendorIdentity') &&
-      context.membershipRole === 'owner'
-    );
+    return context.permissions.includes('ManageOwnMarketParticipation');
   if (context.scope === 'VENDOR' && canonical === '/vendor/booths')
     return context.permissions.includes('ReadOwnVendorIdentity');
   if (context.scope === 'VENDOR' && canonical === '/vendor/products/new')
     return mayCommand(context, 'ManageOwnCatalog');
+  if (context.scope === 'VENDOR' && canonical === '/vendor/inventory')
+    return hasPermission(context.permissions, 'ReadOwnInventory');
+  if (
+    context.scope === 'VENDOR' &&
+    /^\/vendor\/products\/[^/]+$/.test(canonical)
+  )
+    return hasPermission(context.permissions, 'ReadOwnCatalog');
   if (context.scope !== 'VENDOR')
     return visibleNavigation(context).some((item) => item.path === path);
   return visibleNavigation(context).some((item) => {
@@ -562,7 +623,10 @@ export function vendorPath(path: string) {
 export function mayCommand(context: AdminContext, permission: Permission) {
   return (
     context.scope === 'VENDOR' &&
-    context.membershipRole === 'owner' &&
+    (!['ManageOwnPaymentAccount', 'ManageOwnPosIntegrations'].includes(
+      permission,
+    ) ||
+      context.membershipRole === 'owner') &&
     hasPermission(context.permissions, permission)
   );
 }
@@ -617,7 +681,10 @@ export async function resolveAdminContext(
       (item) =>
         item.principalId === session.user.id && item.status === 'active',
     );
-    if (!membership || !['owner', 'staff'].includes(membership.role))
+    if (
+      !membership ||
+      !['owner', 'administrator', 'lead', 'staff'].includes(membership.role)
+    )
       throw new AppError('forbidden');
     return {
       scope: 'VENDOR',
@@ -627,7 +694,8 @@ export async function resolveAdminContext(
         permissions.includes(p as Permission),
       ),
       source: 'backend',
-      membershipRole: membership.role as 'owner' | 'staff',
+      membershipRole: membership.role as
+        'owner' | 'administrator' | 'lead' | 'staff',
     };
   }
   if (
@@ -644,7 +712,9 @@ export async function resolveAdminContext(
       identity.membership.principalId !== session.user.id ||
       identity.membership.marketId !== identity.id ||
       identity.membership.status !== 'active' ||
-      identity.membership.role !== 'marketAdmin' ||
+      !['owner', 'administrator', 'lead', 'staff', 'marketAdmin'].includes(
+        identity.membership.role,
+      ) ||
       !identity.permissions.includes('ReadOwnMarket') ||
       !['active', 'suspended'].includes(identity.status)
     )
@@ -657,6 +727,10 @@ export async function resolveAdminContext(
       ),
       subject: { marketId: identity.id },
       source: 'backend',
+      membershipRole:
+        identity.membership.role === 'marketAdmin'
+          ? 'administrator'
+          : (identity.membership.role as AdminContext['membershipRole']),
       marketStatus: identity.status as 'active' | 'suspended',
     };
   }

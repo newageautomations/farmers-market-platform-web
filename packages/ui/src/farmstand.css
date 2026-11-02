@@ -1,0 +1,321 @@
+/* Opt-in Farmstand presentation requested for the vendor catalog. */
+.farmstand-text-link {
+  position: relative;
+  text-decoration: none;
+}
+.farmstand-text-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.35s ease;
+  pointer-events: none;
+}
+.farmstand-text-link:is(:hover, :focus-visible)::after,
+:is(.farmstand-button, .farmstand-text-action):is(:hover, :focus-visible)
+  > .farmstand-text-link::after {
+  transform: scaleX(1);
+}
+.farmstand-text-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 24px;
+  color: var(--brand-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-decoration: none;
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  .farmstand-text-link::after {
+    transition: none;
+  }
+}
+.farmstand-panel.card.ui-card {
+  --farmstand-border: color-mix(
+    in srgb,
+    var(--brand-primary) 16%,
+    var(--brand-surface)
+  );
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--farmstand-border);
+  border-radius: 16px;
+  background: var(--brand-surface);
+  box-shadow: none;
+  overflow: hidden;
+}
+.farmstand-button.button.ui-button {
+  --ui-control-height: 42px;
+  --ui-button-radius: 8px;
+  --ui-button-padding-inline: 16px;
+  --button-hover-transform: none;
+  gap: 7px;
+  padding-block: 0;
+  font-size: 15px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.farmstand-button.button.ui-button.secondary {
+  --button-fill: var(--brand-surface);
+  --button-ink: var(--brand-foreground);
+  --button-edge: color-mix(
+    in srgb,
+    var(--brand-primary) 16%,
+    var(--brand-surface)
+  );
+}
+.farmstand-button.secondary > .farmstand-icon {
+  color: var(--brand-primary);
+}
+.farmstand-button.button.ui-button.button-compact {
+  --ui-control-height: 32px;
+  --ui-button-padding-inline: 10px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+.farmstand-button.button.ui-button.button-tertiary {
+  --button-ink: var(--brand-primary);
+  --button-fill: transparent;
+  --button-edge: transparent;
+  padding: 0;
+  min-height: 24px;
+  font-size: 14px;
+}
+.farmstand-button.button.ui-button.button-icon {
+  --ui-control-height: 30px;
+  padding: 0;
+  border: 1px solid var(--button-edge);
+}
+.farmstand-search {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+}
+.farmstand-search > .farmstand-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--brand-muted);
+  pointer-events: none;
+}
+.farmstand-search .farmstand-search-input.ui-input {
+  width: 100%;
+  height: 38px;
+  min-height: 38px;
+  border: 1px solid
+    color-mix(in srgb, var(--brand-primary) 16%, var(--brand-surface));
+  border-radius: 8px;
+  padding: 0 12px 0 35px;
+  background: color-mix(in srgb, var(--brand-primary) 3%, var(--brand-surface));
+  color: var(--brand-foreground);
+  font: inherit;
+  font-size: 14px;
+}
+.farmstand-search-input::placeholder {
+  color: var(--brand-muted);
+  opacity: 1;
+}
+.farmstand-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-left: 8px;
+  cursor: pointer;
+  background: var(--brand-primary);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m4 4 8 8m0-8-8 8' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / 16px 16px no-repeat;
+}
+.farmstand-select.ui-select.ui-select:not(:disabled) {
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+.farmstand-select.ui-select.ui-select:not(:disabled):hover {
+  background-color: color-mix(
+    in srgb,
+    var(--brand-primary) 7%,
+    var(--brand-surface)
+  );
+}
+.farmstand-select.ui-select > button {
+  cursor: inherit;
+}
+@media (prefers-reduced-motion: reduce) {
+  .farmstand-select.ui-select.ui-select {
+    transition: none;
+  }
+}
+.farmstand-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.farmstand-select-wrap > .farmstand-icon {
+  position: absolute;
+  left: 10px;
+  z-index: 1;
+  pointer-events: none;
+  color: var(--brand-primary);
+}
+.farmstand-select.ui-select.ui-select {
+  width: auto;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 10px 0 30px;
+  border: 1px solid
+    color-mix(in srgb, var(--brand-primary) 16%, var(--brand-surface));
+  border-radius: 8px;
+  background: var(--brand-surface);
+  color: var(--brand-foreground);
+  font-size: 14px;
+  font-weight: 600;
+}
+.farmstand-select.ui-select::picker-icon {
+  display: none;
+}
+.farmstand-select.ui-select > button {
+  padding: 0;
+}
+.farmstand-stock-badge.ui-status {
+  display: inline-flex;
+  width: fit-content;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+.farmstand-stock-badge.farmstand-stock-in {
+  color: var(--brand-primary);
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 12%,
+    var(--brand-surface)
+  );
+}
+.farmstand-stock-summary {
+  display: grid;
+  gap: 16px;
+}
+.farmstand-stock-distribution {
+  display: flex;
+  gap: 4px;
+  height: 6px;
+}
+.farmstand-stock-segment {
+  flex-basis: 0;
+  border-radius: 3px;
+}
+.farmstand-stock-segment.farmstand-stock-in {
+  background: var(--brand-primary);
+}
+.farmstand-stock-segment.farmstand-stock-low {
+  background: color-mix(
+    in srgb,
+    var(--status-warning-fg) 65%,
+    var(--brand-surface)
+  );
+}
+.farmstand-stock-segment.farmstand-stock-out {
+  background: color-mix(
+    in srgb,
+    var(--status-danger-fg) 45%,
+    var(--brand-surface)
+  );
+}
+.farmstand-stock-legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+.farmstand-stock-legend > :first-child {
+  color: var(--brand-primary);
+}
+.farmstand-stock-legend > :nth-child(2) {
+  color: var(--status-warning-fg);
+}
+.farmstand-stock-legend > :last-child {
+  color: var(--status-danger-fg);
+}
+.farmstand-icon {
+  display: inline-block;
+  flex: none;
+  width: var(--farmstand-icon-width);
+  height: var(--farmstand-icon-height, var(--farmstand-icon-width));
+  background: currentColor;
+  mask-image: var(--farmstand-icon-source);
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+.farmstand-icon-plus {
+  --farmstand-icon-width: 16px;
+  --farmstand-icon-source: url('./assets/farmstand/plus.svg');
+}
+.farmstand-icon-plus-small {
+  --farmstand-icon-width: 13px;
+  --farmstand-icon-source: url('./assets/farmstand/plus-small.svg');
+}
+.farmstand-icon-plus-category {
+  --farmstand-icon-width: 16px;
+  --farmstand-icon-source: url('./assets/farmstand/plus-category.svg');
+}
+.farmstand-icon-search {
+  --farmstand-icon-width: 15px;
+  --farmstand-icon-source: url('./assets/farmstand/search.svg');
+}
+.farmstand-icon-chevron-down {
+  --farmstand-icon-width: 13px;
+  --farmstand-icon-source: url('./assets/farmstand/chevron-down.svg');
+}
+.farmstand-icon-chevron-right {
+  --farmstand-icon-width: 14px;
+  --farmstand-icon-source: url('./assets/farmstand/chevron-right.svg');
+}
+.farmstand-icon-arrow-up-right {
+  --farmstand-icon-width: 12px;
+  --farmstand-icon-source: url('./assets/farmstand/arrow-up-right.svg');
+}
+.farmstand-icon-carrot {
+  --farmstand-icon-width: 18px;
+  --farmstand-icon-source: url('./assets/farmstand/carrot.svg');
+}
+.farmstand-icon-apple {
+  --farmstand-icon-width: 18px;
+  --farmstand-icon-source: url('./assets/farmstand/apple.svg');
+}
+.farmstand-icon-egg {
+  --farmstand-icon-width: 18px;
+  --farmstand-icon-source: url('./assets/farmstand/egg.svg');
+}
+.farmstand-icon-archive {
+  --farmstand-icon-width: 18px;
+  --farmstand-icon-source: url('./assets/farmstand/archive.svg');
+}
+.farmstand-icon-arrow-right {
+  --farmstand-icon-width: 13px;
+  --farmstand-icon-source: url('./assets/farmstand/arrow-right.svg');
+}
+.farmstand-icon-triangle-alert {
+  --farmstand-icon-width: 18px;
+  --farmstand-icon-source: url('./assets/farmstand/triangle-alert.svg');
+}
+@media (forced-colors: active) {
+  .farmstand-icon {
+    background: CanvasText;
+  }
+  .farmstand-stock-segment {
+    border: 1px solid CanvasText;
+  }
+}

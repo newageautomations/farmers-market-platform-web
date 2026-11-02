@@ -11,12 +11,20 @@ export function Overview({ service }: { service: VendorService }) {
       service.catalogRead({ take: 1, skip: 0, search: null, sort: 'NAME_ASC' }),
     [service],
   );
-  const catalog = useRead('overview-catalog', catalogRead);
+  const catalog = useRead(
+    'overview-catalog',
+    catalogRead,
+    hasPermission(service.context.permissions, 'ReadOwnCatalog'),
+  );
   const ordersRead = useCallback(
     () => service.orderList({ take: 1, skip: 0, kind: null }),
     [service],
   );
-  const orders = useRead('overview-orders', ordersRead);
+  const orders = useRead(
+    'overview-orders',
+    ordersRead,
+    hasPermission(service.context.permissions, 'ReadOwnOrders'),
+  );
   const customerRead = useCallback(
     () => service.customers({ skip: 0, take: 1, search: null }),
     [service],
@@ -41,9 +49,10 @@ export function Overview({ service }: { service: VendorService }) {
   );
   return (
     <>
-      {service.notifications && (
-        <ComplianceOverview api={service.notifications} />
-      )}
+      {service.notifications &&
+        hasPermission(service.context.permissions, 'ReadOwnDocuments') && (
+          <ComplianceOverview api={service.notifications} />
+        )}
       <p>
         Manage your Vendor catalog, physical inventory, operational orders and
         customer relationships.

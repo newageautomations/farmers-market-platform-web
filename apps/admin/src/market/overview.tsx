@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { hasPermission } from '@market/auth';
 import { Card, EmptyState } from '@market/ui';
 import type { MarketService } from './service';
 import { ComplianceOverview } from '../documents/ComplianceOverview';
@@ -25,9 +26,10 @@ export function MarketOverview({ service }: { service: MarketService }) {
   const next = occurrences.data?.nextOccurrence;
   return (
     <>
-      {service.notifications && (
-        <ComplianceOverview api={service.notifications} manager />
-      )}
+      {service.notifications &&
+        hasPermission(service.context.permissions, 'ReadOwnDocuments') && (
+          <ComplianceOverview api={service.notifications} manager />
+        )}
       <Card
         as="section"
         className="dashboard-card"

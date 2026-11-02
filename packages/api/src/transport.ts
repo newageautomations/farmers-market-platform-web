@@ -89,7 +89,9 @@ export function transport<K extends ApiKind>(
               first &&
               typeof first === 'object' &&
               'message' in first &&
-              first.message === 'STALE_DOMAIN_VERSION';
+              (first.message === 'STALE_DOMAIN_VERSION' ||
+                first.message ===
+                  'Employee access changed. Reload the team before saving.');
             const error = backendError(
               staleDomain ? 'STALE_DOMAIN_VERSION' : code,
               response.status,

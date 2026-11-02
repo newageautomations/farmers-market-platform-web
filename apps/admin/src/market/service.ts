@@ -1,3 +1,5 @@
+import { createTeamService } from '../team/service';
+import type { TeamApi } from '@market/api';
 import {
   createFinanceApi,
   type FinanceApi,
@@ -21,6 +23,7 @@ export type MarketAvailability =
   'ALLOWED' | 'DENIED' | 'UNKNOWN' | 'UNCONFIGURED';
 let serviceGeneration = 0;
 export interface MarketService extends MarketApi {
+  team?: TeamApi;
   finance?: FinanceApi;
   loyalty?: MarketLoyaltyApi;
   checklist?: (occurrenceId: string) => Promise<MarketDayChecklist>;
@@ -34,6 +37,7 @@ export interface MarketService extends MarketApi {
 export const marketActionPermissions: Partial<
   Record<keyof MarketApi, Permission>
 > = {
+  operations: 'ReadOwnMarketOrders',
   configure: 'ManageOwnMarketSchedule',
   recurrence: 'ManageOwnMarketSchedule',
   generate: 'ManageOwnMarketSchedule',
@@ -108,7 +112,13 @@ export function guardMarketService(
                   identity.id !== marketId ||
                   identity.membership.status !== 'active' ||
                   identity.membership.marketId !== marketId ||
-                  identity.membership.role !== 'marketAdmin' ||
+                  ![
+                    'owner',
+                    'administrator',
+                    'lead',
+                    'staff',
+                    'marketAdmin',
+                  ].includes(identity.membership.role) ||
                   !identity.permissions.includes('ReadOwnMarket')
                 )
                   revoke();
@@ -154,6 +164,12 @@ export function createLiveMarketService(
   const service = guardMarketService(
     context,
     createMarketApi({ endpoint, channelToken }),
+    onAuthorityFailure,
+  );
+  service.team = createTeamService(
+    context,
+    endpoint,
+    channelToken,
     onAuthorityFailure,
   );
   const operations = createMarketOperationsApi({ endpoint, channelToken });

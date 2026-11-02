@@ -2,23 +2,14 @@ import { ProductImages } from './ProductImages';
 import { ProductInformationFields } from './ProductInformationFields';
 import { ProductCategories } from './categories';
 import { parseTaxPercent, TaxRateField } from './tax';
-import { EmptyState } from '@market/ui';
-import { Badge } from '@market/ui';
-import { cardClassName, disclosureClassName } from '@market/ui/presentation';
+import { CatalogWorkspace } from './CatalogWorkspace';
+import { disclosureClassName } from '@market/ui/presentation';
 import { ProductionCost } from '../finance/ProductionCost';
 import { useCallback, useId, useState } from 'react';
 import { mayCommand } from '@market/admin-core';
 import { AppError, type ProductInput } from '@market/api';
 import { formatMoney, parsePrice } from '@market/config';
-import {
-  Select,
-  Button,
-  Checkbox,
-  Field,
-  Input,
-  Pagination,
-  Textarea,
-} from '@market/ui';
+import { Select, Checkbox, Field, Input, Textarea } from '@market/ui';
 import {
   type VendorService,
   type CatalogProduct,
@@ -189,13 +180,6 @@ export function Products({
   service: VendorService;
   id?: string;
 }) {
-  const [search, setSearch] = useState(''),
-    [skip, setSkip] = useState(0);
-  const read = useCallback(
-    () => service.catalog(search, skip),
-    [service, search, skip],
-  );
-  const query = useRead(`catalog:${search}:${skip}`, read, !id);
   if (id === 'new')
     return (
       <>
@@ -215,89 +199,7 @@ export function Products({
       </>
     );
   if (id) return <ProductDetail service={service} id={id} />;
-  return (
-    <>
-      {mayCommand(service.context, 'ManageOwnCatalog') && (
-        <div className="actions">
-          <RouteLink to="/vendor/products/new">Create product</RouteLink>
-        </div>
-      )}
-      {
-        <>
-          <form
-            className={cardClassName({
-              className: 'filter-bar ui-control-row ui-control-row-lookup',
-            })}
-            onSubmit={(e) => {
-              e.preventDefault();
-              setSkip(0);
-              setSearch(text(new FormData(e.currentTarget), 'search'));
-            }}
-          >
-            <TextField
-              name="search"
-              label="Search products"
-              required={false}
-              maxLength={200}
-            />
-            <div className="ui-field-action">
-              <Button type="submit">Search</Button>
-            </div>
-          </form>
-          <ReadState {...query} retry={query.refresh} />
-          {query.data && (
-            <>
-              <DataTable
-                label="Owned products"
-                recordDetails={{ status: 1 }}
-                headings={['Product', 'Status', 'Variants', 'Actions']}
-              >
-                {query.data.items.map((p) => (
-                  <tr key={p.id}>
-                    <th scope="row">{p.name}</th>
-                    <td>
-                      <Badge tone={p.enabled ? 'success' : 'neutral'}>
-                        {p.enabled ? 'Enabled' : 'Disabled'}
-                      </Badge>
-                    </td>
-                    <td>{p.variants.length}</td>
-                    <td>
-                      <RouteLink
-                        to={`/vendor/products/${encodeURIComponent(p.id)}`}
-                      >
-                        Edit {p.name}
-                      </RouteLink>
-                    </td>
-                  </tr>
-                ))}
-              </DataTable>
-              {!query.data.items.length && (
-                <EmptyState title="No matching products">
-                  <p>No products match your search.</p>
-                </EmptyState>
-              )}
-              <Pagination
-                summary={
-                  <>
-                    {query.data.totalItems} records. Showing{' '}
-                    {query.data.items.length ? skip + 1 : 0} to{' '}
-                    {query.data.items.length
-                      ? skip + query.data.items.length
-                      : 0}
-                    .
-                  </>
-                }
-                hasPrevious={skip > 0}
-                hasNext={skip + 20 < query.data.totalItems}
-                onPrevious={() => setSkip(skip - 20)}
-                onNext={() => setSkip(skip + 20)}
-              />
-            </>
-          )}
-        </>
-      }
-    </>
-  );
+  return <CatalogWorkspace service={service} />;
 }
 function decimal(price: number, currency: string) {
   const digits =

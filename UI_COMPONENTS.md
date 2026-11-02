@@ -1,5 +1,9 @@
 # UI component decision registry
 
+## Vendor catalog Figma presentation, November 1, 2026
+
+The developer explicitly requested the Farmstand vendor products and inventory design, including its new control appearance. `@market/ui/farmstand` provides opt-in reusable adapters over the existing primitives, using 8px control corners, 42px main actions, 32px compact actions, 16px panels and the original local Figma icons. This exception is scoped to the requested catalog composition, preserves the current AdminShell and account palette tokens, and does not replace the site-wide standard or approve other pending categories. Existing category and product editors and guarded stock commands remain authoritative. [Implementation and reuse rationale](docs/VENDOR_CATALOG_DESIGN.md).
+
 Developer-approved BTN-01 extension, October 23, 2026: `destructive-outline` is the reusable red-text/red-outline variant for exit/remove/cancel actions, filling danger red with white text on hover/focus without translation. React Button, the Astro adapter and action links share its presentation. It uses existing danger and geometry tokens, preserves disabled/loading and accessible semantics, and is independent of storefront hover-effect settings. Cart Remove adopts it; other consumers migrate only when separately requested. The filled `destructive` variant remains available. The button gallery and playground include the new variant.
 
 ## Financial reporting composition, 2026-10-20

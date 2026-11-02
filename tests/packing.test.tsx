@@ -164,6 +164,8 @@ function fixture() {
       permissions: [
         'ReadOwnVendorIdentity',
         'ManageOwnInventory',
+        'ReadOwnOrders',
+        'FulfillOwnOrders',
         'ManageOwnCatalog',
       ],
     }),

@@ -22,6 +22,20 @@ export type BillingSubjectInput = {
   readonly vendorId: string | number | null | undefined;
 };
 
+export type BusinessEmployeeRole =
+  | 'administrator'
+  | 'lead'
+  | 'staff';
+
+export type ChangeBusinessEmployeeInput = {
+  readonly delegationCeiling: ReadonlyArray<string> | null | undefined;
+  readonly expectedRevision: number;
+  readonly id: string | number;
+  readonly permissions: ReadonlyArray<string>;
+  readonly revoke: boolean | null | undefined;
+  readonly role: BusinessEmployeeRole;
+};
+
 export type CompletePosAuthorizationInput = {
   readonly accountHint: string | null | undefined;
   readonly callbackParams: unknown;
@@ -379,6 +393,12 @@ export type CurrencyCode =
   /** Zimbabwean dollar */
   | 'ZWL';
 
+export type InviteBusinessEmployeeInput = {
+  readonly email: string;
+  readonly permissions: ReadonlyArray<string> | null | undefined;
+  readonly role: BusinessEmployeeRole;
+};
+
 export type MarketAttendanceInput = {
   readonly expectedVersion: number | null | undefined;
   readonly membershipId: string | number;
@@ -644,6 +664,8 @@ export type OwnPublicationStatus =
 export type Permission =
   /** Authenticated means simply that the user is logged in */
   | 'Authenticated'
+  | 'CancelOwnOrders'
+  | 'ConfigureOwnPosIntegrations'
   /** Grants permission to create Administrator */
   | 'CreateAdministrator'
   /** Grants permission to create ApiKey */
@@ -736,6 +758,7 @@ export type Permission =
   | 'DeleteTaxRate'
   /** Grants permission to delete Zone */
   | 'DeleteZone'
+  | 'FulfillOwnOrders'
   | 'ManageBillingCatalog'
   | 'ManageCatalogPublication'
   | 'ManageMarketIdentity'
@@ -743,6 +766,7 @@ export type Permission =
   | 'ManageOwnBilling'
   | 'ManageOwnCatalog'
   | 'ManageOwnCoupon'
+  | 'ManageOwnDocuments'
   | 'ManageOwnInventory'
   | 'ManageOwnMarketApplications'
   | 'ManageOwnMarketAssignments'
@@ -754,6 +778,7 @@ export type Permission =
   | 'ManageOwnMarketOfferings'
   | 'ManageOwnMarketParticipation'
   | 'ManageOwnMarketSchedule'
+  | 'ManageOwnMarketTeam'
   | 'ManageOwnPaymentAccount'
   | 'ManageOwnPosIntegrations'
   | 'ManageOwnStorefront'
@@ -789,12 +814,17 @@ export type Permission =
   | 'ReadOrder'
   | 'ReadOwnBilling'
   | 'ReadOwnCRM'
+  | 'ReadOwnCatalog'
+  | 'ReadOwnDocuments'
+  | 'ReadOwnInventory'
   | 'ReadOwnMarket'
   | 'ReadOwnMarketAnalytics'
   | 'ReadOwnMarketApplications'
   | 'ReadOwnMarketAssignments'
   | 'ReadOwnMarketBilling'
   | 'ReadOwnMarketLayouts'
+  | 'ReadOwnMarketOrders'
+  | 'ReadOwnOrders'
   | 'ReadOwnPaymentAccount'
   | 'ReadOwnPosIntegrations'
   | 'ReadOwnVendorAnalytics'
@@ -1382,6 +1412,64 @@ export type SaveVendorTaxSettingsMutationVariables = Exact<{
 
 
 export type SaveVendorTaxSettingsMutation = { readonly saveOwnVendorTaxSettings: { readonly defaultRate: number | null, readonly version: number, readonly newProductCollectTaxes: boolean, readonly markets: ReadonlyArray<{ readonly id: string, readonly name: string, readonly rate: number | null }> } };
+
+export type TeamMemberFieldsFragment = { readonly id: string, readonly name: string, readonly email: string | null, readonly role: string, readonly status: string, readonly permissions: ReadonlyArray<string>, readonly delegationCeiling: ReadonlyArray<string>, readonly grantRevision: number, readonly canManage: boolean };
+
+export type TeamInvitationFieldsFragment = { readonly id: string, readonly email: string, readonly role: string, readonly status: string, readonly expiresAt: string, readonly createdAt: string, readonly presetVersion: string, readonly deliveredAt: string | null, readonly canManage: boolean };
+
+export type TeamPolicyQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type TeamPolicyQuery = { readonly ownBusinessTeamPolicy: { readonly membershipId: string, readonly owner: boolean, readonly basePermission: string, readonly grantablePermissions: ReadonlyArray<string>, readonly presets: ReadonlyArray<{ readonly role: string, readonly permissions: ReadonlyArray<string> }> } };
+
+export type TeamMembersQueryVariables = Exact<{
+  skip: number | null | undefined;
+}>;
+
+
+export type TeamMembersQuery = { readonly ownBusinessTeam: ReadonlyArray<{ readonly id: string, readonly name: string, readonly email: string | null, readonly role: string, readonly status: string, readonly permissions: ReadonlyArray<string>, readonly delegationCeiling: ReadonlyArray<string>, readonly grantRevision: number, readonly canManage: boolean }> };
+
+export type TeamMemberQueryVariables = Exact<{
+  id: string | number;
+}>;
+
+
+export type TeamMemberQuery = { readonly ownBusinessTeamMember: { readonly id: string, readonly name: string, readonly email: string | null, readonly role: string, readonly status: string, readonly permissions: ReadonlyArray<string>, readonly delegationCeiling: ReadonlyArray<string>, readonly grantRevision: number, readonly canManage: boolean } | null };
+
+export type TeamInvitationsQueryVariables = Exact<{
+  skip: number | null | undefined;
+}>;
+
+
+export type TeamInvitationsQuery = { readonly ownBusinessEmployeeInvitations: ReadonlyArray<{ readonly id: string, readonly email: string, readonly role: string, readonly status: string, readonly expiresAt: string, readonly createdAt: string, readonly presetVersion: string, readonly deliveredAt: string | null, readonly canManage: boolean }> };
+
+export type TeamInviteMutationVariables = Exact<{
+  input: InviteBusinessEmployeeInput;
+}>;
+
+
+export type TeamInviteMutation = { readonly inviteBusinessEmployee: { readonly id: string, readonly email: string, readonly role: string, readonly status: string, readonly expiresAt: string, readonly createdAt: string, readonly presetVersion: string, readonly deliveredAt: string | null, readonly canManage: boolean } };
+
+export type TeamResendMutationVariables = Exact<{
+  id: string | number;
+}>;
+
+
+export type TeamResendMutation = { readonly resendBusinessEmployeeInvitation: { readonly id: string, readonly email: string, readonly role: string, readonly status: string, readonly expiresAt: string, readonly createdAt: string, readonly presetVersion: string, readonly deliveredAt: string | null, readonly canManage: boolean } };
+
+export type TeamCancelMutationVariables = Exact<{
+  id: string | number;
+}>;
+
+
+export type TeamCancelMutation = { readonly cancelBusinessEmployeeInvitation: { readonly id: string, readonly email: string, readonly role: string, readonly status: string, readonly expiresAt: string, readonly createdAt: string, readonly presetVersion: string, readonly deliveredAt: string | null, readonly canManage: boolean } };
+
+export type TeamChangeMutationVariables = Exact<{
+  input: ChangeBusinessEmployeeInput;
+}>;
+
+
+export type TeamChangeMutation = { readonly changeBusinessEmployee: boolean };
 
 export type OwnComplianceDocumentsQueryVariables = Exact<{
   skip: number | null | undefined;
@@ -2122,6 +2210,8 @@ export const OfferingFragmentDoc = {"kind":"Document","definitions":[{"kind":"Fr
 export const AnalyticsMetaFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AnalyticsMeta"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AnalyticsMetadata"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"projectionCode"}},{"kind":"Field","name":{"kind":"Name","value":"schemaVersion"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"generationId"}},{"kind":"Field","name":{"kind":"Name","value":"activeGenerationId"}},{"kind":"Field","name":{"kind":"Name","value":"sourceAsOf"}},{"kind":"Field","name":{"kind":"Name","value":"asOf"}},{"kind":"Field","name":{"kind":"Name","value":"completeness"}},{"kind":"Field","name":{"kind":"Name","value":"lastSuccessfulAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastReconciledAt"}},{"kind":"Field","name":{"kind":"Name","value":"errorCode"}},{"kind":"Field","name":{"kind":"Name","value":"technicalBucket"}},{"kind":"Field","name":{"kind":"Name","value":"marketFinancialPolicy"}}]}}]} as unknown as DocumentNode<AnalyticsMetaFragment, unknown>;
 export const VendorMetricsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"VendorMetrics"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"VendorAnalyticsBucket"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"day"}},{"kind":"Field","name":{"kind":"Name","value":"currency"}},{"kind":"Field","name":{"kind":"Name","value":"variantId"}},{"kind":"Field","name":{"kind":"Name","value":"marketId"}},{"kind":"Field","name":{"kind":"Name","value":"occurrenceId"}},{"kind":"Field","name":{"kind":"Name","value":"vendorPurchaseCount"}},{"kind":"Field","name":{"kind":"Name","value":"directPurchaseCount"}},{"kind":"Field","name":{"kind":"Name","value":"marketPurchaseCount"}},{"kind":"Field","name":{"kind":"Name","value":"vendorAttributed"}},{"kind":"Field","name":{"kind":"Name","value":"settledRefund"}},{"kind":"Field","name":{"kind":"Name","value":"cohortSettledRefund"}},{"kind":"Field","name":{"kind":"Name","value":"vendorRemainingAttributed"}},{"kind":"Field","name":{"kind":"Name","value":"gross"}},{"kind":"Field","name":{"kind":"Name","value":"discount"}},{"kind":"Field","name":{"kind":"Name","value":"itemTax"}},{"kind":"Field","name":{"kind":"Name","value":"shippingNet"}},{"kind":"Field","name":{"kind":"Name","value":"shippingTax"}},{"kind":"Field","name":{"kind":"Name","value":"originalUnits"}},{"kind":"Field","name":{"kind":"Name","value":"refundedOriginalUnits"}},{"kind":"Field","name":{"kind":"Name","value":"distinctPurchasingCustomers"}},{"kind":"Field","name":{"kind":"Name","value":"fulfilledUnits"}},{"kind":"Field","name":{"kind":"Name","value":"cancelledUnits"}},{"kind":"Field","name":{"kind":"Name","value":"awaitingPortions"}},{"kind":"Field","name":{"kind":"Name","value":"completedPortions"}},{"kind":"Field","name":{"kind":"Name","value":"cancelledPortions"}},{"kind":"Field","name":{"kind":"Name","value":"externalPosUnitsObserved"}},{"kind":"Field","name":{"kind":"Name","value":"externalPosOperations"}}]}}]} as unknown as DocumentNode<VendorMetricsFragment, unknown>;
 export const OwnedCatalogProductFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"OwnedCatalogProduct"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"OwnCatalogProduct"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"productInformation"}},{"kind":"Field","name":{"kind":"Name","value":"assetIds"}},{"kind":"Field","name":{"kind":"Name","value":"collectTaxes"}},{"kind":"Field","name":{"kind":"Name","value":"taxOverride"}},{"kind":"Field","name":{"kind":"Name","value":"taxConfigured"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"enabled"}},{"kind":"Field","name":{"kind":"Name","value":"currency"}},{"kind":"Field","name":{"kind":"Name","value":"variants"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"sku"}},{"kind":"Field","name":{"kind":"Name","value":"enabled"}},{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"currency"}},{"kind":"Field","name":{"kind":"Name","value":"optionIds"}}]}},{"kind":"Field","name":{"kind":"Name","value":"optionGroups"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"options"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}}]}}]}}]}}]} as unknown as DocumentNode<OwnedCatalogProductFragment, unknown>;
+export const TeamMemberFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TeamMemberFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BusinessTeamMember"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"}},{"kind":"Field","name":{"kind":"Name","value":"delegationCeiling"}},{"kind":"Field","name":{"kind":"Name","value":"grantRevision"}},{"kind":"Field","name":{"kind":"Name","value":"canManage"}}]}}]} as unknown as DocumentNode<TeamMemberFieldsFragment, unknown>;
+export const TeamInvitationFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TeamInvitationFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BusinessEmployeeInvitation"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"presetVersion"}},{"kind":"Field","name":{"kind":"Name","value":"deliveredAt"}},{"kind":"Field","name":{"kind":"Name","value":"canManage"}}]}}]} as unknown as DocumentNode<TeamInvitationFieldsFragment, unknown>;
 export const TenantSummaryFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TenantSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PlatformTenantSummary"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"storefrontStatus"}}]}}]} as unknown as DocumentNode<TenantSummaryFragment, unknown>;
 export const ModuleReadinessFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ModuleReadiness"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"IntegrationModuleStatus"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"qualification"}},{"kind":"Field","name":{"kind":"Name","value":"detail"}},{"kind":"Field","name":{"kind":"Name","value":"asOf"}}]}}]} as unknown as DocumentNode<ModuleReadinessFragment, unknown>;
 export const ManagementEntitlementFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ManagementEntitlement"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"OwnEntitlement"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"featureCode"}},{"kind":"Field","name":{"kind":"Name","value":"allowed"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"valueKind"}},{"kind":"Field","name":{"kind":"Name","value":"enabled"}},{"kind":"Field","name":{"kind":"Name","value":"limit"}},{"kind":"Field","name":{"kind":"Name","value":"unlimited"}},{"kind":"Field","name":{"kind":"Name","value":"planVersionId"}},{"kind":"Field","name":{"kind":"Name","value":"subscriptionStatus"}},{"kind":"Field","name":{"kind":"Name","value":"accessPolicyVersion"}},{"kind":"Field","name":{"kind":"Name","value":"overrideId"}},{"kind":"Field","name":{"kind":"Name","value":"currentCount"}},{"kind":"Field","name":{"kind":"Name","value":"committed"}},{"kind":"Field","name":{"kind":"Name","value":"reserved"}},{"kind":"Field","name":{"kind":"Name","value":"remaining"}},{"kind":"Field","name":{"kind":"Name","value":"overLimit"}},{"kind":"Field","name":{"kind":"Name","value":"metricCode"}},{"kind":"Field","name":{"kind":"Name","value":"windowPolicy"}},{"kind":"Field","name":{"kind":"Name","value":"windowStart"}},{"kind":"Field","name":{"kind":"Name","value":"windowEnd"}}]}}]} as unknown as DocumentNode<ManagementEntitlementFragment, unknown>;
@@ -2174,6 +2264,14 @@ export const OwnDashboardPaletteDocument = {"kind":"Document","definitions":[{"k
 export const SaveOwnDashboardPaletteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SaveOwnDashboardPalette"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SettingsStoreInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setSettingsStoreValue"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"result"}},{"kind":"Field","name":{"kind":"Name","value":"error"}}]}}]}}]} as unknown as DocumentNode<SaveOwnDashboardPaletteMutation, SaveOwnDashboardPaletteMutationVariables>;
 export const VendorTaxSettingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"VendorTaxSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ownVendorTaxSettings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"defaultRate"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"newProductCollectTaxes"}},{"kind":"Field","name":{"kind":"Name","value":"markets"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"rate"}}]}}]}}]}}]} as unknown as DocumentNode<VendorTaxSettingsQuery, VendorTaxSettingsQueryVariables>;
 export const SaveVendorTaxSettingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SaveVendorTaxSettings"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"VendorTaxSettingsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"saveOwnVendorTaxSettings"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"defaultRate"}},{"kind":"Field","name":{"kind":"Name","value":"version"}},{"kind":"Field","name":{"kind":"Name","value":"newProductCollectTaxes"}},{"kind":"Field","name":{"kind":"Name","value":"markets"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"rate"}}]}}]}}]}}]} as unknown as DocumentNode<SaveVendorTaxSettingsMutation, SaveVendorTaxSettingsMutationVariables>;
+export const TeamPolicyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TeamPolicy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ownBusinessTeamPolicy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"membershipId"}},{"kind":"Field","name":{"kind":"Name","value":"owner"}},{"kind":"Field","name":{"kind":"Name","value":"basePermission"}},{"kind":"Field","name":{"kind":"Name","value":"grantablePermissions"}},{"kind":"Field","name":{"kind":"Name","value":"presets"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"}}]}}]}}]}}]} as unknown as DocumentNode<TeamPolicyQuery, TeamPolicyQueryVariables>;
+export const TeamMembersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TeamMembers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skip"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ownBusinessTeam"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"skip"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skip"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TeamMemberFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TeamMemberFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BusinessTeamMember"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"}},{"kind":"Field","name":{"kind":"Name","value":"delegationCeiling"}},{"kind":"Field","name":{"kind":"Name","value":"grantRevision"}},{"kind":"Field","name":{"kind":"Name","value":"canManage"}}]}}]} as unknown as DocumentNode<TeamMembersQuery, TeamMembersQueryVariables>;
+export const TeamMemberDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TeamMember"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ownBusinessTeamMember"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TeamMemberFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TeamMemberFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BusinessTeamMember"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"}},{"kind":"Field","name":{"kind":"Name","value":"delegationCeiling"}},{"kind":"Field","name":{"kind":"Name","value":"grantRevision"}},{"kind":"Field","name":{"kind":"Name","value":"canManage"}}]}}]} as unknown as DocumentNode<TeamMemberQuery, TeamMemberQueryVariables>;
+export const TeamInvitationsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TeamInvitations"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skip"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ownBusinessEmployeeInvitations"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"skip"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skip"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TeamInvitationFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TeamInvitationFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BusinessEmployeeInvitation"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"presetVersion"}},{"kind":"Field","name":{"kind":"Name","value":"deliveredAt"}},{"kind":"Field","name":{"kind":"Name","value":"canManage"}}]}}]} as unknown as DocumentNode<TeamInvitationsQuery, TeamInvitationsQueryVariables>;
+export const TeamInviteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"TeamInvite"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"InviteBusinessEmployeeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"inviteBusinessEmployee"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TeamInvitationFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TeamInvitationFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BusinessEmployeeInvitation"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"presetVersion"}},{"kind":"Field","name":{"kind":"Name","value":"deliveredAt"}},{"kind":"Field","name":{"kind":"Name","value":"canManage"}}]}}]} as unknown as DocumentNode<TeamInviteMutation, TeamInviteMutationVariables>;
+export const TeamResendDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"TeamResend"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"resendBusinessEmployeeInvitation"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TeamInvitationFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TeamInvitationFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BusinessEmployeeInvitation"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"presetVersion"}},{"kind":"Field","name":{"kind":"Name","value":"deliveredAt"}},{"kind":"Field","name":{"kind":"Name","value":"canManage"}}]}}]} as unknown as DocumentNode<TeamResendMutation, TeamResendMutationVariables>;
+export const TeamCancelDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"TeamCancel"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cancelBusinessEmployeeInvitation"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TeamInvitationFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TeamInvitationFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BusinessEmployeeInvitation"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"presetVersion"}},{"kind":"Field","name":{"kind":"Name","value":"deliveredAt"}},{"kind":"Field","name":{"kind":"Name","value":"canManage"}}]}}]} as unknown as DocumentNode<TeamCancelMutation, TeamCancelMutationVariables>;
+export const TeamChangeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"TeamChange"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ChangeBusinessEmployeeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"changeBusinessEmployee"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}]}]}}]} as unknown as DocumentNode<TeamChangeMutation, TeamChangeMutationVariables>;
 export const OwnComplianceDocumentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"OwnComplianceDocuments"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skip"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ownComplianceDocuments"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"skip"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skip"}}}]}]}}]} as unknown as DocumentNode<OwnComplianceDocumentsQuery, OwnComplianceDocumentsQueryVariables>;
 export const UploadComplianceDocumentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UploadComplianceDocument"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"JSON"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"file"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Upload"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"uploadComplianceDocument"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}},{"kind":"Argument","name":{"kind":"Name","value":"file"},"value":{"kind":"Variable","name":{"kind":"Name","value":"file"}}}]}]}}]} as unknown as DocumentNode<UploadComplianceDocumentMutation, UploadComplianceDocumentMutationVariables>;
 export const ComplianceDocumentCommandDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ComplianceDocumentCommand"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ComplianceCommandInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"complianceDocumentCommand"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}]}]}}]} as unknown as DocumentNode<ComplianceDocumentCommandMutation, ComplianceDocumentCommandMutationVariables>;

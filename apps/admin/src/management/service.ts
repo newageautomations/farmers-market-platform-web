@@ -49,7 +49,9 @@ export function createManagementService(
           else if (pos.includes(key))
             permission = reads.includes(key)
               ? 'ReadOwnPosIntegrations'
-              : 'ManageOwnPosIntegrations';
+              : ['mapPos', 'posPolicies'].includes(key)
+                ? 'ConfigureOwnPosIntegrations'
+                : 'ManageOwnPosIntegrations';
           else if (key === 'billing') permission = 'ReadOwnBilling';
           else if (key === 'mappingSource')
             permission = 'ReadOwnVendorIdentity';
@@ -62,6 +64,8 @@ export function createManagementService(
             !context.permissions.includes(permission) ||
             (tenantModule && context.scope === 'PLATFORM') ||
             ((payment.includes(key) || pos.includes(key)) &&
+              !reads.includes(key) &&
+              !['mapPos', 'posPolicies'].includes(key) &&
               (context.scope !== 'VENDOR' ||
                 context.membershipRole !== 'owner')) ||
             (!tenantModule && context.scope !== 'PLATFORM')

@@ -100,6 +100,7 @@ type Query {
   currentCheckoutStatus(orderId: ID): CustomerCheckoutView
   customerAccountProfile: CheckoutContactView
   platformAccountContexts: JSON!
+  employeeInvitation(token: String!): EmployeeInvitationPreview!
 }
 
 type Mutation {
@@ -292,6 +293,7 @@ type Mutation {
   setCheckoutContact(input: CheckoutContactInput!): CheckoutContactView!
   requestPurchaseAccountLink(orderId: ID!, origin: String!): PurchaseAccountLinkReceipt!
   exchangeCustomerHandoff(code: String!, origin: String!, correlation: String!): CustomerHandoffResult!
+  acceptEmployeeInvitation(token: String!): EmployeeInvitationAcceptance!
   submitStorefrontContact(input: JSON!): JSON!
 }
 
@@ -821,6 +823,16 @@ enum Permission {
   ReadOwnPosIntegrations
   ManageOwnPosIntegrations
   OperateOwnPos
+  ReadOwnDocuments
+  ManageOwnDocuments
+  ConfigureOwnPosIntegrations
+  ReadOwnCatalog
+  ReadOwnInventory
+  ReadOwnOrders
+  FulfillOwnOrders
+  CancelOwnOrders
+  ReadOwnMarketOrders
+  ManageOwnMarketTeam
   ReadOwnBilling
   ManageOwnBilling
   ManageBillingCatalog
@@ -4597,4 +4609,19 @@ type CustomerHandoffResult {
 input PlatformShopCredentials {
   username: String!
   password: String!
+}
+
+type EmployeeInvitationPreview {
+  businessName: String!
+  businessType: String!
+  role: String!
+  permissions: [String!]!
+  status: String!
+  expiresAt: DateTime!
+}
+
+type EmployeeInvitationAcceptance {
+  membershipId: ID!
+  channelId: ID!
+  businessType: String!
 }

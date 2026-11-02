@@ -24,7 +24,7 @@ describe('shared Admin scope', () => {
     ).not.toContain('Products');
     expect(
       visibleNavigation(fixtureContexts.VENDOR).map((x) => x.label),
-    ).toContain('Inventory');
+    ).toContain('Products & Inventory');
     expect(
       visibleNavigation(fixtureContexts.PLATFORM).map((x) => x.label),
     ).toContain('Tenants');
@@ -42,6 +42,67 @@ describe('shared Admin scope', () => {
       screen.queryByRole('link', { name: 'Products' }),
     ).not.toBeInTheDocument();
     window.history.replaceState(null, '', '/');
+  });
+  it('groups vendor pages in the requested order without changing other workspaces', () => {
+    const items = visibleNavigation({
+      ...fixtureContexts.VENDOR,
+      permissions: [
+        ...fixtureContexts.VENDOR.permissions,
+        'ReadOwnDocuments',
+        'OperateOwnPos',
+        'ManageOwnStorefront',
+        'ReadOwnVendorFinance',
+        'ReadOwnPaymentAccount',
+        'ReadOwnPosIntegrations',
+      ],
+    });
+    expect(
+      items.filter((item) => !item.parent).map((item) => item.label),
+    ).toEqual([
+      'Overview',
+      'Notifications',
+      'In-Person Checkout',
+      'Products & Inventory',
+      'Orders',
+      'Customers',
+      'Markets',
+      'Website',
+      'Finances',
+      'Settings',
+      'Integrations',
+      'Billing',
+      'Team',
+      'Contact Submissions',
+      'Market Day',
+      'Analytics',
+    ]);
+    for (const [parent, children] of [
+      ['/vendor/products', ['Categories']],
+      ['/vendor/orders', ['Packing & Fulfillment']],
+      ['/vendor/customers', ['Loyalty']],
+      ['/vendor/markets', ['Documents', 'Applications']],
+      ['/vendor/integrations', ['Payments', 'POS']],
+    ] as const) {
+      expect(
+        items
+          .filter((item) => item.parent === parent)
+          .map((item) => item.label),
+      ).toEqual(children);
+    }
+    const inventoryOnly = visibleNavigation({
+      ...fixtureContexts.VENDOR,
+      permissions: ['ReadOwnInventory'],
+      membershipRole: 'staff',
+    });
+    expect(
+      inventoryOnly.find((item) => item.path === '/vendor/products'),
+    ).toMatchObject({ label: 'Products & Inventory' });
+    expect(
+      inventoryOnly.find((item) => item.path === '/vendor/products')?.parent,
+    ).toBeUndefined();
+    expect(
+      inventoryOnly.some((item) => item.path === '/vendor/inventory'),
+    ).toBe(false);
   });
   it('never renders tenant content before auth resolves and handles expired sessions', async () => {
     const fetcher = vi

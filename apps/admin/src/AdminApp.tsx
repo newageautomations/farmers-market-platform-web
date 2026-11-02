@@ -122,16 +122,64 @@ export function AdminApp({
     )
       .then((value) => {
         if (active && generation.current === contextGeneration) {
+          let revalidation: Promise<void> | null = null;
+          const onAuthorityFailure = () => {
+            if (
+              !active ||
+              generation.current !== contextGeneration ||
+              revalidation
+            )
+              return;
+            // A denied resource or optional capability does not necessarily revoke workspace access.
+            // Keep the current screen and its error unless live authority actually changed.
+            revalidation = (async () => {
+              try {
+                const restored = await createAdminSession(endpoint).restore(
+                  session.channel.id,
+                );
+                if (!active || generation.current !== contextGeneration) return;
+                if (restored.status !== 'authenticated') {
+                  refreshSession(session.channel.id);
+                  return;
+                }
+                const current = await resolveAdminContext(
+                  restored,
+                  endpoint,
+                  value.scope,
+                );
+                if (!active || generation.current !== contextGeneration) return;
+                const unchanged =
+                  current.scope === value.scope &&
+                  JSON.stringify(current.subject) ===
+                    JSON.stringify(value.subject) &&
+                  current.membershipRole === value.membershipRole &&
+                  current.marketStatus === value.marketStatus &&
+                  current.permissions.length === value.permissions.length &&
+                  current.permissions.every((permission) =>
+                    value.permissions.includes(permission),
+                  );
+                if (!unchanged) refreshSession(session.channel.id);
+              } catch (error) {
+                if (active && generation.current === contextGeneration) {
+                  // An unavailable identity must fail closed without remounting the denied page.
+                  setContext(null);
+                  setVendorService(undefined);
+                  setMarketService(undefined);
+                  setManagementService(undefined);
+                  setContextError(safeError(error));
+                }
+              } finally {
+                revalidation = null;
+              }
+            })();
+          };
           setContext(value);
           setManagementService(
             createManagementService(
               value,
               endpoint,
               session.channel.token,
-              () => {
-                if (generation.current === contextGeneration)
-                  refreshSession(session.channel.id);
-              },
+              onAuthorityFailure,
             ),
           );
           setMarketService(
@@ -140,13 +188,7 @@ export function AdminApp({
                   value,
                   endpoint,
                   session.channel.token,
-                  () => {
-                    if (generation.current === contextGeneration) {
-                      window.history.replaceState(null, '', '/market');
-                      window.dispatchEvent(new PopStateEvent('popstate'));
-                      refreshSession(session.channel.id);
-                    }
-                  },
+                  onAuthorityFailure,
                 )
               : undefined,
           );
@@ -156,15 +198,7 @@ export function AdminApp({
                   value,
                   endpoint,
                   session.channel.token,
-                  () => {
-                    if (generation.current === contextGeneration) {
-                      // A foreign resource can be denied while the tenant identity remains valid.
-                      // Re-enter the safe workspace root before revalidation to avoid retrying that route indefinitely.
-                      window.history.replaceState(null, '', '/vendor');
-                      window.dispatchEvent(new PopStateEvent('popstate'));
-                      refreshSession(session.channel.id);
-                    }
-                  },
+                  onAuthorityFailure,
                 )
               : undefined,
           );

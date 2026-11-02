@@ -1,3 +1,4 @@
+import { TeamWorkspace } from '../team/TeamWorkspace';
 import { AttendanceHistory } from '../market/phase14/Attendance';
 import { VendorPacking, PackingCardStatus } from './packing';
 import {
@@ -17,7 +18,7 @@ import { VendorLoyalty } from './loyalty';
 import { vendorPath } from '@market/admin-core';
 import type { VendorService } from './service';
 import { Products } from './catalog';
-import { Inventory } from './inventory';
+import { CatalogWorkspace } from './CatalogWorkspace';
 import { Orders } from './orders';
 import { Customers } from './customers';
 import { Markets } from './markets';
@@ -32,6 +33,8 @@ export function VendorRoutes({
   path: string;
 }) {
   const [, , module, id] = vendorPath(path).split('/');
+  if (module === 'team')
+    return <TeamWorkspace api={service.team} context={service.context} />;
   if (module === 'finances')
     return (
       <Finances
@@ -76,7 +79,11 @@ export function VendorRoutes({
   if (module === 'day')
     return service.marketAttendance ? (
       <>
-        <p>Scheduled appearances reserve your market date. Market staff record physical attendance. Use the date filters to view upcoming dates or past attendance.</p>
+        <p>
+          Scheduled appearances reserve your market date. Market staff record
+          physical attendance. Use the date filters to view upcoming dates or
+          past attendance.
+        </p>
         <AttendanceHistory
           key={service.vendorId}
           api={service.marketAttendance}
@@ -93,13 +100,15 @@ export function VendorRoutes({
           }
         />
       </>
-    ) : <p>Market Day is unavailable in this environment.</p>;
+    ) : (
+      <p>Market Day is unavailable in this environment.</p>
+    );
   if (module === 'booths') return <VendorBooths service={service} />;
   // IDs remain opaque backend resource references. They never establish tenant context.
   if (module === 'categories')
     return <Categories key={service.vendorId} service={service} />;
   if (module === 'products') return <Products service={service} id={id} />;
-  if (module === 'inventory') return <Inventory service={service} />;
+  if (module === 'inventory') return <CatalogWorkspace service={service} />;
   if (module === 'orders' && id === 'packing')
     return <VendorPacking key={service.vendorId} service={service} />;
   if (module === 'orders') return <Orders service={service} id={id} />;

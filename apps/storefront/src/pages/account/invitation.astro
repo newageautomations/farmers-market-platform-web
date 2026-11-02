@@ -1,0 +1,216 @@
+---
+import { createHash, randomBytes } from 'node:crypto';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import {
+  accountBridge,
+  isCentral,
+  type CentralAccountData,
+} from '../../lib/account';
+
+if (!isCentral(Astro.url))
+  return new Response('Open the original account invitation link.', {
+    status: 400,
+  });
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Referrer-Policy', 'strict-origin');
+const cookieOptions = {
+  httpOnly: true,
+  secure: Astro.url.protocol === 'https:',
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 7 * 86400,
+};
+const fromLink = Astro.url.searchParams.get('token');
+if (fromLink !== null) {
+  if (/^[A-Za-z0-9_-]{43}$/.test(fromLink))
+    Astro.cookies.set('employee-invitation', fromLink, cookieOptions);
+  else Astro.cookies.delete('employee-invitation', { path: '/' });
+  Astro.cookies.delete('account-signup-role', { path: '/' });
+  Astro.cookies.delete('employee-invitation-csrf', { path: '/' });
+  // Redirect before rendering any content or fetching resources. Opening does not consume the capability.
+  return new Response(null, {
+    status: 303,
+    headers: {
+      Location: '/account/invitation',
+      'Cache-Control': 'private, no-store',
+      'Referrer-Policy': 'no-referrer',
+    },
+  });
+}
+type Preview = {
+  businessName: string;
+  businessType: string;
+  role: string;
+  permissions: string[];
+  status: string;
+  expiresAt: string;
+};
+let invitation: Preview | undefined,
+  account: CentralAccountData | undefined,
+  matches = false;
+const token = Astro.cookies.get('employee-invitation')?.value ?? '';
+const boundary = createHash('sha256').update(Astro.clientAddress).digest('hex');
+try {
+  invitation = await accountBridge<Preview>({
+    action: 'employeeInvitation',
+    token,
+    boundary,
+  });
+  const central = Astro.cookies.get('platform-unified-account')?.value;
+  if (central) {
+    try {
+      account = await accountBridge<CentralAccountData>({
+        action: 'centralProfile',
+        central,
+      });
+      matches = await accountBridge<boolean>({
+        action: 'employeeInvitationRecipient',
+        central,
+        token,
+      });
+    } catch {
+      /* Expired or phone-unverified sessions can sign in again. */
+    }
+  }
+} catch {
+  /* Invalid or superseded tokens reveal no invitation information. */
+}
+const csrf = randomBytes(32).toString('base64url');
+Astro.cookies.set('employee-invitation-csrf', csrf, {
+  ...cookieOptions,
+  sameSite: 'strict',
+  maxAge: 1800,
+});
+const accessSummary = (permissions: string[]) => {
+  const groups = [
+    ['catalog|Inventory', 'Products and inventory'],
+    ['Orders|Fulfill|Pos', 'Orders and checkout'],
+    ['Finance|Refund|Billing', 'Financial information and billing'],
+    ['CRM|Marketing|Communications', 'Customers and communications'],
+    [
+      'Schedule|Applications|Layouts|Assignments|MarketDay|Occurrences|Offerings|Listings|Participation',
+      'Market operations',
+    ],
+    ['Storefront', 'Website management'],
+    ['Documents', 'Business documents'],
+    ['Membership|Team', 'Employee management within delegated limits'],
+  ];
+  return groups
+    .filter(([pattern]) =>
+      permissions.some((p) => new RegExp(pattern!, 'i').test(p)),
+    )
+    .map(([, label]) => label);
+};
+---
+
+<SiteLayout title="Your team invitation" noindex>
+  <section class="py-12 account-panel">
+    <h1>Your team invitation</h1>
+    {Astro.url.searchParams.has('accepted') ? (
+      <>
+        <p class="alert ui-alert ui-alert-success" role="status">
+          Invitation accepted. Your business workspace is ready.
+        </p>
+        <Button href="/account/workspaces">Choose your workspace</Button>
+      </>
+    ) : !invitation ? (
+      <p role="alert">
+        This invitation link is invalid or has been replaced. Ask the business
+        owner for a fresh invitation.
+      </p>
+    ) : (
+      <>
+        <p>
+          {invitation.businessName} ({invitation.businessType}) has invited you
+          to join as{' '}
+          {invitation.role === 'administrator'
+            ? 'an Administrator'
+            : invitation.role === 'lead'
+              ? 'a Lead'
+              : 'Staff'}
+          .
+        </p>
+        <p>
+          Access includes:{' '}
+          {accessSummary(invitation.permissions).join(', ') ||
+            'Business workspace access'}
+          . Your permissions apply only to this business.
+        </p>
+        <p>
+          Expires{' '}
+          {new Date(invitation.expiresAt).toLocaleString('en-US', {
+            timeZone: 'America/Chicago',
+            timeZoneName: 'short',
+          })}
+          .
+        </p>
+        {Astro.url.searchParams.has('error') && (
+          <p class="alert ui-alert ui-alert-error" role="alert">
+            The invitation could not be accepted. Check that you are signed into
+            the invited account. The invitation or inviter's authority may have
+            changed.
+          </p>
+        )}
+        {invitation.status !== 'pending' ? (
+          <p role="status">
+            This invitation is {invitation.status}. Ask the business owner for
+            help if you still need access.
+          </p>
+        ) : !account ? (
+          <>
+            <p>
+              Sign in with the account that received this email, or create your
+              normal platform account. You will review and accept this
+              invitation after signing in.
+            </p>
+            <div class="ui-actions">
+              <Button href="/account/login?returnTo=%2Faccount%2Finvitation">
+                Sign in
+              </Button>
+              <Button href="/account/signup" variant="secondary">
+                Create an account
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p>Signed in as {account.profile.emailAddress}.</p>
+            {!account.profile.phoneVerified ? (
+              <Button href="/account/login?returnTo=%2Faccount%2Finvitation">
+                Complete personal phone verification
+              </Button>
+            ) : matches ? (
+              <form method="post" action="/api/account">
+                <input
+                  type="hidden"
+                  name="action"
+                  value="acceptEmployeeInvitation"
+                />
+                <input type="hidden" name="csrf" value={csrf} />
+                <input
+                  type="hidden"
+                  name="principal"
+                  value={account.contexts.principalId}
+                />
+                <Button type="submit">Accept invitation</Button>
+              </form>
+            ) : (
+              <p role="alert">
+                This invitation belongs to a different account. Sign into the
+                account that received the invitation.
+              </p>
+            )}
+            <form method="post" action="/api/account">
+              <input type="hidden" name="action" value="invitationSignOut" />
+              <input type="hidden" name="csrf" value={csrf} />
+              <Button type="submit" variant="secondary">
+                Sign into a different account
+              </Button>
+            </form>
+          </>
+        )}
+      </>
+    )}
+  </section>
+</SiteLayout>

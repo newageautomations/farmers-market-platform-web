@@ -2,6 +2,7 @@ import { navigationIconPaths } from '@market/ui/presentation';
 const paths: Record<string, string> = {
   ...navigationIconPaths,
   storefront: navigationIconPaths.markets,
+  team: navigationIconPaths.vendors,
   finances: 'M4 3v18h17M8 16v-4m5 4V8m5 8V5',
   pos: 'M4 4h16v10H4V4Zm3 13h10l3 4H4l3-4Zm1-9h2m4 0h2',
   documents: 'M6 3h8l5 5v13H6V3Zm8 0v6h5M9 13h7m-7 4h7',

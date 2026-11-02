@@ -167,7 +167,13 @@
     "demo:market-operations:attendance-fixtures": "tsx scripts/demo-market-operations.ts attendance-fixtures",
     "test:attendance": "vitest run tests/attendance.test.tsx",
     "demo:market-operations:packing-preorders": "tsx scripts/demo-market-operations.ts packing-preorders",
-    "demo:market-operations:attendance-today": "tsx scripts/demo-market-operations.ts attendance-today"
+    "demo:market-operations:attendance-today": "tsx scripts/demo-market-operations.ts attendance-today",
+    "demo:market-operations:team-permissions-fixtures": "tsx scripts/demo-market-operations.ts team-permissions-fixtures",
+    "demo:market-operations:team-permissions-data": "tsx scripts/demo-market-operations.ts team-permissions-fixtures --populate",
+    "test:team-permissions": "npm --prefix ../farmers-market-platform run test:team-permissions",
+    "demo:market-operations:team-invitations-fixtures": "tsx scripts/demo-market-operations.ts team-invitations-fixtures",
+    "demo:market-operations:team-invitations-api": "tsx scripts/demo-market-operations.ts team-invitations-api",
+    "test:team-invitations:backend": "npm --prefix ../farmers-market-platform run test:team-invitations"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",

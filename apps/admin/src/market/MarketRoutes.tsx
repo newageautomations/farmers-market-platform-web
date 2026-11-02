@@ -1,3 +1,4 @@
+import { TeamWorkspace } from '../team/TeamWorkspace';
 import { marketPath } from '@market/admin-core';
 import { Finances } from '../finance/Finances';
 import { MarketLoyalty } from './loyalty';
@@ -17,6 +18,8 @@ export function MarketRoutes({
   path: string;
 }) {
   const canonical = marketPath(path);
+  if (canonical === '/market/team')
+    return <TeamWorkspace api={service.team} context={service.context} />;
   if (canonical.startsWith('/market/finances'))
     return (
       <Finances

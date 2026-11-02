@@ -38,6 +38,7 @@ import { RouteLink, useRead } from './common';
 import { date } from '../market/presentation';
 import '../market/phase14/attendance.css';
 import './packing.css';
+import { QuantityStepper } from './QuantityStepper';
 
 function PackingBadge({ status }: { status: string }) {
   return (
@@ -274,7 +275,7 @@ function PackingOccurrence({
   const disabled =
     busy ||
     loading ||
-    !mayCommand(service.context, 'ManageOwnInventory') ||
+    !mayCommand(service.context, 'FulfillOwnOrders') ||
     data?.occurrence.status === 'cancelled';
   const product = data?.products.find((p) => p.variantId === productId),
     customer = data?.customers.find((c) => c.key === customerKey);
@@ -712,62 +713,36 @@ function PackingQuantity({
   };
   return (
     <Field id={id} label="Quantity packed">
-      <div className="packing-quantity-stepper">
-        <Button
-          iconOnly
-          variant="destructive"
-          className="packing-step-button packing-step-decrease"
-          aria-label={`Decrease ${label.toLowerCase()}`}
-          disabled={disabled || Number(draft.text) <= 0}
-          onPointerDown={(e) => e.preventDefault()}
-          onClick={() => step(-1)}
-        >
-          -
-        </Button>
-        <Input
-          id={id}
-          aria-label={label}
-          type="number"
-          min={0}
-          max={max}
-          step={1}
-          required
-          value={draft.text}
-          disabled={disabled}
-          onChange={(e) => {
-            stop();
-            const text = e.target.value;
-            draftValue.current = text;
-            setDraft({ source: value, text });
-            if (/^\d+$/.test(text) && Number(text) <= max)
-              timer.current = setTimeout(commit, 300);
-          }}
-          onBlur={() => {
-            if (
-              timer.current !== null ||
-              !/^\d+$/.test(draft.text) ||
-              Number(draft.text) > max
-            )
-              commit();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              commit();
-            }
-          }}
-        />
-        <Button
-          iconOnly
-          className="packing-step-button packing-step-increase"
-          aria-label={`Increase ${label.toLowerCase()}`}
-          disabled={disabled || Number(draft.text) >= max}
-          onPointerDown={(e) => e.preventDefault()}
-          onClick={() => step(1)}
-        >
-          +
-        </Button>
-      </div>
+      <QuantityStepper
+        id={id}
+        label={label}
+        value={draft.text}
+        max={max}
+        disabled={disabled}
+        onStep={step}
+        onChange={(e) => {
+          stop();
+          const text = e.target.value;
+          draftValue.current = text;
+          setDraft({ source: value, text });
+          if (/^\d+$/.test(text) && Number(text) <= max)
+            timer.current = setTimeout(commit, 300);
+        }}
+        onBlur={() => {
+          if (
+            timer.current !== null ||
+            !/^\d+$/.test(draft.text) ||
+            Number(draft.text) > max
+          )
+            commit();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commit();
+          }
+        }}
+      />
     </Field>
   );
 }

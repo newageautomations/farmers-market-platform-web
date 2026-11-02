@@ -1,0 +1,162 @@
+{
+  "database": "vendure_demo_market_ops",
+  "updatedAt": "2026-11-01T22:36:31.331Z",
+  "markets": [
+    {
+      "id": 2,
+      "name": "Boerne Farmers Market",
+      "urls": ["http://boerne-farmers-market.localhost:4321/"],
+      "vendorIds": []
+    },
+    {
+      "id": 1,
+      "name": "Bulverde Market Day Demo",
+      "urls": ["http://localhost:4321/"],
+      "vendorIds": [
+        8, 21, 10, 22, 19, 13, 23, 20, 18, 17, 2, 11, 9, 12, 15, 16, 3, 14, 7
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Cedar Grove Farmers Market",
+      "urls": [],
+      "vendorIds": [26]
+    },
+    {
+      "id": 4,
+      "name": "Oak Bend Saturday Market",
+      "urls": [],
+      "vendorIds": [26]
+    },
+    {
+      "id": 15,
+      "name": "Riverbend Saturday Market",
+      "urls": [],
+      "vendorIds": []
+    },
+    {
+      "id": 5,
+      "name": "Riverstone Community Market",
+      "urls": [],
+      "vendorIds": [26]
+    },
+    {
+      "id": 3,
+      "name": "Willow Green Market Design Fixture",
+      "urls": ["http://homepage-market.localhost:4321/"],
+      "vendorIds": [26]
+    }
+  ],
+  "vendors": [
+    {
+      "id": 21,
+      "name": "9-1 Produce Farm",
+      "urls": ["http://9-1-produce-farm.localhost:4321/"]
+    },
+    {
+      "id": 23,
+      "name": "Anna’s Kimchi",
+      "urls": ["http://annas-kimchi.localhost:4321/"]
+    },
+    {
+      "id": 3,
+      "name": "Canyon Bakery Demo",
+      "urls": []
+    },
+    {
+      "id": 44,
+      "name": "Cedar Creek Produce",
+      "urls": []
+    },
+    {
+      "id": 13,
+      "name": "Grammies Crackers",
+      "urls": ["http://grammies-crackers.localhost:4321/"]
+    },
+    {
+      "id": 2,
+      "name": "Hill Country Honey Demo",
+      "urls": []
+    },
+    {
+      "id": 19,
+      "name": "Hisco Apparel",
+      "urls": ["http://hisco-apparel.localhost:4321/"]
+    },
+    {
+      "id": 17,
+      "name": "Jake n Bake",
+      "urls": ["http://jake-n-bake.localhost:4321/"]
+    },
+    {
+      "id": 14,
+      "name": "Last Watch Coffee",
+      "urls": ["http://last-watch-coffee.localhost:4321/"]
+    },
+    {
+      "id": 7,
+      "name": "Manna Roots",
+      "urls": ["http://manna-roots.localhost:4321/"]
+    },
+    {
+      "id": 20,
+      "name": "Manna Tallow",
+      "urls": ["http://manna-tallow.localhost:4321/"]
+    },
+    {
+      "id": 11,
+      "name": "Mummy’s Macarons",
+      "urls": ["http://mummys-macarons.localhost:4321/"]
+    },
+    {
+      "id": 9,
+      "name": "Norma Jean’s Greens",
+      "urls": ["http://norma-jeans-greens.localhost:4321/"]
+    },
+    {
+      "id": 16,
+      "name": "Priceless Honey",
+      "urls": ["http://priceless-honey.localhost:4321/"]
+    },
+    {
+      "id": 15,
+      "name": "Pucker Up!",
+      "urls": ["http://pucker-up.localhost:4321/"]
+    },
+    {
+      "id": 8,
+      "name": "Showbread Catering",
+      "urls": ["http://showbread-catering.localhost:4321/"]
+    },
+    {
+      "id": 12,
+      "name": "Smith Pastures",
+      "urls": ["http://smith-pastures.localhost:4321/"]
+    },
+    {
+      "id": 22,
+      "name": "Sunflour & Crumb",
+      "urls": ["http://sunflour-and-crumb.localhost:4321/"]
+    },
+    {
+      "id": 10,
+      "name": "Tamales De Reina",
+      "urls": ["http://tamales-de-reina.localhost:4321/"]
+    },
+    {
+      "id": 1,
+      "name": "Texas Wild Seafood Demo",
+      "urls": []
+    },
+    {
+      "id": 18,
+      "name": "Twice Baked Cafe",
+      "urls": ["http://twice-baked-cafe.localhost:4321/"]
+    },
+    {
+      "id": 26,
+      "name": "Willow & Grain Farmstead",
+      "urls": ["http://homepage-vendor.localhost:4321/"]
+    }
+  ]
+}
