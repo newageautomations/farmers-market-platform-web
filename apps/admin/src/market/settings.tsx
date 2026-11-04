@@ -24,6 +24,65 @@ import {
 } from './common';
 import { TimezoneField, usTimezones } from './timezones';
 
+/** Matches the backend Market region allowlist (US states and DC). Never inferred from venue text. */
+export const marketRegions = [
+  'AL',
+  'AK',
+  'AZ',
+  'AR',
+  'CA',
+  'CO',
+  'CT',
+  'DE',
+  'DC',
+  'FL',
+  'GA',
+  'HI',
+  'ID',
+  'IL',
+  'IN',
+  'IA',
+  'KS',
+  'KY',
+  'LA',
+  'ME',
+  'MD',
+  'MA',
+  'MI',
+  'MN',
+  'MS',
+  'MO',
+  'MT',
+  'NE',
+  'NV',
+  'NH',
+  'NJ',
+  'NM',
+  'NY',
+  'NC',
+  'ND',
+  'OH',
+  'OK',
+  'OR',
+  'PA',
+  'RI',
+  'SC',
+  'SD',
+  'TN',
+  'TX',
+  'UT',
+  'VT',
+  'VA',
+  'WA',
+  'WV',
+  'WI',
+  'WY',
+] as const;
+const regionLabels = Object.fromEntries([
+  ['', 'Not set'],
+  ...marketRegions.map((code) => [code, code]),
+]);
+
 export function configurationInput(
   data: FormData,
   market: MarketConfiguration,
@@ -43,12 +102,24 @@ export function configurationInput(
     !['narrower', 'withinBoundary'].includes(vendorWindowMode)
   )
     throw new AppError('validation');
+  // City and state are saved together, or both cleared, for vendor market discovery.
+  const city = text(data, 'city').replace(/\s+/g, ' '),
+    region = text(data, 'region').toUpperCase();
+  if (
+    !!city !== !!region ||
+    (region && !(marketRegions as readonly string[]).includes(region)) ||
+    city.length > 120 ||
+    (city && !/^\p{L}[\p{L}\p{M} .'-]*$/u.test(city))
+  )
+    throw new AppError('validation');
   return {
     marketId: market.id,
     expectedVersion: market.version,
     name: text(data, 'name'),
     timezone,
     venue: text(data, 'venue'),
+    city,
+    region,
     pickupInstructions: text(data, 'pickupInstructions'),
     status: status as MarketConfigureInput['status'],
     defaultPreorderRule: ruleInput(data),
@@ -126,6 +197,21 @@ export function MarketSettings({ service }: { service: MarketService }) {
                   maxLength={500}
                 />
                 <TextField
+                  name="city"
+                  label="City"
+                  value={market.city ?? ''}
+                  required={false}
+                  maxLength={120}
+                  info="Shown to vendors searching for markets. Enter the city and state together."
+                />
+                <Choice
+                  name="region"
+                  label="State"
+                  value={market.region ?? ''}
+                  choices={['', ...marketRegions]}
+                  labels={regionLabels}
+                />
+                <TextField
                   name="pickupInstructions"
                   label="Default pickup instructions"
                   value={market.pickupInstructions}
@@ -170,6 +256,14 @@ export function MarketSettings({ service }: { service: MarketService }) {
                 <div>
                   <dt>Default venue</dt>
                   <dd>{market.venue || 'Not provided'}</dd>
+                </div>
+                <div>
+                  <dt>Location</dt>
+                  <dd>
+                    {market.city && market.region
+                      ? `${market.city}, ${market.region}`
+                      : 'Not provided'}
+                  </dd>
                 </div>
                 <div>
                   <dt>Pickup instructions</dt>

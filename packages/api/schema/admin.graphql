@@ -119,6 +119,7 @@ type Query {
   ownMarketAttendance(input: JSON): JSON!
   ownVendorAttendance(input: JSON): JSON!
   applicantApplications(input: JSON): JSON!
+  vendorMarketDiscovery(input: JSON): JSON!
   ownMarketOperations(section: MarketOperationsSection!, occurrenceId: Int, input: JSON): JSON!
   ownVendorBoothAssignments: JSON!
   ownVendorLinkRequests: JSON!
@@ -7738,6 +7739,8 @@ type MarketDomain {
   status: String!
   timezone: String!
   venue: String!
+  city: String
+  region: String
   pickupInstructions: String!
   channelId: ID!
   recurrence: WeeklyRecurrence
@@ -8075,6 +8078,8 @@ input ProvisionMarketInput {
   slug: String!
   timezone: String!
   venue: String!
+  city: String
+  region: String
   pickupInstructions: String!
   channelId: ID
   recurrence: WeeklyRecurrenceInput
@@ -8088,6 +8093,8 @@ input ConfigureMarketInput {
   name: String!
   timezone: String!
   venue: String!
+  city: String
+  region: String
   pickupInstructions: String!
   status: MarketStatus!
   defaultPreorderRule: MarketPreorderRuleInput!
@@ -8826,6 +8833,8 @@ input PlatformProvisionMarketInput {
   slug: String!
   timezone: String!
   venue: String!
+  city: String
+  region: String
   pickupInstructions: String!
   initialPrincipalId: ID
   defaultPreorderRule: MarketPreorderRuleInput!

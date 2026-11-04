@@ -17,7 +17,6 @@ import {
   Badge,
   EmptyState,
   Field,
-  SearchSelect,
   UtilityIcon,
 } from '@market/ui';
 import {
@@ -38,9 +37,10 @@ import {
   applicationKey,
   applicationLocation,
   applicationNextStep,
+  discoveryAction,
   readAllMarketApplications,
   readApplicationSteps,
-  safeMarketApplicationUrl,
+  type DiscoverableMarket,
   type MarketDiscoveryApi,
 } from './market-applications-data';
 import './market-applications.css';
@@ -146,6 +146,59 @@ function ZonedDate({ value, timezone }: { value: string; timezone: string }) {
   );
 }
 
+/** Apply follows the vendor's existing relationship; workspace links stay in-app. */
+function DiscoveryApply({ market }: { market: DiscoverableMarket }) {
+  const action = discoveryAction(market);
+  switch (action.kind) {
+    case 'apply':
+      return (
+        <FarmstandLink
+          href={action.href}
+          variant="primary"
+          className="market-discovery-arrow"
+        >
+          {action.label}
+          <FarmstandIcon name="arrow-right" />
+        </FarmstandLink>
+      );
+    case 'external':
+      return (
+        <FarmstandLink href={action.href} variant="secondary">
+          {action.label}
+          <FarmstandIcon name="chevron-right" />
+        </FarmstandLink>
+      );
+    case 'local':
+      return (
+        <ApplicationLink href={action.href}>{action.label}</ApplicationLink>
+      );
+    case 'not-yet-open':
+      return (
+        <>
+          <span className="markets-muted">
+            {action.opensAt && action.timezone ? (
+              <>
+                Opens{' '}
+                <ZonedDate value={action.opensAt} timezone={action.timezone} />
+              </>
+            ) : (
+              'Not yet open'
+            )}
+          </span>
+          <FarmstandButton disabled title="Applications are not open yet">
+            Apply
+          </FarmstandButton>
+        </>
+      );
+    default:
+      return (
+        <FarmstandButton disabled title={action.reason}>
+          {action.label}
+          <span className="sr-only">. {action.reason}</span>
+        </FarmstandButton>
+      );
+  }
+}
 export function FindMarketApplications({ api }: { api?: MarketDiscoveryApi }) {
   const id = useId();
   const [search, setSearch] = useState(''),
@@ -202,22 +255,27 @@ export function FindMarketApplications({ api }: { api?: MarketDiscoveryApi }) {
             }}
           />
         </Field>
-        <SearchSelect
-          label="Location"
-          placeholder="Search cities..."
-          selectedLabel={city ? undefined : 'All locations'}
-          value={city}
-          onChange={(value) => {
-            setCity(value);
-            setPage(0);
-          }}
-          options={[
-            { value: '', label: 'All locations' },
-            ...(cities.data ?? []),
-          ]}
-          disabled={!api || !!cities.error}
-          loading={cities.loading}
-        />
+        <Field
+          id={id + '-location'}
+          label={<span className="sr-only">Location</span>}
+        >
+          <FarmstandSelect
+            id={id + '-location'}
+            value={city}
+            disabled={!api || !!cities.error || cities.loading}
+            onChange={(e) => {
+              setCity(e.target.value);
+              setPage(0);
+            }}
+          >
+            <option value="">All locations</option>
+            {(cities.data ?? []).map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </FarmstandSelect>
+        </Field>
       </div>
       {!api ? (
         <EmptyState title="Market search is not available yet">
@@ -240,8 +298,7 @@ export function FindMarketApplications({ api }: { api?: MarketDiscoveryApi }) {
                   'Location',
                   'Next market',
                   'Application deadline',
-                  'Apply',
-                  'Website',
+                  'Actions',
                 ]}
               >
                 {query.data.items.map((market) => (
@@ -251,7 +308,9 @@ export function FindMarketApplications({ api }: { api?: MarketDiscoveryApi }) {
                         <span className="markets-identity-icon">
                           <FarmstandIcon name="store" />
                         </span>
-                        {market.name}
+                        <span className="market-application-name">
+                          {market.name}
+                        </span>
                       </div>
                     </th>
                     <td>
@@ -278,21 +337,11 @@ export function FindMarketApplications({ api }: { api?: MarketDiscoveryApi }) {
                         <span className="markets-muted">Not specified</span>
                       )}
                     </td>
-                    <td>
-                      {safeMarketApplicationUrl(market.applyUrl) ? (
-                        <FarmstandLink
-                          href={safeMarketApplicationUrl(market.applyUrl)!}
-                          variant="primary"
-                        >
-                          Apply
-                          <FarmstandIcon name="arrow-right" />
-                        </FarmstandLink>
-                      ) : (
-                        <FarmstandButton disabled>Apply</FarmstandButton>
-                      )}
-                    </td>
-                    <td>
-                      <Website href={market.website} />
+                    <td className="market-discovery-actions-cell">
+                      <div className="market-discovery-actions">
+                        <DiscoveryApply market={market} />
+                        <Website href={market.website} />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -306,6 +355,7 @@ export function FindMarketApplications({ api }: { api?: MarketDiscoveryApi }) {
             <div className="market-discovery-more">
               <FarmstandButton
                 variant="tertiary"
+                className="market-discovery-arrow market-discovery-more-action"
                 onClick={() => {
                   setExpanded(true);
                   setPage(0);
@@ -654,3 +704,6 @@ export function MarketApplicationRecords({
     </>
   );
 }
+
+/** Shared application status presentation for other Markets views. */
+export { Status as ApplicationStatusBadge };

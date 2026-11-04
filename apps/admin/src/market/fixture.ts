@@ -74,6 +74,8 @@ export function createMarketFixtureData(marketId: string, now = Date.now()) {
     status: 'active',
     timezone: 'America/Chicago',
     venue: `${name} fixture venue`,
+    city: null,
+    region: null,
     pickupInstructions: `${name} fixture pickup instructions`,
     version: 1,
     recurrenceVersion: 1,
@@ -581,6 +583,14 @@ export function createFixtureMarketService(
       data.configuration = {
         ...data.configuration,
         ...input,
+        city:
+          input.city === undefined
+            ? data.configuration.city
+            : input.city || null,
+        region:
+          input.region === undefined
+            ? data.configuration.region
+            : input.region || null,
         version: data.configuration.version + 1,
         policyVersion: data.configuration.policyVersion + 1,
       };

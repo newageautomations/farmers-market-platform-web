@@ -12,9 +12,8 @@ import {
 } from '@market/ui/farmstand';
 import '@market/ui/farmstand.css';
 import { WorkspaceMenu } from '../WorkspaceMenu';
-import { AttendanceHistory } from '../market/phase14/Attendance';
-import { PackingCardStatus } from './packing';
-import { go, ReadState, RouteLink, useRead } from './common';
+import { go, ReadState, useRead } from './common';
+import { UpcomingMarketDates } from './UpcomingMarketDates';
 import type { VendorService } from './service';
 import { vendorStatusTone } from './status-presentation';
 import {
@@ -120,26 +119,7 @@ export function MarketsWorkspace({
             {relationshipTools}
           </>
         )}
-        {view === 'upcoming-dates' &&
-          (service.marketAttendance ? (
-            <AttendanceHistory
-              api={service.marketAttendance}
-              vendor
-              initialFrom={new Date().toISOString().slice(0, 10)}
-              renderVendorExtra={
-                service.packing
-                  ? (row) => (
-                      <PackingCardStatus
-                        api={service.packing!}
-                        occurrenceId={row.occurrenceId}
-                      />
-                    )
-                  : undefined
-              }
-            />
-          ) : (
-            <UpcomingMembershipDates service={service} />
-          ))}
+        {view === 'upcoming-dates' && <UpcomingMarketDates service={service} />}
       </div>
     </div>
   );
@@ -492,51 +472,6 @@ function MarketsOverview({
             </FarmstandPanel>
           </div>
         </>
-      )}
-    </>
-  );
-}
-
-function UpcomingMembershipDates({ service }: { service: VendorService }) {
-  const read = useCallback(() => readMarketsOverview(service), [service]);
-  const query = useRead(`markets-dates:${service.vendorId}`, read);
-  return (
-    <>
-      <ReadState {...query} retry={query.refresh} />
-      {query.data && (
-        <FarmstandPanel as="section" className="markets-list">
-          <h2>Upcoming dates</h2>
-          <p>Open a market to manage your participation.</p>
-          <FarmstandTable
-            label="Upcoming market dates"
-            headings={['Market', 'Date', 'Venue']}
-          >
-            {query.data.rows
-              .flatMap((row) => row.upcoming.map((o) => ({ row, o })))
-              .sort(
-                (a, b) => Date.parse(a.o.startsAt) - Date.parse(b.o.startsAt),
-              )
-              .map(({ row, o }) => (
-                <tr key={row.membership.id + ':' + o.id}>
-                  <th scope="row">
-                    <RouteLink
-                      to={
-                        '/vendor/markets/' +
-                        encodeURIComponent(row.membership.id)
-                      }
-                    >
-                      {row.membership.market.name}
-                    </RouteLink>
-                  </th>
-                  <td>
-                    {marketDate(o, true)}
-                    <small>{marketTime(o)}</small>
-                  </td>
-                  <td>{o.venue}</td>
-                </tr>
-              ))}
-          </FarmstandTable>
-        </FarmstandPanel>
       )}
     </>
   );

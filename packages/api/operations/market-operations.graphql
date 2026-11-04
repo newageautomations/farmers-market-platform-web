@@ -70,6 +70,9 @@ mutation ExchangePlatformAdminHandoff($code: String!, $correlation: String!) {
 query ApplicantApplications($input: JSON) {
   applicantApplications(input: $input)
 }
+query VendorMarketDiscovery($input: JSON) {
+  vendorMarketDiscovery(input: $input)
+}
 mutation ApplicantApplicationCommand($action: String!, $input: JSON!) {
   applicantApplicationCommand(action: $action, input: $input)
 }

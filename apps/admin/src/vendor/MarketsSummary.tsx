@@ -4,17 +4,20 @@ import type { ComponentProps } from 'react';
 /** Shared Markets composition; values and their meaning remain caller-owned. */
 export function MarketsSummary({
   items,
+  className = '',
 }: {
   items: Array<{
     label: string;
     value: number;
     hint: string;
     icon: ComponentProps<typeof FarmstandIcon>['name'];
-    tone?: 'warning' | 'success';
+    tone?: 'warning' | 'success' | 'danger';
   }>;
+  /** Optional layout modifier, for example a four-card grid. */
+  className?: string;
 }) {
   return (
-    <div className="markets-summary ui-kpi-grid">
+    <div className={`markets-summary ui-kpi-grid ${className}`.trim()}>
       {items.map((stat) => (
         <FarmstandPanel
           as="div"

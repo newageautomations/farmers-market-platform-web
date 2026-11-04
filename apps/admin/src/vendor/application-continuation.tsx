@@ -18,17 +18,22 @@ export function VendorApplicationContinuation({
   const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
+    const params = new URLSearchParams(window.location.search);
+    // A draft continues saved work; a published form slug (from Markets discovery) starts a new one.
+    const draft = params.get('draft'),
+      slug = params.get('slug');
+    const draftId =
+        draft && /^[1-9]\d*$/.test(draft) ? Number(draft) : undefined,
+      formSlug =
+        !draft && slug && /^[a-zA-Z0-9-]{1,80}$/.test(slug) ? slug : undefined;
     void (async () => {
       try {
-        const params = new URLSearchParams(window.location.search);
-        if (!service.applications) throw new Error();
+        if (!service.applications || (!draftId && !formSlug)) throw new Error();
         const result = await service.applications.command<{ callback: string }>(
           'CONTINUE',
           {
             vendorId: Number(service.vendorId),
-            draftId: params.has('draft')
-              ? Number(params.get('draft'))
-              : undefined,
+            ...(draftId ? { draftId } : { slug: formSlug }),
             origin: params.get('origin'),
             correlation: params.get('correlation'),
           },
@@ -44,7 +49,9 @@ export function VendorApplicationContinuation({
       } catch {
         if (active)
           setError(
-            'This draft is unavailable to the selected Vendor. Select its business in the account switcher, then resume it from Vendor Applications.',
+            draft
+              ? 'This draft is unavailable to the selected Vendor. Select its business in the account switcher, then resume it from Vendor Applications.'
+              : 'This application is unavailable to the selected Vendor. Select its business in the account switcher, then choose Apply again from Markets.',
           );
       }
     })();

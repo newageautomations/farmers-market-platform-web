@@ -29,7 +29,12 @@ export const GET: APIRoute = async (context) => {
   );
   if (vendor && /^[1-9]\d*$/.test(vendor)) returnParams.set('vendor', vendor);
   const returnTo = '/vendor/application-return?' + returnParams.toString();
-  if (!draft)
+  // Drafts, and new applications started from Vendor Markets with a selected business, carry the
+  // vendor's existing admin session through the one-time handoff. Applicants arriving directly
+  // from this storefront (no vendor) keep the central account sign-in.
+  const adminHandoff =
+    !!draft || (!claim && !!slug && !!vendor && /^[1-9]\d*$/.test(vendor));
+  if (!adminHandoff)
     return context.redirect(
       await centralSignIn(context, returnTo, 'vendor-applications'),
     );
@@ -51,7 +56,7 @@ export const GET: APIRoute = async (context) => {
   context.cookies.set('account-return', returnTo, options);
   const target = new URL('/vendor/applications/continue', admin);
   for (const [key, value] of Object.entries({
-    draft,
+    ...(draft ? { draft } : { slug: slug! }),
     vendor,
     origin: context.url.origin,
     correlation,

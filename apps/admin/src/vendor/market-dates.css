@@ -1,0 +1,70 @@
+/* Upcoming Dates composes the Applications layout; only its four-card and six-column needs live here. */
+.markets-summary.market-dates-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.markets-stat-danger {
+  --markets-stat-color: var(--status-danger-fg);
+  --markets-stat-background: var(--status-danger-bg);
+}
+.markets-stat.markets-stat-danger .markets-stat-icon {
+  color: var(--markets-stat-color);
+  background: var(--markets-stat-background);
+}
+.markets-stat.markets-stat-danger dd {
+  color: var(--markets-stat-color);
+}
+.markets-filters.market-dates-filters {
+  grid-template-columns: minmax(160px, 1fr) repeat(3, minmax(130px, 150px));
+}
+.market-applications-main .market-dates-list .farmstand-data-table {
+  min-width: 880px;
+}
+.market-applications-main
+  .market-dates-list
+  .farmstand-data-table
+  th:first-child {
+  width: 22%;
+}
+.market-dates-list .farmstand-data-table td {
+  white-space: nowrap;
+}
+.market-dates-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: normal;
+}
+.market-dates-location .farmstand-icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--brand-muted);
+}
+.market-date-packing {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+}
+.market-date-packing small {
+  color: var(--brand-muted);
+  font-size: 11px;
+}
+.market-date-details .markets-next-content > .farmstand-button {
+  gap: 8px;
+}
+@container (max-width: 1080px) {
+  .markets-summary.market-dates-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (max-width: 600px) {
+  .markets-summary.market-dates-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .markets-filters.market-dates-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .markets-filters.market-dates-filters > :first-child {
+    grid-column: 1 / -1;
+  }
+}

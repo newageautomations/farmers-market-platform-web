@@ -80,6 +80,7 @@ export * from './product-information';
 export * from './contact';
 
 export * from './applicant-applications';
+export * from './market-discovery';
 export * from './application-rules';
 
 export * from './attendance';

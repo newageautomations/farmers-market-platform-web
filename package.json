@@ -161,6 +161,7 @@
     "demo:market-operations:grant-willow-crm": "tsx scripts/demo-market-operations.ts grant-willow-crm",
     "demo:market-operations:phase-b-fixtures": "tsx scripts/demo-market-operations.ts phase-b-fixtures",
     "demo:market-operations:phase-a-fixtures": "tsx scripts/demo-market-operations.ts phase-a-fixtures",
+    "demo:market-operations:market-discovery-fixtures": "tsx scripts/demo-market-operations.ts market-discovery-fixtures",
     "demo:market-operations:inspect": "tsx scripts/demo-market-operations.ts inspect",
     "demo:market-operations:phase-d-fixtures": "tsx scripts/demo-market-operations.ts phase-d-fixtures",
     "demo:market-operations:phase-c-fixtures": "tsx scripts/demo-market-operations.ts phase-c-fixtures",

@@ -8,7 +8,7 @@ The local vendor workspace at `/vendor/markets` opens its overview by default. I
 
 `WorkspaceMenu.tsx` extracts the existing Loyalty segmented menu's presentation and link behavior. `LoyaltyMenu` now composes it with the original items, routes and current-page state. Importing the whole Loyalty dashboard into Markets would couple its unrelated data and workflows. Loyalty's existing responsive layout and content animations remain intact. This extraction does not approve a universal tab category.
 
-Applications now uses the [Applications workspace design](VENDOR_MARKET_APPLICATIONS_DESIGN.md), while retaining existing application detail and continuation destinations. The existing identity verification and relationship request forms remain accessible under Applications. Upcoming Dates retains its existing attendance controller and supplies an optional initial date to `AttendanceHistory`; existing consumers keep their previous defaults, filters, pagination and physical check-in behavior. Fixture environments without that API use the existing membership occurrence reads for a simple date listing.
+Applications now uses the [Applications workspace design](VENDOR_MARKET_APPLICATIONS_DESIGN.md), while retaining existing application detail and continuation destinations. The existing identity verification and relationship request forms remain accessible under Applications. Upcoming Dates now uses the [Upcoming Dates design](VENDOR_MARKET_UPCOMING_DATES_DESIGN.md). `AttendanceHistory` and its physical check-in remain on `/vendor/day` and the Market Manager screens.
 
 The existing `/vendor/applications` list entry also opens `#applications` inside the Markets workspace. Individual application, draft and continuation routes retain their existing destinations.
 

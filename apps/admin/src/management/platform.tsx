@@ -225,6 +225,9 @@ function Provisioning({
                 ...base,
                 timezone: text(f, 'timezone'),
                 venue: text(f, 'venue'),
+                // Market managers set the structured discovery location in Market settings.
+                city: null,
+                region: null,
                 pickupInstructions: text(f, 'pickup'),
                 defaultPreorderRule: {
                   opensDaysBefore: integer(f.get('openDays'), { zero: true }),

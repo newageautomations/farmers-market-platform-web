@@ -125,8 +125,7 @@ describe('market discovery UI contract', () => {
       'Location',
       'Next market',
       'Application deadline',
-      'Apply',
-      'Website',
+      'Actions',
     ]);
     expect(
       within(table).getAllByRole('link', { name: 'Apply' })[0],
@@ -147,7 +146,7 @@ describe('market discovery UI contract', () => {
     });
     expect(window.location.href).toBe(path);
   });
-  it('searches only supplied market cities and resets pagination on city selection', async () => {
+  it('lists only supplied market cities and resets pagination on city selection', async () => {
     const api = discovery();
     render(<FindMarketApplications api={api} />);
     fireEvent.click(
@@ -157,10 +156,14 @@ describe('market discovery UI contract', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     await screen.findByText('Discover market 10');
     const location = screen.getByRole('combobox', { name: 'Location' });
-    fireEvent.focus(location);
-    fireEvent.change(location, { target: { value: 'Boer' } });
-    expect(screen.getAllByRole('option')).toHaveLength(1);
-    fireEvent.click(screen.getByRole('option', { name: 'Boerne, TX' }));
+    await waitFor(() =>
+      expect(
+        within(location)
+          .getAllByRole('option')
+          .map((o) => o.textContent),
+      ).toEqual(['All locations', 'Austin, TX', 'Boerne, TX']),
+    );
+    fireEvent.change(location, { target: { value: 'Boerne, TX' } });
     await waitFor(() =>
       expect(api.search).toHaveBeenLastCalledWith({
         search: '',

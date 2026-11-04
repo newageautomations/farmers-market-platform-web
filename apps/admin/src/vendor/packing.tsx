@@ -40,7 +40,7 @@ import '../market/phase14/attendance.css';
 import './packing.css';
 import { QuantityStepper } from './QuantityStepper';
 
-function PackingBadge({ status }: { status: string }) {
+export function PackingBadge({ status }: { status: string }) {
   return (
     <Badge
       tone={

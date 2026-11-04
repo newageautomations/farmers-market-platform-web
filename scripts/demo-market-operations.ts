@@ -39,6 +39,7 @@ if (
     'team-permissions-fixtures',
     'team-invitations-fixtures',
     'team-invitations-api',
+    'market-discovery-fixtures',
   ].includes(action)
 )
   Object.assign(
@@ -89,6 +90,7 @@ if (['admin', 'storefront'].includes(action)) {
       'team-permissions-fixtures',
       'team-invitations-fixtures',
       'team-invitations-api',
+      'market-discovery-fixtures',
       'test',
     ].includes(action)
   )

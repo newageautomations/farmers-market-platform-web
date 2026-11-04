@@ -65,6 +65,41 @@
   justify-content: center;
   margin-top: 8px;
 }
+/* Actions share one right-anchored cell; its heading stays for screen readers only. */
+.market-discovery .farmstand-data-table thead th:last-child {
+  font-size: 0;
+}
+.market-discovery .farmstand-data-table td.market-discovery-actions-cell {
+  padding-right: 20px;
+}
+.market-discovery-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  white-space: nowrap;
+}
+/* Tertiary View more with ordinary button padding; arrows slide right as in the reward wizard. */
+.market-discovery
+  .farmstand-button.button.ui-button.button-tertiary.market-discovery-more-action {
+  min-height: 40px;
+  padding: 0 18px;
+}
+.market-discovery-arrow .farmstand-icon-arrow-right {
+  transition: transform 180ms ease;
+}
+.market-discovery-arrow:is(:hover, :focus-visible):not(:disabled)
+  .farmstand-icon-arrow-right {
+  transform: translateX(3px);
+}
+.market-discovery tbody tr:is(:hover, :focus-within) .market-application-name {
+  background-size: 100% 1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-discovery-arrow .farmstand-icon-arrow-right {
+    transition: none;
+  }
+}
 .market-applications-main .markets-list .farmstand-data-table {
   min-width: 800px;
 }

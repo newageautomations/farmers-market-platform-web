@@ -5,6 +5,8 @@ fragment MarketConfiguration on MarketDomain {
   status
   timezone
   venue
+  city
+  region
   pickupInstructions
   version
   recurrenceVersion

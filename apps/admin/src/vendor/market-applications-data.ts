@@ -2,33 +2,16 @@ import {
   safeStorefrontUrl,
   type ApplicantApplicationDetail,
   type ApplicantApplicationRow,
+  type DiscoverableMarket,
 } from '@market/api';
 import type { ApplicantApplicationsApi } from '@market/api';
 
-/** Discovery is a separate public read, never inferred from memberships or submissions. */
-export interface DiscoverableMarket {
-  id: string;
-  name: string;
-  city: string;
-  state: string;
-  website: string | null;
-  applyUrl: string | null;
-  nextMarket: { startsAt: string; timezone: string } | null;
-  deadline: { closesAt: string; timezone: string } | null;
-}
-/** Adapter contract pending a vendor-authorized discovery endpoint. */
-export interface MarketDiscoveryApi {
-  cities: () => Promise<Array<{ value: string; label: string }>>;
-  search: (input: {
-    search: string;
-    city: string;
-    skip: number;
-    take: number;
-  }) => Promise<{
-    items: DiscoverableMarket[];
-    totalItems: number;
-  }>;
-}
+/** Discovery is a separate vendor-authorized read, never inferred from memberships or submissions. */
+export type {
+  DiscoverableMarket,
+  MarketApplyState,
+  MarketDiscoveryApi,
+} from '@market/api';
 export const applicationKey = (row: ApplicantApplicationRow) =>
   `${row.status === 'DRAFT' ? 'draft' : 'submission'}:${row.id}`;
 export const applicationLocation = (row: ApplicantApplicationRow) =>
@@ -77,6 +60,74 @@ export function safeMarketApplicationUrl(value: string | null) {
       : undefined;
   } catch {
     return undefined;
+  }
+}
+/**
+ * Apply-column action for a discovery row, from the backend's advisory `applyState`.
+ * Destinations are re-validated: storefront URLs by origin, workspace links by same-origin /vendor/ path.
+ * Older servers omit `applyState`; their safe `applyUrl` keeps the original Apply behavior.
+ */
+export type DiscoveryAction =
+  | { kind: 'apply'; label: string; href: string }
+  | { kind: 'external'; label: string; href: string }
+  | { kind: 'local'; label: string; href: string }
+  | {
+      kind: 'not-yet-open';
+      label: string;
+      opensAt: string | null;
+      timezone?: string;
+    }
+  | { kind: 'unavailable'; label: string; reason: string };
+export function discoveryAction(market: DiscoverableMarket): DiscoveryAction {
+  const local = (label: string, value?: string | null) => {
+    const href = localVendorDestination(value);
+    return href
+      ? ({ kind: 'local', label, href } as const)
+      : ({
+          kind: 'unavailable',
+          label,
+          reason: 'This record is unavailable here.',
+        } as const);
+  };
+  switch (market.applyState) {
+    case 'MEMBER':
+      return local(
+        'Membership',
+        market.existingApplicationHref ?? '/vendor/markets',
+      );
+    case 'MEMBERSHIP_PENDING':
+      return local(
+        'Membership pending',
+        market.existingApplicationHref ?? '/vendor/markets',
+      );
+    case 'APPLIED':
+      return local('View application', market.existingApplicationHref);
+    case 'DRAFT': {
+      const external = safeMarketApplicationUrl(
+        market.existingApplicationHref ?? null,
+      );
+      if (external)
+        return { kind: 'external', label: 'Continue draft', href: external };
+      return local('Continue draft', market.existingApplicationHref);
+    }
+    case 'NOT_YET_OPEN':
+      return {
+        kind: 'not-yet-open',
+        label: 'Not yet open',
+        opensAt: market.opensAt ?? null,
+        timezone: market.timezone ?? market.deadline?.timezone,
+      };
+    default: {
+      const href = safeMarketApplicationUrl(market.applyUrl);
+      return href
+        ? { kind: 'apply', label: 'Apply', href }
+        : {
+            kind: 'unavailable',
+            label: 'Apply',
+            reason:
+              "Applications are unavailable until this market's website is active.",
+          };
+    }
   }
 }
 export function applicationNextStep(

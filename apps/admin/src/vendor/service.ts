@@ -10,6 +10,7 @@ import {
 } from '@market/api';
 import {
   createApplicantApplicationsApi,
+  createMarketDiscoveryApi,
   type ApplicantApplicationsApi,
 } from '@market/api';
 import { createVendorContactApi, type VendorContactApi } from '@market/api';
@@ -195,6 +196,7 @@ export function createLiveVendorService(
       { endpoint, channelToken },
       'admin',
     ),
+    marketDiscovery: createMarketDiscoveryApi({ endpoint, channelToken }),
     taxonomy: createProductTaxonomyApi({ endpoint, channelToken }),
     categories: createVendorCategoryApi({ endpoint, channelToken }),
     finance: createFinanceApi({ endpoint, channelToken, onAuthorityFailure }),
