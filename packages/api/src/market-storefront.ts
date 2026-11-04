@@ -1,10 +1,13 @@
+import type { StorefrontTaxonomy } from './storefront-taxonomy';
 import * as shop from './generated/shop';
 import { transport, type TransportOptions } from './transport';
 import { AppError } from './errors';
 
 export type PublicMarketOccurrence = shop.MarketPublicOccurrenceFieldsFragment;
-export type MarketCatalog =
-  shop.MarketStorefrontCatalogQuery['marketOccurrenceCatalog'];
+export type MarketCatalog = Omit<
+  shop.MarketStorefrontCatalogQuery['marketOccurrenceCatalog'],
+  'taxonomy'
+> & { taxonomy: StorefrontTaxonomy };
 export type MarketItem = shop.MarketPublicItemFragment;
 export type MarketCart = NonNullable<
   shop.MarketActiveCartSnapshotQuery['marketActiveCart']
@@ -83,7 +86,7 @@ export function createMarketStorefrontApi(
           { api: 'shop', document: shop.MarketStorefrontCatalogDocument },
           { occurrenceId, options: catalogOptions },
         )
-      ).marketOccurrenceCatalog,
+      ).marketOccurrenceCatalog as MarketCatalog,
     item: async (occurrenceId: string, variantId: string) => {
       const catalog = (
         await execute(

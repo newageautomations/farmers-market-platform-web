@@ -1,6 +1,7 @@
 ---
+import { vendorCategoryNavigation } from '../../lib/storefront-taxonomy';
 import type { StorefrontContext } from '@market/storefront-core';
-import { shopCategories, safeAsset } from '@market/storefront-core';
+import { safeAsset } from '@market/storefront-core';
 import type { PublicCatalog } from '@market/api';
 import { farmhouseDestination } from './navigation';
 import Photo from './Photo.astro';
@@ -13,7 +14,7 @@ const { context, catalog, error } = Astro.props as {
 };
 const settings = context.appearance!.template!.settings as FarmhouseSettings;
 const products = catalog?.items ?? [];
-const categories = shopCategories(products);
+const categories = await vendorCategoryNavigation(Astro);
 const destination = (href: string) =>
   farmhouseDestination(context, href) ? href : '/products';
 const productImage = (index: number) =>
@@ -58,15 +59,36 @@ const productImage = (index: number) =>
           </div>
           <div class="farmhouse-tile-grid">
             {(section.tiles.length
-              ? section.tiles
+              ? section.tiles.filter((tile) => {
+                  const id = new URL(
+                    tile.destination,
+                    'http://local',
+                  ).searchParams.get('category');
+                  return !id || categories.some((c) => c.id === id);
+                })
               : categories.slice(0, 3).map((category, index) => ({
                   title: category.name,
                   body: '',
                   destination:
                     '/products?category=' + encodeURIComponent(category.id),
-                  photo: { ...section.photo, url: productImage(index) },
+                  photo: {
+                    ...section.photo,
+                    url: category.image || productImage(index),
+                  },
                 }))
             )
+              .map((tile) => {
+                const id = new URL(
+                  tile.destination,
+                  'http://local',
+                ).searchParams.get('category');
+                const image = id
+                  ? categories.find((c) => c.id === id)?.image
+                  : undefined;
+                return image
+                  ? { ...tile, photo: { ...tile.photo, url: image } }
+                  : tile;
+              })
               .filter((tile) => farmhouseDestination(context, tile.destination))
               .map((tile) => (
                 <a class="farmhouse-editorial-tile" href={tile.destination}>

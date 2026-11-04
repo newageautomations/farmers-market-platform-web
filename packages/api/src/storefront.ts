@@ -1,8 +1,16 @@
+import { createStorefrontTaxonomyApi } from './storefront-taxonomy';
 import * as shop from './generated/shop';
 import { transport, type TransportOptions } from './transport';
 import { AppError } from './errors';
 
-export type PublicProduct = NonNullable<shop.StorefrontProductQuery['product']>;
+type ShopProduct = NonNullable<shop.StorefrontProductQuery['product']>;
+type ShopVariant = ShopProduct['variants'][number];
+export type PublicProduct = Omit<ShopProduct, 'variants'> & {
+  variants: ReadonlyArray<
+    Omit<ShopVariant, 'catalogDetails'> &
+      Partial<Pick<ShopVariant, 'catalogDetails'>>
+  >;
+};
 export type PublicCatalog = shop.VendorProductsQuery['products'];
 export type PublicCart = NonNullable<shop.CartSnapshotQuery['activeOrder']>;
 export type StorefrontAction =
@@ -104,6 +112,7 @@ export function createStorefrontApi(
     }
   }
   return {
+    taxonomy: createStorefrontTaxonomyApi(options),
     appearances: async () =>
       (
         await execute(

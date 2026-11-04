@@ -161,13 +161,6 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnCatalog',
   },
   {
-    label: 'Categories',
-    path: '/vendor/categories',
-    parent: '/vendor/products',
-    scopes: ['VENDOR'],
-    permission: 'ManageOwnCatalog',
-  },
-  {
     label: 'Orders',
     path: '/vendor/orders',
     scopes: ['VENDOR'],
@@ -176,6 +169,13 @@ export const navigation: readonly NavItem[] = [
   {
     label: 'Packing & Fulfillment',
     path: '/vendor/orders/packing',
+    parent: '/vendor/orders',
+    scopes: ['VENDOR'],
+    permission: 'ReadOwnOrders',
+  },
+  {
+    label: 'Pickup',
+    path: '/vendor/orders/pickup',
     parent: '/vendor/orders',
     scopes: ['VENDOR'],
     permission: 'ReadOwnOrders',
@@ -391,9 +391,9 @@ export function visibleNavigation(context: AdminContext) {
       '/notifications',
       '/vendor/pos',
       '/vendor/products',
-      '/vendor/categories',
       '/vendor/orders',
       '/vendor/orders/packing',
+      '/vendor/orders/pickup',
       '/vendor/customers',
       '/vendor/loyalty',
       '/vendor/markets',
@@ -572,6 +572,24 @@ export function routeAllowed(context: AdminContext, path: string) {
     return context.permissions.includes('ManageOwnMarketParticipation');
   if (context.scope === 'VENDOR' && canonical === '/vendor/booths')
     return context.permissions.includes('ReadOwnVendorIdentity');
+  if (
+    context.scope === 'VENDOR' &&
+    /^\/vendor\/products\/[^/]+\/setup(?:\/preview|\/variants\/[^/]+)?$/.test(
+      canonical,
+    )
+  )
+    return (
+      hasPermission(context.permissions, 'ReadOwnCatalog') &&
+      mayCommand(context, 'ManageOwnCatalog')
+    );
+  if (
+    context.scope === 'VENDOR' &&
+    /^\/vendor\/products\/[^/]+\/variants\/[^/]+$/.test(canonical)
+  )
+    return (
+      hasPermission(context.permissions, 'ReadOwnCatalog') &&
+      mayCommand(context, 'ManageOwnCatalog')
+    );
   if (context.scope === 'VENDOR' && canonical === '/vendor/products/new')
     return mayCommand(context, 'ManageOwnCatalog');
   if (context.scope === 'VENDOR' && canonical === '/vendor/inventory')

@@ -4,7 +4,7 @@ import Button from './ui/Button.astro';
 import { cardClassName } from '@market/ui/presentation';
 import { SectionHeader, ErrorState } from '@market/ui';
 import type { StorefrontContext } from '@market/storefront-core';
-import { occurrenceLabel } from '@market/storefront-core';
+import { taxonomyNavigation, occurrenceLabel } from '@market/storefront-core';
 import type {
   PublicMarketOccurrence,
   MarketCatalog,
@@ -32,6 +32,12 @@ const {
 const next = occurrences[0];
 const nextHref = next ? `/occurrences/${next.id}` : '#occurrences';
 const vendors = catalog?.vendors ?? [];
+const categories = catalog?.taxonomy
+  ? taxonomyNavigation(
+      catalog.taxonomy,
+      context.appearance?.categoryPresentation,
+    )
+  : [];
 const dateParts = (value: PublicMarketOccurrence) => {
   const date = new Date(value.startsAt);
   return {
@@ -149,6 +155,29 @@ const dateParts = (value: PublicMarketOccurrence) => {
       </nav>
     )}
   </section>
+  {next && categories.length > 0 && (
+    <nav
+      class="harvest-section market-filter-options"
+      aria-label="Categories for the next market date"
+    >
+      {categories.map((category) => (
+        <a
+          href={`/occurrences/${next.id}?category=${encodeURIComponent(category.id)}`}
+        >
+          {category.image && (
+            <img
+              src={category.image}
+              alt=""
+              width="80"
+              height="80"
+              loading="lazy"
+            />
+          )}
+          {category.name}
+        </a>
+      ))}
+    </nav>
+  )}
   <section id="vendors" class="harvest-section" aria-labelledby="vendors-title">
     <SectionHeader
       title="Get to know your local favorites."

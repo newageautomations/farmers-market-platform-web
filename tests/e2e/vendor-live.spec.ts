@@ -178,12 +178,10 @@ test('real Vendor catalog, inventory, orders, CRM, Market publication and analyt
   await expect(customers.getByRole('row')).toHaveCount(2);
   await customers.getByRole('link').first().click();
   await expect(
-    page.getByRole('table', { name: 'Vendor specific purchase history' }),
+    page.getByRole('table', { name: 'Vendor orders' }),
   ).toBeVisible();
   await expect(
-    page
-      .getByRole('table', { name: 'Vendor specific purchase history' })
-      .getByRole('row'),
+    page.getByRole('table', { name: 'Vendor orders' }).getByRole('row'),
   ).toHaveCount(21);
   await navigate(page, 'Markets');
   await expect(

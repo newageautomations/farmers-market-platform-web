@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { formatMoney, parsePrice } from '@market/config';
 import {
   PosInputError,
@@ -53,6 +53,23 @@ const errorText = (error: unknown) =>
 export const unresolvedPayment = (sale: PosSale) =>
   !['COMPLETED', 'DECLINED', 'CANCELLED', 'FAILED'].includes(sale.state);
 
+/** Preserve the receipt's provider and test-evidence wording in each order layout. */
+export function posPaymentDescription(sale: PosSale) {
+  return sale.native
+    ? `${nativePaymentLabel(sale.native.method)}${sale.evidenceType === 'NATIVE_CONTROLLED_TEST' ? ' - Controlled adapter test only' : ' - Sandbox'}`
+    : sale.evidenceType === 'SQUARE_SDK_FIXTURE'
+      ? 'Square SDK fixture only'
+      : sale.method === 'CASH'
+        ? 'Cash, confirmed by cashier'
+        : sale.method === 'CLOVER' || sale.method === 'CLOVER_GO'
+          ? sale.evidenceType === 'CLOVER_CONTROLLED_TEST'
+            ? 'Clover controlled test only'
+            : 'Clover Sandbox'
+          : sale.method.startsWith('SQUARE')
+            ? `Square Terminal${sale.square?.environment === 'Sandbox' ? ' - Sandbox' : ''}`
+            : 'Simulated Terminal - Test Only';
+}
+
 export function PosSaleDetails({ sale }: { sale: PosSale }) {
   const money = (n: number) => formatMoney(n, sale.currency as 'USD');
   return (
@@ -72,21 +89,7 @@ export function PosSaleDetails({ sale }: { sale: PosSale }) {
         <p>
           {sale.customer} · {sale.context.label}
         </p>
-        <p>
-          {sale.native
-            ? `${nativePaymentLabel(sale.native.method)}${sale.evidenceType === 'NATIVE_CONTROLLED_TEST' ? ' - Controlled adapter test only' : ' - Sandbox'}`
-            : sale.evidenceType === 'SQUARE_SDK_FIXTURE'
-              ? 'Square SDK fixture only'
-              : sale.method === 'CASH'
-                ? 'Cash, confirmed by cashier'
-                : sale.method === 'CLOVER' || sale.method === 'CLOVER_GO'
-                  ? sale.evidenceType === 'CLOVER_CONTROLLED_TEST'
-                    ? 'Clover controlled test only'
-                    : 'Clover Sandbox'
-                  : sale.method.startsWith('SQUARE')
-                    ? `Square Terminal${sale.square?.environment === 'Sandbox' ? ' - Sandbox' : ''}`
-                    : 'Simulated Terminal - Test Only'}
-        </p>
+        <p>{posPaymentDescription(sale)}</p>
         {sale.square && (
           <p>
             Square location {sale.square.locationId} · Payment{' '}
@@ -759,10 +762,14 @@ export function PosOrderPayment({
   api,
   orderId,
   canRefund,
+  renderRecord,
+  actionClassName,
 }: {
   api: InPersonApi;
   orderId: string;
   canRefund: boolean;
+  renderRecord?: (sale: PosSale | null, controls: ReactNode) => ReactNode;
+  actionClassName?: string;
 }) {
   const [sale, setSale] = useState<PosSale | null>(null),
     [error, setError] = useState(''),
@@ -783,13 +790,14 @@ export function PosOrderPayment({
       active = false;
     };
   }, [api, orderId]);
-  if (error && !sale)
-    return (
+  if (error && !sale) {
+    const failure = (
       <Alert severity="error">
         <p>{error}</p>
         <div className="ui-actions">
           <Button
             variant="secondary"
+            className={actionClassName}
             onClick={() => {
               setError('');
               api
@@ -803,11 +811,15 @@ export function PosOrderPayment({
         </div>
       </Alert>
     );
-  if (!sale) return null;
-  return (
-    <Card className="pos-payment-record" aria-label="In-person payment">
+    return renderRecord ? renderRecord(null, failure) : failure;
+  }
+  if (!sale)
+    return renderRecord
+      ? renderRecord(null, <Spinner label="Loading payment details" />)
+      : null;
+  const controls = (
+    <>
       {error && <Alert severity="error">{error}</Alert>}
-      <PosSaleDetails sale={sale} />
       <div className="ui-actions">
         {canRefund &&
           sale.canRecordRefund === true &&
@@ -815,12 +827,20 @@ export function PosOrderPayment({
           sale.refunds
             .filter((r) => r.state === 'SETTLED')
             .reduce((n, r) => n + r.amount, 0) < sale.amount && (
-            <Button variant="secondary" onClick={() => setOpen(true)}>
+            <Button
+              variant="secondary"
+              className={actionClassName}
+              onClick={() => setOpen(true)}
+            >
               Record Refund
             </Button>
           )}
         {sale.refunds.length > 0 && (
-          <Button variant="secondary" onClick={() => setDetailsOpen(true)}>
+          <Button
+            variant="secondary"
+            className={actionClassName}
+            onClick={() => setDetailsOpen(true)}
+          >
             Refund Details
           </Button>
         )}
@@ -839,6 +859,7 @@ export function PosOrderPayment({
               <Button
                 disabled={busy}
                 variant="secondary"
+                className={actionClassName}
                 onClick={() => {
                   setBusy(true);
                   setError('');
@@ -869,6 +890,14 @@ export function PosOrderPayment({
       {detailsOpen && (
         <PosRefundDetails sale={sale} onClose={() => setDetailsOpen(false)} />
       )}
+    </>
+  );
+  return renderRecord ? (
+    renderRecord(sale, controls)
+  ) : (
+    <Card className="pos-payment-record" aria-label="In-person payment">
+      <PosSaleDetails sale={sale} />
+      {controls}
     </Card>
   );
 }

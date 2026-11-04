@@ -331,7 +331,11 @@ it('prefers native categories, excludes the current product and limits related p
     featuredAsset: null,
     variants: [],
     facetValues: [
-      { id: category, name: category, facet: { id: '1', name: 'Category' } },
+      {
+        id: category,
+        name: category,
+        facet: { code: 'farmstand-category', id: '1', name: 'Category' },
+      },
     ],
   });
   const current = product('1', 'a');

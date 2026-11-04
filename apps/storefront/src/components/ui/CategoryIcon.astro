@@ -1,0 +1,31 @@
+---
+import {
+  categoryIconShapes,
+  categoryIconViewBox,
+} from '@market/ui/category-icons';
+interface Props {
+  code: string;
+  size?: number;
+}
+const { code, size = 24 } = Astro.props;
+const shapes = categoryIconShapes(code);
+---
+
+{shapes && (
+  <svg
+    width={size}
+    height={size}
+    viewBox={categoryIconViewBox}
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    {shapes.map(({ tag: Shape, attrs }) => (
+      <Shape {...attrs} />
+    ))}
+  </svg>
+)}

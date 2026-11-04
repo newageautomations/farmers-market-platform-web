@@ -15,6 +15,7 @@ const env = { ...process.env };
 // Forward only account settings to the backend, never frontend DB/provider values.
 if (
   [
+    'initialize-stock',
     'admin',
     'storefront',
     'serve',
@@ -34,6 +35,7 @@ if (
     'phase-c-fixtures',
     'phase-b-fixtures',
     'inspect',
+    'taxonomy-c-fixtures',
     'team-permissions-fixtures',
     'team-invitations-fixtures',
     'team-invitations-api',
@@ -60,6 +62,7 @@ if (['admin', 'storefront'].includes(action)) {
 } else {
   if (
     ![
+      'initialize-stock',
       'reset',
       'seed',
       'showcase',
@@ -82,6 +85,7 @@ if (['admin', 'storefront'].includes(action)) {
       'phase-c-fixtures',
       'phase-b-fixtures',
       'inspect',
+      'taxonomy-c-fixtures',
       'team-permissions-fixtures',
       'team-invitations-fixtures',
       'team-invitations-api',
@@ -92,6 +96,8 @@ if (['admin', 'storefront'].includes(action)) {
   if (!existsSync(path.join(backend, 'scripts/market-operations-demo/run.ts')))
     throw new Error(`Local backend demo tooling was not found at ${backend}`);
   args = ['--prefix', backend, 'run', `demo:market-operations:${action}`];
+  if (['serve', 'worker'].includes(action))
+    args = [path.join(root, 'scripts/demo-loyalty-runtime.cjs'), action];
   const extra = process.argv.slice(3);
   if (extra.length) args.push('--', ...extra);
   console.log(
@@ -117,7 +123,8 @@ if (action === 'serve') {
     );
   });
 }
-const child = spawn(process.execPath, [npm, ...args], {
+const childArgs = ['serve', 'worker'].includes(action) ? args : [npm, ...args];
+const child = spawn(process.execPath, childArgs, {
   cwd: root,
   env,
   stdio: 'inherit',

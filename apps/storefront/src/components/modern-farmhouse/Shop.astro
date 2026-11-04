@@ -69,6 +69,7 @@ const hero = farmhouseSettings.sections.find(
   </div>
   <div class="farmhouse-space farmhouse-shop-content">
     <section tabindex="-1" aria-label="Products" data-farmhouse-catalog>
+      <slot />
       <div class="farmhouse-shop-toolbar">
         <nav aria-label="Product categories">
           <a
@@ -102,7 +103,12 @@ const hero = farmhouseSettings.sections.find(
               value={Astro.url.searchParams.get('search')!.slice(0, 100)}
             />
           )}
-          {category && <input type="hidden" name="category" value={category} />}{' '}
+          {Astro.url.searchParams.getAll('category').map((value) => (
+            <input type="hidden" name="category" value={value} />
+          ))}
+          {Astro.url.searchParams.getAll('tag').map((value) => (
+            <input type="hidden" name="tag" value={value} />
+          ))}{' '}
           {preorder.selected && (
             <input
               type="hidden"

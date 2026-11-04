@@ -1,3 +1,4 @@
+import { StorefrontCategoriesEditor } from './StorefrontCategoriesEditor';
 import {
   useEffect,
   Fragment,
@@ -365,6 +366,15 @@ function LegacyMarketAppearanceEditor({
           }}
         >
           <fieldset disabled={busy}>
+            <StorefrontCategoriesEditor
+              api={api}
+              value={draft.categoryPresentation}
+              themeId={draft.theme}
+              onChange={(categoryPresentation) =>
+                update({ categoryPresentation })
+              }
+              busy={busy}
+            />
             <Card>
               <h2>Appearance</h2>
               <p>Theme: Harvest</p>

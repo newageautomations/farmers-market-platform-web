@@ -185,6 +185,25 @@
 .farmstand-select.ui-select > button {
   padding: 0;
 }
+.farmstand-select-with-icon {
+  width: 100%;
+}
+.farmstand-select-with-icon::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  pointer-events: none;
+}
+.farmstand-select-with-icon .farmstand-select.ui-select {
+  width: 100%;
+  padding-left: 38px;
+  padding-right: 3rem;
+}
 .farmstand-stock-badge.ui-status {
   display: inline-flex;
   width: fit-content;
@@ -318,4 +337,136 @@
   .farmstand-stock-segment {
     border: 1px solid CanvasText;
   }
+}
+
+.farmstand-icon-shopping-cart {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/shopping-cart.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-layers {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/layers.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-package {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/package.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-store {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/store.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-credit-card {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/credit-card.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-circle-check {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/circle-check.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-hash {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/hash.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-user-round {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/user-round.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-calendar-days {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/calendar-days.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-receipt-text {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/receipt-text.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-map-pin {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/map-pin.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-info {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/info.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-truck {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/truck.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-arrow-left {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/arrow-left.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-tag {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/tag.svg');
+  mask-size: contain;
+}
+
+/* Shared catalog and order table presentation. */
+:is(.catalog-table, .farmstand-data-table) :is(th, td) {
+  max-width: none;
+  padding: 0 12px 0 0;
+  border-bottom: 1px solid var(--catalog-border);
+  vertical-align: middle;
+  text-align: left;
+  line-height: 1.3;
+}
+:is(.catalog-table, .farmstand-data-table) :is(th, td):first-child {
+  padding-left: 22px;
+}
+:is(.catalog-table, .farmstand-data-table) :is(th, td):last-child {
+  padding-right: 22px;
+}
+:is(.catalog-table, .farmstand-data-table) thead {
+  background: var(--catalog-soft);
+}
+:is(.catalog-table, .farmstand-data-table) thead th {
+  height: 34px;
+  border-top: 1px solid var(--catalog-border);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--brand-muted);
+}
+:is(.catalog-table, .farmstand-data-table) tbody tr {
+  height: 82px;
+  background: var(--brand-surface);
+}
+:is(.catalog-table, .farmstand-data-table) tbody tr:is(:hover, :focus-within) {
+  background: var(--catalog-soft);
+}
+:is(.catalog-table, .farmstand-data-table) tbody td {
+  font-size: 14px;
+  color: var(--brand-muted);
+}
+
+.farmstand-data-table {
+  width: 100%;
+  border-collapse: collapse;
 }

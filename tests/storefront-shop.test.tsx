@@ -17,7 +17,11 @@ const items: PublicCatalog['items'] = [
     description: '',
     featuredAsset: null,
     facetValues: [
-      { id: '10', name: 'Pantry', facet: { id: '1', name: 'Category' } },
+      {
+        id: '10',
+        name: 'Pantry',
+        facet: { code: 'farmstand-category', id: '1', name: 'Category' },
+      },
     ],
     variants: [
       { id: '22', name: 'Jar', priceWithTax: 500, currencyCode: 'USD' },
@@ -30,8 +34,20 @@ const items: PublicCatalog['items'] = [
     description: '',
     featuredAsset: null,
     facetValues: [
-      { id: '11', name: 'Produce', facet: { id: '1', name: 'Category' } },
-      { id: '50', name: 'Organic', facet: { id: '5', name: 'Certification' } },
+      {
+        id: '11',
+        name: 'Produce',
+        facet: { code: 'farmstand-category', id: '1', name: 'Category' },
+      },
+      {
+        id: '50',
+        name: 'Organic',
+        facet: {
+          code: 'unrelated-certification',
+          id: '5',
+          name: 'Certification',
+        },
+      },
     ],
     variants: [
       { id: '21', name: 'Bag', priceWithTax: 600, currencyCode: 'USD' },

@@ -32,6 +32,35 @@ import { AdminShell } from '../apps/admin/src/AdminShell';
 import type { ComplianceDocument } from '@market/api';
 
 describe('Shared UI refinement', () => {
+  it('opens read-only product selections without checkboxes or mutation controls', () => {
+    const change = vi.fn();
+    render(
+      <SearchableMultiSelect
+        label="Review products"
+        readOnly
+        allowClear
+        value={['a', 'b']}
+        options={[
+          { value: 'a', label: 'Honey' },
+          { value: 'b', label: 'Jam' },
+        ]}
+        onChange={change}
+      />,
+    );
+    const input = screen.getByRole('combobox', { name: 'Review products' });
+    fireEvent.focus(input);
+    expect(input).toHaveAttribute('readonly');
+    expect(input).toHaveValue('Honey, Jam');
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Clear selection' }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole('option', { name: 'Jam' }));
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(change).not.toHaveBeenCalled();
+    expect(input).toHaveValue('Honey, Jam');
+  });
   it('shows only identifier and status and opens every retained field/action by keyboard', async () => {
     const user = userEvent.setup(),
       act = vi.fn();

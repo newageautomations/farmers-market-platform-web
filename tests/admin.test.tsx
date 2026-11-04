@@ -77,8 +77,8 @@ describe('shared Admin scope', () => {
       'Analytics',
     ]);
     for (const [parent, children] of [
-      ['/vendor/products', ['Categories']],
-      ['/vendor/orders', ['Packing & Fulfillment']],
+      ['/vendor/products', []],
+      ['/vendor/orders', ['Packing & Fulfillment', 'Pickup']],
       ['/vendor/customers', ['Loyalty']],
       ['/vendor/markets', ['Documents', 'Applications']],
       ['/vendor/integrations', ['Payments', 'POS']],

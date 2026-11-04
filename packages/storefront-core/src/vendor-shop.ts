@@ -32,7 +32,7 @@ export function shopCategories(items: PublicCatalog['items']) {
   const categories = new Map<string, { id: string; name: string }>();
   for (const product of items)
     for (const value of product.facetValues)
-      if (/^(product\s+)?categor(y|ies)$/i.test(value.facet.name.trim()))
+      if (value.facet.code === 'farmstand-category')
         categories.set(value.id, { id: value.id, name: value.name });
   return [...categories.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -43,7 +43,11 @@ export function shopProducts(
   sort: string,
 ) {
   const result = items.filter(
-    (p) => !category || p.facetValues.some((v) => v.id === category),
+    (p) =>
+      !category ||
+      p.facetValues.some(
+        (v) => v.id === category && v.facet.code === 'farmstand-category',
+      ),
   );
   return result.sort((a, b) => {
     const stable = Number(a.id) - Number(b.id);

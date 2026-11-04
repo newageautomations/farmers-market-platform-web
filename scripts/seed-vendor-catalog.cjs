@@ -1,3 +1,4 @@
+throw new Error('Retired category seed: use the guarded taxonomy migration. This script must be migrated before reuse.');
 /* Populate only the explicitly requested persistent local catalog through normal services. */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('node:assert/strict');

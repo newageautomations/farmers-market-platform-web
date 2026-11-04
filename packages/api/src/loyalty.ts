@@ -4,6 +4,10 @@ import { transport, type TransportOptions } from './transport';
 
 export interface LoyaltyTerms {
   name: string;
+  description?: string;
+  imageAssetId?: string | null;
+  /** Canonical preview resolved by the backend from the vendor-owned asset. */
+  image?: string | null;
   kind: 'FIXED' | 'PERCENTAGE' | 'FREE_PRODUCT';
   points: number;
   value: number;
@@ -72,6 +76,8 @@ export interface LoyaltyActivity {
 }
 export interface LoyaltyRank {
   rank?: number;
+  /** Customer identity, distinct from the loyalty wallet ID in `id`. */
+  customerId?: string;
   id: number;
   customer: string;
   earned: string;
@@ -163,7 +169,27 @@ export function createLoyaltyApi(
       execute<LoyaltyReward>(
         'mutation SaveLoyaltyReward($terms:JSON!,$status:String,$id:Int){saveOwnLoyaltyReward(terms:$terms,status:$status,id:$id)}',
         'saveOwnLoyaltyReward',
-        { terms, status, id },
+        {
+          terms: {
+            name: terms.name,
+            kind: terms.kind,
+            points: terms.points,
+            value: terms.value,
+            maximum: terms.maximum,
+            minimum: terms.minimum,
+            variantIds: terms.variantIds,
+            quantity: terms.quantity,
+            startsAt: terms.startsAt,
+            endsAt: terms.endsAt,
+            limit: terms.limit,
+            ...(terms.description ? { description: terms.description } : {}),
+            ...(terms.imageAssetId !== undefined
+              ? { imageAssetId: terms.imageAssetId }
+              : {}),
+          },
+          status,
+          id,
+        },
       ),
   };
 }

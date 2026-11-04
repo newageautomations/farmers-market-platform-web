@@ -185,9 +185,7 @@ test('partial Market portion keeps operational quantities separate from money', 
   await expect(
     page.getByRole('button', { name: 'Review cancellation', exact: true }),
   ).toHaveCount(0);
-  await page
-    .getByRole('button', { name: 'Review fulfillment cancellation' })
-    .click();
+  await page.getByRole('button', { name: 'Cancel fulfillment' }).click();
   await page
     .getByRole('dialog')
     .getByRole('button', { name: 'Confirm change' })
@@ -230,9 +228,36 @@ test('partial Market portion keeps operational quantities separate from money', 
     '4',
   ]);
 });
-test('CRM search, pagination, detail and Vendor specific purchase history', async ({
-  page,
-}) => {
+test('customer workspace is responsive and accessible', async ({ page }) => {
+  await vendor(page, '/vendor/customers');
+  for (const width of [390, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      'Customers',
+    );
+    const table = page.getByRole('table', {
+      name: 'Owned customer relationships',
+    });
+    await expect(table).toBeVisible();
+    await expect(page.getByRole('link', { name: 'View All' })).toHaveAttribute(
+      'href',
+      '/vendor/customers/1201',
+    );
+    expect(await table.locator('svg, .farmstand-icon').count()).toBe(0);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    await page.screenshot({
+      path: test.info().outputPath(`customers-${width}.png`),
+      fullPage: true,
+    });
+  }
+});
+
+test('CRM search, pagination, detail and customer orders', async ({ page }) => {
   await vendor(page, '/vendor/customers');
   await expect(
     page
@@ -249,7 +274,6 @@ test('CRM search, pagination, detail and Vendor specific purchase history', asyn
   await page
     .getByLabel('Search customer name or email')
     .fill('synthetic-1-23@');
-  await page.getByRole('button', { name: 'Search', exact: true }).click();
   await expect(
     page
       .getByRole('table', { name: 'Owned customer relationships' })
@@ -258,14 +282,15 @@ test('CRM search, pagination, detail and Vendor specific purchase history', asyn
   await page
     .getByRole('link', { name: 'Synthetic A Customer 23', exact: true })
     .click();
+  await page.getByRole('link', { name: 'View Purchase History' }).click();
   await expect(
     page.getByRole('heading', { name: 'Synthetic A Customer 23', exact: true }),
   ).toBeVisible();
   const history = page.getByRole('table', {
-    name: 'Vendor specific purchase history',
+    name: 'Vendor orders',
   });
   await expect(history).toContainText('Market');
-  await expect(history).toContainText('Direct Vendor');
+  await expect(history).toContainText('Independent sale');
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(history.getByRole('row')).toHaveCount(3);
   await expect(page.locator('main')).not.toContainText('Phone');

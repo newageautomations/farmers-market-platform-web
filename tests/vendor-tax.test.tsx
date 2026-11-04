@@ -9,6 +9,36 @@ import { createFixtureVendorService } from '../apps/admin/src/vendor/fixture';
 import { fixtureContexts } from '../apps/admin/src/FixtureAdmin';
 import { createVendorApi } from '@market/api';
 
+function taxService() {
+  const service = createFixtureVendorService(fixtureContexts.VENDOR);
+  const leaf = {
+    id: 'tax-leaf',
+    code: 'tax-leaf',
+    name: 'Tax test leaf',
+    parentId: null,
+    active: true,
+    assignable: true,
+    children: [],
+  };
+  service.taxonomy = {
+    hierarchy: vi.fn(async () => [leaf]),
+    classification: vi.fn(async () => ({
+      primaryCategory: leaf,
+      categoryPath: [leaf],
+      tags: [],
+    })),
+    tags: vi.fn(async () => []),
+  };
+  return service;
+}
+async function classificationReady() {
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Choose category' }),
+    ).toBeEnabled(),
+  );
+}
+
 describe('Vendor configured tax controls', () => {
   it('preserves an omitted override in the API request when collection is disabled', async () => {
     const fetcher = vi
@@ -56,25 +86,36 @@ describe('Vendor configured tax controls', () => {
     expect(parseTaxPercent('100')).toBe(100);
   });
   it('saves an override while tax collection is disabled', async () => {
-    const service = createFixtureVendorService(fixtureContexts.VENDOR);
+    const service = taxService();
     const create = vi.spyOn(service, 'createProduct');
     render(<Products service={service} id="new" />);
     await screen.findByLabelText('Collect taxes');
+    await classificationReady();
     fireEvent.change(screen.getByLabelText('Product name'), {
       target: { value: 'Tax fixture' },
     });
     fireEvent.change(screen.getByLabelText('Slug'), {
       target: { value: 'tax-fixture' },
     });
-    const details = screen.getByText('Advanced Settings').closest('details')!;
+    const details = screen.getByText('Advanced settings').closest('details')!;
     expect(details.open).toBe(false);
-    fireEvent.click(screen.getByText('Advanced Settings'));
+    fireEvent.click(screen.getByText('Advanced settings'));
     expect(details.open).toBe(true);
     fireEvent.click(screen.getByLabelText('Override tax rate'));
     fireEvent.change(screen.getByLabelText('Custom rate (%)'), {
       target: { value: '6.50' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create product' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Choose category' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Tax test leaf' }));
+    await waitFor(() =>
+      expect(
+        document.querySelector('input[name="primaryCategoryId"]'),
+      ).toHaveValue('tax-leaf'),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     await waitFor(() =>
       expect(create).toHaveBeenCalledWith(
         expect.objectContaining({ collectTaxes: false, taxOverride: 6.5 }),
@@ -82,7 +123,7 @@ describe('Vendor configured tax controls', () => {
     );
   });
   it('retains saved zero override and can disable it', async () => {
-    const service = createFixtureVendorService(fixtureContexts.VENDOR);
+    const service = taxService();
     const product = (await service.catalog('', 0)).items[0]!;
     vi.spyOn(service, 'product').mockResolvedValue({
       ...product,
@@ -97,7 +138,13 @@ describe('Vendor configured tax controls', () => {
     expect(screen.getByLabelText('Custom rate (%)')).toHaveValue(0);
     fireEvent.click(screen.getByLabelText('Override tax rate'));
     expect(screen.queryByLabelText('Custom rate (%)')).not.toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save' })[0]!);
+    await classificationReady();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Save product' }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Save product' }));
     await waitFor(() =>
       expect(update).toHaveBeenCalledWith(
         product.id,
@@ -106,7 +153,7 @@ describe('Vendor configured tax controls', () => {
     );
   });
   it('saves default and market-specific rates with optimistic version', async () => {
-    const service = createFixtureVendorService(fixtureContexts.VENDOR);
+    const service = taxService();
     vi.spyOn(service, 'taxSettings').mockResolvedValue({
       version: 3,
       defaultRate: 8.25,
@@ -129,7 +176,7 @@ describe('Vendor configured tax controls', () => {
     );
   });
   it('retains an existing override when collection is unchecked', async () => {
-    const service = createFixtureVendorService(fixtureContexts.VENDOR);
+    const service = taxService();
     const product = (await service.catalog('', 0)).items[0]!;
     vi.spyOn(service, 'product').mockResolvedValue({
       ...product,
@@ -140,7 +187,13 @@ describe('Vendor configured tax controls', () => {
     const update = vi.spyOn(service, 'updateProduct');
     render(<Products service={service} id={product.id} />);
     fireEvent.click(await screen.findByLabelText('Collect taxes'));
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save' })[0]!);
+    await classificationReady();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Save product' }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Save product' }));
     await waitFor(() =>
       expect(update).toHaveBeenCalledWith(
         product.id,
@@ -149,12 +202,19 @@ describe('Vendor configured tax controls', () => {
     );
   });
   it('preserves legacy tax configuration during unrelated metadata edits', async () => {
-    const service = createFixtureVendorService(fixtureContexts.VENDOR);
+    const service = taxService();
     const product = (await service.catalog('', 0)).items[0]!;
     const update = vi.spyOn(service, 'updateProduct');
     render(<Products service={service} id={product.id} />);
     await screen.findByLabelText('Collect taxes');
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save' })[0]!);
+    await classificationReady();
+    await classificationReady();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Save product' }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Save product' }));
     await waitFor(() => expect(update).toHaveBeenCalled());
     expect(update.mock.calls[0]![1]).not.toHaveProperty('collectTaxes');
     expect(update.mock.calls[0]![1]).not.toHaveProperty('taxOverride');

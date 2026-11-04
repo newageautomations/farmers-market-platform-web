@@ -63,7 +63,7 @@ const products: PublicProduct[] = Array.from({ length: 15 }, (_, index) => ({
     {
       id: '1',
       name: index % 2 ? 'Orchard' : 'Garden',
-      facet: { id: '1', name: 'Category' },
+      facet: { code: 'development-fixture-category', id: '1', name: 'Category' },
     },
   ],
   optionGroups: [

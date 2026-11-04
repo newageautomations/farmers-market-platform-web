@@ -6,6 +6,8 @@
   "exports": {
     ".": "./src/index.tsx",
     "./presentation": "./src/presentation.ts",
+    "./category-icons": "./src/category-icons.ts",
+    "./category-icon-reference": "./src/category-icon-reference.ts",
     "./styles.css": "./src/styles.css",
     "./documents": "./src/documents.tsx",
     "./notifications": "./src/notifications.tsx",
@@ -14,7 +16,8 @@
     "./loyalty": "./src/loyalty.tsx",
     "./loyalty.css": "./src/loyalty.css",
     "./farmstand": "./src/farmstand.tsx",
-    "./farmstand.css": "./src/farmstand.css"
+    "./farmstand.css": "./src/farmstand.css",
+    "./harvest-product.css": "./src/harvest-product.css"
   },
   "dependencies": {
     "@market/api": "0.1.0",

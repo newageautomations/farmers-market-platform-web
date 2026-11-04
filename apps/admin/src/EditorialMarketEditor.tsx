@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import {
   Button,
   Checkbox,
@@ -8,7 +8,7 @@ import {
   Textarea,
 } from '@market/ui';
 import { disclosureClassName } from '@market/ui/presentation';
-import type { StorefrontAppearanceApi, VendorCategory } from '@market/api';
+import type { StorefrontAppearanceApi } from '@market/api';
 import type {
   EditorialMarketSettings,
   StorefrontEditorSection,
@@ -50,27 +50,6 @@ export function EditorialMarketEditor({
   collapse: () => void;
   busy: boolean;
 }) {
-  const [categories, setCategories] = useState<VendorCategory[]>([]);
-  const [categoryError, setCategoryError] = useState(false);
-  useEffect(() => {
-    if (!api.media) return;
-    let active = true;
-    void api.media
-      .list()
-      .then((rows) => {
-        if (active) {
-          setCategories(rows);
-          setCategoryError(false);
-        }
-      })
-      .catch(() => {
-        if (active) setCategoryError(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, [api]);
-
   const patch = (next: Partial<EditorialMarketSettings>) =>
     onChange({ ...value, ...next });
   const text = (
@@ -275,42 +254,10 @@ export function EditorialMarketEditor({
                 </option>
               ))}
             </SelectField>
-            {categoryError && (
-              <p role="status">
-                Product categories could not be loaded. Existing image choices
-                are retained.
-              </p>
-            )}
-            {!categoryError && !categories.length && (
-              <p>No product categories are available yet.</p>
-            )}
-            {api.media &&
-              categories.slice(0, value.categories.limit).map((category) => {
-                const selectedImage = value.categories.images[category.id];
-                return (
-                  <CategoryImageField
-                    key={category.id}
-                    api={api.media!}
-                    themeId="editorial-market"
-                    value={selectedImage?.assetId}
-                    preview={selectedImage?.url}
-                    label={`${category.name} image`}
-                    presentation="library"
-                    onImageChange={(image) => {
-                      const images = { ...value.categories.images };
-                      if (image)
-                        images[category.id] = {
-                          assetId: image.id,
-                          url: image.preview,
-                        };
-                      else delete images[category.id];
-                      patch({
-                        categories: { ...value.categories, images },
-                      });
-                    }}
-                  />
-                );
-              })}
+            <p>
+              Choose category images, order and visibility in Category
+              presentation.
+            </p>
           </>,
         )}
       {page === 'home' &&

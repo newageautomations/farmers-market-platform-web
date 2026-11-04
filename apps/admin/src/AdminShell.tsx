@@ -2,6 +2,7 @@ import {
   lazy,
   Suspense,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type MouseEvent,
@@ -106,8 +107,23 @@ function Shell({
 }) {
   const appearance = useDashboardAppearance();
   const [path, setPath] = useState(window.location.pathname);
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [path]);
   useEffect(() => {
-    const update = () => setPath(window.location.pathname);
+    const update = (event: PopStateEvent) => {
+      // Ask mounted forms before a route update can unmount their leave guards.
+      if (
+        !window.dispatchEvent(
+          new CustomEvent('vendor:before-route-change', {
+            cancelable: true,
+            detail: event,
+          }),
+        )
+      )
+        return;
+      setPath(window.location.pathname);
+    };
     window.addEventListener('popstate', update);
     return () => window.removeEventListener('popstate', update);
   }, []);
@@ -383,9 +399,19 @@ function Shell({
             <>
               {!(
                 context.scope === 'VENDOR' &&
-                ['/vendor/products', '/vendor/inventory'].includes(
-                  vendorPath(path),
-                )
+                (vendorPath(path) === '/vendor/inventory' ||
+                  vendorPath(path) === '/vendor/products' ||
+                  vendorPath(path) === '/vendor/orders' ||
+                  vendorPath(path) === '/vendor/customers' ||
+                  vendorPath(path) === '/vendor/markets' ||
+                  vendorPath(path) === '/vendor/applications' ||
+                  vendorPath(path) === '/vendor/loyalty' ||
+                  vendorPath(path) === '/vendor/loyalty/leaderboard' ||
+                    vendorPath(path) === '/vendor/loyalty/redemptions' ||
+                  vendorPath(path).startsWith('/vendor/customers/') ||
+                  vendorPath(path).startsWith('/vendor/products/') ||
+                  (vendorPath(path).startsWith('/vendor/orders/') &&
+                    vendorPath(path) !== '/vendor/orders/packing'))
               ) && (
                 <PageHeader
                   title={

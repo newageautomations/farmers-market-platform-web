@@ -1,3 +1,4 @@
+import { scrollToPaginatedTable } from '@market/ui';
 import { useCallback, useState, type MouseEvent } from 'react';
 import { hasPermission } from '@market/auth';
 import { mayCommand } from '@market/admin-core';
@@ -5,10 +6,10 @@ import {
   AppError,
   type CategoryImage,
   type InventoryPage,
-  type VendorCategory,
+  type ProductClassification,
 } from '@market/api';
 import { formatMoney } from '@market/config';
-import { EmptyState, UtilityIcon } from '@market/ui';
+import { CategoryIcon, EmptyState, UtilityIcon } from '@market/ui';
 import {
   FarmstandButton,
   FarmstandIcon,
@@ -19,15 +20,13 @@ import {
   FarmstandStockBadge,
   FarmstandStockSummary,
   stockStatus,
-  type FarmstandIconName,
-  type StockStatus,
 } from '@market/ui/farmstand';
 import '@market/ui/farmstand.css';
 import { ReadState, go, useRead } from './common';
 import { StockAdjustmentDialog } from './StockAdjustmentDialog';
 import type { CatalogProduct, VendorService } from './service';
 import './catalog-workspace.css';
-import { CategoryEditor } from './categories';
+import { catalogCategories } from './product-taxonomy';
 
 type StockRow = InventoryPage['items'][number];
 type ProductRecord = Pick<CatalogProduct, 'id' | 'name'> & {
@@ -73,32 +72,6 @@ function inventoryProducts(rows: StockRow[]): ProductRecord[] {
     });
   }
   return [...products.values()];
-}
-
-function productStock(
-  product: ProductRecord,
-  stocks: Map<string, StockRow>,
-): StockStatus {
-  const quantities = product.variants.map(
-    (variant) => stocks.get(variant.id)?.stockOnHand,
-  );
-  if (
-    !quantities.length ||
-    quantities.some((quantity) => quantity === undefined)
-  )
-    return 'unknown';
-  const known = quantities as number[];
-  if (known.every((quantity) => quantity <= 0)) return 'out';
-  return known.some((quantity) => stockStatus(quantity) !== 'in')
-    ? 'low'
-    : 'in';
-}
-
-function categoryIcon(name: string): FarmstandIconName {
-  if (/vegetable|produce|greens/i.test(name)) return 'carrot';
-  if (/fruit/i.test(name)) return 'apple';
-  if (/egg/i.test(name)) return 'egg';
-  return 'archive';
 }
 
 /** Only explicit unit labels from real variants are appended to physical counts. */
@@ -155,7 +128,6 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
   const [stockFilter, setStockFilter] = useState('');
   const [page, setPage] = useState(0);
   const [selection, setSelection] = useState<StockRow | null>(null);
-  const [addingCategory, setAddingCategory] = useState(false);
   const readProducts = useCallback(async () => {
     const items: CatalogProduct[] = [];
     let total = 0;
@@ -182,17 +154,31 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
     readStocks,
     canReadStock,
   );
-  const readCategories = useCallback(
-    () =>
-      service.categories
-        ? service.categories.list()
-        : Promise.resolve([] as VendorCategory[]),
-    [service],
-  );
+  const readCategories = useCallback(async () => {
+    if (!service.taxonomy) throw new AppError('unavailable');
+    const hierarchy = await service.taxonomy.hierarchy();
+    const classifications = new Map<string, ProductClassification>();
+    const items = catalog.data ?? [];
+    for (let i = 0; i < items.length; i += 8) {
+      const batch = await Promise.all(
+        items
+          .slice(i, i + 8)
+          .map(
+            async (product) =>
+              [
+                product.id,
+                await service.taxonomy!.classification(product.id),
+              ] as const,
+          ),
+      );
+      for (const [id, value] of batch) classifications.set(id, value);
+    }
+    return { hierarchy, classifications };
+  }, [service, catalog.data]);
   const categories = useRead(
     `catalog-categories:${service.vendorId}`,
     readCategories,
-    canReadCatalog,
+    canReadCatalog && !!catalog.data,
   );
   const readImages = useCallback(async () => {
     const wanted = new Set(
@@ -226,28 +212,65 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
   const imageMap = new Map(
     (images.data ?? []).map((image) => [image.id, image.preview]),
   );
-  const categoryList = categories.data ?? [];
-  const statuses = new Map(
-    products.map((product) => [product.id, productStock(product, stocks)]),
+  const categoryList = categories.data
+    ? catalogCategories(
+        categories.data.hierarchy,
+        categories.data.classifications,
+      )
+    : [];
+  const uncategorized = products.filter(
+    (product) =>
+      categories.data?.classifications.get(product.id)?.primaryCategory ===
+      null,
+  );
+  const navigation = [
+    {
+      id: '',
+      name: 'All Products',
+      productIds: products.map((product) => product.id),
+      depth: 0,
+    },
+    ...(uncategorized.length
+      ? [
+          {
+            id: 'uncategorized',
+            name: 'Uncategorized',
+            productIds: uncategorized.map((product) => product.id),
+            depth: 0,
+          },
+        ]
+      : []),
+    ...categoryList,
+  ];
+  // Each table row has its own stock state, filter match and pagination position.
+  const entries = products.flatMap((product) =>
+    (product.variants.length
+      ? product.variants
+      : [{ id: '', name: '', sku: '' }]
+    ).map((variant) => ({ product, variant })),
   );
   const counts = { in: 0, low: 0, out: 0 };
   let unknown = 0;
-  for (const status of statuses.values()) {
+  for (const { variant } of entries) {
+    if (!variant.id) continue;
+    const status = stockStatus(stocks.get(variant.id)?.stockOnHand);
     if (status === 'unknown') unknown++;
     else counts[status]++;
   }
-  const filtered = products.filter((product) => {
+  const filtered = entries.filter(({ product, variant }) => {
     const term = search.trim().toLocaleLowerCase();
     return (
       (!term ||
-        `${product.name} ${product.variants.map((variant) => variant.sku).join(' ')}`
+        `${product.name} ${variant.name} ${variant.sku}`
           .toLocaleLowerCase()
           .includes(term)) &&
       (!categoryId ||
-        categoryList
+        navigation
           .find((category) => category.id === categoryId)
           ?.productIds.includes(product.id)) &&
-      (!stockFilter || statuses.get(product.id) === stockFilter)
+      (!stockFilter ||
+        (variant.id &&
+          stockStatus(stocks.get(variant.id)?.stockOnHand) === stockFilter))
     );
   });
   const currentPage = Math.min(
@@ -284,7 +307,7 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
               <p>Keep your harvest up to date, one product at a time.</p>
             </div>
             <span>
-              {loaded ? `${products.length} products` : 'Loading products'}
+              {loaded ? `${entries.length} products` : 'Loading products'}
             </span>
           </div>
           <div className="catalog-controls">
@@ -308,11 +331,13 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
               }
             >
               <option value="">All categories</option>
-              {categoryList.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
+              {navigation
+                .filter((category) => category.id)
+                .map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
             </FarmstandSelect>
             <FarmstandSelect
               aria-label="Filter by stock"
@@ -353,159 +378,159 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {visible.flatMap((product) => {
-                      const variants = product.variants.length
-                        ? product.variants
-                        : [{ id: '', name: '', sku: '' }];
-                      const productCategories = categoryList.filter(
-                        (category) => category.productIds.includes(product.id),
-                      );
-                      const photo = product.assetIds?.[0]
-                        ? imageMap.get(product.assetIds[0])
-                        : undefined;
-                      const href = `/vendor/products/${encodeURIComponent(product.id)}`;
-                      return variants.map((variant) => {
-                        const row = stocks.get(variant.id);
-                        return (
-                          <tr
-                            key={`${product.id}:${variant.id}`}
-                            className={
-                              canReadCatalog ? 'catalog-product-row' : undefined
-                            }
-                            onClick={(event) => {
-                              if (
-                                !canReadCatalog ||
-                                event.defaultPrevented ||
-                                (event.target instanceof Element &&
-                                  event.target.closest(
-                                    'a, button, input, select, textarea, label',
-                                  ))
-                              )
-                                return;
-                              const link =
-                                event.currentTarget.querySelector<HTMLAnchorElement>(
-                                  '.catalog-product-name a',
-                                );
-                              if (
-                                event.ctrlKey ||
-                                event.metaKey ||
-                                event.shiftKey
-                              )
-                                window.open(href, '_blank', 'noopener');
-                              else link?.click();
-                            }}
-                          >
-                            <th scope="row">
-                              <div className="catalog-product-identity">
-                                <div className="catalog-product-photo">
-                                  {photo ? (
-                                    <img
-                                      src={photo}
-                                      alt=""
-                                      width="42"
-                                      height="42"
-                                      loading="lazy"
-                                    />
-                                  ) : (
-                                    <UtilityIcon name="store" />
-                                  )}
+                    {visible.flatMap(
+                      ({ product, variant: selectedVariant }) => {
+                        const variants = [selectedVariant];
+                        const classification =
+                          categories.data?.classifications.get(product.id);
+                        const photo = product.assetIds?.[0]
+                          ? imageMap.get(product.assetIds[0])
+                          : undefined;
+                        const href = `/vendor/products/${encodeURIComponent(product.id)}`;
+                        return variants.map((variant) => {
+                          const row = stocks.get(variant.id);
+                          return (
+                            <tr
+                              key={`${product.id}:${variant.id}`}
+                              className={
+                                canReadCatalog
+                                  ? 'catalog-product-row'
+                                  : undefined
+                              }
+                              onClick={(event) => {
+                                if (
+                                  !canReadCatalog ||
+                                  event.defaultPrevented ||
+                                  (event.target instanceof Element &&
+                                    event.target.closest(
+                                      'a, button, input, select, textarea, label',
+                                    ))
+                                )
+                                  return;
+                                const link =
+                                  event.currentTarget.querySelector<HTMLAnchorElement>(
+                                    '.catalog-product-name a',
+                                  );
+                                if (
+                                  event.ctrlKey ||
+                                  event.metaKey ||
+                                  event.shiftKey
+                                )
+                                  window.open(href, '_blank', 'noopener');
+                                else link?.click();
+                              }}
+                            >
+                              <th scope="row">
+                                <div className="catalog-product-identity">
+                                  <div className="catalog-product-photo">
+                                    {photo ? (
+                                      <img
+                                        src={photo}
+                                        alt=""
+                                        width="42"
+                                        height="42"
+                                        loading="lazy"
+                                      />
+                                    ) : (
+                                      <UtilityIcon name="store" />
+                                    )}
+                                  </div>
+                                  <div className="catalog-product-name">
+                                    {canReadCatalog ? (
+                                      <a
+                                        className="farmstand-text-link"
+                                        href={href}
+                                        onClick={navigate}
+                                      >
+                                        {product.name}
+                                      </a>
+                                    ) : (
+                                      <strong>{product.name}</strong>
+                                    )}
+                                    {product.variants.length > 1 && (
+                                      <small>{variant.name}</small>
+                                    )}
+                                    <small>
+                                      {variant.sku || 'No variants yet'}
+                                    </small>
+                                  </div>
                                 </div>
-                                <div className="catalog-product-name">
-                                  {canReadCatalog ? (
-                                    <a
-                                      className="farmstand-text-link"
-                                      href={href}
-                                      onClick={navigate}
-                                    >
-                                      {product.name}
-                                    </a>
-                                  ) : (
-                                    <strong>{product.name}</strong>
-                                  )}
-                                  {product.variants.length > 1 && (
-                                    <small>{variant.name}</small>
-                                  )}
-                                  <small>
-                                    {variant.sku || 'No variants yet'}
-                                  </small>
-                                </div>
-                              </div>
-                            </th>
-                            <td>
-                              {productCategories
-                                .map((category) => category.name)
-                                .join(', ') ||
-                                (categories.loading
-                                  ? 'Loading'
-                                  : categories.error || !canReadCatalog
-                                    ? 'Unavailable'
-                                    : 'Uncategorized')}
-                            </td>
-                            <td>
-                              <div className="catalog-price">
-                                {'price' in variant &&
-                                variant.price !== undefined &&
-                                variant.currency
-                                  ? formatMoney(variant.price, variant.currency)
-                                  : canReadCatalog
-                                    ? 'Not set'
+                              </th>
+                              <td>
+                                {classification
+                                  ? classification.categoryPath
+                                      .map((category) => category.name)
+                                      .join(' → ') || 'Uncategorized'
+                                  : categories.loading
+                                    ? 'Loading'
                                     : 'Unavailable'}
-                                {variant.name &&
-                                  variant.name !== product.name &&
-                                  !/^(default|standard)( variant)?$/i.test(
-                                    variant.name,
-                                  ) && <small>/ {variant.name}</small>}
-                              </div>
-                            </td>
-                            <td>
-                              <div className="catalog-on-hand">
-                                <strong>
-                                  {inventoryQuantity(
-                                    row?.stockOnHand,
-                                    variant.name,
-                                  )}
-                                </strong>
-                                <FarmstandStockBadge
-                                  status={stockStatus(row?.stockOnHand)}
-                                />
-                              </div>
-                            </td>
-                            <td>
-                              {canManageStock && row ? (
-                                <div className="catalog-stock-actions">
-                                  <FarmstandButton
-                                    variant="primary"
-                                    size="compact"
-                                    aria-label={`Adjust stock for ${product.name}${product.variants.length > 1 ? ` ${variant.name}` : ''}`}
-                                    onClick={() => setSelection(row)}
-                                  >
-                                    Adjust stock
-                                  </FarmstandButton>
+                              </td>
+                              <td>
+                                <div className="catalog-price">
+                                  {'price' in variant &&
+                                  variant.price !== undefined &&
+                                  variant.currency
+                                    ? formatMoney(
+                                        variant.price,
+                                        variant.currency,
+                                      )
+                                    : canReadCatalog
+                                      ? 'Not set'
+                                      : 'Unavailable'}
                                 </div>
-                              ) : (
-                                <span className="catalog-muted">
-                                  {canReadStock
-                                    ? 'View only'
-                                    : 'No inventory access'}
-                                </span>
-                              )}
-                            </td>
-                            <td>
-                              {canReadCatalog && (
-                                <a
-                                  className="catalog-detail-link"
-                                  href={href}
-                                  onClick={navigate}
-                                  aria-label={`View ${product.name}`}
-                                >
-                                  <FarmstandIcon name="chevron-right" />
-                                </a>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      });
-                    })}
+                              </td>
+                              <td>
+                                <div className="catalog-on-hand">
+                                  <strong>
+                                    {inventoryQuantity(
+                                      row?.stockOnHand,
+                                      variant.name,
+                                    )}
+                                  </strong>
+                                  <FarmstandStockBadge
+                                    status={stockStatus(row?.stockOnHand)}
+                                  />
+                                </div>
+                              </td>
+                              <td>
+                                {canManageStock && row ? (
+                                  <div className="catalog-stock-actions">
+                                    <FarmstandButton
+                                      variant="primary"
+                                      size="compact"
+                                      aria-label={`Adjust stock for ${product.name}${product.variants.length > 1 ? ` ${variant.name}` : ''}`}
+                                      onClick={() => setSelection(row)}
+                                    >
+                                      Adjust stock
+                                    </FarmstandButton>
+                                  </div>
+                                ) : (
+                                  <span className="catalog-muted">
+                                    {canReadStock
+                                      ? canManageStock && !row
+                                        ? 'Stock setup required'
+                                        : 'View only'
+                                      : 'No inventory access'}
+                                  </span>
+                                )}
+                              </td>
+                              <td>
+                                {canReadCatalog && (
+                                  <a
+                                    className="catalog-detail-link"
+                                    href={href}
+                                    onClick={navigate}
+                                    aria-label={`View ${product.name}`}
+                                  >
+                                    <FarmstandIcon name="chevron-right" />
+                                  </a>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        });
+                      },
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -525,7 +550,12 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
                     : `Showing ${currentPage * 20 + 1} to ${Math.min((currentPage + 1) * 20, filtered.length)} of ${filtered.length} products`}
                 </span>
                 {filtered.length > 20 ? (
-                  <div className="catalog-pagination">
+                  <div
+                    className="catalog-pagination"
+                    onClickCapture={(event) =>
+                      scrollToPaginatedTable(event.currentTarget)
+                    }
+                  >
                     <FarmstandButton
                       variant="secondary"
                       size="compact"
@@ -565,90 +595,51 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
                 <h2>Categories</h2>
                 <p>A little order for your offerings.</p>
               </div>
-              {canManageCatalog && service.categories && (
-                <FarmstandButton
-                  onClick={() => setAddingCategory(true)}
-                  variant="secondary"
-                  iconOnly
-                  aria-label="Add category"
-                  disabled={!catalog.data}
-                >
-                  <FarmstandIcon name="plus-category" />
-                </FarmstandButton>
-              )}
             </div>
             <div className="catalog-category-status">
               <ReadState {...categories} retry={categories.refresh} />
             </div>
-            {categoryList.map((category) => {
-              const categoryProducts = products.filter((product) =>
-                category.productIds.includes(product.id),
-              );
-              const low = categoryProducts.filter(
-                (product) => statuses.get(product.id) === 'low',
-              ).length;
-              const out = categoryProducts.filter(
-                (product) => statuses.get(product.id) === 'out',
-              ).length;
-              const unavailable = categoryProducts.some(
-                (product) => statuses.get(product.id) === 'unknown',
-              );
-              const detail = unavailable
-                ? 'Stock unavailable'
-                : out
-                  ? `${out} out of stock`
-                  : low
-                    ? `${low} low stock`
-                    : 'All in stock';
-              return (
+            {categories.data &&
+              navigation.map((category) => (
                 <button
+                  type="button"
                   className="catalog-category-record"
                   key={category.id}
                   aria-pressed={categoryId === category.id}
-                  onClick={() =>
-                    filter(() =>
-                      setCategoryId(
-                        categoryId === category.id ? '' : category.id,
-                      ),
-                    )
-                  }
+                  style={{
+                    paddingInlineStart: `calc(var(--space-4, 1rem) * ${category.depth + 1})`,
+                  }}
+                  onClick={() => filter(() => setCategoryId(category.id))}
                 >
                   <span className="catalog-category-icon">
-                    <FarmstandIcon name={categoryIcon(category.name)} />
+                    {'node' in category ? (
+                      <CategoryIcon code={category.node.code} />
+                    ) : (
+                      <FarmstandIcon
+                        name={category.id ? 'plus-category' : 'archive'}
+                      />
+                    )}
                   </span>
                   <span>
-                    <strong>{category.name}</strong>
+                    <strong>
+                      {'node' in category ? category.node.name : category.name}
+                    </strong>{' '}
                     <small>
-                      {category.productCount}{' '}
-                      {category.productCount === 1 ? 'product' : 'products'} ·{' '}
-                      {detail}
+                      {
+                        entries.filter(({ product }) =>
+                          category.productIds.includes(product.id),
+                        ).length
+                      }{' '}
+                      {entries.filter(({ product }) =>
+                        category.productIds.includes(product.id),
+                      ).length === 1
+                        ? 'product'
+                        : 'products'}
                     </small>
                   </span>
                   <FarmstandIcon name="chevron-right" />
                 </button>
-              );
-            })}
-            {!categories.loading &&
-              !categories.error &&
-              !categoryList.length && (
-                <p className="catalog-no-categories">
-                  {canReadCatalog
-                    ? 'No categories yet.'
-                    : 'Catalog access is required to view categories.'}
-                </p>
-              )}
-            {canManageCatalog && (
-              <div className="catalog-category-footer">
-                <FarmstandLink
-                  appearance="text"
-                  href="/vendor/categories"
-                  onClick={navigate}
-                >
-                  <span className="farmstand-text-link">Manage categories</span>
-                  <FarmstandIcon name="arrow-right" />
-                </FarmstandLink>
-              </div>
-            )}
+              ))}
           </FarmstandPanel>
           <FarmstandPanel className="catalog-stock-guidance">
             <div
@@ -697,17 +688,6 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
           </FarmstandPanel>
         </aside>
       </div>
-      {addingCategory && service.categories && (
-        <CategoryEditor
-          api={service.categories}
-          products={products}
-          onClose={() => setAddingCategory(false)}
-          onSaved={() => {
-            setAddingCategory(false);
-            categories.refresh();
-          }}
-        />
-      )}
       {selection && (
         <StockAdjustmentDialog
           row={selection}

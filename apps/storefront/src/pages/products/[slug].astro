@@ -18,7 +18,11 @@ import VendorPreorderBanner from '../../components/VendorPreorderBanner.astro';
 import { disclosureClassName } from '@market/ui/presentation';
 import { readProductInformation, type PublicCatalog } from '@market/api';
 import { storefrontText } from '@market/theme/storefront';
-import { relatedProducts, shopCategories } from '@market/storefront-core';
+import {
+  relatedProducts,
+  shopCategories,
+  variantProductPage,
+} from '@market/storefront-core';
 import '../../styles/vendor-shop.css';
 import '../../styles/product-details.css';
 import SiteLayout from '../../layouts/SiteLayout.astro';
@@ -68,13 +72,17 @@ try {
       }
     }
     if (!product) throw new AppError('not-found');
+    if (Astro.params.variantSlug) {
+      product = variantProductPage(product, Astro.params.variantSlug);
+      if (!product) throw new AppError('not-found');
+    }
   }
 } catch (e) {
   error = safeError(e);
 }
 if (error) Astro.response.status = error.kind === 'not-found' ? 404 : 503;
 const path = product
-  ? `/products/${encodeURIComponent(product.slug)}`
+  ? `/products/${encodeURIComponent(product.slug)}${Astro.params.variantSlug ? `/${encodeURIComponent(Astro.params.variantSlug)}` : ''}`
   : Astro.url.pathname;
 let related: PublicCatalog['items'] = [];
 if (

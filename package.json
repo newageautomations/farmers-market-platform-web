@@ -155,6 +155,7 @@
     "mobile:tokens": "tsx scripts/native-tokens.ts",
     "test:pos:mobile:native-ui": "npm run test --prefix mobile/companion",
     "demo:market-operations:willow-fixtures": "tsx scripts/demo-market-operations.ts willow-fixtures",
+    "demo:market-operations:taxonomy-c-fixtures": "tsx scripts/demo-market-operations.ts taxonomy-c-fixtures",
     "test:storefront:contact": "vitest run tests/storefront-contact.test.tsx --reporter=default",
     "test:storefront:contact:http": "tsx scripts/test-storefront-contact.ts",
     "demo:market-operations:grant-willow-crm": "tsx scripts/demo-market-operations.ts grant-willow-crm",
@@ -173,7 +174,8 @@
     "test:team-permissions": "npm --prefix ../farmers-market-platform run test:team-permissions",
     "demo:market-operations:team-invitations-fixtures": "tsx scripts/demo-market-operations.ts team-invitations-fixtures",
     "demo:market-operations:team-invitations-api": "tsx scripts/demo-market-operations.ts team-invitations-api",
-    "test:team-invitations:backend": "npm --prefix ../farmers-market-platform run test:team-invitations"
+    "test:team-invitations:backend": "npm --prefix ../farmers-market-platform run test:team-invitations",
+    "demo:market-operations:initialize-stock": "tsx scripts/demo-market-operations.ts initialize-stock"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",

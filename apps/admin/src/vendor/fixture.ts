@@ -518,7 +518,23 @@ export function createFixtureVendorService(
                   id,
                   name: input.name.trim(),
                   sku: input.sku.trim(),
-                  enabled: true,
+                  enabled: input.enabled ?? true,
+                  slug:
+                    input.slug ??
+                    input.name
+                      .trim()
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, '-'),
+                  description: input.description ?? p.description,
+                  productInformation:
+                    input.productInformation ?? p.productInformation,
+                  assetIds: input.assetIds?.map(String) ?? p.assetIds,
+                  collectTaxes: input.collectTaxes ?? p.collectTaxes,
+                  taxOverride:
+                    input.taxOverride === undefined
+                      ? p.taxOverride
+                      : input.taxOverride,
+                  taxConfigured: true,
                   price: input.price,
                   currency: 'USD',
                   optionIds: (input.optionIds ?? []).map(String),
@@ -536,7 +552,14 @@ export function createFixtureVendorService(
         ...p,
         variants: p.variants.map((v) =>
           v.id === id
-            ? { ...v, ...input, name: input.name.trim(), sku: input.sku.trim() }
+            ? {
+                ...v,
+                ...input,
+                slug: input.slug ?? v.slug,
+                assetIds: input.assetIds?.map(String) ?? v.assetIds,
+                name: input.name.trim(),
+                sku: input.sku.trim(),
+              }
             : v,
         ),
       }));

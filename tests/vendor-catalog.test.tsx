@@ -38,6 +38,47 @@ function setup() {
     remove: vi.fn(),
     upload: vi.fn(),
   };
+  const parent = {
+    id: 'produce',
+    code: 'produce',
+    name: 'Produce',
+    active: true,
+    parentId: null,
+  };
+  const vegetables = {
+    id: 'vegetables',
+    code: 'vegetables',
+    name: 'Vegetables',
+    active: true,
+    parentId: parent.id,
+  };
+  const fruit = { ...vegetables, id: 'fruit', code: 'fruit', name: 'Fruits' };
+  service.taxonomy = {
+    hierarchy: vi.fn(async () => [
+      {
+        ...parent,
+        assignable: false,
+        children: [vegetables, fruit].map((node) => ({
+          ...node,
+          assignable: true,
+          children: [],
+        })),
+      },
+    ]),
+    tags: vi.fn(async () => []),
+    classification: vi.fn(async (id) => {
+      const leaf = ['1001', '1023'].includes(id)
+        ? vegetables
+        : id === '1003'
+          ? fruit
+          : null;
+      return {
+        primaryCategory: leaf,
+        categoryPath: leaf ? [parent, leaf] : [],
+        tags: [],
+      };
+    }),
+  };
   return service;
 }
 
@@ -66,6 +107,111 @@ function review(dialog: HTMLElement, value: string) {
 }
 
 describe('vendor Products & Inventory workspace', () => {
+  it('counts and filters sibling stock independently while retaining product wording', async () => {
+    const service = setup();
+    const product = (await service.catalog('', 0)).items[0]!;
+    const baseline = (await service.inventory('1')).items[0]!;
+    service.catalog = vi.fn(async () => ({ items: [product], totalItems: 1 }));
+    service.inventory = vi.fn(async () => ({
+      items: product.variants.map((v, index) => ({
+        ...baseline,
+        variantId: v.id,
+        variantName: v.name,
+        sku: v.sku,
+        productId: product.id,
+        stockOnHand: index ? 4 : 20,
+      })),
+      totalItems: 2,
+      nextCursor: null,
+      asOf: new Date().toISOString(),
+    }));
+    render(<CatalogWorkspace service={service} />);
+    await screen.findByText('Showing all 2 products');
+    await screen.findByRole('img', {
+      name: '1 in stock, 1 low stock, 0 out of stock',
+    });
+    const table = screen.getByRole('table');
+    const filter = screen.getByLabelText('Filter by stock');
+    fireEvent.change(filter, { target: { value: 'low' } });
+    expect(within(table).getAllByRole('row')).toHaveLength(2);
+    expect(
+      within(table).getByText(product.variants[1]!.sku),
+    ).toBeInTheDocument();
+    expect(
+      within(table).queryByText(product.variants[0]!.sku),
+    ).not.toBeInTheDocument();
+    fireEvent.change(filter, { target: { value: 'out' } });
+    expect(screen.getByText('No matching products')).toBeInTheDocument();
+    fireEvent.change(filter, { target: { value: 'in' } });
+    expect(
+      within(table).getByText(product.variants[0]!.sku),
+    ).toBeInTheDocument();
+    expect(
+      within(table).queryByText(product.variants[1]!.sku),
+    ).not.toBeInTheDocument();
+  });
+  it('paginates variant rows even when they share the same parent', async () => {
+    const service = setup();
+    const product = (await service.catalog('', 0)).items[0]!;
+    const variants = Array.from({ length: 25 }, (_, index) => ({
+      ...product.variants[0]!,
+      id: `size-${index}`,
+      name: `Size ${index}`,
+      sku: `SIZE-${index}`,
+    }));
+    const baseline = (await service.inventory('1')).items[0]!;
+    service.catalog = vi.fn(async () => ({
+      items: [{ ...product, variants }],
+      totalItems: 1,
+    }));
+    service.inventory = vi.fn(async () => ({
+      items: variants.map((v) => ({
+        ...baseline,
+        variantId: v.id,
+        variantName: v.name,
+        sku: v.sku,
+        productId: product.id,
+      })),
+      totalItems: 25,
+      nextCursor: null,
+      asOf: new Date().toISOString(),
+    }));
+    render(<CatalogWorkspace service={service} />);
+    await screen.findByText('Showing 1 to 20 of 25 products');
+    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(
+      21,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(
+      screen.getByText('Showing 21 to 25 of 25 products'),
+    ).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(
+      6,
+    );
+  });
+  it('navigates parents, leaves, uncategorized and all products with independent row counts', async () => {
+    const service = setup();
+    render(<CatalogWorkspace service={service} />);
+    await waitFor(() =>
+      expect(screen.getByLabelText('Filter by category')).toBeEnabled(),
+    );
+    const parent = screen.getByRole('button', { name: /Produce 4 products/ });
+    fireEvent.click(parent);
+    expect(parent).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Showing all 4 products')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: /Vegetables 3 products/ }),
+    );
+    expect(screen.getByText('Showing all 3 products')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: /Uncategorized 20 products/ }),
+    );
+    expect(screen.getByText('Showing all 20 products')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: /All Products 24 products/ }),
+    );
+    expect(screen.getByLabelText('Filter by category')).toHaveValue('');
+  });
   it.each([
     { quantity: 20, state: 'success' },
     { quantity: 4, state: 'warning' },
@@ -111,41 +257,17 @@ describe('vendor Products & Inventory workspace', () => {
     expect(action).not.toHaveClass('button-tertiary');
   });
 
-  it('reuses the existing category editor and refreshes categories after saving', async () => {
+  it('removes custom category management controls', async () => {
     const service = setup();
-    vi.mocked(service.categories!.save).mockResolvedValue({
-      id: 'pantry',
-      name: 'Pantry',
-      imageAssetId: null,
-      image: null,
-      productIds: [],
-      productCount: 0,
-    });
     render(<CatalogWorkspace service={service} />);
     await loaded();
-    fireEvent.click(screen.getByRole('button', { name: 'Add category' }));
-    const dialog = screen.getByRole('dialog', { name: 'Create category' });
-    fireEvent.change(within(dialog).getByLabelText('Category name'), {
-      target: { value: 'Pantry' },
-    });
-    await waitFor(() =>
-      expect(
-        dialog.querySelector('input[name="categoryImagePending"]'),
-      ).toHaveValue('false'),
-    );
-    fireEvent.click(
-      within(dialog).getByRole('button', { name: 'Create category' }),
-    );
-    await waitFor(() =>
-      expect(service.categories!.save).toHaveBeenCalledWith({
-        name: 'Pantry',
-        imageAssetId: null,
-        productIds: [],
-      }),
-    );
-    await waitFor(() =>
-      expect(service.categories!.list).toHaveBeenCalledTimes(2),
-    );
+    expect(
+      screen.queryByRole('button', { name: 'Add category' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Manage categories' }),
+    ).not.toBeInTheDocument();
+    expect(service.categories!.list).not.toHaveBeenCalled();
   });
 
   it('resolves the actual featured photograph beyond the first asset-library page', async () => {
@@ -206,7 +328,7 @@ describe('vendor Products & Inventory workspace', () => {
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole('img', {
-        name: '22 in stock, 0 low stock, 1 out of stock',
+        name: '23 in stock, 0 low stock, 1 out of stock',
       }),
     ).toBeInTheDocument();
     expect(
@@ -224,6 +346,9 @@ describe('vendor Products & Inventory workspace', () => {
       screen.getByRole('link', { name: 'Synthetic A Product 23' }),
     ).toBeInTheDocument();
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: '' } });
+    await waitFor(() =>
+      expect(screen.getByLabelText('Filter by category')).toBeEnabled(),
+    );
     fireEvent.change(screen.getByLabelText('Filter by category'), {
       target: { value: 'fruit' },
     });
@@ -238,8 +363,8 @@ describe('vendor Products & Inventory workspace', () => {
     });
     expect(screen.getByText('No matching products')).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: 'Manage categories' }),
-    ).toHaveAttribute('href', '/vendor/categories');
+      screen.queryByRole('link', { name: 'Manage categories' }),
+    ).not.toBeInTheDocument();
   });
 
   it('keeps one dialog and the draft when going back, then saves only after confirmation', async () => {
@@ -470,7 +595,7 @@ describe('vendor Products & Inventory workspace', () => {
     };
     const catalog = vi.spyOn(service, 'catalog');
     render(<CatalogWorkspace service={service} />);
-    await screen.findByText('Showing 1 to 20 of 23 products');
+    await screen.findByText('Showing 1 to 20 of 24 products');
     expect(catalog).not.toHaveBeenCalled();
     expect(service.categories!.list).not.toHaveBeenCalled();
     expect(

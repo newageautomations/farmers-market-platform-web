@@ -1,6 +1,6 @@
 # Farmstand product category taxonomy audit
 
-Audit date: November 1, 2026. Status: architecture recommendation only. The proposed requirements and taxonomy remain subject to product-owner approval.
+Audit date: November 1, 2026. Phase A implementation: November 1, 2026. The original findings below describe the pre-implementation architecture. The Phase A section at the end records the approved implementation and populated database conversion and supersedes earlier rollout and legacy-preservation recommendations for this phase.
 
 ## Findings
 
@@ -218,3 +218,92 @@ These phases are recommendations, not implementation or migration authorization.
 - Approve how legacy vendor groups are mapped or archived, who resolves ambiguous Products, how long old links/API inputs are supported, and whether in-person Collection categories remain a retained specialist.
 
 The existing catalog foundation can support the proposal without replacing Vendure Products or market eligibility. The missing layer is governed classification and presentation contracts, plus an explicit compatibility migration. No implementation is approved or performed by this report.
+
+## Phase A implementation
+
+Implemented locally November 1, 2026. The approved request supersedes earlier suggestions to preserve obsolete categories, archive their images or build mapping ledgers. Frontend screens were not redesigned.
+
+### Backend architecture
+
+Native public Facets `farmstand-category` and `farmstand-product-tag` contain 90 category FacetValues (15 roots and 75 leaves) and 18 predefined tag FacetValues. Explicit code/name pairs keep machine codes independent of display names. Native FacetValue IDs are stable database identities.
+
+Migration `UnifiedProductTaxonomy1795500000000` adds three narrow tables: `farmstand_category` stores parent, position and active state; `farmstand_tag` stores group, applicable category codes and active state; `farmstand_product_category` stores one primary leaf per Product. Tags use native Product/FacetValue assignments. Primary assignments project all ancestors into that same native relation for browsing. Recursive paths and parent references support additional levels.
+
+Backend and deferred database checks enforce active leaves, one primary, consistent ancestor membership, applicable tags and no Variant classification overrides. Tree constraints reject cycles. Drafts can be unclassified. New enabled Products, Product enablement, new visible Variants, Variant re-enablement and market publication require classification. Existing ambiguous published Products retain their records and publication until an operator classifies them before new publication.
+
+New Admin API operations are `productCategoryHierarchy`, `applicableProductTags(categoryId)`, `ownProductClassification(productId)` and `setOwnProductClassification(productId, categoryId, tagIds)`. Results include the primary category, ancestor path, stable codes, tags and `SELLER_DECLARED` claim status. Product create/update inputs also accept `primaryCategoryId` and `tagIds`. Owned reads require current catalog-read authority. Writes recheck current catalog-management authority, ownership and vendor channel in a Product-serialized transaction. Invalid retained tags reject a category change; send replacement `tagIds`, including `[]`, in the same operation to remove them. Tags confer no publication authority.
+
+Tag restrictions match ancestor codes. Dietary and Fresh/Frozen/Dried/Fermented apply to food roots. Certified Organic/Naturally Grown apply to Produce, Meat & Poultry, Dairy & Eggs, Pantry & Preserves and Beverages. Grass-Fed/Pasture-Raised/Free-Range apply to Meat & Poultry and Dairy & Eggs. Homegrown applies to Produce and Flowers & Plants. Handmade, Small Batch and Locally Produced apply to every classified category. Conversion inferred no tags, and no certification or verification workflow was introduced.
+
+Native facet definition mutations require current platform SuperAdmin authority. Legacy vendor category creation, renaming and deletion return `GLOBAL_CATEGORIES_ARE_CENTRALLY_MANAGED`; image uploads return `CATEGORY_PRESENTATION_IS_UNAVAILABLE_IN_PHASE_A`. The legacy reader returns active global leaves with only the requesting vendor's Product memberships. Legacy `categoryIds` accepts zero or one leaf until Phase B replaces the plural selector.
+
+Local backend files changed: the new `src/plugins/marketplace-commerce/taxonomy/` directory and migration; existing catalog, publication, category adapter, API and plugin files; guarded demo tooling; `test/product-taxonomy/` and package scripts. Web changes retire two old seed entry points and update this document.
+
+### Database conversion
+
+The guarded inspector verified `vendure_demo_market_ops` at local PostgreSQL address `::1`. Its only pending migration was `UnifiedProductTaxonomy1795500000000`. After explicit user approval in chat, the web-directory command `npm run demo:market-operations:migrate -- --taxonomy-convert` applied it and converted existing records.
+
+Product-specific name/description rules classified 394 Products. The conversion deleted 24 obsolete category Facets: `market-category`, `shop-page-category` and existing `vendor-category-*` Facets. Old category memberships and image metadata cascaded away. Editorial category image overrides were cleared from draft/published template settings without deleting Assets or other settings. The empty `vendor_category_metadata` table remains temporarily because the appearance validator still reads it. POS Collection tables and relationships remain intact; this populated database currently has zero Collections.
+
+Complete-row SHA-256 comparisons passed inside the conversion transaction for 17 protected tables: Products/translations, Variants/translations, vendors, markets, tenant/market memberships, listings, offerings, participation, stock levels, orders, order lines, customers, Collections and Collection/Variant memberships. Unrelated Product facet memberships were compared separately and preserved. Initialization retains existing IDs; conversion never replaces an operator's existing primary classification.
+
+The converter also refreshes only the derived facet ID columns in Vendure's search index, retaining its prices, stock, channels and Collection projections. A second guarded run confirmed populated-database repeatability: zero new assignments, no remaining obsolete Facets to delete, 90 categories, 18 tags and the same two unresolved bundles. Protected-table comparisons passed again.
+
+| Bounded post-conversion check | Result |
+| --- | --- |
+| Products / Variants | 396 / 397, unchanged |
+| Categories / roots / predefined tags | 90 / 15 / 18 |
+| Classified Products | 394 |
+| Invalid primary categories / missing ancestors / Variant overrides | 0 / 0 / 0 |
+| Obsolete category Facets / category-image metadata rows | 0 / 0 |
+
+Two mixed bundles remain unclassified, preserving their records:
+
+| Product ID | Product | Vendor |
+| --- | --- | --- |
+| 331 | Coffee & Biscotti Pairing | Twice Baked Cafe |
+| 408 | Farmhouse Pantry Pair | Willow & Grain Farmstead |
+
+Choose their intended primary merchandising category manually before republishing.
+
+Web `seed-testing-vendors.cjs` and `seed-vendor-catalog.cjs` now fail immediately with a retirement message. Backend `storefront-shop-fixture.ts` is also blocked. These entry points cannot recreate obsolete custom categories and require a separately scoped canonical-taxonomy update before reuse.
+
+### Verification and manual testing
+
+The focused disposable-database harness passed 10 groups covering product-specific mapping, hierarchy/cycles, leaf-only and single-primary validation, ancestor membership, allowed/forbidden tags, ownership isolation, blocked mutations, publication/rollback, native-relation and Variant safeguards, HTTP contracts, repeat initialization/conversion and preservation. It includes populated unrelated ingredient and POS Collection relationships, atomic category/tag changes and search-facet cache refresh without price changes. Successful disposable databases were dropped by the existing guarded mechanism. The backend server build and focused taxonomy TypeScript check passed. No full repository suite, browser automation or screenshots were run.
+
+From the backend directory, run `npm run test:product-taxonomy`, `npm run test:product-taxonomy:types` and `npm run build:server` to reproduce qualification. From the web directory, inspect the populated database without modifying it:
+
+```powershell
+npm run demo:market-operations:inspect -- --taxonomy --verify
+```
+
+The same inspector without `--verify` reports pending migrations and bounded Product inventory. Add `--plan` to review remaining automatic mappings without writing. Conversion requires the explicit migration flag; ordinary serve/worker startup never migrates or converts data.
+
+Start or restart the local backend with `npm run demo:market-operations:serve` and admin with `npm run demo:market-operations:admin`. Use matching `demo:market-operations:worker` and `demo:market-operations:storefront` scripts when needed. The database inspection confirmed existing account `manna-roots@example.test`. The existing Boerne market-manager account is `market.manager@example.test`. Use the existing local demo credentials defined in backend `scripts/market-operations-demo/environment.ts`; credentials are not duplicated here. Use the vendor account for its Product classification and the manager account for market operations.
+
+The vendor catalog route is `http://localhost:4322/vendor/products`. It loads canonical leaves; category creation controls now return the governance error. For the full backend contract, use authenticated requests to `http://localhost:3000/admin-api` with the account's bearer session and vendor `vendure-token` header:
+
+```graphql
+query {
+  productCategoryHierarchy
+  ownVendorCatalog(options: { take: 5 }) { items { id name } }
+}
+
+query Inspect($product: ID!, $category: ID!) {
+  applicableProductTags(categoryId: $category)
+  ownProductClassification(productId: $product)
+}
+
+mutation Classify($product: ID!, $category: ID!, $tags: [ID!]) {
+  setOwnProductClassification(productId: $product, categoryId: $category, tagIds: $tags)
+}
+```
+
+Use owned Product IDs and native category/tag IDs returned by those reads. For a Manna Roots juice, select `beverages.juices-cider` and `[]` tags. Expect Beverages in the ancestor path. Fresh is applicable; Grass-Fed is rejected. A root, unknown tag or foreign Product must fail. An unclassified draft remains editable, but enabling it fails until a leaf is assigned. Legacy category save/delete mutations fail. Tags never satisfy market publication permissions, listing approval or offering requirements.
+
+### Temporary limits and Phase B
+
+Phase B owns single-leaf/tag form controls, removal of category-management controls, hierarchical vendor navigation, market browsing/counts/filter labels, storefront images/order/visibility and POS taxonomy migration. Current forms still display a plural selector and reject multiple leaves. Existing storefront readers can show parent and leaf values; generic market facet summaries can include declared tags. The old category API no longer edits presentation overrides. No new shared UI design was introduced or approved.
+
+The occurrence catalog still narrows approved listings/offerings with all existing ownership, channel, market, price and time gates. Ancestor FacetValues support exact parent filtering without a replacement catalog. New classification operations are Admin API operations; public storefront-specific typed projections and navigation remain Phase B. Collections remain the POS category source until that dependent behavior is migrated.

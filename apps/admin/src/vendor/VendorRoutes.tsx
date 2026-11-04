@@ -8,7 +8,6 @@ import {
 import { RouteLink } from './common';
 import { ApplicantApplications } from '@market/ui';
 import { ContactSubmissions } from './contact-submissions';
-import { Categories } from './categories';
 import { VendorTaxSettings } from './tax';
 import { VendorPos } from './pos';
 import { Finances } from '../finance/Finances';
@@ -20,6 +19,7 @@ import type { VendorService } from './service';
 import { Products } from './catalog';
 import { CatalogWorkspace } from './CatalogWorkspace';
 import { Orders } from './orders';
+import { VendorPickup } from './pickup';
 import { Customers } from './customers';
 import { Markets } from './markets';
 import { Analytics } from './analytics';
@@ -32,7 +32,8 @@ export function VendorRoutes({
   service: VendorService;
   path: string;
 }) {
-  const [, , module, id] = vendorPath(path).split('/');
+  const [, , module, id, child, variantId, setupVariantId] =
+    vendorPath(path).split('/');
   if (module === 'team')
     return <TeamWorkspace api={service.team} context={service.context} />;
   if (module === 'finances')
@@ -62,6 +63,8 @@ export function VendorRoutes({
     return (
       <VendorDraftPreview service={service} id={Number(path.split('/')[4])} />
     );
+  if (module === 'applications' && !id)
+    return <Markets service={service} initialView="applications" />;
   if (module === 'applications')
     return service.applications ? (
       <ApplicantApplications
@@ -106,9 +109,31 @@ export function VendorRoutes({
   if (module === 'booths') return <VendorBooths service={service} />;
   // IDs remain opaque backend resource references. They never establish tenant context.
   if (module === 'categories')
-    return <Categories key={service.vendorId} service={service} />;
-  if (module === 'products') return <Products service={service} id={id} />;
+    return (
+      <RouteLink to="/vendor/products">
+        Assign standard categories in Products &amp; Inventory
+      </RouteLink>
+    );
+  if (module === 'products')
+    return (
+      <Products
+        key={`${service.vendorId}:${id ?? 'list'}:${variantId ?? ''}`}
+        service={service}
+        id={id}
+        setup={child === 'setup'}
+        preview={child === 'setup' && variantId === 'preview'}
+        variantId={
+          child === 'variants'
+            ? variantId
+            : child === 'setup' && variantId === 'variants'
+              ? setupVariantId
+              : undefined
+        }
+      />
+    );
   if (module === 'inventory') return <CatalogWorkspace service={service} />;
+  if (module === 'orders' && id === 'pickup')
+    return <VendorPickup key={service.vendorId} service={service} />;
   if (module === 'orders' && id === 'packing')
     return <VendorPacking key={service.vendorId} service={service} />;
   if (module === 'orders') return <Orders service={service} id={id} />;

@@ -14,7 +14,12 @@ import { categoryArt } from './category-art';
 
 interface Props {
   context: StorefrontContext;
-  categories: Array<{ id: string; name: string }>;
+  categories: Array<{
+    id: string;
+    name: string;
+    code?: string;
+    image?: string;
+  }>;
   category: string;
   search: string;
   sort: string;
@@ -138,8 +143,8 @@ const noneAvailable =
     </a>
     {categories.map((item) => {
       const image = categoryArt(
-        item.name,
-        safeAsset(settings.categories.images[item.id]?.url),
+        item.code,
+        safeAsset(item.image || settings.categories.images[item.id]?.url),
       );
       return (
         <a
@@ -161,11 +166,17 @@ const noneAvailable =
   </section>
 
   <section class="em-shop-content" aria-label="Shop products for market pickup">
+    <slot />
     <form class="em-shop-controls" action="/products" method="get">
       {selectedId && (
         <input type="hidden" name="occurrence" value={selectedId} />
       )}
-      {category && <input type="hidden" name="category" value={category} />}
+      {Astro.url.searchParams.getAll('category').map((value) => (
+        <input type="hidden" name="category" value={value} />
+      ))}
+      {Astro.url.searchParams.getAll('tag').map((value) => (
+        <input type="hidden" name="tag" value={value} />
+      ))}
       {search && <input type="hidden" name="search" value={search} />}
 
       <details class="em-shop-filter-menu">

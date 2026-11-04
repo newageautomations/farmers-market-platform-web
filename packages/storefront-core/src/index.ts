@@ -1,4 +1,5 @@
 import { AppError } from '@market/api';
+export { variantProductPage } from './variant-page';
 import type { Theme } from '@market/theme';
 import type { StorefrontAppearance } from '@market/theme/storefront';
 export type StorefrontKind = 'VENDOR' | 'MARKET'; // Backend uses mutually exclusive vendorId / marketId, not a GraphQL enum.
@@ -99,3 +100,5 @@ export * from './backend';
 export * from './catalog';
 export * from './vendor-shop';
 export * from './market';
+
+export * from './taxonomy';

@@ -91,3 +91,7 @@ export {
   type TeamPolicy,
   type EmployeeRole,
 } from './team';
+
+export * from './product-taxonomy';
+
+export * from './storefront-taxonomy';

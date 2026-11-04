@@ -1,6 +1,7 @@
 ---
+import { vendorCategoryNavigation } from '../../lib/storefront-taxonomy';
 import type { StorefrontContext } from '@market/storefront-core';
-import { safeAsset, shopCategories } from '@market/storefront-core';
+import { safeAsset } from '@market/storefront-core';
 import type { PublicCatalog, AppError } from '@market/api';
 import { ErrorState, SectionHeader } from '@market/ui';
 import {
@@ -27,14 +28,14 @@ const aboutBlurb = vendor?.aboutUseLegacyStory
 const aboutEnabled = vendor?.aboutEnabled ?? !!appearance?.homepage.story;
 const aboutImage = safeAsset(vendor?.aboutImage);
 // Only the already loaded featured catalog is used. No independent collection CMS or extra query.
-const tiles = shopCategories(catalog?.items ?? [])
+const tiles = (await vendorCategoryNavigation(Astro))
   .flatMap((category) => {
     const product = catalog?.items.find(
       (p) =>
         p.facetValues.some((v) => v.id === category.id) &&
         safeAsset(p.featuredAsset?.preview),
     );
-    const image = safeAsset(product?.featuredAsset?.preview);
+    const image = category.image || safeAsset(product?.featuredAsset?.preview);
     return image ? [{ ...category, image }] : [];
   })
   .slice(0, 3);

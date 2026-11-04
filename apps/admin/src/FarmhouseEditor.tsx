@@ -66,10 +66,22 @@ export function FarmhouseEditor({
   >([]);
   useEffect(() => {
     let active = true;
-    void api.media
-      ?.list()
+    void api
+      .hierarchy?.()
       .then((rows) => {
-        if (active) setCategories(rows);
+        if (active) {
+          const flatten = (
+            nodes: typeof rows,
+            prefix: string[] = [],
+          ): Array<{ id: string; name: string }> =>
+            nodes
+              .filter((n) => n.active)
+              .flatMap((n) => [
+                { id: n.id, name: [...prefix, n.name].join(' / ') },
+                ...flatten(n.children, [...prefix, n.name]),
+              ]);
+          setCategories(flatten(rows));
+        }
       })
       .catch(() => {});
     return () => {

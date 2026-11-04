@@ -5,6 +5,9 @@ export {
   MarketPlatformLogo,
 } from './utility';
 export { RecordCard } from './record-details';
+export { CategoryIcon } from './CategoryIcon';
+import { scrollToPaginatedTable } from './table-navigation';
+export { scrollToPaginatedTable } from './table-navigation';
 import {
   RecordDetailsTable,
   type RecordDetailsColumns,
@@ -421,17 +424,20 @@ export function Dropdown({
   defaultOpen = false,
   open,
   className = '',
+  onToggle,
 }: {
   label: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
   open?: boolean;
   className?: string;
+  onToggle?: ComponentProps<'details'>['onToggle'];
 }) {
   return (
     <details
       className={disclosureClassName(`dropdown ${className}`)}
       open={open ?? (defaultOpen || undefined)}
+      onToggle={onToggle}
     >
       <summary>{label}</summary>
       <div className="ui-disclosure-content">{children}</div>
@@ -558,6 +564,7 @@ export function DataTable({
   sort,
   wide = false,
   recordDetails,
+  className,
 }: {
   headings: readonly string[];
   children: ReactNode;
@@ -565,6 +572,7 @@ export function DataTable({
   sort?: { heading: string; direction: 'ascending' | 'descending' };
   wide?: boolean;
   recordDetails?: RecordDetailsColumns;
+  className?: string;
 }) {
   if (recordDetails)
     return (
@@ -578,7 +586,12 @@ export function DataTable({
       </RecordDetailsTable>
     );
   return (
-    <Table aria-label={label} className={wide ? 'ui-table-wide' : undefined}>
+    <Table
+      aria-label={label}
+      className={[wide ? 'ui-table-wide' : '', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <caption className="sr-only">
         {label}
         {sort && !headings.includes(sort.heading)
@@ -624,10 +637,23 @@ export function Pagination({
   return (
     <nav aria-label={label} className="actions ui-pagination">
       {summary && <p className="ui-pagination-summary">{summary}</p>}
-      <Button variant="secondary" disabled={!hasPrevious} onClick={onPrevious}>
+      <Button
+        variant="secondary"
+        disabled={!hasPrevious}
+        onClick={(event) => {
+          scrollToPaginatedTable(event.currentTarget);
+          onPrevious();
+        }}
+      >
         {previousLabel}
       </Button>
-      <Button disabled={!hasNext} onClick={onNext}>
+      <Button
+        disabled={!hasNext}
+        onClick={(event) => {
+          scrollToPaginatedTable(event.currentTarget);
+          onNext();
+        }}
+      >
         {nextLabel}
       </Button>
     </nav>
@@ -645,7 +671,10 @@ export {
   passwordSymbols,
 } from './password-policy';
 
-export { ApplicantApplications } from './ApplicantApplications';
+export {
+  ApplicantApplications,
+  applicationStatusLabel,
+} from './ApplicantApplications';
 export { ApplicationOnboarding } from './ApplicationOnboarding';
 
 export * from './ApplicationInformation';

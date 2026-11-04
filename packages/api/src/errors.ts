@@ -1,4 +1,23 @@
 import { applicationErrorMessages } from './application-rules';
+
+const catalogMessages: Record<string, string> = {
+  INVALID_REWARD_FIELD:
+    'The reward form sent an unsupported field. Your progress is preserved. Return to Reward details and try saving again.',
+  INVALID_REWARD_CONFIGURATION:
+    'Check Reward details for the name, reward value and eligible product, then check Redemption rules for points, limits and dates.',
+  REWARD_PRODUCT_UNAVAILABLE:
+    'The selected product is disabled or unavailable. Return to Reward details and choose an enabled product and variant.',
+  REWARD_NOT_EDITABLE:
+    'This reward can no longer be edited. Close the editor and check its current status.',
+  INVALID_VARIANT_SLUG:
+    'Use lowercase letters, numbers and hyphens for the variant slug.',
+  VARIANT_SLUG_ALREADY_EXISTS:
+    'Another variant of this product already uses that slug. Choose a different slug.',
+  PRODUCT_CATEGORY_REQUIRED:
+    'Select a valid leaf category before enabling or publishing this product. If classification could not be loaded, retry the classification read first.',
+  PRODUCT_CLASSIFICATION_PENDING:
+    'Wait for category and tag checks to finish before saving.',
+};
 export type ErrorKind =
   | 'network'
   | 'graphql'
@@ -23,29 +42,52 @@ export const safeMessages: Record<ErrorKind, string> = {
   unknown: 'Something went wrong. Please try again.',
 };
 const taxMessages: Record<string, string> = {
-  BOUNDED_SCHEDULE_RANGE_REQUIRED: 'Choose a valid bounded date range. Recurring rules can cover up to one year.',
-  SCHEDULE_RANGE_TOO_LARGE: 'Choose a shorter range. Recurring rule previews support up to 128 market dates.',
-  SCHEDULE_CONFIRM_REQUIRED: 'Review and confirm the proposed scheduling change.',
-  SCHEDULE_PREVIEW_CHANGED: 'Scheduling information changed. Review a fresh preview before confirming.',
-  RECURRING_RULE_CONFLICT: 'Another recurring rule already covers this vendor or physical booth in the selected range.',
-  RESOLVE_RULE_CONFLICTS_FIRST: 'Resolve the blocked changes to existing assignments before changing this recurring rule.',
-  RULE_VENDOR_IMMUTABLE: 'Choose the existing rule’s vendor, or create a separate recurring assignment.',
-  BOOTH_ABSENT_FROM_LAYOUT: 'This booth does not exist in the selected date’s layout.',
-  RESOLVE_ISSUED_INVOICES_FIRST: 'Resolve issued or paid invoices through Booth billing before releasing this assignment or cancelling participation. No refund is automatic.',
-  EXPLICIT_DRAFT_INVOICE_VOID_REQUIRED: 'A draft invoice must be explicitly voided before releasing this booth. A manager with billing permission can confirm that option.',
-  HISTORICAL_DATE_DECISION_IMMUTABLE: 'This market date has started or attendance is frozen. Use the existing attendance correction workflow.',
-  CONFIRMED_DATE_REQUIRED: 'Confirm the vendor’s participation for this market date before assigning a booth.',
-  BOOTH_ALREADY_ASSIGNED: 'This booth is occupied. Refresh the schedule and review its current assignment.',
-  BOOTH_SIZE_CONFLICT: 'This booth does not meet the vendor’s space requirements.',
-  BOOTH_AMENITY_CONFLICT: 'This booth does not provide the vendor’s required amenities.',
-  RENTAL_CAPACITY_CONFLICT: 'The requested rentals exceed capacity for this market date.',
-  PLATFORM_PARTICIPATION_UNAVAILABLE: 'This vendor needs approved market membership and confirmed participation for this date.',
-  PHYSICAL_BOOTH_IDENTITY_AUTOMATIC: 'Booth identity is managed automatically. Refresh the layout before saving.',
-  PHYSICAL_BOOTH_CONFIRMATION_REQUIRED: 'Confirm the physical booth identity change before saving.',
-  PHYSICAL_BOOTH_ALREADY_IN_LAYOUT: 'This physical booth already has a representation in this layout. Remove the duplicate before saving.',
-  ASSIGNED_BOOTH_IDENTITY_IMMUTABLE: 'This booth has assignment history. Keep its identity and resolve the replacement separately.',
-  ASSIGNED_BOOTH_CANNOT_BE_RETIRED: 'Resolve active booth assignments before retiring this physical booth.',
-  PHYSICAL_BOOTH_RETIRED: 'This physical booth is retired. Use an active booth or create a new booth.',
+  BOUNDED_SCHEDULE_RANGE_REQUIRED:
+    'Choose a valid bounded date range. Recurring rules can cover up to one year.',
+  SCHEDULE_RANGE_TOO_LARGE:
+    'Choose a shorter range. Recurring rule previews support up to 128 market dates.',
+  SCHEDULE_CONFIRM_REQUIRED:
+    'Review and confirm the proposed scheduling change.',
+  SCHEDULE_PREVIEW_CHANGED:
+    'Scheduling information changed. Review a fresh preview before confirming.',
+  RECURRING_RULE_CONFLICT:
+    'Another recurring rule already covers this vendor or physical booth in the selected range.',
+  RESOLVE_RULE_CONFLICTS_FIRST:
+    'Resolve the blocked changes to existing assignments before changing this recurring rule.',
+  RULE_VENDOR_IMMUTABLE:
+    'Choose the existing rule’s vendor, or create a separate recurring assignment.',
+  BOOTH_ABSENT_FROM_LAYOUT:
+    'This booth does not exist in the selected date’s layout.',
+  RESOLVE_ISSUED_INVOICES_FIRST:
+    'Resolve issued or paid invoices through Booth billing before releasing this assignment or cancelling participation. No refund is automatic.',
+  EXPLICIT_DRAFT_INVOICE_VOID_REQUIRED:
+    'A draft invoice must be explicitly voided before releasing this booth. A manager with billing permission can confirm that option.',
+  HISTORICAL_DATE_DECISION_IMMUTABLE:
+    'This market date has started or attendance is frozen. Use the existing attendance correction workflow.',
+  CONFIRMED_DATE_REQUIRED:
+    'Confirm the vendor’s participation for this market date before assigning a booth.',
+  BOOTH_ALREADY_ASSIGNED:
+    'This booth is occupied. Refresh the schedule and review its current assignment.',
+  BOOTH_SIZE_CONFLICT:
+    'This booth does not meet the vendor’s space requirements.',
+  BOOTH_AMENITY_CONFLICT:
+    'This booth does not provide the vendor’s required amenities.',
+  RENTAL_CAPACITY_CONFLICT:
+    'The requested rentals exceed capacity for this market date.',
+  PLATFORM_PARTICIPATION_UNAVAILABLE:
+    'This vendor needs approved market membership and confirmed participation for this date.',
+  PHYSICAL_BOOTH_IDENTITY_AUTOMATIC:
+    'Booth identity is managed automatically. Refresh the layout before saving.',
+  PHYSICAL_BOOTH_CONFIRMATION_REQUIRED:
+    'Confirm the physical booth identity change before saving.',
+  PHYSICAL_BOOTH_ALREADY_IN_LAYOUT:
+    'This physical booth already has a representation in this layout. Remove the duplicate before saving.',
+  ASSIGNED_BOOTH_IDENTITY_IMMUTABLE:
+    'This booth has assignment history. Keep its identity and resolve the replacement separately.',
+  ASSIGNED_BOOTH_CANNOT_BE_RETIRED:
+    'Resolve active booth assignments before retiring this physical booth.',
+  PHYSICAL_BOOTH_RETIRED:
+    'This physical booth is retired. Use an active booth or create a new booth.',
 
   INVALID_PACKING_QUANTITY:
     'Enter a whole number from zero to one million. Reusing packed units cannot exceed the available quantity.',
@@ -84,13 +126,20 @@ export class AppError extends Error {
     super(
       (code &&
         ((code.startsWith('APPLICATION_') && applicationErrorMessages[code]) ||
-          taxMessages[code])) ||
+          taxMessages[code] ||
+          catalogMessages[code])) ||
         safeMessages[kind],
     );
     this.name = 'AppError';
   }
 }
 const codes: Record<string, ErrorKind> = {
+  INVALID_REWARD_FIELD: 'validation',
+  INVALID_REWARD_CONFIGURATION: 'validation',
+  REWARD_PRODUCT_UNAVAILABLE: 'validation',
+  REWARD_NOT_EDITABLE: 'conflict',
+  INVALID_VARIANT_SLUG: 'validation',
+  VARIANT_SLUG_ALREADY_EXISTS: 'validation',
   INVALID_PACKING_QUANTITY: 'validation',
   PACKING_CHECKLIST_INCOMPLETE: 'validation',
   PACKING_OCCURRENCE_CANCELLED: 'validation',

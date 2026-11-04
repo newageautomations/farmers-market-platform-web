@@ -1,3 +1,6 @@
+import { AppError } from '@market/api';
+import { MarketsWorkspace } from './MarketsWorkspace';
+import { categoryOptions } from './product-taxonomy';
 import { EmptyState } from '@market/ui';
 import { Badge } from '@market/ui';
 import { vendorStatusTone } from './status-presentation';
@@ -134,89 +137,28 @@ function ruleInput(data: FormData): PreorderInput {
 export function Markets({
   service,
   id,
+  initialView,
 }: {
   service: VendorService;
   id?: string;
+  initialView?: 'applications';
 }) {
-  const read = useCallback(() => service.memberships(), [service]);
-  const query = useRead('memberships', read, !id);
   if (id) return <MarketDetail service={service} id={id} />;
   return (
-    <>
-      {service.linkRequests &&
-        service.respondToLink &&
-        mayCommand(service.context, 'ManageOwnMarketParticipation') && (
-          <VendorLinkRequests service={service} />
-        )}
-      {service.requestRelationship &&
-        mayCommand(service.context, 'ManageOwnMarketParticipation') && (
-          <CommandForm
-            title="Request a Market relationship"
-            validate={(d) => {
-              integer(d.get('market-id'));
-            }}
-            run={(d) => service.requestRelationship!(text(d, 'market-id'))}
-            onDone={query.refresh}
-          >
-            <TextField
-              name="market-id"
-              label="Market ID provided by the Market"
-              required
-            />
-            <p>
-              This records your business's consent. The Market must approve the
-              relationship separately.
-            </p>
-          </CommandForm>
-        )}
-      {service.boothAssignments && (
-        <RouteLink to="/vendor/booths">Your booth assignments</RouteLink>
-      )}
-      <p>
-        Business membership, attendance, listing approval, publication and
-        occurrence offering are separate states.
-      </p>
-      <ReadState {...query} retry={query.refresh} />
-      {query.data && (
+    <MarketsWorkspace
+      key={service.vendorId}
+      service={service}
+      initialView={initialView}
+      relationshipTools={
         <>
-          <DataTable
-            label="Owned Market relationships"
-            recordDetails={{ status: 1 }}
-            headings={['Market', 'Membership', 'Actions']}
-          >
-            {query.data.map((m) => (
-              <tr key={m.id}>
-                <th scope="row">
-                  {m.market.name}
-                  {service.context.source === 'backend' && (
-                    <small>Relationship reference {m.id}</small>
-                  )}
-                </th>
-                <td>
-                  <Badge tone={vendorStatusTone('membership', m.status)}>
-                    {m.status}
-                  </Badge>
-                </td>
-                <td>
-                  <RouteLink to={`/vendor/markets/${encodeURIComponent(m.id)}`}>
-                    Manage relationship
-                  </RouteLink>
-                </td>
-              </tr>
-            ))}
-          </DataTable>
-          {!query.data.length && (
-            <EmptyState title="No market relationships">
-              <p>No Market relationships are available.</p>
-            </EmptyState>
-          )}
-          <p>
-            The backend caps this relationship projection at 1,000 rows. No
-            total or cursor is provided.
-          </p>
+          {service.linkRequests &&
+            service.respondToLink &&
+            mayCommand(service.context, 'ManageOwnMarketParticipation') && (
+              <VendorLinkRequests service={service} />
+            )}
         </>
-      )}
-    </>
+      }
+    />
   );
 }
 function MarketDetail({ service, id }: { service: VendorService; id: string }) {
@@ -383,13 +325,17 @@ function Occurrences({
   refresh: () => void;
   can: boolean;
 }) {
+  const requestedOccurrence = new URLSearchParams(
+    window.location.hash.slice(1),
+  ).get('attendance');
   const [range, setRange] = useState(() => ({
       from: new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z',
-      through:
-        new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10) +
-        'T00:00:00.000Z',
+      through: requestedOccurrence
+        ? new Date(Date.now() + 90 * 86400000).toISOString()
+        : new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10) +
+          'T00:00:00.000Z',
     })),
-    [selected, setSelected] = useState<string>(''),
+    [selected, setSelected] = useState<string>(requestedOccurrence ?? ''),
     [rangeError, setRangeError] = useState(false);
   const read = useCallback(
     () => service.occurrences(state.membership.id, range.from, range.through),
@@ -513,7 +459,11 @@ function Occurrences({
       {can && occurrence && (
         <CommandForm
           key={selected}
-          title="Participation"
+          title={
+            requestedOccurrence === selected
+              ? 'Request attendance'
+              : 'Participation'
+          }
           confirm={(data) =>
             text(data, 'attendance-status') === 'cancelled'
               ? 'Cancel participation in this occurrence? The backend controls offering and pickup eligibility. Existing orders remain backend managed.'
@@ -533,7 +483,12 @@ function Occurrences({
             <Select
               id="attendance-status"
               name="attendance-status"
-              defaultValue={participation?.status ?? 'planned'}
+              defaultValue={
+                requestedOccurrence === selected &&
+                participation?.status === 'cancelled'
+                  ? 'planned'
+                  : (participation?.status ?? 'planned')
+              }
             >
               <option value="planned">Planned</option>
               <option value="confirmed">Confirmed</option>
@@ -631,7 +586,7 @@ function ListingRequest({
     </>
   );
 }
-function PublicationControls({
+export function PublicationControls({
   service,
   listing,
   refresh,
@@ -645,8 +600,29 @@ function PublicationControls({
     [service, listing.id],
   );
   const query = useRead(`publication:${listing.id}`, read);
+  const readClassification = useCallback(async () => {
+    if (!service.taxonomy || !query.data) throw new AppError('unavailable');
+    const [nodes, classification] = await Promise.all([
+      service.taxonomy.hierarchy(),
+      service.taxonomy.classification(query.data.productId),
+    ]);
+    return categoryOptions(nodes).some(
+      ({ node }) =>
+        node.id === classification.primaryCategory?.id &&
+        node.assignable &&
+        !node.children.length,
+    );
+  }, [service, query.data]);
+  const classification = useRead(
+    `publication-classification:${listing.id}`,
+    readClassification,
+    listing.status === 'approved' &&
+      !!query.data &&
+      mayCommand(service.context, 'ManageCatalogPublication'),
+  );
   const done = () => {
     query.refresh();
+    classification.refresh();
     refresh();
   };
   return (
@@ -664,11 +640,22 @@ function PublicationControls({
             <CommandForm
               embedded
               title="Publish listing"
+              validate={() => {
+                if (!classification.data)
+                  throw new AppError('validation', 'PRODUCT_CATEGORY_REQUIRED');
+              }}
               run={() => service.publish(listing.id)}
               onDone={done}
               submitLabel="Publish"
             >
               <p>Publish this approved listing to its Market.</p>
+              <ReadState {...classification} retry={classification.refresh} />
+              {classification.data === false && (
+                <p>
+                  Select a valid leaf category in the product editor before
+                  publishing this listing.
+                </p>
+              )}
             </CommandForm>
           )}
           <CommandForm

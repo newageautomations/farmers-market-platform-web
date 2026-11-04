@@ -9,8 +9,22 @@ import { parse } from 'graphql';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { transport, type TransportOptions } from './transport';
 import { AppError } from './errors';
-import { createVendorCategoryApi } from './vendor-categories';
+import {
+  createVendorCategoryApi,
+  type CategoryImage,
+} from './vendor-categories';
+import { uploadDocumentFile } from './document-upload';
+import { createProductTaxonomyApi } from './product-taxonomy';
 export interface StorefrontAppearanceConfig {
+  categoryPresentation?: Record<
+    string,
+    {
+      position: number;
+      visible: boolean;
+      imageAssetId: string | null;
+      image: string;
+    }
+  >;
   template?:
     | {
         id: 'modern-farmhouse';
@@ -435,13 +449,38 @@ export function createStorefrontAppearanceApi(options: TransportOptions) {
     },
     { themeId: string }
   >;
+  const images = parse(
+    'query OwnStorefrontImages($skip: Int) { ownStorefrontImages(skip: $skip) }',
+  ) as TypedDocumentNode<
+    { ownStorefrontImages: CategoryImage[] },
+    { skip: number }
+  >;
   return {
+    hierarchy: options.channelToken
+      ? createProductTaxonomyApi({
+          ...options,
+          channelToken: options.channelToken,
+        }).hierarchy
+      : undefined,
     media: options.channelToken
       ? {
           ...createVendorCategoryApi({
             ...options,
             channelToken: options.channelToken,
           }),
+          images: async (skip = 0) =>
+            (await execute({ api: 'admin', document: images }, { skip }))
+              .ownStorefrontImages,
+          upload: (file: File) =>
+            uploadDocumentFile(
+              { ...options, channelToken: options.channelToken! },
+              parse(
+                'mutation UploadOwnStorefrontImage($input: JSON!, $file: Upload!) { uploadOwnStorefrontImage(input:$input,file:$file) }',
+              ),
+              'uploadOwnStorefrontImage',
+              file,
+              {},
+            ) as Promise<CategoryImage>,
           themeImages: async (themeId: string) =>
             (
               await execute(
@@ -476,12 +515,12 @@ export function createStorefrontAppearanceApi(options: TransportOptions) {
 }
 export type StorefrontAppearanceApi = Omit<
   ReturnType<typeof createStorefrontAppearanceApi>,
-  'products' | 'preview' | 'media'
+  'products' | 'preview' | 'media' | 'hierarchy'
 > &
   Partial<
     Pick<
       ReturnType<typeof createStorefrontAppearanceApi>,
-      'products' | 'preview'
+      'products' | 'preview' | 'hierarchy'
     >
   > & {
     media?: Omit<

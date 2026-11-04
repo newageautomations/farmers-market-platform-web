@@ -1,9 +1,14 @@
-import { createPortal } from 'react-dom';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import {
   AppError,
   safeError,
-  type VendorCategory,
   type CategoryImage,
   type VendorCategoryApi,
 } from '@market/api';
@@ -14,21 +19,11 @@ import {
   Field,
   Input,
   SearchSelect,
-  SearchableMultiSelect,
   Tabs,
   UtilityIcon,
 } from '@market/ui';
 import './image-library.css';
-import { mayCommand } from '@market/admin-core';
-import type { VendorService } from './service';
-import {
-  CommandForm,
-  DataTable,
-  ReadState,
-  TextField,
-  text,
-  useRead,
-} from './common';
+import { ReadState, useRead } from './common';
 
 /** Feature composition of approved controls. No existing category or public asset picker exists. */
 export function CategoryImageField({
@@ -40,6 +35,8 @@ export function CategoryImageField({
   onChange,
   onImageChange,
   presentation = 'inline',
+  triggerClassName = '',
+  renderTrigger,
   themeId,
 }: {
   api: Pick<VendorCategoryApi, 'images' | 'upload'> & {
@@ -52,6 +49,8 @@ export function CategoryImageField({
   onChange?: () => void;
   onImageChange?: (image: CategoryImage | null) => void;
   presentation?: 'inline' | 'library';
+  triggerClassName?: string;
+  renderTrigger?: (open: () => void, disabled: boolean) => ReactNode;
   themeId?: string;
 }) {
   const read = useCallback(() => api.images(), [api]);
@@ -150,29 +149,33 @@ export function CategoryImageField({
     <div className="stack">
       {presentation === 'library' ? (
         <>
-          <Field id={`${uploadId}-select`} label={label}>
-            <Button
-              id={`${uploadId}-select`}
-              variant="secondary"
-              className="image-library-trigger"
-              aria-label={label}
-              aria-haspopup="dialog"
-              aria-expanded={libraryOpen}
-              onClick={() => {
-                setLibraryOpen(true);
-                if (themeId && api.themeImages) {
-                  setThemeLoading(true);
-                  setThemeError(undefined);
-                }
-              }}
-            >
-              <span>
-                {options.find((image) => image.id === selectedId)?.name ||
-                  (selectedId ? 'Selected image' : 'Choose an image')}
-              </span>
-              <UtilityIcon name="chevron-down" />
-            </Button>
-          </Field>
+          {renderTrigger ? (
+            renderTrigger(() => setLibraryOpen(true), busy || loadingMore)
+          ) : (
+            <Field id={`${uploadId}-select`} label={label}>
+              <Button
+                id={`${uploadId}-select`}
+                variant="secondary"
+                className={`image-library-trigger ${triggerClassName}`}
+                aria-label={label}
+                aria-haspopup="dialog"
+                aria-expanded={libraryOpen}
+                onClick={() => {
+                  setLibraryOpen(true);
+                  if (themeId && api.themeImages) {
+                    setThemeLoading(true);
+                    setThemeError(undefined);
+                  }
+                }}
+              >
+                <span>
+                  {options.find((image) => image.id === selectedId)?.name ||
+                    (selectedId ? 'Selected image' : 'Choose an image')}
+                </span>
+                <UtilityIcon name="chevron-down" />
+              </Button>
+            </Field>
+          )}
           <Dialog
             open={libraryOpen}
             title="Choose an image"
@@ -353,277 +356,12 @@ export function CategoryImageField({
       <input
         type="hidden"
         name="categoryImagePending"
-        value={busy || images.loading || !!images.error ? 'true' : 'false'}
-      />
-    </div>
-  );
-}
-function categoryInput(data: FormData) {
-  const name = text(data, 'categoryName');
-  if (!name || name.length > 100 || data.get('categoryImagePending') === 'true')
-    throw new AppError('validation');
-  return { name, imageAssetId: text(data, 'imageAssetId') || null };
-}
-export function CategoryEditor({
-  api,
-  category,
-  onSaved,
-  onClose,
-  products,
-}: {
-  api: VendorCategoryApi;
-  category?: VendorCategory;
-  onSaved: (category: VendorCategory) => void;
-  onClose: () => void;
-  products?: Array<{ id: string; name: string }>;
-}) {
-  const [busy, setBusy] = useState(false);
-  return createPortal(
-    <div
-      onSubmit={(event) => event.stopPropagation()}
-      onSubmitCapture={(event) => {
-        if (busy) {
-          event.preventDefault();
-          event.stopPropagation();
+        value={
+          busy || (!renderTrigger && (images.loading || !!images.error))
+            ? 'true'
+            : 'false'
         }
-      }}
-    >
-      <Dialog
-        open
-        title={category ? 'Edit category' : 'Create category'}
-        busy={busy}
-        onClose={onClose}
-      >
-        <CommandForm
-          title={category ? category.name : 'New category'}
-          validate={categoryInput}
-          onPendingChange={setBusy}
-          submitLabel={category ? 'Save changes' : 'Create category'}
-          onDone={() => undefined}
-          run={async (data) => {
-            const saved = await api.save({
-              ...categoryInput(data),
-              ...(category ? { id: category.id } : {}),
-              ...(products
-                ? { productIds: data.getAll('productIds').map(String) }
-                : {}),
-            });
-            onSaved(saved);
-          }}
-          secondaryAction={
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={busy}
-              onClick={onClose}
-            >
-              Cancel
-            </Button>
-          }
-        >
-          <TextField
-            name="categoryName"
-            label="Category name"
-            value={category?.name}
-            maxLength={100}
-          />
-          <CategoryImageField
-            api={api}
-            value={category?.imageAssetId}
-            preview={category?.image}
-          />
-          {products && (
-            <SearchableMultiSelect
-              label="Products"
-              name="productIds"
-              defaultValue={category?.productIds ?? []}
-              options={products.map((p) => ({ value: p.id, label: p.name }))}
-              allowClear
-            />
-          )}
-        </CommandForm>
-        {category && products && (
-          <CommandForm
-            title="Delete category"
-            confirm="Delete this category and its assignments? Products and variants will be preserved."
-            submitLabel="Delete category"
-            onPendingChange={setBusy}
-            run={async () => {
-              await api.remove(category.id);
-              onClose();
-              onSaved(category);
-            }}
-            onDone={() => undefined}
-          >
-            <p>Deleting a category preserves its products.</p>
-          </CommandForm>
-        )}
-      </Dialog>
-    </div>,
-    document.body,
-  );
-}
-export function ProductCategories({
-  service,
-  productId,
-}: {
-  service: VendorService;
-  productId?: string;
-}) {
-  const api = service.categories!;
-  const read = useCallback(() => api.list(), [api]);
-  const query = useRead(
-    `product-categories:${service.vendorId}:${productId ?? 'new'}`,
-    read,
-    true,
-    { retainPreviousData: true },
-  );
-  const [selected, setSelected] = useState<string[] | null>(null);
-  const [added, setAdded] = useState<VendorCategory[]>([]);
-  const [creating, setCreating] = useState(false);
-  const rows = [
-    ...(query.data ?? []),
-    ...added.filter((a) => !query.data?.some((c) => c.id === a.id)),
-  ];
-  const initial = rows
-    .filter((c) => productId && c.productIds.includes(productId))
-    .map((c) => c.id);
-  return (
-    <div className="stack">
-      <ReadState {...query} retry={query.refresh} />
-      {query.data && (
-        <input type="hidden" name="categoriesLoaded" value="true" />
-      )}
-      <SearchableMultiSelect
-        label="Categories"
-        name="categoryIds"
-        options={rows.map((c) => ({ value: c.id, label: c.name }))}
-        value={selected ?? initial}
-        onChange={setSelected}
-        disabled={!query.data}
-        allowClear
       />
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={() => setCreating(true)}
-      >
-        + Create New Category
-      </Button>
-      {creating && (
-        <CategoryEditor
-          api={api}
-          onClose={() => setCreating(false)}
-          onSaved={(category) => {
-            setAdded((previous) => [...previous, category]);
-            setSelected((previous) => [...(previous ?? initial), category.id]);
-            setCreating(false);
-            query.refresh();
-          }}
-        />
-      )}
     </div>
-  );
-}
-export function Categories({ service }: { service: VendorService }) {
-  const api = service.categories;
-  const read = useCallback(
-    () => (api ? api.list() : Promise.resolve([])),
-    [api],
-  );
-  const query = useRead(`categories:${service.vendorId}`, read);
-  const [editing, setEditing] = useState<VendorCategory | 'new' | null>(null);
-  const readProducts = useCallback(async () => {
-    const all = [];
-    let skip = 0;
-    while (true) {
-      const page = await service.catalog('', skip);
-      all.push(...page.items);
-      skip += page.items.length;
-      if (skip >= page.totalItems) return all;
-      if (!page.items.length) throw new AppError('unavailable');
-    }
-  }, [service]);
-  const productQuery = useRead(
-    `category-products:${service.vendorId}:${editing === 'new' ? 'new' : editing?.id}`,
-    readProducts,
-    editing !== null,
-  );
-  const products = productQuery.data;
-  if (!api) return <p>Categories are unavailable in this environment.</p>;
-  const can = mayCommand(service.context, 'ManageOwnCatalog');
-  return (
-    <>
-      {can && (
-        <div className="actions">
-          <Button onClick={() => setEditing('new')}>Create Category</Button>
-        </div>
-      )}
-      <ReadState {...query} retry={query.refresh} />
-      {query.data && (
-        <DataTable
-          label="Categories"
-          headings={['Image', 'Category', 'Products']}
-        >
-          {query.data.map((category) => (
-            <tr
-              key={category.id}
-              className="ui-record-row"
-              onClick={(event) => {
-                if (
-                  !(event.target instanceof Element) ||
-                  event.target.closest(
-                    'button, a, input, select, textarea, label',
-                  )
-                )
-                  return;
-                const trigger =
-                  event.currentTarget.querySelector<HTMLButtonElement>(
-                    'button',
-                  );
-                trigger?.focus({ preventScroll: true });
-                trigger?.click();
-              }}
-            >
-              <td>
-                {category.image ? (
-                  <img src={category.image} alt="" width="48" height="48" />
-                ) : (
-                  <span aria-label="No category image">No image</span>
-                )}
-              </td>
-              <th scope="row">
-                <Button
-                  variant="tertiary"
-                  disabled={!can}
-                  onClick={() => setEditing(category)}
-                >
-                  {category.name}
-                </Button>
-              </th>
-              <td>{category.productCount}</td>
-            </tr>
-          ))}
-        </DataTable>
-      )}
-      {editing && !products && (
-        <Dialog open title="Category products" onClose={() => setEditing(null)}>
-          <ReadState {...productQuery} retry={productQuery.refresh} />
-        </Dialog>
-      )}
-      {editing && products && (
-        <CategoryEditor
-          key={editing === 'new' ? 'new' : editing.id}
-          api={api}
-          category={editing === 'new' ? undefined : editing}
-          products={products}
-          onClose={() => setEditing(null)}
-          onSaved={() => {
-            setEditing(null);
-            query.refresh();
-          }}
-        />
-      )}
-    </>
   );
 }

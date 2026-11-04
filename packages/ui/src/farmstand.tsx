@@ -1,5 +1,5 @@
 import type { ComponentProps, CSSProperties, ReactNode } from 'react';
-import { Badge, Button, Card, Input, Select } from './index';
+import { Badge, Button, Card, DataTable, Input, Select } from './index';
 import { buttonClassName } from './presentation';
 
 /** Opt-in Figma appearance. Existing primitives retain behavior and semantics. */
@@ -55,6 +55,16 @@ export function FarmstandPanel({
   );
 }
 
+/** Catalog table presentation with the existing accessible DataTable semantics. */
+export function FarmstandTable(props: ComponentProps<typeof DataTable>) {
+  return (
+    <DataTable
+      {...props}
+      className={`farmstand-data-table ${props.className ?? ''}`}
+    />
+  );
+}
+
 export function FarmstandSearch({
   className = '',
   ...props
@@ -73,17 +83,35 @@ export function FarmstandSearch({
 
 export function FarmstandSelect({
   className = '',
+  icon,
   ...props
-}: ComponentProps<typeof Select>) {
+}: ComponentProps<typeof Select> & { icon?: FarmstandIconName }) {
   return (
-    <span className="farmstand-select-wrap">
-      <FarmstandIcon name="chevron-down" />
+    <span
+      className={`farmstand-select-wrap${icon ? ' farmstand-select-with-icon' : ''}`}
+    >
+      <FarmstandIcon name={icon ?? 'chevron-down'} />
       <Select {...props} className={`farmstand-select ${className}`} />
     </span>
   );
 }
 
 export type FarmstandIconName =
+  | 'shopping-cart'
+  | 'layers'
+  | 'package'
+  | 'store'
+  | 'credit-card'
+  | 'circle-check'
+  | 'hash'
+  | 'user-round'
+  | 'calendar-days'
+  | 'receipt-text'
+  | 'map-pin'
+  | 'info'
+  | 'truck'
+  | 'arrow-left'
+  | 'tag'
   | 'plus'
   | 'plus-small'
   | 'plus-category'

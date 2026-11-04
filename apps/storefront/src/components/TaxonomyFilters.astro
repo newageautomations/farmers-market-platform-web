@@ -1,0 +1,81 @@
+---
+import type { StorefrontTaxonomy } from '@market/api';
+import {
+  presentedCategories,
+  type CategoryPresentation,
+} from '@market/storefront-core';
+import { disclosureClassName, buttonClassName } from '@market/ui/presentation';
+interface Props {
+  taxonomy: StorefrontTaxonomy;
+  settings?: CategoryPresentation;
+  query: URLSearchParams;
+}
+const { taxonomy, settings, query } = Astro.props;
+const categories = presentedCategories(taxonomy.categories, settings);
+const groups = [...new Set(taxonomy.tags.map((t) => t.group))];
+const preserve = [...query.entries()].filter(
+  ([key]) => !['category', 'tag', 'page'].includes(key),
+);
+---
+
+<details class={disclosureClassName('dropdown')}>
+  <summary>Refine products</summary>
+  <div class="ui-disclosure-content">
+    <form method="get">
+      {preserve.map(([name, value]) => (
+        <input type="hidden" name={name} value={value} />
+      ))}
+      <fieldset>
+        <legend>Categories</legend>
+        <div class="market-filter-options">
+          {categories.map((category) => (
+            <label
+              style={`padding-inline-start:${(category.pathIds.length - 1) * 1.25}rem`}
+            >
+              {settings?.[category.id]?.image && (
+                <img
+                  src={settings[category.id]!.image}
+                  alt=""
+                  width="40"
+                  height="40"
+                  loading="lazy"
+                />
+              )}
+              <input
+                type="checkbox"
+                name="category"
+                value={category.id}
+                checked={query.getAll('category').includes(category.id)}
+              />
+              {category.pathNames.join(' / ')} ({category.count})
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      {groups.map((group) => (
+        <fieldset>
+          <legend>{group.replaceAll('-', ' ')}</legend>
+          <div class="market-filter-options">
+            {taxonomy.tags
+              .filter((tag) => tag.group === group)
+              .map((tag) => (
+                <label>
+                  <input
+                    type="checkbox"
+                    name="tag"
+                    value={tag.id}
+                    checked={query.getAll('tag').includes(tag.id)}
+                  />
+                  {tag.name} ({tag.count})
+                </label>
+              ))}
+          </div>
+        </fieldset>
+      ))}
+      {!!groups.length && <p>Product tags are seller declared.</p>}
+      <button type="submit" class={buttonClassName({ variant: 'secondary' })}>
+        Apply category and tag filters
+      </button>
+    </form>
+  </div>
+</details>

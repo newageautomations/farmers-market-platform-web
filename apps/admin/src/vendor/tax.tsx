@@ -30,6 +30,11 @@ export function TaxRateField({
         min="0"
         max="100"
         step="0.01"
+        maxLength={6}
+        onInput={(event) => {
+          if (event.currentTarget.value.length > 6)
+            event.currentTarget.value = event.currentTarget.value.slice(0, 6);
+        }}
         required={required}
         defaultValue={value ?? ''}
       />

@@ -361,8 +361,26 @@ const storefrontTextSchema = z
     ) as Record<StorefrontTextKey, z.ZodOptional<ReturnType<typeof text>>>,
   )
   .strict();
+export const categoryPresentationSchema = z
+  .record(
+    z.string().regex(/^[1-9][0-9]*$/),
+    z
+      .object({
+        position: z.number().int().min(0).max(10000),
+        visible: z.boolean(),
+        imageAssetId: z
+          .string()
+          .regex(/^[1-9][0-9]*$/)
+          .nullable(),
+        image,
+      })
+      .strict()
+      .refine((value) => !!value.image === !!value.imageAssetId),
+  )
+  .refine((value) => Object.keys(value).length <= 200);
 export const storefrontAppearanceSchema = z
   .object({
+    categoryPresentation: categoryPresentationSchema.optional(),
     template: z
       .union([farmhouseTemplateSchema, editorialMarketTemplateSchema])
       .optional(),

@@ -20,6 +20,9 @@ export interface ApplicantApplicationRow {
   vendorChannelId?: string;
   marketId: number;
   marketName: string;
+  /** Optional discovery metadata. Older servers omit these fields. */
+  city?: string | null;
+  state?: string | null;
   name: string;
   slug: string;
   origin: string | null;

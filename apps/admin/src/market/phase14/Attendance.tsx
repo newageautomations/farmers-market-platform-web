@@ -711,16 +711,18 @@ export function AttendanceHistory({
   vendorId,
   directoryId,
   vendor = false,
+  initialFrom = '',
   renderVendorExtra,
 }: {
   api: AttendanceApi;
   vendorId?: number;
   directoryId?: number;
   vendor?: boolean;
+  initialFrom?: string;
   renderVendorExtra?: (row: AttendanceRow) => import('react').ReactNode;
 }) {
   const id = useId(),
-    [from, setFrom] = useState(''),
+    [from, setFrom] = useState(initialFrom),
     [through, setThrough] = useState(''),
     [status, setStatus] = useState(''),
     [skip, setSkip] = useState(0),

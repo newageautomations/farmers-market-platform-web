@@ -54,6 +54,7 @@ export type DialogProps = {
   description?: ReactNode;
   'aria-describedby'?: string;
   actions?: ReactNode;
+  headerActions?: ReactNode;
   /** @deprecated All dialogs provide the shared header dismiss button. */
   showClose?: boolean;
 };
@@ -82,6 +83,7 @@ export function Dialog({
   description,
   'aria-describedby': describedBy,
   actions,
+  headerActions,
 }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -265,6 +267,9 @@ export function Dialog({
         <h2 ref={titleRef} id={id} tabIndex={-1}>
           {title}
         </h2>
+        {headerActions && (
+          <div className="ui-dialog-header-actions">{headerActions}</div>
+        )}
         <Button
           iconOnly
           variant="secondary"

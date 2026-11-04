@@ -83,7 +83,8 @@ export function PosRegister({
     [feedback, setFeedback] = useState('');
   const [search, setSearch] = useState(''),
     [debounced, setDebounced] = useState(''),
-    [category, setCategory] = useState(''),
+    [parentCategory, setParentCategory] = useState(''),
+    [childCategory, setChildCategory] = useState(''),
     [favorites, setFavorites] = useState(false),
     [skip, setSkip] = useState(0),
     [refresh, setRefresh] = useState(0),
@@ -117,6 +118,11 @@ export function PosRegister({
     back: false,
     forward: false,
   });
+  const category = childCategory || parentCategory;
+  const parent = catalog?.categories.find((c) => c.id === parentCategory);
+  const catalogCache = useRef(
+    new Map<string, { value: PosCatalog; at: number }>(),
+  );
   const selectedOccurrence =
     (draft ? draft.context.occurrenceId : occurrence) || null;
   const requestKey = JSON.stringify([
@@ -145,7 +151,16 @@ export function PosRegister({
     return () => clearTimeout(timeout);
   }, [search]);
   useEffect(() => {
+    catalogCache.current.clear();
+  }, [api, selectedOccurrence]);
+  useEffect(() => {
     let active = true;
+    const cached = catalogCache.current.get(requestKey);
+    if (cached && Date.now() - cached.at < 15000) {
+      setCatalog(cached.value);
+      setLoadedKey(requestKey);
+      return;
+    }
     api
       .catalog({
         search: debounced,
@@ -155,10 +170,24 @@ export function PosRegister({
         occurrenceId: selectedOccurrence || null,
       })
       .then((value) => {
-        if (active) setCatalog(value);
+        if (active) {
+          // Small, short-lived page cache. Checkout always revalidates price and stock.
+          catalogCache.current.delete(requestKey);
+          catalogCache.current.set(requestKey, { value, at: Date.now() });
+          if (catalogCache.current.size > 24)
+            catalogCache.current.delete(
+              catalogCache.current.keys().next().value!,
+            );
+          setCatalog(value);
+        }
       })
       .catch((e) => {
-        if (active) setError(message(e));
+        if (active) {
+          setError(message(e));
+          setCatalog((previous) =>
+            previous ? { ...previous, items: [], totalItems: 0 } : null,
+          );
+        }
       })
       .finally(() => {
         if (active) setLoadedKey(requestKey);
@@ -928,14 +957,19 @@ export function PosRegister({
             role="search"
             onSubmit={(e) => {
               e.preventDefault();
-              if (loading || search !== debounced || !catalog) return;
+              if (loading || search !== debounced || !search.trim() || !catalog)
+                return;
               const variants = catalog.items
                 .flatMap((p) => p.variants)
                 .filter(
                   (v) => v.sku.toLowerCase() === search.trim().toLowerCase(),
                 );
               if (variants.length === 1) void add(variants[0]!);
-              else if (catalog.totalItems === 1 && catalog.items[0])
+              else if (
+                !variants.length &&
+                catalog.totalItems === 1 &&
+                catalog.items[0]
+              )
                 choose(catalog.items[0]);
             }}
           >
@@ -985,28 +1019,34 @@ export function PosRegister({
             >
               <div className="pos-category-list">
                 <Button
-                  variant={!category ? 'secondary' : 'tertiary'}
-                  aria-pressed={!category}
+                  variant={!parentCategory ? 'secondary' : 'tertiary'}
+                  aria-pressed={!parentCategory}
                   onClick={() => {
-                    setCategory('');
+                    setParentCategory('');
+                    setChildCategory('');
                     setSkip(0);
                   }}
                 >
                   All Products
                 </Button>
-                {catalog?.categories.map((c) => (
-                  <Button
-                    key={c.id}
-                    variant={category === c.id ? 'secondary' : 'tertiary'}
-                    aria-pressed={category === c.id}
-                    onClick={() => {
-                      setCategory(c.id);
-                      setSkip(0);
-                    }}
-                  >
-                    {c.name}
-                  </Button>
-                ))}
+                {catalog?.categories
+                  .filter((c) => !c.parentId)
+                  .map((c) => (
+                    <Button
+                      key={c.id}
+                      variant={
+                        parentCategory === c.id ? 'secondary' : 'tertiary'
+                      }
+                      aria-pressed={parentCategory === c.id}
+                      onClick={() => {
+                        setParentCategory(c.id);
+                        setChildCategory('');
+                        setSkip(0);
+                      }}
+                    >
+                      {c.name}
+                    </Button>
+                  ))}
               </div>
             </div>
             {categoryScroll.overflow && (
@@ -1048,8 +1088,45 @@ export function PosRegister({
               </div>
             )}
           </div>
+          {parent && (
+            <div
+              className="pos-categories pos-child-categories"
+              role="group"
+              aria-label={`${parent.name} subcategories`}
+            >
+              <div className="pos-category-list">
+                <Button
+                  variant="tertiary"
+                  size="compact"
+                  aria-pressed={!childCategory}
+                  onClick={() => {
+                    setChildCategory('');
+                    setSkip(0);
+                  }}
+                >
+                  All {parent.name}
+                </Button>
+                {catalog?.categories
+                  .filter((c) => c.parentId === parent.id)
+                  .map((c) => (
+                    <Button
+                      key={c.id}
+                      variant="tertiary"
+                      size="compact"
+                      aria-pressed={childCategory === c.id}
+                      onClick={() => {
+                        setChildCategory(c.id);
+                        setSkip(0);
+                      }}
+                    >
+                      {c.name}
+                    </Button>
+                  ))}
+              </div>
+            </div>
+          )}
           <div className="pos-feedback" role="status" aria-live="polite">
-            {feedback}
+            {loading && catalog ? 'Updating products' : feedback}
             {pending > 0 ? ` · ${pending} pending` : ''}
           </div>
           {loading && !catalog ? (

@@ -49,7 +49,7 @@ if (storefront?.kind === 'MARKET' && storefront.source === 'backend') {
       try {
         marketCatalog = await requestMarketShop(Astro).catalog(
           occurrences[0].id,
-          { skip: 0, take: 8 },
+          { skip: 0, take: 8, distinctProducts: true },
         );
       } catch {
         /* An unavailable catalog must not hide valid market dates. */

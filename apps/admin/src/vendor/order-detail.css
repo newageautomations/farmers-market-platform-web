@@ -1,0 +1,436 @@
+.admin-content:has(.order-detail) {
+  width: calc(100% - 4rem);
+  max-width: none;
+  margin-block: 30px 28px;
+}
+.order-detail {
+  container-type: inline-size;
+  color: var(--brand-foreground);
+  font-family: 'Inter', var(--font-body);
+  --order-border: color-mix(
+    in srgb,
+    var(--brand-primary) 16%,
+    var(--brand-surface)
+  );
+  --order-soft: color-mix(
+    in srgb,
+    var(--brand-primary) 4%,
+    var(--brand-surface)
+  );
+  --catalog-border: var(--order-border);
+  --catalog-soft: var(--order-soft);
+}
+.order-page-heading,
+.order-heading-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.order-page-heading {
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.order-heading-title {
+  min-width: 0;
+  flex: 1;
+}
+.order-heading-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--order-soft);
+  color: var(--brand-primary);
+}
+.order-detail .order-page-heading h1 {
+  margin: 0;
+  font-family: 'Lora', Georgia, serif;
+  font-size: clamp(25px, 3vw, 36px);
+  line-height: 1.3;
+  font-weight: 400;
+  letter-spacing: -0.8px;
+  overflow-wrap: anywhere;
+}
+.order-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.order-main,
+.order-sidebar {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.order-detail .order-panel > h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 22px;
+  font-family: var(--font-body);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.order-panel > h2 > .farmstand-icon {
+  color: var(--brand-primary);
+}
+.order-detail dl,
+.order-detail dd {
+  margin: 0;
+}
+.order-overview-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 22px 22px !important;
+  border: 1px solid var(--order-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.order-overview-facts .order-fact {
+  padding: 16px;
+  box-shadow:
+    1px 0 var(--order-border),
+    0 1px var(--order-border);
+}
+.order-fact {
+  min-width: 0;
+}
+.order-fact dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--brand-muted);
+  font-size: 14px;
+}
+.order-fact dt .farmstand-icon {
+  --farmstand-icon-width: 17px;
+  color: var(--brand-foreground);
+}
+.order-fact dd {
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.order-overview-facts .order-fact dd {
+  padding-left: 25px;
+}
+.order-detail small {
+  display: block;
+  margin-top: 5px;
+  font-size: 14px;
+  color: var(--brand-muted);
+  font-weight: 400;
+}
+.order-detail .farmstand-data-table {
+  margin: 0;
+}
+.order-detail .farmstand-data-table tbody tr {
+  height: 62px;
+}
+.order-detail .farmstand-data-table :is(th, td) {
+  padding-block: 12px;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.order-detail .farmstand-data-table tbody th {
+  font-weight: 600;
+}
+.order-items-panel .farmstand-data-table :is(th, td):not(:first-child) {
+  text-align: right;
+  width: 120px;
+}
+.order-items-panel .farmstand-data-table :is(th, td):nth-child(3) {
+  width: 150px;
+}
+.order-detail .farmstand-data-table thead th {
+  font-size: 13px;
+}
+.order-detail .farmstand-data-table tbody td {
+  font-size: 14px;
+}
+.order-items-panel .farmstand-data-table tbody td:last-child {
+  font-size: 15px;
+}
+.order-detail small,
+.order-status-badge.ui-status {
+  font-size: 13px;
+}
+.order-item-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.order-totals {
+  display: grid;
+  gap: 10px;
+  padding: 18px 22px;
+}
+.order-totals .order-fact,
+.order-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.order-totals .order-fact dd {
+  margin: 0;
+  font-weight: 500;
+}
+.order-total {
+  margin-inline: -10px;
+  padding: 10px;
+  border-radius: 6px;
+  background: var(--order-soft);
+  color: var(--brand-primary);
+  font-size: 16px;
+  font-weight: 700;
+}
+.order-detail-facts {
+  padding: 0 22px;
+}
+.order-detail-facts > .order-fact {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  align-items: baseline;
+  gap: 12px;
+  padding-block: 13px;
+  border-bottom: 1px solid var(--order-border);
+}
+.order-detail-facts > .order-fact dd {
+  text-align: right;
+  margin: 0;
+}
+.order-payment-facts > :last-child {
+  border-bottom: 0;
+}
+.order-payment-facts {
+  padding-bottom: 16px;
+}
+.order-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px;
+  border: 1px solid var(--order-border);
+  border-radius: 8px;
+  background: var(--order-soft);
+}
+.order-detail .order-status-row > dd {
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+.order-status-row dt,
+.order-progress > div:first-child > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.order-status-row dt > .farmstand-icon,
+.order-progress .farmstand-icon {
+  --farmstand-icon-width: 18px;
+  color: var(--brand-primary);
+}
+.order-status-badge.ui-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 100px;
+  padding: 4px 9px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.order-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.order-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 16px 22px 22px;
+  padding: 12px;
+  background: var(--order-soft);
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+.order-note .farmstand-icon {
+  --farmstand-icon-width: 17px;
+  margin-top: 2px;
+}
+.order-detail .order-panel.card > .order-note {
+  margin-bottom: 22px;
+}
+.order-detail .order-panel.card > .order-progress {
+  margin-bottom: 22px;
+}
+.order-status-list {
+  display: grid;
+  gap: 10px;
+  padding: 0 22px;
+}
+.order-progress {
+  margin: 10px 22px 22px;
+  padding: 12px;
+  border: 1px solid var(--order-border);
+  border-radius: 8px;
+  background: var(--order-soft);
+}
+.order-progress > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.order-progress strong,
+.order-progress p,
+.order-progress-track > span {
+  font-size: 14px;
+}
+.order-progress-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.order-progress progress {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  height: 7px;
+  border: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--order-border);
+  accent-color: var(--brand-primary);
+}
+.order-progress progress::-webkit-progress-bar {
+  background: var(--order-border);
+}
+.order-progress progress::-webkit-progress-value {
+  background: var(--brand-primary);
+  border-radius: 10px;
+}
+.order-progress progress::-moz-progress-bar {
+  background: var(--brand-primary);
+  border-radius: 10px;
+}
+.order-progress p {
+  margin: 8px 0 0;
+  color: var(--brand-muted);
+}
+.order-operations > p,
+.order-operations > details {
+  margin: 16px 22px;
+}
+.order-operations > p {
+  font-size: 14px;
+  color: var(--brand-muted);
+  line-height: 1.6;
+}
+.order-operations .command-section {
+  margin: 0;
+  min-width: 0;
+}
+.order-operations > .table-scroll .command-section {
+  padding: 0;
+}
+.order-panel > .table-scroll {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.order-operations > .table-scroll {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.order-operations .farmstand-data-table form > .ui-actions {
+  margin-block-start: 0;
+}
+.order-operations .farmstand-data-table {
+  table-layout: auto;
+}
+.order-operations .farmstand-data-table th:last-child {
+  width: 42%;
+}
+.order-payment-controls {
+  padding: 0 22px 22px;
+}
+.order-payment-controls > .ui-actions:empty {
+  display: none;
+}
+.order-refund-history {
+  list-style: none;
+  padding: 0 22px;
+  margin: 0 0 18px;
+}
+.order-refund-history li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-block: 10px;
+  border-top: 1px solid var(--order-border);
+  font-size: 14px;
+}
+.order-refund-history li > span:last-of-type,
+.order-refund-history time {
+  width: 100%;
+}
+@container (max-width: 900px) {
+  .order-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .order-sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (max-width: 600px) {
+  .order-items-panel .farmstand-data-table :is(th, td):nth-child(2) {
+    width: 100px;
+  }
+  .order-items-panel .farmstand-data-table :is(th, td):nth-child(3) {
+    width: 130px;
+  }
+  .order-overview-facts,
+  .order-sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .order-detail
+    .order-fulfillment-panel
+    > .table-scroll
+    > .farmstand-data-table {
+    min-width: 520px;
+  }
+  .order-detail .order-operations .farmstand-data-table {
+    min-width: 520px;
+  }
+  .order-detail .order-page-heading h1 {
+    font-size: 32px;
+  }
+}
+@media (max-width: 767px) {
+  .admin-content:has(.order-detail) {
+    width: calc(100% - 2rem);
+    margin-block: 22px;
+  }
+}

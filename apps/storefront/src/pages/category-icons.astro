@@ -1,0 +1,119 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import CategoryIcon from '../components/ui/CategoryIcon.astro';
+import { cardClassName, buttonClassName } from '@market/ui/presentation';
+import { categoryIconDataUrl } from '@market/ui/category-icons';
+import { categoryIconReference } from '@market/ui/category-icon-reference';
+
+// Temporary local review aid. Never exposed by production builds or added to navigation.
+if (!import.meta.env.DEV) return new Response('Not found', { status: 404 });
+Astro.response.headers.set('Cache-Control', 'no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+const childCount = categoryIconReference.reduce(
+  (sum, group) => sum + group.children.length,
+  0,
+);
+---
+
+<SiteLayout title="Product category icons" noindex>
+  <div class="category-icon-review">
+    <h1>Product category icons</h1>
+    <p>
+      {categoryIconReference.length} parent categories and {childCount}{' '}
+      subcategories. A distinct SVG for every category.
+    </p>
+    <p class="review-note">
+      Temporary local preview. Each parent is followed by its subcategories.
+      Select an icon to download its SVG.
+    </p>
+    <div class="category-icon-groups">
+      {categoryIconReference.map((group) => (
+        <section
+          class={cardClassName({
+            className: 'category-icon-group',
+            spacing: 'contained',
+          })}
+          aria-labelledby={group.code}
+        >
+          <div class="category-icon-parent">
+            <a
+              class={buttonClassName({ variant: 'tertiary', iconOnly: true })}
+              href={categoryIconDataUrl(group.code)}
+              download={`${group.code}.svg`}
+              aria-label={`Download ${group.name} SVG`}
+            >
+              <CategoryIcon code={group.code} size={48} />
+            </a>
+            <h2 id={group.code}>{group.name}</h2>
+          </div>
+          <ul class="category-icon-children">
+            {group.children.map((child) => (
+              <li data-category-code={child.code}>
+                <a
+                  class={buttonClassName({
+                    variant: 'tertiary',
+                    iconOnly: true,
+                  })}
+                  href={categoryIconDataUrl(child.code)}
+                  download={`${child.code}.svg`}
+                  aria-label={`Download ${child.name} SVG`}
+                >
+                  <CategoryIcon code={child.code} size={40} />
+                </a>
+                <span>{child.name}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  </div>
+</SiteLayout>
+
+<style>
+  .category-icon-review {
+    padding-block: 2rem 4rem;
+  }
+  .review-note {
+    color: var(--brand-muted);
+  }
+  .category-icon-groups {
+    display: grid;
+    gap: var(--space-6, 1.5rem);
+    margin-block-start: 2rem;
+  }
+  .category-icon-parent {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 1rem);
+    color: var(--brand-primary);
+  }
+  .category-icon-parent h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    overflow-wrap: anywhere;
+  }
+  .category-icon-children {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: var(--space-4, 1rem);
+    list-style: none;
+    padding: var(--space-5, 1.25rem) 0 0;
+    margin: var(--space-4, 1rem) 0 0;
+    border-block-start: 1px solid var(--brand-border);
+  }
+  .category-icon-children li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 1rem);
+    min-width: 0;
+  }
+  .category-icon-children li > span {
+    overflow-wrap: anywhere;
+  }
+  .category-icon-review a {
+    flex-shrink: 0;
+    color: var(--brand-primary);
+    --ui-control-height: 64px;
+  }
+</style>

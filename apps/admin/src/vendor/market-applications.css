@@ -1,0 +1,193 @@
+.market-applications-main {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.markets-stat-warning {
+  --markets-stat-color: var(--status-warning-fg);
+  --markets-stat-background: var(--status-warning-bg);
+}
+.markets-stat-success {
+  --markets-stat-color: var(--status-success-fg);
+  --markets-stat-background: var(--status-success-bg);
+}
+.markets-stat:is(.markets-stat-warning, .markets-stat-success)
+  .markets-stat-icon {
+  color: var(--markets-stat-color);
+  background: var(--markets-stat-background);
+}
+.markets-stat:is(.markets-stat-warning, .markets-stat-success) dd {
+  color: var(--markets-stat-color);
+}
+.market-applications-columns {
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+.market-applications-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+}
+.market-applications-title h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.market-applications-title h2 .farmstand-icon {
+  color: var(--brand-primary);
+}
+.market-applications-title p {
+  color: var(--brand-muted);
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.5;
+}
+.market-discovery.farmstand-panel {
+  background: color-mix(in srgb, var(--brand-primary) 3%, var(--brand-surface));
+}
+.markets-filters.market-discovery-filters {
+  grid-template-columns: minmax(160px, 1fr) minmax(180px, 240px);
+  align-items: end;
+}
+.market-discovery-filters .ui-search-select > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.market-discovery-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+.market-applications-main .markets-list .farmstand-data-table {
+  min-width: 800px;
+}
+.market-applications-main .table-scroll {
+  position: relative;
+}
+.market-applications-main .markets-list .farmstand-data-table th:first-child {
+  width: 24%;
+}
+.market-applications-main
+  .markets-list
+  .farmstand-data-table
+  .farmstand-button {
+  --ui-control-height: 40px;
+  --ui-button-padding-inline: 14px;
+}
+.market-applications-list tr {
+  cursor: pointer;
+}
+.market-applications-list tr.market-application-selected {
+  background: var(--markets-soft);
+}
+.market-applications-list .markets-identity .farmstand-button {
+  text-align: left;
+  justify-content: flex-start;
+  white-space: normal;
+}
+.market-applications-main .farmstand-button > svg,
+.market-application-details .farmstand-button > svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.market-application-details {
+  position: sticky;
+  top: 18px;
+  min-width: 0;
+}
+.market-application-facts {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  font-size: 12px;
+}
+.market-application-facts > div {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+.market-application-facts dt {
+  color: var(--brand-muted);
+}
+.market-application-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.market-application-guidance {
+  margin: 0;
+  padding: 12px;
+  border-radius: 9px;
+  background: var(--markets-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+@container (max-width: 1080px) {
+  .market-applications-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .market-application-details {
+    position: static;
+  }
+  .market-application-details
+    .markets-next-content
+    > :is(dl, p, .progress, .error-state) {
+    grid-column: 1 / -1;
+  }
+}
+@container (max-width: 600px) {
+  .markets-filters.market-discovery-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.market-application-facts > div {
+  align-items: center;
+}
+.market-application-facts dd {
+  padding: 0;
+}
+.market-application-name {
+  font-weight: 600;
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: left bottom;
+  background-size: 0 1px;
+  background-repeat: no-repeat;
+  transition: background-size 180ms ease;
+}
+.market-applications-list
+  .farmstand-data-table
+  td.market-application-status-cell {
+  text-align: left;
+  padding-right: 20px;
+}
+.market-application-status-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.market-application-status-content > .farmstand-icon {
+  flex: none;
+  color: var(--brand-muted);
+}
+.market-applications-list
+  tbody
+  tr:is(:hover, :focus-visible)
+  .market-application-name {
+  background-size: 100% 1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-application-name {
+    transition: none;
+  }
+}

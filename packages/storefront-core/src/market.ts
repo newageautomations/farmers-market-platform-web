@@ -1,3 +1,4 @@
+import { taxonomyFilters } from './taxonomy';
 import type { MarketCatalogOptions, PublicMarketOccurrence } from '@market/api';
 import { formatDate } from '@market/config';
 export function occurrenceLabel(
@@ -43,7 +44,10 @@ export function marketCatalogInputs(search: URLSearchParams): {
     options: {
       skip: (page - 1) * 12,
       take: 12,
+      distinctProducts: true,
       sort,
+      ...taxonomyFilters(search),
+      search: (search.get('search') ?? '').slice(0, 100),
       vendorIds: ids('vendor'),
       facetValueIds: ids('facet'),
     },

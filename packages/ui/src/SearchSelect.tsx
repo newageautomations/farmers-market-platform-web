@@ -10,6 +10,7 @@ export type SearchOption = {
   pinned?: boolean;
 };
 type SharedProps = {
+  readOnly?: boolean;
   label: string;
   options: readonly SearchOption[];
   placeholder?: string;
@@ -84,6 +85,7 @@ function SearchChoices({
   options,
   placeholder = 'Search options',
   disabled = false,
+  readOnly = false,
   allowClear = false,
   clearLabel = 'Clear selection',
   selectedLabel,
@@ -154,7 +156,8 @@ function SearchChoices({
     onSearch?.('');
   }
   function select(option: SearchOption) {
-    if (option.disabled || input.current?.matches(':disabled')) return;
+    if (readOnly || option.disabled || input.current?.matches(':disabled'))
+      return;
     onSelection(
       multiple
         ? values.includes(option.value)
@@ -189,7 +192,9 @@ function SearchChoices({
             open && activeIndex >= 0 ? id + '-' + activeIndex : undefined
           }
           disabled={disabled}
-          value={open ? query : selection}
+          readOnly={readOnly}
+          aria-readonly={readOnly || undefined}
+          value={open && !readOnly ? query : selection}
           placeholder={placeholder}
           onFocus={() => {
             setOpen(true);
@@ -197,6 +202,7 @@ function SearchChoices({
           }}
           onClick={() => setOpen(true)}
           onChange={(e) => {
+            if (readOnly) return;
             setQuery(e.target.value);
             onSearch?.(e.target.value);
             setOpen(true);
@@ -263,7 +269,7 @@ function SearchChoices({
             }
           />
         ))}
-      {allowClear && values.length > 0 && (
+      {!readOnly && allowClear && values.length > 0 && (
         <Button
           variant="secondary"
           size="compact"
@@ -285,6 +291,7 @@ function SearchChoices({
         id={id + '-options'}
         role="listbox"
         aria-multiselectable={multiple || undefined}
+        aria-readonly={readOnly || undefined}
         aria-hidden={!open}
         aria-label={label}
         className={'market-select-options ' + (open ? 'is-open' : '')}
@@ -319,7 +326,7 @@ function SearchChoices({
               }
             }}
           >
-            {multiple && (
+            {multiple && !readOnly && (
               <Checkbox
                 className="ui-option-check"
                 checked={values.includes(option.value)}

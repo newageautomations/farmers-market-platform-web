@@ -152,6 +152,7 @@ type Query {
   authorizeStorefrontPreview(token: String!, host: String!, config: JSON!): JSON!
   ownStorefrontWebsites(storefrontId: ID!, skip: Int, take: Int): JSON!
   ownStorefrontWebsite(storefrontId: ID!, id: ID!): JSON!
+  ownStorefrontImages(skip: Int): JSON!
   ownStorefrontProducts(search: String): JSON!
   ownStorefrontThemeAssets(themeId: String!): JSON!
   ownStorefrontLinks: JSON!
@@ -806,6 +807,7 @@ type Mutation {
   saveOwnVendorCategory(input: JSON!): JSON!
   deleteOwnVendorCategory(id: ID!): Boolean!
   uploadOwnVendorCategoryImage(input: JSON!, file: Upload!): JSON!
+  uploadOwnStorefrontImage(input: JSON!, file: Upload!): JSON!
   createStorefrontWebsite(storefrontId: ID!, name: String!, templateId: String!, sourceId: ID): JSON!
   changeStorefrontWebsite(storefrontId: ID!, id: ID!, version: Int!, action: String!, input: JSON, publicationVersion: Int, templateConfig: JSON): JSON!
   startStorefrontPreview(id: ID!, websiteId: ID): JSON!
@@ -7134,6 +7136,8 @@ input OwnCatalogProductInput {
   collectTaxes: Boolean
   taxOverride: Float
   categoryIds: [ID!]
+  primaryCategoryId: ID
+  tagIds: [ID!]
   productInformation: String
   assetIds: [ID!]
 }
@@ -7144,12 +7148,25 @@ input OwnCatalogVariantInput {
   sku: String!
   price: Int!
   optionIds: [ID!]
+  enabled: Boolean
+  slug: String
+  description: String
+  productInformation: String
+  assetIds: [ID!]
+  collectTaxes: Boolean
+  taxOverride: Float
 }
 
 input OwnCatalogVariantMetadataInput {
   name: String!
   sku: String!
   enabled: Boolean!
+  slug: String
+  description: String
+  productInformation: String
+  assetIds: [ID!]
+  collectTaxes: Boolean
+  taxOverride: Float
 }
 
 input OwnInventoryAdjustmentInput {
@@ -8849,6 +8866,13 @@ type OwnCatalogOptionGroup {
 }
 
 type OwnCatalogVariant {
+  slug: String!
+  description: String
+  productInformation: String
+  assetIds: [ID!]
+  collectTaxes: Boolean
+  taxOverride: Float
+  taxConfigured: Boolean!
   id: ID!
   name: String!
   sku: String!

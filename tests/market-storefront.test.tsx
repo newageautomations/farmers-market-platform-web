@@ -83,7 +83,11 @@ describe('Market public contract boundaries', () => {
       options: {
         skip: 12,
         take: 12,
+        distinctProducts: true,
         sort: 'PRICE_DESC',
+        categoryIds: [],
+        tagIds: [],
+        search: '',
         vendorIds: ['10'],
         facetValueIds: ['2'],
       },

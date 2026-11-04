@@ -515,7 +515,7 @@ it('ranks cart suggestions using existing categories and excludes every product 
       {
         id: category,
         name: category,
-        facet: { id: 'category', name: 'Category' },
+        facet: { code: 'farmstand-category', id: 'category', name: 'Category' },
       },
     ],
   });

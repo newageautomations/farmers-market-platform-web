@@ -1,4 +1,6 @@
+import { createProductTaxonomyApi, type ProductTaxonomyApi } from '@market/api';
 import { createTeamService } from '../team/service';
+import type { MarketDiscoveryApi } from './market-applications-data';
 import type { TeamApi } from '@market/api';
 import {
   createPackingApi,
@@ -62,8 +64,10 @@ export interface VendorService extends VendorApi {
   packing?: PackingApi;
   marketAttendance?: AttendanceApi;
   applications?: ApplicantApplicationsApi;
+  marketDiscovery?: MarketDiscoveryApi;
   contact?: VendorContactApi;
   categories?: VendorCategoryApi;
+  taxonomy?: ProductTaxonomyApi;
   finance?: FinanceApi;
   pos?: InPersonApi;
   loyalty?: LoyaltyApi;
@@ -191,6 +195,7 @@ export function createLiveVendorService(
       { endpoint, channelToken },
       'admin',
     ),
+    taxonomy: createProductTaxonomyApi({ endpoint, channelToken }),
     categories: createVendorCategoryApi({ endpoint, channelToken }),
     finance: createFinanceApi({ endpoint, channelToken, onAuthorityFailure }),
     pos: createInPersonApi({ endpoint, channelToken }),

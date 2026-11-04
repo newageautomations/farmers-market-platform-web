@@ -32,7 +32,12 @@ export interface PosCatalog {
   items: PosProduct[];
   totalItems: number;
   currency: string;
-  categories: { id: string; name: string }[];
+  categories: {
+    id: string;
+    name: string;
+    parentId: string | null;
+    position?: number;
+  }[];
 }
 export interface PosLine {
   id: string;
@@ -504,6 +509,8 @@ export function createInPersonApi(options: TransportOptions) {
       ),
     catalog: (input: {
       search?: string;
+      /** Exact SKU lookup is independent of browsing category and favorites. */
+      sku?: string;
       skip?: number;
       categoryId?: string;
       favorites?: boolean;

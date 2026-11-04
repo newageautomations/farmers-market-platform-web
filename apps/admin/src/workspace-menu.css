@@ -1,0 +1,74 @@
+/* Explicitly requested route-menu variant. Native links preserve navigation. */
+.workspace-menu {
+  --workspace-border: color-mix(
+    in srgb,
+    var(--brand-primary) 14%,
+    var(--brand-surface)
+  );
+  --workspace-soft: color-mix(
+    in srgb,
+    var(--brand-primary) 7%,
+    var(--brand-surface)
+  );
+  display: grid;
+  grid-template-columns: repeat(
+    var(--workspace-menu-columns, 4),
+    minmax(0, 1fr)
+  );
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 12px;
+  background: var(--brand-surface);
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--brand-primary) 4%, transparent);
+}
+.workspace-menu a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  color: var(--brand-foreground);
+  text-decoration: none;
+  font-size: 14px;
+  line-height: 1.3;
+  transition: background 160ms ease;
+}
+.workspace-menu a + a::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  height: 24px;
+  width: 1px;
+  background: var(--workspace-border);
+}
+.workspace-menu a[aria-current] {
+  color: var(--brand-primary);
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 13%,
+    var(--brand-surface)
+  );
+  font-weight: 650;
+}
+.workspace-menu a:hover {
+  background: var(--workspace-soft);
+}
+.workspace-menu a:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 1px;
+}
+.workspace-menu svg {
+  width: 21px;
+  height: 21px;
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-menu a {
+    transition: none;
+  }
+}

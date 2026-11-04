@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react';
-import { ApplicationFields, Card, Spinner } from '@market/ui';
-import type { ApplicantDraftDetail } from '@market/api';
+import {
+  ApplicationFields,
+  Button,
+  Card,
+  Dialog,
+  Spinner,
+  buttonClassName,
+} from '@market/ui';
+import { safeStorefrontUrl, type ApplicantDraftDetail } from '@market/api';
 import type { VendorService } from './service';
-import { RouteLink } from './common';
+import { go, RouteLink } from './common';
 export function VendorApplicationContinuation({
   service,
 }: {
@@ -62,7 +69,9 @@ export function VendorDraftPreview({
   id: number;
 }) {
   const [draft, setDraft] = useState<ApplicantDraftDetail | null>(null),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [confirmation, setConfirmation] = useState(false),
+    [pending, setPending] = useState(false);
   useEffect(() => {
     let active = true;
     void service.applications
@@ -93,15 +102,77 @@ export function VendorDraftPreview({
               {draft.name} at {draft.marketName}
             </p>
             <p>
-              This form changed or was retired. Your saved answers are retained.
-              Contact the market before starting another application.
+              {draft.current
+                ? 'Your saved answers are shown below. Continue your application to make changes and submit it.'
+                : 'This form changed or was retired. Your saved answers are retained. Contact the market before starting another application.'}
             </p>
+            {draft.current && safeStorefrontUrl(draft.origin) && (
+              <a
+                className={buttonClassName({ variant: 'primary' })}
+                href={`${safeStorefrontUrl(draft.origin)}/vendor/application-continue?draft=${draft.draft.id}&vendor=${draft.vendor.id}&channel=${encodeURIComponent(draft.vendor.channelId)}`}
+              >
+                Complete application
+              </a>
+            )}
           </Card>
           <ApplicationFields
             definition={draft.definition}
             answers={draft.draft.progress.answers}
             readOnly
           />
+          <Button
+            variant="destructive-outline"
+            onClick={() => setConfirmation(true)}
+          >
+            Discard draft
+          </Button>
+          <Dialog
+            open={confirmation}
+            title="Discard draft?"
+            busy={pending}
+            onClose={() => {
+              if (!pending) setConfirmation(false);
+            }}
+            actions={
+              <>
+                <Button
+                  variant="secondary"
+                  disabled={pending}
+                  onClick={() => setConfirmation(false)}
+                >
+                  Keep application
+                </Button>
+                <Button
+                  variant="destructive-outline"
+                  disabled={pending}
+                  onClick={() => {
+                    if (!service.applications) return;
+                    setPending(true);
+                    void service.applications
+                      .command('DISCARD_DRAFT', {
+                        id: draft.draft.id,
+                        revision: draft.draft.revision,
+                        cancelInformationRequests: true,
+                      })
+                      .then(() => {
+                        go('/vendor/markets#applications');
+                      })
+                      .catch(() => {
+                        setConfirmation(false);
+                        setError(
+                          'The action could not be completed. Reload to check the current status, then try again.',
+                        );
+                      })
+                      .finally(() => setPending(false));
+                  }}
+                >
+                  {pending ? 'Saving' : 'Discard draft'}
+                </Button>
+              </>
+            }
+          >
+            <p>This permanently removes your saved draft.</p>
+          </Dialog>
         </>
       ) : (
         <Spinner />

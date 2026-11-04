@@ -1,0 +1,291 @@
+.loyalty-rewards {
+  --catalog-border: var(--loyalty-border);
+  --catalog-soft: var(--loyalty-soft);
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  animation: rewards-enter 180ms ease-out;
+}
+.rewards-description {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 14px;
+}
+.rewards-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.rewards-stat.farmstand-panel.card.ui-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 12px;
+}
+.rewards-stat-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: 14px;
+  color: var(--status-success-fg);
+  background: var(--status-success-bg);
+}
+.rewards-stat-icon[data-status='INACTIVE'] {
+  color: var(--status-warning-fg);
+  background: var(--status-warning-bg);
+}
+.rewards-stat-icon[data-status='ARCHIVED'] {
+  color: var(--brand-muted);
+  background: var(--loyalty-soft);
+}
+.rewards-stat > div {
+  display: grid;
+  gap: 2px;
+}
+.rewards-stat strong {
+  font-size: 24px;
+  line-height: 1.2;
+}
+.rewards-stat > div > span {
+  font-size: 13px;
+  color: var(--brand-muted);
+}
+.rewards-toolbar {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) auto auto minmax(16px, 0.4fr) auto;
+  gap: 16px;
+  align-items: center;
+}
+.rewards-toolbar > .field:last-child {
+  grid-column: 5;
+}
+.rewards-toolbar .field {
+  margin: 0;
+  min-width: 0;
+}
+.rewards-toolbar .farmstand-search,
+.rewards-toolbar .farmstand-select-wrap {
+  width: 100%;
+}
+.rewards-table-panel {
+  min-width: 0;
+}
+.rewards-table-panel .farmstand-data-table {
+  min-width: 800px;
+}
+.rewards-table-panel .farmstand-data-table th:first-child {
+  width: 40%;
+}
+.rewards-table-panel .farmstand-data-table :is(th, td) {
+  padding: 12px 18px;
+}
+.rewards-table-panel .farmstand-data-table thead th:last-child {
+  font-size: 0;
+}
+.reward-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  white-space: normal;
+  min-width: 250px;
+}
+.reward-identity > span:last-child {
+  display: grid;
+  gap: 3px;
+}
+.reward-identity strong {
+  font-weight: 650;
+  font-size: 14px;
+}
+.reward-identity > span > span {
+  color: var(--brand-muted);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.reward-thumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: 9px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--loyalty-soft);
+  color: var(--brand-primary);
+}
+.reward-thumbnail > * {
+  grid-area: 1 / 1;
+}
+.reward-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reward-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+}
+.reward-kind svg,
+.reward-kind .farmstand-icon {
+  width: 18px;
+  height: 18px;
+}
+.rewards-readonly {
+  font-size: 12px;
+  color: var(--brand-muted);
+}
+.reward-actions {
+  position: relative;
+  --ui-disclosure-summary-padding: 0;
+  --ui-disclosure-radius: 8px;
+  --ui-disclosure-border-color: var(--loyalty-border);
+}
+.reward-actions .dropdown {
+  margin: 0;
+  width: 104px;
+  background: var(--brand-surface);
+}
+.reward-actions summary {
+  min-height: 36px;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.reward-actions summary::after {
+  display: none;
+}
+.reward-actions .ui-disclosure-content {
+  position: fixed;
+  left: var(--reward-menu-left);
+  top: var(--reward-menu-top);
+  width: 180px;
+  z-index: 100;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  background: var(--brand-surface);
+  border: 1px solid var(--loyalty-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--brand-muted) 18%, transparent);
+  animation: reward-menu-enter 160ms ease-out;
+  transform-origin: top right;
+}
+.reward-actions .ui-disclosure-content .farmstand-button {
+  justify-content: flex-start;
+  min-height: 40px;
+  width: 100%;
+  padding-inline: 14px;
+  gap: 10px;
+}
+.reward-actions summary svg {
+  width: 14px;
+  height: 14px;
+}
+.reward-actions .ui-disclosure-content :is(svg, .farmstand-icon) {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.reward-actions .ui-disclosure::details-content {
+  overflow: visible;
+  transition: none;
+}
+.reward-editor-photo {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-block: 16px;
+}
+.reward-editor-photo > img {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+@keyframes reward-menu-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes rewards-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (max-width: 1000px) {
+  .rewards-toolbar {
+    grid-template-columns: minmax(180px, 1fr) auto auto;
+  }
+  .rewards-toolbar > .field:last-child {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+}
+@media (max-width: 600px) {
+  .rewards-summary {
+    gap: 8px;
+  }
+  .rewards-stat.farmstand-panel.card.ui-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+    gap: 10px;
+  }
+  .rewards-stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+  .rewards-stat > div > span {
+    font-size: 12px;
+  }
+  .rewards-toolbar {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .rewards-toolbar > .field:first-child {
+    grid-column: 1 / -1;
+  }
+  .rewards-toolbar > .field:last-child {
+    width: 100%;
+    justify-self: stretch;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loyalty-rewards,
+  .reward-actions .ui-disclosure-content {
+    animation: none;
+  }
+}
+
+.reward-actions details:not([open]) .ui-disclosure-content {
+  display: none;
+}
+.rewards-table-panel .table-scroll {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.rewards-table-panel .farmstand-data-table tbody tr {
+  height: 68px;
+}
+.rewards-table-panel .farmstand-data-table thead th {
+  white-space: nowrap;
+}

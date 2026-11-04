@@ -1,4 +1,5 @@
 ---
+import TaxonomyFilters from '../../../components/TaxonomyFilters.astro';
 import {
   buttonClassName,
   cardClassName,
@@ -25,12 +26,13 @@ import { formatMoney } from '@market/config';
 import { ErrorState } from '@market/ui';
 const { storefront, storefrontError } = Astro.locals;
 const occurrenceId = Astro.params.occurrenceId ?? '';
-const { page, options } = marketCatalogInputs(Astro.url.searchParams);
+let { page, options } = marketCatalogInputs(new URLSearchParams());
 let occurrence: PublicMarketOccurrence | null = null,
   catalog: MarketCatalog | null = null,
   error = storefrontError;
 let bootstrap: MarketBootstrap = { signedIn: false, cart: null };
 try {
+  ({ page, options } = marketCatalogInputs(Astro.url.searchParams));
   if (
     storefront?.kind !== 'MARKET' ||
     storefront.source !== 'backend' ||
@@ -52,7 +54,9 @@ try {
 if (error)
   Astro.response.status = ['not-found', 'forbidden'].includes(error.kind)
     ? 404
-    : 503;
+    : error.kind === 'validation'
+      ? 400
+      : 503;
 const path = `/occurrences/${encodeURIComponent(occurrenceId)}`;
 const pageUrl = (next: number) => {
   const query = new URLSearchParams(Astro.url.searchParams);
@@ -180,26 +184,24 @@ const structured =
               )}
             </div>
           </fieldset>
-          {!!catalog.facets.length && (
-            <fieldset>
-              <legend>Filter by public category</legend>
-              <div class="market-filter-options">
-                {catalog.facets.map((facet) => (
-                  <label>
-                    <input
-                      type="checkbox"
-                      name="facet"
-                      value={facet.facetValueId}
-                      checked={options.facetValueIds?.includes(
-                        facet.facetValueId,
-                      )}
-                    />
-                    {facet.name} ({facet.count})
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          )}
+          {options.categoryIds?.map((value) => (
+            <input type="hidden" name="category" value={value} />
+          ))}
+          {options.tagIds?.map((value) => (
+            <input type="hidden" name="tag" value={value} />
+          ))}
+          {options.facetValueIds?.map((value) => (
+            <input type="hidden" name="facet" value={value} />
+          ))}
+          <div class="field">
+            <label for="catalog-search">Search products</label>
+            <input
+              id="catalog-search"
+              name="search"
+              value={options.search ?? ''}
+              maxlength="100"
+            />
+          </div>
           <div class="actions">
             <Button type="submit" variant="primary">
               Apply filters
@@ -209,10 +211,15 @@ const structured =
             </a>
           </div>
         </form>
-        <p role="status">{catalog.totalItems} eligible offerings</p>
+        <TaxonomyFilters
+          taxonomy={catalog.taxonomy}
+          settings={storefront?.appearance?.categoryPresentation}
+          query={Astro.url.searchParams}
+        />
+        <p role="status">{catalog.totalItems} eligible products</p>
         {!catalog.items.length ? (
           <div class="empty-state">
-            <h2 class="ui-section-title-consumer">No eligible offerings</h2>
+            <h2 class="ui-section-title-consumer">No eligible products</h2>
             <p>Try clearing filters or choosing another occurrence.</p>
           </div>
         ) : (
@@ -247,6 +254,21 @@ const structured =
                   <p>{item.name}</p>
                 </a>
                 <p>{item.vendorName}</p>
+                {item.productVariants.length > 1 && (
+                  <details>
+                    <summary>Choose an option</summary>
+                    <div class="ui-disclosure-content">
+                      {item.productVariants.map((variant) => (
+                        <p>
+                          <a href={`${path}/products/${variant.variantId}`}>
+                            {variant.name}:{' '}
+                            {formatMoney(variant.price, variant.currencyCode)}
+                          </a>
+                        </p>
+                      ))}
+                    </div>
+                  </details>
+                )}
                 <p class="product-price">
                   {formatMoney(item.price, item.currencyCode)}
                 </p>
@@ -256,7 +278,7 @@ const structured =
         )}
         <nav class="pagination ui-pagination" aria-label="Catalog pages">
           <p>
-            {catalog.totalItems} offerings. Showing{' '}
+            {catalog.totalItems} products. Showing{' '}
             {catalog.items.length ? (options.skip ?? 0) + 1 : 0} to{' '}
             {catalog.items.length
               ? (options.skip ?? 0) + catalog.items.length

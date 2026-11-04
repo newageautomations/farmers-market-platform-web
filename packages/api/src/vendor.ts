@@ -8,17 +8,35 @@ export type ProductInput = Omit<
   | 'collectTaxes'
   | 'taxOverride'
   | 'categoryIds'
+  | 'primaryCategoryId'
+  | 'tagIds'
   | 'productInformation'
   | 'assetIds'
 > & {
   collectTaxes?: boolean | null;
   taxOverride?: number | null;
   categoryIds?: string[];
+  primaryCategoryId?: string | null;
+  tagIds?: string[];
   productInformation?: string | null;
   assetIds?: string[];
 };
-export type VariantInput = g.VendorCreateVariantMutationVariables['input'];
-export type VariantMetadata = g.VendorUpdateVariantMutationVariables['input'];
+type OptionalVariantFields =
+  | 'slug'
+  | 'description'
+  | 'productInformation'
+  | 'assetIds'
+  | 'collectTaxes'
+  | 'taxOverride';
+type OptionalInput<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type VariantInput = OptionalInput<
+  g.VendorCreateVariantMutationVariables['input'],
+  OptionalVariantFields | 'enabled' | 'optionIds'
+>;
+export type VariantMetadata = OptionalInput<
+  g.VendorUpdateVariantMutationVariables['input'],
+  OptionalVariantFields
+>;
 export type InventoryInput = g.VendorRestockMutationVariables['input'];
 export type OperationalInput = g.VendorFulfillMutationVariables['input'];
 export type AttendanceInput = g.VendorAttendanceMutationVariables['input'];
@@ -39,8 +57,19 @@ export type Occurrence = g.OccurrenceFragment;
 export type Offering = g.OfferingFragment;
 export type Listing = g.ListingFragment;
 export type InventoryPage = g.VendorInventoryQuery['ownOperationalInventory'];
-export type OwnedCatalogProduct = g.OwnedCatalogProductFragment;
-export type OwnedCatalogPage = g.VendorCatalogQuery['ownVendorCatalog'];
+type CatalogVariant = g.OwnedCatalogProductFragment['variants'][number];
+export type OwnedCatalogProduct = Omit<
+  g.OwnedCatalogProductFragment,
+  'variants'
+> & {
+  variants: ReadonlyArray<
+    OptionalInput<CatalogVariant, OptionalVariantFields | 'taxConfigured'>
+  >;
+};
+export type OwnedCatalogPage = Omit<
+  g.VendorCatalogQuery['ownVendorCatalog'],
+  'items'
+> & { items: readonly OwnedCatalogProduct[] };
 export type Publication = g.VendorPublicationQuery['ownListingPublication'];
 export type AnalyticsPage = g.VendorTrendQuery['ownVendorAnalyticsTrend'];
 export type AnalyticsTotals = g.VendorTotalsQuery['ownVendorAnalyticsTotals'];
@@ -64,12 +93,14 @@ export function createVendorApi(
         { api: 'admin', document: g.SaveVendorTaxSettingsDocument },
         { input },
       ).then((r) => r.saveOwnVendorTaxSettings),
-    catalogRead: (options: g.VendorCatalogQueryVariables['options']) =>
+    catalogRead: (
+      options: g.VendorCatalogQueryVariables['options'],
+    ): Promise<OwnedCatalogPage> =>
       run(
         { api: 'admin', document: g.VendorCatalogDocument },
         { options },
       ).then((r) => r.ownVendorCatalog),
-    productRead: (productId: string) =>
+    productRead: (productId: string): Promise<OwnedCatalogProduct> =>
       run(
         { api: 'admin', document: g.VendorProductDocument },
         { productId },
@@ -106,12 +137,12 @@ export function createVendorApi(
     createVariant: (input: VariantInput) =>
       run(
         { api: 'admin', document: g.VendorCreateVariantDocument },
-        { input },
+        { input: input as g.VendorCreateVariantMutationVariables['input'] },
       ).then((r) => r.createOwnCatalogVariant),
     updateVariant: (id: string, input: VariantMetadata) =>
       run(
         { api: 'admin', document: g.VendorUpdateVariantDocument },
-        { id, input },
+        { id, input: input as g.VendorUpdateVariantMutationVariables['input'] },
       ).then((r) => r.updateOwnCatalogVariant),
     price: (id: string, price: number) =>
       run(

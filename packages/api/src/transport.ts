@@ -93,7 +93,21 @@ export function transport<K extends ApiKind>(
                 first.message ===
                   'Employee access changed. Reload the team before saving.');
             const error = backendError(
-              staleDomain ? 'STALE_DOMAIN_VERSION' : code,
+              staleDomain
+                ? 'STALE_DOMAIN_VERSION'
+                : code === 'BAD_USER_INPUT' &&
+                    first &&
+                    typeof first === 'object' &&
+                    'message' in first &&
+                    typeof first.message === 'string' &&
+                    [
+                      'INVALID_REWARD_FIELD',
+                      'INVALID_REWARD_CONFIGURATION',
+                      'REWARD_PRODUCT_UNAVAILABLE',
+                      'REWARD_NOT_EDITABLE',
+                    ].includes(first.message)
+                  ? first.message
+                  : code,
               response.status,
             );
             if (

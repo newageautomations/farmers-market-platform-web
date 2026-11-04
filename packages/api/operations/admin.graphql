@@ -557,6 +557,13 @@ fragment OwnedCatalogProduct on OwnCatalogProduct {
     price
     currency
     optionIds
+    slug
+    description
+    productInformation
+    assetIds
+    collectTaxes
+    taxOverride
+    taxConfigured
   }
   optionGroups {
     id

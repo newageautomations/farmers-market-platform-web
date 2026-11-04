@@ -1,0 +1,26 @@
+# Vendor loyalty leaderboard
+
+The leaderboard is a view of `/vendor/loyalty`, selected through the existing loyalty menu. Selecting it preserves the header, menu, browser pathname, focus and scroll position while loading the information beneath the menu. The `#leaderboard` fragment supports refresh, modifier-click links and browser history. Existing `/vendor/loyalty/leaderboard` links open the same workspace and normalize to the fragment URL. Overview date and metric selections survive switching views. Rewards, reward editing and redemptions retain their controllers and destinations.
+
+`LoyaltyLeaderboard.tsx` composes the shared Farmstand table used by Products, Pickup and Customers, alongside Farmstand panels, actions, search/select controls, Field, Pagination, EmptyState and vendor ReadState. The feature composition is necessary because no shared component combines a ranked podium with a selectable customer preview. `LoyaltyIcon.tsx` extracts the overview's existing artwork for reuse. No new primitive, UI library or universal presentation standard is introduced. The podium is an explicitly requested feature presentation using themed medal colors and visible decorative overflow. Ordinary panels and controls retain their shared contracts.
+
+The top three customers are ordered second, first, third on wide screens, with first place elevated. Narrow screens show them in rank order. The seven-column native table retains its accessible, labelled horizontal scroll region where columns cannot fit. This bounded overflow keeps contact information, numeric comparisons and actions available without shrinking text or omitting columns. The preview stacks below the table on narrow containers. Entry animation honors reduced-motion preferences.
+
+There are no summary cards for total ranked members, average points or highest points. There are no tier/status filters, loyalty tiers or membership labels. Search covers customer name and email. Phone is omitted because the authorized CRM projection does not expose it. Rank is numeric and stays fixed when search, sorting or pagination changes.
+
+`loyalty-leaderboard-data.ts` loads all backend-ranked pages before applying search and sorting, then displays 20 rows per page. Export includes every matching row, in the selected sort order, with CSV quoting and formula-prefix protection. Its duplicate-wallet guard rejects inconsistent pagination rather than silently returning an incomplete list. Points are labelled net lifetime points because the existing ranking deducts earning reversals. Completed orders retain the loyalty API's existing qualification semantics. Spending reuses `customerSpend` and keeps different currencies separate.
+
+The authorized local backend change adds `customerId` to the existing vendor-scoped, CRM-permission-gated ranking query. Wallet ID remains `id`; neither ID is treated as a CRM relationship ID. The web composition matches `customerId` against existing authorized customer relationships and uses the relationship's `id` for `/vendor/customers/:id`. There is no name-based or numeric-wallet fallback. Unmatched records retain the existing anonymous label and unavailable contact/spending facts, without a fabricated customer link. No schema migration, persistent database write or new endpoint is required.
+
+Validation completed:
+
+- 25 focused frontend tests covering loyalty, overview, leaderboard, customers and customer detail.
+- Admin production build and focused ESLint/Prettier checks.
+- Backend dashboard/server/worker build with `APP_ENV=dev` and `NODE_ENV=development`, plus `test:loyalty:types`.
+- `scripts/check-loyalty-leaderboard.mjs`: in-memory fixtures with backend/external traffic blocked; 1800, 1280, 768 and 390px layouts, Axe accessibility, overflow, stable header/menu nodes, paging, search, rank preservation, customer links, CSV download and browser Back. Screenshots are stored under `.tmp/loyalty-leaderboard-preview`.
+
+Whole-project frontend TypeScript remains blocked by pre-existing errors in table navigation and application/layout test fixtures, with no errors in the changed leaderboard files. The guarded backend `test:loyalty` suite creates an isolated `vendure_test_` database but fails during its existing fixture setup before reaching leaderboard assertions: the fixture omits current variant catalog details and team membership migrations. No persistent demo database was selected or modified. Failed disposable databases are retained by the harness's existing policy.
+
+For manual testing, restart the local backend through `npm run demo:market-operations:serve` from the web project so the additive customer ID is available. Use `npm run demo:market-operations:admin` for the admin server if needed. No migration command is required for this feature.
+
+Podium cards now use a full-card native customer-profile link over plain customer-name text. Square bottom corners meet the podium artwork; scoped hover/focus feedback preserves the card's placement and respects reduced motion. Customer detail reads the same authorized ranking by customer ID, showing net lifetime earned points and the distinct available balance. The preview stays open and has no close action.

@@ -126,7 +126,7 @@ function fixture() {
       ],
       totalItems: 2,
       currency: 'USD',
-      categories: [{ id: 'cat', name: 'Bakery' }],
+      categories: [{ id: 'cat', name: 'Bakery', parentId: null }],
     })),
     contexts: vi.fn(async () => []),
     drafts: vi.fn(async () => []),
@@ -494,6 +494,225 @@ describe('POS interface', () => {
         expect.objectContaining({ search: 'H-1' }),
       ),
     );
+  });
+  it('switches parent and child immediately, resets, combines search and retains the cart without navigation', async () => {
+    const api = fixture();
+    const base = await api.catalog({});
+    const categories = [
+      { id: 'produce', name: 'Produce', parentId: null },
+      { id: 'vegetables', name: 'Vegetables', parentId: 'produce' },
+      { id: 'fruits', name: 'Fruits', parentId: 'produce' },
+      { id: 'bakery', name: 'Bakery', parentId: null },
+      { id: 'bread', name: 'Bread & Rolls', parentId: 'bakery' },
+    ];
+    vi.mocked(api.catalog).mockImplementation(async (input) => ({
+      ...base,
+      categories,
+      items:
+        input.categoryId === 'fruits'
+          ? []
+          : input.categoryId === 'bakery' || input.categoryId === 'bread'
+            ? [base.items[1]!]
+            : input.categoryId
+              ? [base.items[0]!]
+              : base.items,
+    }));
+    const location = window.location.href;
+    render(<PosRegister api={api} vendorName="Honey Farm" />);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Start checkout' }),
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Honey' }));
+    await screen.findByLabelText('Quantity for Honey');
+    const unrelatedReads = [
+      api.contexts,
+      api.drafts,
+      api.paymentMethods,
+      api.recoverablePayments,
+    ].map((fn) => vi.mocked(fn).mock.calls.length);
+    const choose = async (label: string, categoryId: string) => {
+      fireEvent.click(screen.getByRole('button', { name: label }));
+      expect(screen.getByRole('button', { name: label })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+      await waitFor(() =>
+        expect(api.catalog).toHaveBeenLastCalledWith(
+          expect.objectContaining({ categoryId }),
+        ),
+      );
+    };
+    expect(
+      screen.queryByRole('group', { name: 'Produce subcategories' }),
+    ).not.toBeInTheDocument();
+    await choose('Produce', 'produce');
+    expect(
+      screen.getByRole('button', { name: 'Add Honey' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Add Bread, choose variant' }),
+    ).not.toBeInTheDocument();
+    await choose('Vegetables', 'vegetables');
+    fireEvent.click(screen.getByRole('button', { name: 'All Produce' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Add Honey' })).toBeEnabled(),
+    );
+    await choose('Bakery', 'bakery');
+    expect(
+      screen.queryByRole('button', { name: 'Vegetables' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'All Bakery' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await choose('Bread & Rolls', 'bread');
+    fireEvent.change(screen.getByLabelText('Search products'), {
+      target: { value: 'B-1' },
+    });
+    await waitFor(() =>
+      expect(api.catalog).toHaveBeenLastCalledWith(
+        expect.objectContaining({ search: 'B-1', categoryId: 'bread' }),
+      ),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'All Products' }));
+    await waitFor(() =>
+      expect(api.catalog).toHaveBeenLastCalledWith(
+        expect.objectContaining({ categoryId: undefined, search: 'B-1' }),
+      ),
+    );
+    expect(
+      screen.queryByRole('group', { name: 'Bakery subcategories' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Quantity for Honey')).toHaveValue(1);
+    expect(
+      [
+        api.contexts,
+        api.drafts,
+        api.paymentMethods,
+        api.recoverablePayments,
+      ].map((fn) => vi.mocked(fn).mock.calls.length),
+    ).toEqual(unrelatedReads);
+    expect(window.location.href).toBe(location);
+  });
+  it.each(['category', 'favorites'] as const)(
+    'does not add a searched SKU hidden by the %s filter on Enter',
+    async (filter) => {
+      const api = fixture();
+      const base = await api.catalog({});
+      vi.mocked(api.catalog).mockImplementation(async (input) => ({
+        ...base,
+        items: input.categoryId || input.favorites ? [] : base.items,
+        totalItems: input.categoryId || input.favorites ? 0 : base.totalItems,
+      }));
+      render(<PosRegister api={api} vendorName="Honey Farm" />);
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Start checkout' }),
+      );
+      fireEvent.click(
+        await screen.findByRole('button', {
+          name: filter === 'category' ? 'Bakery' : 'Favorites',
+        }),
+      );
+      fireEvent.change(screen.getByLabelText('Search products'), {
+        target: { value: 'B-2' },
+      });
+      fireEvent.submit(screen.getByRole('search'));
+      await waitFor(() =>
+        expect(api.catalog).toHaveBeenLastCalledWith(
+          expect.objectContaining({ search: 'B-2' }),
+        ),
+      );
+      await waitFor(() =>
+        expect(screen.getByRole('status')).not.toHaveTextContent(
+          'Updating products',
+        ),
+      );
+      const calls = vi.mocked(api.catalog).mock.calls.length;
+      fireEvent.submit(screen.getByRole('search'));
+      expect(api.start).not.toHaveBeenCalled();
+      expect(api.command).not.toHaveBeenCalled();
+      expect(vi.mocked(api.catalog).mock.calls.length).toBe(calls);
+      expect(
+        screen.queryByRole('button', { name: 'Add Bread, choose variant' }),
+      ).not.toBeInTheDocument();
+    },
+  );
+  it('adds the exact visible variant on Enter after the filtered search finishes', async () => {
+    const api = fixture();
+    const base = await api.catalog({});
+    vi.mocked(api.catalog).mockImplementation(async () => ({
+      ...base,
+      items: [base.items[1]!],
+      totalItems: 1,
+    }));
+    render(<PosRegister api={api} vendorName="Honey Farm" />);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Start checkout' }),
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Bakery' }));
+    fireEvent.change(screen.getByLabelText('Search products'), {
+      target: { value: 'B-2' },
+    });
+    fireEvent.submit(screen.getByRole('search'));
+    expect(api.start).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(api.catalog).toHaveBeenLastCalledWith(
+        expect.objectContaining({ search: 'B-2', categoryId: 'cat' }),
+      ),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Add Bread, choose variant' }),
+      ).toBeEnabled(),
+    );
+    fireEvent.submit(screen.getByRole('search'));
+    await waitFor(() =>
+      expect(api.start).toHaveBeenCalledWith(expect.any(String), null, '22'),
+    );
+  });
+  it('ignores stale category responses and reuses recently loaded pages', async () => {
+    const api = fixture();
+    const base = await api.catalog({});
+    const categories = [
+      { id: 'a', name: 'Produce', parentId: null },
+      { id: 'b', name: 'Beverages', parentId: null },
+    ];
+    let resolveOld!: (value: typeof base) => void;
+    vi.mocked(api.catalog).mockImplementation(async (input) => {
+      if (input.categoryId === 'a')
+        return new Promise((resolve) => {
+          resolveOld = resolve;
+        });
+      return {
+        ...base,
+        categories,
+        items: input.categoryId === 'b' ? [base.items[1]!] : base.items,
+      };
+    });
+    render(<PosRegister api={api} vendorName="Honey Farm" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Produce' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Beverages' }));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: 'Add Honey' }),
+      ).not.toBeInTheDocument(),
+    );
+    resolveOld({ ...base, categories });
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: 'Add Honey' }),
+      ).not.toBeInTheDocument(),
+    );
+    const calls = vi.mocked(api.catalog).mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: 'All Products' }));
+    await screen.findByRole('button', { name: 'Add Honey' });
+    fireEvent.click(screen.getByRole('button', { name: 'Beverages' }));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: 'Add Honey' }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(vi.mocked(api.catalog).mock.calls.length).toBe(calls);
   });
   it('enables payment after review and exposes optional customer controls', async () => {
     const api = fixture();

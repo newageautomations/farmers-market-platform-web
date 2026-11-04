@@ -1,8 +1,9 @@
 ---
+import { vendorCategoryNavigation } from '../../lib/storefront-taxonomy';
 import type { PublicCatalog } from '@market/api';
 import type { StorefrontContext } from '@market/storefront-core';
 import { isEditorialMarket } from '@market/theme/storefront';
-import { priceLabel, safeAsset, shopCategories } from '@market/storefront-core';
+import { priceLabel, safeAsset } from '@market/storefront-core';
 import { ErrorState } from '@market/ui';
 import Button from '../ui/Button.astro';
 import { FeaturedAdd } from '../FeaturedAdd';
@@ -19,7 +20,7 @@ if (!isEditorialMarket(context.appearance))
     'Editorial Market homepage requires its theme configuration.',
   );
 const settings = context.appearance.template.settings;
-const categories = shopCategories(catalog?.items ?? []).slice(
+const categories = (await vendorCategoryNavigation(Astro)).slice(
   0,
   settings.categories.limit,
 );
@@ -75,7 +76,10 @@ const mobileFooter = safeAsset(settings.assets.mobileFooter.url);
         <div class="em-categories">
           {categories.map((category) => {
             const image = settings.categories.images[category.id];
-            const imageUrl = categoryArt(category.name, safeAsset(image?.url));
+            const imageUrl = categoryArt(
+              category.code,
+              safeAsset(category.image || image?.url),
+            );
             return (
               <a href={`/products?category=${encodeURIComponent(category.id)}`}>
                 <span class="em-category-image">

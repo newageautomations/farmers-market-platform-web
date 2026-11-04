@@ -1,3 +1,4 @@
+throw new Error('Retired category seed: use the guarded taxonomy migration. This script must be migrated before reuse.');
 /** Add the requested businesses through normal services, only in the local demo DB. */
 /* eslint-disable @typescript-eslint/no-require-imports -- Vendure's decorated backend uses its CommonJS ts-node loader. */
 const assert = require('node:assert/strict');

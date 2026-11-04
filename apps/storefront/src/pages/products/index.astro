@@ -1,8 +1,14 @@
 ---
+import TaxonomyFilters from '../../components/TaxonomyFilters.astro';
+import { vendorTaxonomy } from '../../lib/storefront-taxonomy';
+import {
+  availableTaxonomy,
+  taxonomyFilters,
+  taxonomyNavigation,
+} from '@market/storefront-core';
 import PremiumShop from '../../components/modern-farmhouse/Shop.astro';
 import EditorialShop from '../../components/editorial-market/Shop.astro';
 import { isEditorialMarket, isFarmhouse } from '@market/theme/storefront';
-import { farmhouseCatalog } from '../../lib/farmhouse-catalog';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import ProductCards from '../../components/ProductCards.astro';
 import Button from '../../components/ui/Button.astro';
@@ -18,7 +24,6 @@ import { AppError, safeError, type PublicCatalog } from '@market/api';
 import { ErrorState } from '@market/ui';
 import {
   catalogInputs,
-  shopCategories,
   shopProducts,
   productPreorder,
   safeAsset,
@@ -29,6 +34,8 @@ Astro.response.headers.set('Cache-Control', 'private, no-store');
 let error = storefrontError,
   items: PublicCatalog['items'] = [],
   page = 1;
+let taxonomy: Awaited<ReturnType<typeof vendorTaxonomy>> | undefined;
+let matchingIds: Set<string> | undefined;
 let preorder: Awaited<ReturnType<typeof vendorPreorder>> = {
   occurrences: [],
   selected: undefined,
@@ -47,9 +54,16 @@ const category = Astro.url.searchParams.get('category') ?? '',
 try {
   if (storefront?.kind === 'MARKET') throw new AppError('not-found');
   page = catalogInputs(Astro.url.searchParams).page;
-  if (isFarmhouse(storefront?.appearance)) {
-    items = (await farmhouseCatalog(Astro)).items;
-  } else if (storefront?.source === 'fixture' && import.meta.env.DEV) {
+  if (storefront?.source === 'backend') {
+    const filters = taxonomyFilters(Astro.url.searchParams);
+    taxonomy = await vendorTaxonomy(Astro);
+    const filteredProjection =
+      filters.categoryIds.length || filters.tagIds.length
+        ? await requestShop(Astro).taxonomy(filters)
+        : taxonomy;
+    matchingIds = new Set(filteredProjection.products.map((p) => p.productId));
+  }
+  if (storefront?.source === 'fixture' && import.meta.env.DEV) {
     const { fixtureCatalog } = await import('@market/storefront-core/fixtures');
     items = fixtureCatalog({
       search: '',
@@ -59,9 +73,21 @@ try {
     }).items;
   } else if (storefront) {
     const api = requestShop(Astro);
-    for (let skip = 0; ; skip += 100) {
+    for (let skip = 0; matchingIds?.size !== 0; skip += 100) {
       const { products } = await api.catalog({
-        options: { skip, take: 100, sort: { id: 'ASC' } },
+        options: {
+          skip,
+          take: 100,
+          sort: { id: 'ASC' },
+          ...(matchingIds
+            ? {
+                filter: {
+                  id: { in: [...matchingIds] },
+                  ...(search ? { name: { contains: search } } : {}),
+                },
+              }
+            : {}),
+        },
       });
       items = [...items, ...products.items];
       if (items.length >= products.totalItems) break;
@@ -72,8 +98,8 @@ try {
 } catch (e) {
   error = safeError(e);
 }
-const categories = shopCategories(items);
-let filtered = shopProducts(items, category, sort).filter(
+if (matchingIds) items = items.filter((p) => matchingIds!.has(p.id));
+let filtered = shopProducts(items, '', sort).filter(
   (product) =>
     (!isFarmhouse(storefront?.appearance) &&
       !isEditorialMarket(storefront?.appearance)) ||
@@ -87,15 +113,43 @@ if (
 ) {
   preorder = await vendorPreorder(
     Astro,
-    filtered.flatMap((product) =>
-      product.variants.map((variant) => variant.id),
-    ),
+    taxonomy
+      ? taxonomy.products.flatMap((product) => product.variantIds.map(String))
+      : filtered.flatMap((product) =>
+          product.variants.map((variant) => variant.id),
+        ),
   );
   filtered = filtered.filter(
     (product) =>
       productPreorder(product.variants, preorder.availability).available,
   );
+  if (taxonomy) {
+    const availableVariants = new Set(
+      preorder.availability.filter((v) => v.available).map((v) => v.variantId),
+    );
+    const availableProducts = new Set(
+      taxonomy.products
+        .filter((p) =>
+          p.variantIds.some((id) => availableVariants.has(String(id))),
+        )
+        .map((p) => p.productId),
+    );
+    taxonomy = {
+      ...taxonomy,
+      taxonomy: availableTaxonomy(
+        taxonomy.taxonomy,
+        taxonomy.products,
+        availableProducts,
+      ),
+    };
+  }
 }
+const categories = taxonomy
+  ? taxonomyNavigation(
+      taxonomy.taxonomy,
+      storefront?.appearance?.categoryPresentation,
+    )
+  : [];
 const skip = (page - 1) * 12;
 const visible = filtered.slice(skip, skip + 12);
 if (
@@ -117,21 +171,20 @@ const link = (next: {
   category?: string;
   page?: number;
   availability?: string;
-}) =>
-  '/products?' +
-  new URLSearchParams({
-    ...(selected ? { occurrence: selected.id } : {}),
-    sort,
-    ...(isFarmhouse(storefront?.appearance) && search ? { search } : {}),
-    ...(isEditorialMarket(storefront?.appearance) && search ? { search } : {}),
-    ...(isEditorialMarket(storefront?.appearance)
-      ? { availability: next.availability ?? availabilityFilter }
-      : {}),
-    ...((next.category ?? category)
-      ? { category: next.category ?? category }
-      : {}),
-    ...(next.page ? { page: String(next.page) } : {}),
-  });
+}) => {
+  const query = new URLSearchParams(Astro.url.searchParams);
+  query.set('sort', sort);
+  if (selected) query.set('occurrence', selected.id);
+  if (next.category !== undefined) {
+    query.delete('category');
+    if (next.category) query.set('category', next.category);
+  }
+  if (next.availability !== undefined)
+    query.set('availability', next.availability);
+  if (next.page) query.set('page', String(next.page));
+  else query.delete('page');
+  return '/products?' + query;
+};
 if (error)
   Astro.response.status =
     error.kind === 'not-found' ? 404 : error.kind === 'validation' ? 400 : 503;
@@ -163,7 +216,15 @@ const noneAvailable =
       preorder={preorder}
       link={link}
       preview={!!Astro.locals.editorPreview}
-    />
+    >
+      {taxonomy && (
+        <TaxonomyFilters
+          taxonomy={taxonomy.taxonomy}
+          settings={storefront.appearance?.categoryPresentation}
+          query={Astro.url.searchParams}
+        />
+      )}
+    </PremiumShop>
   ) : storefront && isEditorialMarket(storefront.appearance) && !error ? (
     <EditorialShop
       context={storefront}
@@ -183,7 +244,15 @@ const noneAvailable =
       unavailable={preorder.unavailable}
       preview={!!Astro.locals.editorPreview}
       link={link}
-    />
+    >
+      {taxonomy && (
+        <TaxonomyFilters
+          taxonomy={taxonomy.taxonomy}
+          settings={storefront.appearance?.categoryPresentation}
+          query={Astro.url.searchParams}
+        />
+      )}
+    </EditorialShop>
   ) : (
     <section
       class="vendor-shop"
@@ -268,6 +337,13 @@ const noneAvailable =
             </nav>
           </aside>
           <div class="shop-catalog">
+            {taxonomy && (
+              <TaxonomyFilters
+                taxonomy={taxonomy.taxonomy}
+                settings={storefront?.appearance?.categoryPresentation}
+                query={Astro.url.searchParams}
+              />
+            )}
             <form method="get" class="shop-catalog-controls">
               {selected && (
                 <input type="hidden" name="occurrence" value={selected.id} />
@@ -282,23 +358,13 @@ const noneAvailable =
                   {filtered.length === 1 ? 'product' : 'products'}
                 </span>
               </div>
-              <div class="field shop-mobile-categories">
-                <label for="shop-category">Product category</label>
-                <select
-                  id="shop-category"
-                  name="category"
-                  class={selectClassName()}
-                >
-                  <option value="" selected={!category}>
-                    All Products
-                  </option>
-                  {categories.map((c) => (
-                    <option value={c.id} selected={category === c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {Astro.url.searchParams.getAll('category').map((value) => (
+                <input type="hidden" name="category" value={value} />
+              ))}
+              {search && <input type="hidden" name="search" value={search} />}
+              {Astro.url.searchParams.getAll('tag').map((value) => (
+                <input type="hidden" name="tag" value={value} />
+              ))}
               <div class="field shop-sort">
                 <label for="shop-sort">Sort by</label>
                 <select id="shop-sort" name="sort" class={selectClassName()}>

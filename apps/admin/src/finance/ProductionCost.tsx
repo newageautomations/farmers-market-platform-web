@@ -15,10 +15,14 @@ export function ProductionCost({
   api,
   variantId,
   currency,
+  onPendingChange,
+  submitClassName,
 }: {
   api: FinanceApi;
   variantId: string;
   currency: string;
+  onPendingChange?: (pending: boolean) => void;
+  submitClassName?: string;
 }) {
   const id = useId(),
     read = useCallback(() => api.costs(variantId), [api, variantId]),
@@ -30,6 +34,8 @@ export function ProductionCost({
         <CommandForm
           key={query.data[0]?.id ?? 'unknown'}
           embedded
+          onPendingChange={onPendingChange}
+          submitClassName={submitClassName}
           title="Production cost"
           run={(data) =>
             api.setCost(

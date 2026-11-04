@@ -81,6 +81,7 @@ type Query {
   marketApplicationApplicant: JSON!
   publicMarketApplication(slug: String): JSON!
   publicMarketOccurrenceMap(occurrenceId: Int!): JSON!
+  vendorStorefrontTaxonomy(categoryIds: [ID!], tagIds: [ID!]): JSON!
   vendorMarketAppearances: [VendorMarketAppearance!]!
   vendorPreorderOccurrences: [VendorPreorderOccurrence!]!
   vendorPreorderAvailability(occurrenceId: ID!, variantIds: [ID!]!): [VendorPreorderAvailability!]!
@@ -3225,6 +3226,7 @@ type ProductVariant implements Node {
   facetValues: [FacetValue!]!
   translations: [ProductVariantTranslation!]!
   customFields: JSON
+  catalogDetails: VariantCatalogDetails
 }
 
 type ProductVariantTranslation {
@@ -4089,15 +4091,27 @@ enum OccurrenceCatalogSort {
 }
 
 input OccurrenceCatalogOptions {
+  distinctProducts: Boolean
   skip: Int
   take: Int
   sort: OccurrenceCatalogSort
+  categoryIds: [ID!]
+  tagIds: [ID!]
+  search: String
   facetValueIds: [ID!]
   vendorIds: [ID!]
   variantIds: [ID!]
 }
 
+type OccurrenceProductVariant {
+  variantId: ID!
+  name: String!
+  price: Int!
+  currencyCode: CurrencyCode!
+}
+
 type OccurrenceCatalogItem {
+  productVariants: [OccurrenceProductVariant!]!
   variantId: ID!
   productId: ID!
   offeringId: ID!
@@ -4113,6 +4127,9 @@ type OccurrenceCatalogItem {
   featuredAssetId: ID
   featuredAsset: MarketPublicAsset
   facetValueIds: [ID!]!
+  primaryCategoryId: ID
+  categoryIds: [ID!]!
+  tagIds: [ID!]!
 }
 
 type MarketPublicAsset {
@@ -4200,6 +4217,7 @@ type OccurrenceCatalogFacet {
 }
 
 type OccurrenceCatalog {
+  taxonomy: JSON!
   occurrenceId: ID!
   eligibility: String!
   totalItems: Int!
@@ -4475,6 +4493,13 @@ type StorefrontCommunicationPreferences {
   displayName: String!
   noticeVersion: String
   preferences: [ScopedCommunicationPreference!]!
+}
+
+type VariantCatalogDetails {
+  slug: String!
+  description: String!
+  productInformation: String!
+  assets: [Asset!]!
 }
 
 type CustomerFollowSubject {

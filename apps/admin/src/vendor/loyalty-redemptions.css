@@ -1,0 +1,93 @@
+/* Layout only, reusing the existing loyalty presentation contracts. */
+.redemptions-toolbar {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) repeat(4, auto);
+  align-items: end;
+  gap: 14px;
+}
+.redemptions-toolbar .field {
+  margin: 0;
+  min-width: 0;
+}
+.redemptions-toolbar .farmstand-select-wrap {
+  width: 100%;
+}
+.redemptions-table-panel .farmstand-data-table {
+  min-width: 720px;
+}
+.redemptions-preview .leaderboard-facts > div {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+}
+.redemptions-preview dd {
+  overflow-wrap: anywhere;
+}
+.redemptions-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.redemptions-actions > a {
+  flex: 1;
+}
+@container (max-width: 850px) {
+  .redemptions-toolbar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .redemptions-toolbar > .field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+@container (max-width: 550px) {
+  .redemptions-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.loyalty-redemptions .rewards-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.loyalty-redemptions .rewards-stat-icon[data-metric='coins'] {
+  color: var(--status-warning-fg);
+  background: var(--status-warning-bg);
+}
+.loyalty-redemptions .rewards-stat-icon[data-metric='ticket'] {
+  color: var(--brand-primary);
+  background: var(--loyalty-soft);
+}
+.redemptions-preview .leaderboard-facts dd {
+  margin: 0;
+  align-self: center;
+}
+.redemptions-actions {
+  flex-direction: column;
+}
+.redemptions-actions > a {
+  width: 100%;
+  flex: none;
+}
+.redemptions-table-panel tbody tr {
+  cursor: pointer;
+}
+.redemptions-table-panel tbody tr:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: -2px;
+}
+.redemptions-table-panel
+  tbody
+  tr:is(:hover, :focus-visible)
+  .farmstand-text-link::after {
+  transform: scaleX(1);
+}
+.redemption-discount {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-right: 10px;
+}
+@container (max-width: 850px) {
+  .loyalty-redemptions .rewards-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -5,7 +5,7 @@ import {
   editorialMarketTemplateSchema,
 } from '@market/theme/storefront';
 import type { StorefrontAppearanceApi } from '@market/api';
-import { EditorialMarketEditor } from '../apps/admin/src/EditorialMarketEditor';
+import { StorefrontCategoriesEditor } from '../apps/admin/src/StorefrontCategoriesEditor';
 
 function api(): StorefrontAppearanceApi {
   return {
@@ -13,6 +13,17 @@ function api(): StorefrontAppearanceApi {
     links: vi.fn(async () => []),
     save: vi.fn(),
     publish: vi.fn(),
+    hierarchy: vi.fn(async () => [
+      {
+        id: '42',
+        code: 'produce',
+        name: 'Fresh Produce',
+        parentId: null,
+        active: true,
+        assignable: false,
+        children: [],
+      },
+    ]),
     media: {
       list: vi.fn(async () => [
         {
@@ -67,18 +78,11 @@ it('maps an actual category ID to a read-only theme image without uploading it',
   const mediaApi = api();
   const onChange = vi.fn();
   render(
-    <EditorialMarketEditor
-      value={editorialMarketStarterSettings()}
+    <StorefrontCategoriesEditor
+      value={{}}
       onChange={onChange}
       api={mediaApi}
-      products={[]}
-      loadProducts={() => {}}
-      page="home"
-      selected="editorial:categories"
-      collapsed={false}
-      choose={() => {}}
-      collapse={() => {}}
-      busy={false}
+      themeId="editorial-market"
     />,
   );
   const choose = await screen.findByRole('button', {
@@ -98,11 +102,15 @@ it('maps an actual category ID to a read-only theme image without uploading it',
     }),
   );
   const next = onChange.mock.calls.at(-1)?.[0];
-  expect(next.categories.images).toEqual({
+  expect(next).toEqual({
     '42': {
-      assetId: '91',
-      url: 'http://localhost:3000/assets/preview/editorial.png',
+      position: 0,
+      visible: true,
+      imageAssetId: '91',
+      image: 'http://localhost:3000/assets/preview/editorial.png',
     },
   });
   expect(mediaApi.media!.upload).not.toHaveBeenCalled();
+  expect(mediaApi.media!.save).not.toHaveBeenCalled();
+  expect(mediaApi.media!.list).not.toHaveBeenCalled();
 });

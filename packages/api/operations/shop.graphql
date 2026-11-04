@@ -52,6 +52,12 @@ query MarketStorefrontOccurrence($id: ID!) {
   }
 }
 fragment MarketPublicItem on OccurrenceCatalogItem {
+  productVariants {
+    variantId
+    name
+    price
+    currencyCode
+  }
   variantId
   productId
   vendorId
@@ -62,6 +68,9 @@ fragment MarketPublicItem on OccurrenceCatalogItem {
   price
   currencyCode
   facetValueIds
+  primaryCategoryId
+  categoryIds
+  tagIds
   featuredAsset {
     id
     preview
@@ -80,6 +89,7 @@ query MarketStorefrontCatalog(
     items {
       ...MarketPublicItem
     }
+    taxonomy
     facets {
       facetValueId
       name
@@ -174,6 +184,7 @@ query VendorProducts($options: ProductListOptions) {
         id
         name
         facet {
+          code
           id
           name
         }
@@ -277,6 +288,7 @@ query StorefrontProduct($slug: String!) {
       id
       name
       facet {
+        code
         id
         name
       }
@@ -290,6 +302,17 @@ query StorefrontProduct($slug: String!) {
       }
     }
     variants {
+      catalogDetails {
+        slug
+        description
+        productInformation
+        assets {
+          id
+          preview
+          width
+          height
+        }
+      }
       id
       name
       sku

@@ -1,4 +1,5 @@
 import { IconButton } from '@market/ui';
+import { useFormProgress } from './useFormProgress';
 import {
   useCallback,
   useEffect,
@@ -7,6 +8,7 @@ import {
   useState,
   type FormEvent,
   type ReactNode,
+  type ComponentProps,
 } from 'react';
 import { AppError, safeError } from '@market/api';
 import {
@@ -24,6 +26,12 @@ export { DataTable } from '@market/ui';
 import { formatDate } from '@market/config';
 
 export function go(path: string) {
+  if (
+    !window.dispatchEvent(
+      new Event('vendor:before-navigate', { cancelable: true }),
+    )
+  )
+    return;
   window.history.pushState(null, '', path);
   window.dispatchEvent(new PopStateEvent('popstate'));
   document.querySelector<HTMLElement>('#main')?.focus();
@@ -163,6 +171,18 @@ export function TextField({
         id={id}
         name={name}
         defaultValue={value}
+        pattern={name === 'slug' ? '[a-z0-9]+(-[a-z0-9]+)*' : undefined}
+        onInput={
+          name === 'slug'
+            ? (event) => {
+                event.currentTarget.value = event.currentTarget.value
+                  .toLowerCase()
+                  .replace(/\s/g, '-')
+                  .replace(/[^a-z0-9-]/g, '')
+                  .slice(0, 120);
+              }
+            : undefined
+        }
         type={type === 'text' && name === 'quantity' ? 'number' : type}
         min={name === 'quantity' ? 1 : undefined}
         required={required}
@@ -206,18 +226,45 @@ export function CommandForm({
   onPendingChange,
   embedded = false,
   secondaryAction,
+  header,
+  className = '',
+  submitClassName,
+  submitVariant,
+  submitSize,
+  headerControls,
+  hideTitle = false,
+  id,
+  protectChanges = false,
+  disableUntilValid = false,
 }: {
   title: string;
   run: (data: FormData, operationKey: string) => Promise<unknown>;
   onDone: () => void;
   children: ReactNode;
   confirm?: string | ((data: FormData) => string | undefined);
-  submitLabel?: string;
+  submitLabel?: ReactNode;
   validate?: (data: FormData) => void;
   onPendingChange?: (pending: boolean) => void;
   embedded?: boolean;
-  secondaryAction?: ReactNode;
+  secondaryAction?: ReactNode | ((disabled: boolean) => ReactNode);
+  header?: ReactNode;
+  className?: string;
+  submitClassName?: string;
+  submitVariant?: ComponentProps<typeof Button>['variant'];
+  submitSize?: ComponentProps<typeof Button>['size'];
+  headerControls?: (disabled: boolean) => ReactNode;
+  hideTitle?: boolean;
+  id?: string;
+  protectChanges?: boolean;
+  disableUntilValid?: boolean;
 }) {
+  const form = useRef<HTMLFormElement>(null);
+  const progress = useFormProgress(
+    form,
+    protectChanges,
+    disableUntilValid,
+    validate,
+  );
   const [pending, setPending] = useState(false),
     [error, setError] = useState<AppError | null>(null),
     [success, setSuccess] = useState(false),
@@ -241,6 +288,7 @@ export function CommandForm({
       intent.current = null;
       setCandidate(null);
       setSuccess(true);
+      progress.saved();
       onDone();
     } catch (e) {
       const safe = safeError(e);
@@ -260,7 +308,14 @@ export function CommandForm({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy.current || uncertain || requiresRefresh) return;
+    if (disableUntilValid && !event.currentTarget.checkValidity()) {
+      event.currentTarget.reportValidity();
+      return;
+    }
     const data = new FormData(event.currentTarget);
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    if (submitter instanceof HTMLButtonElement && submitter.name)
+      data.set(submitter.name, submitter.value);
     try {
       validate?.(data);
       const prompt = typeof confirm === 'function' ? confirm(data) : confirm;
@@ -272,34 +327,70 @@ export function CommandForm({
       setError(e instanceof AppError ? e : new AppError('validation'));
     }
   }
+  const disabled =
+    pending ||
+    uncertain ||
+    requiresRefresh ||
+    (disableUntilValid && !progress.valid);
+  const secondary =
+    typeof secondaryAction === 'function'
+      ? secondaryAction(disabled)
+      : secondaryAction;
   return (
     <Card
       as="section"
-      className="command-section"
+      className={`command-section ${className}`}
       surface={embedded ? 'embedded' : 'card'}
     >
-      <h2 className="ui-section-title-dashboard">{title}</h2>
+      {!header && !hideTitle && (
+        <h2 className="ui-section-title-dashboard">{title}</h2>
+      )}
       <form
+        ref={form}
+        id={id}
         onSubmit={submit}
         aria-busy={pending}
         aria-describedby={error ? `${formId}-error` : undefined}
       >
+        {header && (
+          <div className="command-form-heading">
+            {header}
+            <div className="ui-actions">
+              {headerControls?.(pending || uncertain || requiresRefresh)}
+              <Button
+                type="submit"
+                className={submitClassName}
+                variant={submitVariant}
+                size={submitSize}
+                disabled={disabled}
+              >
+                {pending ? 'Saving' : submitLabel}
+              </Button>
+              {secondary}
+            </div>
+          </div>
+        )}
         <fieldset disabled={pending || uncertain || requiresRefresh}>
           {children}
         </fieldset>
-        <div
-          className={
-            secondaryAction ? 'ui-actions ui-modal-actions' : 'ui-actions'
-          }
-        >
-          <Button
-            type="submit"
-            disabled={pending || uncertain || requiresRefresh}
+        {!header && (
+          <div
+            className={
+              secondaryAction ? 'ui-actions ui-modal-actions' : 'ui-actions'
+            }
           >
-            {pending ? 'Saving' : submitLabel}
-          </Button>
-          {secondaryAction}
-        </div>
+            <Button
+              type="submit"
+              className={submitClassName}
+              variant={submitVariant}
+              size={submitSize}
+              disabled={disabled}
+            >
+              {pending ? 'Saving' : submitLabel}
+            </Button>
+            {secondary}
+          </div>
+        )}
       </form>
       {error && (
         <div id={`${formId}-error`}>
@@ -317,7 +408,12 @@ export function CommandForm({
         </Alert>
       )}
       {error && (
-        <Button className="secondary" onClick={onDone}>
+        <Button
+          className="secondary"
+          onClick={() => {
+            if (progress.confirmDiscard()) onDone();
+          }}
+        >
           Check current records
         </Button>
       )}

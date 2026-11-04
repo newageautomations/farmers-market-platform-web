@@ -1,9 +1,8 @@
 ---
+import { vendorCategoryNavigation } from '../../lib/storefront-taxonomy';
 import type { StorefrontContext } from '@market/storefront-core';
-import { shopCategories } from '@market/storefront-core';
 import { contactDetails, contactHref } from '@market/theme/storefront';
 import { farmhouseLinks } from './navigation';
-import { farmhouseCatalog } from '../../lib/farmhouse-catalog';
 const { context } = Astro.props as { context: StorefrontContext };
 const links = farmhouseLinks(context);
 const site = [
@@ -15,7 +14,7 @@ const site = [
 ].filter((link) => links.some((enabled) => enabled.href === link.href));
 let categories: Array<{ id: string; name: string }> = [];
 try {
-  categories = shopCategories((await farmhouseCatalog(Astro)).items);
+  categories = await vendorCategoryNavigation(Astro);
 } catch {
   /* Catalog failure must not hide page navigation. */
 }

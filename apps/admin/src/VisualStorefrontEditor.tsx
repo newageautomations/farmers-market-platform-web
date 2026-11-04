@@ -1,3 +1,4 @@
+import { StorefrontCategoriesEditor } from './StorefrontCategoriesEditor';
 import { FarmhouseEditor } from './FarmhouseEditor';
 import { EditorialMarketEditor } from './EditorialMarketEditor';
 import { PoliciesEditor } from './PoliciesEditor';
@@ -389,6 +390,15 @@ export function VisualStorefrontEditor({
             </Button>
           </div>
           <nav aria-label="Page sections" className="visual-editor-sections">
+            <StorefrontCategoriesEditor
+              api={api}
+              value={draft.categoryPresentation}
+              themeId={draft.theme}
+              onChange={(categoryPresentation) =>
+                update({ categoryPresentation })
+              }
+              busy={busy}
+            />
             {draft.template?.id === 'modern-farmhouse' && (
               <FarmhouseEditor
                 appearance={draft}

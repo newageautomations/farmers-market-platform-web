@@ -1,3 +1,4 @@
+import { scrollToPaginatedTable } from '@market/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -791,7 +792,12 @@ export function QuickBooks({
               </tr>
             ))}
           </DataTable>
-          <div className="actions">
+          <div
+            className="actions"
+            onClickCapture={(event) =>
+              scrollToPaginatedTable(event.currentTarget)
+            }
+          >
             <Button
               disabled={busy || offset === 0}
               onClick={() =>
