@@ -10,7 +10,8 @@ const { path } = Astro.props as { path: string };
       href={item.href}
       aria-current={
         path === item.href ||
-        (item.href === '/notifications' && path.startsWith('/notifications/'))
+        (item.href === '/account/notifications' &&
+          path.startsWith('/account/notifications/'))
           ? 'page'
           : undefined
       }
@@ -28,7 +29,7 @@ const { path } = Astro.props as { path: string };
         <path
           d={
             navigationIconPaths[
-              (item.href === '/notifications'
+              (item.href === '/account/notifications'
                 ? 'notifications'
                 : (item.href.split('/')[2] ??
                   'overview')) as keyof typeof navigationIconPaths

@@ -74,7 +74,7 @@ describe('vendor markets overview', () => {
     ).toHaveTextContent(state.membership.market.name);
   });
 
-  it('opens the selected attendance form without submitting a command', async () => {
+  it('opens the selected market date page without submitting a command', async () => {
     const { service, next, state } = await setup('cancelled');
     const { unmount } = render(<Markets service={service} />);
     const links = await screen.findAllByRole('link', {
@@ -82,16 +82,24 @@ describe('vendor markets overview', () => {
     });
     expect(links[0]).toHaveAttribute(
       'href',
-      `/vendor/markets/${state.membership.id}#attendance=${next.id}`,
+      `/vendor/markets/${state.membership.id}/dates/${next.id}`,
     );
     fireEvent.click(links[0]!);
     expect(service.attendance).not.toHaveBeenCalled();
     unmount();
-    render(<Markets service={service} id={state.membership.id} />);
+    render(
+      <Markets
+        service={service}
+        id={state.membership.id}
+        occurrenceId={next.id}
+      />,
+    );
     expect(
-      await screen.findByRole('heading', { name: 'Request attendance' }),
-    ).toBeVisible();
-    expect(screen.getByLabelText('Attendance')).toHaveValue('planned');
+      await screen.findByRole('button', { name: 'Attending' }),
+    ).toHaveAttribute('aria-pressed', 'false');
+    expect(
+      screen.getByRole('button', { name: 'Not attending' }),
+    ).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('uses hash navigation, supports history changes, and retains read-only authority', async () => {

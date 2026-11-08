@@ -1,0 +1,78 @@
+/* Notification preferences: Farmstand-bordered sections with option rows.
+   Checkboxes stay native (accent-color); only the row and press feedback
+   are presented here. */
+.notification-preferences {
+  --notification-border: color-mix(
+    in srgb,
+    var(--brand-primary) 16%,
+    var(--brand-surface)
+  );
+}
+.notification-preferences > fieldset {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+/* Packed columns so short sections do not leave gaps under one another. */
+.notification-sections {
+  columns: 2 320px;
+  column-gap: 14px;
+}
+.notification-sections > fieldset.notification-section {
+  break-inside: avoid;
+  margin-bottom: 14px;
+}
+fieldset.notification-section {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 14px;
+  padding: 14px;
+  border: 1px solid var(--notification-border);
+  border-radius: 12px;
+  background: var(--brand-surface);
+  min-width: 0;
+}
+/* Beats the generic farmstand-controls legend size. */
+.notification-preferences fieldset.notification-section > legend:not(.sr-only) {
+  float: left;
+  width: 100%;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--brand-foreground);
+}
+fieldset.notification-section > legend + p,
+.notification-thresholds > p {
+  clear: both;
+  margin: 2px 0 8px;
+  color: var(--brand-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.notification-thresholds {
+  margin: 8px 0 0;
+  padding: 10px 0 0;
+  border: 0;
+  border-top: 1px solid var(--notification-border);
+  min-width: 0;
+}
+.notification-preferences .notification-thresholds > legend:not(.sr-only) {
+  float: left;
+  width: 100%;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+/* Option row, hover and check animation: @market/ui/notifications.css. */
+.notification-preferences fieldset:disabled .notification-option {
+  cursor: default;
+}
+.notification-preferences fieldset:disabled .notification-option:hover {
+  background: transparent;
+}
+.notification-preferences > fieldset > .button {
+  justify-self: start;
+}

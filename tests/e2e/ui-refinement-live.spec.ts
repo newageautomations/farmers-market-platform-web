@@ -238,7 +238,13 @@ for (const width of [390, 768, 1280]) {
         await page.setViewportSize({ width, height: 900 });
       } else {
         await page.setViewportSize({ width, height: 900 });
-        await login(page, user!, `/${scope}/settings`);
+        await login(
+          page,
+          user!,
+          scope === 'market'
+            ? '/market/settings/preferences'
+            : `/${scope}/settings`,
+        );
         await expect(
           page.getByRole('region', { name: 'Dashboard colors' }),
         ).toBeVisible();
@@ -356,7 +362,7 @@ test('account palette persists across reload and sign-in, isolates users and rej
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await login(page, 'market-a@test.invalid', '/market/settings');
+  await login(page, 'market-a@test.invalid', '/market/settings/preferences');
   const colors = page.getByRole('region', { name: 'Dashboard colors' });
   await colors
     .getByRole('button', { name: 'Restore defaults', exact: true })
@@ -436,7 +442,7 @@ test('account palette persists across reload and sign-in, isolates users and rej
   await expect(
     page.getByRole('button', { name: 'Sign in', exact: true }),
   ).toBeVisible();
-  await login(page, 'market-b@test.invalid', '/market/settings');
+  await login(page, 'market-b@test.invalid', '/market/settings/preferences');
   await expect(colors.getByLabel('Primary', { exact: true })).toHaveValue(
     original,
   );
@@ -444,7 +450,7 @@ test('account palette persists across reload and sign-in, isolates users and rej
   await expect(
     page.getByRole('button', { name: 'Sign in', exact: true }),
   ).toBeVisible();
-  await login(page, 'market-a@test.invalid', '/market/settings');
+  await login(page, 'market-a@test.invalid', '/market/settings/preferences');
   await expect(colors.getByLabel('Primary', { exact: true })).toHaveValue(
     '#492d65',
   );

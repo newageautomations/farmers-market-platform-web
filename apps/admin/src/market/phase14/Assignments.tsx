@@ -7,35 +7,15 @@ import type {
   OperationsCommand,
   SpaceAssignment,
   RentalSnapshot,
-  BoothInvoice,
 } from '@market/api';
-import {
-  Button,
-  Select,
-  Card,
-  MarketMap,
-  ErrorState,
-  type BoothStatus,
-} from '@market/ui';
+import { Button, Select, Card, MarketMap, ErrorState } from '@market/ui';
 import { Check, Control, Entry, moneyLabel } from './common';
 import { Invoice } from './Billing';
 import { OccurrenceLayoutActions } from './OccurrenceLayoutActions';
+import { boothStatus } from './booth-status';
+export { boothStatus } from './booth-status';
 
 type Run = (c: OperationsCommand) => Promise<unknown>;
-export function boothStatus(
-  assignment: SpaceAssignment | undefined,
-  invoices: BoothInvoice[] = [],
-): BoothStatus {
-  if (!assignment) return 'available';
-  return invoices.some(
-    (i) =>
-      i.assignmentId === assignment.id &&
-      i.status !== 'VOID' &&
-      (i.status === 'PAID' || i.billingStatus === 'PAID'),
-  )
-    ? 'paid'
-    : 'assigned';
-}
 export function Assignments({
   data,
   run,
@@ -70,7 +50,6 @@ export function Assignments({
     } | null>(null),
     [search, setSearch] = useState(''),
     [mapSelection, setMapSelection] = useState(''),
-    [mapDirectory, setMapDirectory] = useState(''),
     [vendorDetail, setVendorDetail] = useState<number | null>(null);
   const plan = data.plans?.find((p) => p.occurrenceId === occurrenceId),
     version = data.layoutVersions?.find((v) => v.id === plan?.layoutVersionId),
@@ -80,10 +59,7 @@ export function Assignments({
       data.approvals?.filter((a) => a.occurrenceId === occurrenceId) ?? [],
     spaces =
       data.spaces?.filter((s) => s.layoutVersionId === version?.id) ?? [];
-  const selectedBooth = spaces.find((s) => s.elementId === mapSelection),
-    selectedAssignment = assignments.find(
-      (a) => a.spaceId === selectedBooth?.id,
-    );
+  const selectedBooth = spaces.find((s) => s.elementId === mapSelection);
   const statuses = Object.fromEntries(
     spaces.map((s) => [
       s.elementId,
@@ -98,6 +74,7 @@ export function Assignments({
     label: s.details.label,
     widthFeet: s.details.widthFeet,
     depthFeet: s.details.depthFeet,
+    spaceType: s.details.spaceType,
     amenities: s.details.amenities,
     vendor:
       assignments.find((a) => a.spaceId === s.id)?.businessSnapshot ?? null,
@@ -261,130 +238,23 @@ export function Assignments({
               const booth = spaces.find((s) => s.elementId === id);
               if (!booth) return;
               setMapSelection(id);
-              setMapDirectory(
-                String(
-                  assignments.find((a) => a.spaceId === booth?.id)
-                    ?.directoryId ??
-                    booth?.details.preferredDirectoryId ??
-                    '',
-                ),
-              );
             }}
           />
         )}
       </Card>
       {selectedBooth && (
-        <Dialog
-          open
-          title={`Booth ${selectedBooth.details.label}`}
-          focusTitle
+        <BoothAssignmentDialog
+          key={mapSelection}
+          data={data}
+          occurrenceId={occurrenceId}
+          elementId={mapSelection}
+          run={run}
+          canAssign={canAssign}
+          canDay={canDay && day}
+          canBill={canBill}
+          commandError={commandError}
           onClose={() => setMapSelection('')}
-        >
-          <p className="booth-modal-info">
-            {selectedBooth.details.widthFeet} ×{' '}
-            {selectedBooth.details.depthFeet} ft ·{' '}
-            {moneyLabel(
-              selectedBooth.details.feeMinor,
-              selectedBooth.details.currency,
-            )}{' '}
-            booth fee
-          </p>
-          {selectedBooth.details.amenities.length > 0 && (
-            <p>
-              Amenities:{' '}
-              {selectedBooth.details.amenities
-                .map((a) => a.toLowerCase().replaceAll('_', ' '))
-                .join(', ')}
-            </p>
-          )}
-          {!!commandError && <ErrorState error={commandError} />}
-          {selectedAssignment && (
-            <p>
-              Assigned to {selectedAssignment.businessSnapshot.businessName}.
-              You can update its existing assignment below.
-            </p>
-          )}
-          {canAssign ? (
-            <>
-              <div className="attendance-business-selector">
-                <Control label="Business for selected booth">
-                  {(id) => (
-                    <Select
-                      id={id}
-                      value={mapDirectory}
-                      onChange={(e) => setMapDirectory(e.target.value)}
-                    >
-                      <option value="">Choose business</option>
-                      {data.directory?.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.contact.businessName}
-                          {assignments.some((a) => a.directoryId === d.id)
-                            ? ` · Assigned to Booth ${assignments
-                                .filter((a) => a.directoryId === d.id)
-                                .map((a) => a.spaceSnapshot.label)
-                                .join(', ')}`
-                            : ' · Unassigned'}
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-                </Control>
-              </div>
-              {mapDirectory &&
-                !approvals.some(
-                  (a) => a.directoryId === Number(mapDirectory),
-                ) && (
-                  <Card as="div" className="dashboard-card">
-                    <p>
-                      This business needs approval for this market date before
-                      it can receive a booth.
-                    </p>
-                    <Button
-                      variant="secondary"
-                      size="compact"
-                      type="button"
-                      onClick={() =>
-                        run({
-                          action: 'APPROVE_OCCURRENCE',
-                          data: {
-                            occurrenceId,
-                            directoryId: Number(mapDirectory),
-                          },
-                        })
-                      }
-                    >
-                      Approve business for this date
-                    </Button>
-                  </Card>
-                )}
-              {approvals
-                .filter((a) => a.directoryId === Number(mapDirectory))
-                .map((a) => (
-                  <AssignmentCard
-                    key={`map:${mapSelection}:${a.id}:${a.revision}:${assignments.map((x) => x.revision).join(':')}`}
-                    approval={a}
-                    data={data}
-                    assignments={assignments.filter(
-                      (x) => x.approvalId === a.id,
-                    )}
-                    run={run}
-                    canAssign={canAssign}
-                    canDay={canDay && day}
-                    canBill={canBill}
-                    initialSpaceId={
-                      spaces.find((s) => s.elementId === mapSelection)?.id
-                    }
-                  />
-                ))}
-            </>
-          ) : (
-            <p>
-              {selectedAssignment
-                ? 'You have read-only access to this assignment.'
-                : 'This booth is available. Assignment permission is required to add a business.'}
-            </p>
-          )}
-        </Dialog>
+        />
       )}
       {!day && canAssign && (
         <>
@@ -618,6 +488,164 @@ export function Assignments({
     </>
   );
 }
+/**
+ * One booth's assignment dialog: its details, the business dropdown, date
+ * approval and the assignment form. Shared by the Assignments workspace and
+ * the occurrence detail map; callers own the selection and command runner.
+ */
+export function BoothAssignmentDialog({
+  data,
+  occurrenceId,
+  elementId,
+  run,
+  canAssign,
+  canDay,
+  canBill,
+  commandError,
+  onClose,
+}: {
+  data: MarketOperationsData;
+  occurrenceId: number;
+  elementId: string;
+  run: Run;
+  canAssign: boolean;
+  canDay: boolean;
+  canBill: boolean;
+  commandError?: unknown;
+  onClose: () => void;
+}) {
+  const mapSelection = elementId;
+  const plan = data.plans?.find((p) => p.occurrenceId === occurrenceId),
+    assignments =
+      data.assignments?.filter((a) => a.occurrenceId === occurrenceId) ?? [],
+    approvals =
+      data.approvals?.filter((a) => a.occurrenceId === occurrenceId) ?? [],
+    spaces =
+      data.spaces?.filter((s) => s.layoutVersionId === plan?.layoutVersionId) ??
+      [];
+  const selectedBooth = spaces.find((s) => s.elementId === elementId),
+    selectedAssignment = assignments.find(
+      (a) => a.spaceId === selectedBooth?.id,
+    );
+  const [mapDirectory, setMapDirectory] = useState(
+    String(
+      selectedAssignment?.directoryId ??
+        selectedBooth?.details.preferredDirectoryId ??
+        '',
+    ),
+  );
+  if (!selectedBooth) return null;
+  return (
+    <Dialog
+      open
+      title={`Booth ${selectedBooth.details.label}`}
+      focusTitle
+      onClose={onClose}
+    >
+      <p className="booth-modal-info">
+        {selectedBooth.details.widthFeet} × {selectedBooth.details.depthFeet} ft
+        ·{' '}
+        {moneyLabel(
+          selectedBooth.details.feeMinor,
+          selectedBooth.details.currency,
+        )}{' '}
+        booth fee
+      </p>
+      {selectedBooth.details.amenities.length > 0 && (
+        <p>
+          Amenities:{' '}
+          {selectedBooth.details.amenities
+            .map((a) => a.toLowerCase().replaceAll('_', ' '))
+            .join(', ')}
+        </p>
+      )}
+      {!!commandError && <ErrorState error={commandError} />}
+      {selectedAssignment && (
+        <p>
+          Assigned to {selectedAssignment.businessSnapshot.businessName}. You
+          can update its existing assignment below.
+        </p>
+      )}
+      {canAssign ? (
+        <>
+          <div className="attendance-business-selector">
+            <Control label="Business for selected booth">
+              {(id) => (
+                <Select
+                  id={id}
+                  value={mapDirectory}
+                  onChange={(e) => setMapDirectory(e.target.value)}
+                >
+                  <option value="">Choose business</option>
+                  {data.directory?.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.contact.businessName}
+                      {assignments.some((a) => a.directoryId === d.id)
+                        ? ` · Assigned to Booth ${assignments
+                            .filter((a) => a.directoryId === d.id)
+                            .map((a) => a.spaceSnapshot.label)
+                            .join(', ')}`
+                        : ' · Unassigned'}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Control>
+          </div>
+          {mapDirectory &&
+            !approvals.some((a) => a.directoryId === Number(mapDirectory)) && (
+              <Card as="div" className="dashboard-card">
+                <p>
+                  This business needs approval for this market date before it
+                  can receive a booth.
+                </p>
+                <Button
+                  variant="secondary"
+                  size="compact"
+                  type="button"
+                  onClick={() =>
+                    run({
+                      action: 'APPROVE_OCCURRENCE',
+                      data: {
+                        occurrenceId,
+                        directoryId: Number(mapDirectory),
+                      },
+                    })
+                  }
+                >
+                  Approve business for this date
+                </Button>
+              </Card>
+            )}
+          {approvals
+            .filter((a) => a.directoryId === Number(mapDirectory))
+            .map((a) => (
+              <AssignmentCard
+                key={`map:${mapSelection}:${a.id}:${a.revision}:${assignments.map((x) => x.revision).join(':')}`}
+                approval={a}
+                data={data}
+                assignments={assignments.filter((x) => x.approvalId === a.id)}
+                run={run}
+                canAssign={canAssign}
+                canDay={canDay}
+                canBill={canBill}
+                initialSpaceId={
+                  spaces.find((s) => s.elementId === mapSelection)?.id
+                }
+              />
+            ))}
+        </>
+      ) : (
+        <p>
+          {selectedAssignment
+            ? 'You have read-only access to this assignment.'
+            : 'This booth is available. Assignment permission is required to add a business.'}
+        </p>
+      )}
+    </Dialog>
+  );
+}
+
 function AssignmentCard({
   approval: a,
   data,

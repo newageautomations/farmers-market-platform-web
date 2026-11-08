@@ -100,7 +100,7 @@ export async function squareBrowserChecks(ready: PosReady) {
   }
   try {
     await check(
-      'vendor owner opens Payment Integrations with a clearly labelled SDK fixture',
+      'vendor owner opens Settings > Payments with a clearly labelled SDK fixture',
       async () => {
         await page.goto(`${ready.accountOrigin}/account/login`);
         await page.getByLabel('Email', { exact: true }).fill(ready.vendors[0]!);
@@ -116,11 +116,9 @@ export async function squareBrowserChecks(ready: PosReady) {
           .getByRole('link', { name: 'Settings', exact: true })
           .first()
           .click({ timeout: 45000 });
+        await page.getByRole('link', { name: 'Payments', exact: true }).click();
         await page
-          .getByRole('link', { name: 'Payment Integrations', exact: true })
-          .click();
-        await page
-          .getByRole('heading', { name: 'Payment Integrations', exact: true })
+          .getByRole('heading', { name: 'Square', exact: true })
           .waitFor();
         await page.getByText(/Controlled SDK fixture only/).waitFor();
         assert.equal(

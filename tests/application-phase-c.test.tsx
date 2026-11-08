@@ -12,6 +12,28 @@ import {
 import { ApplicationBuilder } from '../apps/admin/src/market/phase14/ApplicationBuilder';
 import { MarketApplication } from '../apps/storefront/src/components/MarketApplication';
 import { managerData } from './fixtures/market-dashboard-data';
+import type { MarketOperationsData } from '@market/api';
+/** The builder opens an application by template; give the version one. */
+function withVersion(
+  data: MarketOperationsData,
+  version: ApplicationVersion,
+): MarketOperationsData {
+  return {
+    ...data,
+    templates: [
+      {
+        id: 1,
+        marketId: 1,
+        revision: 1,
+        name: 'Season application',
+        slug: 'season',
+        visibility: 'PUBLIC',
+        advertised: false,
+      },
+    ],
+    versions: [version],
+  };
+}
 const definition: ApplicationDefinition = {
   sections: ['Business'],
   occurrenceIds: [],
@@ -95,11 +117,10 @@ it('configures rules with question labels, supported comparisons and expected an
   } as ApplicationVersion;
   render(
     <ApplicationBuilder
-      version={version}
-      data={data}
+      templateId={1}
+      data={withVersion(data, version)}
       canManage
       run={vi.fn()}
-      onSelect={vi.fn()}
     />,
   );
   fireEvent.click(screen.getByRole('button', { name: 'Edit Safety plan' }));
@@ -136,11 +157,10 @@ it('validates the schedule and supports interactive unpublished previews', () =>
   } as ApplicationVersion;
   render(
     <ApplicationBuilder
-      version={version}
-      data={data}
+      templateId={1}
+      data={withVersion(data, version)}
       canManage
       run={run}
-      onSelect={vi.fn()}
     />,
   );
   fireEvent.change(screen.getByLabelText('Opening date and time'), {
@@ -152,8 +172,12 @@ it('validates the schedule and supports interactive unpublished previews', () =>
   expect(screen.getByRole('alert')).toHaveTextContent(
     'Opening must be before closing.',
   );
-  expect(screen.getByRole('button', { name: 'Save draft' })).toBeDisabled();
-  fireEvent.click(screen.getByRole('button', { name: 'Preview application' }));
+  // Invalid schedules are never autosaved or published.
+  expect(screen.getByRole('button', { name: 'Publish' })).toBeDisabled();
+  expect(
+    screen.getByText('Not saved: fix the issues below'),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
   fireEvent.change(screen.getByLabelText('Prepare food?'), {
     target: { value: 'true' },
   });

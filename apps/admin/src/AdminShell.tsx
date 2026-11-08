@@ -13,7 +13,12 @@ import {
   visibleNavigation,
   vendorPath,
   marketPath,
+  canonicalSettingsPath,
+  canonicalNotificationsPath,
+  notificationsBase,
+  notificationsView,
   type AdminContext,
+  type AdminScope,
 } from '@market/admin-core';
 import { AppError } from '@market/api';
 import {
@@ -38,7 +43,6 @@ import {
 import { dashboardClasses } from '@market/ui/presentation';
 import {
   DashboardAppearanceProvider,
-  DashboardAppearanceSettings,
   useDashboardAppearance,
 } from './DashboardAppearance';
 import type { CSSProperties } from 'react';
@@ -53,7 +57,12 @@ const MarketRoutes = lazy(() =>
 import type { MarketService } from './market/service';
 import './market.css';
 import type { ManagementService } from './management/service';
-import { isManagementRoute } from './management/routes';
+import { isManagementRoute, isSettingsRoute } from './management/routes';
+const SettingsWorkspace = lazy(() =>
+  import('./settings/SettingsWorkspace').then((module) => ({
+    default: module.SettingsWorkspace,
+  })),
+);
 const ManagementRoutes = lazy(() =>
   import('./management/ManagementRoutes').then((module) => ({
     default: module.ManagementRoutes,
@@ -64,14 +73,13 @@ import './phase15.css';
 import './phase15b.css';
 import './market/dashboard.css';
 import { NavigationIcon, Chevron } from './NavigationIcon';
-import { NotificationPreferences } from './notifications/NotificationPreferences';
-import { AccountTimezoneSettings } from './AccountTimezoneSettings';
 import {
   StorefrontAppearanceSettings,
   ViewStorefront,
 } from './StorefrontAppearance';
 import { NotificationCenter } from '@market/ui/notifications';
 import '@market/ui/notifications.css';
+import { NotificationsWorkspace } from './notifications/NotificationsWorkspace';
 const notificationAccountOrigin =
   typeof __PLATFORM_ACCOUNT_ORIGIN__ === 'undefined'
     ? undefined
@@ -81,6 +89,22 @@ const DocumentsWorkspace = lazy(() =>
     default: module.DocumentsWorkspace,
   })),
 );
+/**
+ * Current pathname, replacing a former Integrations route with its Settings tab
+ * and a former unscoped `/notifications` route with this role's inbox.
+ */
+function currentPath(scope: AdminScope) {
+  const path = window.location.pathname,
+    next =
+      canonicalNotificationsPath(scope, path) ?? canonicalSettingsPath(path);
+  if (next !== path)
+    window.history.replaceState(
+      window.history.state,
+      '',
+      next + window.location.search + window.location.hash,
+    );
+  return next;
+}
 function Shell({
   context,
   onLogout,
@@ -106,7 +130,7 @@ function Shell({
   };
 }) {
   const appearance = useDashboardAppearance();
-  const [path, setPath] = useState(window.location.pathname);
+  const [path, setPath] = useState(() => currentPath(context.scope));
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [path]);
@@ -122,11 +146,11 @@ function Shell({
         )
       )
         return;
-      setPath(window.location.pathname);
+      setPath(currentPath(context.scope));
     };
     window.addEventListener('popstate', update);
     return () => window.removeEventListener('popstate', update);
-  }, []);
+  }, [context.scope]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [inputMode, setInputMode] = useState('pointer');
   useEffect(() => {
@@ -157,8 +181,6 @@ function Shell({
     .find(
       (item) =>
         item.path === path ||
-        (item.path === '/notifications' &&
-          path.startsWith('/notifications/')) ||
         (context.scope === 'PLATFORM' &&
           ((path === '/' && item.path === '/platform') ||
             (item.path !== '/platform' && path.startsWith(item.path + '/')))) ||
@@ -186,6 +208,10 @@ function Shell({
     )
       return;
     event.preventDefault();
+    visit(next);
+  }
+  /** In-app navigation: keeps the current workspace scope and channel. */
+  function visit(next: string) {
     if (next === '/vendor/storefront' || path === '/vendor/storefront') {
       const destination = new URL(next, window.location.origin);
       if (documentConnection?.channelId)
@@ -194,7 +220,7 @@ function Shell({
       return;
     }
     window.history.pushState(null, '', next);
-    setPath(window.location.pathname);
+    setPath(currentPath(context.scope));
     window.dispatchEvent(new PopStateEvent('popstate'));
     document.querySelector<HTMLElement>('#main')?.focus();
   }
@@ -204,29 +230,6 @@ function Shell({
         .filter((item) => !item.parent)
         .map((item) => {
           const children = items.filter((child) => child.parent === item.path);
-          const financeApi =
-            context.scope === 'MARKET'
-              ? marketService?.finance
-              : vendorService?.finance;
-          if (
-            item.path === '/vendor/finances' ||
-            item.path === '/market/finances'
-          ) {
-            for (const [suffix, label] of [
-              ...(financeApi?.quickbooks
-                ? [['/quickbooks', 'QuickBooks Online']]
-                : []),
-              ['/expenses?action=add-expense', 'Add Expense'],
-              ['/transactions', 'View Transactions'],
-              ['/expenses', 'Manage Expenses'],
-            ])
-              children.push({
-                ...item,
-                path: item.path + suffix,
-                label: label!,
-                parent: item.path,
-              });
-          }
           const isExpanded =
             current?.path === item.path || current?.parent === item.path;
           return (
@@ -341,6 +344,8 @@ function Shell({
                 view="bell"
                 connection={documentConnection}
                 personalOrigin={notificationAccountOrigin}
+                basePath={notificationsBase(context.scope)}
+                navigate={visit}
               />
             )}
             <DashboardMenu navigation={links()}>
@@ -398,72 +403,67 @@ function Shell({
           ) : (
             <>
               {!(
-                context.scope === 'VENDOR' &&
-                (vendorPath(path) === '/vendor/inventory' ||
-                  vendorPath(path) === '/vendor/products' ||
-                  vendorPath(path) === '/vendor/orders' ||
-                  vendorPath(path) === '/vendor/customers' ||
-                  vendorPath(path) === '/vendor/markets' ||
-                  vendorPath(path) === '/vendor/applications' ||
-                  vendorPath(path) === '/vendor/loyalty' ||
-                  vendorPath(path) === '/vendor/loyalty/leaderboard' ||
+                // The Finances, Settings, Notifications and Documents workspaces render their own heading.
+                isSettingsRoute(context.scope, path) ||
+                !!notificationsView(context.scope, path) ||
+                (!!documentConnection &&
+                  ['/vendor/documents', '/market/documents'].includes(path)) ||
+                (context.scope === 'VENDOR' &&
+                  /^\/vendor\/(finances(\/|$)|analytics$)/.test(
+                    vendorPath(path),
+                  )) ||
+                (context.scope === 'MARKET' &&
+                  /^\/market\/(finances(\/|$)|analytics$|booth-billing(\/|$))/.test(
+                    path,
+                  ))
+              ) &&
+                !(
+                  context.scope === 'VENDOR' &&
+                  // The vendor dashboard renders its own heading.
+                  (path === '/' ||
+                    vendorPath(path) === '/vendor' ||
+                    vendorPath(path) === '/vendor/inventory' ||
+                    vendorPath(path) === '/vendor/products' ||
+                    vendorPath(path) === '/vendor/orders' ||
+                    vendorPath(path) === '/vendor/team' ||
+                    vendorPath(path) === '/vendor/customers' ||
+                    vendorPath(path) === '/vendor/contact-submissions' ||
+                    vendorPath(path) === '/vendor/markets' ||
+                    vendorPath(path).startsWith('/vendor/markets/') ||
+                    vendorPath(path) === '/vendor/applications' ||
+                    /^\/vendor\/applications\/[1-9]\d*$/.test(
+                      vendorPath(path),
+                    ) ||
+                    vendorPath(path) === '/vendor/loyalty' ||
+                    vendorPath(path) === '/vendor/loyalty/leaderboard' ||
                     vendorPath(path) === '/vendor/loyalty/redemptions' ||
-                  vendorPath(path).startsWith('/vendor/customers/') ||
-                  vendorPath(path).startsWith('/vendor/products/') ||
-                  (vendorPath(path).startsWith('/vendor/orders/') &&
-                    vendorPath(path) !== '/vendor/orders/packing'))
-              ) && (
-                <PageHeader
-                  title={
-                    path.startsWith('/notifications')
-                      ? path.endsWith('/settings')
-                        ? 'Notification settings'
-                        : path.endsWith('/unsubscribed')
-                          ? 'Unsubscribed notifications'
-                          : 'Notifications'
-                      : path === '/vendor/settings/payments'
-                        ? 'Payment Integrations'
-                        : path === '/vendor/pos/square-return'
-                          ? 'Check Square payment'
-                          : (current?.label ?? 'Overview')
-                  }
-                >
-                  {context.scope === 'PLATFORM' && (
-                    <p>
-                      {context.scope === 'PLATFORM'
-                        ? 'Shared platform administration'
-                        : 'Your Market workspace'}
-                    </p>
-                  )}
-                </PageHeader>
-              )}
-              {[
-                '/vendor/settings',
-                '/market/settings',
-                '/platform/settings',
-              ].includes(path) && <DashboardAppearanceSettings />}
-              {[
-                '/vendor/settings',
-                '/market/settings',
-                '/platform/settings',
-              ].includes(path) &&
-                documentConnection && (
-                  <AccountTimezoneSettings
-                    key={documentConnection.channelToken}
-                    connection={documentConnection}
-                  />
-                )}
-              {['/vendor/settings', '/market/settings'].includes(path) &&
-                (marketService?.notifications ||
-                  vendorService?.notifications) && (
-                  <NotificationPreferences
-                    key={`${context.scope}:${documentConnection?.channelToken}`}
-                    context={context}
-                    api={
-                      (marketService?.notifications ||
-                        vendorService?.notifications)!
+                    vendorPath(path).startsWith('/vendor/customers/') ||
+                    vendorPath(path).startsWith('/vendor/products/') ||
+                    vendorPath(path).startsWith('/vendor/orders/'))
+                ) &&
+                !(
+                  context.scope === 'MARKET' &&
+                  // Team, Occurrences, Operations and Applications render their own heading.
+                  (path === '/market/team' ||
+                    /^\/market\/(occurrences|operations|applications|application-submissions|rentals|directory|vendors)(\/|$)/.test(
+                      path,
+                    ))
+                ) && (
+                  <PageHeader
+                    title={
+                      path === '/vendor/pos/square-return'
+                        ? 'Check Square payment'
+                        : (current?.label ?? 'Overview')
                     }
-                  />
+                  >
+                    {context.scope === 'PLATFORM' && (
+                      <p>
+                        {context.scope === 'PLATFORM'
+                          ? 'Shared platform administration'
+                          : 'Your Market workspace'}
+                      </p>
+                    )}
+                  </PageHeader>
                 )}
               {['/vendor/storefront', '/market/storefront'].includes(path) ? (
                 <StorefrontAppearanceSettings
@@ -471,19 +471,24 @@ function Shell({
                   connection={documentConnection}
                   market={context.scope === 'MARKET'}
                 />
-              ) : path.startsWith('/notifications') ? (
+              ) : notificationsView(context.scope, path) ? (
                 documentConnection ? (
-                  <NotificationCenter
-                    connection={documentConnection}
-                    personalOrigin={notificationAccountOrigin}
-                    view={
-                      path.endsWith('/settings')
-                        ? 'settings'
-                        : path.endsWith('/unsubscribed')
-                          ? 'unsubscribed'
-                          : 'inbox'
-                    }
-                  />
+                  <NotificationsWorkspace
+                    scope={context.scope}
+                    path={path}
+                    navigate={visit}
+                  >
+                    {(view) => (
+                      <NotificationCenter
+                        connection={documentConnection}
+                        personalOrigin={notificationAccountOrigin}
+                        view={view}
+                        tabs={false}
+                        basePath={notificationsBase(context.scope)}
+                        navigate={visit}
+                      />
+                    )}
+                  </NotificationsWorkspace>
                 ) : (
                   <EmptyState title="Connect to the backend to view notifications" />
                 )
@@ -505,6 +510,18 @@ function Shell({
                     </p>
                   </EmptyState>
                 )
+              ) : isSettingsRoute(context.scope, path) ? (
+                <Suspense fallback={<Spinner label="Loading settings" />}>
+                  <SettingsWorkspace
+                    key={`${context.scope}:${JSON.stringify(context.subject)}`}
+                    context={context}
+                    path={path}
+                    vendor={vendorService}
+                    market={marketService}
+                    management={managementService}
+                    connection={documentConnection}
+                  />
+                </Suspense>
               ) : managementService &&
                 isManagementRoute(context.scope, path) ? (
                 <div className="management-workspace">
@@ -522,7 +539,7 @@ function Shell({
               ) : context.scope === 'VENDOR' && vendorService ? (
                 <div className="vendor-workspace">
                   <VendorRoutes
-                    key={`${vendorService.vendorId}:${vendorPath(path)}`}
+                    key={`${vendorService.vendorId}:${workspaceKey(vendorPath(path))}`}
                     service={vendorService}
                     path={path}
                   />
@@ -533,7 +550,7 @@ function Shell({
                     fallback={<Spinner label="Loading Market module" />}
                   >
                     <MarketRoutes
-                      key={`${marketService.marketId}:${marketPath(path)}`}
+                      key={`${marketService.marketId}:${workspaceKey(marketPath(path))}`}
                       service={marketService}
                       path={path}
                     />
@@ -579,6 +596,21 @@ function Shell({
   );
 }
 
+/** Finance tabs (and their former Analytics/Booth billing routes) share one
+ * mounted workspace so its heading, actions and reads persist across tabs;
+ * Market occurrence dialogs keep the list mounted the same way. */
+function workspaceKey(path: string) {
+  if (/^\/market\/(applications|application-submissions)$/.test(path))
+    return 'market/applications';
+  if (/^\/market\/occurrences(\/(generate|new))?$/.test(path))
+    // The Generate and single-date dialogs open over the mounted list.
+    return 'market/occurrences';
+  return /^\/(vendor|market)\/(finances(\/|$)|analytics$|booth-billing(\/|$))/.test(
+    path,
+  )
+    ? path.split('/')[1] + '/finances'
+    : path;
+}
 export function AdminShell(
   props: Parameters<typeof Shell>[0] & { accountId?: string },
 ) {

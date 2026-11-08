@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react';
 import { safeError, type OperationsCommand } from '@market/api';
-import { Card, ErrorState, MarketMap } from '@market/ui';
+import { ErrorState, MarketMap } from '@market/ui';
+import { FarmstandIcon, FarmstandLink } from '@market/ui/farmstand';
+import { Panel } from '../vendor/application-detail';
 import type { MarketService } from './service';
-import { ReadState, RouteLink, useRead } from './common';
+import { go, ReadState, useRead } from './common';
 import { OccurrenceLayoutActions } from './phase14/OccurrenceLayoutActions';
-import { boothStatus } from './phase14/Assignments';
+import { BoothAssignmentDialog, boothStatus } from './phase14/Assignments';
 
 export function OccurrenceMap({
   service,
@@ -14,6 +16,8 @@ export function OccurrenceMap({
   occurrenceId: string;
 }) {
   const [error, setError] = useState<ReturnType<typeof safeError> | null>(null);
+  // The booth chosen on the map or from the booth list opens its assignment.
+  const [selected, setSelected] = useState('');
   const allowed =
     !!service.phase14 &&
     service.context.permissions.includes('ReadOwnMarketAssignments');
@@ -25,6 +29,10 @@ export function OccurrenceMap({
     `${service.readKey}:occurrence-map:${occurrenceId}`,
     load,
     allowed,
+    { retainPreviousData: true },
+  );
+  const canAssign = service.context.permissions.includes(
+    'ManageOwnMarketAssignments',
   );
   const data = state.data;
   const plan = data?.plans?.find(
@@ -50,68 +58,119 @@ export function OccurrenceMap({
     }
   }
   return (
-    <Card
-      as="section"
-      className="dashboard-card"
-      aria-label="Occurrence layout"
+    <Panel
+      icon={{ farmstand: 'map-pin' }}
+      title="Market layout"
+      className="occurrence-map-panel"
+      aside={
+        allowed && (
+          <div className="occurrence-map-actions">
+            {data && (
+              <OccurrenceLayoutActions
+                key={`${service.readKey}:${occurrenceId}`}
+                data={data}
+                occurrenceId={Number(occurrenceId)}
+                run={run}
+                canChange={service.context.permissions.includes(
+                  'ManageOwnMarketAssignments',
+                )}
+                compact
+                canEdit={
+                  service.context.permissions.includes(
+                    'ManageOwnMarketLayouts',
+                  ) &&
+                  service.context.permissions.includes(
+                    'ManageOwnMarketAssignments',
+                  )
+                }
+              />
+            )}
+            <FarmstandLink
+              href={`/market/assignments/${occurrenceId}`}
+              variant="secondary"
+              size="compact"
+              onClick={(event) => {
+                if (
+                  event.button ||
+                  event.ctrlKey ||
+                  event.metaKey ||
+                  event.shiftKey ||
+                  event.altKey
+                )
+                  return;
+                event.preventDefault();
+                go(`/market/assignments/${occurrenceId}`);
+              }}
+            >
+              <FarmstandIcon name="store" />
+              Manage booths
+            </FarmstandLink>
+          </div>
+        )
+      }
     >
-      <h2 className="ui-section-title-dashboard">Market Layout</h2>
-      {data && (
-        <OccurrenceLayoutActions
-          key={`${service.readKey}:${occurrenceId}`}
+      <div className="occurrence-map-body">
+        <ReadState {...state} retry={state.refresh} />
+        {error && <ErrorState error={error} />}
+        {layout && canAssign && (
+          <p className="markets-muted">
+            Select a booth on the map, or open one in the booth list, to assign
+            a business.
+          </p>
+        )}
+        {layout ? (
+          <MarketMap
+            key={layout.id}
+            selectedId={selected || undefined}
+            onSelect={setSelected}
+            definition={layout.definition}
+            spaces={spaces.map((s) => ({
+              elementId: s.elementId,
+              label: s.details.label,
+              widthFeet: s.details.widthFeet,
+              depthFeet: s.details.depthFeet,
+              amenities: s.details.amenities,
+              vendor:
+                assignments.find((a) => a.spaceId === s.id)?.businessSnapshot ??
+                null,
+            }))}
+            statuses={Object.fromEntries(
+              spaces.map((s) => [
+                s.elementId,
+                boothStatus(
+                  assignments.find((a) => a.spaceId === s.id),
+                  data?.invoices,
+                ),
+              ]),
+            )}
+          />
+        ) : (
+          !state.loading &&
+          !state.error && (
+            <p className="markets-muted">
+              {allowed
+                ? 'No layout has been selected for this occurrence.'
+                : 'The layout is unavailable for this account.'}
+            </p>
+          )
+        )}
+      </div>
+      {data && selected && (
+        <BoothAssignmentDialog
+          key={selected}
           data={data}
           occurrenceId={Number(occurrenceId)}
+          elementId={selected}
           run={run}
-          canChange={service.context.permissions.includes(
-            'ManageOwnMarketAssignments',
+          canAssign={canAssign}
+          canDay={false}
+          canBill={service.context.permissions.includes(
+            'ManageOwnMarketBilling',
           )}
-          canEdit={
-            service.context.permissions.includes('ManageOwnMarketLayouts') &&
-            service.context.permissions.includes('ManageOwnMarketAssignments')
-          }
+          commandError={error}
+          onClose={() => setSelected('')}
         />
       )}
-      <ReadState {...state} retry={state.refresh} />
-      {error && <ErrorState error={error} />}
-      {layout ? (
-        <MarketMap
-          key={layout.id}
-          definition={layout.definition}
-          spaces={spaces.map((s) => ({
-            elementId: s.elementId,
-            label: s.details.label,
-            widthFeet: s.details.widthFeet,
-            depthFeet: s.details.depthFeet,
-            amenities: s.details.amenities,
-            vendor:
-              assignments.find((a) => a.spaceId === s.id)?.businessSnapshot ??
-              null,
-          }))}
-          statuses={Object.fromEntries(
-            spaces.map((s) => [
-              s.elementId,
-              boothStatus(
-                assignments.find((a) => a.spaceId === s.id),
-                data?.invoices,
-              ),
-            ]),
-          )}
-        />
-      ) : (
-        !state.loading &&
-        !state.error && (
-          <p>
-            {allowed
-              ? 'No layout has been selected for this occurrence.'
-              : 'The layout is unavailable for this account.'}
-          </p>
-        )
-      )}
-      {allowed && (
-        <RouteLink to={`/market/assignments/${occurrenceId}`}>
-          Manage Booths
-        </RouteLink>
-      )}
-    </Card>
+    </Panel>
   );
 }

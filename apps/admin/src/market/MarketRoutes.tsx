@@ -20,15 +20,39 @@ export function MarketRoutes({
   const canonical = marketPath(path);
   if (canonical === '/market/team')
     return <TeamWorkspace api={service.team} context={service.context} />;
-  if (canonical.startsWith('/market/finances'))
+  if (/^\/market\/(finances|analytics|booth-billing)(\/|$)/.test(canonical)) {
+    const permissions = service.context.permissions;
+    const billing = permissions.includes('ReadOwnMarketBilling');
     return (
       <Finances
-        key={`${service.readKey}:${canonical}`}
+        key={service.readKey}
         api={service.finance}
-        path={canonical}
+        // Former Booth billing and Analytics routes open their finance tab.
+        path={
+          canonical.startsWith('/market/booth-billing')
+            ? '/market/finances/invoices'
+            : canonical
+        }
         manager
+        canReadFinance={billing}
+        insights={
+          permissions.includes('ReadOwnMarketAnalytics')
+            ? (scope) => <MarketAnalytics service={service} scope={scope} />
+            : undefined
+        }
+        invoices={
+          billing && service.phase14 ? (
+            <Phase14Routes
+              api={service.phase14}
+              notifications={service.notifications}
+              path="/market/booth-billing"
+              permissions={permissions}
+            />
+          ) : undefined
+        }
       />
     );
+  }
   if (canonical.startsWith('/market/loyalty'))
     return (
       <MarketLoyalty
@@ -38,14 +62,15 @@ export function MarketRoutes({
       />
     );
   if (
-    /^\/market\/(applications|application-submissions|directory|rentals|layouts|assignments|booth-billing|day)(\/|$)/.test(
+    /^\/market\/(applications|application-submissions|rentals|layouts|assignments|day)(\/|$)/.test(
       canonical,
     )
   )
     return service.phase14 ? (
       <Phase14Routes
-        key={`${service.readKey}:${canonical}`}
+        key={`${service.readKey}:${/^\/market\/(applications|application-submissions)$/.test(canonical) ? 'applications' : canonical}`}
         api={service.phase14}
+        rentalMedia={service.rentalMedia}
         notifications={service.notifications}
         path={canonical}
         permissions={service.context.permissions}
@@ -59,10 +84,23 @@ export function MarketRoutes({
   if (canonical.startsWith('/market/occurrences'))
     return (
       <MarketOccurrences
-        key={canonical}
+        key={
+          ['', 'generate', 'new'].includes(id)
+            ? '/market/occurrences'
+            : canonical
+        }
         service={service}
         id={['generate', 'new'].includes(id) ? undefined : id}
         view={id === 'generate' ? 'generate' : id === 'new' ? 'manual' : 'list'}
+      />
+    );
+  // The former directory routes open the combined Vendors list.
+  if (/^\/market\/directory(\/new)?$/.test(canonical))
+    return (
+      <MarketVendors
+        key={canonical}
+        service={service}
+        adding={canonical.endsWith('/new')}
       />
     );
   if (canonical.startsWith('/market/vendors'))
@@ -84,7 +122,5 @@ export function MarketRoutes({
     );
   if (canonical.startsWith('/market/operations'))
     return <MarketOperations key={service.readKey} service={service} id={id} />;
-  if (canonical === '/market/analytics')
-    return <MarketAnalytics key={service.readKey} service={service} />;
   return <MarketSettings key={service.readKey} service={service} />;
 }

@@ -1,10 +1,17 @@
 import { render, screen, within, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import type { MarketDayChecklist } from '@market/api';
 import type { MarketService } from '../apps/admin/src/market/service';
 import { ReadinessChecklist } from '../apps/admin/src/market/ReadinessChecklist';
-import { visibleNavigation, type AdminContext } from '@market/admin-core';
+import {
+  canonicalNotificationsPath,
+  isLegacyNotificationsPath,
+  notificationsBase,
+  notificationsView,
+  routeAllowed,
+  visibleNavigation,
+  type AdminContext,
+} from '@market/admin-core';
 
 const data: MarketDayChecklist = {
   occurrenceId: '7',
@@ -26,21 +33,8 @@ const data: MarketDayChecklist = {
   ],
 };
 describe('Live Market readiness checklist', () => {
-  it('displays authoritative counts and resolution links and refreshes resolved source facts', async () => {
-    const user = userEvent.setup(),
-      checklist = vi
-        .fn()
-        .mockResolvedValueOnce(data)
-        .mockResolvedValue({
-          ...data,
-          items: [
-            {
-              ...data.items[0],
-              count: 0,
-              status: 'No outstanding requirements',
-            },
-          ],
-        });
+  it('displays authoritative counts and resolution links without a page refresh button', async () => {
+    const checklist = vi.fn().mockResolvedValue(data);
     const service = {
       readKey: 'test-market',
       checklist,
@@ -51,11 +45,32 @@ describe('Live Market readiness checklist', () => {
       screen.getByRole('link', { name: 'Review Documents' }),
     ).toHaveAttribute('href', '/market/documents?view=reports&occurrence=7');
     expect(screen.queryByRole('checkbox')).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Refresh checklist' }));
+    // Refreshing is the AdminShell workspace refresh, which remounts the page.
+    expect(screen.queryByRole('button', { name: /refresh/i })).toBeNull();
+    expect(checklist).toHaveBeenCalledTimes(1);
+  });
+  it('groups resolved items as on track and shows the all-clear only for sourced dates', async () => {
+    const service = {
+      readKey: 'resolved-market',
+      checklist: vi.fn().mockResolvedValue({
+        ...data,
+        items: [
+          {
+            ...data.items[0],
+            count: 0,
+            status: 'No outstanding requirements',
+          },
+        ],
+      }),
+    } as unknown as MarketService;
+    render(<ReadinessChecklist service={service} occurrenceId="7" />);
     expect(
       await screen.findByText('No outstanding requirements'),
     ).toBeVisible();
-    expect(checklist).toHaveBeenCalledTimes(2);
+    expect(
+      screen.getByText('Nothing needs attention for this date right now.'),
+    ).toBeVisible();
+    expect(screen.getByRole('heading', { name: /On track/ })).toBeVisible();
   });
   it('does not present canceled requirements as complete', async () => {
     const service = {
@@ -98,9 +113,43 @@ describe('Permanent unified Notifications navigation', () => {
       } as AdminContext;
       expect(
         visibleNavigation(context).filter(
-          (item) => item.path === '/notifications',
+          (item) => item.label === 'Notifications',
         ),
-      ).toHaveLength(1);
+      ).toEqual([
+        expect.objectContaining({
+          path: `/${scope.toLowerCase()}/notifications`,
+        }),
+      ]);
+    },
+  );
+  it.each(['VENDOR', 'MARKET', 'PLATFORM'] as const)(
+    'keeps %s notification routes under the role so a refresh keeps the role',
+    (scope) => {
+      const base = `/${scope.toLowerCase()}/notifications`;
+      const context = {
+        scope,
+        name: 'Test workspace',
+        permissions: [],
+        source: 'backend',
+      } as AdminContext;
+      expect(notificationsBase(scope)).toBe(base);
+      for (const [suffix, view] of [
+        ['', 'inbox'],
+        ['/trash', 'trash'],
+        ['/settings', 'settings'],
+        ['/unsubscribed', 'unsubscribed'],
+      ] as const) {
+        expect(notificationsView(scope, base + suffix)).toBe(view);
+        expect(routeAllowed(context, base + suffix)).toBe(true);
+        expect(
+          canonicalNotificationsPath(scope, `/notifications${suffix}`),
+        ).toBe(base + suffix);
+      }
+      expect(isLegacyNotificationsPath('/notifications/settings')).toBe(true);
+      expect(isLegacyNotificationsPath(base)).toBe(false);
+      expect(canonicalNotificationsPath(scope, '/notifications/other')).toBe(
+        null,
+      );
     },
   );
 });

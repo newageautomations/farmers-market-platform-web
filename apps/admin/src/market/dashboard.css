@@ -337,16 +337,32 @@
 .market-dashboard .fixture-notice:has(~ .admin-shell .layout-editor-screen) {
   display: none;
 }
-.layout-editor-screen .designer-header h1 {
-  font-size: 1.15rem;
-  margin: 0 0 0.25rem;
-}
 .layout-editor-screen {
   height: 100dvh;
   min-height: 600px;
   display: flex;
   flex-direction: column;
   width: 100%;
+  background: #17191c;
+}
+/* Status messages float over the full-height editor instead of pushing it
+   below the viewport and exposing empty page space. */
+.layout-editor-screen {
+  position: relative;
+}
+.layout-editor-screen > .alert,
+.ops-floating-error {
+  position: fixed;
+  top: 4.5rem;
+  left: 50%;
+  z-index: 40;
+  width: min(32rem, calc(100vw - 2rem));
+  margin: 0;
+  transform: translateX(-50%);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.35);
+}
+.ops-floating-error > * {
+  margin: 0;
 }
 .market-dashboard .ops-vendor-list .ops-day-card {
   margin: 0;
@@ -394,9 +410,6 @@
   .layout-editor-screen {
     height: auto;
     min-height: 100dvh;
-  }
-  .layout-editor-screen .designer-body > .map-canvas-shell {
-    min-height: 60dvh;
   }
 }
 @media (prefers-reduced-motion: reduce) {

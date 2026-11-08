@@ -98,6 +98,9 @@ it('refuses a different account, origin, destination and expired draft', () => {
 });
 it('allows only bounded applicant and draft continuation destinations', () => {
   expect(safeAccountReturn('/account/applications/claim/42')).toBe('/account');
+  expect(safeAccountReturn('/account/notifications/settings')).toBe(
+    '/account/notifications/settings',
+  );
   expect(safeAccountReturn('/account/applications/drafts/42')).toBe('/account');
   expect(safeAccountReturn('/apply/season?draft=42')).toBe(
     '/apply/season?draft=42',

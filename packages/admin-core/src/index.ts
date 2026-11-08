@@ -27,10 +27,13 @@ export interface NavItem {
 export const navigation: readonly NavItem[] = [
   { label: 'Team', path: '/vendor/team', scopes: ['VENDOR'] },
   { label: 'Team', path: '/market/team', scopes: ['MARKET'] },
+  // One inbox per role, each under its own scope so a page refresh keeps the role.
+  { label: 'Notifications', path: '/vendor/notifications', scopes: ['VENDOR'] },
+  { label: 'Notifications', path: '/market/notifications', scopes: ['MARKET'] },
   {
     label: 'Notifications',
-    path: '/notifications',
-    scopes: ['VENDOR', 'MARKET', 'PLATFORM'],
+    path: '/platform/notifications',
+    scopes: ['PLATFORM'],
   },
   {
     label: 'Documents',
@@ -46,24 +49,10 @@ export const navigation: readonly NavItem[] = [
     parent: '/market/applications',
   },
   {
-    label: 'Add external business',
-    path: '/market/directory/new',
-    scopes: ['MARKET'],
-    permission: 'ReadOwnMarketApplications',
-    parent: '/market/directory',
-  },
-  {
     label: 'Rentals',
     path: '/market/rentals',
     scopes: ['MARKET'],
     permission: 'ReadOwnMarketApplications',
-  },
-  {
-    label: 'Add rental equipment',
-    path: '/market/rentals/new',
-    scopes: ['MARKET'],
-    permission: 'ReadOwnMarketApplications',
-    parent: '/market/rentals',
   },
   {
     label: 'Generate occurrences',
@@ -114,12 +103,6 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnMarketApplications',
   },
   {
-    label: 'Vendor Directory',
-    path: '/market/directory',
-    scopes: ['MARKET'],
-    permission: 'ReadOwnMarketApplications',
-  },
-  {
     label: 'Layouts',
     path: '/market/layouts',
     scopes: ['MARKET'],
@@ -132,19 +115,13 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnMarketAssignments',
   },
   {
-    label: 'Booth billing',
-    path: '/market/booth-billing',
-    scopes: ['MARKET'],
-    permission: 'ReadOwnMarketBilling',
-  },
-  {
     label: 'Market Day',
     path: '/market/day',
     scopes: ['MARKET'],
     permission: 'OperateOwnMarketDay',
   },
   {
-    label: 'Overview',
+    label: 'Dashboard',
     path: '/',
     scopes: ['VENDOR'],
   },
@@ -243,39 +220,13 @@ export const navigation: readonly NavItem[] = [
     permission: 'SuperAdmin',
   },
   {
-    label: 'Integrations',
-    path: '/platform/integrations',
-    scopes: ['PLATFORM'],
-    permission: 'SuperAdmin',
-  },
-  {
     label: 'Settings',
     path: '/platform/settings',
     scopes: ['PLATFORM'],
     permission: 'SuperAdmin',
   },
   {
-    label: 'Integrations',
-    path: '/vendor/integrations',
-    scopes: ['VENDOR'],
-    permission: 'ReadOwnVendorIdentity',
-  },
-  {
-    label: 'Payments',
-    path: '/vendor/integrations/payments',
-    parent: '/vendor/integrations',
-    scopes: ['VENDOR'],
-    permission: 'ReadOwnPaymentAccount',
-  },
-  {
-    label: 'POS',
-    path: '/vendor/integrations/pos',
-    parent: '/vendor/integrations',
-    scopes: ['VENDOR'],
-    permission: 'ReadOwnPosIntegrations',
-  },
-  {
-    label: 'Billing',
+    label: 'Subscription',
     path: '/vendor/billing',
     scopes: ['VENDOR'],
     permission: 'ReadOwnBilling',
@@ -293,7 +244,7 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnVendorIdentity',
   },
   {
-    label: 'Billing',
+    label: 'Subscription',
     path: '/market/billing',
     scopes: ['MARKET'],
     permission: 'ReadOwnBilling',
@@ -312,12 +263,6 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnCRM',
   },
   {
-    label: 'Analytics',
-    path: '/vendor/analytics',
-    scopes: ['VENDOR'],
-    permission: 'ReadOwnVendorAnalytics',
-  },
-  {
     label: 'Finances',
     path: '/vendor/finances',
     scopes: ['VENDOR'],
@@ -328,12 +273,6 @@ export const navigation: readonly NavItem[] = [
     path: '/market/finances',
     scopes: ['MARKET'],
     permission: 'ReadOwnMarketBilling',
-  },
-  {
-    label: 'Analytics',
-    path: '/market/analytics',
-    scopes: ['MARKET'],
-    permission: 'ReadOwnMarketAnalytics',
   },
   {
     label: 'Overview',
@@ -383,12 +322,17 @@ export function visibleNavigation(context: AdminContext) {
       (!item.permission ||
         hasPermission(context.permissions, item.permission) ||
         (item.path === '/vendor/products' &&
-          hasPermission(context.permissions, 'ReadOwnInventory'))),
+          hasPermission(context.permissions, 'ReadOwnInventory')) ||
+        // Finances also hosts the optional sales/market insights overview.
+        (item.path === '/vendor/finances' &&
+          hasPermission(context.permissions, 'ReadOwnVendorAnalytics')) ||
+        (item.path === '/market/finances' &&
+          hasPermission(context.permissions, 'ReadOwnMarketAnalytics'))),
   );
   if (context.scope === 'VENDOR') {
     const order = [
       '/',
-      '/notifications',
+      '/vendor/notifications',
       '/vendor/pos',
       '/vendor/products',
       '/vendor/orders',
@@ -402,9 +346,6 @@ export function visibleNavigation(context: AdminContext) {
       '/vendor/storefront',
       '/vendor/finances',
       '/vendor/settings',
-      '/vendor/integrations',
-      '/vendor/integrations/payments',
-      '/vendor/integrations/pos',
       '/vendor/billing',
     ];
     const rank = (path: string) => {
@@ -427,23 +368,19 @@ export function visibleNavigation(context: AdminContext) {
         'Vendors',
         'Operations',
         'Applications',
-        'Vendor Directory',
         'Rentals',
         'Layouts',
         'Assignments',
-        'Booth billing',
         'Finances',
         'Market Day',
         'Documents',
         'Loyalty',
-        'Analytics',
-        'Billing',
+        'Subscription',
         'Storefront Appearance',
         'Team',
         'Settings',
         'Submitted applications',
         'Add external business',
-        'Add rental equipment',
         'Generate occurrences',
         'Manual occurrence',
         'Business memberships',
@@ -453,7 +390,122 @@ export function visibleNavigation(context: AdminContext) {
       ].flatMap((label) => items.filter((item) => item.label === label))
     : items;
 }
+/** Inbox, settings and unsubscribed views of the notification workspace. */
+export type NotificationsView = 'inbox' | 'trash' | 'settings' | 'unsubscribed';
+/** Scoped notification inbox route, e.g. `/vendor/notifications`. */
+export function notificationsBase(scope: AdminScope) {
+  return `/${scope.toLowerCase()}/notifications`;
+}
+export function notificationsHref(scope: AdminScope, view: NotificationsView) {
+  return view === 'inbox'
+    ? notificationsBase(scope)
+    : `${notificationsBase(scope)}/${view}`;
+}
+/** The notification view a path opens in this scope, or null. */
+export function notificationsView(
+  scope: AdminScope,
+  path: string,
+): NotificationsView | null {
+  const base = notificationsBase(scope);
+  if (path === base) return 'inbox';
+  if (path === `${base}/trash`) return 'trash';
+  if (path === `${base}/settings`) return 'settings';
+  if (path === `${base}/unsubscribed`) return 'unsubscribed';
+  return null;
+}
+/**
+ * Former unscoped `/notifications`, `/notifications/settings` and
+ * `/notifications/unsubscribed` routes, mapped onto the current role's routes.
+ */
+export function canonicalNotificationsPath(scope: AdminScope, path: string) {
+  const match = /^\/notifications(\/trash|\/settings|\/unsubscribed)?\/?$/.exec(
+    path,
+  );
+  return match ? `${notificationsBase(scope)}${match[1] ?? ''}` : null;
+}
+/** True for an unscoped legacy notification path (no role in the URL). */
+export function isLegacyNotificationsPath(path: string) {
+  return /^\/notifications(\/|$)/.test(path);
+}
+/** Tabs of the consolidated Settings workspace, per role. */
+export type SettingsView =
+  | 'preferences'
+  | 'market'
+  | 'notifications'
+  | 'taxes'
+  | 'payments'
+  | 'pos'
+  | 'integrations';
+export const settingsViews: Record<AdminScope, readonly SettingsView[]> = {
+  VENDOR: ['preferences', 'notifications', 'taxes', 'payments', 'pos'],
+  MARKET: ['market', 'preferences', 'notifications'],
+  PLATFORM: ['preferences', 'integrations'],
+};
+/** Former Integrations routes now open their Settings tab. */
+const settingsLegacyRoutes: Record<string, string> = {
+  '/vendor/integrations': '/vendor/settings',
+  '/vendor/integrations/payments': '/vendor/settings/payments',
+  '/vendor/integrations/pos': '/vendor/settings/pos',
+  '/platform/integrations': '/platform/settings/integrations',
+};
+export function canonicalSettingsPath(path: string) {
+  return settingsLegacyRoutes[path] ?? path;
+}
+export function settingsBase(scope: AdminScope) {
+  return `/${scope.toLowerCase()}/settings`;
+}
+/** Route for a Settings tab; each role's first tab is the bare base route. */
+export function settingsHref(scope: AdminScope, view: SettingsView) {
+  return view === settingsViews[scope][0]
+    ? settingsBase(scope)
+    : `${settingsBase(scope)}/${view}`;
+}
+/** The Settings tab a path names, or undefined when it is not a Settings tab. */
+export function settingsView(
+  scope: AdminScope,
+  path: string,
+): SettingsView | undefined {
+  const base = settingsBase(scope);
+  if (path === base) return settingsViews[scope][0];
+  const view = path.startsWith(base + '/')
+    ? (path.slice(base.length + 1) as SettingsView)
+    : undefined;
+  return view &&
+    view !== settingsViews[scope][0] &&
+    settingsViews[scope].includes(view)
+    ? view
+    : undefined;
+}
+/** Visibility only. Every read and command remains backend-authorized. */
+export function settingsViewAllowed(context: AdminContext, view: SettingsView) {
+  if (!settingsViews[context.scope].includes(view)) return false;
+  switch (view) {
+    case 'taxes':
+      return mayCommand(context, 'ManageOwnCatalog');
+    case 'payments':
+      return (
+        hasPermission(context.permissions, 'ReadOwnPaymentAccount') ||
+        mayCommand(context, 'ManageOwnPosIntegrations')
+      );
+    case 'pos':
+      return hasPermission(context.permissions, 'ReadOwnPosIntegrations');
+    case 'integrations':
+      return context.permissions.includes('SuperAdmin');
+    default:
+      return true;
+  }
+}
 export function routeAllowed(context: AdminContext, path: string) {
+  const settings = settingsView(
+    context.scope,
+    context.scope === 'VENDOR' ? vendorPath(path) : path,
+  );
+  if (settings)
+    return (
+      visibleNavigation(context).some(
+        (item) => item.path === settingsBase(context.scope),
+      ) && settingsViewAllowed(context, settings)
+    );
   if (path === `/${context.scope.toLowerCase()}/team`)
     return (
       context.scope !== 'PLATFORM' &&
@@ -466,14 +518,7 @@ export function routeAllowed(context: AdminContext, path: string) {
           )))
     );
 
-  if (
-    [
-      '/notifications',
-      '/notifications/settings',
-      '/notifications/unsubscribed',
-    ].includes(path)
-  )
-    return true;
+  if (notificationsView(context.scope, path)) return true;
   if (context.scope === 'PLATFORM') {
     const canonical = path === '/' ? '/platform' : path;
     return (
@@ -495,11 +540,17 @@ export function routeAllowed(context: AdminContext, path: string) {
   if (context.scope === 'MARKET') {
     const canonical = marketPath(path);
     if (
-      /^\/market\/finances(?:\/(?:transactions|expenses|quickbooks))?$/.test(
+      /^\/market\/(?:finances\/(?:transactions|expenses|quickbooks|invoices)|booth-billing(?:\/[1-9][0-9]*)?)$/.test(
         canonical,
       )
     )
       return context.permissions.includes('ReadOwnMarketBilling');
+    // The overview (and the former Analytics route) also serve analytics-only roles.
+    if (canonical === '/market/finances' || canonical === '/market/analytics')
+      return (
+        context.permissions.includes('ReadOwnMarketBilling') ||
+        context.permissions.includes('ReadOwnMarketAnalytics')
+      );
     if (
       /^\/market\/loyalty(?:\/(?:challenges(?:\/(?:new|[1-9][0-9]*(?:\/(?:edit|replace))?))?|rewards))?$/.test(
         canonical,
@@ -508,6 +559,16 @@ export function routeAllowed(context: AdminContext, path: string) {
       return context.permissions.includes('ReadOwnMarket');
     if (/^\/market\/assignments\/[1-9][0-9]*\/edit-layout$/.test(canonical))
       return context.permissions.includes('ReadOwnMarketAssignments');
+    // The former directory pages open the combined Vendors list.
+    if (/^\/market\/directory(\/new)?$/.test(canonical))
+      return visibleNavigation(context).some(
+        (item) => item.path === '/market/vendors',
+      );
+    // Legacy creation links open the inventory's modal, with no sidebar page.
+    if (canonical === '/market/rentals/new')
+      return visibleNavigation(context).some(
+        (item) => item.path === '/market/rentals',
+      );
     if (
       /^\/market\/(applications|layouts)\/(new|[1-9][0-9]*(?:\/edit)?)$/.test(
         canonical,
@@ -528,10 +589,9 @@ export function routeAllowed(context: AdminContext, path: string) {
           '/market/vendors/offerings',
           '/market/operations',
           '/market/applications',
-          '/market/directory',
+          '/market/application-submissions',
           '/market/layouts',
           '/market/assignments',
-          '/market/booth-billing',
           '/market/day',
         ].includes(item.path) &&
           new RegExp(`^${item.path}/[1-9][0-9]*$`).test(canonical)),
@@ -540,19 +600,22 @@ export function routeAllowed(context: AdminContext, path: string) {
   const canonical = vendorPath(path);
   if (
     context.scope === 'VENDOR' &&
-    /^\/vendor\/finances(?:\/(?:transactions|expenses|quickbooks))?$/.test(
-      canonical,
-    )
+    /^\/vendor\/finances\/(?:transactions|expenses|quickbooks)$/.test(canonical)
   )
     return context.permissions.includes('ReadOwnVendorFinance');
+  // The overview (and the former Analytics route) also serve analytics-only roles.
+  if (
+    context.scope === 'VENDOR' &&
+    (canonical === '/vendor/finances' || canonical === '/vendor/analytics')
+  )
+    return (
+      context.permissions.includes('ReadOwnVendorFinance') ||
+      context.permissions.includes('ReadOwnVendorAnalytics')
+    );
   if (
     context.scope === 'VENDOR' &&
     canonical === '/vendor/settings/clover-return'
   )
-    return mayCommand(context, 'ManageOwnPosIntegrations');
-  if (context.scope === 'VENDOR' && canonical === '/vendor/settings/taxes')
-    return mayCommand(context, 'ManageOwnCatalog');
-  if (context.scope === 'VENDOR' && canonical === '/vendor/settings/payments')
     return mayCommand(context, 'ManageOwnPosIntegrations');
   if (context.scope === 'VENDOR' && canonical === '/vendor/pos/square-return')
     return context.permissions.includes('OperateOwnPos');
@@ -592,6 +655,14 @@ export function routeAllowed(context: AdminContext, path: string) {
     );
   if (context.scope === 'VENDOR' && canonical === '/vendor/products/new')
     return mayCommand(context, 'ManageOwnCatalog');
+  // Market date pages inherit the Markets entry's visibility; commands stay backend-authorized.
+  if (
+    context.scope === 'VENDOR' &&
+    /^\/vendor\/markets\/[^/]+\/dates\/[^/]+$/.test(canonical)
+  )
+    return visibleNavigation(context).some(
+      (item) => item.path === '/vendor/markets',
+    );
   if (context.scope === 'VENDOR' && canonical === '/vendor/inventory')
     return hasPermission(context.permissions, 'ReadOwnInventory');
   if (

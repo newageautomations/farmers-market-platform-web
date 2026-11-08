@@ -1,0 +1,487 @@
+/* Vendor application detail: Farmstand panels with tinted headers, as in Order detail tokens. */
+.admin-content:has(.application-detail) {
+  width: min(100% - 4rem, 1320px);
+  max-width: none;
+  margin-block: 26px 28px;
+}
+.application-detail {
+  --application-border: color-mix(
+    in srgb,
+    var(--brand-primary) 16%,
+    var(--brand-surface)
+  );
+  --application-soft: color-mix(
+    in srgb,
+    var(--brand-primary) 6%,
+    var(--brand-surface)
+  );
+  --catalog-border: var(--application-border);
+  --catalog-soft: var(--application-soft);
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  container-type: inline-size;
+  color: var(--brand-foreground);
+}
+.application-detail dl,
+.application-detail dd,
+.application-detail ol,
+.application-detail ul {
+  margin: 0;
+}
+.application-detail ol,
+.application-detail ul {
+  padding: 0;
+  list-style: none;
+}
+.application-detail .farmstand-button > svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.application-detail-back {
+  justify-self: start;
+}
+
+/* Arrowed actions slide toward their destination, as in the reward wizard and market discovery. */
+.application-detail-arrow
+  :is(.farmstand-icon-arrow-right, .farmstand-icon-arrow-left, svg) {
+  transition: transform 180ms ease;
+}
+.application-detail-arrow:is(:hover, :focus-visible)
+  .farmstand-icon-arrow-right {
+  transform: translateX(3px);
+}
+.application-detail-arrow:is(:hover, :focus-visible)
+  .farmstand-icon-arrow-left {
+  transform: translateX(-3px);
+}
+.application-detail-arrow:is(:hover, :focus-visible) > svg {
+  transform: translate(2px, -2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .application-detail-arrow
+    :is(.farmstand-icon-arrow-right, .farmstand-icon-arrow-left, svg) {
+    transition: none;
+  }
+}
+
+.application-detail-heading,
+.application-detail-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+.application-detail-heading {
+  justify-content: space-between;
+}
+.application-detail-title {
+  flex: 1;
+  min-width: 0;
+}
+.application-detail .application-detail-heading h1 {
+  margin: 0;
+  font-family: 'Lora', Georgia, serif;
+  font-size: clamp(25px, 3vw, 34px);
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.8px;
+  overflow-wrap: anywhere;
+}
+
+/* Overview strip: four facts and the market action. */
+.application-detail-overview.farmstand-panel.card.ui-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 20px;
+}
+.application-detail-overview dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  flex: 1;
+  min-width: 0;
+}
+.application-detail-overview dl > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 12px;
+  padding: 2px 16px;
+  min-width: 0;
+}
+.application-detail-overview dl > div:first-child {
+  padding-left: 0;
+}
+.application-detail-overview dl > div + div {
+  border-left: 1px solid var(--application-border);
+}
+.application-detail-overview dt {
+  display: contents;
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+.application-detail-overview dt > :is(.farmstand-icon, svg) {
+  grid-row: span 2;
+  align-self: center;
+  color: var(--brand-primary);
+  --farmstand-icon-width: 22px;
+  width: 22px;
+  height: 22px;
+}
+.application-detail-overview dd {
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.application-detail-overview > :is(a, button) {
+  flex: none;
+}
+
+.application-detail-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.application-detail-main,
+.application-detail-sidebar {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+/* Panel header band. */
+.application-detail-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 10px 4px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--application-soft);
+}
+.application-detail .application-detail-panel-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.application-detail-panel-header h2 > :is(.farmstand-icon, svg) {
+  color: var(--brand-primary);
+  --farmstand-icon-width: 20px;
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.application-detail .application-detail-empty,
+.application-detail .application-detail-note {
+  margin: 8px 24px 0;
+  padding-bottom: 10px;
+  color: var(--brand-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.application-detail .application-detail-note {
+  margin-top: 0;
+  font-size: 12px;
+}
+
+/* Icon fact rows used by submitted information and summary. */
+.application-detail-answers {
+  padding: 6px 24px 16px;
+}
+.application-detail-answers h3 {
+  margin: 10px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-muted);
+}
+.application-detail-answers dl > div,
+.application-detail-summary > div {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1.6fr);
+  gap: 16px;
+  align-items: center;
+  padding-block: 8px;
+  font-size: 13px;
+}
+.application-detail-summary {
+  padding: 6px 24px 18px;
+}
+.application-detail-summary > div {
+  grid-template-columns: minmax(130px, 0.9fr) minmax(0, 1.3fr);
+  align-items: center;
+}
+.application-detail
+  :is(.application-detail-answers, .application-detail-summary)
+  dt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+.application-detail
+  :is(.application-detail-answers, .application-detail-summary)
+  dt
+  > :is(.farmstand-icon, svg) {
+  color: var(--brand-primary);
+  --farmstand-icon-width: 17px;
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+.application-detail
+  :is(.application-detail-answers, .application-detail-summary)
+  dd {
+  /* Same fix as the loyalty redemptions sidebar: a global dd margin pushed values below their labels. */
+  margin: 0;
+  align-self: center;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+  line-height: 1.5;
+}
+
+/* Tables inside panels. */
+.application-detail-panel .farmstand-data-table {
+  margin: 0;
+}
+.application-detail-panel .table-scroll {
+  margin: 0 10px 10px;
+}
+.application-detail-panel .farmstand-data-table :is(th, td) {
+  padding-block: 10px;
+  font-size: 13px;
+}
+.application-detail-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.application-detail-cell > :is(.farmstand-icon, svg) {
+  color: var(--brand-primary);
+  --farmstand-icon-width: 16px;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.application-detail-cell small {
+  display: block;
+  margin-top: 2px;
+  color: var(--brand-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* History timeline. */
+.application-detail-timeline {
+  padding: 10px 24px 20px !important;
+}
+.application-detail-timeline li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: 14px;
+  padding-bottom: 18px;
+}
+.application-detail-timeline li:last-child {
+  padding-bottom: 0;
+}
+.application-detail-timeline li:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 32px;
+  bottom: 2px;
+  left: 14px;
+  width: 2px;
+  background: var(--application-border);
+}
+.application-detail-timeline-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--brand-primary);
+  background: var(--application-soft);
+  --farmstand-icon-width: 15px;
+}
+.application-detail-tone-success {
+  color: var(--status-success-fg);
+  background: var(--status-success-bg);
+}
+.application-detail-tone-warning {
+  color: var(--status-warning-fg);
+  background: var(--status-warning-bg);
+}
+.application-detail-tone-danger {
+  color: var(--status-danger-fg);
+  background: var(--status-danger-bg);
+}
+.application-detail-timeline strong {
+  display: block;
+  font-size: 14px;
+  line-height: 30px;
+}
+.application-detail-timeline p {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.application-detail-timeline time {
+  color: var(--brand-muted);
+  font-size: 12px;
+  line-height: 30px;
+  white-space: nowrap;
+}
+
+/* Document compliance. */
+.application-detail-documents {
+  display: grid;
+  gap: 4px;
+  padding: 8px 24px 4px !important;
+}
+.application-detail-documents li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding-block: 8px;
+  font-size: 13px;
+}
+.application-detail-document-icon {
+  color: var(--brand-primary);
+  --farmstand-icon-width: 18px;
+}
+.application-detail-documents strong,
+.application-detail-documents small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.application-detail-documents small {
+  margin-top: 2px;
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+.application-detail-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 6px 24px 0 !important;
+  padding-top: 10px;
+  border-top: 1px solid var(--application-border);
+  font-size: 12px;
+}
+.application-detail-counts > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.application-detail-counts :is(dt, dd) {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+/* Same fix as the loyalty redemptions sidebar: the global dd margin pushed the badge below its label. */
+.application-detail .application-detail-counts dd {
+  margin: 0;
+  align-self: center;
+}
+.application-detail-counts dt {
+  color: var(--brand-muted);
+}
+.application-detail-panel-actions
+  > .farmstand-button.button.ui-button.button-tertiary {
+  padding: 0 16px;
+}
+.application-detail-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 24px 20px;
+}
+
+/* Quick actions: full-width stacked controls. */
+.application-detail-quick-actions {
+  display: grid;
+  gap: 10px;
+  padding: 8px 20px 20px;
+}
+.application-detail-quick-actions > .farmstand-button.button.ui-button {
+  width: 100%;
+  justify-content: flex-start;
+}
+.application-detail-quick-actions
+  > :is(a, button)
+  > :is(svg, .farmstand-icon-arrow-right):not(:first-child) {
+  margin-left: auto;
+}
+.application-detail-sidebar > section.card:not(.farmstand-panel) {
+  margin: 0;
+}
+
+@container (max-width: 1080px) {
+  .application-detail-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .application-detail-overview.farmstand-panel.card.ui-card {
+    flex-wrap: wrap;
+  }
+  .application-detail-overview dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 14px;
+  }
+  .application-detail-overview dl > div:nth-child(odd),
+  .application-detail-overview dl > div + div:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+@container (max-width: 600px) {
+  .application-detail-overview dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .application-detail-overview dl > div,
+  .application-detail-overview dl > div + div {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .application-detail-answers dl > div,
+  .application-detail-summary > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .application-detail-timeline li {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+  .application-detail-timeline time {
+    grid-column: 2;
+    line-height: 1.4;
+  }
+  .application-detail-overview > :is(a, button),
+  .application-detail-heading > button {
+    width: 100%;
+  }
+}
+
+/* Badges keep one line; narrow tables scroll inside their panel instead of breaking words. */
+.application-detail .ui-status {
+  white-space: nowrap;
+}
+.application-detail-panel .farmstand-data-table {
+  min-width: 440px;
+}
+.application-detail-panel .farmstand-data-table :is(th, td) {
+  white-space: nowrap;
+}
+.application-detail-panel-header {
+  flex-wrap: wrap;
+}

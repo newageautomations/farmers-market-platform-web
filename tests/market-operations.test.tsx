@@ -1,7 +1,12 @@
-import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApplicationFields, MarketMap } from '@market/ui';
-import type { ApplicationDefinition, MapDefinition } from '@market/api';
+import type {
+  ApplicationDefinition,
+  MapDefinition,
+  OperationsCommand,
+} from '@market/api';
 import { drawingHistory } from '../apps/admin/src/market/phase14/Layouts';
 import { Applications } from '../apps/admin/src/market/phase14/Applications';
 const definition: ApplicationDefinition = {
@@ -113,10 +118,16 @@ test('editor undo and redo restore both geometry and physical details', () => {
   expect(undone.present).toEqual(present);
   expect(drawingHistory(undone, { type: 'REDO' }).present).toEqual(changed);
 });
-test('published application offers a new version and preserves typed inspector', async () => {
+test('published application is edited as a draft created on the first change', async () => {
   const user = userEvent.setup();
+  const run = vi.fn(async (command: OperationsCommand) =>
+    command.action === 'CLONE_APPLICATION'
+      ? { id: 2, templateId: 1, revision: 1 }
+      : { id: 2, templateId: 1, revision: 2 },
+  );
   render(
     <Applications
+      path="/market/applications/1"
       data={{
         marketId: 1,
         providerState: 'NOT_CONFIGURED',
@@ -145,18 +156,29 @@ test('published application offers a new version and preserves typed inspector',
           },
         ],
       }}
-      run={async () => undefined}
+      run={run}
       canManage
     />,
   );
-  await user.click(
-    screen.getByRole('button', { name: 'Open Season application' }),
-  );
-  await user.click(screen.getByRole('button', { name: 'Open Published' }));
   expect(
-    screen.getByRole('button', { name: 'Create new draft' }),
+    screen.getByText(/Your edits are saved as a draft and stay private/),
   ).toBeInTheDocument();
-  expect(
-    screen.queryByRole('button', { name: 'Save draft' }),
-  ).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Save draft' })).toBeNull();
+  await new Promise((resolve) => setTimeout(resolve, 900));
+  expect(run).not.toHaveBeenCalled();
+  await user.type(screen.getByLabelText('Application name'), ' 2027');
+  await waitFor(
+    () =>
+      expect(run.mock.calls.map(([c]) => c.action)).toEqual([
+        'CLONE_APPLICATION',
+        'SAVE_APPLICATION',
+      ]),
+    { timeout: 3000 },
+  );
+  expect(run.mock.calls[0]![0]).toMatchObject({ id: 1 });
+  expect(run.mock.calls[1]![0]).toMatchObject({
+    id: 2,
+    expectedRevision: 1,
+    data: { name: 'Season application 2027' },
+  });
 });

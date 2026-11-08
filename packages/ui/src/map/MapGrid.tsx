@@ -6,11 +6,15 @@ export function MapGrid({
   width,
   height,
   spacing,
+  color = '#dce4df',
+  opacity = 0.45,
 }: {
   view: Viewport;
   width: number;
   height: number;
   spacing: number;
+  color?: string;
+  opacity?: number;
 }) {
   const lines = useMemo(() => {
     // Coarsen distant grids and cap line count regardless of world extent.
@@ -40,7 +44,8 @@ export function MapGrid({
         <Line
           key={i}
           points={points}
-          stroke="#dce4df"
+          stroke={color}
+          opacity={opacity}
           strokeWidth={1 / view.scale}
           listening={false}
         />

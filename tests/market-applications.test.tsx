@@ -340,8 +340,8 @@ describe('application records and next actions', () => {
       await within(panel).findByRole('link', { name: 'Open documents' }),
     ).toHaveAttribute('href', '/vendor/documents?channel=vendor-channel');
     expect(
-      within(panel).getByRole('link', { name: 'Open application' }),
-    ).toHaveAttribute('href', '/vendor/applications/2?channel=vendor-channel');
+      within(panel).queryByRole('link', { name: 'Open application' }),
+    ).toBeNull();
     expect(
       within(panel).getByRole('link', { name: /View market/ }),
     ).toHaveAttribute('href', 'https://market.example');
@@ -375,14 +375,6 @@ describe('application records and next actions', () => {
     expect(
       within(screen.getByRole('table')).getByText('Not submitted'),
     ).toBeVisible();
-    expect(
-      within(
-        screen.getByRole('region', { name: 'Application details' }),
-      ).getByRole('link', { name: 'Open application' }),
-    ).toHaveAttribute(
-      'href',
-      '/vendor/applications/drafts/1?channel=vendor-channel',
-    );
   });
   it('collects all submitted pages while deduplicating repeated drafts', async () => {
     const api = {
@@ -410,8 +402,8 @@ describe('application records and next actions', () => {
       within(panel).getByRole('button', { name: 'View market' }),
     ).toBeDisabled();
     expect(
-      within(panel).getByRole('link', { name: 'Open application' }),
-    ).toBeVisible();
+      within(panel).queryByRole('link', { name: 'Open application' }),
+    ).toBeNull();
     expect(applicationNextStep(row(2, 'WAITLISTED')).label).toBe(
       'View updates',
     );

@@ -146,7 +146,8 @@
 }
 .reward-progress {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* WizardProgress sets --wizard-steps; the reward wizard has four. */
+  grid-template-columns: repeat(var(--wizard-steps, 4), minmax(0, 1fr));
   list-style: none;
   margin: 0 0 32px;
   padding: 0;
@@ -331,7 +332,7 @@
   flex-wrap: wrap;
   gap: 12px;
 }
-.reward-image-controls img {
+.reward-image-controls > img {
   width: 96px;
   height: 96px;
   border-radius: 10px;

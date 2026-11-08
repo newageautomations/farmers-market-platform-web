@@ -7,7 +7,7 @@ import {
 } from '@testing-library/react';
 import { vi, expect, it } from 'vitest';
 import { Applications } from '../apps/admin/src/market/phase14/Applications';
-import { Directory, Rentals } from '../apps/admin/src/market/phase14/Directory';
+import { Rentals } from '../apps/admin/src/market/phase14/Directory';
 import { MarketVendors } from '../apps/admin/src/market/vendors';
 import { OccurrenceMap } from '../apps/admin/src/market/OccurrenceMap';
 import {
@@ -126,58 +126,165 @@ it('discards application drafts when closed and keeps failed saves open', async 
   ).toBeInTheDocument();
 });
 
-it('edits a directory business in a modal and discards unsaved changes', async () => {
-  const run = vi.fn();
-  render(<Directory data={managerData()} run={run} canManage />);
-  fireEvent.click(screen.getByRole('button', { name: 'Orchard Farm' }));
-  expect(
-    screen.getByRole('dialog', { name: 'Edit Business' }),
-  ).toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('business name'), {
-    target: { value: 'Unsaved' },
+function vendorsService(memberships = 2) {
+  const service = createFixtureMarketService(marketFixtureContext());
+  service.context = {
+    ...service.context,
+    permissions: [
+      ...service.context.permissions,
+      'ReadOwnMarketApplications',
+      'ManageOwnMarketApplications',
+      'ManageOwnMarketMemberships',
+    ],
+  };
+  const data = managerData();
+  const command = vi.fn(async (input: { action: string; data: Record<string, unknown> }) =>
+    input.action === 'SAVE_DIRECTORY'
+      ? { ...data.directory![0]!, id: 9, contact: input.data.contact }
+      : { id: 1, revision: 1 },
+  );
+  service.phase14 = {
+    read: vi.fn().mockResolvedValue(data),
+    command,
+    vendorAssignments: vi.fn(),
+  } as never;
+  const rows = Array.from({ length: memberships }, (_, i) => ({
+    id: String(i + 1),
+    marketId: '1',
+    vendorId: String(500 + i),
+    vendor: { id: String(500 + i), name: `Platform Farm ${i + 1}`, slug: `p${i}`, status: 'active' },
+    status: 'approved',
+    version: 1,
+    preorderDefault: null,
+  }));
+  const pages = vi
+    .spyOn(service, 'relationshipPage')
+    .mockImplementation(async ({ skip = 0, take = 20 } = {}) => ({
+      totalItems: rows.length,
+      items: rows.slice(skip!, skip! + take!),
+    }) as never);
+  return { service, command, pages };
+}
+
+it('lists platform Vendors and external businesses together; platform details are read-only', async () => {
+  const { service } = vendorsService();
+  render(<MarketVendors service={service} />);
+  const table = await screen.findByRole('table', { name: 'Market businesses' });
+  await within(table).findByText('Platform Farm 1');
+  expect(within(table).getByText('Orchard Farm')).toBeInTheDocument();
+  fireEvent.click(within(table).getByRole('row', { name: /Platform Farm 1/ }));
+  const details = screen.getByRole('region', { name: 'Business details' });
+  expect(within(details).queryByRole('button', { name: /Edit business/ })).toBeNull();
+  expect(within(details).getByRole('button', { name: 'Edit private notes' })).toBeInTheDocument();
+  expect(within(details).getByText('Managed by the Vendor')).toBeInTheDocument();
+  fireEvent.click(within(table).getByRole('row', { name: /Orchard Farm/ }));
+  expect(within(details).getByRole('button', { name: /Edit business/ })).toBeInTheDocument();
+});
+
+it('saves private notes for a platform Vendor without changing its details', async () => {
+  const { service, command } = vendorsService();
+  render(<MarketVendors service={service} />);
+  const table = await screen.findByRole('table', { name: 'Market businesses' });
+  fireEvent.click(await within(table).findByRole('row', { name: /Platform Farm 1/ }));
+  fireEvent.click(screen.getByRole('button', { name: 'Edit private notes' }));
+  fireEvent.change(screen.getByLabelText('Private manager notes'), {
+    target: { value: 'Corner booth' },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-  expect(run).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: 'Orchard Farm' }));
-  expect(screen.getByLabelText('business name')).toHaveValue('Orchard Farm');
+  fireEvent.click(screen.getByRole('button', { name: 'Save notes' }));
+  await waitFor(() =>
+    expect(command).toHaveBeenCalledWith({
+      action: 'SAVE_VENDOR_NOTES',
+      expectedRevision: undefined,
+      data: { vendorId: 500, notes: 'Corner booth' },
+    }),
+  );
+});
+
+it('adds an external business through the staged wizard', async () => {
+  const { service, command } = vendorsService();
+  render(<MarketVendors service={service} adding />);
+  const next = () => fireEvent.click(screen.getByRole('button', { name: /Next/ }));
+  fireEvent.click(screen.getByRole('radio', { name: 'External business' }));
+  next();
+  fireEvent.change(screen.getByLabelText('Business name'), {
+    target: { value: 'River Honey' },
+  });
+  next();
+  fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Ada' } });
+  fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'Lane' } });
+  fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'nope' } });
+  next();
+  expect(screen.getByText('Enter a valid contact email address.')).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Email'), {
+    target: { value: 'ada@example.com' },
+  });
+  next();
+  expect(command).not.toHaveBeenCalled();
+  fireEvent.click(
+    within(screen.getByRole('dialog')).getByRole('button', { name: 'Add business' }),
+  );
+  await screen.findByRole('heading', { name: 'Business added' });
+  expect(command).toHaveBeenCalledWith(
+    expect.objectContaining({
+      action: 'SAVE_DIRECTORY',
+      data: expect.objectContaining({
+        contact: expect.objectContaining({ businessName: 'River Honey' }),
+      }),
+    }),
+  );
+});
+
+it('adds a platform Vendor membership with private notes', async () => {
+  const { service, command } = vendorsService();
+  const add = vi.spyOn(service, 'membershipStatus');
+  render(<MarketVendors service={service} adding />);
+  const next = () => fireEvent.click(screen.getByRole('button', { name: /Next/ }));
+  fireEvent.click(screen.getByRole('radio', { name: 'Platform Vendor' }));
+  next();
+  next();
+  expect(screen.getByText('Choose the platform Vendor to add.')).toBeInTheDocument();
+  fireEvent.click(
+    await screen.findByRole('option', {
+      name: /Eligible Vendor 1$/,
+      hidden: true,
+    }),
+  );
+  next();
+  fireEvent.change(screen.getByLabelText('Private manager notes'), {
+    target: { value: 'Met at the fair' },
+  });
+  next();
+  fireEvent.click(
+    within(screen.getByRole('dialog')).getByRole('button', { name: 'Add business' }),
+  );
+  await screen.findByRole('heading', { name: 'Business added' });
+  expect(add).toHaveBeenCalledWith(service.marketId, expect.any(String), 'pending');
+  expect(command).toHaveBeenCalledWith(
+    expect.objectContaining({
+      action: 'SAVE_VENDOR_NOTES',
+      data: expect.objectContaining({ notes: 'Met at the fair' }),
+    }),
+  );
+});
+
+it('loads every membership page and pages the combined list ten at a time', async () => {
+  const { service, pages } = vendorsService(41);
+  render(<MarketVendors service={service} />);
+  const table = await screen.findByRole('table', { name: 'Market businesses' });
+  await within(table).findByText('Platform Farm 1');
+  expect(pages).toHaveBeenCalledTimes(3);
+  expect(within(table).getAllByRole('row')).toHaveLength(11);
+  expect(screen.getByText(/43 businesses/)).toBeInTheDocument();
 });
 
 it('shows remaining rental stock for the chosen occurrence', () => {
   render(<Rentals data={managerData()} run={vi.fn()} canManage />);
-  const card = screen
-    .getByRole('button', { name: 'Folding Table' })
-    .closest('li')!;
+  const card = screen.getByRole('row', { name: /Folding Table/ });
   expect(card).toHaveTextContent('Current stock: 7 / 10');
   fireEvent.change(screen.getByLabelText('Stock for Market Date'), {
     target: { value: '102' },
   });
   expect(card).toHaveTextContent('Current stock: 10 / 10');
-});
-
-it('caps vendors at twenty and requests the next page', async () => {
-  const service = createFixtureMarketService(marketFixtureContext());
-  const original = await service.relationshipPage();
-  const rows = Array.from({ length: 41 }, (_, i) => ({
-    ...original.items[0]!,
-    id: String(i),
-    vendor: { ...original.items[0]!.vendor, name: `Farm ${i + 1}` },
-  }));
-  const read = vi
-    .spyOn(service, 'relationshipPage')
-    .mockImplementation(async ({ skip = 0, take = 20 } = {}) => ({
-      totalItems: 41,
-      items: rows.slice(skip!, skip! + take!),
-    }));
-  render(<MarketVendors service={service} />);
-  const table = await screen.findByRole('table');
-  expect(within(table).getAllByRole('row')).toHaveLength(21);
-  expect(
-    within(table).queryByRole('columnheader', { name: 'Version' }),
-  ).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-  await screen.findByRole('button', { name: 'Open Farm 21' });
-  expect(read).toHaveBeenLastCalledWith({ take: 20, skip: 20, search: '' });
 });
 
 it('loads the selected occurrence layout with its assigned vendor', async () => {
@@ -191,8 +298,33 @@ it('loads the selected occurrence layout with its assigned vendor', async () => 
   render(<OccurrenceMap service={service} occurrenceId="101" />);
   await screen.findByText('Orchard Farm');
   expect(read).toHaveBeenCalledWith('ASSIGNMENTS', 101);
-  expect(screen.getByRole('link', { name: 'Manage Booths' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: 'Manage booths' })).toHaveAttribute(
     'href',
     '/market/assignments/101',
   );
+});
+
+it('assigns a business from the occurrence booth list through the shared booth dialog', async () => {
+  const service = createFixtureMarketService(marketFixtureContext());
+  service.context = {
+    ...service.context,
+    permissions: [
+      ...service.context.permissions,
+      'ReadOwnMarketAssignments',
+      'ManageOwnMarketAssignments',
+    ],
+  };
+  const read = vi.fn().mockResolvedValue(managerData());
+  service.phase14 = { read, command: vi.fn(), vendorAssignments: vi.fn() };
+  render(<OccurrenceMap service={service} occurrenceId="101" />);
+  await screen.findByText('Orchard Farm');
+  fireEvent.click(
+    screen.getAllByRole('button', {
+      name: /Manage business assignment|Add business to booth/,
+    })[0]!,
+  );
+  const dialog = await screen.findByRole('dialog', { name: /^Booth / });
+  expect(
+    within(dialog).getByLabelText('Business for selected booth'),
+  ).toBeInTheDocument();
 });

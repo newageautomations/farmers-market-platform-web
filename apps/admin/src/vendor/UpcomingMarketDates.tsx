@@ -48,7 +48,7 @@ function inApp(event: MouseEvent<HTMLAnchorElement>, href: string) {
   event.preventDefault();
   go(href);
 }
-function AttendanceBadge({ value }: { value: DateAttendance }) {
+export function AttendanceBadge({ value }: { value: DateAttendance }) {
   return (
     <Badge tone={dateAttendanceTones[value]}>
       {dateAttendanceLabels[value]}

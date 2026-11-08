@@ -69,19 +69,17 @@ describe('shared Admin scope', () => {
       'Website',
       'Finances',
       'Settings',
-      'Integrations',
-      'Billing',
+      'Subscription',
       'Team',
       'Contact Submissions',
       'Market Day',
-      'Analytics',
     ]);
     for (const [parent, children] of [
       ['/vendor/products', []],
       ['/vendor/orders', ['Packing & Fulfillment', 'Pickup']],
       ['/vendor/customers', ['Loyalty']],
       ['/vendor/markets', ['Documents', 'Applications']],
-      ['/vendor/integrations', ['Payments', 'POS']],
+      ['/vendor/settings', []],
     ] as const) {
       expect(
         items

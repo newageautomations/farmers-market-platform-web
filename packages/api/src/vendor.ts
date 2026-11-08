@@ -215,6 +215,11 @@ export function createVendorApi(
         { api: 'admin', document: g.VendorMarketDefaultDocument },
         { id, expectedVersion, rule },
       ).then((r) => r.configureOwnMarketMembershipDefault),
+    autoEnroll: (id: string, expectedVersion: number, enabled: boolean) =>
+      run(
+        { api: 'admin', document: g.VendorMarketAutoEnrollDocument },
+        { id, expectedVersion, enabled },
+      ).then((r) => r.configureOwnMarketMembershipAutoEnroll),
     attendance: (input: AttendanceInput) =>
       run(
         { api: 'admin', document: g.VendorAttendanceDocument },

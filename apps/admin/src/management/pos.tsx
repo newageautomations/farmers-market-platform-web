@@ -3,7 +3,9 @@ import { Badge } from '@market/ui';
 import { managementStatusTone } from './status-presentation';
 import { useCallback, useState } from 'react';
 import { AppError, type PosConnection } from '@market/api';
-import { Button, Card } from '@market/ui';
+import { Button } from '@market/ui';
+import { FarmstandPanel } from '@market/ui/farmstand';
+import { codeLabel, ProviderLogo, providerName } from '../settings/providers';
 import type { VendorService } from '../vendor/service';
 import type { ManagementService } from './service';
 import {
@@ -42,30 +44,39 @@ export function Pos({
       </Unavailable>
       {data && (
         <>
-          <div className="management-grid">
+          <div className="provider-cards">
             {data.providers.map((p) => {
               const runtime = data.runtime.providers.find(
                   (r) => r.providerCode === p.providerCode,
                 ),
-                localIO = canManage && runtime?.providerIOAllowed;
+                localIO = canManage && runtime?.providerIOAllowed,
+                state = runtime?.state ?? 'NOT_CONFIGURED';
               return (
-                <Card key={p.providerCode}>
-                  <h2 className="ui-section-title-dashboard">
-                    {p.providerCode}
-                  </h2>
-                  <p>
-                    API version {p.apiVersion} ·{' '}
-                    {runtime?.state ?? 'NOT_CONFIGURED'}
-                  </p>
+                <FarmstandPanel
+                  key={p.providerCode}
+                  as="article"
+                  className="provider-card"
+                >
+                  <header className="provider-card-heading">
+                    <ProviderLogo code={p.providerCode} />
+                    <div>
+                      <h3>{providerName(p.providerCode)}</h3>
+                      <p>API version {p.apiVersion}</p>
+                    </div>
+                    <Badge tone={managementStatusTone('readiness', state)}>
+                      {codeLabel(state)}
+                    </Badge>
+                  </header>
                   <details className="ui-disclosure">
                     <summary>Provider capabilities</summary>
                     <div className="ui-disclosure-content">
-                      <dl>
+                      <dl className="provider-facts">
                         {Object.entries(p.capabilities).map(([key, c]) => (
                           <div key={key}>
-                            <dt>{key}</dt>
+                            <dt>{codeLabel(key)}</dt>
                             <dd>
-                              {c.support} · {c.reason}
+                              {codeLabel(c.support)}
+                              {c.reason ? ` · ${c.reason}` : ''}
                             </dd>
                           </div>
                         ))}
@@ -75,7 +86,7 @@ export function Pos({
                   {localIO && p.capabilities.oauth?.support === 'SUPPORTED' ? (
                     <CommandForm
                       embedded
-                      title={`Connect ${p.providerCode}`}
+                      title={`Connect ${providerName(p.providerCode)}`}
                       submitLabel="Connect local adapter"
                       run={async (f) => {
                         const hint = text(f, 'accountHint');
@@ -130,7 +141,7 @@ export function Pos({
                       'SUPPORTED' ? (
                     <CommandForm
                       embedded
-                      title={`Connect ${p.providerCode}`}
+                      title={`Connect ${providerName(p.providerCode)}`}
                       run={(f) =>
                         service.connectPos({
                           providerCode: p.providerCode,
@@ -149,33 +160,55 @@ export function Pos({
                   ) : (
                     <Button disabled>Authorize connection</Button>
                   )}
-                </Card>
+                </FarmstandPanel>
               );
             })}
           </div>
           <section>
-            <h2 className="ui-section-title-dashboard">Connections</h2>
+            <h3 className="provider-section-title">Connections</h3>
             {!data.connections.length && (
               <EmptyState title="No connections recorded">
                 <p>No connections are recorded for this Vendor.</p>
               </EmptyState>
             )}
-            {data.connections.map((c) => (
-              <Card key={c.id}>
-                <h3>{c.providerCode}</h3>
-                <p>
-                  <Badge tone={managementStatusTone('connection', c.status)}>
-                    {c.status}
-                  </Badge>{' '}
-                  · {c.mode} · API {c.apiVersion}
-                </p>
-                <p>Inventory authority: {c.policies.inventory}</p>
-                <p>Last successful observation: {date(c.lastSuccessAt)}</p>
-                <Button className="secondary" onClick={() => setSelected(c.id)}>
-                  Inspect connection
-                </Button>
-              </Card>
-            ))}
+            <div className="provider-cards">
+              {data.connections.map((c) => (
+                <FarmstandPanel
+                  key={c.id}
+                  as="article"
+                  className="provider-card"
+                >
+                  <header className="provider-card-heading">
+                    <ProviderLogo code={c.providerCode} />
+                    <div>
+                      <h4>{providerName(c.providerCode)}</h4>
+                      <p>
+                        {codeLabel(c.mode)} · API {c.apiVersion}
+                      </p>
+                    </div>
+                    <Badge tone={managementStatusTone('connection', c.status)}>
+                      {codeLabel(c.status)}
+                    </Badge>
+                  </header>
+                  <dl className="provider-facts">
+                    <div>
+                      <dt>Inventory authority</dt>
+                      <dd>{codeLabel(c.policies.inventory)}</dd>
+                    </div>
+                    <div>
+                      <dt>Last successful observation</dt>
+                      <dd>{date(c.lastSuccessAt)}</dd>
+                    </div>
+                  </dl>
+                  <Button
+                    className="secondary"
+                    onClick={() => setSelected(c.id)}
+                  >
+                    Inspect connection
+                  </Button>
+                </FarmstandPanel>
+              ))}
+            </div>
           </section>
           {data.connections.find((c) => c.id === selected) && (
             <PosDetail
@@ -246,7 +279,7 @@ function PosDetail({
   return (
     <section>
       <h2 className="ui-section-title-dashboard">
-        {c.providerCode} connection details
+        {providerName(c.providerCode)} connection details
       </h2>
       <ReadState {...result} retry={refresh} />
       {result.data && (
@@ -281,18 +314,18 @@ function PosDetail({
           <ul>
             {result.data.health.issues.map((i) => (
               <li key={i.id}>
-                {i.kind} · {date(i.createdAt)}
+                {codeLabel(i.kind)} · {date(i.createdAt)}
               </li>
             ))}
           </ul>
           <details className="ui-disclosure">
             <summary>Effective connection capabilities</summary>
             <div className="ui-disclosure-content">
-              <dl>
+              <dl className="provider-facts">
                 {Object.entries(c.capabilities).map(([key, value]) => (
                   <div key={key}>
-                    <dt>{key}</dt>
-                    <dd>{value}</dd>
+                    <dt>{codeLabel(key)}</dt>
+                    <dd>{codeLabel(String(value))}</dd>
                   </div>
                 ))}
               </dl>
@@ -303,13 +336,13 @@ function PosDetail({
             <ul>
               {result.data.mappings.map((m) => (
                 <li key={m.id}>
-                  {m.kind} · {m.externalId} →{' '}
+                  {codeLabel(m.kind)} · {m.externalId} →{' '}
                   {m.variantId
                     ? `Owned variant ${m.variantId}`
                     : `Owned source ${m.stockLocationId}`}{' '}
                   ·{' '}
                   <Badge tone={managementStatusTone('mapping', m.status)}>
-                    {m.status}
+                    {codeLabel(m.status)}
                   </Badge>
                 </li>
               ))}

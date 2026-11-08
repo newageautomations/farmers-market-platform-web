@@ -1,6 +1,7 @@
 import { Input } from '@market/ui';
 import { useId, type ReactNode } from 'react';
 import { PhoneInput, InfoTip } from '@market/ui';
+import { replayCheck } from '@market/ui/notifications';
 export function Control({
   label,
   children,
@@ -91,21 +92,31 @@ export function Check({
   checked,
   onChange,
   info,
+  animated = false,
 }: {
   label: string;
   checked: boolean;
   onChange: (value: boolean) => void;
   info?: string;
+  /** Opt-in: the shared animated option row (`notification-option`) with
+   *  the press pop replayed on each user change. */
+  animated?: boolean;
 }) {
   const id = useId();
   return (
     <div className="ops-check">
-      <label className="ops-check" htmlFor={id}>
+      <label
+        className={animated ? 'ops-check notification-option' : 'ops-check'}
+        htmlFor={id}
+      >
         <Input
           id={id}
           type="checkbox"
           checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
+          onChange={(e) => {
+            if (animated) replayCheck(e);
+            onChange(e.target.checked);
+          }}
         />
         {label}
       </label>

@@ -69,6 +69,25 @@ async function store(): Promise<MarketOperationsData> {
 async function number(label: string) {
   return Number(await page!.getByLabel(label, { exact: true }).inputValue());
 }
+/** Opens a layout editor rail drawer without toggling an open one closed. */
+async function drawer(name: string) {
+  const button = page!
+    .getByRole('navigation', { name: 'Design tools', exact: true })
+    .getByRole('button', { name, exact: true });
+  if ((await button.getAttribute('aria-pressed')) !== 'true')
+    await button.click();
+}
+async function inspectorTab(name: 'Properties' | 'Style') {
+  await page!
+    .getByRole('group', { name: 'Inspector view', exact: true })
+    .getByRole('button', { name, exact: true })
+    .click();
+}
+/** Runs an item from a selection toolbar menu. */
+async function menu(label: string, item: string) {
+  await page!.getByRole('button', { name: label, exact: true }).click();
+  await page!.getByRole('button', { name: item, exact: true }).click();
+}
 async function element(): Promise<MapElement> {
   return {
     id: '',
@@ -132,6 +151,7 @@ try {
   await check(
     'rectangle resized and rotated using actual Transformer handles',
     async () => {
+      await drawer('Add');
       await page!
         .getByRole('button', { name: 'Add rectangle', exact: true })
         .click();
@@ -170,7 +190,7 @@ try {
       before.y + before.height / 2,
     );
     await dragMap(page!, center, { x: center.x + 70, y: center.y + 40 });
-    await page!.getByRole('button', { name: 'Layers', exact: true }).click();
+    await drawer('Layers');
     const locked = page!
       .getByRole('list', { name: 'Layout elements', exact: true })
       .locator('li')
@@ -180,18 +200,20 @@ try {
       before.x,
     );
     await locked.locator('.layer-select').click();
-    await page!.getByRole('button', { name: 'Inspector', exact: true }).click();
     assert.equal(await number('x'), before.x);
     await page!.keyboard.press('Delete');
     assert.equal(await page!.getByLabel('Label', { exact: true }).count(), 1);
   });
   await check('text styling and bounded freehand pointer path', async () => {
+    await drawer('Add');
     await page!.getByRole('button', { name: 'Add text', exact: true }).click();
     await page!
       .getByLabel('Label', { exact: true })
       .fill('Welcome to Main Market');
+    await inspectorTab('Style');
     await page!.getByLabel('Font size', { exact: true }).fill('28');
     await page!.getByLabel('Bold text', { exact: true }).check();
+    await inspectorTab('Properties');
     await page!
       .getByRole('button', { name: 'Draw path', exact: false })
       .click();
@@ -209,6 +231,7 @@ try {
   await check(
     'A01 and A02 booth inspector, fee, amenities and safe duplicate',
     async () => {
+      await drawer('Add');
       await page!
         .getByRole('button', { name: 'Add booth', exact: true })
         .click();
@@ -254,7 +277,7 @@ try {
       await page!.keyboard.up('Shift');
       await page!.getByText('2 selected', { exact: true }).waitFor();
       await dragMap(page!, a, { x: a.x + 30, y: a.y + 30 });
-      await page!.getByRole('button', { name: 'Layers', exact: true }).click();
+      await drawer('Layers');
       const moved = (await page!
         .locator('[data-geometry]')
         .evaluateAll((rows) =>
@@ -265,9 +288,6 @@ try {
       assert.notEqual(first.x, 100, 'Multi-selection must actually move');
       assert.ok(Math.abs(first.x - 100 - (second.x - 260)) < 0.01);
       assert.ok(Math.abs(first.y - 200 - (second.y - 220)) < 0.01);
-      await page!
-        .getByRole('button', { name: 'Inspector', exact: true })
-        .click();
       await page!.keyboard.press('Escape');
       const start = await mapPoint(
         page!,
@@ -281,9 +301,7 @@ try {
       );
       await dragMap(page!, start, end);
       await page!.getByText('2 selected', { exact: true }).waitFor();
-      await page!
-        .getByLabel('Align selection', { exact: true })
-        .selectOption('top');
+      await menu('Align selection', 'Align top');
       await screenshot('multi-selection-1440');
       await page!.keyboard.press('Control+c');
       await page!.keyboard.press('Control+v');
@@ -346,7 +364,7 @@ try {
     await page!.getByRole('button', { name: 'Fit map', exact: true }).click();
   });
   await check('layers hide/show, locate and decoration grouping', async () => {
-    await page!.getByRole('button', { name: 'Layers', exact: true }).click();
+    await drawer('Layers');
     const list = page!.getByRole('list', {
       name: 'Layout elements',
       exact: true,
@@ -357,12 +375,14 @@ try {
         exact: false,
       }),
     });
-    await row
-      .getByLabel('Hide Welcome to Main Market', { exact: true })
-      .check();
-    await row
-      .getByLabel('Hide Welcome to Main Market', { exact: true })
-      .uncheck();
+    const hide = row.getByRole('button', {
+      name: 'Hide Welcome to Main Market',
+      exact: true,
+    });
+    await hide.click();
+    assert.equal(await hide.getAttribute('aria-pressed'), 'true');
+    await hide.click();
+    assert.equal(await hide.getAttribute('aria-pressed'), 'false');
     await row
       .getByRole('button', {
         name: 'Locate Welcome to Main Market',
@@ -373,17 +393,17 @@ try {
       el.scrollTop = 0;
     });
     await screenshot('layers-1440');
-    await page!.getByRole('button', { name: 'Inspector', exact: true }).click();
+    await drawer('Add');
     await page!
       .getByRole('button', { name: 'Add circle', exact: true })
       .click();
-    await page!.getByRole('button', { name: 'Layers', exact: true }).click();
+    await drawer('Layers');
     await list
       .getByRole('button', { name: 'Welcome to Main Market', exact: true })
       .click({ modifiers: ['Shift'] });
-    await page!.getByRole('button', { name: 'Group', exact: true }).click();
+    await menu('More actions', 'Group');
     assert.equal(await list.getByText(/grouped/).count(), 2);
-    await page!.getByRole('button', { name: 'Ungroup', exact: true }).click();
+    await menu('More actions', 'Ungroup');
     assert.equal(await list.getByText(/grouped/).count(), 0);
   });
   await check(
@@ -457,6 +477,7 @@ try {
       await page!
         .getByRole('button', { name: 'Create new draft version', exact: true })
         .click();
+      await drawer('Add');
       await page!
         .getByRole('button', { name: 'Add triangle', exact: true })
         .click();

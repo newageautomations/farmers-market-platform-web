@@ -79,7 +79,7 @@ describe('Clover payment integration', () => {
     expect(f.clover.complete).not.toHaveBeenCalled();
     expect(window.location.search).toBe('');
     expect(
-      screen.getByRole('link', { name: 'Return to Payment Integrations' }),
+      screen.getByRole('link', { name: 'Return to Payments settings' }),
     ).toHaveAttribute('href', '/vendor/settings/payments');
   });
   it('rejects missing state without invoking merchant connection APIs', async () => {

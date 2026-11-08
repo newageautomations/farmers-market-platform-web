@@ -14,6 +14,9 @@ export type MarketConfigureInput = g.MarketConfigureMutationVariables['input'];
 export type MarketRecurrenceInput =
   g.MarketRecurrenceMutationVariables['recurrence'];
 export type MarketSessionInput = g.MarketManualMutationVariables['input'];
+export type MarketScheduleInput =
+  g.MarketSaveScheduleMutationVariables['schedule'];
+export type MarketSchedule = MarketConfiguration['schedules'][number];
 export type MarketMembershipStatus =
   g.MarketMembershipStatusMutationVariables['status'];
 export type MarketListingStatus =
@@ -161,11 +164,36 @@ export function createMarketApi(
         { api: 'admin', document: g.MarketRecurrenceDocument },
         { marketId, expectedVersion, recurrence },
       ).then((r) => r.reviseMarketRecurrence),
-    generate: (marketId: string, from: string, through: string) =>
+    /** Generates from the chosen schedules (all when null); each new date uses its schedule's venue. */
+    generate: (
+      marketId: string,
+      from: string,
+      through: string,
+      scheduleIds: string[] | null = null,
+    ) =>
       run(
         { api: 'admin', document: g.MarketGenerateDocument },
-        { marketId, from, through },
+        { marketId, from, through, scheduleIds },
       ).then((r) => r.generateMarketOccurrences),
+    /** Creates a schedule (no `id`) or replaces one; versioned like the Market. */
+    saveSchedule: (
+      marketId: string,
+      expectedVersion: number,
+      schedule: MarketScheduleInput,
+    ) =>
+      run(
+        { api: 'admin', document: g.MarketSaveScheduleDocument },
+        { marketId, expectedVersion, schedule },
+      ).then((r) => r.saveMarketSchedule),
+    deleteSchedule: (
+      marketId: string,
+      expectedVersion: number,
+      scheduleId: string,
+    ) =>
+      run(
+        { api: 'admin', document: g.MarketDeleteScheduleDocument },
+        { marketId, expectedVersion, scheduleId },
+      ).then((r) => r.deleteMarketSchedule),
     enqueue: (marketId: string, from: string, through: string) =>
       run(
         { api: 'admin', document: g.MarketEnqueueDocument },
@@ -205,6 +233,11 @@ export function createMarketApi(
         { api: 'admin', document: g.MarketMembershipStatusDocument },
         { marketId, vendorId, status, expectedVersion },
       ).then((r) => r.setMarketVendorMembership),
+    listingPreview: (id: string) =>
+      run(
+        { api: 'admin', document: g.MarketListingPreviewDocument },
+        { id },
+      ).then((r) => r.ownMarketListingPreview),
     approveListing: (
       id: string,
       expectedVersion: number,

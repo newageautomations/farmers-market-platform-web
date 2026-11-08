@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "apps/admin/src/market/phase14/Layouts.tsx",
+    "apps/admin/src/market/phase14/Assignments.tsx",
+    "packages/ui/src/map/**/*.ts",
+    "packages/ui/src/map/**/*.tsx",
+    "tests/layout-smart-design.test.tsx",
+    "tests/layout-smart-contract.test.ts",
+    "tests/layout-visual-rendering.test.tsx",
+    "tests/layout-editor-ui.test.tsx",
+    "tests/layout-canvas-drag.test.tsx",
+    "tests/setup.ts"
+  ]
+}

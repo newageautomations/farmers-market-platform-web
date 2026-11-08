@@ -19,7 +19,32 @@
 .button.ui-button.packing-step-button {
   --button-hover-transform: none;
   border-radius: 50%;
-  font-size: 1.4rem;
+}
+/* SVG glyphs sit on the true center, unlike text +/- with font metrics. */
+.packing-step-button > svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  stroke-width: 2.4;
+}
+/* Press feedback: a quick shrink and darken while held. */
+.button.ui-button.packing-step-button:not(:disabled):is(
+    :active,
+    [data-pressed]
+  ) {
+  transform: scale(0.88);
+  filter: brightness(0.88);
+  transition:
+    transform 70ms ease,
+    filter 70ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .button.ui-button.packing-step-button:not(:disabled):is(
+      :active,
+      [data-pressed]
+    ) {
+    transform: none;
+  }
 }
 .button.ui-button.packing-step-increase {
   --button-fill: var(--status-success-fg);

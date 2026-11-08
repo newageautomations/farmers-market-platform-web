@@ -15,6 +15,10 @@ export interface ContactSummary {
   full_name: string;
   created_at: string;
   read_at: string | null;
+  /** Present from backends that list contact summaries with their topic. */
+  email?: string;
+  subject?: string;
+  order_number?: string;
 }
 export interface ContactSubmission extends ContactSummary {
   email: string;
@@ -23,9 +27,14 @@ export interface ContactSubmission extends ContactSummary {
   message: string;
   order_number: string;
 }
+export type ContactStatusFilter = 'read' | 'unread';
 export interface ContactPage {
   items: ContactSummary[];
+  /** Matching the requested status filter. */
   totalItems: number;
+  allItems?: number;
+  unreadItems?: number;
+  recentItems?: number;
 }
 const document = <R, V>(s: string) => parse(s) as TypedDocumentNode<R, V>;
 export function createPublicContactApi(options: TransportOptions) {
@@ -51,19 +60,25 @@ export function createPublicContactApi(options: TransportOptions) {
 export function createVendorContactApi(options: TransportOptions) {
   const execute = transport('admin', options);
   return {
-    list: async (skip = 0) =>
+    list: async (skip = 0, status?: ContactStatusFilter) =>
       (
         await execute(
           {
             api: 'admin',
             document: document<
               { vendorContactSubmissions: ContactPage },
-              { skip: number }
+              { skip: number; status: ContactStatusFilter | null }
             >(
-              'query VendorContactSubmissions($skip:Int!){vendorContactSubmissions(skip:$skip)}',
+              // Unfiltered reads omit the argument so older backends still answer.
+              status
+                ? 'query VendorContactSubmissions($skip:Int!,$status:String){vendorContactSubmissions(skip:$skip,status:$status)}'
+                : 'query VendorContactSubmissions($skip:Int!){vendorContactSubmissions(skip:$skip)}',
             ),
           },
-          { skip },
+          (status ? { skip, status } : { skip }) as {
+            skip: number;
+            status: ContactStatusFilter | null;
+          },
         )
       ).vendorContactSubmissions,
     detail: async (id: string) =>

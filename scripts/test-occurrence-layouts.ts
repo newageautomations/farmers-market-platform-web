@@ -115,9 +115,6 @@ try {
         .isEnabled(),
       false,
     );
-    await editor
-      .getByRole('button', { name: 'Inspector', exact: true })
-      .click();
     await editor.getByLabel('x', { exact: true }).fill('300');
     await page.screenshot({ path: resolve(evidence, `editor-${width}.png`) });
     assert.deepEqual(
@@ -133,7 +130,7 @@ try {
       .getByRole('button', { name: 'Save layout', exact: true })
       .click();
     await editor.getByText('All changes saved', { exact: true }).waitFor();
-    await page.getByRole('link', { name: 'Back to occurrence' }).click();
+    await page.getByRole('link', { name: 'Exit to occurrence' }).click();
     await editor.waitFor({ state: 'hidden' });
     await page.getByText('A1 - Orchard Farm', { exact: true }).waitFor();
     await change.click();
@@ -189,7 +186,7 @@ try {
       .getByRole('button', { name: 'Save layout', exact: true })
       .click();
     await editor.getByText('All changes saved', { exact: true }).waitFor();
-    await page.getByRole('link', { name: 'Back to layouts' }).click();
+    await page.getByRole('link', { name: 'Exit to layouts' }).click();
     await saved.waitFor();
     await card
       .getByRole('button', { name: 'Copy Layout', exact: true })
@@ -202,7 +199,7 @@ try {
       .locator('.designer-header .market-status')
       .filter({ hasText: 'Draft' })
       .waitFor();
-    await page.getByRole('link', { name: 'Back to layouts' }).click();
+    await page.getByRole('link', { name: 'Exit to layouts' }).click();
     const copyCard = page.getByRole('article', { name: 'Copy - Town Square' });
     page.once('dialog', (dialog) => dialog.accept());
     await copyCard

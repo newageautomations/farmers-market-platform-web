@@ -12,20 +12,28 @@ import type { AdminContext } from '@market/admin-core';
 import {
   Alert,
   Badge,
-  Button,
-  Card,
   Checkbox,
   Dialog,
+  Dropdown,
   EmptyState,
   ErrorState,
   Field,
   Input,
   Radio,
-  SelectField,
   Spinner,
 } from '@market/ui';
-import { disclosureClassName } from '@market/ui/presentation';
+import {
+  FarmstandButton as Button,
+  FarmstandIcon,
+  FarmstandPanel as Card,
+  FarmstandSearch,
+  FarmstandSelect,
+} from '@market/ui/farmstand';
+import { replayCheck } from '../notifications/NotificationPreferences';
 import { canReadTeam } from './service';
+import '@market/ui/farmstand.css';
+import '../vendor/order-detail.css';
+import '../notifications/notification-preferences.css';
 import './team.css';
 
 const label = (value: string) =>
@@ -51,6 +59,15 @@ const group = (value: string) =>
           ? 'Business and team'
           : 'Market operations';
 const date = (value: string) => new Date(value).toLocaleString();
+function expiresIn(value: string) {
+  const minutes = Math.floor((new Date(value).getTime() - Date.now()) / 60000);
+  if (minutes <= 0) return 'Expired';
+  const unit = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  if (minutes < 60) return `Expires in ${unit(minutes, 'minute')}`;
+  if (minutes < 1440)
+    return `Expires in ${unit(Math.floor(minutes / 60), 'hour')}`;
+  return `Expires in ${unit(Math.floor(minutes / 1440), 'day')}`;
+}
 
 function Permissions({
   policy,
@@ -70,49 +87,49 @@ function Permissions({
   return (
     <div className="team-permissions">
       {[...new Set(options.map(group))].map((section) => (
-        <details
+        <Dropdown
           key={section}
-          className={disclosureClassName()}
+          label={section}
           open={openSection === section}
+          onToggle={(event) => {
+            const open = event.currentTarget.open;
+            setOpenSection((current) =>
+              open ? section : current === section ? null : current,
+            );
+          }}
         >
-          <summary
-            onClick={(event) => {
-              event.preventDefault();
-              setOpenSection(openSection === section ? null : section);
-            }}
-          >
-            {section}
-          </summary>
-          <div className="ui-disclosure-content">
-            {options
-              .filter((p) => group(p) === section)
-              .map((permission) => (
-                <label className="team-permission" key={permission}>
-                  <Checkbox
-                    checked={selected.includes(permission)}
-                    disabled={
-                      disabled ||
-                      !policy.grantablePermissions.includes(permission) ||
-                      (!ceiling && permission === policy.basePermission)
-                    }
-                    onChange={(event) =>
-                      onChange(
-                        event.target.checked
-                          ? [...selected, permission]
-                          : selected.filter((p) => p !== permission),
-                      )
-                    }
-                  />
-                  <span>
-                    {label(permission)}
-                    {!ceiling && permission === policy.basePermission && (
-                      <small>Required workspace access</small>
-                    )}
-                  </span>
-                </label>
-              ))}
-          </div>
-        </details>
+          {options
+            .filter((p) => group(p) === section)
+            .map((permission) => (
+              <label
+                className="team-permission ops-check notification-option"
+                key={permission}
+              >
+                <Checkbox
+                  checked={selected.includes(permission)}
+                  disabled={
+                    disabled ||
+                    !policy.grantablePermissions.includes(permission) ||
+                    (!ceiling && permission === policy.basePermission)
+                  }
+                  onChange={(event) => {
+                    replayCheck(event);
+                    onChange(
+                      event.target.checked
+                        ? [...selected, permission]
+                        : selected.filter((p) => p !== permission),
+                    );
+                  }}
+                />
+                <span>
+                  {label(permission)}
+                  {!ceiling && permission === policy.basePermission && (
+                    <small>Required workspace access</small>
+                  )}
+                </span>
+              </label>
+            ))}
+        </Dropdown>
       ))}
     </div>
   );
@@ -125,6 +142,7 @@ function AccessForm({
   blocked,
   onSave,
   onCancel,
+  onRevoke,
 }: {
   policy: TeamPolicy;
   member?: TeamMember;
@@ -137,6 +155,7 @@ function AccessForm({
     email: string,
   ) => void;
   onCancel: () => void;
+  onRevoke?: () => void;
 }) {
   const initial =
     policy.presets.find((p) => p.role === 'staff') ?? policy.presets[0]!;
@@ -185,7 +204,8 @@ function AccessForm({
                     name={member ? 'employee-role' : 'invitation-role'}
                     value={preset.role}
                     checked={role === preset.role}
-                    onChange={() => {
+                    onChange={(event) => {
+                      replayCheck(event);
                       setRole(preset.role as EmployeeRole);
                       setPermissions([...preset.permissions]);
                       if (preset.role !== 'administrator') setCeiling([]);
@@ -211,11 +231,6 @@ function AccessForm({
         </span>
         <small>{permissions.length} selected</small>
       </div>
-      {!readonly && (
-        <p className="team-muted">
-          Presets suggest access. Check or uncheck to customize.
-        </p>
-      )}
       <Permissions
         policy={policy}
         selected={permissions}
@@ -223,9 +238,8 @@ function AccessForm({
         disabled={readonly || busy || blocked}
       />
       {policy.owner && role === 'administrator' && (
-        <details className="ui-disclosure">
-          <summary>Administrator delegation ceiling</summary>
-          <p>
+        <Dropdown label="Administrator delegation ceiling">
+          <p className="team-muted">
             Choose what this administrator may grant to Staff and Leads. An
             empty ceiling delegates nothing. Their own permissions also limit
             delegation.
@@ -237,7 +251,7 @@ function AccessForm({
             ceiling
             disabled={readonly || busy || blocked}
           />
-        </details>
+        </Dropdown>
       )}
       {!readonly && (
         <div className="team-form-footer">
@@ -254,11 +268,20 @@ function AccessForm({
             </Alert>
           )}
           <div className="team-actions">
+            {onRevoke && (
+              <Button
+                variant="destructive-outline"
+                disabled={busy}
+                onClick={onRevoke}
+              >
+                Revoke access
+              </Button>
+            )}
             <Button variant="secondary" disabled={busy} onClick={onCancel}>
               Cancel
             </Button>
             <Button type="submit" loading={busy} disabled={blocked || !valid}>
-              {member ? 'Save access' : 'Send invitation'}
+              {member ? 'Save' : 'Send invitation'}
             </Button>
           </div>
         </div>
@@ -311,7 +334,6 @@ function TeamContent({
 }) {
   const [snapshot, setSnapshot] = useState<Snapshot>();
   const [error, setError] = useState<AppError>();
-  const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [blocked, setBlocked] = useState(false);
@@ -367,17 +389,15 @@ function TeamContent({
       ++generation.current;
     };
   }, [api]); // eslint-disable-line react-hooks/exhaustive-deps
-  async function run(action: () => Promise<unknown>, success: string) {
+  async function run(action: () => Promise<unknown>) {
     if (lock.current) return;
     const request = generation.current;
     lock.current = true;
     setBusy(true);
     setError(undefined);
-    setNotice('');
     try {
       await action();
       if (alive.current && request === generation.current) {
-        setNotice(success);
         await refresh();
       }
     } catch (e) {
@@ -425,38 +445,31 @@ function TeamContent({
       `${m.name} ${m.email ?? ''}`.toLowerCase().includes(query.toLowerCase()),
   );
   return (
-    <section className="team-workspace" aria-label="Team and permissions">
-      <header className="team-heading">
-        <div>
-          <h2>Good markets grow together.</h2>
-          <p>Manage your team and give everyone the right tools to help.</p>
+    <section
+      className="team-workspace farmstand-controls order-detail"
+      aria-label="Team and permissions"
+    >
+      <header className="order-page-heading">
+        <div className="order-heading-title">
+          <span className="order-heading-icon">
+            <FarmstandIcon name="user-round" />
+          </span>
+          <div>
+            <h1>Team</h1>
+          </div>
         </div>
-        <div className="team-actions">
-          <Button
-            variant="secondary"
-            disabled={busy || loading}
-            onClick={() => void refresh()}
-          >
-            Refresh team
-          </Button>
-          <Button
-            disabled={!snapshot || busy}
-            onClick={() => {
-              setInvite(true);
-              requestAnimationFrame(() =>
-                document.getElementById('team-invite-email')?.focus(),
-              );
-            }}
-          >
-            Invite member
-          </Button>
-        </div>
+        <Button
+          disabled={!snapshot || busy}
+          onClick={() => {
+            setInvite(true);
+            requestAnimationFrame(() =>
+              document.getElementById('team-invite-email')?.focus(),
+            );
+          }}
+        >
+          Invite member
+        </Button>
       </header>
-      {notice && (
-        <Alert severity="success">
-          <span role="status">{notice}</span>
-        </Alert>
-      )}
       {error && (
         <>
           <ErrorState error={error} />
@@ -481,28 +494,29 @@ function TeamContent({
                   <strong>Your team</strong>
                   <span>{snapshot.members.length} members</span>
                 </div>
-                <p className="team-muted">The people behind {context.name}.</p>
                 <div className="team-filters">
                   <Field label="Search your team" id="team-search">
-                    <Input
+                    <FarmstandSearch
                       id="team-search"
-                      type="search"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                     />
                   </Field>
-                  <SelectField
-                    label="Role"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                  >
-                    <option value="all">All roles</option>
-                    {['owner', 'administrator', 'lead', 'staff'].map((r) => (
-                      <option key={r} value={r}>
-                        {roleLabel(r)}
-                      </option>
-                    ))}
-                  </SelectField>
+                  <Field label="Role" id="team-role">
+                    <FarmstandSelect
+                      id="team-role"
+                      icon="user-round"
+                      value={role}
+                      onChange={(e) => setRole(e.target.value)}
+                    >
+                      <option value="all">All roles</option>
+                      {['owner', 'administrator', 'lead', 'staff'].map((r) => (
+                        <option key={r} value={r}>
+                          {roleLabel(r)}
+                        </option>
+                      ))}
+                    </FarmstandSelect>
+                  </Field>
                 </div>
               </div>
               <ul className="team-members">
@@ -517,36 +531,40 @@ function TeamContent({
                           .join('')}
                       </span>
                       <div className="team-identity">
-                        <Button
-                          variant="tertiary"
-                          disabled={busy}
-                          onClick={() => void details(m.id)}
-                        >
-                          {m.name}
-                        </Button>
+                        <div className="team-name-row">
+                          <button
+                            type="button"
+                            className="team-name-link"
+                            disabled={busy}
+                            onClick={() => void details(m.id)}
+                          >
+                            <span className="farmstand-text-link">
+                              {m.name}
+                            </span>
+                          </button>
+                          {m.status === 'active' ? (
+                            <Badge className={`team-role team-role-${m.role}`}>
+                              {roleLabel(m.role)}
+                            </Badge>
+                          ) : (
+                            <Badge tone="danger">
+                              {m.status === 'revoked'
+                                ? 'Revoked'
+                                : roleLabel(m.status)}
+                            </Badge>
+                          )}
+                        </div>
                         {m.email && <small>{m.email}</small>}
                         {String(m.id) ===
                           String(snapshot.policy.membershipId) && (
                           <small>Your account</small>
                         )}
                       </div>
-                      <span>{roleLabel(m.role)}</span>
-                      <Badge
-                        tone={m.status === 'active' ? 'success' : 'neutral'}
-                      >
-                        {roleLabel(m.status)}
-                      </Badge>
                     </div>
-                    <div className="team-member-bottom">
-                      <small>
-                        {m.role === 'owner'
-                          ? 'Protected business ownership'
-                          : `${m.permissions.length} effective permissions`}
-                      </small>
-                      {m.canManage && (
+                    {m.canManage && (
+                      <div className="team-member-actions">
                         <div className="team-actions">
                           <Button
-                            variant="tertiary"
                             size="compact"
                             disabled={busy}
                             onClick={() => void details(m.id)}
@@ -562,8 +580,8 @@ function TeamContent({
                             Revoke access
                           </Button>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -573,7 +591,7 @@ function TeamContent({
                 </EmptyState>
               )}
             </Card>
-            <Card>
+            <Card className="team-pending">
               <div className="team-count">
                 <strong>Pending invitations</strong>
                 <span>{snapshot.invitations.length}</span>
@@ -585,63 +603,55 @@ function TeamContent({
               ) : (
                 <ul className="team-invitations">
                   {snapshot.invitations.map((i) => (
-                    <li key={i.id}>
-                      <div>
-                        <strong>{i.email}</strong>
-                        <Badge tone="warning">Awaiting acceptance</Badge>
-                      </div>
-                      <p>
-                        {roleLabel(i.role)} · Expires {date(i.expiresAt)}
-                      </p>
-                      <small>
-                        {i.deliveredAt
-                          ? `Email delivered ${date(i.deliveredAt)}`
-                          : 'Email delivery queued'}
-                      </small>
-                      {i.canManage && (
-                        <div className="team-actions">
-                          <Button
-                            variant="tertiary"
-                            disabled={busy}
-                            onClick={() =>
-                              void run(
-                                () => api.resend(String(i.id)),
-                                'Invitation resent. Previous links no longer work.',
-                              )
-                            }
-                          >
-                            Resend
-                          </Button>
-                          <Button
-                            variant="destructive-outline"
-                            disabled={busy}
-                            onClick={() => setConfirm({ invitation: i })}
-                          >
-                            Cancel invitation
-                          </Button>
+                    <li key={i.id} className="team-invitation">
+                      <div className="team-invitation-info">
+                        <div>
+                          <span className="team-name-link">{i.email}</span>
+                          <Badge tone="warning">Awaiting acceptance</Badge>
                         </div>
-                      )}
+                        <p>
+                          <Badge className={`team-role team-role-${i.role}`}>
+                            {roleLabel(i.role)}
+                          </Badge>
+                          <small>{expiresIn(i.expiresAt)}</small>
+                        </p>
+                      </div>
+                      <div className="team-invitation-side">
+                        {i.canManage && (
+                          <div className="team-actions">
+                            <Button
+                              size="compact"
+                              disabled={busy}
+                              onClick={() =>
+                                void run(() => api.resend(String(i.id)))
+                              }
+                            >
+                              Resend
+                            </Button>
+                            <Button
+                              variant="destructive-outline"
+                              size="compact"
+                              disabled={busy}
+                              onClick={() => setConfirm({ invitation: i })}
+                            >
+                              Cancel invitation
+                            </Button>
+                          </div>
+                        )}
+                        <small>
+                          {i.deliveredAt
+                            ? `Email delivered ${date(i.deliveredAt)}`
+                            : 'Email delivery queued'}
+                        </small>
+                      </div>
                     </li>
                   ))}
                 </ul>
               )}
             </Card>
-            <Card surface="embedded">
-              <strong>Access that fits each person</strong>
-              <p className="team-muted">
-                Roles are a starting point. Customize access for the work each
-                person does. Business ownership stays protected.
-              </p>
-            </Card>
           </div>
           {invite && (
             <Card className="team-invite">
-              <div className="team-invite-heading">
-                <strong>Invite a team member</strong>
-                <p className="team-muted">
-                  A little help goes a long way. Choose the access they need.
-                </p>
-              </div>
               <AccessForm
                 key={formKey}
                 policy={snapshot.policy}
@@ -649,10 +659,7 @@ function TeamContent({
                 blocked={blocked}
                 onCancel={() => setInvite(false)}
                 onSave={(role, permissions, _ceiling, email) =>
-                  void run(
-                    () => api.invite({ role, permissions, email }),
-                    'Invitation created. Access begins when the recipient accepts.',
-                  )
+                  void run(() => api.invite({ role, permissions, email }))
                 }
               />
             </Card>
@@ -690,40 +697,25 @@ function TeamContent({
               busy={busy}
               blocked={blocked}
               onCancel={() => setMember(undefined)}
+              onRevoke={
+                member.canManage ? () => setConfirm({ member }) : undefined
+              }
               onSave={(role, permissions, delegationCeiling) =>
-                void run(
-                  () =>
-                    api.change({
-                      id: member.id,
-                      role,
-                      permissions,
-                      delegationCeiling:
-                        snapshot.policy.owner && role === 'administrator'
-                          ? delegationCeiling
-                          : undefined,
-                      expectedRevision: member.grantRevision,
-                      revoke: false,
-                    }),
-                  'Employee access updated.',
+                void run(() =>
+                  api.change({
+                    id: member.id,
+                    role,
+                    permissions,
+                    delegationCeiling:
+                      snapshot.policy.owner && role === 'administrator'
+                        ? delegationCeiling
+                        : undefined,
+                    expectedRevision: member.grantRevision,
+                    revoke: false,
+                  }),
                 )
               }
             />
-            {member.canManage && (
-              <Button
-                variant="destructive-outline"
-                disabled={busy}
-                onClick={() => setConfirm({ member })}
-              >
-                Revoke employee access
-              </Button>
-            )}
-            <Button
-              variant="secondary"
-              disabled={busy}
-              onClick={() => void refresh()}
-            >
-              Reload current access
-            </Button>
           </>
         )}
       </Dialog>
@@ -751,23 +743,18 @@ function TeamContent({
               onClick={() => {
                 if (confirm?.member) {
                   const m = confirm.member;
-                  void run(
-                    () =>
-                      api.change({
-                        id: m.id,
-                        role: m.role as EmployeeRole,
-                        permissions: [],
-                        delegationCeiling: undefined,
-                        expectedRevision: m.grantRevision,
-                        revoke: true,
-                      }),
-                    'Employee access revoked. Other business memberships are preserved.',
+                  void run(() =>
+                    api.change({
+                      id: m.id,
+                      role: m.role as EmployeeRole,
+                      permissions: [],
+                      delegationCeiling: undefined,
+                      expectedRevision: m.grantRevision,
+                      revoke: true,
+                    }),
                   );
                 } else if (confirm?.invitation)
-                  void run(
-                    () => api.cancel(String(confirm.invitation!.id)),
-                    'Invitation canceled. Its link can no longer grant access.',
-                  );
+                  void run(() => api.cancel(String(confirm.invitation!.id)));
               }}
             >
               Confirm {confirm?.member ? 'revocation' : 'cancellation'}

@@ -25,7 +25,7 @@ import type {
   QuickBooksAdjustment,
 } from '@market/api';
 import { AppError } from '@market/api';
-import { ReadState, RouteLink, useRead } from '../vendor/common';
+import { ReadState, useRead } from '../vendor/common';
 
 export function QuickBooks({
   api,
@@ -203,10 +203,7 @@ export function QuickBooks({
     spending: 'Expense payment account',
   };
   return (
-    <div className="finance-workspace quickbooks-workspace">
-      <RouteLink to={manager ? '/market/finances' : '/vendor/finances'}>
-        Back to Finances
-      </RouteLink>
+    <div className="quickbooks-workspace">
       <ReadState {...status} retry={status.refresh} />
       {error && <Alert severity="error">{error}</Alert>}
       {notice && <Alert severity="success">{notice}</Alert>}

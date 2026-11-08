@@ -134,7 +134,14 @@ export function configurationInput(
     },
   };
 }
-export function MarketSettings({ service }: { service: MarketService }) {
+export function MarketSettings({
+  service,
+  embedded = false,
+}: {
+  service: MarketService;
+  /** Host panel supplies the Market configuration heading and surface. */
+  embedded?: boolean;
+}) {
   const read = useCallback(
     () => service.configuration(service.marketId),
     [service],
@@ -147,7 +154,11 @@ export function MarketSettings({ service }: { service: MarketService }) {
       <ReadState {...state} retry={state.refresh} />
       {market && (
         <>
-          <Card as="div" className="dashboard-card">
+          <Card
+            as="div"
+            className={embedded ? undefined : 'dashboard-card'}
+            surface={embedded ? 'embedded' : 'card'}
+          >
             <p>
               {market.name} <StatusBadge>{market.status}</StatusBadge>
             </p>
@@ -167,6 +178,8 @@ export function MarketSettings({ service }: { service: MarketService }) {
             <CommandForm
               key={`config:${market.version}`}
               title="Market configuration"
+              embedded={embedded}
+              hideTitle={embedded}
               onDone={state.refresh}
               run={(data) =>
                 service.configure(configurationInput(data, market))

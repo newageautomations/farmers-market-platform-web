@@ -66,3 +66,10 @@ Before implementing or modifying frontend UI, read the root [COMPONENT_USAGE_GUI
 9. Document necessary deviations and request developer approval before introducing a competing standard. Do not infer canonical approval for unselected categories; continue applying the existing reuse rules to them.
 
 10. Keep feature work and migrations bounded. Do not perform unrelated UI refactoring, rewrite business controllers or expand the migration plan without task authorization. Use [UI_COMPONENT_MIGRATION_PLAN.md](docs/UI_COMPONENT_MIGRATION_PLAN.md) for the approved sequence; the plan itself is not implementation authorization.
+
+## Label/value alignment
+
+Inherited `dd` margins keep pushing values below their labels. Whenever you build label/value rows (`dl` > `div` > `dt` + `dd`):
+- Put `margin: 0; align-self: center;` on the component's own `dd` selector. A broad reset like `.page dd { margin: 0 }` can lose to the app-wide rule.
+- Use `align-items: center` on the row instead of `start`.
+- Check in the browser that the `dt` and `dd` centers line up (0px offset), as `.redemptions-preview .leaderboard-facts dd` in `loyalty-redemptions.css` does.

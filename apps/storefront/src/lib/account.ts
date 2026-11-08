@@ -142,7 +142,7 @@ export function safeAccountReturn(value: string | null | undefined) {
   if (
     value &&
     value.length <= 1024 &&
-    /^\/(?:account(?:\/(?:orders(?:\/[1-9]\d*)?|settings|communications|markets|vendors|loyalty|workspaces|onboarding\/(?:vendor|market)))?|notifications)(?:\?[A-Za-z0-9_%=&.+:-]*)?$/.test(
+    /^\/(?:account(?:\/(?:orders(?:\/[1-9]\d*)?|settings|communications|markets|vendors|loyalty|workspaces|notifications(?:\/(?:trash|settings|unsubscribed))?|onboarding\/(?:vendor|market)))?|notifications)(?:\?[A-Za-z0-9_%=&.+:-]*)?$/.test(
       value,
     )
   )

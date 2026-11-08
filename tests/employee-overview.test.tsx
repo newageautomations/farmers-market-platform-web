@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { Overview } from '../apps/admin/src/vendor/overview';
+import { VendorDashboard } from '../apps/admin/src/vendor/VendorDashboard';
 import { MarketOverview } from '../apps/admin/src/market/overview';
 import type { VendorService } from '../apps/admin/src/vendor/service';
 import type { MarketService } from '../apps/admin/src/market/service';
@@ -29,9 +29,9 @@ describe.each(['lead', 'staff'] as const)('%s workspace overview', (role) => {
         upcoming: vi.fn(),
       },
     };
-    render(<Overview service={service as unknown as VendorService} />);
-    await screen.findByText('Owned products');
-    await screen.findByText('Operational orders');
+    render(<VendorDashboard service={service as unknown as VendorService} />);
+    await screen.findByText('No upcoming market');
+    expect(screen.queryByText('Urgent requests')).not.toBeInTheDocument();
     expect(service.notifications.summary).not.toHaveBeenCalled();
     expect(service.notifications.upcoming).not.toHaveBeenCalled();
     expect(service.customers).not.toHaveBeenCalled();
@@ -73,13 +73,13 @@ it('keeps a base-read-only Vendor workspace usable without catalog or order acce
     availability: vi.fn().mockResolvedValue('denied'),
     totals: vi.fn(),
   };
-  render(<Overview service={service as unknown as VendorService} />);
+  render(<VendorDashboard service={service as unknown as VendorService} />);
   await waitFor(() => expect(service.memberships).toHaveBeenCalledOnce());
   expect(service.catalogRead).not.toHaveBeenCalled();
   expect(service.orderList).not.toHaveBeenCalled();
 });
 
-it('preserves the compliance panel for an authorized Owner', async () => {
+it('shows urgent document work for an authorized Owner', async () => {
   const service = {
     context: {
       scope: 'VENDOR',
@@ -92,16 +92,25 @@ it('preserves the compliance panel for an authorized Owner', async () => {
     totals: vi.fn(),
     memberships: vi.fn().mockResolvedValue([]),
     availability: vi.fn().mockResolvedValue('denied'),
-    notifications: {
-      summary: vi.fn().mockResolvedValue({
-        totals: { outstandingRequired: 0, pending: 0, rejected: 0 },
-        library: { expired: 0, expiringSoon: 0 },
-        markets: [],
-        truncated: false,
+    documents: {
+      read: vi.fn().mockResolvedValue({
+        documents: [
+          {
+            id: 'doc-1',
+            expiration: 'Expired',
+            metadata: { title: 'Liability Insurance', expiresOn: '2026-10-25' },
+          },
+        ],
+        requests: [],
       }),
     },
   };
-  render(<Overview service={service as unknown as VendorService} />);
-  await screen.findByRole('link', { name: 'Open document library' });
-  expect(service.notifications.summary).toHaveBeenCalledOnce();
+  render(<VendorDashboard service={service as unknown as VendorService} />);
+  await screen.findByText('Urgent requests');
+  // The card appears under Urgent requests and as a This week task.
+  expect(
+    screen.getAllByRole('link', { name: /Liability Insurance expired/ })[0],
+  ).toHaveAttribute('href', '/vendor/documents');
+  expect(service.documents.read).toHaveBeenCalledOnce();
+  expect(service.customers).not.toHaveBeenCalled();
 });

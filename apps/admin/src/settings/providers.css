@@ -1,0 +1,150 @@
+/* Provider identity tile: same 44px geometry as .markets-stat-icon. Marks sit
+   on a white chip so brand colors stay legible in every dashboard palette. */
+.provider-logo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--provider-color);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+.provider-logo.provider-logo-mark {
+  border: 1px solid
+    color-mix(in srgb, var(--brand-primary) 16%, var(--brand-surface));
+  background: #fff;
+}
+.provider-logo-glyph {
+  width: 24px;
+  height: 24px;
+  background: var(--provider-color);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+.provider-logo-square {
+  mask-image: url('./brands/square.svg');
+}
+.provider-logo-stripe {
+  mask-image: url('./brands/stripe.svg');
+}
+.provider-logo-shopify {
+  mask-image: url('./brands/shopify.svg');
+}
+/* Full-color supplied images rather than masks. */
+.provider-logo-glyph:is(
+  .provider-logo-clover,
+  .provider-logo-toast,
+  .provider-logo-lightspeed
+) {
+  mask: none;
+}
+.provider-logo-glyph.provider-logo-clover {
+  width: 32px;
+  height: 32px;
+  background: url('./brands/clover.png') center / contain no-repeat;
+}
+.provider-logo-glyph.provider-logo-toast {
+  width: 26px;
+  height: 26px;
+  background: url('./brands/toast.png') center / contain no-repeat;
+}
+.provider-logo-glyph.provider-logo-lightspeed {
+  width: 26px;
+  height: 26px;
+  background: url('./brands/lightspeed.png') center / contain no-repeat;
+}
+@media (forced-colors: active) {
+  .provider-logo,
+  .provider-logo.provider-logo-mark {
+    border: 1px solid CanvasText;
+  }
+  .provider-logo-glyph {
+    background: CanvasText;
+  }
+}
+
+/* Provider cards inside Settings panels (POS providers and connections). */
+.provider-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 14px;
+  min-width: 0;
+}
+.provider-card.farmstand-panel.card.ui-card {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 12px;
+  min-width: 0;
+  overflow: visible;
+}
+.provider-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.provider-card-heading > div {
+  flex: 1;
+  min-width: 0;
+}
+.provider-card-heading > .ui-status {
+  flex: none;
+  white-space: nowrap;
+}
+.provider-card-heading :is(h3, h4) {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.3;
+}
+.provider-card-heading p {
+  margin: 2px 0 0;
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+.provider-card > p {
+  margin: 0;
+  font-size: 13px;
+}
+.provider-card > :is(.button, .ui-actions) {
+  justify-self: start;
+}
+.provider-facts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.provider-facts > div {
+  display: grid;
+  grid-template-columns: minmax(110px, 40%) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.provider-facts > div > dt {
+  color: var(--brand-muted);
+  font-weight: 600;
+}
+.provider-facts > div > dd {
+  margin: 0;
+  align-self: center;
+  overflow-wrap: anywhere;
+}
+.provider-section-title {
+  margin: 4px 0 0;
+  font-size: 16px;
+}
+.provider-facts + p {
+  margin-top: 12px;
+}
+/* Stand-alone selectors (e.g. Stripe mode) keep a control-sized width. */
+.settings-panel-body.management-workspace > :is(.field, .ui-field, .ops-field) {
+  max-width: 260px;
+  margin: 0;
+}

@@ -13,7 +13,6 @@ import { routeAllowed } from '@market/admin-core';
 import { Applications } from '../apps/admin/src/market/phase14/Applications';
 import { Layouts } from '../apps/admin/src/market/phase14/Layouts';
 import {
-  Directory,
   Rentals,
   usdToMinor,
 } from '../apps/admin/src/market/phase14/Directory';
@@ -25,28 +24,66 @@ import { recurrenceInput } from '../apps/admin/src/market/schedule';
 
 import { data, definition } from './fixtures/phase15-data';
 import { applicationReviewApi } from './fixtures/application-review-api';
+/** Renders the builder for the fixture's draft; run answers every save. */
 async function builder() {
   const user = userEvent.setup(),
-    run = vi.fn(async (_command: OperationsCommand) => data.versions![0]);
-  render(<Applications data={structuredClone(data)} run={run} canManage />);
-  await user.click(
-    screen.getByRole('button', { name: 'Open Season application' }),
+    run = vi.fn(async (command: OperationsCommand) => ({
+      ...data.versions![0]!,
+      revision: (command.expectedRevision ?? 0) + 1,
+    }));
+  render(
+    <Applications
+      data={structuredClone(data)}
+      run={run}
+      canManage
+      path="/market/applications/1"
+    />,
   );
-  await user.click(screen.getByRole('button', { name: 'Open Draft' }));
   return { user, run };
 }
-test('application and layout creation do not require names', async () => {
-  const run = vi.fn(async () => undefined);
-  const view = render(<Applications data={data} run={run} canManage />);
-  expect(screen.queryByLabelText('Application name')).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Create application' }));
-  await waitFor(() =>
-    expect(run).toHaveBeenCalledWith({
-      action: 'CREATE_APPLICATION',
-      data: { name: 'Untitled application' },
-    }),
+/** The last autosaved command, once the debounce has run. */
+async function autosaved(run: ReturnType<typeof vi.fn>) {
+  await waitFor(
+    () =>
+      expect(run).toHaveBeenLastCalledWith(
+        expect.objectContaining({ action: 'SAVE_APPLICATION' }),
+      ),
+    { timeout: 3000 },
   );
-  view.rerender(<Layouts data={data} run={run} canManage />);
+  return run.mock.calls.at(-1)![0] as OperationsCommand;
+}
+test('a new application is not saved until something is edited', async () => {
+  const user = userEvent.setup();
+  const run = vi.fn(async (command: OperationsCommand) =>
+    command.action === 'CREATE_APPLICATION'
+      ? { ...data.versions![0]!, id: 9, templateId: 9, revision: 1 }
+      : { ...data.versions![0]!, id: 9, templateId: 9, revision: 2 },
+  );
+  render(
+    <Applications
+      data={{ ...structuredClone(data), applicationDefaults: definition }}
+      run={run}
+      canManage
+      path="/market/applications/new"
+    />,
+  );
+  expect(screen.getByText('Not saved yet')).toBeInTheDocument();
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  expect(run).not.toHaveBeenCalled();
+  await user.clear(screen.getByLabelText('Application name'));
+  await user.type(screen.getByLabelText('Application name'), 'Fall');
+  const saved = await autosaved(run);
+  expect(run.mock.calls.map(([c]) => c.action)).toEqual([
+    'CREATE_APPLICATION',
+    'SAVE_APPLICATION',
+  ]);
+  expect(run.mock.calls[0]![0].data).toEqual({ name: 'Fall' });
+  expect(saved).toMatchObject({ id: 9, expectedRevision: 1 });
+  expect(window.location.pathname).toBe('/market/applications/9');
+});
+test('layout creation does not require a name', async () => {
+  const run = vi.fn(async () => undefined);
+  render(<Layouts data={data} run={run} canManage />);
   expect(screen.queryByLabelText('Layout name')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Create layout' }));
   await waitFor(() =>
@@ -56,8 +93,44 @@ test('application and layout creation do not require names', async () => {
     }),
   );
 });
+test('applications can be archived and restored from the list', async () => {
+  const user = userEvent.setup();
+  const run = vi.fn(async () => ({ id: 1 }));
+  const view = render(
+    <Applications data={structuredClone(data)} run={run} canManage />,
+  );
+  await user.click(screen.getByRole('button', { name: 'Archive' }));
+  await user.click(
+    within(screen.getByRole('dialog')).getByRole('button', {
+      name: 'Archive application',
+    }),
+  );
+  expect(run).toHaveBeenCalledWith({
+    action: 'ARCHIVE_APPLICATION',
+    id: 1,
+    expectedRevision: 1,
+    data: {},
+  });
+  const archived = structuredClone(data);
+  archived.templates![0]!.archivedAt = '2026-11-01T00:00:00Z';
+  view.rerender(<Applications data={archived} run={run} canManage />);
+  expect(screen.getByText('No matching applications')).toBeInTheDocument();
+  await user.selectOptions(
+    screen.getByLabelText('Application status'),
+    'ARCHIVED',
+  );
+  await user.click(screen.getByRole('button', { name: 'Restore application' }));
+  expect(run).toHaveBeenLastCalledWith({
+    action: 'UNARCHIVE_APPLICATION',
+    id: 1,
+    expectedRevision: 1,
+    data: {},
+  });
+});
 test('one question expands at a time and custom options are individual fields', async () => {
   const { user } = await builder();
+  expect(screen.queryByLabelText('Question')).toBeNull();
+  await user.click(screen.getByRole('button', { name: 'Edit Business name' }));
   expect(screen.getByLabelText('Question')).toHaveValue('Business name');
   await user.click(screen.getByRole('button', { name: 'Edit Products sold' }));
   expect(screen.getAllByLabelText('Question')).toHaveLength(1);
@@ -76,16 +149,18 @@ test('one question expands at a time and custom options are individual fields', 
     'checkbox',
   );
 });
-test('application title, required toggle, and time question save through the command', async () => {
+test('application title, required toggle, and time question autosave', async () => {
   const { user, run } = await builder();
   await user.clear(screen.getByLabelText('Application name'));
   await user.type(screen.getByLabelText('Application name'), 'Fall season');
+  await user.click(screen.getByRole('button', { name: 'Edit Business name' }));
   expect(screen.getByLabelText('Required')).toBeDisabled();
   await user.click(screen.getByRole('button', { name: 'Edit Setup notes' }));
   await user.selectOptions(screen.getByLabelText('Question type'), 'TIME');
   await user.click(screen.getByLabelText('Required'));
-  await user.click(screen.getByRole('button', { name: 'Save draft' }));
-  expect(run).toHaveBeenLastCalledWith(
+  expect(screen.queryByRole('button', { name: 'Save draft' })).toBeNull();
+  const saved = await autosaved(run);
+  expect(saved).toEqual(
     expect.objectContaining({
       action: 'SAVE_APPLICATION',
       data: expect.objectContaining({
@@ -102,60 +177,88 @@ test('application title, required toggle, and time question save through the com
       }),
     }),
   );
+  // The draft already exists, so nothing new is created.
+  expect(run.mock.calls.every(([c]) => c.action === 'SAVE_APPLICATION')).toBe(
+    true,
+  );
 });
 test('optional fields can be deleted while system identity stays protected', async () => {
   const { user, run } = await builder();
+  await user.click(screen.getByRole('button', { name: 'Edit Business name' }));
   expect(screen.queryByRole('button', { name: 'Delete question' })).toBeNull();
   await user.click(screen.getByRole('button', { name: 'Edit Setup notes' }));
   await user.click(screen.getByRole('button', { name: 'Delete question' }));
-  await user.click(screen.getByRole('button', { name: 'Save draft' }));
-  const saved = run.mock.calls.at(-1)![0].data
-    .definition as ApplicationDefinition;
+  const saved = (await autosaved(run)).data.definition as ApplicationDefinition;
   expect(saved.questions.some((q) => q.id === 'notes')).toBe(false);
   expect(saved.questions.some((q) => q.semantic === 'businessName')).toBe(true);
+});
+test('questions move between sections with the keyboard handle', async () => {
+  const { run } = await builder();
+  fireEvent.keyDown(
+    screen.getByRole('button', { name: 'Move Products sold' }),
+    { key: 'ArrowUp' },
+  );
+  expect(
+    screen.getByText('Products sold moved to position 3 of 3 in Business.'),
+  ).toBeInTheDocument();
+  fireEvent.keyDown(
+    screen.getByRole('button', { name: 'Move Products sold' }),
+    { key: 'ArrowUp' },
+  );
+  const saved = (await autosaved(run)).data.definition as ApplicationDefinition;
+  expect(
+    saved.questions.filter((q) => q.section === 'Business').map((q) => q.id),
+  ).toEqual(['business', 'category', 'notes']);
 });
 test('new sections are visible, movable, and rename their questions together', async () => {
   const { user, run } = await builder();
   await user.click(screen.getByRole('button', { name: 'Add section' }));
   expect(screen.getByLabelText('Section name: Section 3')).toBeInTheDocument();
-  await user.click(
-    screen.getByRole('button', { name: 'Move section Section 3 up' }),
-  );
+  for (let i = 0; i < 2; i++)
+    fireEvent.keyDown(
+      screen.getByRole('button', { name: 'Move section Section 3' }),
+      { key: 'ArrowUp' },
+    );
   await user.click(screen.getByRole('button', { name: 'Edit Products sold' }));
   await user.selectOptions(screen.getByLabelText('Section'), 'Section 3');
   fireEvent.change(screen.getByLabelText('Section name: Section 3'), {
     target: { value: 'Experience' },
   });
   fireEvent.blur(screen.getByLabelText('Section name: Section 3'));
-  await user.click(screen.getByRole('button', { name: 'Save draft' }));
+  await waitFor(
+    () =>
+      expect(
+        (run.mock.calls.at(-1)?.[0]?.data.definition as ApplicationDefinition)
+          ?.sections,
+      ).toEqual(['Experience', 'Business', 'Products']),
+    { timeout: 3000 },
+  );
   const saved = run.mock.calls.at(-1)![0].data
     .definition as ApplicationDefinition;
-  expect(saved.sections).toEqual(['Experience', 'Business', 'Products']);
   expect(saved.questions.find((q) => q.id === 'category')?.section).toBe(
     'Experience',
   );
 });
-test('submitted application opens in a modal and omits blank optional answers', async () => {
-  const user = userEvent.setup();
+test('submitted application detail omits blank optional answers', async () => {
   render(
     <Applications
       data={data}
       run={async () => undefined}
       canManage={false}
       view="submissions"
+      path="/market/application-submissions/1"
       api={applicationReviewApi(data)}
     />,
   );
-  await user.click(
-    await screen.findByRole('button', { name: 'Open Local Orchard' }),
-  );
-  await screen.findByLabelText('Original submitted answers');
-  const dialog = screen.getByRole('dialog');
-  expect(within(dialog).queryByText('Setup notes')).toBeNull();
-  expect(within(dialog).queryByText('Products sold')).toBeNull();
-  expect(within(dialog).getByText('No')).toBeInTheDocument();
-  await user.click(within(dialog).getByRole('button', { name: 'Close' }));
-  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  const answers = await screen.findByRole('region', {
+    name: 'Submitted information',
+  });
+  expect(within(answers).queryByText('Setup notes')).toBeNull();
+  expect(within(answers).queryByText('Products sold')).toBeNull();
+  expect(within(answers).getByText('No')).toBeInTheDocument();
+  expect(
+    screen.getByRole('link', { name: 'Back to submitted applications' }),
+  ).toHaveAttribute('href', '/market/application-submissions');
 });
 test('empty checkbox answers are omitted while zero and No remain', () => {
   render(
@@ -180,18 +283,16 @@ test('empty checkbox answers are omitted while zero and No remain', () => {
   expect(screen.getByText('No')).toBeInTheDocument();
   expect(screen.getByText('0')).toBeInTheDocument();
 });
-test('external business and rental equipment forms are separate pages', () => {
-  const view = render(
-    <Directory data={data} run={async () => undefined} canManage view="add" />,
-  );
-  expect(
-    screen.getByRole('heading', { name: 'Add external business' }),
-  ).toBeInTheDocument();
-  expect(screen.queryByLabelText('Rental name')).toBeNull();
-  view.rerender(
+test('rental creation opens a staged modal', async () => {
+  render(
     <Rentals data={data} run={async () => undefined} canManage view="add" />,
   );
   expect(screen.queryByRole('button', { name: 'Save business' })).toBeNull();
+  expect(
+    screen.getByRole('dialog', { name: 'Add rental equipment' }),
+  ).toBeInTheDocument();
+  await userEvent.setup().type(screen.getByLabelText('Rental name'), 'Table');
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Next' }));
   expect(
     screen.getByRole('button', { name: 'About Price (USD)' }),
   ).toBeInTheDocument();
@@ -201,6 +302,7 @@ test('USD prices accept at most two decimals, normalize on blur, and save cents'
     run = vi.fn(async () => ({}));
   render(<Rentals data={data} run={run} canManage view="add" />);
   await user.type(screen.getByLabelText('Rental name'), 'Table');
+  await user.click(screen.getByRole('button', { name: 'Next' }));
   await user.clear(screen.getByLabelText('Price (USD)'));
   await user.type(screen.getByLabelText('Price (USD)'), '12.345');
   expect(screen.getByLabelText('Price (USD)')).toHaveValue('12.34');
@@ -208,6 +310,8 @@ test('USD prices accept at most two decimals, normalize on blur, and save cents'
   await user.type(screen.getByLabelText('Price (USD)'), '25');
   await user.tab();
   expect(screen.getByLabelText('Price (USD)')).toHaveValue('25.00');
+  await user.click(screen.getByRole('button', { name: 'Next' }));
+  expect(run).not.toHaveBeenCalled();
   await user.click(screen.getByRole('button', { name: 'Save rental' }));
   expect(run).toHaveBeenCalledWith(
     expect.objectContaining({

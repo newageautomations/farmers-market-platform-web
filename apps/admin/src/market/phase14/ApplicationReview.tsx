@@ -1,3 +1,8 @@
+import {
+  Fact,
+  Panel,
+  SubmittedInformation,
+} from '../../vendor/application-detail';
 import { ApplicationInformationReview } from './ApplicationInformationReview';
 import { buttonClassName } from '@market/ui/presentation';
 import { useEffect, useRef, useState } from 'react';
@@ -48,6 +53,7 @@ export function ApplicationReview({
   onBusy,
   onRefresh,
   onDirty,
+  page = false,
 }: {
   submission: ApplicationSubmission;
   data: MarketOperationsData;
@@ -60,6 +66,7 @@ export function ApplicationReview({
   onSaved: () => void;
   onBusy: (busy: boolean) => void;
   onDirty?: (dirty: boolean) => void;
+  page?: boolean;
 }) {
   const [status, setStatus] = useState(s.status),
     [notes, setNotes] = useState(s.managerNotes),
@@ -161,6 +168,25 @@ export function ApplicationReview({
       setConfirming(false);
     }
   }
+  if (page)
+    return (
+      <div className="application-detail-columns submission-review-columns">
+        <div
+          className="application-detail-main"
+          aria-label="Original submitted answers"
+        >
+          <SubmittedInformation
+            detail={{ definition: s.definitionSnapshot, answers: s.answers }}
+          />
+        </div>
+        <aside
+          className="application-detail-sidebar"
+          aria-label="Application details and actions"
+        >
+          {detailsPanel()}
+        </aside>
+      </div>
+    );
   return (
     <div className="application-review-panels">
       <Tabs
@@ -187,144 +213,159 @@ export function ApplicationReview({
   function detailsPanel() {
     return (
       <div className="application-review-inspector">
-        <Card as="section" aria-label="Applicant information">
-          <h3 className="application-review-card-heading">
-            <UtilityIcon name="user" />
-            <span>Applicant information</span>
-          </h3>
-          <p>
-            {s.applicant.firstName} {s.applicant.lastName} · {s.applicant.email}
-          </p>
-          <p>{s.applicant.email}</p>
-          <p>Identity: {friendlyLabel(s.identityMode ?? 'LEGACY_UNKNOWN')}</p>
-          {s.applicant.category && (
-            <p>Vendor category: {s.applicant.category}</p>
-          )}
-          {s.applicant.phone && <p>Phone: {s.applicant.phone}</p>}
-          <p>
-            {s.applicantVendorId
-              ? `Applicant Vendor: ${s.applicantVendorId}. A verified directory association and market membership are separate.`
-              : 'Submitted without a platform Vendor association.'}
-          </p>
-          {s.onboarding?.platformVendorId && (
-            <p>Verified linked Vendor: {s.onboarding.platformVendorId}</p>
-          )}
-          {s.directoryId && (
-            <p>
-              Market business:{' '}
-              {data.directory?.find((d) => d.id === s.directoryId)?.contact
-                .businessName ?? `Directory record ${s.directoryId}`}
-            </p>
-          )}
-        </Card>
-        <Card as="section">
-          <h3 className="application-review-card-heading">
-            <UtilityIcon name="calendar" />
-            <span>Requested dates and rentals</span>
-          </h3>
-          <section aria-label="Requested dates and rentals">
-            {s.requestedOccurrenceIds.length ? (
-              <ul>
-                {s.requestedOccurrenceIds.map((id) => (
-                  <li key={id}>
-                    {date(
-                      data.occurrences.find((o) => o.id === id)?.startsAt,
-                      data.timeZone,
-                    )}{' '}
-                    ·{' '}
-                    <StatusBadge>
-                      {decisions.find((d) => d.occurrenceId === id)?.decision ??
-                        'PENDING'}
-                    </StatusBadge>
-                    <p>
-                      {s.rentalRequests
-                        .filter((r) => r.quantity > 0)
-                        .map((r) => `${r.name}: ${r.quantity}`)
-                        .join(', ') || 'No rentals requested.'}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No dates requested.</p>
-            )}
-          </section>
-          {s.status === 'ACCEPTED' && (
-            <>
-              <fieldset disabled={!canConfirmDates || busy || requestDirty}>
-                <legend>Requested dates</legend>
-                <p>
-                  Date confirmation records attendance approval without
-                  reserving or guaranteeing a booth. Booth compatibility and
-                  availability are checked when assigning.
-                </p>
-                {s.requestedOccurrenceIds.map((id) => (
-                  <DateDecision
-                    key={id}
-                    submission={s}
-                    occurrenceId={id}
-                    data={data}
-                    run={relatedCommand}
-                    canBilling={canBilling}
-                  />
-                ))}
-              </fieldset>
-              {canConfirmDates && (
-                <a
-                  className={buttonClassName({
-                    variant: 'secondary',
-                    className: 'button secondary',
-                  })}
-                  href={`/market/assignments?directory=${s.directoryId}&channel=${new URLSearchParams(window.location.search).get('channel') ?? ''}`}
+        <Panel icon={{ utility: 'user' }} title="Applicant information">
+          <div className="submission-review-panel-body">
+            <dl className="application-detail-summary submission-applicant-facts">
+              <Fact icon={{ utility: 'user' }} label="Contact">
+                {[s.applicant.firstName, s.applicant.lastName]
+                  .filter(Boolean)
+                  .join(' ') || 'Not provided'}
+              </Fact>
+              <Fact icon={{ utility: 'email' }} label="Email">
+                {s.applicant.email || 'Not provided'}
+              </Fact>
+              {s.applicant.phone && (
+                <Fact icon={{ utility: 'phone' }} label="Phone">
+                  {s.applicant.phone}
+                </Fact>
+              )}
+              <Fact icon={{ farmstand: 'tag' }} label="Category">
+                {s.applicant.category || 'Not provided'}
+              </Fact>
+              <Fact icon={{ utility: 'user' }} label="Identity">
+                {friendlyLabel(s.identityMode ?? 'LEGACY_UNKNOWN')}
+              </Fact>
+              <Fact icon={{ farmstand: 'store' }} label="Platform vendor">
+                {s.applicantVendorId ?? 'Not linked'}
+              </Fact>
+              {s.onboarding?.platformVendorId && (
+                <Fact
+                  icon={{ farmstand: 'circle-check' }}
+                  label="Verified vendor"
                 >
-                  Assign confirmed dates
-                </a>
+                  {s.onboarding.platformVendorId}
+                </Fact>
               )}
-            </>
-          )}
-        </Card>
-        <Card as="section" aria-label="Application documentation">
-          <h3 className="application-review-card-heading">
-            <UtilityIcon name="document-check" />
-            <span>Documents and compliance</span>
-          </h3>
-          {s.documentation && (
-            <>
-              <DocumentStatus value={s.documentation.status} />
-              {s.documentation.total > 0 && (
+              {s.directoryId && (
+                <Fact icon={{ farmstand: 'store' }} label="Market business">
+                  {data.directory?.find((d) => d.id === s.directoryId)?.contact
+                    .businessName ?? `Directory record ${s.directoryId}`}
+                </Fact>
+              )}
+            </dl>
+          </div>
+        </Panel>
+        <Panel
+          icon={{ utility: 'calendar' }}
+          title="Requested dates and rentals"
+        >
+          <div className="submission-review-panel-body">
+            <section>
+              {s.requestedOccurrenceIds.length ? (
+                <ul>
+                  {s.requestedOccurrenceIds.map((id) => (
+                    <li key={id}>
+                      {date(
+                        data.occurrences.find((o) => o.id === id)?.startsAt,
+                        data.timeZone,
+                      )}{' '}
+                      ·{' '}
+                      <StatusBadge>
+                        {decisions.find((d) => d.occurrenceId === id)
+                          ?.decision ?? 'PENDING'}
+                      </StatusBadge>
+                      <p>
+                        {s.rentalRequests
+                          .filter((r) => r.quantity > 0)
+                          .map((r) => `${r.name}: ${r.quantity}`)
+                          .join(', ') || 'No rentals requested.'}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No dates requested.</p>
+              )}
+            </section>
+            {s.status === 'ACCEPTED' && (
+              <>
+                <fieldset disabled={!canConfirmDates || busy || requestDirty}>
+                  <legend>Requested dates</legend>
+                  <p>
+                    Date confirmation records attendance approval without
+                    reserving or guaranteeing a booth. Booth compatibility and
+                    availability are checked when assigning.
+                  </p>
+                  {s.requestedOccurrenceIds.map((id) => (
+                    <DateDecision
+                      key={id}
+                      submission={s}
+                      occurrenceId={id}
+                      data={data}
+                      run={relatedCommand}
+                      canBilling={canBilling}
+                    />
+                  ))}
+                </fieldset>
+                {canConfirmDates && (
+                  <a
+                    className={buttonClassName({
+                      variant: 'secondary',
+                      className: 'button secondary',
+                    })}
+                    href={`/market/assignments?directory=${s.directoryId}&channel=${new URLSearchParams(window.location.search).get('channel') ?? ''}`}
+                  >
+                    Assign confirmed dates
+                  </a>
+                )}
+              </>
+            )}
+          </div>
+        </Panel>
+        <Panel
+          icon={{ utility: 'document-check' }}
+          title="Documents and compliance"
+        >
+          <div className="submission-review-panel-body">
+            {s.documentation && (
+              <>
+                <DocumentStatus value={s.documentation.status} />
+                {s.documentation.total > 0 && (
+                  <p>
+                    Documents: {s.documentation.complete} of{' '}
+                    {s.documentation.total} complete. Missing:{' '}
+                    {s.documentation.missing}. Awaiting review:{' '}
+                    {s.documentation.pending}. Expired:{' '}
+                    {s.documentation.expired}. Rejected:{' '}
+                    {s.documentation.rejected}.
+                  </p>
+                )}
+                {s.documentation.outstanding.length > 0 && (
+                  <p>Outstanding: {s.documentation.outstanding.join(', ')}</p>
+                )}
                 <p>
-                  Documents: {s.documentation.complete} of{' '}
-                  {s.documentation.total} complete. Missing:{' '}
-                  {s.documentation.missing}. Awaiting review:{' '}
-                  {s.documentation.pending}. Expired: {s.documentation.expired}.
-                  Rejected: {s.documentation.rejected}.
+                  Documentation readiness is separate from acceptance and does
+                  not change attendance.
                 </p>
-              )}
-              {s.documentation.outstanding.length > 0 && (
-                <p>Outstanding: {s.documentation.outstanding.join(', ')}</p>
-              )}
-              <p>
-                Documentation readiness is separate from acceptance and does not
-                change attendance.
-              </p>
-              <a
-                className={buttonClassName({ variant: 'secondary' })}
-                href={`/market/documents?vendor=${documentVendorId ?? ''}&channel=${new URLSearchParams(window.location.search).get('channel') ?? ''}`}
-              >
-                Review document readiness
-              </a>
-              {canRequestDocuments && s.applicantVendorId && (
                 <a
                   className={buttonClassName({ variant: 'secondary' })}
-                  href={`/market/documents?vendor=${s.applicantVendorId}&request=1`}
+                  href={`/market/documents?vendor=${documentVendorId ?? ''}&channel=${new URLSearchParams(window.location.search).get('channel') ?? ''}`}
                 >
-                  Request an additional document
+                  Review document readiness
                 </a>
-              )}
-            </>
-          )}
-          {!s.documentation && <p>Document readiness unavailable.</p>}
-        </Card>
+                {canRequestDocuments && s.applicantVendorId && (
+                  <a
+                    className={buttonClassName({ variant: 'secondary' })}
+                    href={`/market/documents?vendor=${s.applicantVendorId}&request=1`}
+                  >
+                    Request an additional document
+                  </a>
+                )}
+              </>
+            )}
+            {!s.documentation && <p>Document readiness unavailable.</p>}
+          </div>
+        </Panel>
         <Dropdown
           label={
             <span className="application-review-card-heading">
@@ -376,44 +417,42 @@ export function ApplicationReview({
             </ul>
           </section>
         </Dropdown>
-        <Card as="section" aria-label="Private Manager Notes">
-          <h3 className="application-review-card-heading">
-            <UtilityIcon name="notebook" />
-            <span>Private manager notes</span>
-          </h3>
-          <p>
-            Private Manager Notes are visible only to authorized managers.
-            Applicants cannot see these notes or the private decision reason.
-          </p>
-          {editable ? (
-            <fieldset disabled={busy}>
-              <Entry
-                label="Private Manager Notes and decision reason"
-                value={notes}
-                onChange={setNotes}
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={
-                  busy ||
-                  s.status === 'ACCEPTED' ||
-                  notes === s.managerNotes ||
-                  requestDirty ||
-                  decisionDirty
-                }
-                onClick={() => void save(true)}
-              >
-                Save notes
-              </Button>
-              {decisionDirty && (
-                <p>Save the decision below to include these notes.</p>
-              )}
-            </fieldset>
-          ) : (
-            <p>{s.managerNotes || 'No private notes recorded.'}</p>
-          )}
-        </Card>
+        <Panel icon={{ utility: 'notebook' }} title="Private manager notes">
+          <div className="submission-review-panel-body">
+            <p>
+              Private Manager Notes are visible only to authorized managers.
+              Applicants cannot see these notes or the private decision reason.
+            </p>
+            {editable ? (
+              <fieldset disabled={busy}>
+                <Entry
+                  label="Private Manager Notes and decision reason"
+                  value={notes}
+                  onChange={setNotes}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={
+                    busy ||
+                    s.status === 'ACCEPTED' ||
+                    notes === s.managerNotes ||
+                    requestDirty ||
+                    decisionDirty
+                  }
+                  onClick={() => void save(true)}
+                >
+                  Save notes
+                </Button>
+                {decisionDirty && (
+                  <p>Save the decision below to include these notes.</p>
+                )}
+              </fieldset>
+            ) : (
+              <p>{s.managerNotes || 'No private notes recorded.'}</p>
+            )}
+          </div>
+        </Panel>
         {s.onboarding && (
           <Dropdown
             label={
@@ -426,154 +465,154 @@ export function ApplicationReview({
             <ApplicationOnboarding summary={s.onboarding} />
           </Dropdown>
         )}
-        <Card as="section" aria-label="Application decision">
-          <h3 className="application-review-card-heading">
-            <UtilityIcon name="check" />
-            <span>Application decision</span>
-          </h3>
-          {canManage && !terminal ? (
-            <fieldset disabled={busy || activeRequest || requestDirty}>
-              <p>
-                Acceptance approves the business for consideration. Confirm
-                dates separately, then assign compatible booths and review
-                billing.
-              </p>
-              {status === 'ACCEPTED' && (
-                <Check
-                  label="Accept conditionally while required documentation remains outstanding"
-                  checked={conditional}
-                  onChange={setConditional}
-                />
-              )}
-              {status === 'ACCEPTED' && s.status !== 'ACCEPTED' && (
-                <SearchSelect
-                  label="Existing Market Business"
-                  value={directory}
-                  onChange={setDirectory}
-                  placeholder="Create a directory business"
-                  allowClear
-                  clearLabel="Create a directory business instead"
-                  options={(data.directory ?? [])
-                    .filter((d) =>
-                      s.applicantVendorId
-                        ? d.linkedVendorId === s.applicantVendorId &&
-                          d.linkState === 'LINK_VERIFIED'
-                        : !d.linkedVendorId,
-                    )
-                    .map((d) => ({
-                      value: String(d.id),
-                      label: `${d.contact.businessName} (${d.linkState === 'LINK_VERIFIED' ? 'Verified platform Vendor' : 'External directory record'})`,
-                    }))}
-                />
-              )}
-              {status === 'ACCEPTED' && s.status !== 'ACCEPTED' && (
+        <Panel icon={{ utility: 'check' }} title="Application decision">
+          <div className="submission-review-panel-body">
+            {canManage && !terminal ? (
+              <fieldset disabled={busy || activeRequest || requestDirty}>
                 <p>
-                  Choose an existing market business record if this applicant is
-                  already in your market directory. Otherwise, a new record can
-                  be created during acceptance.
+                  Acceptance approves the business for consideration. Confirm
+                  dates separately, then assign compatible booths and review
+                  billing.
                 </p>
-              )}
-              <SelectField
-                label="Application status"
-                value={status}
-                style={statusColors(status)}
-                onChange={(e) => {
-                  setStatus(e.target.value as typeof status);
-                  setConfirming(false);
-                }}
-              >
-                <option value={s.status} style={statusColors(s.status)}>
-                  {friendlyLabel(s.status)}
-                </option>
-                {[
-                  'UNDER_REVIEW',
-                  'WAITLISTED',
-                  'ACCEPTED',
-                  'DECLINED',
-                  'WITHDRAWN',
-                ]
-                  .filter((value) => value !== s.status)
-                  .map((value) => (
-                    <option
-                      key={value}
-                      value={value}
-                      style={statusColors(value)}
-                    >
-                      {friendlyLabel(value)}
-                    </option>
-                  ))}
-              </SelectField>
-              {s.status === 'ACCEPTED' && decisions.length > 0 && (
-                <Check
-                  label="I reviewed the affected dates and their obligations. Historical records must stay intact."
-                  checked={reviewed}
-                  onChange={setReviewed}
-                />
-              )}
-              <Button
-                type="button"
-                disabled={
-                  busy ||
-                  status === s.status ||
-                  (s.status === 'ACCEPTED' && decisions.length > 0 && !reviewed)
-                }
-                onClick={() => setConfirming(true)}
-              >
-                Review decision
-              </Button>
-              <MarketDialog
-                open={confirming}
-                busy={busy}
-                title="Confirm application decision"
-                onClose={() => setConfirming(false)}
-              >
-                {() => (
-                  <>
-                    <p>
-                      Change {s.applicant.businessName} to{' '}
-                      {friendlyLabel(status)}? The private decision reason uses
-                      the manager notes above.
-                    </p>
-                    <div className="ui-actions">
-                      <Button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => void save()}
-                      >
-                        Confirm decision
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => setConfirming(false)}
-                      >
-                        Keep reviewing
-                      </Button>
-                    </div>
-                  </>
+                {status === 'ACCEPTED' && (
+                  <Check
+                    label="Accept conditionally while required documentation remains outstanding"
+                    checked={conditional}
+                    onChange={setConditional}
+                  />
                 )}
-              </MarketDialog>
-            </fieldset>
-          ) : (
-            <p>
-              <StatusBadge>{s.status}</StatusBadge> This application is
-              read-only.
-            </p>
-          )}
-          {(activeRequest || requestDirty) && (
-            <p>
-              Resolve or cancel the current information request and finish any
-              draft before changing the application decision.
-            </p>
-          )}
-          {failed && (
-            <p className="alert ui-alert ui-alert-error" role="alert">
-              {notesOnly.current
-                ? 'The private notes could not be saved.'
-                : 'The decision could not be saved. Confirmed dates and active obligations must be reviewed and resolved explicitly before withdrawing acceptance.'}
-            </p>
-          )}
-        </Card>
+                {status === 'ACCEPTED' && s.status !== 'ACCEPTED' && (
+                  <SearchSelect
+                    label="Existing Market Business"
+                    value={directory}
+                    onChange={setDirectory}
+                    placeholder="Create a directory business"
+                    allowClear
+                    clearLabel="Create a directory business instead"
+                    options={(data.directory ?? [])
+                      .filter((d) =>
+                        s.applicantVendorId
+                          ? d.linkedVendorId === s.applicantVendorId &&
+                            d.linkState === 'LINK_VERIFIED'
+                          : !d.linkedVendorId,
+                      )
+                      .map((d) => ({
+                        value: String(d.id),
+                        label: `${d.contact.businessName} (${d.linkState === 'LINK_VERIFIED' ? 'Verified platform Vendor' : 'External directory record'})`,
+                      }))}
+                  />
+                )}
+                {status === 'ACCEPTED' && s.status !== 'ACCEPTED' && (
+                  <p>
+                    Choose an existing market business record if this applicant
+                    is already in your market directory. Otherwise, a new record
+                    can be created during acceptance.
+                  </p>
+                )}
+                <SelectField
+                  label="Application status"
+                  value={status}
+                  style={statusColors(status)}
+                  onChange={(e) => {
+                    setStatus(e.target.value as typeof status);
+                    setConfirming(false);
+                  }}
+                >
+                  <option value={s.status} style={statusColors(s.status)}>
+                    {friendlyLabel(s.status)}
+                  </option>
+                  {[
+                    'UNDER_REVIEW',
+                    'WAITLISTED',
+                    'ACCEPTED',
+                    'DECLINED',
+                    'WITHDRAWN',
+                  ]
+                    .filter((value) => value !== s.status)
+                    .map((value) => (
+                      <option
+                        key={value}
+                        value={value}
+                        style={statusColors(value)}
+                      >
+                        {friendlyLabel(value)}
+                      </option>
+                    ))}
+                </SelectField>
+                {s.status === 'ACCEPTED' && decisions.length > 0 && (
+                  <Check
+                    label="I reviewed the affected dates and their obligations. Historical records must stay intact."
+                    checked={reviewed}
+                    onChange={setReviewed}
+                  />
+                )}
+                <Button
+                  type="button"
+                  disabled={
+                    busy ||
+                    status === s.status ||
+                    (s.status === 'ACCEPTED' &&
+                      decisions.length > 0 &&
+                      !reviewed)
+                  }
+                  onClick={() => setConfirming(true)}
+                >
+                  Review decision
+                </Button>
+                <MarketDialog
+                  open={confirming}
+                  busy={busy}
+                  title="Confirm application decision"
+                  onClose={() => setConfirming(false)}
+                >
+                  {() => (
+                    <>
+                      <p>
+                        Change {s.applicant.businessName} to{' '}
+                        {friendlyLabel(status)}? The private decision reason
+                        uses the manager notes above.
+                      </p>
+                      <div className="ui-actions">
+                        <Button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void save()}
+                        >
+                          Confirm decision
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => setConfirming(false)}
+                        >
+                          Keep reviewing
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </MarketDialog>
+              </fieldset>
+            ) : (
+              <p>
+                <StatusBadge>{s.status}</StatusBadge> This application is
+                read-only.
+              </p>
+            )}
+            {(activeRequest || requestDirty) && (
+              <p>
+                Resolve or cancel the current information request and finish any
+                draft before changing the application decision.
+              </p>
+            )}
+            {failed && (
+              <p className="alert ui-alert ui-alert-error" role="alert">
+                {notesOnly.current
+                  ? 'The private notes could not be saved.'
+                  : 'The decision could not be saved. Confirmed dates and active obligations must be reviewed and resolved explicitly before withdrawing acceptance.'}
+              </p>
+            )}
+          </div>
+        </Panel>
       </div>
     );
   }

@@ -22,6 +22,19 @@ fragment MarketConfiguration on MarketDomain {
     effectiveFrom
     effectiveUntil
   }
+  schedules {
+    id
+    venue
+    frequency
+    weekInterval
+    monthWeeks
+    weekdays
+    startTime
+    endTime
+    endDayOffset
+    effectiveFrom
+    effectiveUntil
+  }
   defaultPreorderRule {
     ...PreorderRule
   }
@@ -101,11 +114,47 @@ mutation MarketRecurrence(
     recurrenceVersion
   }
 }
-mutation MarketGenerate($marketId: ID!, $from: String!, $through: String!) {
+mutation MarketSaveSchedule(
+  $marketId: ID!
+  $expectedVersion: Int!
+  $schedule: MarketScheduleInput!
+) {
+  saveMarketSchedule(
+    marketId: $marketId
+    expectedVersion: $expectedVersion
+    schedule: $schedule
+  ) {
+    id
+    version
+    recurrenceVersion
+  }
+}
+mutation MarketDeleteSchedule(
+  $marketId: ID!
+  $expectedVersion: Int!
+  $scheduleId: ID!
+) {
+  deleteMarketSchedule(
+    marketId: $marketId
+    expectedVersion: $expectedVersion
+    scheduleId: $scheduleId
+  ) {
+    id
+    version
+    recurrenceVersion
+  }
+}
+mutation MarketGenerate(
+  $marketId: ID!
+  $from: String!
+  $through: String!
+  $scheduleIds: [ID!]
+) {
   generateMarketOccurrences(
     marketId: $marketId
     from: $from
     through: $through
+    scheduleIds: $scheduleIds
   ) {
     id
     version
@@ -323,9 +372,11 @@ fragment MarketOrganizerListingFields on MarketOrganizerListing {
     id
     name
     sku
+    image
     product {
       id
       name
+      category
     }
   }
   publication {
@@ -334,6 +385,19 @@ fragment MarketOrganizerListingFields on MarketOrganizerListing {
     productId
     marketId
     state
+  }
+}
+query MarketListingPreview($id: ID!) {
+  ownMarketListingPreview(id: $id) {
+    listingId
+    productName
+    variantName
+    sku
+    description
+    price
+    currency
+    productInformation
+    images
   }
 }
 query MarketEligibleVendors($options: OwnMarketVendorDirectoryOptions) {

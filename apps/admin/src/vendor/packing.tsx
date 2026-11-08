@@ -14,15 +14,22 @@ import {
   UtilityIcon,
   Dialog,
   RecordCard,
+  SearchSelect,
   EmptyState,
   ErrorState,
   Field,
   IconButton,
   Input,
-  SelectField,
   Spinner,
   Tabs,
 } from '@market/ui';
+import {
+  FarmstandButton,
+  FarmstandIcon,
+  FarmstandPanel,
+  FarmstandSearch,
+  FarmstandSelect,
+} from '@market/ui/farmstand';
 import {
   safeError,
   type PackingApi,
@@ -37,6 +44,10 @@ import type { VendorService } from './service';
 import { RouteLink, useRead } from './common';
 import { date } from '../market/presentation';
 import '../market/phase14/attendance.css';
+import '@market/ui/farmstand.css';
+import './order-detail.css';
+import './orders.css';
+import '../workspace-menu.css';
 import './packing.css';
 import { QuantityStepper } from './QuantityStepper';
 
@@ -105,48 +116,107 @@ export function VendorPacking({ service }: { service: VendorService }) {
     )?.id ||
     read.data?.[0]?.id ||
     0;
-  if (!api)
-    return <EmptyState title="Packing is unavailable in this environment" />;
-  return (
-    <section className="packing-workspace">
-      {read.loading && <Spinner label="Loading market dates" />}
-      {read.error && <ErrorState error={read.error} />}
-      {read.data && (
-        <>
-          <SelectField
-            label="Market occurrence"
-            value={String(selected)}
+  const occurrences = read.data ?? [],
+    markets = [...new Set(occurrences.map((o) => o.marketName))],
+    market =
+      occurrences.find((o) => o.id === selected)?.marketName ??
+      markets[0] ??
+      '',
+    marketDates = occurrences.filter((o) => o.marketName === market);
+  const choose = (id: number) => {
+    select(id);
+    const url = new URL(window.location.href);
+    url.searchParams.set('occurrence', String(id));
+    window.history.replaceState(null, '', url);
+  };
+  const filters = (
+    <FarmstandPanel className="orders-toolbar packing-toolbar">
+      <div className="packing-occurrence-filters">
+        <Field id="packing-market" label="Market">
+          <FarmstandSelect
+            id="packing-market"
+            icon="store"
+            value={market}
             onChange={(e) => {
-              const id = Number(e.target.value);
-              select(id);
-              const url = new URL(window.location.href);
-              url.searchParams.set('occurrence', String(id));
-              window.history.replaceState(null, '', url);
+              const dates = occurrences.filter(
+                (o) => o.marketName === e.target.value,
+              );
+              const next =
+                dates.find(
+                  (o) =>
+                    new Date(o.endsAt).getTime() >= now &&
+                    o.status !== 'cancelled',
+                ) ?? dates[0];
+              if (next) choose(next.id);
             }}
           >
-            {!read.data.length && (
+            {!markets.length && <option value="">No markets available</option>}
+            {markets.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </FarmstandSelect>
+        </Field>
+        <Field id="packing-occurrence" label="Market date">
+          <FarmstandSelect
+            id="packing-occurrence"
+            icon="calendar-days"
+            value={String(selected)}
+            onChange={(e) => choose(Number(e.target.value))}
+          >
+            {!marketDates.length && (
               <option value="0">No market dates available</option>
             )}
-            {read.data.map((o) => (
+            {marketDates.map((o) => (
               <option key={o.id} value={o.id}>
-                {o.marketName} · {date(o.startsAt, o.timezone)}
+                {date(o.startsAt, o.timezone)}
                 {o.status === 'cancelled' ? ' (cancelled)' : ''}
               </option>
             ))}
-          </SelectField>
-          {selected ? (
-            <PackingOccurrence
-              key={`${service.vendorId}:${selected}`}
-              api={api}
-              service={service}
-              occurrenceId={selected}
-            />
-          ) : (
-            <EmptyState title="No planned market appearances" />
-          )}
-        </>
-      )}
-    </section>
+          </FarmstandSelect>
+        </Field>
+      </div>
+    </FarmstandPanel>
+  );
+  if (!api)
+    return <EmptyState title="Packing is unavailable in this environment" />;
+  return (
+    <div className="order-detail orders-page packing-page">
+      <header className="order-page-heading">
+        <div className="order-heading-title">
+          <span className="order-heading-icon">
+            <FarmstandIcon name="package" />
+          </span>
+          <div>
+            <h1>Packing &amp; Fulfillment</h1>
+            <p>
+              Gather products and complete customer packing lists for each
+              market date.
+            </p>
+          </div>
+        </div>
+      </header>
+      <section className="packing-workspace">
+        {read.loading && <Spinner label="Loading market dates" />}
+        {read.error && <ErrorState error={read.error} />}
+        {read.data && (
+          <>
+            {filters}
+            {selected ? (
+              <PackingOccurrence
+                key={`${service.vendorId}:${selected}`}
+                api={api}
+                service={service}
+                occurrenceId={selected}
+              />
+            ) : (
+              <EmptyState title="No planned market appearances" />
+            )}
+          </>
+        )}
+      </section>
+    </div>
   );
 }
 function PackingOccurrence({
@@ -164,6 +234,9 @@ function PackingOccurrence({
     [busy, setBusy] = useState(false),
     [saved, setSaved] = useState(false),
     [productId, selectProduct] = useState<string | null>(null),
+    // Counts user-initiated opens; the automatic top-product panel does not take focus.
+    [productFocus, setProductFocus] = useState(0),
+    [customerFocus, setCustomerFocus] = useState(0),
     [customerKey, selectCustomer] = useState<string | null>(null),
     [search, setSearch] = useState(''),
     [planSelection, setPlanSelection] = useState<string | null | undefined>(
@@ -185,6 +258,7 @@ function PackingOccurrence({
         if (!cancelled) {
           dataRef.current = result;
           setData(result);
+          selectProduct(result.products[0]?.variantId ?? null);
         }
       })
       .catch((e) => {
@@ -272,8 +346,9 @@ function PackingOccurrence({
     saveQueue.current = result;
     return result;
   };
+  // Saves run through an ordered queue, so controls stay enabled (and do not
+  // flicker) while one is in flight; only the modal form waits on `busy`.
   const disabled =
-    busy ||
     loading ||
     !mayCommand(service.context, 'FulfillOwnOrders') ||
     data?.occurrence.status === 'cancelled';
@@ -282,9 +357,6 @@ function PackingOccurrence({
   const master = (
     <div className={`attendance-columns ${product ? 'has-selection' : ''}`}>
       <div className="packing-list-content">
-        <Button disabled={disabled} onClick={() => setPlanSelection(null)}>
-          Add walk-up inventory
-        </Button>
         {!data?.products.length && (
           <EmptyState title="Nothing planned yet">
             <p>
@@ -299,7 +371,10 @@ function PackingOccurrence({
                 title={p.name}
                 label={p.name}
                 className="packing-item-card"
-                onOpen={() => selectProduct(p.variantId)}
+                onOpen={() => {
+                  selectProduct(p.variantId);
+                  setProductFocus((count) => count + 1);
+                }}
                 renderTrigger={(props) => (
                   <Button
                     {...props}
@@ -340,24 +415,27 @@ function PackingOccurrence({
           title={product.name}
           close={() => selectProduct(null)}
           busy={busy}
+          focusRequest={productFocus}
         >
-          <p>
-            {product.planned} walk-up + {product.preorders} preorder ={' '}
-            {product.required} required
-          </p>
+          <div className="packing-inspector-status">
+            <p>
+              {product.planned} walk-up + {product.preorders} preorder ={' '}
+              {product.required} required
+            </p>
+            <PackingBadge status={product.status} />
+          </div>
           <PackingProgress
             required={product.required}
             packed={product.packed}
             label="Product packing progress"
           />
-          <PackingBadge status={product.status} />
-          <Button
+          <FarmstandButton
             variant="secondary"
             disabled={disabled}
             onClick={() => setPlanSelection(product.variantId)}
           >
             Edit walk-up inventory
-          </Button>
+          </FarmstandButton>
           <ProductQuantity
             key={product.variantId}
             product={product}
@@ -371,14 +449,16 @@ function PackingOccurrence({
   const individual = (
     <div className={`attendance-columns ${customer ? 'has-selection' : ''}`}>
       <div className="packing-list-content">
-        <Field id="packing-search" label="Search customers or order numbers">
-          <Input
-            id="packing-search"
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </Field>
+        <FarmstandPanel className="orders-toolbar packing-toolbar">
+          <Field id="packing-search" label="Search customers or order numbers">
+            <FarmstandSearch
+              id="packing-search"
+              placeholder="Customer name or order number"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </Field>
+        </FarmstandPanel>
         <ul className="packing-list">
           {data?.customers
             .filter((c) =>
@@ -392,7 +472,10 @@ function PackingOccurrence({
                   title={`${c.name} ${c.orderCodes.join(', ')}`}
                   label={c.name}
                   className="packing-item-card"
-                  onOpen={() => selectCustomer(c.key)}
+                  onOpen={() => {
+                    selectCustomer(c.key);
+                    setCustomerFocus((count) => count + 1);
+                  }}
                   renderTrigger={(props) => (
                     <Button
                       {...props}
@@ -401,15 +484,17 @@ function PackingOccurrence({
                     />
                   )}
                   summary={
-                    <div className="packing-row">
-                      <div>
-                        {c.name}
-                        <small>{c.orderCodes.join(', ')}</small>
-                        <small className="packing-available-summary">
-                          {c.availablePacked
-                            ? `${c.availablePacked} already packed units available`
-                            : '\u00a0'}
+                    <div className="packing-row packing-customer-row">
+                      <div className="packing-customer-identity">
+                        <span className="packing-customer-name">{c.name}</span>
+                        <small className="packing-order-codes">
+                          {c.orderCodes.join(', ')}
                         </small>
+                        {!!c.availablePacked && (
+                          <small className="packing-available-summary">
+                            {c.availablePacked} already packed units available
+                          </small>
+                        )}
                       </div>
                       <div className="packing-item-progress">
                         <div>
@@ -445,6 +530,7 @@ function PackingOccurrence({
           compact
           close={() => selectCustomer(null)}
           busy={busy}
+          focusRequest={customerFocus}
         >
           <CustomerChecklist
             customer={customer}
@@ -457,12 +543,12 @@ function PackingOccurrence({
     </div>
   );
   return (
-    <>
+    <div className="packing-occurrence">
       {planSelection !== undefined && (
         <PlanProduct
           key={`${planSelection ?? 'add'}:${data?.products.find((p) => p.variantId === planSelection)?.planned ?? 0}`}
           service={service}
-          disabled={disabled}
+          disabled={disabled || busy}
           busy={busy}
           run={run}
           editProduct={data?.products.find(
@@ -471,33 +557,28 @@ function PackingOccurrence({
           onClose={() => setPlanSelection(undefined)}
         />
       )}
-      <p className="packing-save-status" role="status">
-        {saved ? 'Packing saved' : '\u00a0'}
-      </p>
-      {loading && <Spinner label="Loading packing lists" />}
-      {error && <ErrorState error={error} />}
       {data && (
-        <>
-          <p>
-            {data.occurrence.venue} ·{' '}
-            {date(data.occurrence.startsAt, data.occurrence.timezone)}
-          </p>
-          {data.occurrence.status === 'cancelled' && (
-            <p role="status">
-              This occurrence is cancelled. Packing is read-only.
+        <FarmstandPanel className="packing-summary">
+          <div className="packing-summary-header">
+            <h2>Packing summary</h2>
+            <p className="packing-save-status" role="status">
+              {saved ? 'Packing saved' : '\u00a0'}
             </p>
-          )}
-          <div className="ui-kpi-grid">
-            <Card>
+          </div>
+          <ul aria-label="Packing summary" className="packing-summary-list">
+            <li className="packing-summary-primary">
+              <FarmstandIcon name="package" />
               <span>{data.summary.distinct} products</span>
-            </Card>
-            <Card>
+            </li>
+            <li className="packing-summary-success">
+              <FarmstandIcon name="circle-check" />
               <span>{data.summary.fullyPacked} fully packed</span>
-            </Card>
-            <Card>
+            </li>
+            <li className="packing-summary-warning">
+              <UtilityIcon name="clock" />
               <span>{data.summary.partiallyPacked} partially packed</span>
-            </Card>
-            <Card>
+            </li>
+            <li className="packing-summary-progress">
               <span>{data.summary.progress}% gathered</span>
               <PackingProgress
                 required={data.summary.required}
@@ -511,21 +592,61 @@ function PackingOccurrence({
                 }
                 label="Overall packing progress"
               />
-            </Card>
-          </div>
+            </li>
+          </ul>
+          <FarmstandButton
+            className="packing-summary-action"
+            disabled={disabled}
+            onClick={() => setPlanSelection(null)}
+          >
+            <FarmstandIcon name="plus" />
+            Add walk-up inventory
+          </FarmstandButton>
+        </FarmstandPanel>
+      )}
+      {loading && <Spinner label="Loading packing lists" />}
+      {error && <ErrorState error={error} />}
+      {data && (
+        <>
+          {data.occurrence.status === 'cancelled' && (
+            <p role="status">
+              This occurrence is cancelled. Packing is read-only.
+            </p>
+          )}
           <Tabs
+            className="workspace-menu packing-tabs"
             items={[
-              { label: 'Master List', content: master },
-              { label: 'Individual Lists', content: individual },
+              {
+                label: 'Master List',
+                content: master,
+                icon: <FarmstandIcon name="layers" />,
+              },
+              {
+                label: 'Individual Lists',
+                content: individual,
+                icon: <FarmstandIcon name="user-round" />,
+              },
             ]}
-            onChange={() => {
-              selectProduct(null);
-              selectCustomer(null);
+            onChange={(label) => {
+              selectProduct(
+                label === 'Master List'
+                  ? (dataRef.current?.products[0]?.variantId ?? null)
+                  : null,
+              );
+              selectCustomer(
+                label === 'Individual Lists'
+                  ? (dataRef.current?.customers.find((c) =>
+                      `${c.name} ${c.orderCodes.join(' ')}`
+                        .toLowerCase()
+                        .includes(search.toLowerCase()),
+                    )?.key ?? null)
+                  : null,
+              );
             }}
           />
         </>
       )}
-    </>
+    </div>
   );
 }
 /** Feature composition over the Market Day panel's existing layout and animation classes. */
@@ -535,15 +656,19 @@ function PackingInspector({
   busy,
   children,
   compact = false,
+  focusRequest = 1,
 }: {
   title: string;
   close: () => void;
   busy: boolean;
   children: ReactNode;
   compact?: boolean;
+  /** Each change moves focus into the panel; 0 opens it without taking focus. */
+  focusRequest?: number;
 }) {
   const [closing, setClosing] = useState(false),
     heading = useRef<HTMLHeadingElement>(null),
+    returnFocus = useRef<HTMLElement | null>(null),
     closeRef = useRef(close);
   useEffect(() => {
     closeRef.current = close;
@@ -555,12 +680,17 @@ function PackingInspector({
     else setClosing(true);
   };
   useEffect(() => {
-    const trigger = document.activeElement as HTMLElement | null;
+    if (!focusRequest) return;
+    returnFocus.current = document.activeElement as HTMLElement | null;
     heading.current?.focus();
-    return () => {
+  }, [focusRequest]);
+  useEffect(
+    () => () => {
+      const trigger = returnFocus.current;
       if (trigger?.isConnected) trigger.focus({ preventScroll: true });
-    };
-  }, []);
+    },
+    [],
+  );
   useEffect(() => {
     if (!closing) return;
     const timer = setTimeout(() => closeRef.current(), 220);
@@ -599,7 +729,6 @@ function PackingInspector({
           <IconButton
             icon="close"
             label="Close packing details"
-            disabled={busy}
             onClick={dismiss}
           />
         </div>
@@ -761,20 +890,29 @@ function PlanProduct({
   onClose: () => void;
   run: (c: PackingCommand) => Promise<boolean>;
 }) {
-  const [search, setSearch] = useState(''),
+  const [query, setQuery] = useState(''),
+    [search, setSearch] = useState(''),
     [variantId, select] = useState(editProduct?.variantId ?? ''),
-    [skip, setSkip] = useState(0);
-  const load = useCallback(
-    () => service.catalog(search, skip),
-    [service, search, skip],
-  );
-  const read = useRead(`packing-catalog:${search}:${skip}`, load, !editProduct);
+    [chosenLabel, setChosenLabel] = useState('');
+  // Typing searches the catalog; a short pause avoids a request per keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(query), 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+  const load = useCallback(() => service.catalog(search, 0), [service, search]);
+  const read = useRead(`packing-catalog:${search}:0`, load, !editProduct);
+  const options =
+    read.data?.items.flatMap((p) =>
+      p.variants.map((v) => ({ value: v.id, label: `${p.name} · ${v.name}` })),
+    ) ?? [];
   return (
     <Dialog
       open
       title={editProduct ? 'Edit walk-up inventory' : 'Add walk-up inventory'}
       onClose={onClose}
       busy={busy}
+      size="standard"
+      className="packing-walkup-dialog"
     >
       <form
         className="packing-forms"
@@ -794,63 +932,25 @@ function PlanProduct({
           <p>{editProduct.name}</p>
         ) : (
           <>
-            <Field id="packing-catalog-search" label="Find a catalog product">
-              <Input
-                id="packing-catalog-search"
-                type="search"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setSkip(0);
-                  select('');
-                }}
-              />
-            </Field>
-            {read.loading && <Spinner label="Loading catalog" />}
-            {read.error && <ErrorState error={read.error} />}
-            <SelectField
-              label="Product variant"
+            <SearchSelect
+              id="packing-variant"
+              label="Product"
+              placeholder="Search products"
               value={variantId}
+              selectedLabel={chosenLabel || undefined}
+              options={options}
+              onSearch={setQuery}
+              loading={read.loading}
               required
-              disabled={disabled || read.loading}
-              onChange={(e) => select(e.target.value)}
-            >
-              <option value="">Select a product</option>
-              {read.data?.items.flatMap((p) =>
-                p.variants.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {p.name} · {v.name}
-                  </option>
-                )),
-              )}
-            </SelectField>
-            {read.data && (
-              <div className="ui-actions">
-                <Button
-                  variant="secondary"
-                  disabled={skip === 0 || read.loading}
-                  onClick={() => {
-                    setSkip(Math.max(0, skip - 20));
-                    select('');
-                  }}
-                >
-                  Previous products
-                </Button>
-                <Button
-                  variant="secondary"
-                  disabled={
-                    skip + read.data.items.length >= read.data.totalItems ||
-                    read.loading
-                  }
-                  onClick={() => {
-                    setSkip(skip + 20);
-                    select('');
-                  }}
-                >
-                  More products
-                </Button>
-              </div>
-            )}
+              disabled={disabled}
+              onChange={(value) => {
+                select(value);
+                setChosenLabel(
+                  options.find((option) => option.value === value)?.label ?? '',
+                );
+              }}
+            />
+            {read.error && <ErrorState error={read.error} />}
           </>
         )}
         <Field id="packing-planned" label="Walk-up units">
@@ -866,9 +966,9 @@ function PlanProduct({
             disabled={disabled}
           />
         </Field>
-        <Button type="submit" disabled={disabled || !variantId}>
+        <FarmstandButton type="submit" disabled={disabled || !variantId}>
           Save walk-up plan
-        </Button>
+        </FarmstandButton>
       </form>
     </Dialog>
   );
@@ -894,8 +994,7 @@ function CustomerChecklist({
       <p>Orders {customer.orderCodes.join(', ')}</p>
       <p>
         {date(data.occurrence.startsAt, data.occurrence.timezone)}
-        {' \u00b7 '}
-        {data.occurrence.venue}
+        {data.occurrence.venue && ` \u00b7 ${data.occurrence.venue}`}
       </p>
       <div>
         {customer.packed} / {customer.required} packed{' '}
@@ -920,7 +1019,7 @@ function CustomerChecklist({
           run={run}
         />
       ))}
-      <Button
+      <FarmstandButton
         disabled={disabled || (!customer.completed && !complete)}
         onClick={() =>
           void run({
@@ -930,7 +1029,7 @@ function CustomerChecklist({
         }
       >
         {customer.completed ? 'Reopen packing' : 'Mark Customer Packed'}
-      </Button>
+      </FarmstandButton>
       {!customer.completed && complete && (
         <p>All quantities packed. Confirm customer packing explicitly.</p>
       )}
@@ -1014,8 +1113,9 @@ function CustomerPackingItem({
               {available === 1 ? 'unit available' : 'units available'} from the
               master list.
             </p>
-            <Button
+            <FarmstandButton
               variant="secondary"
+              size="compact"
               disabled={disabled}
               onClick={() =>
                 void run({
@@ -1026,7 +1126,7 @@ function CustomerPackingItem({
               }
             >
               Use {available} already packed
-            </Button>
+            </FarmstandButton>
           </div>
         )}
       </div>

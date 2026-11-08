@@ -67,6 +67,7 @@ export function createMarketFixtureData(marketId: string, now = Date.now()) {
     closesDaysBefore: 1,
     closesTime: '18:00',
   };
+  // The legacy single rule appears as the first schedule, as the backend reports it.
   const configuration: MarketConfiguration = {
     id: marketId,
     name,
@@ -91,6 +92,7 @@ export function createMarketFixtureData(marketId: string, now = Date.now()) {
       effectiveFrom: day,
       effectiveUntil: null,
     },
+    schedules: [],
     defaultPreorderRule: rule,
     overridePolicy: {
       membershipAllowed: true,
@@ -99,6 +101,15 @@ export function createMarketFixtureData(marketId: string, now = Date.now()) {
       closeMinutesBeforeStart: 60,
     },
   };
+  Object.assign(configuration, {
+    schedules: [
+      {
+        ...configuration.recurrence!,
+        id: 'legacy',
+        venue: configuration.venue,
+      },
+    ],
+  });
   const occurrence = (
     id: string,
     offset: number,
@@ -141,6 +152,7 @@ export function createMarketFixtureData(marketId: string, now = Date.now()) {
     status,
     version: 1,
     preorderDefault: null,
+    autoEnroll: false,
     market: { id: marketId, name, slug: configuration.slug },
   }));
   const states: Record<string, MarketRelationshipState> = {};
@@ -393,9 +405,11 @@ export function createFixtureMarketService(
         id: listing.variantId,
         name: `${data.configuration.name} Harvest Variant`,
         sku: `MARKET-${listing.variantId}`,
+        image: null,
         product: {
           id: `${listing.variantId}1`,
           name: `${data.configuration.name} Harvest Product`,
+          category: 'Vegetables',
         },
       },
       publication: {
@@ -616,15 +630,72 @@ export function createFixtureMarketService(
         version: data.configuration.version + 1,
         recurrenceVersion: data.configuration.recurrenceVersion + 1,
       };
+      const legacy = data.configuration.recurrence
+        ? [
+            {
+              ...data.configuration.recurrence,
+              id: data.configuration.schedules[0]?.id ?? 'legacy',
+              venue:
+                data.configuration.schedules[0]?.venue ??
+                data.configuration.venue,
+            },
+            ...data.configuration.schedules.slice(1),
+          ]
+        : data.configuration.schedules.slice(1);
+      data.configuration = { ...data.configuration, schedules: legacy };
       return data.configuration;
     },
-    generate: async (id) => {
+    saveSchedule: async (id, expected, input) => {
+      own(id);
+      version(data.configuration.version, expected);
+      const schedule = {
+        ...input,
+        id: input.id ? String(input.id) : `fixture-schedule-${Date.now()}`,
+        frequency: input.frequency ?? 'weekly',
+        weekInterval: input.weekInterval ?? 1,
+        monthWeeks: [...(input.monthWeeks ?? [])],
+        weekdays: [...input.weekdays],
+        effectiveUntil: input.effectiveUntil ?? null,
+      };
+      const schedules = data.configuration.schedules.some(
+        (s) => s.id === schedule.id,
+      )
+        ? data.configuration.schedules.map((s) =>
+            s.id === schedule.id ? schedule : s,
+          )
+        : [...data.configuration.schedules, schedule];
+      data.configuration = {
+        ...data.configuration,
+        schedules,
+        version: data.configuration.version + 1,
+        recurrenceVersion: data.configuration.recurrenceVersion + 1,
+      };
+      return data.configuration;
+    },
+    deleteSchedule: async (id, expected, scheduleId) => {
+      own(id);
+      version(data.configuration.version, expected);
+      data.configuration = {
+        ...data.configuration,
+        schedules: data.configuration.schedules.filter(
+          (s) => s.id !== scheduleId,
+        ),
+        version: data.configuration.version + 1,
+        recurrenceVersion: data.configuration.recurrenceVersion + 1,
+      };
+      return data.configuration;
+    },
+    generate: async (id, _from, _through, scheduleIds = null) => {
       check(true);
       own(id);
       if (data.configuration.status !== 'active')
         throw new AppError('validation');
-      if (!data.configuration.recurrence) return [];
-      const row = data.occurrence(`${marketId}03`, 19, 'generated');
+      if (!data.configuration.schedules.length) return [];
+      const generated = data.occurrence(`${marketId}03`, 19, 'generated');
+      const schedule = data.configuration.schedules.find(
+        (s) => !scheduleIds || scheduleIds.includes(s.id),
+      );
+      const row = { ...generated, venue: schedule?.venue ?? generated.venue };
       if (!data.occurrences.some((item) => item.id === row.id))
         data.occurrences.push(row);
       return structuredClone(data.occurrences);
@@ -679,6 +750,7 @@ export function createFixtureMarketService(
           status,
           version: 1,
           preorderDefault: null,
+          autoEnroll: false,
           market: {
             id: marketId,
             name: data.configuration.name,
@@ -698,6 +770,34 @@ export function createFixtureMarketService(
       version(row.version, expected);
       Object.assign(row, { status, version: row.version + 1 });
       return structuredClone(row);
+    },
+    listingPreview: async (id) => {
+      check();
+      const state = Object.values(data.states).find((state) =>
+        state.listings.some((row) => row.id === id),
+      );
+      const row = state?.listings.find((row) => row.id === id);
+      if (!row) throw new AppError('forbidden');
+      const display = listingDisplay(row);
+      return {
+        listingId: row.id,
+        productName: display.variant.product.name,
+        variantName: display.variant.name,
+        sku: display.variant.sku,
+        description:
+          '<p>Picked this week from our orchard. Crisp, sweet and good for baking.</p>',
+        price: 650,
+        currency: 'USD',
+        productInformation: JSON.stringify({
+          ingredients: { enabled: true, content: 'Apples' },
+          allergens: { enabled: false, content: '' },
+          storage: { enabled: true, content: 'Keep refrigerated.' },
+          pickup: { enabled: false, content: '' },
+          pickupEnabled: false,
+          custom: [],
+        }),
+        images: [],
+      };
     },
     approveListing: async (id, expected, status) => {
       const state = Object.values(data.states).find((state) =>
@@ -768,6 +868,13 @@ export function createFixtureMarketService(
           row.variantId === input.variantId,
       );
       if (prior) version(prior.version, input.expectedVersion);
+      // As in the backend: a Market may only disable or re-enable an existing offering.
+      if (
+        !prior ||
+        input.preorderEnabled !== prior.preorderEnabled ||
+        (input.salesCap ?? null) !== (prior.salesCap ?? null)
+      )
+        throw new AppError('validation');
       const template = data.states[`${marketId}2`]!.offerings[0]!;
       const row = {
         ...template,
@@ -784,27 +891,9 @@ export function createFixtureMarketService(
       });
       return row;
     },
-    rematerialize: async (id, expected) => {
-      const state = Object.values(data.states).find((state) =>
-        state.offerings.some((row) => row.id === id),
-      );
-      const row = state?.offerings.find((row) => row.id === id);
-      if (!row) throw new AppError('forbidden');
-      version(row.version, expected);
-      const updated = {
-        ...row,
-        version: row.version + 1,
-        windowProvenance: {
-          ...row.windowProvenance,
-          marketVersion: data.configuration.version,
-        },
-      };
-      Object.assign(state!, {
-        offerings: state!.offerings.map((item) =>
-          item.id === id ? updated : item,
-        ),
-      });
-      return updated;
+    // As in the backend: Markets cannot rematerialize a Vendor's preorder window.
+    rematerialize: async () => {
+      throw new AppError('validation');
     },
     operations: async (id, skip) => {
       check();

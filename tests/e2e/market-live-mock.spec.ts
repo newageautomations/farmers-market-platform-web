@@ -453,9 +453,12 @@ test('production Market login and all modules use generated own contracts, with 
     .getByRole('link', { name: /View operations for/ })
     .first()
     .click();
-  await expect(page.locator('main')).toContainText('Showing 1 to 20');
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
-  await expect(page.locator('main')).toContainText('Showing 21 to 23');
+  await expect(
+    page.getByRole('region', { name: 'Market Day Checklist' }),
+  ).toBeVisible();
+  await expect(page.locator('main')).not.toContainText(
+    /operational purchases/i,
+  );
   await page
     .locator('.admin-sidebar')
     .getByRole('link', { name: 'Analytics', exact: true })

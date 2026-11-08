@@ -1,24 +1,16 @@
 import type { ManagementService } from './service';
 import type { VendorService } from '../vendor/service';
-import { RouteLink } from '../vendor/common';
-import {
-  PlatformOverview,
-  PlatformIntegrations,
-  TenantDirectory,
-  TenantDetail,
-} from './platform';
+import { PlatformOverview, TenantDirectory, TenantDetail } from './platform';
 import { Catalog } from './catalog';
-import { Payments } from './payments';
-import { Pos } from './pos';
 import { Billing } from './billing';
 import { AccountOnboardingReview } from './AccountOnboardingReview';
 export function ManagementRoutes({
   service,
   path,
-  vendor,
 }: {
   service: ManagementService;
   path: string;
+  /** Retained for callers; tenant POS now renders in Settings. */
   vendor?: VendorService;
 }) {
   if (service.context.scope === 'PLATFORM') {
@@ -42,64 +34,8 @@ export function ManagementRoutes({
       );
     if (path.startsWith('/platform/billing'))
       return <Catalog key={path} service={service} path={path} />;
-    if (path === '/platform/integrations')
-      return <PlatformIntegrations service={service} />;
-    if (path === '/platform/settings')
-      return (
-        <>
-          <PlatformIntegrations service={service} />
-          <p>
-            Provider secrets and production deployment settings are configured
-            outside product administration. Platform pricing and access policies
-            have purpose-specific catalog workflows.
-          </p>
-          <RouteLink to="/platform/billing/policies">
-            Manage subscription access policies
-          </RouteLink>
-        </>
-      );
     return <PlatformOverview service={service} />;
   }
-  if (path.endsWith('/integrations/payments'))
-    return <Payments service={service} />;
-  if (path.endsWith('/integrations/pos'))
-    return <Pos service={service} vendor={vendor} />;
-  if (path.endsWith('/billing')) return <Billing service={service} />;
-  return (
-    <>
-      <p>
-        Manage the current tenant's integrations and billing using its current
-        grants.
-      </p>
-      <nav className="overview-links" aria-label="Tenant settings">
-        {service.context.scope === 'VENDOR' &&
-          service.context.permissions.includes('ManageOwnCatalog') && (
-            <RouteLink to="/vendor/settings/taxes">Taxes</RouteLink>
-          )}
-        {service.context.scope === 'VENDOR' &&
-          service.context.permissions.includes('ManageOwnPosIntegrations') && (
-            <RouteLink to="/vendor/settings/payments">
-              Payment Integrations
-            </RouteLink>
-          )}
-        {service.context.permissions.includes('ReadOwnPaymentAccount') && (
-          <RouteLink to="/vendor/integrations/payments">
-            Marketplace Stripe Connect
-          </RouteLink>
-        )}
-        {service.context.permissions.includes('ReadOwnPosIntegrations') && (
-          <RouteLink to="/vendor/integrations/pos">POS integrations</RouteLink>
-        )}
-        {service.context.permissions.includes('ReadOwnBilling') && (
-          <RouteLink to={`/${service.context.scope.toLowerCase()}/billing`}>
-            Subscription and entitlements
-          </RouteLink>
-        )}
-      </nav>
-      <p>
-        POS connection does not establish physical inventory authority. Stripe
-        connection does not qualify shopper payment confirmation.
-      </p>
-    </>
-  );
+  // Tenant Settings tabs (taxes, payments, POS) live in the Settings workspace.
+  return <Billing service={service} />;
 }

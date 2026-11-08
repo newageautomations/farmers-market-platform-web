@@ -52,7 +52,8 @@
   box-shadow: none;
   overflow: hidden;
 }
-.farmstand-button.button.ui-button {
+.farmstand-button.button.ui-button,
+.farmstand-controls .button.ui-button {
   --ui-control-height: 42px;
   --ui-button-radius: 8px;
   --ui-button-padding-inline: 16px;
@@ -63,7 +64,8 @@
   line-height: 1.3;
   white-space: nowrap;
 }
-.farmstand-button.button.ui-button.secondary {
+.farmstand-button.button.ui-button.secondary,
+.farmstand-controls .button.ui-button.secondary {
   --button-fill: var(--brand-surface);
   --button-ink: var(--brand-foreground);
   --button-edge: color-mix(
@@ -72,16 +74,19 @@
     var(--brand-surface)
   );
 }
-.farmstand-button.secondary > .farmstand-icon {
+.farmstand-button.secondary > .farmstand-icon,
+.farmstand-controls .button.ui-button.secondary > .farmstand-icon {
   color: var(--brand-primary);
 }
-.farmstand-button.button.ui-button.button-compact {
+.farmstand-button.button.ui-button.button-compact,
+.farmstand-controls .button.ui-button.button-compact {
   --ui-control-height: 32px;
   --ui-button-padding-inline: 10px;
   padding: 0 10px;
   font-size: 14px;
 }
-.farmstand-button.button.ui-button.button-tertiary {
+.farmstand-button.button.ui-button.button-tertiary,
+.farmstand-controls .button.ui-button.button-tertiary {
   --button-ink: var(--brand-primary);
   --button-fill: transparent;
   --button-edge: transparent;
@@ -89,10 +94,91 @@
   min-height: 24px;
   font-size: 14px;
 }
-.farmstand-button.button.ui-button.button-icon {
+.farmstand-button.button.ui-button.button-icon,
+.farmstand-controls .button.ui-button.button-icon {
   --ui-control-height: 30px;
   padding: 0;
   border: 1px solid var(--button-edge);
+}
+/* Opt-in container: existing forms that render the ordinary shared Button,
+   Input, Textarea and Select take the Farmstand control presentation (the
+   same values as FarmstandButton, FarmstandSelect and the Finances expense
+   form). Approved primitives elsewhere are unaffected. */
+.farmstand-controls {
+  --farmstand-border: color-mix(
+    in srgb,
+    var(--brand-primary) 16%,
+    var(--brand-surface)
+  );
+}
+.farmstand-controls :is(.field, .ui-field, .ops-field) > label,
+.farmstand-controls :is(.field, .ui-field, .ops-field) > .field-title > label,
+.farmstand-controls fieldset > legend:not(.sr-only) {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-muted);
+}
+.farmstand-controls :is(.ui-input.ui-input, .ui-textarea, textarea) {
+  border: 1px solid var(--farmstand-border);
+  border-radius: 8px;
+  background: var(--brand-surface);
+  color: var(--brand-foreground);
+  font-size: 14px;
+}
+.farmstand-controls .ui-input.ui-input {
+  --ui-control-height: 40px;
+  height: 40px;
+  min-height: 40px;
+}
+.farmstand-controls .ui-select.ui-select:not(.farmstand-select) {
+  --ui-control-height: 40px;
+  height: 40px;
+  min-height: 40px;
+  border: 1px solid var(--farmstand-border);
+  border-radius: 8px;
+  background-color: var(--brand-surface);
+  color: var(--brand-foreground);
+  font-size: 14px;
+  line-height: 1.2;
+}
+.farmstand-controls .ui-select.ui-select:not(.farmstand-select) > button {
+  align-items: center;
+  line-height: 1.2;
+}
+.farmstand-controls .ui-select.ui-select:not(.farmstand-select):not(:disabled) {
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+.farmstand-controls
+  .ui-select.ui-select:not(.farmstand-select):not(:disabled):hover {
+  background-color: color-mix(
+    in srgb,
+    var(--brand-primary) 7%,
+    var(--brand-surface)
+  );
+}
+/* Native DDN-03 disclosures keep their behavior and animation; only the
+   documented geometry variables take the Farmstand values. */
+.farmstand-controls .ui-disclosure {
+  --ui-disclosure-border-color: var(--farmstand-border);
+  --ui-disclosure-radius: 8px;
+  --ui-disclosure-summary-padding: 9px 12px;
+  --ui-disclosure-content-padding: 12px;
+  --ui-disclosure-hover-background: color-mix(
+    in srgb,
+    var(--brand-primary) 7%,
+    var(--brand-surface)
+  );
+  margin: 0;
+}
+.farmstand-controls .ui-disclosure > summary {
+  font-size: 14px;
+  font-weight: 600;
+}
+@media (prefers-reduced-motion: reduce) {
+  .farmstand-controls .ui-select.ui-select:not(.farmstand-select) {
+    transition: none;
+  }
 }
 .farmstand-search {
   position: relative;
@@ -369,6 +455,112 @@
   mask-size: contain;
 }
 
+/* Settings workspace glyphs (Lucide, same license as the set above). */
+.farmstand-icon-settings {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/settings.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-palette {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/palette.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-bell {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/bell.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-bell-off {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/bell-off.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-trash {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/trash.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-inbox {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/inbox.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-sliders-horizontal {
+  --farmstand-icon-width: 18px;
+  --farmstand-icon-source: url('./assets/farmstand/sliders-horizontal.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-percent {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/percent.svg');
+  mask-size: contain;
+}
+
+.farmstand-icon-plug {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/plug.svg');
+  mask-size: contain;
+}
+/* Documents workspace glyphs (Lucide, same license). */
+.farmstand-icon-file-text {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/file-text.svg');
+  mask-size: contain;
+}
+.farmstand-icon-file-image {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/file-image.svg');
+  mask-size: contain;
+}
+.farmstand-icon-file-check {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/file-check.svg');
+  mask-size: contain;
+}
+.farmstand-icon-folder-open {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/folder-open.svg');
+  mask-size: contain;
+}
+.farmstand-icon-clipboard-list {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/clipboard-list.svg');
+  mask-size: contain;
+}
+.farmstand-icon-shield-check {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/shield-check.svg');
+  mask-size: contain;
+}
+.farmstand-icon-chart-column {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/chart-column.svg');
+  mask-size: contain;
+}
+.farmstand-icon-book-open {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/book-open.svg');
+  mask-size: contain;
+}
+.farmstand-icon-upload {
+  --farmstand-icon-width: 16px;
+  --farmstand-icon-source: url('./assets/farmstand/upload.svg');
+  mask-size: contain;
+}
+.farmstand-icon-download {
+  --farmstand-icon-width: 16px;
+  --farmstand-icon-source: url('./assets/farmstand/download.svg');
+  mask-size: contain;
+}
+
 .farmstand-icon-circle-check {
   --farmstand-icon-width: 20px;
   --farmstand-icon-source: url('./assets/farmstand/circle-check.svg');
@@ -469,4 +661,20 @@
 .farmstand-data-table {
   width: 100%;
   border-collapse: collapse;
+}
+
+/* FarmstandPagination footer (formerly vendor markets-pagination.css). */
+.markets-pagination-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 16px;
+  font-size: 13px;
+  color: var(--brand-muted);
+}
+.markets-pagination-footer nav {
+  display: flex;
+  gap: 8px;
 }

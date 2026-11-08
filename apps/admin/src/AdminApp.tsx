@@ -2,7 +2,11 @@ import { IconButton, MarketPlatformLogo } from '@market/ui';
 import { buttonClassName } from '@market/ui/presentation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createAdminSession, type SessionState } from '@market/auth';
-import { resolveAdminContext, type AdminContext } from '@market/admin-core';
+import {
+  isLegacyNotificationsPath,
+  resolveAdminContext,
+  type AdminContext,
+} from '@market/admin-core';
 import { AppError, safeError } from '@market/api';
 import { Button, ErrorState, Spinner } from '@market/ui';
 import { AdminShell } from './AdminShell';
@@ -114,11 +118,15 @@ export function AdminApp({
     resolveAdminContext(
       session,
       endpoint,
-      window.location.pathname.startsWith('/platform')
-        ? 'PLATFORM'
-        : window.location.pathname.startsWith('/vendor')
-          ? 'VENDOR'
-          : 'MARKET',
+      // A legacy unscoped notification link carries no role; use the
+      // channel's own role, then the shell moves it to that role's route.
+      isLegacyNotificationsPath(window.location.pathname)
+        ? undefined
+        : window.location.pathname.startsWith('/platform')
+          ? 'PLATFORM'
+          : window.location.pathname.startsWith('/vendor')
+            ? 'VENDOR'
+            : 'MARKET',
     )
       .then((value) => {
         if (active && generation.current === contextGeneration) {

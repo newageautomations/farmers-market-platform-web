@@ -1,0 +1,80 @@
+/* Settings composes the Markets workspace presentation (heading, segmented
+   menu, Farmstand panels and stat icon tiles). These rules only arrange
+   settings sections within that contract. */
+.settings-view .markets-columns.settings-columns {
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+/* Preferences: a compact color editor with the four colors on one row. */
+.settings-panel-body .dashboard-colors-form {
+  margin: 0;
+}
+.settings-panel-body .dashboard-colors-form > fieldset {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+.settings-panel-body .dashboard-colors-form > fieldset > * {
+  margin-block: 0;
+}
+.settings-panel-body .ui-palette-fields.ui-palette-fields-row {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.75rem), 1fr));
+  gap: 12px;
+}
+.settings-panel-body .ui-palette-fields-row > .field {
+  margin: 0;
+}
+.settings-panel-body .ui-palette-preview {
+  padding: 12px;
+  border-color: var(--farmstand-border);
+  border-radius: 12px;
+}
+.settings-panel-body .ui-palette-field input[type='color'] {
+  border-color: var(--farmstand-border);
+  border-radius: 8px;
+}
+.settings-panel-body > .ui-card-embedded > p:first-child {
+  margin-top: 0;
+}
+/* Sales tax: one labelled rate per market, with prominent rate headings. */
+.tax-rate-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 14px 18px;
+}
+.tax-rate-fields > :is(.field, .ui-field) {
+  margin: 0;
+}
+.farmstand-controls .tax-rate-fields :is(.field, .ui-field) > label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--brand-foreground);
+}
+.settings-note {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.settings-panel-body .farmstand-button .farmstand-icon {
+  width: 14px;
+  height: 14px;
+}
+@container (max-width: 1080px) {
+  .settings-view .markets-columns.settings-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container (max-width: 600px) {
+  .settings-panel.farmstand-panel.card.ui-card {
+    padding: 15px;
+  }
+  /* Up to five tabs: wrap onto rows of three so labels never overflow. */
+  .markets-workspace.settings-workspace .workspace-menu {
+    --workspace-menu-columns: var(--workspace-tabs-narrow, 3);
+  }
+  .markets-workspace.settings-workspace
+    .workspace-menu
+    a:nth-child(3n + 1)::before {
+    display: none;
+  }
+}

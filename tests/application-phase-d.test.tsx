@@ -74,10 +74,15 @@ it('queries filters and pagination on the server, resets them and loads only the
       canRequestDocuments={false}
     />,
   );
-  await screen.findByRole('button', { name: 'Open Orchard Farm' });
-  expect(pageRead.mock.calls.every((c) => c[2]?.mode === 'PAGE')).toBe(true);
+  await screen.findByRole('link', { name: 'Open Orchard Farm' });
+  await waitFor(() =>
+    expect(pageRead).toHaveBeenCalledWith('APPLICATIONS', undefined, {
+      mode: 'DETAIL',
+      submissionId: 1,
+    }),
+  );
   expect(screen.getAllByRole('columnheader').map((c) => c.textContent)).toEqual(
-    ['Business', 'Status'],
+    ['Business', 'Status', ''],
   );
   fireEvent.change(screen.getByLabelText('Search applications'), {
     target: { value: 'alex@example.invalid' },
@@ -136,16 +141,13 @@ it('queries filters and pagination on the server, resets them and loads only the
       }),
     ),
   );
-  fireEvent.click(
-    await screen.findByRole('button', { name: 'Open Orchard Farm' }),
-  );
-  await waitFor(() =>
-    expect(pageRead).toHaveBeenCalledWith('APPLICATIONS', undefined, {
-      mode: 'DETAIL',
-      submissionId: 1,
-    }),
-  );
-  await screen.findByRole('region', { name: 'Original submitted answers' });
+  const preview = screen.getByRole('region', { name: 'Submission details' });
+  expect(
+    await within(preview).findByText('alex@example.invalid'),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('link', { name: 'Open Orchard Farm' }),
+  ).toHaveAttribute('href', '/market/application-submissions/1');
 });
 it('separates private notes from submitted answers, date requests and information requests', () => {
   const data = managerData(),
@@ -288,7 +290,9 @@ it('keeps quick views and additional filters synchronized and closes the card', 
       canRequestDocuments={false}
     />,
   );
-  fireEvent.click(screen.getByRole('button', { name: 'To review' }));
+  fireEvent.change(screen.getByLabelText('Show applications'), {
+    target: { value: 'REVIEW' },
+  });
   await waitFor(() =>
     expect(api.read).toHaveBeenCalledWith(
       'APPLICATIONS',
@@ -296,7 +300,9 @@ it('keeps quick views and additional filters synchronized and closes the card', 
       expect.objectContaining({ quickView: 'REVIEW', skip: 0 }),
     ),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Awaiting vendor' }));
+  fireEvent.change(screen.getByLabelText('Show applications'), {
+    target: { value: 'VENDOR' },
+  });
   await waitFor(() =>
     expect(api.read).toHaveBeenCalledWith(
       'APPLICATIONS',
@@ -309,7 +315,9 @@ it('keeps quick views and additional filters synchronized and closes the card', 
     .getByText('Filter applications', { selector: 'summary' })
     .closest('details')!;
   fireEvent.focus(screen.getByRole('combobox', { name: 'Application status' }));
-  expect(screen.getAllByRole('option')[0]).toHaveTextContent('All statuses');
+  expect(within(card).getAllByRole('option')[0]).toHaveTextContent(
+    'All statuses',
+  );
   expect(screen.queryByRole('button', { name: 'All statuses' })).toBeNull();
   expect(
     screen.queryByRole('heading', { name: 'Filter applications' }),
@@ -337,7 +345,9 @@ it('keeps quick views and additional filters synchronized and closes the card', 
       expect.objectContaining({ quickView: 'VENDOR', status: '' }),
     ),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'All' }));
+  fireEvent.change(screen.getByLabelText('Show applications'), {
+    target: { value: 'ALL' },
+  });
   await waitFor(() =>
     expect(api.read).toHaveBeenLastCalledWith(
       'APPLICATIONS',

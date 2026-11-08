@@ -1,39 +1,11 @@
 ---
-import CustomerLayout from '../../layouts/CustomerLayout.astro';
-import CustomerNotifications from '../../components/CustomerNotifications';
-import {
-  customerApi,
-  customerAuthenticationError,
-} from '../../lib/customer-dashboard';
-import { temporaryUnavailableResponse } from '@market/config';
+// Former unscoped customer inbox routes now live with the rest of the
+// customer dashboard under /account.
 const view = Astro.params.view ?? '';
 if (!['', 'settings', 'unsubscribed'].includes(view))
   return new Response(null, { status: 404 });
-const api = customerApi(Astro);
-try {
-  if (!(await api.profile())) return Astro.redirect(api.login);
-} catch (error) {
-  return customerAuthenticationError(error)
-    ? Astro.redirect(api.login)
-    : temporaryUnavailableResponse();
-}
-const title =
-  view === 'settings'
-    ? 'Notification settings'
-    : view === 'unsubscribed'
-      ? 'Unsubscribed notifications'
-      : 'Notifications';
+return Astro.redirect(
+  `/account/notifications${view ? `/${view}` : ''}${Astro.url.search}`,
+  301,
+);
 ---
-
-<CustomerLayout title={title} path="/notifications">
-  <CustomerNotifications
-    view={
-      view === 'settings'
-        ? 'settings'
-        : view === 'unsubscribed'
-          ? 'unsubscribed'
-          : 'inbox'
-    }
-    client:load
-  />
-</CustomerLayout>

@@ -234,3 +234,197 @@
     padding: 16px;
   }
 }
+
+/* Permission rows reuse the notification option row; keep the team spacing. */
+.team-permission.notification-option.ops-check {
+  margin-block: 0;
+}
+/* Only the radio itself animates when a preset is picked. */
+.team-roles input[type='radio'] {
+  transition: transform 120ms ease;
+}
+.team-roles input[type='radio']:active:not(:disabled) {
+  transform: scale(0.86);
+}
+.team-roles input[type='radio'].is-toggled {
+  animation: notification-check 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .team-roles input[type='radio'] {
+    transition: none;
+  }
+  .team-roles input[type='radio']:active:not(:disabled),
+  .team-roles input[type='radio'].is-toggled {
+    transform: none;
+    animation: none;
+  }
+}
+
+.team-workspace {
+  gap: 16px;
+}
+.team-workspace > .order-page-heading {
+  margin-bottom: 0;
+}
+.farmstand-panel.card.ui-card.team-pending,
+.farmstand-panel.card.ui-card.team-invite {
+  padding: 22px;
+}
+.team-permissions {
+  gap: 8px;
+}
+.team-permissions .ui-disclosure {
+  margin: 0;
+}
+.team-permissions .ui-disclosure > summary {
+  min-height: 44px;
+}
+.team-permissions .ui-disclosure > .ui-disclosure-content {
+  gap: 2px;
+  padding: 8px 12px 12px;
+}
+.team-pending .team-count {
+  margin-bottom: 4px;
+}
+.team-invitations li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.team-permission.notification-option.ops-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.team-permission > input {
+  margin: 0;
+}
+.team-permission > span {
+  display: grid;
+  align-items: center;
+}
+.team-roles label > span {
+  align-items: center;
+}
+.team-roles label > span > input {
+  margin: 0;
+}
+.team-access-form > .team-muted,
+.team-access-form .ui-disclosure-content > .team-muted {
+  margin: 0 0 8px;
+}
+
+.team-name-link {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.team-name-link:disabled {
+  cursor: default;
+}
+.team-name-link:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.team-name-link:is(:hover, :focus-visible) .farmstand-text-link::after {
+  transform: scaleX(1);
+}
+.team-role {
+  --team-role-color: var(--brand-muted);
+  background: color-mix(
+    in srgb,
+    var(--team-role-color) 16%,
+    var(--brand-surface)
+  );
+  color: color-mix(
+    in srgb,
+    var(--team-role-color) 75%,
+    var(--brand-foreground)
+  );
+  border-radius: 999px;
+}
+.team-role-owner {
+  --team-role-color: #7c3aed;
+}
+.team-role-administrator {
+  --team-role-color: #2563eb;
+}
+.team-role-lead {
+  --team-role-color: #d97706;
+}
+.team-role-staff {
+  --team-role-color: #0d9488;
+}
+
+.team-name-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.team-invitations li.team-invitation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+.team-invitation-info {
+  min-width: 0;
+}
+.team-invitation-info > div {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.team-invitation-info p {
+  margin: 4px 0 0;
+}
+.team-invitation-side {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  margin-left: auto;
+  text-align: end;
+}
+.team-invitations .team-invitation-side .team-actions {
+  margin-top: 0;
+  justify-content: end;
+}
+
+.team-member {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+.team-member-actions {
+  margin-left: auto;
+}
+.team-invitation-info p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+span.team-name-link {
+  cursor: default;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.team-invitations li.team-invitation > .team-invitation-info {
+  display: grid;
+  gap: 4px;
+}
+.team-invitation-info p {
+  margin: 0;
+}

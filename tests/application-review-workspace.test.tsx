@@ -10,6 +10,7 @@ import {
 import { afterEach, expect, it, vi } from 'vitest';
 import type { ApplicationSubmission } from '@market/api';
 import { ApplicationReview } from '../apps/admin/src/market/phase14/ApplicationReview';
+import { Applications } from '../apps/admin/src/market/phase14/Applications';
 import { ApplicationSubmissions } from '../apps/admin/src/market/phase14/ApplicationSubmissions';
 import { managerData } from './fixtures/market-dashboard-data';
 import { applicationReviewApi } from './fixtures/application-review-api';
@@ -39,7 +40,7 @@ function renderReview(
   return { data, submission, run, container: view.container };
 }
 
-it('opens inside shell content, retains list controls/page and restores row focus after closing', async () => {
+it('retains list controls and paging while selecting a side preview', async () => {
   const data = managerData(),
     api = applicationReviewApi(data);
   const original = api.read.getMockImplementation()!;
@@ -52,75 +53,6 @@ it('opens inside shell content, retains list controls/page and restores row focu
     return result;
   });
   render(
-    <div className="admin-shell">
-      <nav aria-label="Admin navigation">
-        <a href="/market">Market</a>
-      </nav>
-      <div className="admin-main">
-        <header>Account controls</header>
-        <main className="admin-content">
-          <ApplicationSubmissions
-            api={api}
-            data={data}
-            run={vi.fn()}
-            canManage
-            canConfirmDates={false}
-            canBilling={false}
-            canRequestDocuments={false}
-          />
-        </main>
-      </div>
-    </div>,
-  );
-  fireEvent.change(screen.getByLabelText('Search applications'), {
-    target: { value: 'Orchard' },
-  });
-  await waitFor(() =>
-    expect(api.read).toHaveBeenLastCalledWith(
-      'APPLICATIONS',
-      undefined,
-      expect.objectContaining({ search: 'Orchard' }),
-    ),
-  );
-  fireEvent.click(screen.getByText('Filters'));
-  fireEvent.change(screen.getByLabelText('Sort applications'), {
-    target: { value: 'BUSINESS' },
-  });
-  fireEvent.change(screen.getByLabelText('Vendor category'), {
-    target: { value: 'Produce' },
-  });
-  await screen.findByRole('button', { name: 'Next' });
-  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-  await waitFor(() =>
-    expect(api.read).toHaveBeenLastCalledWith(
-      'APPLICATIONS',
-      undefined,
-      expect.objectContaining({ skip: 20 }),
-    ),
-  );
-  const row = await screen.findByRole('button', { name: 'Open Orchard Farm' });
-  row.focus();
-  fireEvent.click(row);
-  const review = await screen.findByRole('region', { name: 'Orchard Farm' });
-  expect(review.closest('main')).toBeTruthy();
-  expect(
-    screen.getByRole('navigation', { name: 'Admin navigation' }),
-  ).toBeVisible();
-  expect(screen.getByText('Account controls')).toBeVisible();
-  expect(screen.queryByRole('dialog')).toBeNull();
-  expect(screen.getByRole('heading', { name: 'Orchard Farm' })).toHaveFocus();
-  fireEvent.click(screen.getByRole('button', { name: 'Back to applications' }));
-  expect(screen.getByLabelText('Search applications')).toHaveValue('Orchard');
-  expect(screen.getByLabelText('Sort applications')).toHaveValue('BUSINESS');
-  expect(screen.getByLabelText('Vendor category')).toHaveValue('Produce');
-  expect(screen.getByText('21 to 21 of 42 applications')).toBeTruthy();
-  await waitFor(() => expect(row).toHaveFocus());
-});
-
-it('protects unsaved notes on Escape and discards only after confirmation', async () => {
-  const data = managerData(),
-    api = applicationReviewApi(data);
-  render(
     <ApplicationSubmissions
       api={api}
       data={data}
@@ -131,24 +63,71 @@ it('protects unsaved notes on Escape and discards only after confirmation', asyn
       canRequestDocuments={false}
     />,
   );
+  fireEvent.change(screen.getByLabelText('Search applications'), {
+    target: { value: 'Orchard' },
+  });
+  await waitFor(() =>
+    expect(api.read).toHaveBeenCalledWith(
+      'APPLICATIONS',
+      undefined,
+      expect.objectContaining({ search: 'Orchard' }),
+    ),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
+  fireEvent.change(screen.getByLabelText('Sort applications'), {
+    target: { value: 'BUSINESS' },
+  });
+  fireEvent.change(screen.getByLabelText('Vendor category'), {
+    target: { value: 'Produce' },
+  });
+  fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+  await waitFor(() =>
+    expect(api.read).toHaveBeenCalledWith(
+      'APPLICATIONS',
+      undefined,
+      expect.objectContaining({ skip: 20 }),
+    ),
+  );
   fireEvent.click(
-    await screen.findByRole('button', { name: 'Open Orchard Farm' }),
+    within(
+      screen.getByRole('table', { name: 'Application submissions' }),
+    ).getByText('Orchard Farm'),
+  );
+  expect(screen.getByLabelText('Search applications')).toHaveValue('Orchard');
+  expect(screen.getByLabelText('Sort applications')).toHaveValue('BUSINESS');
+  expect(screen.getByLabelText('Vendor category')).toHaveValue('Produce');
+  expect(screen.getByText('21 to 21 of 42 applications')).toBeTruthy();
+  expect(
+    await within(
+      screen.getByRole('region', { name: 'Submission details' }),
+    ).findByText('alex@example.invalid'),
+  ).toBeVisible();
+});
+
+it('protects unsaved notes before leaving the submission detail page', async () => {
+  const data = managerData(),
+    api = applicationReviewApi(data);
+  render(
+    <Applications
+      api={api}
+      data={data}
+      run={vi.fn()}
+      canManage
+      view="submissions"
+      path="/market/application-submissions/1"
+    />,
   );
   const notes = await screen.findByLabelText(
     'Private Manager Notes and decision reason',
   );
   fireEvent.change(notes, { target: { value: 'Unsaved private note' } });
-  fireEvent.keyDown(notes, { key: 'Escape' });
-  expect(
-    screen.getByRole('dialog', { name: 'Discard unsaved changes?' }),
-  ).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Keep reviewing' }));
-  expect(notes).toHaveValue('Unsaved private note');
-  fireEvent.click(screen.getByRole('button', { name: 'Back to applications' }));
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
   fireEvent.click(
-    screen.getByRole('button', { name: 'Discard changes and close' }),
+    screen.getByRole('link', { name: 'Back to submitted applications' }),
   );
-  expect(screen.queryByRole('region', { name: 'Orchard Farm' })).toBeNull();
+  expect(confirm).toHaveBeenCalled();
+  expect(notes).toHaveValue('Unsaved private note');
+  confirm.mockRestore();
 });
 
 it('renders snapshot sections, supported answer values, conditional visibility, dates, rentals and readiness', () => {
@@ -442,7 +421,7 @@ it('keeps amendment rounds, chronological history and accepted onboarding availa
   );
 });
 
-it('opens notification deep links in place and removes only the submission parameter when closed', async () => {
+it('opens notification deep links using the submission detail page', async () => {
   window.history.replaceState(
     null,
     '',
@@ -450,20 +429,19 @@ it('opens notification deep links in place and removes only the submission param
   );
   const data = managerData();
   render(
-    <ApplicationSubmissions
+    <Applications
       api={applicationReviewApi(data)}
       data={data}
       run={vi.fn()}
       canManage
-      canConfirmDates={false}
-      canBilling={false}
-      canRequestDocuments={false}
+      view="submissions"
     />,
   );
   await screen.findByLabelText('Private Manager Notes and decision reason');
-  fireEvent.click(screen.getByRole('button', { name: 'Back to applications' }));
-  expect(window.location.search).toBe('?channel=42');
   expect(
-    screen.getByRole('button', { name: 'Open Orchard Farm' }),
-  ).toBeTruthy();
+    screen.getByRole('heading', { level: 1, name: 'Orchard Farm' }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('link', { name: 'Back to submitted applications' }),
+  ).toHaveAttribute('href', '/market/application-submissions');
 });

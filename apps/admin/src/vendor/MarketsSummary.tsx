@@ -1,5 +1,5 @@
 import { FarmstandIcon, FarmstandPanel } from '@market/ui/farmstand';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
 /** Shared Markets composition; values and their meaning remain caller-owned. */
 export function MarketsSummary({
@@ -8,8 +8,9 @@ export function MarketsSummary({
 }: {
   items: Array<{
     label: string;
-    value: number;
-    hint: string;
+    /** Counts, or caller-formatted values such as money. */
+    value: number | string;
+    hint: ReactNode;
     icon: ComponentProps<typeof FarmstandIcon>['name'];
     tone?: 'warning' | 'success' | 'danger';
   }>;

@@ -210,7 +210,9 @@ describe('Phase 13G safe contracts', () => {
         connectStripe: connect,
       } as unknown as ManagementService;
     render(<Payments service={service} />);
-    await screen.findByText('Not configured');
+    // Configuration and funds flow policy are both NOT_CONFIGURED.
+    expect(await screen.findAllByText('Not configured')).toHaveLength(2);
+    expect(screen.getByText('Reconciliation required')).toBeVisible();
     expect(
       screen.getByRole('button', { name: 'Connect account' }),
     ).toBeDisabled();

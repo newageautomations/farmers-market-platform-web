@@ -1,6 +1,11 @@
 .admin-content:has(.markets-workspace) {
   width: min(100% - 4rem, 1320px);
 }
+/* Centered workspaces must not move when a tab is short enough to drop the
+   page scrollbar. */
+html:has(.markets-workspace) {
+  scrollbar-gutter: stable;
+}
 .markets-workspace {
   --markets-border: color-mix(
     in srgb,
@@ -44,7 +49,8 @@
   line-height: 1.5;
 }
 .markets-workspace .workspace-menu {
-  --workspace-menu-columns: 3;
+  /* WorkspaceFrame sets --workspace-tabs to its tab count. */
+  --workspace-menu-columns: var(--workspace-tabs, 3);
 }
 .markets-view,
 .markets-view > div:has(> .markets-summary) {

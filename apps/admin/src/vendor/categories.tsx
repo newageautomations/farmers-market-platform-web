@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import {
-  AppError,
+  type AppError,
   safeError,
   type CategoryImage,
   type VendorCategoryApi,
@@ -18,12 +18,15 @@ import {
   ErrorState,
   Field,
   Input,
+  IconButton,
   SearchSelect,
   Tabs,
   UtilityIcon,
 } from '@market/ui';
 import './image-library.css';
 import { ReadState, useRead } from './common';
+
+export type StockLibraryImage = CategoryImage;
 
 /** Feature composition of approved controls. No existing category or public asset picker exists. */
 export function CategoryImageField({
@@ -38,6 +41,7 @@ export function CategoryImageField({
   triggerClassName = '',
   renderTrigger,
   themeId,
+  stockImages,
 }: {
   api: Pick<VendorCategoryApi, 'images' | 'upload'> & {
     themeImages?: (themeId: string) => Promise<CategoryImage[]>;
@@ -52,6 +56,8 @@ export function CategoryImageField({
   triggerClassName?: string;
   renderTrigger?: (open: () => void, disabled: boolean) => ReactNode;
   themeId?: string;
+  /** Opt-in curated collection. Omit outside the owning feature. */
+  stockImages?: readonly StockLibraryImage[];
 }) {
   const read = useCallback(() => api.images(), [api]);
   const images = useRead('category-images', read);
@@ -61,6 +67,7 @@ export function CategoryImageField({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<AppError>();
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [enlarged, setEnlarged] = useState<CategoryImage>();
   const [extra, setExtra] = useState<CategoryImage[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState<boolean>();
@@ -72,9 +79,25 @@ export function CategoryImageField({
     ...[...(images.data ?? []), ...extra].filter(
       (i) => !uploaded.some((u) => u.id === i.id),
     ),
-  ];
-  if (value && !options.some((image) => image.id === value))
-    options.push({ id: value, name: 'Current image', preview: preview ?? '' });
+  ].filter(
+    (image) =>
+      image.source !== 'theme' &&
+      image.source !== 'stock' &&
+      !themeImages.some((theme) => theme.id === image.id) &&
+      !stockImages?.some((stock) => stock.id === image.id),
+  );
+  // A selected external image must not become a personal-library entry.
+  const selectedImage =
+    options.find((image) => image.id === selectedId) ??
+    stockImages?.find((image) => image.id === selectedId) ??
+    themeImages.find((image) => image.id === selectedId);
+  const inlineOptions =
+    value && !options.some((image) => image.id === value)
+      ? [
+          ...options,
+          { id: value, name: 'Current image', preview: preview ?? '' },
+        ]
+      : options;
   const uploadId = useId();
   const imageChange = useRef(onImageChange);
   const mounted = useRef(true);
@@ -111,6 +134,17 @@ export function CategoryImageField({
     onImageChange?.(image);
     setLibraryOpen(false);
   };
+  const enlargeButton = (image: CategoryImage) =>
+    image.preview && (
+      <IconButton
+        label={`Enlarge ${image.name?.trim() || 'image'}`}
+        icon="expand"
+        className="image-library-enlarge"
+        disabled={busy}
+        aria-haspopup="dialog"
+        onClick={() => setEnlarged(image)}
+      />
+    );
   const uploadField = (
     <>
       <Field id={uploadId} label="Upload image (PNG or JPEG)">
@@ -169,7 +203,7 @@ export function CategoryImageField({
                 }}
               >
                 <span>
-                  {options.find((image) => image.id === selectedId)?.name ||
+                  {selectedImage?.name ||
                     (selectedId ? 'Selected image' : 'Choose an image')}
                 </span>
                 <UtilityIcon name="chevron-down" />
@@ -185,7 +219,59 @@ export function CategoryImageField({
           >
             <div className="stack">
               <Tabs
+                initialTab="My Images"
                 items={[
+                  ...(stockImages
+                    ? [
+                        {
+                          label: 'Stock Images',
+                          content: (
+                            <div className="stack">
+                              {busy && (
+                                <p role="status">Adding stock image...</p>
+                              )}
+                              {error && <ErrorState error={error} />}
+                              <div className="image-library-grid image-library-stock">
+                                {stockImages.map((image) => (
+                                  <div
+                                    className="image-library-tile"
+                                    key={image.id}
+                                  >
+                                    <Button
+                                      variant="secondary"
+                                      className="image-library-option button-selection-fill"
+                                      aria-label={`Choose ${image.name}`}
+                                      disabled={busy}
+                                      aria-pressed={selectedId === image.id}
+                                      onClick={() =>
+                                        chooseImage({
+                                          ...image,
+                                          source: 'stock',
+                                          preview: new URL(
+                                            image.preview,
+                                            window.location.origin,
+                                          ).href,
+                                        })
+                                      }
+                                    >
+                                      <img
+                                        src={image.preview}
+                                        alt=""
+                                        width="160"
+                                        height="160"
+                                        loading="lazy"
+                                      />
+                                      <span>{image.name}</span>
+                                    </Button>
+                                    {enlargeButton(image)}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ),
+                        },
+                      ]
+                    : []),
                   {
                     label: 'My Images',
                     content: (
@@ -201,28 +287,30 @@ export function CategoryImageField({
                             No image
                           </Button>
                           {options.map((image) => (
-                            <Button
-                              key={image.id}
-                              variant="secondary"
-                              className="image-library-option button-selection-fill"
-                              aria-label={`Choose ${image.name?.trim() || `Image ${image.id}`}`}
-                              aria-pressed={selectedId === image.id}
-                              disabled={busy}
-                              onClick={() => chooseImage(image)}
-                            >
-                              {image.preview && (
-                                <img
-                                  src={image.preview}
-                                  alt=""
-                                  width="160"
-                                  height="160"
-                                  loading="lazy"
-                                />
-                              )}
-                              <span>
-                                {image.name?.trim() || `Image ${image.id}`}
-                              </span>
-                            </Button>
+                            <div className="image-library-tile" key={image.id}>
+                              <Button
+                                variant="secondary"
+                                className="image-library-option button-selection-fill"
+                                aria-label={`Choose ${image.name?.trim() || `Image ${image.id}`}`}
+                                aria-pressed={selectedId === image.id}
+                                disabled={busy}
+                                onClick={() => chooseImage(image)}
+                              >
+                                {image.preview && (
+                                  <img
+                                    src={image.preview}
+                                    alt=""
+                                    width="160"
+                                    height="160"
+                                    loading="lazy"
+                                  />
+                                )}
+                                <span>
+                                  {image.name?.trim() || `Image ${image.id}`}
+                                </span>
+                              </Button>
+                              {enlargeButton(image)}
+                            </div>
                           ))}
                         </div>
                         {!images.loading && !options.length && (
@@ -281,28 +369,30 @@ export function CategoryImageField({
                             No image
                           </Button>
                           {themeImages.map((image) => (
-                            <Button
-                              key={image.id}
-                              variant="secondary"
-                              className="image-library-option button-selection-fill"
-                              aria-label={`Choose ${image.name?.trim() || `Image ${image.id}`}`}
-                              aria-pressed={selectedId === image.id}
-                              disabled={busy}
-                              onClick={() => chooseImage(image)}
-                            >
-                              {image.preview && (
-                                <img
-                                  src={image.preview}
-                                  alt=""
-                                  width="160"
-                                  height="160"
-                                  loading="lazy"
-                                />
-                              )}
-                              <span>
-                                {image.name?.trim() || `Image ${image.id}`}
-                              </span>
-                            </Button>
+                            <div className="image-library-tile" key={image.id}>
+                              <Button
+                                variant="secondary"
+                                className="image-library-option button-selection-fill"
+                                aria-label={`Choose ${image.name?.trim() || `Image ${image.id}`}`}
+                                aria-pressed={selectedId === image.id}
+                                disabled={busy}
+                                onClick={() => chooseImage(image)}
+                              >
+                                {image.preview && (
+                                  <img
+                                    src={image.preview}
+                                    alt=""
+                                    width="160"
+                                    height="160"
+                                    loading="lazy"
+                                  />
+                                )}
+                                <span>
+                                  {image.name?.trim() || `Image ${image.id}`}
+                                </span>
+                              </Button>
+                              {enlargeButton(image)}
+                            </div>
                           ))}
                         </div>
                         {!themeLoading &&
@@ -316,6 +406,20 @@ export function CategoryImageField({
                 ]}
               />
             </div>
+            <Dialog
+              open={!!enlarged}
+              title={`Image preview: ${enlarged?.name?.trim() || 'Image'}`}
+              size="wide"
+              onClose={() => setEnlarged(undefined)}
+            >
+              {enlarged && (
+                <img
+                  className="image-library-preview"
+                  src={enlarged.preview}
+                  alt={enlarged.name?.trim() || 'Enlarged image'}
+                />
+              )}
+            </Dialog>
           </Dialog>
         </>
       ) : (
@@ -332,7 +436,7 @@ export function CategoryImageField({
               );
             }}
             allowClear
-            options={options.map((i) => ({
+            options={inlineOptions.map((i) => ({
               value: i.id,
               label:
                 typeof i.name === 'string' && i.name.trim()

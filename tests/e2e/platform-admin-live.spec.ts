@@ -166,7 +166,7 @@ test('Platform directory paging, search, detail, native authority, safe readines
     page.getByRole('heading', { name: 'market-a', exact: true }),
   ).toBeVisible();
   await a11y(page);
-  await navigate(page, '/platform/integrations');
+  await navigate(page, '/platform/settings/integrations');
   await expect(
     page.getByRole('heading', {
       name: 'Marketplace Stripe Connect',
@@ -490,7 +490,7 @@ test('Vendor Stripe state, no configuration, separate readiness, isolation and i
   await login(
     page,
     'identity-owner-0@test.invalid',
-    '/vendor/integrations/payments',
+    '/vendor/settings/payments',
   );
   await expect(
     page.getByRole('heading', {
@@ -498,9 +498,11 @@ test('Vendor Stripe state, no configuration, separate readiness, isolation and i
       exact: true,
     }),
   ).toBeVisible();
-  await expect(page.getByText('Not configured', { exact: true })).toBeVisible();
   await expect(
-    page.getByText('RECONCILIATION_REQUIRED', { exact: true }),
+    page.getByText('Not configured', { exact: true }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByText('Reconciliation required', { exact: true }),
   ).toBeVisible();
   for (const name of [
     'Accept direct charges',
@@ -538,7 +540,7 @@ test('Vendor Stripe state, no configuration, separate readiness, isolation and i
     page.getByText('No connected payment account is recorded.'),
   ).toBeVisible();
   await expect(
-    page.getByText('RECONCILIATION_REQUIRED', { exact: true }),
+    page.getByText('Reconciliation required', { exact: true }),
   ).toHaveCount(0);
   await page
     .getByLabel('Workspace', { exact: true })
@@ -581,11 +583,7 @@ test('Vendor Stripe state, no configuration, separate readiness, isolation and i
 test('Real synthetic POS authorization, discovery, explicit mappings, policy denial, sync and revocation', async ({
   page,
 }) => {
-  await login(
-    page,
-    'identity-owner-0@test.invalid',
-    '/vendor/integrations/pos',
-  );
+  await login(page, 'identity-owner-0@test.invalid', '/vendor/settings/pos');
   await expect(
     page.getByRole('heading', { name: 'fake-sixth', exact: true }),
   ).toBeVisible();

@@ -1,9 +1,13 @@
 import {
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
+  type ChangeEvent,
+  type KeyboardEvent,
+  type MouseEvent,
 } from 'react';
 import {
   createCustomerInboxApi,
@@ -20,20 +24,92 @@ import {
   Alert,
   Badge,
   Button,
-  Card,
   Checkbox,
   Dialog,
   Dropdown,
   EmptyState,
   ErrorState,
   Field,
+  IconButton,
   Input,
-  Pagination,
   SelectField,
   Spinner,
   Tooltip,
 } from './index';
+import {
+  FarmstandButton,
+  FarmstandIcon,
+  FarmstandLink,
+  FarmstandPagination,
+  FarmstandPanel,
+  FarmstandSearch,
+  FarmstandSelect,
+} from './farmstand';
 import { buttonClassName, navigationIconPaths } from './presentation';
+
+/** Replays the check animation on each user change, never on first render. */
+export function replayCheck(event: ChangeEvent<HTMLInputElement>) {
+  const input = event.currentTarget;
+  input.classList.remove('is-toggled');
+  void input.offsetWidth;
+  input.classList.add('is-toggled');
+}
+/** Same-tab navigation for in-app links; modified clicks keep native behavior. */
+function follow(
+  event: MouseEvent<HTMLAnchorElement>,
+  navigate?: (href: string) => void,
+) {
+  if (
+    !navigate ||
+    event.button !== 0 ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.shiftKey ||
+    event.altKey
+  )
+    return;
+  event.preventDefault();
+  navigate(event.currentTarget.getAttribute('href')!);
+}
+const pageSize = 25;
+/** The context badge already names the receiving business; skip a repeat. */
+function distinctSender(n: InboxNotification) {
+  return n.workspace_id && n.sender === n.business_name ? null : n.sender;
+}
+const panelMotion = 240;
+/** Keeps a side panel mounted while its closing animation plays. */
+function useClosingPanel() {
+  const [closing, setClosing] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  return {
+    closing,
+    close(onClosed: () => void) {
+      clearTimeout(timer.current);
+      setClosing(true);
+      const reduced =
+        typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      timer.current = setTimeout(
+        () => {
+          setClosing(false);
+          onClosed();
+        },
+        reduced ? 0 : panelMotion,
+      );
+    },
+    cancel() {
+      clearTimeout(timer.current);
+      setClosing(false);
+    },
+  };
+}
+const readStates = [
+  ['all', 'All notifications'],
+  ['unread', 'Unread'],
+  ['read', 'Read'],
+  ['starred', 'Starred'],
+] as const;
 
 const roleName = {
   customer: 'Customer',
@@ -47,7 +123,22 @@ const icons = {
   delete: 'M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7',
   read: 'm3 7 9 6 9-6M3 5h18v14H3Z',
   unsubscribe: 'M4 4l16 16M18 8a6 6 0 0 0-9-5M6 6c0 9-3 9-3 11h14M10 21h4',
+  restore: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5',
 };
+/** Days until a Trash item is permanently deleted, rounded up. */
+function daysLeft(n: InboxNotification, now: number) {
+  return n.purge_at
+    ? Math.max(0, Math.ceil((Date.parse(n.purge_at) - now) / 86400000))
+    : null;
+}
+function purgeLabel(n: InboxNotification, now: number) {
+  const days = daysLeft(n, now);
+  return days === null
+    ? 'In Trash'
+    : days <= 1
+      ? 'Permanently deleted within a day'
+      : `Permanently deleted in ${days} days`;
+}
 function Glyph({ icon }: { icon: keyof typeof icons }) {
   return (
     <svg
@@ -221,12 +312,37 @@ export function NotificationActions({
   busy,
   act,
   unsubscribe,
+  trash = false,
+  purge,
 }: {
   notification: InboxNotification;
   busy: boolean;
   act: (action: InboxAction) => void;
   unsubscribe: () => void;
+  /** Trash rows offer Restore and Delete forever instead. */
+  trash?: boolean;
+  purge?: () => void;
 }) {
+  if (trash)
+    return (
+      <div
+        className="notification-actions"
+        aria-label={`Actions for ${n.title}`}
+      >
+        <IconAction
+          label="Restore to inbox"
+          icon="restore"
+          disabled={busy}
+          onClick={() => act('restore')}
+        />
+        <IconAction
+          label="Delete forever"
+          icon="delete"
+          disabled={busy}
+          onClick={() => (purge ? purge() : act('purge'))}
+        />
+      </div>
+    );
   return (
     <div className="notification-actions" aria-label={`Actions for ${n.title}`}>
       <IconAction
@@ -243,7 +359,7 @@ export function NotificationActions({
         onClick={() => act(n.read_at ? 'unread' : 'read')}
       />
       <IconAction
-        label="Delete notification"
+        label="Move to Trash"
         icon="delete"
         disabled={busy}
         onClick={() => act('delete')}
@@ -345,14 +461,23 @@ export function NotificationCenter({
   accountId = 'current',
   destination,
   personalOrigin,
+  tabs = true,
+  basePath = '/notifications',
+  navigate,
 }: {
-  view?: 'bell' | 'inbox' | 'settings' | 'unsubscribed';
+  view?: 'bell' | 'inbox' | 'trash' | 'settings' | 'unsubscribed';
   connection?: { endpoint: string; channelToken?: string };
   customer?: boolean;
   api?: InboxApi;
   accountId?: string;
   destination?: (n: InboxNotification) => string | null;
   personalOrigin?: string;
+  /** False when the host renders its own Inbox/Settings/Unsubscribed menu. */
+  tabs?: boolean;
+  /** Inbox route for this role, e.g. `/vendor/notifications` or `/account/notifications`. */
+  basePath?: string;
+  /** In-app navigation for same-application links (Admin keeps its scope). */
+  navigate?: (href: string) => void;
 }) {
   const endpoint = connection?.endpoint,
     channelToken = connection?.channelToken;
@@ -380,34 +505,72 @@ export function NotificationCenter({
       view={view}
       destination={destination}
       personalOrigin={personalOrigin}
+      tabs={tabs}
+      basePath={basePath}
+      navigate={navigate}
     />
   );
 }
+const emptyFilter: InboxFilter = { take: pageSize, skip: 0 };
+/** Filters behind the Filters button; search and read status stay visible. */
+const hiddenFilterKeys = [
+  'context',
+  'workspace',
+  'category',
+  'severity',
+  'from',
+  'through',
+  'actionRequired',
+] as const;
 function NotificationWorkspace({
   api,
   view,
   destination,
   personalOrigin,
+  tabs,
+  basePath,
+  navigate,
 }: {
   api: InboxApi;
   view: string;
   destination?: (n: InboxNotification) => string | null;
   personalOrigin?: string;
+  tabs: boolean;
+  basePath: string;
+  navigate?: (href: string) => void;
 }) {
   const { store, snapshot } = useStore(api),
     [page, setPage] = useState<InboxPage | null>(null),
-    [filter, setFilter] = useState<InboxFilter>({ take: 25, skip: 0 }),
+    [filter, setFilter] = useState<InboxFilter>(emptyFilter),
+    [filtersOpen, setFiltersOpen] = useState(false),
     [settings, setSettings] = useState<InboxSettings | null>(null),
     [detail, setDetail] = useState<InboxNotification | null>(null),
     [unsubscribe, setUnsubscribe] = useState<InboxNotification | null>(null),
     [selected, setSelected] = useState<string[]>([]),
     [busy, setBusy] = useState(false),
     [error, setError] = useState<unknown>(null),
-    [message, setMessage] = useState('');
+    [message, setMessage] = useState(''),
+    [purging, setPurging] = useState<string[] | null>(null),
+    [shownView, setShownView] = useState(view);
+  // Countdown reference time, refreshed whenever the list loads.
+  const [now, setNow] = useState(Date.now);
+  const trash = view === 'trash';
+  // Inbox and Trash share this list; switching between them starts fresh.
+  if (shownView !== view) {
+    setShownView(view);
+    setDetail(null);
+    setSelected([]);
+    setPage(null);
+    setFilter((f) => ({ ...f, skip: 0 }));
+  }
+  const id = useId();
+  const panel = useClosingPanel();
   const lock = useRef(false),
     mounted = useRef(true),
     detailRequest = useRef(0),
-    filterKey = JSON.stringify(filter);
+    detailHeading = useRef<HTMLHeadingElement>(null),
+    detailOrigin = useRef<HTMLElement | null>(null),
+    filterKey = JSON.stringify(trash ? { ...filter, state: 'trash' } : filter);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -422,6 +585,7 @@ function NotificationWorkspace({
       .then((p) => {
         if (current) {
           setPage(p);
+          setNow(Date.now());
           setError(null);
         }
       })
@@ -447,6 +611,10 @@ function NotificationWorkspace({
       current = false;
     };
   }, [api, view]);
+  const detailId = detail?.id;
+  useEffect(() => {
+    if (view !== 'bell' && detailId) detailHeading.current?.focus();
+  }, [detailId, view]);
   async function run(work: () => Promise<unknown>) {
     if (lock.current) return;
     lock.current = true;
@@ -469,23 +637,45 @@ function NotificationWorkspace({
     void run(async () => {
       await api.mutate({ ids, action });
       if (detail && ids.includes(detail.id)) {
-        if (action === 'delete') setDetail(null);
+        if (['delete', 'restore', 'purge'].includes(action))
+          panel.close(() => setDetail(null));
         else setDetail(await api.detail(detail.id));
       }
+      const count =
+        ids.length === 1 ? 'Notification' : `${ids.length} notifications`;
+      if (action === 'delete')
+        setMessage(
+          `${count} moved to Trash. Trash is permanently deleted after 30 days.`,
+        );
+      if (action === 'restore') setMessage(`${count} restored to your inbox.`);
+      if (action === 'purge') setMessage(`${count} permanently deleted.`);
     });
   }
   async function open(n: InboxNotification) {
     const request = ++detailRequest.current;
-    setDetail(null);
+    if (view === 'bell') setDetail(null);
+    else detailOrigin.current = document.activeElement as HTMLElement | null;
     try {
       const current = await api.detail(n.id);
       if (!mounted.current || request !== detailRequest.current) return;
+      panel.cancel();
       setDetail(current);
       if (!settings) void api.settings().then(setSettings).catch(setError);
-      if (!current.read_at) act([n.id], 'read');
+      if (!current.read_at && !trash) act([n.id], 'read');
     } catch (e) {
       if (mounted.current) setError(e);
     }
+  }
+  function closeDetail() {
+    detailRequest.current++;
+    if (view === 'bell') {
+      setDetail(null);
+      return;
+    }
+    panel.close(() => setDetail(null));
+    requestAnimationFrame(() => {
+      if (detailOrigin.current?.isConnected) detailOrigin.current.focus();
+    });
   }
   async function askUnsubscribe(n: InboxNotification) {
     setUnsubscribe(n);
@@ -531,16 +721,50 @@ function NotificationWorkspace({
       busy={busy}
       act={(action) => act([n.id], action)}
       unsubscribe={() => void askUnsubscribe(n)}
+      trash={trash}
+      purge={() => setPurging([n.id])}
     />
+  );
+  const purgeDialog = (
+    <Dialog
+      open={!!purging}
+      onClose={() => setPurging(null)}
+      title="Delete forever?"
+      size="standard"
+      busy={busy}
+      actions={
+        <Button
+          variant="destructive"
+          disabled={busy}
+          onClick={() => {
+            if (purging) act(purging, 'purge');
+            setPurging(null);
+          }}
+        >
+          Delete forever
+        </Button>
+      }
+    >
+      <p>
+        {purging?.length === 1
+          ? 'This notification will be permanently deleted.'
+          : `${purging?.length ?? 0} notifications will be permanently deleted.`}{' '}
+        This cannot be undone.
+      </p>
+    </Dialog>
   );
   const feedback = (
     <>
       {(error || snapshot.error) && (
         <>
           <ErrorState error={error || snapshot.error} />
-          <Button variant="secondary" onClick={() => void store.refresh()}>
+          <FarmstandButton
+            variant="secondary"
+            className="notification-retry"
+            onClick={() => void store.refresh()}
+          >
             Retry notifications
-          </Button>
+          </FarmstandButton>
         </>
       )}
       {message && (
@@ -550,61 +774,41 @@ function NotificationWorkspace({
       )}
     </>
   );
-  const details = (
-    <>
-      <Dialog
-        open={!!detail}
-        onClose={() => {
-          detailRequest.current++;
-          setDetail(null);
-        }}
-        title={detail?.title ?? 'Notification'}
-        size="standard"
-        busy={busy}
-      >
-        {detail && (
-          <>
-            <NotificationContext notification={detail} />
-            <p>
-              {detail.sender} ·{' '}
-              <time dateTime={detail.created_at}>
-                {stamp(detail.created_at)}
-              </time>
-            </p>
-            <p className="notification-body">{detail.body}</p>
-            {actions(detail)}
-            {detail.mandatory && (
-              <p>This required notification cannot be disabled.</p>
-            )}
-            {related(detail) && detail.action_label ? (
-              <a
-                className={buttonClassName({ variant: 'primary' })}
-                href={related(detail) ?? undefined}
-              >
-                {detail.action_label}
-              </a>
-            ) : (
-              <p>The destination is currently unavailable.</p>
-            )}
-          </>
-        )}
-      </Dialog>
-      <NotificationUnsubscribe
-        notification={unsubscribe}
-        settings={settings}
-        busy={busy}
-        onClose={() => setUnsubscribe(null)}
-        onSave={(input) =>
-          void run(async () => {
-            await api.preference(input);
-            setSettings(await api.settings());
-            setUnsubscribe(null);
-            setMessage('Subscription updated. Required notices will continue.');
-          })
-        }
-      />
-    </>
+  const unsubscribeDialog = (
+    <NotificationUnsubscribe
+      notification={unsubscribe}
+      settings={settings}
+      busy={busy}
+      onClose={() => setUnsubscribe(null)}
+      onSave={(input) =>
+        void run(async () => {
+          await api.preference(input);
+          setSettings(await api.settings());
+          setUnsubscribe(null);
+          setMessage('Subscription updated. Required notices will continue.');
+        })
+      }
+    />
   );
+  const destinationAction = (n: InboxNotification, side = false) =>
+    related(n) && n.action_label ? (
+      side ? (
+        <FarmstandLink variant="primary" href={related(n) ?? undefined}>
+          {n.action_label}
+        </FarmstandLink>
+      ) : (
+        <a
+          className={buttonClassName({ variant: 'primary' })}
+          href={related(n) ?? undefined}
+        >
+          {n.action_label}
+        </a>
+      )
+    ) : (
+      <p className="notification-muted">
+        The destination is currently unavailable.
+      </p>
+    );
   if (view === 'bell')
     return (
       <div className="notification-bell">
@@ -654,39 +858,74 @@ function NotificationWorkspace({
               </div>
             ))}
             <a
-              href="/notifications"
+              href={basePath}
               className={buttonClassName({ variant: 'secondary' })}
+              onClick={(event) => follow(event, navigate)}
             >
               Open notification inbox
             </a>
           </div>
         </Dropdown>
-        {details}
+        <Dialog
+          open={!!detail}
+          onClose={closeDetail}
+          title={detail?.title ?? 'Notification'}
+          size="standard"
+          busy={busy}
+        >
+          {detail && (
+            <>
+              <NotificationContext notification={detail} />
+              <p>
+                {distinctSender(detail) && `${distinctSender(detail)} · `}
+                <time dateTime={detail.created_at}>
+                  {stamp(detail.created_at)}
+                </time>
+              </p>
+              <p className="notification-body">{detail.body}</p>
+              {actions(detail)}
+              {detail.mandatory && (
+                <p>This required notification cannot be disabled.</p>
+              )}
+              {destinationAction(detail)}
+            </>
+          )}
+        </Dialog>
+        {unsubscribeDialog}
       </div>
     );
+  const activeFilters = hiddenFilterKeys.filter((key) => !!filter[key]).length;
+  const searching = Object.values(filter).some(
+    (v) => (typeof v === 'string' && v && v !== 'all') || v === true,
+  );
+  const skip = filter.skip ?? 0;
   return (
     <div className="notification-center">
       {feedback}
-      <nav aria-label="Notification views" className="ui-tabs">
-        {[
-          ['/notifications', 'Inbox'],
-          ['/notifications/settings', 'Settings'],
-          ['/notifications/unsubscribed', 'Unsubscribed'],
-        ].map(([href, label]) => (
-          <a
-            key={href}
-            href={href}
-            className="ui-route-tab"
-            aria-current={
-              view === (label === 'Inbox' ? 'inbox' : label!.toLowerCase())
-                ? 'page'
-                : undefined
-            }
-          >
-            {label}
-          </a>
-        ))}
-      </nav>
+      {tabs && (
+        <nav aria-label="Notification views" className="ui-tabs">
+          {[
+            [basePath, 'Inbox'],
+            [`${basePath}/trash`, 'Trash'],
+            [`${basePath}/settings`, 'Settings'],
+            [`${basePath}/unsubscribed`, 'Unsubscribed'],
+          ].map(([href, label]) => (
+            <a
+              key={href}
+              href={href}
+              className="ui-route-tab"
+              onClick={(event) => follow(event, navigate)}
+              aria-current={
+                view === (label === 'Inbox' ? 'inbox' : label!.toLowerCase())
+                  ? 'page'
+                  : undefined
+              }
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+      )}
       {view === 'settings' || view === 'unsubscribed' ? (
         settings ? (
           <NotificationSettings
@@ -706,236 +945,415 @@ function NotificationWorkspace({
           <Spinner label="Loading notification preferences" />
         )
       ) : (
-        <>
-          <form
-            className="notification-filters"
-            onSubmit={(e) => e.preventDefault()}
-            aria-label="Notification filters"
+        <div
+          className={`notification-columns${detail && !panel.closing ? ' notification-columns-open' : ''}`}
+        >
+          <FarmstandPanel
+            as="section"
+            className={`notification-inbox${trash ? ' notification-trash' : ''}`}
+            aria-label={trash ? 'Trash' : 'Inbox'}
           >
-            <Field id="notification-search" label="Search notifications">
-              <Input
-                id="notification-search"
-                type="search"
-                maxLength={120}
-                value={filter.search ?? ''}
-                onChange={(e) => update({ search: e.target.value })}
-              />
-            </Field>
-            <SelectField
-              label="Read status"
-              value={filter.state ?? 'all'}
-              onChange={(e) => update({ state: e.target.value })}
+            {trash && (
+              <p className="notification-muted notification-trash-note">
+                Deleted notifications stay in Trash for 30 days, then are
+                permanently deleted.
+              </p>
+            )}
+            <form
+              className="notification-toolbar"
+              onSubmit={(e) => e.preventDefault()}
+              aria-label="Notification filters"
             >
-              {[
-                ['all', 'All notifications'],
-                ['unread', 'Unread'],
-                ['read', 'Read'],
-                ['starred', 'Starred'],
-              ].map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </SelectField>
-            <SelectField
-              label="Receiving role"
-              value={filter.context ?? ''}
-              onChange={(e) => update({ context: e.target.value })}
-            >
-              <option value="">All roles</option>
-              {Object.keys(roleName).map((v) => (
-                <option key={v} value={v}>
-                  <NotificationRole context={v as keyof typeof roleName} />
-                </option>
-              ))}
-            </SelectField>
-            <SelectField
-              label="Receiving business"
-              value={filter.workspace ?? ''}
-              onChange={(e) => update({ workspace: e.target.value })}
-            >
-              <option value="">All businesses</option>
-              {settings?.affiliations.map((a) => (
-                <option
-                  key={`${a.mode}:${a.id}`}
-                  value={`${a.mode === 'VENDOR' ? 'vendor' : 'market'}:${a.id}`}
+              <Field
+                id={`${id}-search`}
+                label={<span className="sr-only">Search notifications</span>}
+              >
+                <FarmstandSearch
+                  id={`${id}-search`}
+                  placeholder={
+                    trash ? 'Search Trash...' : 'Search notifications...'
+                  }
+                  maxLength={120}
+                  value={filter.search ?? ''}
+                  onChange={(e) => update({ search: e.target.value })}
+                />
+              </Field>
+              {!trash && (
+                <Field
+                  id={`${id}-state`}
+                  label={<span className="sr-only">Read status</span>}
                 >
-                  {a.name}
-                </option>
-              ))}
-            </SelectField>
-            <SelectField
-              label="Category"
-              value={filter.category ?? ''}
-              onChange={(e) => update({ category: e.target.value })}
-            >
-              <option value="">All categories</option>
-              {[...new Set(settings?.types.map((t) => t.category) ?? [])].map(
-                (c) => (
-                  <option key={c}>{c}</option>
-                ),
+                  <FarmstandSelect
+                    id={`${id}-state`}
+                    value={filter.state ?? 'all'}
+                    onChange={(e) => update({ state: e.target.value })}
+                  >
+                    {readStates.map(([v, l]) => (
+                      <option key={v} value={v}>
+                        {l}
+                      </option>
+                    ))}
+                  </FarmstandSelect>
+                </Field>
               )}
-            </SelectField>
-            <SelectField
-              label="Priority"
-              value={filter.severity ?? ''}
-              onChange={(e) => update({ severity: e.target.value })}
-            >
-              <option value="">All priorities</option>
-              {['critical', 'operational', 'informational'].map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </SelectField>
-            <Field id="notification-from" label="From date">
-              <Input
-                id="notification-from"
-                type="date"
-                value={filter.from ?? ''}
-                onChange={(e) => update({ from: e.target.value })}
-              />
-            </Field>
-            <Field id="notification-through" label="Through date">
-              <Input
-                id="notification-through"
-                type="date"
-                value={filter.through ?? ''}
-                onChange={(e) => update({ through: e.target.value })}
-              />
-            </Field>
-            <label>
-              <Checkbox
-                checked={filter.actionRequired ?? false}
-                onChange={(e) =>
-                  update({
-                    actionRequired: e.target.checked ? true : undefined,
-                  })
-                }
-              />{' '}
-              Action required
-            </label>
-          </form>
-          {!page && !error && <Spinner label="Loading notification inbox" />}
-          {page && (
-            <>
-              <div className="notification-bulk">
-                <label>
-                  <Checkbox
-                    aria-label="Select all notifications on this page"
-                    checked={
-                      page.items.length > 0 &&
-                      selected.length === page.items.length
-                    }
-                    onChange={(e) =>
-                      setSelected(
-                        e.target.checked ? page.items.map((n) => n.id) : [],
-                      )
-                    }
-                  />{' '}
-                  Select this page
-                </label>
-                <span>{selected.length} selected on this page</span>
-                {(['read', 'unread', 'star', 'unstar', 'delete'] as const).map(
-                  (action) => (
-                    <Button
-                      key={action}
-                      variant="tertiary"
-                      disabled={busy || !selected.length}
-                      onClick={() => act(selected, action)}
-                    >
-                      {
-                        {
-                          read: 'Mark read',
-                          unread: 'Mark unread',
-                          star: 'Star',
-                          unstar: 'Unstar',
-                          delete: 'Delete',
-                        }[action]
-                      }
-                    </Button>
-                  ),
+              <FarmstandButton
+                type="button"
+                variant="secondary"
+                className="notification-filters-toggle"
+                aria-expanded={filtersOpen}
+                aria-controls={`${id}-filters`}
+                onClick={() => setFiltersOpen((open) => !open)}
+              >
+                <FarmstandIcon name="sliders-horizontal" />
+                Filters
+                {activeFilters > 0 && (
+                  <span className="notification-filter-count">
+                    {activeFilters}
+                    <span className="sr-only"> active</span>
+                  </span>
                 )}
+              </FarmstandButton>
+            </form>
+            <div
+              id={`${id}-filters`}
+              className="notification-more-filters farmstand-controls"
+              hidden={!filtersOpen}
+            >
+              <div className="notification-filter-grid">
+                <SelectField
+                  label="Receiving role"
+                  value={filter.context ?? ''}
+                  onChange={(e) => update({ context: e.target.value })}
+                >
+                  <option value="">All roles</option>
+                  {Object.keys(roleName).map((v) => (
+                    <option key={v} value={v}>
+                      <NotificationRole context={v as keyof typeof roleName} />
+                    </option>
+                  ))}
+                </SelectField>
+                <SelectField
+                  label="Receiving business"
+                  value={filter.workspace ?? ''}
+                  onChange={(e) => update({ workspace: e.target.value })}
+                >
+                  <option value="">All businesses</option>
+                  {settings?.affiliations.map((a) => (
+                    <option
+                      key={`${a.mode}:${a.id}`}
+                      value={`${a.mode === 'VENDOR' ? 'vendor' : 'market'}:${a.id}`}
+                    >
+                      {a.name}
+                    </option>
+                  ))}
+                </SelectField>
+                <SelectField
+                  label="Category"
+                  value={filter.category ?? ''}
+                  onChange={(e) => update({ category: e.target.value })}
+                >
+                  <option value="">All categories</option>
+                  {[
+                    ...new Set(settings?.types.map((t) => t.category) ?? []),
+                  ].map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </SelectField>
+                <SelectField
+                  label="Priority"
+                  value={filter.severity ?? ''}
+                  onChange={(e) => update({ severity: e.target.value })}
+                >
+                  <option value="">All priorities</option>
+                  {['critical', 'operational', 'informational'].map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </SelectField>
+                <Field id={`${id}-from`} label="From date">
+                  <Input
+                    id={`${id}-from`}
+                    type="date"
+                    value={filter.from ?? ''}
+                    onChange={(e) => update({ from: e.target.value })}
+                  />
+                </Field>
+                <Field id={`${id}-through`} label="Through date">
+                  <Input
+                    id={`${id}-through`}
+                    type="date"
+                    value={filter.through ?? ''}
+                    onChange={(e) => update({ through: e.target.value })}
+                  />
+                </Field>
               </div>
-              {!page.items.length ? (
-                <EmptyState
-                  title={
-                    filter.state === 'unread'
-                      ? 'No unread notifications'
-                      : Object.values(filter).some(
-                            (v) => typeof v === 'string' && v,
-                          )
-                        ? 'No notifications match your filters'
-                        : 'No notifications yet'
+              <div className="notification-filter-footer">
+                <label
+                  className="ops-check notification-option"
+                  htmlFor={`${id}-action`}
+                >
+                  <Checkbox
+                    id={`${id}-action`}
+                    checked={filter.actionRequired ?? false}
+                    onChange={(e) => {
+                      replayCheck(e);
+                      update({
+                        actionRequired: e.target.checked ? true : undefined,
+                      });
+                    }}
+                  />
+                  <span>Action required only</span>
+                </label>
+                <FarmstandButton
+                  type="button"
+                  variant="secondary"
+                  disabled={!activeFilters}
+                  onClick={() =>
+                    update(
+                      Object.fromEntries(
+                        hiddenFilterKeys.map((key) => [key, undefined]),
+                      ),
+                    )
                   }
                 >
-                  <p>Updates from your authorized accounts appear here.</p>
-                </EmptyState>
-              ) : (
-                <ul
-                  className="notification-list"
-                  aria-label="Notification inbox"
-                >
-                  {page.items.map((n) => (
-                    <li
-                      key={n.id}
-                      className={`notification-row ${n.read_at ? '' : 'notification-unread'}`}
-                    >
-                      <Checkbox
-                        aria-label={`Select ${n.title}`}
-                        checked={selected.includes(n.id)}
-                        onChange={(e) =>
-                          setSelected((s) =>
-                            e.target.checked
-                              ? [...s, n.id]
-                              : s.filter((id) => id !== n.id),
-                          )
+                  Clear filters
+                </FarmstandButton>
+              </div>
+            </div>
+            {!page && !error && <Spinner label="Loading notification inbox" />}
+            {page && (
+              <>
+                <div className="notification-bulk">
+                  <label
+                    className="ops-check notification-option"
+                    htmlFor={`${id}-page`}
+                  >
+                    <Checkbox
+                      id={`${id}-page`}
+                      aria-label="Select all notifications on this page"
+                      checked={
+                        page.items.length > 0 &&
+                        selected.length === page.items.length
+                      }
+                      disabled={!page.items.length}
+                      onChange={(e) => {
+                        replayCheck(e);
+                        setSelected(
+                          e.target.checked ? page.items.map((n) => n.id) : [],
+                        );
+                      }}
+                    />
+                    <span>Select this page</span>
+                  </label>
+                  <span className="notification-muted" aria-live="polite">
+                    {selected.length} selected
+                  </span>
+                  <div className="notification-bulk-actions">
+                    {(trash
+                      ? (['restore', 'purge'] as const)
+                      : ([
+                          'read',
+                          'unread',
+                          'star',
+                          'unstar',
+                          'delete',
+                        ] as const)
+                    ).map((action) => (
+                      <FarmstandButton
+                        key={action}
+                        variant="secondary"
+                        size="compact"
+                        disabled={busy || !selected.length}
+                        onClick={() =>
+                          action === 'purge'
+                            ? setPurging(selected)
+                            : act(selected, action)
                         }
-                      />
-                      <button
-                        className="notification-open"
-                        onClick={() => void open(n)}
                       >
-                        <NotificationContext notification={n} />
-                        <span className="notification-sender">{n.sender}</span>
-                        <strong>
-                          {!n.read_at && <span aria-label="Unread">● </span>}
-                          {n.title}
-                        </strong>
-                        <span className="notification-text">{n.preview}</span>
-                        <time dateTime={n.created_at}>
-                          {stamp(n.created_at)}
-                        </time>
-                      </button>
-                      <div className="notification-desktop-actions">
-                        {actions(n)}
-                      </div>
-                      <div className="notification-mobile-actions">
-                        <Dropdown label="Actions">{actions(n)}</Dropdown>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <Pagination
-                hasPrevious={(filter.skip ?? 0) > 0}
-                hasNext={
-                  (filter.skip ?? 0) + page.items.length < page.totalItems
-                }
-                onPrevious={() =>
-                  setFilter((f) => ({
-                    ...f,
-                    skip: Math.max(0, (f.skip ?? 0) - 25),
-                  }))
-                }
-                onNext={() =>
-                  setFilter((f) => ({ ...f, skip: (f.skip ?? 0) + 25 }))
-                }
-                summary={`${page.totalItems} notifications`}
-              />
-            </>
+                        {
+                          {
+                            read: 'Mark read',
+                            unread: 'Mark unread',
+                            star: 'Star',
+                            unstar: 'Unstar',
+                            delete: 'Delete',
+                            restore: 'Restore',
+                            purge: 'Delete forever',
+                          }[action]
+                        }
+                      </FarmstandButton>
+                    ))}
+                  </div>
+                </div>
+                {!page.items.length ? (
+                  <EmptyState
+                    title={
+                      trash
+                        ? searching
+                          ? 'No deleted notifications match your filters'
+                          : 'Trash is empty'
+                        : filter.state === 'unread'
+                          ? 'No unread notifications'
+                          : searching
+                            ? 'No notifications match your filters'
+                            : 'No notifications yet'
+                    }
+                  >
+                    <p>
+                      {trash
+                        ? 'Notifications you delete appear here for 30 days.'
+                        : 'Updates from your authorized accounts appear here.'}
+                    </p>
+                  </EmptyState>
+                ) : (
+                  <ul
+                    className="notification-list"
+                    aria-label={
+                      trash ? 'Notification trash' : 'Notification inbox'
+                    }
+                  >
+                    {page.items.map((n) => (
+                      <li
+                        key={n.id}
+                        className={`notification-row${n.read_at ? '' : ' notification-unread'}${n.id === detail?.id && !panel.closing ? ' notification-selected' : ''}`}
+                      >
+                        <label
+                          className="notification-option notification-row-select"
+                          htmlFor={`${id}-select-${n.id}`}
+                        >
+                          <Checkbox
+                            id={`${id}-select-${n.id}`}
+                            aria-label={`Select ${n.title}`}
+                            checked={selected.includes(n.id)}
+                            onChange={(e) => {
+                              replayCheck(e);
+                              setSelected((s) =>
+                                e.target.checked
+                                  ? [...s, n.id]
+                                  : s.filter((id) => id !== n.id),
+                              );
+                            }}
+                          />
+                        </label>
+                        <button
+                          className="notification-open"
+                          aria-current={
+                            n.id === detail?.id && !panel.closing
+                              ? 'true'
+                              : undefined
+                          }
+                          onClick={() => void open(n)}
+                        >
+                          <NotificationContext notification={n} />
+                          {distinctSender(n) && (
+                            <span className="notification-sender">
+                              {distinctSender(n)}
+                            </span>
+                          )}
+                          <strong>
+                            {!n.read_at && <span aria-label="Unread">● </span>}
+                            {n.title}
+                          </strong>
+                          <span className="notification-text">{n.preview}</span>
+                          <time dateTime={n.created_at}>
+                            {stamp(n.created_at)}
+                          </time>
+                          {trash && (
+                            <span className="notification-purge">
+                              {purgeLabel(n, now)}
+                            </span>
+                          )}
+                        </button>
+                        <div className="notification-desktop-actions">
+                          {actions(n)}
+                        </div>
+                        <div className="notification-mobile-actions">
+                          <Dropdown label="Actions">{actions(n)}</Dropdown>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <FarmstandPagination
+                  label="Notification pages"
+                  hasPrevious={skip > 0}
+                  hasNext={skip + page.items.length < page.totalItems}
+                  onPrevious={() =>
+                    setFilter((f) => ({
+                      ...f,
+                      skip: Math.max(0, (f.skip ?? 0) - pageSize),
+                    }))
+                  }
+                  onNext={() =>
+                    setFilter((f) => ({ ...f, skip: (f.skip ?? 0) + pageSize }))
+                  }
+                  summary={
+                    page.totalItems
+                      ? `Showing ${skip + 1} to ${skip + page.items.length} of ${page.totalItems} notifications`
+                      : '0 notifications'
+                  }
+                />
+              </>
+            )}
+          </FarmstandPanel>
+          {detail && (
+            <div
+              className={`notification-detail-slot${panel.closing ? ' is-closing' : ''}`}
+            >
+              <FarmstandPanel
+                as="section"
+                className="notification-detail"
+                aria-labelledby={`${id}-detail`}
+                onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
+                  if (event.key === 'Escape' && !event.defaultPrevented) {
+                    event.preventDefault();
+                    closeDetail();
+                  }
+                }}
+              >
+                <div className="notification-detail-top">
+                  <NotificationContext notification={detail} />
+                  <IconButton
+                    icon="close"
+                    label="Close notification details"
+                    variant="tertiary"
+                    onClick={closeDetail}
+                  />
+                </div>
+                <h2 id={`${id}-detail`} ref={detailHeading} tabIndex={-1}>
+                  {detail.title}
+                </h2>
+                <p className="notification-muted">
+                  {distinctSender(detail) && `${distinctSender(detail)} · `}
+                  <time dateTime={detail.created_at}>
+                    {stamp(detail.created_at)}
+                  </time>
+                </p>
+                <p className="notification-body">{detail.body}</p>
+                {actions(detail)}
+                {trash && detail.purge_at && (
+                  <p className="notification-purge">
+                    In Trash. {purgeLabel(detail, now)} (
+                    <time dateTime={detail.purge_at}>
+                      {stamp(detail.purge_at)}
+                    </time>
+                    ).
+                  </p>
+                )}
+                {detail.mandatory && !trash && (
+                  <p className="notification-muted">
+                    This required notification cannot be disabled.
+                  </p>
+                )}
+                <div className="notification-detail-action">
+                  {destinationAction(detail, true)}
+                </div>
+              </FarmstandPanel>
+            </div>
           )}
-        </>
+        </div>
       )}
-      {details}
+      {unsubscribeDialog}
+      {purgeDialog}
     </div>
   );
 }
@@ -959,6 +1377,8 @@ export function NotificationSettings({
     [mute, setMute] = useState(''),
     [rule, setRule] = useState<InboxRule | null>(null);
   const [now] = useState(Date.now);
+  const id = useId();
+  const panel = useClosingPanel();
   const active = settings.rules.filter(
     (p) => p.disabled || (p.muted_until && Date.parse(p.muted_until) > now),
   );
@@ -967,16 +1387,22 @@ export function NotificationSettings({
     p.type_name ??
     p.category ??
     'Optional updates';
+  const shown = rule && active.some((p) => p.id === rule.id) ? rule : null;
   return (
-    <>
-      <p>
+    <div className="notification-settings farmstand-controls">
+      <p className="notification-muted">
         In-platform preferences belong to you across all account modes. Required
         notices always arrive. These settings do not grant email or SMS consent.
       </p>
       {view === 'settings' && (
-        <Card>
+        <FarmstandPanel
+          as="section"
+          className="notification-settings-panel"
+          aria-labelledby={`${id}-add`}
+        >
+          <h2 id={`${id}-add`}>Turn off optional updates</h2>
           <form
-            className="notification-filters"
+            className="notification-settings-form"
             onSubmit={(e) => {
               e.preventDefault();
               const input = {
@@ -999,82 +1425,84 @@ export function NotificationSettings({
               save({ ...input, expectedRevision: existing?.revision ?? 0 });
             }}
           >
-            <SelectField
-              label="Optional notification type"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-            >
-              <option value="">All optional types</option>
-              {settings.types
-                .filter((t) => !t.mandatory && t.status === 'integrated')
-                .map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.contexts.map((c) => roleName[c]).join(', ')})
-                  </option>
-                ))}
-            </SelectField>
-            <SelectField
-              label="Optional category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="">All categories</option>
-              {[
-                ...new Set(
-                  settings.types
-                    .filter((t) => !t.mandatory && t.status === 'integrated')
-                    .map((t) => t.category),
-                ),
-              ].map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </SelectField>
-            <SelectField
-              label="Receiving account"
-              value={context}
-              onChange={(e) => {
-                setContext(e.target.value);
-                setWorkspace('');
-              }}
-            >
-              <option value="">All accounts</option>
-              {Object.keys(roleName).map((v) => (
-                <option key={v} value={v}>
-                  <NotificationRole context={v as keyof typeof roleName} />
-                </option>
-              ))}
-            </SelectField>
-            {['vendor', 'market'].includes(context) && (
+            <div className="notification-filter-grid">
               <SelectField
-                label="Workspace"
-                value={workspace}
-                onChange={(e) => setWorkspace(e.target.value)}
+                label="Optional notification type"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
               >
-                <option value="">All workspaces in this role</option>
-                {settings.affiliations
-                  .filter(
-                    (a) =>
-                      a.mode ===
-                      (context === 'vendor' ? 'VENDOR' : 'MARKET_MANAGER'),
-                  )
-                  .map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
+                <option value="">All optional types</option>
+                {settings.types
+                  .filter((t) => !t.mandatory && t.status === 'integrated')
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.contexts.map((c) => roleName[c]).join(', ')})
                     </option>
                   ))}
               </SelectField>
-            )}
-            <Field
-              id="notification-mute"
-              label="Mute until (your local time, optional)"
-            >
-              <Input
-                id="notification-mute"
-                type="datetime-local"
-                value={mute}
-                onChange={(e) => setMute(e.target.value)}
-              />
-            </Field>
+              <SelectField
+                label="Optional category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <option value="">All categories</option>
+                {[
+                  ...new Set(
+                    settings.types
+                      .filter((t) => !t.mandatory && t.status === 'integrated')
+                      .map((t) => t.category),
+                  ),
+                ].map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </SelectField>
+              <SelectField
+                label="Receiving account"
+                value={context}
+                onChange={(e) => {
+                  setContext(e.target.value);
+                  setWorkspace('');
+                }}
+              >
+                <option value="">All accounts</option>
+                {Object.keys(roleName).map((v) => (
+                  <option key={v} value={v}>
+                    <NotificationRole context={v as keyof typeof roleName} />
+                  </option>
+                ))}
+              </SelectField>
+              {['vendor', 'market'].includes(context) && (
+                <SelectField
+                  label="Workspace"
+                  value={workspace}
+                  onChange={(e) => setWorkspace(e.target.value)}
+                >
+                  <option value="">All workspaces in this role</option>
+                  {settings.affiliations
+                    .filter(
+                      (a) =>
+                        a.mode ===
+                        (context === 'vendor' ? 'VENDOR' : 'MARKET_MANAGER'),
+                    )
+                    .map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                </SelectField>
+              )}
+              <Field
+                id={`${id}-mute`}
+                label="Mute until (your local time, optional)"
+              >
+                <Input
+                  id={`${id}-mute`}
+                  type="datetime-local"
+                  value={mute}
+                  onChange={(e) => setMute(e.target.value)}
+                />
+              </Field>
+            </div>
             <Button
               type="submit"
               disabled={busy || (!type && !category && !context)}
@@ -1082,89 +1510,144 @@ export function NotificationSettings({
               {mute ? 'Mute optional updates' : 'Disable optional updates'}
             </Button>
           </form>
-        </Card>
+        </FarmstandPanel>
       )}
-      {!active.length ? (
-        <EmptyState title="No disabled subscriptions">
-          <p>Eligible notifications use their default in-platform settings.</p>
-        </EmptyState>
-      ) : (
-        <ul className="notification-rules">
-          {active.map((p) => (
-            <li key={p.id}>
-              <Button variant="tertiary" onClick={() => setRule(p)}>
-                {label(p)}
-              </Button>
-              <span>
-                {p.source_name ??
-                  (p.source_kind
-                    ? `${p.source_kind} ${p.source_id}`
-                    : 'All sources')}{' '}
-                ·{' '}
-                {p.context ? (
+      <div
+        className={`notification-columns${shown && !panel.closing ? ' notification-columns-open' : ''}`}
+      >
+        <FarmstandPanel
+          as="section"
+          className="notification-settings-panel"
+          aria-labelledby={`${id}-rules`}
+        >
+          <h2 id={`${id}-rules`}>
+            {view === 'settings'
+              ? 'Disabled and muted subscriptions'
+              : 'Unsubscribed notifications'}
+          </h2>
+          {!active.length ? (
+            <EmptyState title="No disabled subscriptions">
+              <p>
+                Eligible notifications use their default in-platform settings.
+              </p>
+            </EmptyState>
+          ) : (
+            <ul className="notification-rules">
+              {active.map((p) => (
+                <li
+                  key={p.id}
+                  className={
+                    p.id === shown?.id ? 'notification-selected' : undefined
+                  }
+                >
+                  <button
+                    type="button"
+                    className="notification-rule-name"
+                    aria-current={p.id === shown?.id ? 'true' : undefined}
+                    onClick={() => {
+                      panel.cancel();
+                      setRule(p);
+                    }}
+                  >
+                    <span className="farmstand-text-link">{label(p)}</span>
+                  </button>
+                  <span className="notification-rule-scope">
+                    {p.source_name ??
+                      (p.source_kind
+                        ? `${p.source_kind} ${p.source_id}`
+                        : 'All sources')}{' '}
+                    ·{' '}
+                    {p.context ? (
+                      <NotificationRole
+                        context={p.context as keyof typeof roleName}
+                      />
+                    ) : (
+                      'All roles'
+                    )}
+                    {p.workspace_id
+                      ? `: ${settings.affiliations.find((a) => a.id === p.workspace_id && a.mode === (p.context === 'vendor' ? 'VENDOR' : 'MARKET_MANAGER'))?.name ?? p.workspace_id}`
+                      : ''}
+                  </span>
+                  <span className="notification-muted">
+                    {p.delivery_active === false
+                      ? 'Inactive notification type'
+                      : p.disabled
+                        ? 'Unsubscribed'
+                        : `Muted until ${stamp(p.muted_until!)}`}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="compact"
+                    disabled={busy || p.delivery_active === false}
+                    onClick={() =>
+                      save({
+                        id: p.id,
+                        expectedRevision: p.revision,
+                        remove: true,
+                      })
+                    }
+                  >
+                    {p.delivery_active === false
+                      ? 'History preserved'
+                      : 'Resubscribe'}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="notification-muted">
+            Restoring one subscription leaves broader category, type and
+            workspace rules in effect. Past suppressed notifications are not
+            recreated.
+          </p>
+          {settings.truncated && (
+            <Alert severity="warning">
+              The preference limit has been reached. Restore an existing
+              subscription before adding another.
+            </Alert>
+          )}
+        </FarmstandPanel>
+        {shown && (
+          <div
+            className={`notification-detail-slot${panel.closing ? ' is-closing' : ''}`}
+          >
+            <FarmstandPanel
+              as="section"
+              className="notification-detail"
+              aria-labelledby={`${id}-rule`}
+            >
+              <div className="notification-detail-top">
+                {shown.context ? (
                   <NotificationRole
-                    context={p.context as keyof typeof roleName}
+                    context={shown.context as keyof typeof roleName}
                   />
                 ) : (
-                  'All roles'
+                  <span className="notification-muted">All roles</span>
                 )}
-                {p.workspace_id
-                  ? `: ${settings.affiliations.find((a) => a.id === p.workspace_id && a.mode === (p.context === 'vendor' ? 'VENDOR' : 'MARKET_MANAGER'))?.name ?? p.workspace_id}`
+                <IconButton
+                  icon="close"
+                  label="Close subscription details"
+                  variant="tertiary"
+                  onClick={() => panel.close(() => setRule(null))}
+                />
+              </div>
+              <h2 id={`${id}-rule`}>{label(shown)}</h2>
+              <p>
+                Source:{' '}
+                {shown.source_name ?? shown.source_kind ?? 'All sources'}
+                {!shown.source_name && shown.source_id
+                  ? ` ${shown.source_id}`
                   : ''}
-              </span>
-              <span>
-                {p.delivery_active === false
-                  ? 'Inactive notification type'
-                  : p.disabled
-                    ? 'Unsubscribed'
-                    : `Muted until ${stamp(p.muted_until!)}`}
-              </span>
-              <Button
-                variant="secondary"
-                disabled={busy || p.delivery_active === false}
-                onClick={() =>
-                  save({ id: p.id, expectedRevision: p.revision, remove: true })
-                }
-              >
-                {p.delivery_active === false
-                  ? 'History preserved'
-                  : 'Resubscribe'}
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <p>
-        Restoring one subscription leaves broader category, type and workspace
-        rules in effect. Past suppressed notifications are not recreated.
-      </p>
-      {settings.truncated && (
-        <Alert severity="warning">
-          The preference limit has been reached. Restore an existing
-          subscription before adding another.
-        </Alert>
-      )}
-      <Dialog
-        open={!!rule}
-        onClose={() => setRule(null)}
-        title={rule ? label(rule) : 'Subscription details'}
-        size="standard"
-      >
-        <p>
-          Receiving role:{' '}
-          {rule?.context ? (
-            <NotificationRole context={rule.context as keyof typeof roleName} />
-          ) : (
-            'All roles'
-          )}
-          . Source: {rule?.source_kind ?? 'All sources'} {rule?.source_id ?? ''}
-          . This rule suppresses only optional matching notifications.
-        </p>
-        <p>
-          Required transactional, security, participation and compliance notices
-          continue.
-        </p>
-      </Dialog>
-    </>
+                . This rule suppresses only optional matching notifications.
+              </p>
+              <p className="notification-muted">
+                Required transactional, security, participation and compliance
+                notices continue.
+              </p>
+            </FarmstandPanel>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

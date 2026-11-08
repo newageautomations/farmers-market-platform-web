@@ -36,3 +36,24 @@
   text-overflow: ellipsis;
   max-width: 100%;
 }
+.image-library-stock .image-library-option span {
+  white-space: normal;
+}
+.image-library-tile {
+  position: relative;
+  min-width: 0;
+}
+.image-library-tile > .image-library-option {
+  width: 100%;
+}
+.image-library-tile > .ui-tooltip-anchor:has(.image-library-enlarge) {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+.image-library-preview {
+  display: block;
+  width: 100%;
+  height: min(70dvh, 760px);
+  object-fit: contain;
+}

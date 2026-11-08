@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type FormEvent,
@@ -25,6 +24,7 @@ import type { VendorService } from './service';
 import { ReadState, useRead } from './common';
 import { CategoryImageField } from './categories';
 import { LoyaltyIcon } from './LoyaltyIcon';
+import { useWizardDialogHeight, WizardProgress } from '../WizardProgress';
 import './loyalty-reward-wizard.css';
 
 export const rewardKindLabels = {
@@ -108,38 +108,9 @@ export function LoyaltyRewardWizard({
   const saving = useRef(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const root = useRef<HTMLDivElement>(null);
-  const modalHeight = useRef<number | null>(null);
-  useLayoutEffect(() => {
-    const dialog = root.current?.closest('dialog');
-    if (!dialog) return;
-    const target = dialog.getBoundingClientRect().height;
-    const previous = modalHeight.current;
-    modalHeight.current = target;
-    if (previous == null) return;
-    const reduced = window.matchMedia?.(
-      '(prefers-reduced-motion: reduce)',
-    )?.matches;
-    const animation =
-      previous !== target && !reduced
-        ? dialog.animate(
-            [{ height: `${previous}px` }, { height: `${target}px` }],
-            { duration: 300, easing: 'cubic-bezier(.22,1,.36,1)' },
-          )
-        : undefined;
-    const previousOverflow = dialog.style.overflow;
-    dialog.style.overflow = 'hidden';
-    const release = window.setTimeout(() => {
-      dialog.style.overflow = previousOverflow;
-    }, 450);
-    return () => {
-      window.clearTimeout(release);
-      dialog.style.overflow = previousOverflow;
-      animation?.cancel();
-    };
-  }, [step, published]);
+  const captureHeight = useWizardDialogHeight(root, `${step}:${published}`);
   function moveToStep(next: number) {
-    modalHeight.current =
-      root.current?.closest('dialog')?.getBoundingClientRect().height ?? null;
+    captureHeight();
     setStep(next);
   }
   const previousStep = useRef(step);
@@ -363,9 +334,7 @@ export function LoyaltyRewardWizard({
     try {
       await onSave(terms, status);
       if (status === 'ACTIVE') {
-        modalHeight.current =
-          root.current?.closest('dialog')?.getBoundingClientRect().height ??
-          null;
+        captureHeight();
         setPublished(true);
       }
     } catch (err) {
@@ -404,24 +373,11 @@ export function LoyaltyRewardWizard({
     );
   return (
     <div className="reward-wizard" ref={root}>
-      <p className="reward-step-caption" role="status">
-        Step {step + 1} of 4 · {steps[step]}
-      </p>
-      <ol className="reward-progress" aria-label="Reward creation progress">
-        {steps.map((label, index) => (
-          <li
-            key={label}
-            aria-current={index === step ? 'step' : undefined}
-            data-complete={index < step}
-          >
-            <span className="reward-step-number" aria-hidden="true">
-              {index < step ? <UtilityIcon name="check" /> : index + 1}
-            </span>
-            <span>{label}</span>
-            {index < step && <span className="sr-only">Completed</span>}
-          </li>
-        ))}
-      </ol>
+      <WizardProgress
+        steps={steps}
+        step={step}
+        label="Reward creation progress"
+      />
       {error && <Alert severity="error">{error}</Alert>}
       {uncertain && (
         <Alert severity="warning">

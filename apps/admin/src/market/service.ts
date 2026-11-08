@@ -2,12 +2,16 @@ import { createTeamService } from '../team/service';
 import type { TeamApi } from '@market/api';
 import {
   createFinanceApi,
+  createStorefrontAppearanceApi,
+  type VendorCategoryApi,
   type FinanceApi,
   AppError,
   createMarketOperationsApi,
   type MarketOperationsApi,
   createMarketApi,
   createNotificationsApi,
+  createDocumentsApi,
+  type DocumentsApi,
   type NotificationsApi,
   safeError,
   type MarketApi,
@@ -28,7 +32,10 @@ export interface MarketService extends MarketApi {
   loyalty?: MarketLoyaltyApi;
   checklist?: (occurrenceId: string) => Promise<MarketDayChecklist>;
   notifications?: NotificationsApi;
+  /** Read-only compliance requests, used to show what each Vendor is missing. */
+  documents?: Pick<DocumentsApi, 'read'>;
   phase14?: MarketOperationsApi;
+  rentalMedia?: Pick<VendorCategoryApi, 'images' | 'upload'>;
   readKey: string;
   context: AdminContext;
   marketId: string;
@@ -40,6 +47,8 @@ export const marketActionPermissions: Partial<
   operations: 'ReadOwnMarketOrders',
   configure: 'ManageOwnMarketSchedule',
   recurrence: 'ManageOwnMarketSchedule',
+  saveSchedule: 'ManageOwnMarketSchedule',
+  deleteSchedule: 'ManageOwnMarketSchedule',
   generate: 'ManageOwnMarketSchedule',
   enqueue: 'ManageOwnMarketSchedule',
   manual: 'ManageOwnMarketOccurrences',
@@ -173,6 +182,10 @@ export function createLiveMarketService(
     onAuthorityFailure,
   );
   const operations = createMarketOperationsApi({ endpoint, channelToken });
+  if (context.permissions.includes('ManageMarketStorefront')) {
+    const media = createStorefrontAppearanceApi({ endpoint, channelToken }).media!;
+    service.rentalMedia = { images: media.images, upload: media.upload };
+  }
   service.finance = createFinanceApi({
     endpoint,
     channelToken,
@@ -213,6 +226,14 @@ export function createLiveMarketService(
     channelToken,
     onAuthorityFailure,
   });
+  if (context.permissions.includes('ReadOwnDocuments')) {
+    const documents = createDocumentsApi({
+      endpoint,
+      channelToken,
+      onAuthorityFailure,
+    });
+    service.documents = { read: documents.read };
+  }
   service.phase14 = {
     ...operations,
     read: async (...args) => {

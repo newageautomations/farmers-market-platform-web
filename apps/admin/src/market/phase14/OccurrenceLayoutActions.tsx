@@ -1,4 +1,4 @@
-import { IconButton } from '@market/ui';
+import { IconButton, UtilityIcon } from '@market/ui';
 import { useState } from 'react';
 import type {
   LayoutVersion,
@@ -9,6 +9,7 @@ import { Button } from '@market/ui';
 import { AnimatedDisclosure, MarketDialog } from '../presentation';
 import { go, RouteLink } from '../../vendor/common';
 import { LayoutEditor, LayoutPreview } from './Layouts';
+import type { LayoutMedia } from './LayoutImagePicker';
 
 type Run = (command: OperationsCommand) => Promise<unknown>;
 export function OccurrenceLayoutActions({
@@ -17,12 +18,15 @@ export function OccurrenceLayoutActions({
   run,
   canChange,
   canEdit,
+  compact = false,
 }: {
   data: MarketOperationsData;
   occurrenceId: number;
   run: Run;
   canChange: boolean;
   canEdit: boolean;
+  /** Compact secondary buttons for a panel heading; Edit layout gains its label. */
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<LayoutVersion | null>(null);
@@ -88,6 +92,8 @@ export function OccurrenceLayoutActions({
       <div className="occurrence-layout-actions">
         {canChange && (
           <Button
+            variant={compact ? 'secondary' : undefined}
+            size={compact ? 'compact' : undefined}
             onClick={() => {
               setError('');
               setSelected(null);
@@ -97,7 +103,19 @@ export function OccurrenceLayoutActions({
             Change layout
           </Button>
         )}
-        {canEdit && version && (
+        {canEdit && version && compact && (
+          <Button
+            variant="secondary"
+            size="compact"
+            onClick={() =>
+              go(`/market/assignments/${occurrenceId}/edit-layout`)
+            }
+          >
+            <UtilityIcon name="edit" />
+            Edit layout
+          </Button>
+        )}
+        {canEdit && version && !compact && (
           <IconButton
             icon="edit"
             label="Edit layout"
@@ -193,11 +211,13 @@ export function OccurrenceLayoutScreen({
   occurrenceId,
   run,
   canEdit,
+  media,
 }: {
   data: MarketOperationsData;
   occurrenceId: number;
   run: Run;
   canEdit: boolean;
+  media?: LayoutMedia;
 }) {
   const [error, setError] = useState('');
   const plan = data.plans?.find((p) => p.occurrenceId === occurrenceId);
@@ -206,15 +226,6 @@ export function OccurrenceLayoutScreen({
   );
   return (
     <div className="layout-editor-screen">
-      <div className="layout-screen-navigation">
-        <RouteLink to={`/market/occurrences/${occurrenceId}`}>
-          Back to occurrence
-        </RouteLink>
-        <p>
-          Changes apply to this occurrence. Booth assignments and accepted
-          rentals will be kept.
-        </p>
-      </div>
       {error && (
         <p className="alert ui-alert ui-alert-error" role="alert">
           {error}
@@ -227,7 +238,13 @@ export function OccurrenceLayoutScreen({
           data={data}
           run={run}
           canManage={canEdit}
+          media={media}
           occurrenceId={occurrenceId}
+          exit={{
+            to: `/market/occurrences/${occurrenceId}`,
+            label: 'Exit to occurrence',
+          }}
+          notice="Changes apply to this occurrence. Booth assignments and accepted rentals will be kept."
           onSave={async (drawing) => {
             setError('');
             try {
@@ -253,7 +270,14 @@ export function OccurrenceLayoutScreen({
           }}
         />
       ) : (
-        <p>This occurrence does not have a layout.</p>
+        <>
+          <div className="layout-screen-navigation">
+            <RouteLink to={`/market/occurrences/${occurrenceId}`}>
+              Back to occurrence
+            </RouteLink>
+          </div>
+          <p>This occurrence does not have a layout.</p>
+        </>
       )}
     </div>
   );

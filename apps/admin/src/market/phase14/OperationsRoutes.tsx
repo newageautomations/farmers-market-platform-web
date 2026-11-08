@@ -8,11 +8,12 @@ import type {
   OperationsCommand,
   OperationsSection,
   NotificationsApi,
+  VendorCategoryApi,
 } from '@market/api';
 import { safeError } from '@market/api';
 import { Select, ErrorState, Spinner, Tabs } from '@market/ui';
 import { Applications } from './Applications';
-import { Directory, Rentals } from './Directory';
+import { Rentals } from './Rentals';
 import { Layouts, LayoutScreen } from './Layouts';
 import { OccurrenceLayoutScreen } from './OccurrenceLayoutActions';
 import { Assignments } from './Assignments';
@@ -23,7 +24,6 @@ import { RouteLink } from '../../vendor/common';
 const sections: Record<string, OperationsSection> = {
   applications: 'APPLICATIONS',
   'application-submissions': 'APPLICATIONS',
-  directory: 'DIRECTORY',
   rentals: 'DIRECTORY',
   layouts: 'LAYOUTS',
   assignments: 'ASSIGNMENTS',
@@ -34,12 +34,13 @@ export function Phase14Routes({
   api,
   path,
   permissions,
-  notifications,
+  rentalMedia,
 }: {
   api: MarketOperationsApi;
   path: string;
   permissions: readonly string[];
   notifications?: NotificationsApi;
+  rentalMedia?: Pick<VendorCategoryApi, 'images' | 'upload'>;
 }) {
   const [dayView, setDayView] = useState("Map and attendance");
   const segment = path.split('/')[2] ?? '',
@@ -175,22 +176,19 @@ export function Phase14Routes({
                 ? 'submissions'
                 : 'templates'
             }
-          />
-        )}
-        {section === 'DIRECTORY' && segment === 'directory' && (
-          <Directory
-            notifications={notifications}
-            data={data}
-            run={run}
-            canManage={can('ManageOwnMarketApplications')}
-            view={path.endsWith('/new') ? 'add' : 'list'}
+            path={path}
           />
         )}
         {section === 'DIRECTORY' && segment === 'rentals' && (
           <Rentals
             data={data}
+            media={rentalMedia}
             api={can('ReadOwnMarketAssignments') ? api : undefined}
-            run={run}
+            run={async (command) => {
+              const saved = await api.command(command);
+              read.refresh();
+              return saved;
+            }}
             canManage={can('ManageOwnMarketApplications')}
             view={path.endsWith('/new') ? 'add' : 'list'}
           />
@@ -202,6 +200,7 @@ export function Phase14Routes({
               data={data}
               run={run}
               canManage={can('ManageOwnMarketLayouts')}
+              media={rentalMedia}
             />
           ) : (
             <Layouts
@@ -224,6 +223,7 @@ export function Phase14Routes({
               data={data}
               occurrenceId={active}
               run={run}
+              media={rentalMedia}
               canEdit={
                 can('ManageOwnMarketAssignments') &&
                 can('ManageOwnMarketLayouts')
@@ -244,10 +244,22 @@ export function Phase14Routes({
           ))}
       </fieldset>
   );
+  // Full-screen layout editors show their own saving state; in-flow status
+  // above them would push the fixed-height workspace down.
+  const editorRoute =
+    (section === 'LAYOUTS' && path.endsWith('/edit')) ||
+    path.endsWith('/edit-layout');
   return (
     <div className="ops-workspace" aria-busy={pending || read.loading}>
-      {error && <ErrorState error={error} />}
-      {pending && <Spinner label="Saving changes" />}
+      {error &&
+        (editorRoute ? (
+          <div className="ops-floating-error">
+            <ErrorState error={error} />
+          </div>
+        ) : (
+          <ErrorState error={error} />
+        ))}
+      {pending && !editorRoute && <Spinner label="Saving changes" />}
       {section === 'DAY' && !path.endsWith('/edit-layout') && can('ReadOwnMarketAssignments') ? <Tabs items={[
         { label: 'Map and attendance', content: controls },
         { label: 'Schedule', content: dayView === 'Schedule' ? <BoothSchedule api={api} canManage={can('ManageOwnMarketAssignments')} canBill={can('ManageOwnMarketBilling')} /> : null },

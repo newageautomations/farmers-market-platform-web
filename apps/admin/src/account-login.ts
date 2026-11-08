@@ -1,4 +1,5 @@
 import { safeAdminDestination } from '@market/config';
+import { isLegacyNotificationsPath } from '@market/admin-core';
 import { AppError } from '@market/api';
 import { createPlatformAccountApi } from '@market/api';
 import { createAdminSession, type SessionState } from '@market/auth';
@@ -34,6 +35,20 @@ export async function selectAuthorizedAccountContext(
     );
     if (!channel) throw new AppError('forbidden');
     return createAdminSession(endpoint).restore(channel.id);
+  }
+  if (isLegacyNotificationsPath(url.pathname)) {
+    // Former unscoped inbox links carry no role: use the linked workspace in
+    // either role, else the current or first Vendor/Market workspace. The shell then moves the URL under
+    // that role (/vendor/notifications, /market/notifications, ...).
+    const workspaces = account.affiliations.filter(
+      (a) => a.mode === 'VENDOR' || a.mode === 'MARKET_MANAGER',
+    );
+    const linked =
+      workspaces.find((a) => a.channelId === url.searchParams.get('channel')) ??
+      workspaces.find((a) => a.channelId === session.channel.id) ??
+      workspaces[0];
+    if (!linked) throw new AppError('forbidden');
+    return createAdminSession(endpoint).restore(linked.channelId);
   }
   const mode = url.pathname.startsWith('/vendor')
     ? 'VENDOR'

@@ -18,6 +18,7 @@ import {
 import type { VendorService } from './service';
 import { RouteLink } from './common';
 import './pos.css';
+import { codeLabel } from '../settings/providers';
 
 const message = (e: unknown) =>
   e instanceof PosInputError ? e.message : safeError(e).message;
@@ -59,13 +60,13 @@ export function CloverOAuthReturn({ service }: { service: VendorService }) {
       ) : (
         <Alert severity={state === 'complete' ? 'success' : 'error'}>
           {state === 'complete'
-            ? 'Clover merchant authorization verified. Select your device in Payment Integrations.'
+            ? 'Clover merchant authorization verified. Select your device in Settings > Payments.'
             : error}
         </Alert>
       )}
       <div className="ui-actions">
         <RouteLink to="/vendor/settings/payments">
-          Return to Payment Integrations
+          Return to Payments settings
         </RouteLink>
       </div>
     </div>
@@ -73,7 +74,14 @@ export function CloverOAuthReturn({ service }: { service: VendorService }) {
 }
 
 /** Processor-specific controller using the same shared settings, form and dialog primitives as Square. */
-export function CloverPaymentIntegration({ api }: { api: InPersonApi }) {
+export function CloverPaymentIntegration({
+  api,
+  embedded = false,
+}: {
+  api: InPersonApi;
+  /** Host panel supplies the provider heading and the main surface. */
+  embedded?: boolean;
+}) {
   const [data, setData] = useState<CloverIntegration | null>(null),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
@@ -154,7 +162,7 @@ export function CloverPaymentIntegration({ api }: { api: InPersonApi }) {
       {!data && !error ? (
         <Spinner label="Loading Clover integration" />
       ) : (
-        <Card spacing="contained">
+        <Card spacing="contained" surface={embedded ? 'embedded' : 'card'}>
           <div className="pos-payment-sections">
             <p>
               Connect Clover to receive card payments through Cloud Pay Display
@@ -169,9 +177,9 @@ export function CloverPaymentIntegration({ api }: { api: InPersonApi }) {
               <>
                 <div className="ui-actions">
                   <Badge tone={connected ? 'success' : 'warning'}>
-                    {data.connection?.status
-                      .toLowerCase()
-                      .replaceAll('_', ' ') ?? 'disconnected'}
+                    {data.connection
+                      ? codeLabel(data.connection.status)
+                      : 'Disconnected'}
                   </Badge>
                   <Badge>{data.environment}</Badge>
                   <Badge>
@@ -256,7 +264,7 @@ export function CloverPaymentIntegration({ api }: { api: InPersonApi }) {
                                 ? 'Availability unverified'
                                 : d.status === 'AVAILABLE'
                                   ? 'Reached at last check'
-                                  : d.status.toLowerCase()}
+                                  : codeLabel(d.status)}
                             </Badge>
                             {d.isDefault && <Badge>Default device</Badge>}
                           </div>

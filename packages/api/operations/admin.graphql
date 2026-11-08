@@ -223,6 +223,7 @@ fragment BusinessMembership on MarketBusinessMembership {
   vendorId
   status
   version
+  autoEnroll
   preorderDefault {
     ...PreorderRule
   }
@@ -327,6 +328,19 @@ mutation VendorMarketDefault(
     id: $id
     expectedVersion: $expectedVersion
     rule: $rule
+  ) {
+    ...BusinessMembership
+  }
+}
+mutation VendorMarketAutoEnroll(
+  $id: ID!
+  $expectedVersion: Int!
+  $enabled: Boolean!
+) {
+  configureOwnMarketMembershipAutoEnroll(
+    id: $id
+    expectedVersion: $expectedVersion
+    enabled: $enabled
   ) {
     ...BusinessMembership
   }

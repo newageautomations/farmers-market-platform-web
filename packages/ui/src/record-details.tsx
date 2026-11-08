@@ -61,12 +61,15 @@ export function RecordDetailsTable({
   label,
   columns,
   sort,
+  className,
 }: {
   headings: readonly string[];
   children: ReactNode;
   label: string;
   columns: RecordDetailsColumns;
   sort?: { heading: string; direction: 'ascending' | 'descending' };
+  /** Table presentation class (for example FarmstandTable's), kept on both renderings. */
+  className?: string;
 }) {
   const [selected, setSelected] = useState<string>();
   const sourceRows = elements(children);
@@ -83,7 +86,12 @@ export function RecordDetailsTable({
   // Stateful row components must expose their cells before opting in. Keep their full table intact.
   if (sourceRows.some((row) => row.type !== 'tr'))
     return (
-      <DataTable label={label} headings={headings} sort={sort}>
+      <DataTable
+        label={label}
+        headings={headings}
+        sort={sort}
+        className={className}
+      >
         {children}
       </DataTable>
     );
@@ -91,6 +99,7 @@ export function RecordDetailsTable({
     <>
       <DataTable
         label={label}
+        className={className}
         headings={[
           headings[identifier]!,
           ...(columns.status === undefined ? [] : [headings[columns.status]!]),

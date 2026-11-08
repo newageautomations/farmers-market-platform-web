@@ -41,7 +41,14 @@ export function TaxRateField({
     </Field>
   );
 }
-export function VendorTaxSettings({ service }: { service: VendorService }) {
+export function VendorTaxSettings({
+  service,
+  embedded = false,
+}: {
+  service: VendorService;
+  /** Host panel supplies the heading and surface. */
+  embedded?: boolean;
+}) {
   const read = useCallback(() => service.taxSettings(), [service]);
   const query = useRead(`vendor-tax:${service.vendorId}`, read);
   const settings = query.data;
@@ -66,6 +73,8 @@ export function VendorTaxSettings({ service }: { service: VendorService }) {
         <CommandForm
           key={settings.version}
           title="Taxes"
+          embedded={embedded}
+          hideTitle={embedded}
           validate={input}
           run={async (data) => {
             await service.saveTaxSettings(input(data));
@@ -78,19 +87,21 @@ export function VendorTaxSettings({ service }: { service: VendorService }) {
             and remitting collected tax. Addresses do not determine rates. Blank
             market rates inherit your default. Zero is an explicit rate.
           </p>
-          <TaxRateField
-            name="defaultRate"
-            label="Default tax rate (%)"
-            value={settings.defaultRate}
-          />
-          {settings.markets.map((m) => (
+          <div className="tax-rate-fields">
             <TaxRateField
-              key={m.id}
-              name={`market-${m.id}`}
-              label={`${m.name} tax rate (%)`}
-              value={m.rate}
+              name="defaultRate"
+              label="Default tax rate (%)"
+              value={settings.defaultRate}
             />
-          ))}
+            {settings.markets.map((m) => (
+              <TaxRateField
+                key={m.id}
+                name={`market-${m.id}`}
+                label={`${m.name} tax rate (%)`}
+                value={m.rate}
+              />
+            ))}
+          </div>
         </CommandForm>
       )}
     </>

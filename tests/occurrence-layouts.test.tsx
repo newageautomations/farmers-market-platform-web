@@ -186,12 +186,11 @@ it('protects assigned booths from deletion and retains failed edit drafts', asyn
   expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled();
   await user.keyboard('{Delete}');
   expect(screen.getByRole('button', { name: 'A1' })).toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: 'Inspector' }));
   fireEvent.change(screen.getByLabelText('x', { exact: true }), {
     target: { value: '200' },
   });
   vi.spyOn(window, 'confirm').mockReturnValue(false);
-  await user.click(screen.getByRole('link', { name: 'Back to occurrence' }));
+  await user.click(screen.getByRole('link', { name: 'Exit to occurrence' }));
   expect(screen.getByTestId('layout-editor')).toBeInTheDocument();
   expect(screen.getByLabelText('x', { exact: true })).toHaveValue(200);
   await user.click(screen.getByRole('button', { name: 'Save layout' }));

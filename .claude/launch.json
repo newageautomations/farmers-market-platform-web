@@ -1,0 +1,58 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "admin-fixtures",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "exec",
+        "--workspace",
+        "@market/admin",
+        "--",
+        "vite",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "4323",
+        "--strictPort"
+      ],
+      "env": {
+        "FRONTEND_FIXTURE_MODE": "true"
+      },
+      "port": 4323
+    },
+    {
+      "name": "demo-admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "demo:market-operations:admin"
+      ],
+      "port": 4322
+    },
+    {
+      "name": "applications-fixture",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/jake_/AppData/Local/Temp/claude/d406fdb2e6b6e571/ea74a138-7fc2-49fc-8d25-059625adfa00/scratchpad/serve-applications.mjs"
+      ],
+      "port": 4336
+    },
+    {
+      "name": "layout-designer-fixture",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/jake_/AppData/Local/Temp/claude/d9ae8648cf82d27b/9d4faa22-3a4d-4b10-b68f-a8bcde6687b1/scratchpad/serve-layout-designer.mjs"
+      ],
+      "port": 4338
+    },
+    {
+      "name": "directory-fixture",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/jake_/AppData/Local/Temp/claude/d4a8e8585543b24f/5a9b8ca5-18f1-489a-b498-1a462091e987/scratchpad/serve-directory.mjs"
+      ],
+      "port": 4337
+    }
+  ]
+}

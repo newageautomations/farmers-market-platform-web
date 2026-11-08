@@ -33,7 +33,6 @@ import type { VendorService } from './service';
 import { MarketsSummary } from './MarketsSummary';
 import {
   applicationDate,
-  applicationHref,
   applicationKey,
   applicationLocation,
   applicationNextStep,
@@ -46,7 +45,8 @@ import {
 import './market-applications.css';
 import { MarketsPagination as Pagination } from './MarketsPagination';
 
-function navigate(event: MouseEvent<HTMLAnchorElement>) {
+/** Same-origin /vendor/ links navigate in-app; modified clicks keep browser behavior. */
+export function navigate(event: MouseEvent<HTMLAnchorElement>) {
   if (
     event.button ||
     event.ctrlKey ||
@@ -687,9 +687,6 @@ export function MarketApplicationRecords({
                 <p className="market-application-guidance">{next.detail}</p>
                 <ApplicationLink href={next.href} primary>
                   {next.label}
-                </ApplicationLink>
-                <ApplicationLink href={applicationHref(current)}>
-                  Open application
                 </ApplicationLink>
                 <Website href={current.origin} label="View market" />
               </div>

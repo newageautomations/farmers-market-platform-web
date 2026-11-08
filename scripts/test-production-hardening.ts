@@ -804,7 +804,7 @@ try {
         vendor + '/checkout',
         vendor + '/account',
         env.ADMIN_ORIGIN + '/platform',
-        env.ADMIN_ORIGIN + '/platform/integrations',
+        env.ADMIN_ORIGIN + '/platform/settings/integrations',
         env.ADMIN_ORIGIN + '/platform/billing',
       ])
         await audit(page, url);

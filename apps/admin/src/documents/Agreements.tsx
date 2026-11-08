@@ -8,24 +8,26 @@ import type {
 } from '@market/api';
 import {
   Alert,
-  Button,
-  Card,
-  RecordCard,
   SearchSelect,
   SearchableMultiSelect,
-  IconButton,
   Checkbox,
-  DataTable,
   Dialog,
   EmptyState,
   Field,
   Input,
-  Pagination,
   SelectField,
   Textarea,
 } from '@market/ui';
+import {
+  FarmstandButton as Button,
+  FarmstandIcon,
+  FarmstandPagination as Pagination,
+  FarmstandTable as DataTable,
+} from '@market/ui/farmstand';
 import { DocumentFeedback, DocumentStatus } from '@market/ui/documents';
 import { ReadState, useRead } from '../vendor/common';
+import { SettingsPanel } from '../settings/SettingsPanel';
+import { DocumentCard, DocumentFacts, DocumentSection } from './DocumentCard';
 
 export function Agreements({
   api,
@@ -56,16 +58,19 @@ export function Agreements({
     onChanged();
   };
   return (
-    <>
-      <p>
-        Read and acknowledge Market policies here. An acknowledgment is not a
-        formal electronic signature.
-      </p>
-      {manager && (
-        <Button disabled={!canWrite} onClick={() => setEditing(null)}>
-          Create agreement
-        </Button>
-      )}
+    <SettingsPanel
+      icon="file-check"
+      title="Agreements"
+      description="Read and acknowledge Market policies here. An acknowledgment is not a formal electronic signature."
+      actions={
+        manager && (
+          <Button disabled={!canWrite} onClick={() => setEditing(null)}>
+            <FarmstandIcon name="plus" />
+            Create agreement
+          </Button>
+        )
+      }
+    >
       <ReadState {...state} retry={state.refresh} />
       {state.data && (
         <>
@@ -78,45 +83,45 @@ export function Agreements({
           )}
           <div className="documents-grid">
             {state.data.items.map((p) => (
-              <RecordCard
+              <DocumentCard
                 key={p.id}
                 title={p.title}
+                icon="file-check"
                 onOpen={() => setSelected(p.id)}
-                summary={
-                  <>
-                    <p>
-                      {p.market_name} ·{' '}
-                      {p.current_version
-                        ? `Published version ${p.current_version}`
-                        : 'Draft'}
-                    </p>
-                    <DocumentStatus
-                      value={
-                        p.archived
-                          ? 'Archived'
-                          : manager
-                            ? p.current_version
-                              ? 'Published'
-                              : 'Draft'
-                            : p.acknowledged_at
-                              ? 'Complete'
-                              : p.required
-                                ? 'Outstanding'
-                                : 'Optional'
-                      }
-                    />
-                  </>
+                subtitle={`${p.market_name} · ${
+                  p.current_version
+                    ? `Published version ${p.current_version}`
+                    : 'Draft'
+                }`}
+                statuses={
+                  <DocumentStatus
+                    value={
+                      p.archived
+                        ? 'Archived'
+                        : manager
+                          ? p.current_version
+                            ? 'Published'
+                            : 'Draft'
+                          : p.acknowledged_at
+                            ? 'Complete'
+                            : p.required
+                              ? 'Outstanding'
+                              : 'Optional'
+                    }
+                  />
                 }
               />
             ))}
           </div>
-          <Pagination
-            summary={`Agreements ${skip + 1} to ${skip + state.data.items.length}`}
-            hasPrevious={skip > 0}
-            hasNext={state.data.hasMore}
-            onPrevious={() => setSkip((n) => Math.max(0, n - 20))}
-            onNext={() => setSkip((n) => n + 20)}
-          />
+          {(state.data.items.length > 0 || skip > 0) && (
+            <Pagination
+              summary={`Agreements ${skip + 1} to ${skip + state.data.items.length}`}
+              hasPrevious={skip > 0}
+              hasNext={state.data.hasMore}
+              onPrevious={() => setSkip((n) => Math.max(0, n - 20))}
+              onNext={() => setSkip((n) => n + 20)}
+            />
+          )}
         </>
       )}
       {selected && (
@@ -142,7 +147,7 @@ export function Agreements({
           }}
         />
       )}
-    </>
+    </SettingsPanel>
   );
 }
 
@@ -208,13 +213,13 @@ export function AgreementEditor({
         </Button>
       }
     >
-      <p>
+      <p className="documents-note">
         Publishing creates an immutable version. Saving a draft does not
         distribute requests. Use appropriate legal advice for contracts, waivers
         or formal signatures.
       </p>
       {policy && (
-        <p>
+        <p className="documents-note">
           Saved collection settings apply to existing requests immediately.
           Edited agreement text and titles remain private until published.
         </p>
@@ -271,7 +276,9 @@ export function AgreementEditor({
               maxLength={30000}
             />
           </Field>
-          <p>Plain text only. HTML and Markdown are displayed as text.</p>
+          <p className="documents-note">
+            Plain text only. HTML and Markdown are displayed as text.
+          </p>
           <SelectField
             id={`${id}-stage`}
             label="Collection stage"
@@ -323,7 +330,7 @@ export function AgreementEditor({
             Automatically assign at the collection stage for future eligible
             vendors
           </label>
-          <p>
+          <p className="documents-note">
             Automatic distribution requires the existing Market automation
             setting. On request policies remain manual. No historical vendors
             are assigned automatically.
@@ -412,15 +419,24 @@ export function AgreementReader({
       <ReadState {...state} retry={state.refresh} />
       {!!error && <DocumentFeedback error={error} />}
       {data && (
-        <>
-          <p>
-            {data.policy.market_name} ·{' '}
-            {data.policy.archived
-              ? 'Archived agreement'
-              : data.policy.required
-                ? 'Required acknowledgment'
-                : 'Optional acknowledgment'}
-          </p>
+        <div className="documents-dialog-body">
+          <DocumentFacts
+            items={[
+              ['Market', data.policy.market_name],
+              [
+                'Acknowledgment',
+                data.policy.archived
+                  ? 'Archived agreement'
+                  : data.policy.required
+                    ? 'Required acknowledgment'
+                    : 'Optional acknowledgment',
+              ],
+              !!data.version && [
+                'Published',
+                `Version ${data.version.number} · ${new Date(data.version.published_at).toLocaleString()}`,
+              ],
+            ]}
+          />
           <SearchSelect
             id={`${uid}-version`}
             label="Published version"
@@ -437,10 +453,6 @@ export function AgreementReader({
           />
           {data.version ? (
             <>
-              <p>
-                Version {data.version.number} · Published{' '}
-                {new Date(data.version.published_at).toLocaleString()}
-              </p>
               <article
                 className="agreement-content"
                 aria-label={`Agreement version ${data.version.number}`}
@@ -458,7 +470,7 @@ export function AgreementReader({
             !own.acknowledged_at &&
             own.version_id === data.version?.id &&
             !data.policy.archived && (
-              <>
+              <div className="documents-callout">
                 <label className="document-checkbox" htmlFor={`${uid}-confirm`}>
                   <Checkbox
                     id={`${uid}-confirm`}
@@ -481,22 +493,23 @@ export function AgreementReader({
                 >
                   Acknowledge agreement
                 </Button>
-              </>
+              </div>
             )}
-          <p>
+          <p className="documents-note">
             This records a simple electronic acknowledgment. It does not verify
             a legal signature or determine whether a contract or waiver is
             enforceable.
           </p>
           {manager && !data.policy.archived && (
             <>
-              <div className="ui-control-row">
-                <IconButton
-                  icon="edit"
-                  label="Edit agreement draft"
+              <div className="documents-actions">
+                <Button
+                  variant="secondary"
                   disabled={!canWrite || busy}
                   onClick={() => onEdit(data.policy)}
-                />
+                >
+                  Edit agreement draft
+                </Button>
                 <Button
                   disabled={!canWrite || busy}
                   onClick={() => void act('PUBLISH_PREVIEW', {})}
@@ -504,7 +517,7 @@ export function AgreementReader({
                   Preview publication
                 </Button>
                 <Button
-                  variant="destructive"
+                  variant="destructive-outline"
                   disabled={!canWrite || busy}
                   onClick={() => setArchiving(true)}
                 >
@@ -517,24 +530,26 @@ export function AgreementReader({
                     Archive this policy and retire its outstanding requests?
                     Acknowledgment history will remain available.
                   </p>
-                  <Button
-                    variant="destructive"
-                    disabled={busy}
-                    onClick={() => void act('ARCHIVE_AGREEMENT', {})}
-                  >
-                    Confirm archive
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    disabled={busy}
-                    onClick={() => setArchiving(false)}
-                  >
-                    Keep policy
-                  </Button>
+                  <div className="documents-actions">
+                    <Button
+                      variant="secondary"
+                      disabled={busy}
+                      onClick={() => setArchiving(false)}
+                    >
+                      Keep policy
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      disabled={busy}
+                      onClick={() => void act('ARCHIVE_AGREEMENT', {})}
+                    >
+                      Confirm archive
+                    </Button>
+                  </div>
                 </Alert>
               )}
               {preview && (
-                <Card>
+                <div className="documents-callout">
                   <p>
                     Publish version {preview.nextVersion}. There are{' '}
                     {preview.assigned} existing assignments, including{' '}
@@ -548,7 +563,7 @@ export function AgreementReader({
                     />{' '}
                     Request this version again from existing assigned vendors
                   </label>
-                  <p>
+                  <p className="documents-note">
                     {again
                       ? `${preview.assigned} requests will target the new version. Previous acknowledgments remain in history.`
                       : 'Existing requests and acknowledgments keep their current version.'}{' '}
@@ -565,47 +580,53 @@ export function AgreementReader({
                   >
                     Publish version {preview.nextVersion}
                   </Button>
-                </Card>
+                </div>
               )}
               {data.policy.current_version && (
-                <AssignAgreement
-                  api={api}
-                  policy={data.policy}
-                  disabled={!canWrite || busy}
-                  onChanged={onChanged}
-                />
+                <DocumentSection title="Request acknowledgment">
+                  <AssignAgreement
+                    api={api}
+                    policy={data.policy}
+                    disabled={!canWrite || busy}
+                    onChanged={onChanged}
+                  />
+                </DocumentSection>
               )}
             </>
           )}
-          <DataTable
-            label="Agreement assignments"
-            headings={['Vendor', 'Requested version', 'Acknowledgment']}
-          >
-            {data.assignments.map((a) => (
-              <tr key={a.id}>
-                <td>{a.vendor_name}</td>
-                <td>{a.version}</td>
-                <td>
-                  {a.acknowledged_at
-                    ? new Date(a.acknowledged_at).toLocaleString()
-                    : 'Outstanding'}
-                </td>
-              </tr>
-            ))}
-          </DataTable>
-          <DataTable
-            label="Acknowledgment history"
-            headings={['Vendor', 'Version', 'Acknowledged at', 'User']}
-          >
-            {data.history.map((h) => (
-              <tr key={h.id}>
-                <td>{h.vendor_name}</td>
-                <td>{h.version}</td>
-                <td>{new Date(h.acknowledged_at).toLocaleString()}</td>
-                <td>{h.actor_id}</td>
-              </tr>
-            ))}
-          </DataTable>
+          <DocumentSection title="Assignments">
+            <DataTable
+              label="Agreement assignments"
+              headings={['Vendor', 'Requested version', 'Acknowledgment']}
+            >
+              {data.assignments.map((a) => (
+                <tr key={a.id}>
+                  <td>{a.vendor_name}</td>
+                  <td>{a.version}</td>
+                  <td>
+                    {a.acknowledged_at
+                      ? new Date(a.acknowledged_at).toLocaleString()
+                      : 'Outstanding'}
+                  </td>
+                </tr>
+              ))}
+            </DataTable>
+          </DocumentSection>
+          <DocumentSection title="Acknowledgment history">
+            <DataTable
+              label="Acknowledgment history"
+              headings={['Vendor', 'Version', 'Acknowledged at', 'User']}
+            >
+              {data.history.map((h) => (
+                <tr key={h.id}>
+                  <td>{h.vendor_name}</td>
+                  <td>{h.version}</td>
+                  <td>{new Date(h.acknowledged_at).toLocaleString()}</td>
+                  <td>{h.actor_id}</td>
+                </tr>
+              ))}
+            </DataTable>
+          </DocumentSection>
           <Pagination
             summary={`Assignments and history, page ${Math.floor(skip / 20) + 1}`}
             hasPrevious={skip > 0}
@@ -613,7 +634,7 @@ export function AgreementReader({
             onPrevious={() => setSkip((n) => Math.max(0, n - 20))}
             onNext={() => setSkip((n) => n + 20)}
           />
-        </>
+        </div>
       )}
     </Dialog>
   );
@@ -637,6 +658,7 @@ function AssignAgreement({
   const state = useRead('agreement-eligible-vendors', read);
   return (
     <form
+      className="documents-assign-form"
       onSubmit={(e) => {
         e.preventDefault();
         const form = new FormData(e.currentTarget);
@@ -671,7 +693,7 @@ function AssignAgreement({
           compliance workspace for larger Markets.
         </Alert>
       )}
-      <Button type="submit" disabled={disabled || busy}>
+      <Button type="submit" variant="secondary" disabled={disabled || busy}>
         Request acknowledgment
       </Button>
       {!!error && <DocumentFeedback error={error} />}

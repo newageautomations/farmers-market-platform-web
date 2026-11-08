@@ -1,0 +1,398 @@
+/* Market Vendors: arrangements only. Panels, table, filters, side panel,
+   meter and wizard come from the Applications, Occurrences and reward wizard
+   compositions and use the same tokens. */
+.market-vendors > .markets-heading {
+  flex-wrap: wrap;
+}
+.market-vendors > .markets-heading > div:not(.workspace-heading-actions) {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.market-vendors .workspace-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.market-vendors .farmstand-button .farmstand-icon {
+  width: 16px;
+  height: 16px;
+}
+.markets-filters.vendors-filters {
+  grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(150px, 200px));
+}
+.market-applications-main .vendors-list .farmstand-data-table {
+  min-width: 680px;
+}
+.markets-list.vendors-list .farmstand-data-table td:last-child {
+  text-align: left;
+}
+.vendors-list .markets-identity small,
+.vendor-account-cell small,
+.vendor-contact-cell small,
+.vendor-compliance-cell small {
+  display: block;
+  margin-top: 2px;
+  color: var(--brand-muted);
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: none;
+  white-space: normal;
+}
+.vendor-contact-cell,
+.vendor-account-cell,
+.vendor-compliance-cell {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.vendor-compliance-cell small {
+  color: var(--status-danger-fg);
+}
+
+/* Side panel: the selection re-enters with the same short fade as previews. */
+.vendor-details .markets-next-content {
+  animation: vendor-details-in 220ms ease;
+}
+@keyframes vendor-details-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.vendor-details .market-application-facts dd {
+  margin: 0;
+  align-self: center;
+}
+.vendor-details .market-application-facts > div {
+  align-items: center;
+}
+.vendor-details-section {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--markets-border, var(--brand-border));
+}
+.vendor-details-section h4 {
+  margin: 0;
+  font-size: 14px;
+}
+.vendor-details-section .market-application-guidance {
+  white-space: pre-line;
+}
+.vendor-compliance {
+  display: grid;
+  gap: 10px;
+}
+.vendor-gaps {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vendor-gaps li {
+  --gap-color: var(--status-danger-fg);
+  --gap-background: var(--status-danger-bg);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border-left: 3px solid var(--gap-color);
+  background: color-mix(in srgb, var(--gap-background) 60%, var(--brand-surface));
+  font-size: 12px;
+}
+.vendor-gaps li[data-tone='warning'] {
+  --gap-color: var(--status-warning-fg);
+  --gap-background: var(--status-warning-bg);
+}
+.vendor-gaps li > .farmstand-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--gap-color);
+}
+.vendor-gaps strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.vendor-gaps small {
+  display: block;
+  margin-top: 2px;
+  color: var(--brand-muted);
+}
+.vendor-gaps-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--status-success-fg);
+  font-size: 12px;
+}
+.vendor-gaps-done .farmstand-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Wizard review rows centre values on their labels. */
+.business-review {
+  display: grid;
+  gap: 20px;
+}
+.business-wizard .reward-review-facts > div {
+  align-items: center;
+}
+.business-wizard .reward-review-facts dd {
+  margin: 0;
+  align-self: center;
+}
+.business-wizard .ops-field {
+  min-width: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vendor-details .markets-next-content {
+    animation: none;
+  }
+}
+@media (max-width: 767px) {
+  .markets-filters.vendors-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.business-wizard .farmstand-select.ui-select {
+  width: 100%;
+}
+.vendors-summary.markets-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.business-type-grid.reward-type-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.business-type-grid .reward-type-choice .farmstand-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--brand-primary);
+}
+.business-type-grid .reward-type-choice:has(input:disabled) {
+  opacity: 0.55;
+}
+.business-wizard-notes {
+  margin-top: 18px;
+}
+.business-wizard-done {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.business-wizard .ui-search-select {
+  width: 100%;
+}
+.vendor-notes-dialog {
+  display: grid;
+  gap: 14px;
+}
+@media (max-width: 1080px) {
+  .vendors-summary.markets-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .vendors-summary.markets-summary,
+  .business-type-grid.reward-type-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Vendor detail page: same market tokens as the list workspace. */
+.vendor-detail {
+  --markets-border: color-mix(in srgb, var(--brand-primary) 14%, var(--brand-surface));
+  --markets-soft: color-mix(in srgb, var(--brand-primary) 7%, var(--brand-surface));
+  /* Listing thumbnails use the Catalog photo cell, which reads this token. */
+  --catalog-soft: var(--markets-soft);
+}
+.vendor-detail .vendor-notes-text {
+  margin: 0;
+  white-space: pre-line;
+}
+.vendor-detail-menu {
+  margin-block: 4px 2px;
+}
+.vendor-detail .vendor-detail-link {
+  justify-self: start;
+  margin-top: 4px;
+}
+.vendor-detail .application-detail-panel .vendor-compliance {
+  margin-bottom: 12px;
+}
+.vendor-detail-table .farmstand-data-table td:last-child {
+  text-align: right;
+}
+.vendor-detail-table .farmstand-data-table thead th:last-child {
+  font-size: 0;
+}
+
+/* Vendor detail panels: content sits inside the panel padding, as on the
+   application and occurrence detail pages. */
+.vendor-detail .vendor-panel-body {
+  display: grid;
+  gap: 14px;
+  padding: 8px 24px 22px;
+  min-width: 0;
+}
+.vendor-detail .vendor-panel-body .command-section.card.ui-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.vendor-detail .vendor-panel-body .command-section form {
+  display: grid;
+  gap: 14px;
+}
+.vendor-detail .vendor-panel-body .command-section fieldset {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.vendor-detail .vendor-panel-body .ui-actions {
+  margin: 0;
+}
+.vendor-detail .vendor-panel-body .farmstand-select {
+  width: 100%;
+}
+.vendor-detail .vendor-panel-help {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.vendor-detail .application-detail-panel > .empty-state,
+.vendor-detail .application-detail-panel > .ui-empty-state {
+  margin: 0 24px 22px;
+}
+.vendor-detail .vendor-detail-table {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.vendor-detail .vendor-detail-table .farmstand-pagination,
+.vendor-detail .vendor-detail-table > :last-child:not(.table-scroll) {
+  margin: 0 14px 12px;
+}
+.vendor-detail .vendor-panel-body .table-scroll {
+  margin: 0;
+}
+.vendor-detail .vendor-panel-body .vendor-compliance {
+  margin: 0;
+}
+.vendor-detail .vendor-detail-link {
+  justify-self: start;
+  margin: 0;
+}
+.vendor-detail .vendor-panel-body .vendor-notes-text {
+  margin: 0;
+}
+
+/* Views switch in place under the menu, as in Loyalty and Settings. */
+.vendor-detail-view {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  animation: vendor-view-in 180ms ease;
+}
+@keyframes vendor-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vendor-detail-view {
+    animation: none;
+  }
+}
+
+/* Listing review: facts, then the read-only product preview. */
+.listing-review {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.listing-review-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--brand-primary) 6%, var(--brand-surface));
+  font-size: 13px;
+}
+.listing-review-facts > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.listing-review-facts dt {
+  color: var(--brand-muted);
+}
+.listing-review-facts dd {
+  margin: 0;
+  align-self: center;
+  font-weight: 600;
+}
+.listing-review-note {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 13px;
+}
+.listing-review .product-harvest-preview {
+  border-radius: 12px;
+  overflow: hidden;
+}
+.listing-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+/* In the review dialog the preview uses the dialog width and a smaller title. */
+.listing-review .product-harvest-preview.vendor-product {
+  width: 100%;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+.listing-review .product-harvest-preview .product-detail {
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+}
+.listing-review .product-harvest-preview .product-summary > h2 {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  overflow-wrap: break-word;
+}
+
+/* Market dates, listings and products by date: filters above the table.
+   Status filters size to their longest option; the date filter stays wider. */
+.vendor-detail .markets-filters.vendor-detail-filters {
+  grid-template-columns: repeat(2, max-content);
+  margin: 0;
+}
+.vendor-detail .vendor-detail-filters .farmstand-select {
+  width: 100%;
+}
+.vendor-detail .vendor-detail-filters .farmstand-select-with-icon .farmstand-select {
+  min-width: 240px;
+}
+@media (max-width: 600px) {
+  .vendor-detail .markets-filters.vendor-detail-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .vendor-detail .vendor-detail-filters .farmstand-select-with-icon .farmstand-select {
+    min-width: 0;
+  }
+}

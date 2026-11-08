@@ -26,6 +26,10 @@ import {
   type LoyaltyApi,
   createNotificationsApi,
   type NotificationsApi,
+  createDocumentsApi,
+  type DocumentsApi,
+  createVendorDashboardLayoutApi,
+  type VendorDashboardLayoutApi,
   createMarketOperationsApi,
   type VendorBoothAssignment,
   safeError,
@@ -73,6 +77,10 @@ export interface VendorService extends VendorApi {
   pos?: InPersonApi;
   loyalty?: LoyaltyApi;
   notifications?: NotificationsApi;
+  /** Document library and Market requests, for dashboard reminders. */
+  documents?: DocumentsApi;
+  /** Saved per-account dashboard arrangement. */
+  dashboardLayout?: VendorDashboardLayoutApi;
   linkRequests?: ReturnType<
     typeof createMarketOperationsApi
   >['vendorLinkRequests'];
@@ -124,6 +132,7 @@ export function createLiveVendorService(
   ];
   const marketCommands = [
     'marketDefault',
+    'autoEnroll',
     'attendance',
     'requestListing',
     'offering',
@@ -207,6 +216,12 @@ export function createLiveVendorService(
       channelToken,
       onAuthorityFailure,
     }),
+    documents: createDocumentsApi({
+      endpoint,
+      channelToken,
+      onAuthorityFailure,
+    }),
+    dashboardLayout: createVendorDashboardLayoutApi({ endpoint, channelToken }),
     linkRequests: createMarketOperationsApi({ endpoint, channelToken })
       .vendorLinkRequests,
     respondToLink: createMarketOperationsApi({ endpoint, channelToken })

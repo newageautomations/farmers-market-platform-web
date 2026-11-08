@@ -1,0 +1,667 @@
+/*
+ * Market applications: the list reuses the vendor Applications layout
+ * (markets-*, market-application-*); the builder reuses the application
+ * detail page layout and panels. Rules here only arrange those pieces.
+ */
+
+/* List */
+.application-templates-list .markets-identity small,
+.application-state-cell small,
+.application-count-cell small {
+  display: block;
+  margin-top: 2px;
+  color: var(--brand-muted);
+  font-size: 12px;
+  font-weight: 400;
+  /* Row headers are title-cased by the table; these are sentences. */
+  text-transform: none;
+}
+/* Four short columns fit beside the details panel without scrolling. */
+.market-applications-main .application-templates-list .farmstand-data-table {
+  min-width: 640px;
+}
+.application-state-cell {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+}
+.application-count-cell {
+  font-weight: 600;
+}
+.application-details-actions {
+  display: grid;
+  gap: 10px;
+}
+.application-details-actions > :is(a, button) {
+  justify-content: center;
+}
+.application-template-details .occurrence-details-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.application-template-details .occurrence-details-title h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Builder page */
+.admin-content:has(.application-builder-page) {
+  width: min(100% - 4rem, 1320px);
+  max-width: none;
+  margin-block: 26px 28px;
+}
+.application-builder-page .farmstand-button > svg,
+.application-builder-page .button > svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.application-builder-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.application-save-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 4px;
+  color: var(--brand-muted);
+  font-size: 13px;
+}
+.application-save-state svg {
+  width: 16px;
+  height: 16px;
+  color: var(--status-success-fg);
+}
+.application-save-state[data-status='error'],
+.application-save-state[data-status='invalid'] {
+  color: var(--status-warning-fg);
+}
+.application-builder-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+.application-builder-issues {
+  margin: 6px 0 0;
+  padding-left: 1.2rem !important;
+  list-style: disc !important;
+}
+.application-builder-columns {
+  grid-template-columns: minmax(0, 1.9fr) minmax(280px, 1fr);
+}
+.application-builder-sidebar {
+  position: sticky;
+  top: 18px;
+}
+.application-builder-page .application-builder-fieldset {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 8px 24px 12px;
+  border: 0;
+}
+.application-builder-title .ops-field input {
+  font-size: 18px;
+  font-weight: 600;
+}
+.application-builder-choices {
+  max-height: 320px;
+  overflow: auto;
+}
+.application-builder-page
+  .application-builder-fieldset.application-builder-choices {
+  gap: 2px;
+}
+.application-builder-choices > div.ops-check {
+  min-height: 0;
+}
+.application-builder-choices .ops-check {
+  font-size: 14px;
+}
+/* The shared animated option rows, tightened for long date/rental lists. */
+.application-builder-choices .notification-option.ops-check {
+  min-height: 30px;
+  padding-block: 3px;
+}
+.application-builder-facts {
+  padding: 8px 24px 6px;
+}
+.application-detail .application-builder-sidebar .application-detail-empty {
+  padding-bottom: 16px;
+}
+
+/* Question canvas */
+.application-builder-canvas {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.application-builder-hint {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 13px;
+}
+.application-section-block {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--application-border);
+  border-radius: 12px;
+  background: var(--application-soft);
+}
+.application-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.application-section-header h3,
+.application-section-header strong {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+}
+.application-section-header .application-section-name {
+  flex: 1;
+  min-width: 120px;
+  font-size: 16px;
+  font-weight: 600;
+  background: var(--brand-surface);
+}
+.application-section-header small {
+  flex: none;
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+.application-section-body {
+  display: grid;
+  gap: 12px;
+}
+.application-section-header .application-section-toggle .ui-icon,
+.application-section-header .application-section-toggle svg {
+  transition: transform 150ms ease;
+}
+.application-section-header
+  .application-section-toggle[aria-expanded='false']
+  svg {
+  transform: rotate(-90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .application-section-header .application-section-toggle svg {
+    transition: none;
+  }
+}
+.application-question-list {
+  display: grid;
+  gap: 10px;
+}
+.application-question-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 6px;
+  padding: 12px 16px 12px 6px;
+  border: 1px solid var(--application-border);
+  border-radius: 10px;
+  background: var(--brand-surface);
+  touch-action: pan-y;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+.application-question-card:not([data-editing]) {
+  cursor: grab;
+}
+.application-question-card:not([data-editing]):is(:hover, :focus-within) {
+  border-color: var(--brand-primary);
+  box-shadow: 0 6px 18px
+    color-mix(in srgb, var(--brand-primary) 14%, transparent);
+}
+.application-question-card[data-editing] {
+  border-color: var(--brand-primary);
+  border-left-width: 4px;
+  box-shadow: 0 6px 18px
+    color-mix(in srgb, var(--brand-primary) 12%, transparent);
+}
+/* Raised above the operations workspace's generic button rules. */
+.application-builder-page
+  :is(.application-question-card, .application-section-header)
+  .application-drag-handle {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  align-self: start;
+  width: 28px;
+  min-width: 0;
+  height: 36px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--brand-muted);
+  cursor: grab;
+  touch-action: none;
+}
+.application-drag-handle svg {
+  width: 18px;
+  height: 18px;
+}
+.application-builder-page
+  :is(.application-question-card, .application-section-header)
+  button.application-drag-handle:is(:hover, :focus-visible) {
+  color: var(--brand-primary);
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+}
+.application-builder-page
+  :is(.application-question-card, .application-section-header)
+  button.application-drag-handle:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 1px;
+}
+.application-question-preview {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.application-builder-page .application-question-preview fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.application-question-preview .ops-section {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.application-question-preview .ops-section > legend {
+  display: none;
+}
+.application-question-preview :is(input, select, textarea) {
+  opacity: 1;
+  pointer-events: none;
+}
+.application-question-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+/* The whole collapsed card opens its editor; the handle sits above it. */
+.application-builder-page
+  .application-question-card
+  .application-question-open {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
+  cursor: inherit;
+}
+.application-builder-page
+  .application-question-card
+  .application-question-open:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+.application-section-empty {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed var(--application-border);
+  border-radius: 10px;
+  color: var(--brand-muted);
+  font-size: 13px;
+  text-align: center;
+}
+.application-add-question {
+  justify-self: start;
+}
+.application-add-section {
+  justify-self: start;
+}
+
+/* Expanded question editor */
+.question-editor {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 4px 0 2px;
+}
+.question-editor .question-heading {
+  gap: 14px;
+}
+.question-editor .question-options {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.question-editor .question-options > .button {
+  justify-self: start;
+}
+.question-editor .question-condition {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 9px;
+  background: var(--application-soft);
+}
+.question-editor .question-condition p,
+.question-editor .field-help {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 13px;
+}
+.question-editor .question-footer {
+  justify-content: space-between;
+  margin-top: 0;
+  padding-top: 12px;
+  border-top-color: var(--application-border);
+}
+.application-builder-page .question-editor .question-footer fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.question-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Dragging, as in the dashboard layout editor: the card follows the
+   pointer and a dashed placeholder marks where it will land. */
+body.application-dragging,
+body.application-dragging * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+.application-question-card[data-placeholder],
+.application-section-block[data-placeholder] {
+  border: 2px dashed var(--brand-primary);
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  box-shadow: none;
+}
+.application-question-card[data-placeholder] > *,
+.application-section-block[data-placeholder] > * {
+  visibility: hidden;
+}
+.application-builder-page[data-dragging='section'] .application-section-block {
+  padding-block: 10px;
+}
+.application-drag-ghost.application-detail {
+  position: fixed;
+  z-index: 50;
+  display: block;
+  pointer-events: none;
+}
+.application-drag-ghost > [data-ghost] {
+  border-color: var(--brand-primary);
+  background: var(--brand-surface);
+  box-shadow: 0 14px 34px
+    color-mix(in srgb, var(--brand-foreground) 18%, transparent);
+  opacity: 0.94;
+  transform: rotate(-0.6deg);
+}
+
+/* Preview */
+.application-builder-preview-form {
+  display: grid;
+  gap: 16px;
+  padding: 8px 24px 20px;
+}
+.application-builder-preview-form > .button {
+  justify-self: start;
+}
+
+/* Publish dialog */
+.application-publish-options {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+.application-publish-options legend {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.application-publish-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--markets-border, var(--application-border, #d0d7d0));
+  border-radius: 10px;
+  cursor: pointer;
+}
+.application-publish-option:has(input:checked) {
+  border-color: var(--brand-primary);
+  background: color-mix(in srgb, var(--brand-primary) 6%, transparent);
+}
+.application-publish-option > span,
+.application-publish-feature > span {
+  display: grid;
+  gap: 2px;
+}
+.application-publish-option small,
+.application-publish-feature small {
+  color: var(--brand-muted);
+  font-size: 13px;
+}
+.application-publish-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: -2px 0 2px 40px;
+  font-size: 14px;
+}
+.application-publish-summary {
+  margin-bottom: 12px;
+}
+
+@container (max-width: 980px) {
+  .application-builder-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .application-builder-sidebar {
+    position: static;
+  }
+}
+@media (max-width: 600px) {
+  .admin-content:has(.application-builder-page) {
+    width: min(100% - 2rem, 1320px);
+  }
+  .application-section-block {
+    padding: 10px;
+  }
+  .application-section-header {
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .application-question-card {
+    transition: none;
+  }
+  .application-drag-ghost > [data-ghost] {
+    transform: none;
+  }
+}
+
+/* Application names are shown as typed. */
+.application-builder-page .application-detail-heading h1 {
+  text-transform: none;
+}
+
+/* The operations workspace styles every plain button, including its hover
+   state at high specificity; the card overlay and drag handles opt out, as
+   the former question-edit-overlay did. */
+.application-builder-page .application-question-open,
+.application-builder-page
+  .application-question-open:is(:hover, :focus, :active) {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.application-builder-page .application-drag-handle {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.application-builder-page .application-drag-handle:not(:hover, :focus-visible) {
+  background: transparent !important;
+}
+.application-builder-page .application-drag-handle:is(:hover, :focus-visible) {
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    transparent
+  ) !important;
+  color: var(--brand-primary) !important;
+}
+
+/* Label/value rows: values centre on their labels. */
+:is(
+    .application-template-details,
+    .application-builder-page,
+    .application-publish-dialog
+  )
+  .market-application-facts
+  > div {
+  align-items: center;
+}
+:is(
+    .application-template-details,
+    .application-builder-page,
+    .application-publish-dialog
+  )
+  .market-application-facts
+  dd {
+  margin: 0;
+  align-self: center;
+}
+.application-publish-options {
+  margin-top: 4px;
+}
+
+/* The existing WorkspaceFrame owns both routes; only their lower view changes. */
+.market-applications-workspace > .markets-heading {
+  flex-wrap: wrap;
+}
+.market-applications-workspace
+  > .markets-heading
+  > div:not(.workspace-heading-actions) {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.market-applications-workspace .workspace-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+  gap: 10px;
+}
+.market-applications-workspace .workspace-heading-actions > .farmstand-button {
+  box-sizing: border-box;
+  height: 42px;
+  min-height: 42px;
+}
+.market-applications-workspace .workspace-heading-actions .farmstand-icon {
+  width: 16px;
+  height: 16px;
+}
+/* Toolbar, filter card and chips share the table's left and right edges. */
+.application-submissions-list > :is(.application-filter-toolbar, .ops-toolbar) {
+  margin: 16px 0;
+}
+.application-submissions-list .application-filter-toolbar > .field {
+  flex: 1;
+}
+@media (max-width: 600px) {
+  .market-applications-workspace > .workspace-menu {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Submitted applications reuse the Applications list and preview arrangement. */
+.application-submissions-list .submission-filters {
+  grid-template-columns: minmax(160px, 1fr) 170px auto;
+  align-items: center;
+  margin: 16px 0;
+}
+/* Labels are visually hidden, so the fields need no label row gap. */
+.application-submissions-list .submission-filters > .field {
+  gap: 0;
+}
+/* Search, view and Filters share the select's 40px height. */
+.application-submissions-list
+  .submission-filters
+  .farmstand-search
+  .farmstand-search-input.ui-input {
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+}
+.farmstand-controls .submission-filter-trigger.button.ui-button {
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--markets-border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.submission-filter-trigger > .farmstand-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--brand-primary);
+}
+.market-applications-main .application-submissions-list .farmstand-data-table {
+  min-width: 470px;
+}
+.submission-review-panel-body {
+  padding: 6px 24px 18px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.submission-detail .application-review-inspector {
+  gap: 18px;
+}
+.submission-detail .submission-review-columns {
+  grid-template-columns: minmax(0, 1.35fr) minmax(340px, 1fr);
+}
+.submission-detail .application-detail-overview dd {
+  margin: 0;
+  align-self: center;
+}
+@media (max-width: 900px) {
+  .submission-detail .submission-review-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.submission-review-panel-body .submission-applicant-facts {
+  padding: 0;
+}

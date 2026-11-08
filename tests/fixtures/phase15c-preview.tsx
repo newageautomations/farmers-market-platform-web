@@ -32,6 +32,27 @@ context.permissions = [
   'OperateOwnMarketDay',
 ];
 const service = createFixtureMarketService(context);
+// Synthetic Market image library. Uploads resolve to a local public image so
+// the absolute http(s) layout URL contract matches the real asset service.
+const libraryImages = [
+  { id: '901', name: 'Canopy tent photo', preview: '/rental-stock/canopy-tent.png' },
+  { id: '902', name: 'Display rack', preview: '/rental-stock/display-rack.png' },
+].map((image) => ({
+  ...image,
+  preview: new URL(image.preview, location.origin).href,
+}));
+service.rentalMedia = {
+  images: async () => structuredClone(libraryImages),
+  upload: async (file: File) => {
+    const image = {
+      id: String(903 + libraryImages.length),
+      name: file.name.slice(0, 200),
+      preview: new URL('/rental-stock/extension-cord.png', location.origin).href,
+    };
+    libraryImages.unshift(image);
+    return image;
+  },
+};
 service.phase14 = {
   vendorAssignments: async () => [],
   read: async () => structuredClone(data),

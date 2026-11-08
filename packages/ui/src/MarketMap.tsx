@@ -15,6 +15,7 @@ import type {
 } from '@market/api';
 import { MapCanvas, type MapCanvasHandle } from './map/MapCanvas';
 import type { BoothStatus } from './map/KonvaElement';
+import { mapElementLabel } from './map/smart-design';
 export type { BoothStatus } from './map/KonvaElement';
 export function boothTooltipPosition(
   booth: { x: number; y: number; width: number; height: number },
@@ -224,7 +225,7 @@ export function MarketMap({
                 aria-pressed={selected === e.id}
                 onClick={() => choose(e.id)}
               >
-                {e.text || e.type} ({Math.round(e.x)}, {Math.round(e.y)})
+                {mapElementLabel(e)} ({Math.round(e.x)}, {Math.round(e.y)})
               </button>
             </li>
           ))}

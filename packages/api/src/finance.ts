@@ -47,6 +47,8 @@ export interface FinanceActivity {
   platformFee: number;
   currency: string;
   method: string;
+  /** Checkout context of a sale or refund, when the backend reports it. */
+  channel?: 'DIRECT_VENDOR' | 'MARKET_OCCURRENCE' | 'IN_PERSON' | (string & {});
 }
 export interface FinanceExpense {
   id: string;
@@ -73,6 +75,8 @@ export interface FinanceOrderTransaction {
   marketId: string | null;
   occurrenceId: string | null;
   method: string;
+  /** Checkout context, when the backend reports it. */
+  channel?: FinanceActivity['channel'];
   status: 'Paid' | 'Partially refunded' | 'Refunded';
   gross: number;
   discount: number;

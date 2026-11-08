@@ -118,8 +118,8 @@ type Query {
   zone(id: ID!): Zone
   ownMarketAttendance(input: JSON): JSON!
   ownVendorAttendance(input: JSON): JSON!
-  applicantApplications(input: JSON): JSON!
   vendorMarketDiscovery(input: JSON): JSON!
+  applicantApplications(input: JSON): JSON!
   ownMarketOperations(section: MarketOperationsSection!, occurrenceId: Int, input: JSON): JSON!
   ownVendorBoothAssignments: JSON!
   ownVendorLinkRequests: JSON!
@@ -182,6 +182,7 @@ type Query {
   ownMarketMembershipOccurrencePage(membershipId: ID!, options: OwnMarketOccurrenceOptions): OwnMarketOccurrencePage!
   ownMarketMembershipParticipations(membershipId: ID!, options: OwnMarketPageOptions): OwnMarketParticipationPage!
   ownMarketMembershipListings(membershipId: ID!, options: OwnMarketPageOptions): OwnMarketListingPage!
+  ownMarketListingPreview(id: ID!): MarketListingPreview!
   ownMarketMembershipOfferings(membershipId: ID!, options: OwnMarketPageOptions): OwnMarketOfferingPage!
   ownMarketOverviewSummary(options: OwnMarketOverviewOptions): OwnMarketOverviewSummary!
   ownMarketOccurrenceGenerationStatus(jobId: ID!): OwnMarketGenerationStatus!
@@ -236,7 +237,7 @@ type Query {
   ownVendorProduct(productId: ID!): OwnCatalogProduct!
   ownOperationalInventory(take: Int, after: ID, search: String): OwnOperationalInventoryPage!
   ownListingPublication(listingId: ID!): OwnListingPublication!
-  vendorContactSubmissions(skip: Int!): JSON!
+  vendorContactSubmissions(skip: Int!, status: String): JSON!
   vendorContactSubmission(id: String!): JSON!
 }
 
@@ -849,7 +850,9 @@ type Mutation {
   setMarketAdminMembership(marketId: ID!, principalId: ID!, status: VendorMembershipStatus!): MarketAdminMembership!
   configureOwnMarket(input: ConfigureMarketInput!): MarketDomain!
   reviseMarketRecurrence(marketId: ID!, expectedVersion: Int!, recurrence: WeeklyRecurrenceInput): MarketDomain!
-  generateMarketOccurrences(marketId: ID!, from: String!, through: String!): [MarketSession!]!
+  saveMarketSchedule(marketId: ID!, expectedVersion: Int!, schedule: MarketScheduleInput!): MarketDomain!
+  deleteMarketSchedule(marketId: ID!, expectedVersion: Int!, scheduleId: ID!): MarketDomain!
+  generateMarketOccurrences(marketId: ID!, from: String!, through: String!, scheduleIds: [ID!]): [MarketSession!]!
   enqueueMarketOccurrenceGeneration(marketId: ID!, from: String!, through: String!): MarketGenerationJob!
   createManualMarketOccurrence(marketId: ID!, scheduleDate: String!, generationKey: String!, input: MarketSessionInput!): MarketSession!
   reviseMarketOccurrence(id: ID!, expectedVersion: Int!, input: MarketSessionInput!): MarketSession!
@@ -857,6 +860,7 @@ type Mutation {
   setMarketVendorMembership(marketId: ID!, vendorId: ID!, status: MarketBusinessMembershipStatus!, expectedVersion: Int): MarketBusinessMembership!
   requestOwnMarketMembership(marketId: ID!, expectedVersion: Int): MarketBusinessMembership!
   configureOwnMarketMembershipDefault(id: ID!, expectedVersion: Int!, rule: MarketPreorderRuleInput): MarketBusinessMembership!
+  configureOwnMarketMembershipAutoEnroll(id: ID!, expectedVersion: Int!, enabled: Boolean!): MarketBusinessMembership!
   configureMarketParticipation(input: MarketAttendanceInput!): MarketAttendance!
   requestOwnMarketListing(membershipId: ID!, variantId: ID!): MarketVariantListing!
   approveMarketListing(id: ID!, expectedVersion: Int!, status: MarketListingApprovalStatus!): MarketVariantListing!
@@ -7073,12 +7077,15 @@ enum MarketOperationsAction {
   CLONE_APPLICATION
   PUBLISH_APPLICATION
   RETIRE_APPLICATION
+  ARCHIVE_APPLICATION
+  UNARCHIVE_APPLICATION
   SEND_INFORMATION_REQUEST
   RESOLVE_INFORMATION_REQUEST
   CANCEL_INFORMATION_REQUEST
   REVIEW_APPLICATION
   ACCEPT_ASSIGN
   SAVE_DIRECTORY
+  SAVE_VENDOR_NOTES
   REQUEST_VENDOR_LINK
   CONVERT_OCCURRENCE_IDENTITY
   REVIEW_OCCURRENCE
@@ -7744,6 +7751,7 @@ type MarketDomain {
   pickupInstructions: String!
   channelId: ID!
   recurrence: WeeklyRecurrence
+  schedules: [MarketSchedule!]!
   recurrenceVersion: Int!
   defaultPreorderRule: MarketPreorderRule!
   overridePolicy: MarketOverridePolicy!
@@ -7752,6 +7760,20 @@ type MarketDomain {
 }
 
 type WeeklyRecurrence {
+  frequency: String
+  weekInterval: Int
+  monthWeeks: [Int!]
+  weekdays: [Int!]!
+  startTime: String!
+  endTime: String!
+  endDayOffset: Int!
+  effectiveFrom: String!
+  effectiveUntil: String
+}
+
+type MarketSchedule {
+  id: ID!
+  venue: String!
   frequency: String
   weekInterval: Int
   monthWeeks: [Int!]
@@ -7832,6 +7854,7 @@ type MarketBusinessMembership {
   vendorId: ID!
   status: String!
   preorderDefault: MarketPreorderRule
+  autoEnroll: Boolean!
   version: Int!
 }
 
@@ -7950,12 +7973,14 @@ type OwnMarketMembershipPage {
 type MarketListingProductDisplay {
   id: ID!
   name: String!
+  category: String
 }
 
 type MarketListingVariantDisplay {
   id: ID!
   name: String!
   sku: String!
+  image: String
   product: MarketListingProductDisplay!
 }
 
@@ -7972,6 +7997,19 @@ type MarketOrganizerListing {
 type OwnMarketListingPage {
   items: [MarketOrganizerListing!]!
   totalItems: Int!
+}
+
+"""Read-only preview of a listed variant for the Market reviewing it."""
+type MarketListingPreview {
+  listingId: ID!
+  productName: String!
+  variantName: String!
+  sku: String!
+  description: String!
+  price: Int
+  currency: String
+  productInformation: String
+  images: [String!]!
 }
 
 type OwnMarketOccurrencePage {
@@ -8047,6 +8085,20 @@ enum MarketVendorWindowMode {
 }
 
 input WeeklyRecurrenceInput {
+  frequency: String
+  weekInterval: Int
+  monthWeeks: [Int!]
+  weekdays: [Int!]!
+  startTime: String!
+  endTime: String!
+  endDayOffset: Int!
+  effectiveFrom: String!
+  effectiveUntil: String
+}
+
+input MarketScheduleInput {
+  id: ID
+  venue: String!
   frequency: String
   weekInterval: Int
   monthWeeks: [Int!]

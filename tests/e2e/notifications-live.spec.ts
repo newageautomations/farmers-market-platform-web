@@ -39,7 +39,11 @@ for (const width of [390, 1280]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
-    await login(page, 'market-a@test.invalid', '/market/settings');
+    await login(
+      page,
+      'market-a@test.invalid',
+      '/market/settings/notifications',
+    );
     const preferences = page.getByRole('region', {
       name: 'Notification preferences',
     });
@@ -60,11 +64,7 @@ for (const width of [390, 1280]) {
     await expect(
       preferences.getByText('Notification preferences saved.'),
     ).toBeVisible();
-    await inspect(
-      page,
-      `market-settings-${width}`,
-      '[aria-label="Notification preferences"]',
-    );
+    await inspect(page, `market-settings-${width}`, '.settings-panel');
     await page.goto('/market');
     const summary = page.getByRole('region', {
       name: 'Document compliance overview',
@@ -100,7 +100,11 @@ for (const width of [390, 1280]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
-    await login(page, 'identity-owner-0@test.invalid', '/vendor/settings');
+    await login(
+      page,
+      'identity-owner-0@test.invalid',
+      '/vendor/settings/notifications',
+    );
     const preferences = page.getByRole('region', {
       name: 'Notification preferences',
     });
@@ -120,11 +124,7 @@ for (const width of [390, 1280]) {
     await expect(
       preferences.getByText('Notification preferences saved.'),
     ).toBeVisible();
-    await inspect(
-      page,
-      `vendor-settings-${width}`,
-      '[aria-label="Notification preferences"]',
-    );
+    await inspect(page, `vendor-settings-${width}`, '.settings-panel');
     await page.goto('/vendor');
     const summary = page.getByRole('region', {
       name: 'Document compliance overview',

@@ -236,11 +236,57 @@ it('keeps occurrence across tabs, searches order codes and requires explicit com
   );
   await screen.findByRole('button', { name: 'Mark Customer Packed' });
   fireEvent.click(screen.getByRole('tab', { name: 'Master List' }));
-  expect(screen.getByLabelText('Market occurrence')).toHaveValue('21');
+  expect(screen.getByLabelText('Market')).toHaveValue('Packing Market');
+  expect(screen.getByLabelText('Market date')).toHaveValue('21');
   expect(api.command).toHaveBeenCalledTimes(3);
   expect(
     screen.getByRole('button', { name: 'Open Honey jar' }),
   ).toBeInTheDocument();
+});
+it('selects a market, then filters dates to that market and keeps the deep link current', async () => {
+  const { api, service } = fixture();
+  const base = {
+    timezone: 'America/Chicago',
+    venue: 'North gate',
+    status: 'scheduled',
+  };
+  vi.mocked(api.occurrences).mockResolvedValue([
+    {
+      ...base,
+      id: 21,
+      marketName: 'Packing Market',
+      startsAt: '2099-11-08T15:00:00Z',
+      endsAt: '2099-11-08T19:00:00Z',
+    },
+    {
+      ...base,
+      id: 31,
+      marketName: 'River Market',
+      startsAt: '2099-11-01T15:00:00Z',
+      endsAt: '2099-11-01T19:00:00Z',
+      status: 'cancelled',
+    },
+    {
+      ...base,
+      id: 32,
+      marketName: 'River Market',
+      startsAt: '2099-11-15T15:00:00Z',
+      endsAt: '2099-11-15T19:00:00Z',
+    },
+  ]);
+  render(<VendorPacking service={service} />);
+  const marketSelect = await screen.findByLabelText('Market');
+  const dateSelect = screen.getByLabelText('Market date');
+  expect(marketSelect).toHaveValue('Packing Market');
+  expect(within(dateSelect).getAllByRole('option')).toHaveLength(1);
+  fireEvent.change(marketSelect, { target: { value: 'River Market' } });
+  expect(dateSelect).toHaveValue('32');
+  expect(within(dateSelect).getAllByRole('option')).toHaveLength(2);
+  expect(window.location.search).toBe('?occurrence=32');
+  await waitFor(() => expect(api.read).toHaveBeenCalledWith(32));
+  fireEvent.change(dateSelect, { target: { value: '31' } });
+  expect(window.location.search).toBe('?occurrence=31');
+  expect(marketSelect).toHaveValue('River Market');
 });
 it('does not merge same-name customers and restores persisted packing on remount', async () => {
   const { service } = fixture();
@@ -302,6 +348,23 @@ it('uses generated admin transport operations with channel scope and optimistic 
       .revision,
   ).toBe(1);
 });
+it('opens the topmost item panel on load and on each tab without moving focus', async () => {
+  const { service } = fixture();
+  render(<VendorPacking service={service} />);
+  const heading = await screen.findByRole('heading', { name: 'Honey jar' });
+  expect(heading).not.toHaveFocus();
+  expect(
+    screen.getByRole('list', { name: 'Packing summary' }),
+  ).toHaveTextContent('1 products');
+  fireEvent.click(screen.getByRole('tab', { name: 'Individual Lists' }));
+  expect(
+    await screen.findByRole('heading', { name: 'Taylor Buyer' }),
+  ).not.toHaveFocus();
+  fireEvent.click(screen.getByRole('tab', { name: 'Master List' }));
+  expect(
+    await screen.findByRole('heading', { name: 'Honey jar' }),
+  ).not.toHaveFocus();
+});
 it('keeps the panel mounted through its Market Day close animation and restores keyboard focus', async () => {
   const { service } = fixture();
   render(<VendorPacking service={service} />);
@@ -361,6 +424,77 @@ it('presents empty plans and preorders without claiming completion', async () =>
     screen.queryByRole('button', { name: 'Mark Customer Packed' }),
   ).not.toBeInTheDocument();
 });
+it('keeps packing controls enabled while a quantity save is in flight', async () => {
+  const { service, api } = fixture();
+  const original = vi.mocked(api.command).getMockImplementation()!;
+  let release!: () => void;
+  vi.mocked(api.command).mockImplementationOnce(
+    (current, command) =>
+      new Promise((resolve) => {
+        release = () => resolve(original(current, command));
+      }),
+  );
+  render(<VendorPacking service={service} />);
+  await screen.findByRole('heading', { name: 'Honey jar' });
+  const input = screen.getByRole('spinbutton', { name: 'Quantity packed' });
+  fireEvent.change(input, { target: { value: '22' } });
+  fireEvent.blur(input);
+  await waitFor(() => expect(api.command).toHaveBeenCalledTimes(1));
+  expect(input).toBeEnabled();
+  expect(
+    screen.getByRole('button', { name: 'Edit walk-up inventory' }),
+  ).toBeEnabled();
+  expect(
+    screen.getByRole('button', { name: 'Add walk-up inventory' }),
+  ).toBeEnabled();
+  expect(
+    screen.getByRole('button', { name: 'Close packing details' }),
+  ).toBeEnabled();
+  release();
+  await screen.findByText('Packing saved');
+});
+it('searches the catalog from the Product field and saves the chosen variant', async () => {
+  const { service, api } = fixture();
+  vi.mocked(service.catalog).mockImplementation(
+    async (search: string) =>
+      ({
+        items: [
+          {
+            id: '5',
+            name: search ? 'Wildflower honey' : 'Honey jar',
+            variants: [{ id: search ? '82' : '71', name: '12 oz' }],
+          },
+        ],
+        totalItems: 1,
+      }) as unknown as Awaited<ReturnType<VendorService['catalog']>>,
+  );
+  render(<VendorPacking service={service} />);
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Add walk-up inventory' }),
+  );
+  const modal = screen.getByRole('dialog', { name: 'Add walk-up inventory' });
+  const product = within(modal).getByRole('combobox', { name: 'Product' });
+  fireEvent.change(product, { target: { value: 'wild' } });
+  await waitFor(() =>
+    expect(service.catalog).toHaveBeenLastCalledWith('wild', 0),
+  );
+  fireEvent.click(
+    await within(modal).findByRole('option', {
+      name: 'Wildflower honey · 12 oz',
+    }),
+  );
+  expect(product).toHaveValue('Wildflower honey · 12 oz');
+  fireEvent.click(
+    within(modal).getByRole('button', { name: 'Save walk-up plan' }),
+  );
+  await waitFor(() =>
+    expect(api.command).toHaveBeenCalledWith(expect.anything(), {
+      action: 'PLAN',
+      variantId: '82',
+      quantity: 1,
+    }),
+  );
+});
 it('opens walk-up inventory in the shared modal and renders list content outside its keyboard button', async () => {
   const { service } = fixture();
   render(<VendorPacking service={service} />);
@@ -369,11 +503,14 @@ it('opens walk-up inventory in the shared modal and renders list content outside
   );
   const modal = screen.getByRole('dialog', { name: 'Add walk-up inventory' });
   await waitFor(() =>
-    expect(within(modal).getByLabelText('Product variant')).toBeEnabled(),
+    expect(
+      within(modal).getByRole('combobox', { name: 'Product' }),
+    ).toBeEnabled(),
   );
+  expect(within(modal).queryByRole('searchbox')).not.toBeInTheDocument();
   expect(
-    within(modal).getByRole('searchbox', { name: 'Find a catalog product' }),
-  ).toBeVisible();
+    within(modal).queryByRole('button', { name: 'More products' }),
+  ).not.toBeInTheDocument();
   const card = screen.getByRole('article', { name: 'Honey jar' });
   expect(
     within(card).getByRole('button', { name: 'Open Honey jar' }),

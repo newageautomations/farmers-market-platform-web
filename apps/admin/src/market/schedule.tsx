@@ -1,16 +1,20 @@
 import { SelectField, Input } from '@market/ui';
 import { useState } from 'react';
-import { AppError, type MarketConfiguration } from '@market/api';
-import type { MarketService } from './service';
+import {
+  AppError,
+  type MarketConfiguration,
+  type MarketScheduleInput,
+} from '@market/api';
 import {
   calendarDate,
   Choice,
-  CommandForm,
   integer,
   text,
   TextField,
   Weekdays,
 } from './common';
+
+type RecurrenceRule = NonNullable<MarketConfiguration['recurrence']>;
 
 export function recurrenceInput(data: FormData) {
   const weekdays = data
@@ -55,8 +59,24 @@ export function recurrenceInput(data: FormData) {
     endDayOffset,
   };
 }
-export function RecurrenceFields({ market }: { market: MarketConfiguration }) {
-  const recurrence = market.recurrence;
+/** A schedule's rule plus its required address, for saveSchedule. */
+export function scheduleInput(
+  data: FormData,
+  id?: string | null,
+): MarketScheduleInput {
+  const venue = text(data, 'venue').trim();
+  if (!venue || venue.length > 500) throw new AppError('validation');
+  return { ...recurrenceInput(data), id: id ?? null, venue };
+}
+/** Fields for one repeating schedule; `venue` adds its address field. */
+export function RecurrenceFields({
+  value,
+  venue,
+}: {
+  value?: RecurrenceRule | null;
+  venue?: string;
+}) {
+  const recurrence = value;
   const [frequency, setFrequency] = useState(
     recurrence?.frequency === 'monthly'
       ? 'monthly'
@@ -66,6 +86,15 @@ export function RecurrenceFields({ market }: { market: MarketConfiguration }) {
   );
   return (
     <>
+      {venue !== undefined && (
+        <TextField
+          name="venue"
+          label="Market address"
+          info="Every date this schedule creates is held at this address."
+          value={venue}
+          maxLength={500}
+        />
+      )}
       <SelectField
         name="frequency"
         label="Repeat"
@@ -144,47 +173,6 @@ export function RecurrenceFields({ market }: { market: MarketConfiguration }) {
         Times use the market's saved time zone. Saving a rule leaves existing
         market dates unchanged.
       </p>
-    </>
-  );
-}
-export function ScheduleForm({
-  service,
-  market,
-  refresh,
-}: {
-  service: MarketService;
-  market: MarketConfiguration;
-  refresh: () => void;
-}) {
-  return (
-    <>
-      <CommandForm
-        key={`schedule:${market.version}`}
-        title="Repeating market schedule"
-        onDone={refresh}
-        submitLabel="Save schedule"
-        validate={(data) => {
-          recurrenceInput(data);
-        }}
-        run={(data) =>
-          service.recurrence(market.id, market.version, recurrenceInput(data))
-        }
-      >
-        <RecurrenceFields market={market} />
-      </CommandForm>
-      {market.recurrence && (
-        <CommandForm
-          title="Stop repeating schedule"
-          onDone={refresh}
-          submitLabel="Remove schedule"
-          run={() => service.recurrence(market.id, market.version, null)}
-          confirm="Remove this repeating schedule? Existing market dates will stay in place."
-        >
-          <p>
-            Remove the rule when you want to create market dates individually.
-          </p>
-        </CommandForm>
-      )}
     </>
   );
 }

@@ -91,6 +91,96 @@ function api(): InboxApi {
     preference: vi.fn(async () => ({ saved: true })),
   };
 }
+describe('Notification Trash', () => {
+  const inTrash = (n: InboxNotification): InboxNotification => ({
+    ...n,
+    deleted_at: '2026-10-20T12:00:00Z',
+    purge_at: new Date(Date.now() + 12.5 * 86400000).toISOString(),
+  });
+  it('moves deleted notifications to Trash and explains the 30-day timer', async () => {
+    const service = api(),
+      user = userEvent.setup();
+    render(<NotificationCenter api={service} />);
+    const inbox = await screen.findByRole('list', {
+      name: 'Notification inbox',
+    });
+    await user.click(
+      within(inbox).getAllByRole('button', { name: 'Move to Trash' })[0]!,
+    );
+    await waitFor(() =>
+      expect(service.mutate).toHaveBeenCalledWith({
+        ids: ['1'],
+        action: 'delete',
+      }),
+    );
+    expect(
+      await screen.findByText(
+        /moved to Trash.*permanently deleted after 30 days/,
+      ),
+    ).toBeVisible();
+  });
+  it('lists Trash with a countdown, restores, and confirms permanent deletion', async () => {
+    const service = api(),
+      user = userEvent.setup();
+    vi.mocked(service.list).mockResolvedValue({
+      items: [inTrash(rows[0]!)],
+      totalItems: 1,
+      unread: 0,
+      skip: 0,
+      take: 25,
+    });
+    vi.mocked(service.detail).mockResolvedValue(inTrash(rows[0]!));
+    render(<NotificationCenter api={service} view="trash" />);
+    const trash = await screen.findByRole('list', {
+      name: 'Notification trash',
+    });
+    expect(service.list).toHaveBeenCalledWith(
+      expect.objectContaining({ state: 'trash' }),
+    );
+    expect(screen.queryByLabelText('Read status')).toBeNull();
+    expect(
+      within(trash).getByText('Permanently deleted in 13 days'),
+    ).toBeVisible();
+    expect(
+      within(trash).queryByRole('button', { name: 'Star notification' }),
+    ).toBeNull();
+    await user.click(within(trash).getByText('New market occurrence'));
+    expect(
+      await screen.findByRole('region', { name: 'New market occurrence' }),
+    ).toHaveTextContent('In Trash.');
+    expect(service.mutate).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'read' }),
+    );
+    await user.click(
+      within(trash).getAllByRole('button', { name: 'Restore to inbox' })[0]!,
+    );
+    await waitFor(() =>
+      expect(service.mutate).toHaveBeenCalledWith({
+        ids: ['1'],
+        action: 'restore',
+      }),
+    );
+    await user.click(
+      within(trash).getAllByRole('button', { name: 'Delete forever' })[0]!,
+    );
+    const confirm = await screen.findByRole('dialog', {
+      name: 'Delete forever?',
+    });
+    expect(confirm).toHaveTextContent('cannot be undone');
+    expect(service.mutate).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'purge' }),
+    );
+    await user.click(
+      within(confirm).getByRole('button', { name: 'Delete forever' }),
+    );
+    await waitFor(() =>
+      expect(service.mutate).toHaveBeenCalledWith({
+        ids: ['1'],
+        action: 'purge',
+      }),
+    );
+  });
+});
 describe('Unified inbox interaction contracts', () => {
   it('preserves inactive historical messages and their actions without offering subscription controls', async () => {
     const service = api();
@@ -176,7 +266,9 @@ describe('Unified inbox interaction contracts', () => {
         name: /Participating market canceled.*Cancellation notice/,
       }),
     );
-    const dialog = await screen.findByRole('dialog');
+    const dialog = await screen.findByRole('region', {
+      name: 'Participating market canceled',
+    });
     const action = within(dialog).getByRole('link', {
       name: 'View Market Relationships',
     });
@@ -185,6 +277,35 @@ describe('Unified inbox interaction contracts', () => {
       new URL('/vendor/markets?channel=10', location.origin).toString(),
     );
     expect(dialog).not.toHaveTextContent('Open related record');
+  });
+  it('names a business once when it sent its own notification, and opens rows from anywhere', async () => {
+    const service = api(),
+      user = userEvent.setup();
+    const own = { ...rows[1]!, id: '3', sender: 'Honey Vendor' };
+    vi.mocked(service.list).mockResolvedValue({
+      items: [own, rows[1]!],
+      totalItems: 2,
+      unread: 2,
+      skip: 0,
+      take: 25,
+    });
+    vi.mocked(service.detail).mockImplementation(async (id) =>
+      id === '3' ? own : rows[1]!,
+    );
+    render(<NotificationCenter api={service} />);
+    const inbox = await screen.findByRole('list', {
+      name: 'Notification inbox',
+    });
+    const [ownRow, otherRow] = within(inbox).getAllByRole('listitem');
+    expect(within(ownRow!).getAllByText('Honey Vendor')).toHaveLength(1);
+    expect(within(otherRow!).getByText('Saturday Market')).toBeVisible();
+    await user.click(
+      within(ownRow!).getByText('Participating market canceled'),
+    );
+    const panel = await screen.findByRole('region', {
+      name: 'Participating market canceled',
+    });
+    expect(within(panel).getAllByText('Honey Vendor')).toHaveLength(1);
   });
   it('shows a safe unavailable state when a business affiliation has been revoked', async () => {
     const service = api(),
@@ -202,7 +323,9 @@ describe('Unified inbox interaction contracts', () => {
         name: /Participating market canceled.*Cancellation notice/,
       }),
     );
-    const dialog = await screen.findByRole('dialog');
+    const dialog = await screen.findByRole('region', {
+      name: 'Participating market canceled',
+    });
     expect(
       within(dialog).queryByRole('link', { name: 'View Market Relationships' }),
     ).toBeNull();
@@ -236,9 +359,9 @@ describe('Unified inbox interaction contracts', () => {
         name: /New market occurrence.*Saturday at the park/,
       }),
     );
-    expect(await screen.findByRole('dialog')).toHaveTextContent(
-      'Full notification content',
-    );
+    expect(
+      await screen.findByRole('region', { name: 'New market occurrence' }),
+    ).toHaveTextContent('Full notification content');
     await waitFor(() =>
       expect(service.mutate).toHaveBeenCalledWith({
         ids: ['1'],
@@ -306,7 +429,9 @@ describe('Unified inbox interaction contracts', () => {
         name: /Participating market canceled.*Cancellation notice/,
       }),
     );
-    const dialog = await screen.findByRole('dialog');
+    const dialog = await screen.findByRole('region', {
+      name: 'Participating market canceled',
+    });
     expect(
       within(dialog).queryByRole('button', {
         name: 'Unsubscribe from this source',
@@ -319,6 +444,10 @@ describe('Unified inbox interaction contracts', () => {
       user = userEvent.setup();
     render(<NotificationCenter api={service} />);
     await screen.findByRole('list', { name: 'Notification inbox' });
+    expect(screen.getByLabelText('Receiving role')).not.toBeVisible();
+    const toggle = screen.getByRole('button', { name: /^Filters/ });
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await user.selectOptions(screen.getByLabelText('Receiving role'), 'vendor');
     await waitFor(() =>
       expect(service.list).toHaveBeenCalledWith(

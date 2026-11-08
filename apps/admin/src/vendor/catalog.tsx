@@ -37,6 +37,7 @@ import {
 } from '@market/ui/farmstand';
 import '@market/ui/farmstand.css';
 import './product-editor.css';
+import { VendorSwitch } from './VendorSwitch';
 import { ProductSetupPreview } from './ProductSetupPreview';
 import {
   type VendorService,
@@ -107,18 +108,14 @@ function ProductEnabledSwitch({
 }) {
   const [checked, setChecked] = useState(enabled);
   return (
-    <label className="product-enabled-switch">
-      <Checkbox
-        name={name}
-        form={form}
-        role="switch"
-        checked={checked}
-        disabled={disabled}
-        onChange={(event) => setChecked(event.currentTarget.checked)}
-      />
-      <span className="product-enabled-track" aria-hidden="true" />
-      <span>{checked ? 'Enabled' : 'Disabled'}</span>
-    </label>
+    <VendorSwitch
+      name={name}
+      form={form}
+      checked={checked}
+      disabled={disabled}
+      onChange={(event) => setChecked(event.currentTarget.checked)}
+      label={checked ? 'Enabled' : 'Disabled'}
+    />
   );
 }
 

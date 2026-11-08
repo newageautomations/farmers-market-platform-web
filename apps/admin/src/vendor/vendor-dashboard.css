@@ -1,0 +1,872 @@
+/* Vendor dashboard. Composes the Markets workspace heading, MarketsSummary,
+   Farmstand panels, the Markets next-date panel and the finance chart panels;
+   these rules only arrange them on the dashboard grid. */
+.admin-content:has(.vendor-dashboard) {
+  width: min(100% - 4rem, 1320px);
+}
+.vendor-dashboard-actions > :is(.field, .ui-field) {
+  margin: 0;
+}
+.vendor-dashboard-actions .farmstand-select.ui-select.ui-select,
+.vendor-dashboard-actions > .farmstand-button.button {
+  --ui-control-height: 38px;
+  height: 38px;
+  min-height: 38px;
+  font-size: 13px;
+}
+
+/* Full-width bands (Urgent requests, Key metrics) take their content's
+   height; grid runs sit between them. */
+.vendor-dashboard-stack {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.vendor-dashboard-band {
+  min-width: 0;
+  animation: markets-view-enter 360ms ease-out both;
+}
+.vendor-dashboard-band > :is(.farmstand-panel.card.ui-card, section) {
+  margin: 0;
+}
+.vendor-dashboard-band:empty {
+  display: none;
+}
+.vendor-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  /* Keep in step with GRID_ROW and GRID_GAP in dashboard-grid.ts. */
+  grid-auto-rows: 156px;
+  gap: 18px;
+  min-width: 0;
+}
+.vendor-dashboard-widget {
+  grid-column: var(--x) / span var(--w);
+  grid-row: var(--y) / span var(--h);
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  /* Sections lay out their content from the cell they are given. */
+  container: dashboard-widget / size;
+  animation: markets-view-enter 360ms ease-out both;
+}
+.vendor-dashboard-widget:empty {
+  display: none;
+}
+.vendor-dashboard-widget > :is(.farmstand-panel.card.ui-card, section) {
+  margin: 0;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  box-sizing: border-box;
+}
+.vendor-dashboard-widget > .farmstand-panel.card.ui-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* Scrolling bodies for lists longer than their cell. */
+.vendor-dashboard-widget
+  :is(
+    .vendor-dashboard-tasks,
+    .vendor-dashboard-products-list,
+    .vendor-dashboard-orders-scroll
+  ) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.vendor-dashboard-fill {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.vendor-dashboard-panel-header {
+  margin-bottom: 14px;
+}
+.vendor-dashboard-panel-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 17px;
+}
+.vendor-dashboard-panel-header .farmstand-text-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+}
+.vendor-dashboard-panel-header .farmstand-text-action .farmstand-icon {
+  width: 14px;
+  height: 14px;
+  transition: transform 160ms ease;
+}
+.vendor-dashboard-panel-header
+  .farmstand-text-action:is(:hover, :focus-visible)
+  .farmstand-icon {
+  transform: translateX(3px);
+}
+.vendor-dashboard-muted {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 12.5px;
+}
+.vendor-dashboard-change {
+  font-size: 12px;
+}
+.vendor-dashboard-change-positive {
+  color: var(--status-success-fg);
+}
+.vendor-dashboard-change-negative {
+  color: var(--status-danger-fg);
+}
+
+/* Urgent requests */
+.vendor-dashboard-urgent.farmstand-panel.card.ui-card {
+  border-color: color-mix(in srgb, var(--status-danger-fg) 25%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--status-danger-bg) 35%,
+    var(--brand-surface)
+  );
+}
+.vendor-dashboard-urgent h2 > .farmstand-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--status-danger-fg);
+}
+.vendor-dashboard-urgent-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vendor-dashboard-urgent-card > span:nth-child(2) {
+  min-width: 0;
+}
+.vendor-dashboard-urgent-card {
+  --urgent-fg: var(--status-warning-fg);
+  --urgent-bg: var(--status-warning-bg);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--urgent-fg) 28%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--urgent-bg) 70%, var(--brand-surface));
+  color: var(--brand-foreground);
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.vendor-dashboard-urgent-card[data-tone='danger'] {
+  --urgent-fg: var(--status-danger-fg);
+  --urgent-bg: var(--status-danger-bg);
+}
+.vendor-dashboard-urgent-card[data-tone='info'] {
+  --urgent-fg: var(--status-info-fg);
+  --urgent-bg: var(--status-info-bg);
+}
+.vendor-dashboard-urgent-card:is(:hover, :focus-visible) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--urgent-fg) 14%, transparent);
+}
+.vendor-dashboard-urgent-card:focus-visible {
+  outline: 2px solid var(--urgent-fg);
+  outline-offset: 2px;
+}
+.vendor-dashboard-urgent-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--brand-surface);
+  color: var(--urgent-fg);
+}
+.vendor-dashboard-urgent-icon .farmstand-icon {
+  width: 19px;
+  height: 19px;
+}
+.vendor-dashboard-urgent-card strong,
+.vendor-dashboard-urgent-card small {
+  display: block;
+}
+.vendor-dashboard-urgent-card strong {
+  font-size: 13.5px;
+  line-height: 1.35;
+}
+.vendor-dashboard-urgent-card small {
+  margin-top: 3px;
+  color: var(--brand-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.vendor-dashboard-urgent-card > .farmstand-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--urgent-fg);
+}
+
+/* Key metrics */
+.vendor-dashboard-widget > section > .vendor-dashboard-kpis {
+  height: 100%;
+}
+.markets-summary.vendor-dashboard-kpis {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+/* Five cards share the row; keep each value on one line. */
+.vendor-dashboard-kpis .markets-stat.farmstand-panel.card.ui-card {
+  padding: 18px;
+  gap: 6px 12px;
+}
+.vendor-dashboard-kpis .markets-stat dd {
+  font-size: 25px;
+  white-space: nowrap;
+}
+
+/* Next upcoming market: the Markets next-date panel at half width. */
+.vendor-dashboard-next-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  align-content: start;
+  align-items: start;
+  gap: 6px 4px;
+  padding: 0 9px 9px;
+}
+.vendor-dashboard-date-tile.markets-next-art {
+  height: auto;
+  min-height: 132px;
+  margin: 2px 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  color: var(--brand-primary);
+}
+.vendor-dashboard-date-tile span {
+  font-size: 12px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand-muted);
+}
+.vendor-dashboard-date-tile strong {
+  font-size: 46px;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+/* The widget is its own container, so the Markets panel's narrow-page
+   rules would apply inside it; keep the dashboard arrangement. */
+.vendor-dashboard-next .markets-next-content.markets-next-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+.vendor-dashboard-next .markets-next-content {
+  padding: 6px 12px;
+}
+.vendor-dashboard-next-facts {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  font-size: 13px;
+}
+.vendor-dashboard-next-facts > div {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+.vendor-dashboard-next-facts dt {
+  display: grid;
+  place-items: center;
+  color: var(--brand-primary);
+}
+.vendor-dashboard-next-facts dt :is(.farmstand-icon, .ui-icon, svg) {
+  width: 16px;
+  height: 16px;
+}
+.vendor-dashboard-next-facts dd {
+  margin: 0;
+  align-self: center;
+}
+.vendor-dashboard-next-facts dd small {
+  margin-left: 8px;
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+.vendor-dashboard-next-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 4px 3px 0;
+}
+.vendor-dashboard-next-actions .farmstand-button {
+  flex: 1 1 160px;
+  justify-content: center;
+}
+.vendor-dashboard-next-actions .farmstand-icon {
+  width: 16px;
+  height: 16px;
+}
+.vendor-dashboard-later {
+  display: none;
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding: 12px 3px 0;
+  border-top: 1px solid var(--markets-border);
+}
+.vendor-dashboard-later h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--brand-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.vendor-dashboard-later ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vendor-dashboard-later a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: var(--markets-soft);
+  color: var(--brand-foreground);
+  text-decoration: none;
+  font-size: 13px;
+}
+.vendor-dashboard-later a:is(:hover, :focus-visible) {
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 12%,
+    var(--brand-surface)
+  );
+}
+.vendor-dashboard-later .badge,
+.vendor-dashboard-later [class*='status'] {
+  flex: none;
+  white-space: nowrap;
+}
+.vendor-dashboard-later small {
+  display: block;
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+
+/* This week */
+.vendor-dashboard-tasks {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vendor-dashboard-tasks li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 13px;
+}
+.vendor-dashboard-tasks li + li {
+  border-top: 1px solid var(--markets-border);
+}
+.vendor-dashboard-task-mark {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border: 1.5px solid var(--markets-border);
+  border-radius: 5px;
+  color: var(--brand-surface);
+}
+.vendor-dashboard-task-mark :is(.ui-icon, svg) {
+  width: 12px;
+  height: 12px;
+}
+.vendor-dashboard-tasks li[data-done] .vendor-dashboard-task-mark {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+}
+.vendor-dashboard-tasks a {
+  color: var(--brand-foreground);
+  text-decoration: none;
+  line-height: 1.4;
+}
+.vendor-dashboard-tasks a:is(:hover, :focus-visible) {
+  color: var(--brand-primary);
+  text-decoration: underline;
+}
+.vendor-dashboard-tasks li[data-done] a {
+  color: var(--brand-muted);
+  text-decoration: line-through;
+}
+.vendor-dashboard-tasks small {
+  display: block;
+  color: var(--brand-muted);
+  font-size: 11.5px;
+}
+
+/* Chart panels */
+.vendor-dashboard-trend .finance-legend {
+  margin-bottom: 8px;
+}
+.vendor-dashboard-donut .finance-donut-legend span {
+  white-space: normal;
+  line-height: 1.3;
+}
+/* Short gross-sales line keeps the chart row (and its donuts) compact. */
+.vendor-dashboard-trend .finance-main-graph {
+  min-height: 0;
+}
+.vendor-dashboard-gross-key::before {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+.vendor-dashboard-ranking-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.vendor-dashboard-ranking-line a {
+  overflow: hidden;
+  color: var(--brand-foreground);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vendor-dashboard-ranking-line a:is(:hover, :focus-visible) {
+  color: var(--brand-primary);
+  text-decoration: underline;
+}
+.vendor-dashboard-ranking-line strong {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.vendor-dashboard-widget
+  > :is(
+    .vendor-dashboard-donut,
+    .vendor-dashboard-trend
+  ).farmstand-panel.card.ui-card {
+  position: relative;
+  overflow: visible;
+}
+/* Square cells: ring above its key, sized from the cell height. */
+.vendor-dashboard-donut .finance-donut {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+}
+.vendor-dashboard-donut .finance-donut-plot {
+  width: clamp(96px, calc(100cqh - 190px), 230px);
+  margin: 0 auto;
+}
+.vendor-dashboard-donut .finance-donut-controls:empty {
+  display: none;
+}
+.vendor-dashboard-widget:has(.finance-donut-tooltip, .finance-chart-tooltip) {
+  z-index: 2;
+}
+.vendor-dashboard-facts {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--markets-border);
+  font-size: 12.5px;
+}
+.vendor-dashboard-facts > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.vendor-dashboard-facts dt {
+  color: var(--brand-muted);
+}
+.vendor-dashboard-facts dd {
+  margin: 0;
+  align-self: center;
+  font-weight: 650;
+  text-align: right;
+}
+.vendor-dashboard-facts dd .vendor-dashboard-change {
+  display: block;
+  font-weight: 500;
+}
+
+/* Recent orders: customer, total and date only. */
+.vendor-dashboard-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.vendor-dashboard-orders-table thead th {
+  padding: 0 0 8px;
+  color: var(--brand-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-align: left;
+}
+.vendor-dashboard-orders-table :is(th, td) {
+  padding: 9px 0;
+  text-align: left;
+  font-weight: 400;
+}
+.vendor-dashboard-orders-table tbody tr + tr :is(th, td),
+.vendor-dashboard-orders-table tbody tr:first-child :is(th, td) {
+  border-top: 1px solid var(--markets-border);
+}
+.vendor-dashboard-orders-table :is(th, td):nth-child(2) {
+  padding-inline: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.vendor-dashboard-orders-table :is(th, td):last-child {
+  color: var(--brand-muted);
+  text-align: right;
+  white-space: nowrap;
+}
+.vendor-dashboard-orders-table thead th:last-child {
+  color: var(--brand-muted);
+}
+.vendor-dashboard-orders-table tbody th a {
+  color: var(--brand-foreground);
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.vendor-dashboard-orders-table tbody th a:is(:hover, :focus-visible) {
+  color: var(--brand-primary);
+  text-decoration: underline;
+}
+
+/* Wide ranked lists use two columns. */
+.vendor-dashboard-widget:is([data-w='4'], [data-w='5'], [data-w='6'])
+  .vendor-dashboard-products-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+}
+
+/* Top products */
+.vendor-dashboard-products-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: dashboard-rank;
+}
+.vendor-dashboard-products-list li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  counter-increment: dashboard-rank;
+}
+.vendor-dashboard-rank {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--markets-soft);
+  color: var(--brand-primary);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.vendor-dashboard-rank::before {
+  content: counter(dashboard-rank);
+}
+.vendor-dashboard-product strong,
+.vendor-dashboard-product small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vendor-dashboard-product strong {
+  font-size: 13px;
+}
+.vendor-dashboard-product small {
+  color: var(--brand-muted);
+  font-size: 11.5px;
+}
+.vendor-dashboard-meter {
+  display: block;
+  height: 4px;
+  margin-top: 5px;
+  border-radius: 4px;
+  background:
+    linear-gradient(var(--brand-primary), var(--brand-primary)) 0 0 /
+      var(--dashboard-meter, 0%) 100% no-repeat,
+    var(--markets-soft);
+}
+
+/* Layout editor: the page grid at a reduced scale, with drag and resize. */
+dialog.ui-dialog.vendor-dashboard-editor-dialog {
+  width: min(1240px, calc(100vw - 2rem));
+}
+.vendor-dashboard-editor-frame {
+  padding: 14px;
+  border: 1px solid var(--markets-border, #d0d7d0);
+  border-radius: 12px;
+  background: var(--brand-background);
+}
+.vendor-dashboard-editor {
+  position: relative;
+  margin: 0 auto;
+  max-width: 100%;
+  /* Column guides, so cells read as a grid. */
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--brand-primary) 6%, transparent)
+      var(--editor-column),
+    transparent var(--editor-column)
+  );
+  background-size: calc(var(--editor-column) + var(--editor-gap)) 100%;
+  border-radius: 8px;
+  user-select: none;
+}
+.vendor-dashboard-editor-card {
+  position: absolute;
+  box-sizing: border-box;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid var(--markets-border, #d0d7d0);
+  border-radius: 9px;
+  background: var(--brand-surface);
+  text-align: center;
+  font-size: 13px;
+  cursor: grab;
+  touch-action: none;
+  transition:
+    left 160ms ease,
+    top 160ms ease,
+    width 160ms ease,
+    height 160ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+.vendor-dashboard-editor-card[data-conditional] {
+  border-style: dashed;
+}
+.vendor-dashboard-editor-card small {
+  color: var(--brand-muted);
+  font-size: 11px;
+}
+.vendor-dashboard-editor-card:is(:hover, :focus-visible),
+.vendor-dashboard-editor-card[data-active] {
+  border-color: var(--brand-primary);
+  box-shadow: 0 6px 18px
+    color-mix(in srgb, var(--brand-primary) 18%, transparent);
+  outline: none;
+}
+.vendor-dashboard-editor-card[data-active] {
+  z-index: 3;
+  cursor: grabbing;
+  opacity: 0.92;
+  transition: none;
+}
+.vendor-dashboard-editor-placeholder {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px dashed var(--brand-primary);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  transition:
+    left 120ms ease,
+    top 120ms ease,
+    width 120ms ease,
+    height 120ms ease;
+}
+.vendor-dashboard-editor-hide {
+  position: absolute;
+  top: 5px;
+  /* Clear of the top-right resize corner. */
+  right: 22px;
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+.vendor-dashboard-editor-hide :is(button, .button) {
+  --ui-control-height: 26px;
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  background: var(--brand-surface);
+}
+.vendor-dashboard-editor-resize {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transition: opacity 140ms ease;
+  border-color: var(--brand-primary);
+  border-style: solid;
+  border-width: 0;
+}
+/* An L-shaped mark in each corner; the cursor shows the resize direction. */
+.vendor-dashboard-editor-resize[data-corner='nw'] {
+  top: 3px;
+  left: 3px;
+  border-width: 2.5px 0 0 2.5px;
+  border-top-left-radius: 5px;
+  cursor: nwse-resize;
+}
+.vendor-dashboard-editor-resize[data-corner='ne'] {
+  top: 3px;
+  right: 3px;
+  border-width: 2.5px 2.5px 0 0;
+  border-top-right-radius: 5px;
+  cursor: nesw-resize;
+}
+.vendor-dashboard-editor-resize[data-corner='sw'] {
+  bottom: 3px;
+  left: 3px;
+  border-width: 0 0 2.5px 2.5px;
+  border-bottom-left-radius: 5px;
+  cursor: nesw-resize;
+}
+.vendor-dashboard-editor-resize[data-corner='se'] {
+  right: 3px;
+  bottom: 3px;
+  border-width: 0 2.5px 2.5px 0;
+  border-bottom-right-radius: 5px;
+  cursor: nwse-resize;
+}
+
+.vendor-dashboard-editor-card:is(:hover, :focus-within, [data-active])
+  :is(.vendor-dashboard-editor-hide, .vendor-dashboard-editor-resize) {
+  opacity: 1;
+}
+.vendor-dashboard-editor[data-dragging] .vendor-dashboard-editor-hide {
+  opacity: 0;
+}
+.vendor-dashboard-preview-hidden {
+  margin-top: 16px;
+}
+.vendor-dashboard-preview-hidden h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.vendor-dashboard-preview-hidden ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@container dashboard-widget (min-width: 640px) {
+  .vendor-dashboard-next-body {
+    grid-template-columns: 132px minmax(0, 1fr) minmax(220px, 0.9fr);
+  }
+  .vendor-dashboard-next-actions {
+    grid-column: 2;
+  }
+  .vendor-dashboard-later {
+    display: block;
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    margin: 0;
+    padding: 2px 4px 0 18px;
+    border-top: 0;
+    border-left: 1px solid var(--markets-border);
+  }
+  .vendor-dashboard-later ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container dashboard-widget (min-height: 480px) {
+  .vendor-dashboard-later {
+    display: block;
+  }
+}
+/* Landscape cells: ring beside its key. */
+@container dashboard-widget (min-aspect-ratio: 4 / 3) {
+  .vendor-dashboard-donut .finance-donut {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 28px;
+  }
+  .vendor-dashboard-donut .finance-donut-plot {
+    width: clamp(96px, calc(100cqh - 90px), 240px);
+  }
+  .vendor-dashboard-donut .finance-donut-legend {
+    font-size: 13.5px;
+    gap: 10px;
+  }
+}
+@container (max-width: 1080px) {
+  .vendor-dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(156px, auto);
+  }
+  .vendor-dashboard-widget {
+    grid-column: span var(--wn);
+    grid-row: span var(--h);
+  }
+}
+@container (max-width: 600px) {
+  .vendor-dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .vendor-dashboard-widget {
+    grid-column: 1 / -1;
+  }
+}
+/* Narrow cells: compact tile, single-column ranked lists. */
+@container dashboard-widget (max-width: 420px) {
+  .vendor-dashboard-next-body {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+  .vendor-dashboard-widget .vendor-dashboard-products-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vendor-dashboard-widget,
+  .vendor-dashboard-urgent-card,
+  .vendor-dashboard-editor-card,
+  .vendor-dashboard-editor-placeholder,
+  .vendor-dashboard-editor-hide,
+  .vendor-dashboard-editor-resize,
+  .vendor-dashboard-panel-header .farmstand-text-action .farmstand-icon {
+    animation: none;
+    transition: none;
+  }
+}

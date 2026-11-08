@@ -19,9 +19,9 @@ import {
 import type { VendorService } from './service';
 import { RouteLink } from './common';
 import './pos.css';
+import { codeLabel } from '../settings/providers';
 import { PosSaleDetails } from './pos-payments';
 import type { PosSale } from '@market/api';
-import { CloverPaymentIntegration } from './clover';
 
 export function squareMobileReturn(search: string) {
   if (search.length > 10000) throw new Error('Invalid Square return');
@@ -101,29 +101,15 @@ export function SquareMobileReturn({ service }: { service: VendorService }) {
   );
 }
 
-export function VendorPaymentIntegrations({
-  service,
-}: {
-  service: VendorService;
-}) {
-  if (
-    !service.pos ||
-    !service.context.permissions.includes('ManageOwnPosIntegrations')
-  )
-    return (
-      <Alert severity="warning">
-        Payment integrations require vendor owner access.
-      </Alert>
-    );
-  return (
-    <div className="pos-payment-sections" key={service.vendorId}>
-      <SquarePaymentIntegration api={service.pos} />
-      <CloverPaymentIntegration api={service.pos} />
-    </div>
-  );
-}
 /** Domain composition. Existing primitives do not manage processor authorization or pairing. */
-export function SquarePaymentIntegration({ api }: { api: InPersonApi }) {
+export function SquarePaymentIntegration({
+  api,
+  embedded = false,
+}: {
+  api: InPersonApi;
+  /** Host panel supplies the provider heading and the main surface. */
+  embedded?: boolean;
+}) {
   const [data, setData] = useState<SquareIntegration | null>(null),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
@@ -233,7 +219,7 @@ export function SquarePaymentIntegration({ api }: { api: InPersonApi }) {
         <Alert severity="warning">{data.connectionError}</Alert>
       )}
       {busy && <Spinner label="Checking Square" />}
-      <Card spacing="contained">
+      <Card spacing="contained" surface={embedded ? 'embedded' : 'card'}>
         <div className="pos-payment-sections">
           <p>
             Connect Square to receive card payments in your own merchant
@@ -251,8 +237,9 @@ export function SquarePaymentIntegration({ api }: { api: InPersonApi }) {
                   <Alert severity="info">{data.nativeReaderReason}</Alert>
                 )}
                 <Badge tone={connected ? 'success' : 'warning'}>
-                  {data.connection?.status.toLowerCase().replaceAll('_', ' ') ??
-                    'Not connected'}
+                  {data.connection
+                    ? codeLabel(data.connection.status)
+                    : 'Not connected'}
                 </Badge>
                 <Badge tone="info">{data.environment}</Badge>
               </div>
@@ -337,7 +324,7 @@ export function SquarePaymentIntegration({ api }: { api: InPersonApi }) {
                 <option value="">Choose an authorized location</option>
                 {data.locations.map((l) => (
                   <option key={l.id} value={l.id} disabled={!l.eligible}>
-                    {l.name} ({l.currency}, {l.status.toLowerCase()})
+                    {l.name} ({l.currency}, {codeLabel(l.status).toLowerCase()})
                   </option>
                 ))}
               </SelectField>

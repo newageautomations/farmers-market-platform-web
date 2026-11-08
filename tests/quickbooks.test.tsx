@@ -818,9 +818,10 @@ describe('QuickBooks finance settings', () => {
     expect(
       screen.queryByLabelText('Stripe online orders'),
     ).not.toBeInTheDocument();
+    // The Finances workspace menu now provides navigation back to other views.
     expect(
-      screen.getByRole('link', { name: 'Back to Finances' }),
-    ).toHaveAttribute('href', '/market/finances');
+      screen.queryByRole('link', { name: 'Back to Finances' }),
+    ).not.toBeInTheDocument();
   });
   it('previews without writing, requires confirmation and invalidates preview when dates change', async () => {
     const { api } = fixture({

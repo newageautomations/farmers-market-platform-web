@@ -1,0 +1,49 @@
+/* Shared vendor switch (originally the product enabled switch). Native checkbox with role="switch". */
+.product-enabled-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+}
+.product-enabled-switch > input {
+  position: absolute;
+  width: 44px;
+  height: 26px;
+  margin: 0;
+  opacity: 0;
+}
+.product-enabled-track {
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  padding: 3px;
+  border-radius: 20px;
+  background: var(--status-danger-fg);
+}
+.product-enabled-track::before {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--brand-surface);
+}
+.product-enabled-switch > input:checked + .product-enabled-track {
+  background: var(--status-success-fg);
+}
+.product-enabled-switch > input:checked + .product-enabled-track::before {
+  transform: translateX(18px);
+}
+.product-enabled-switch > input:focus-visible + .product-enabled-track {
+  outline: 2px solid var(--brand-foreground);
+  outline-offset: 3px;
+}
+.product-enabled-switch:has(> input:disabled) {
+  opacity: 0.6;
+  cursor: default;
+}
+/* Neutral off state for optional features, where off is not a failure. */
+.product-enabled-switch-neutral > input:not(:checked) + .product-enabled-track {
+  background: color-mix(in srgb, var(--brand-muted) 45%, var(--brand-surface));
+}

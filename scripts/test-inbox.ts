@@ -143,7 +143,7 @@ try {
   ]);
   if (process.argv.includes('--serve')) {
     console.log(
-      `Disposable inbox demo is ready.\nCustomer: ${central}/notifications\nVendor/Market: ${admin}/notifications\nTest email: ${fixture.email}\nTest password: ${fixture.password}\nUse the Customer account selector to switch modes. Press Enter here to close the owned services and clean up the disposable database.`,
+      `Disposable inbox demo is ready.\nCustomer: ${central}/account/notifications\nVendor: ${admin}/vendor/notifications\nMarket: ${admin}/market/notifications\nTest email: ${fixture.email}\nTest password: ${fixture.password}\nUse the Customer account selector to switch modes. Press Enter here to close the owned services and clean up the disposable database.`,
     );
     const input = createInterface({ input: process.stdin });
     await new Promise<void>((resolve) => input.once('line', () => resolve()));
@@ -168,7 +168,7 @@ try {
         await check(
           `Customer bell, unified roles, keyboard and responsive layout at ${width}px`,
           async () => {
-            await page.goto(central + '/notifications');
+            await page.goto(central + '/account/notifications');
             await page
               .getByRole('list', { name: 'Notification inbox' })
               .waitFor();
@@ -197,7 +197,7 @@ try {
             );
             assert.equal(
               await nav
-                .locator('a[href="/notifications"] svg path')
+                .locator('a[href="/account/notifications"] svg path')
                 .getAttribute('d'),
               'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4',
             );
@@ -310,7 +310,7 @@ try {
             );
             await destination.click();
             await page.waitForURL(admin + '/**');
-            await page.goto(central + '/notifications');
+            await page.goto(central + '/account/notifications');
             await page
               .getByRole('list', { name: 'Notification inbox' })
               .waitFor();
@@ -355,10 +355,10 @@ try {
               await openDialog
                 .getByRole('button', { name: 'Close', exact: true })
                 .click();
-            await page.goto(central + '/notifications/unsubscribed');
+            await page.goto(central + '/account/notifications/unsubscribed');
             assert.equal(
               await page
-                .locator('.admin-sidebar a[href="/notifications"]')
+                .locator('.admin-sidebar a[href="/account/notifications"]')
                 .getAttribute('aria-current'),
               'page',
             );
@@ -366,15 +366,15 @@ try {
               .getByRole('button', { name: 'Resubscribe' })
               .first()
               .click();
-            await page.goto(central + '/notifications/settings');
+            await page.goto(central + '/account/notifications/settings');
             assert.equal(
               await page
-                .locator('.admin-sidebar a[href="/notifications"]')
+                .locator('.admin-sidebar a[href="/account/notifications"]')
                 .getAttribute('aria-current'),
               'page',
             );
             await page.getByLabel('Optional notification type').waitFor();
-            await page.goto(central + '/notifications');
+            await page.goto(central + '/account/notifications');
             await page
               .getByRole('list', { name: 'Notification inbox' })
               .waitFor();
@@ -412,7 +412,7 @@ try {
           await customerSelector.selectOption(vendorChoice);
           await page.waitForURL(admin + '/**');
           await page.locator('.admin-topbar').waitFor();
-          await page.goto(admin + '/notifications');
+          await page.goto(admin + '/vendor/notifications');
           try {
             await page
               .getByRole('list', { name: 'Notification inbox' })
@@ -464,7 +464,7 @@ try {
           const selector = await visible(page, 'Account mode');
           await selector.selectOption('MARKET_MANAGER');
           await page.locator('.admin-topbar').waitFor();
-          await page.goto(admin + '/notifications');
+          await page.goto(admin + '/market/notifications');
           await page
             .getByRole('list', { name: 'Notification inbox' })
             .waitFor();
@@ -489,13 +489,13 @@ try {
             1,
           );
           for (const target of [
-            '/notifications/settings',
-            '/notifications/unsubscribed',
+            '/market/notifications/settings',
+            '/market/notifications/unsubscribed',
           ]) {
             await page.goto(admin + target);
             assert.equal(
               await page
-                .locator('.admin-sidebar a[href="/notifications"]')
+                .locator('.admin-sidebar a[href="/market/notifications"]')
                 .getAttribute('aria-current'),
               'page',
             );
@@ -579,14 +579,12 @@ try {
                 status: 'No outstanding requirements',
               })),
             };
+            // The shell refresh remounts the page; remount with resolved facts.
             await page.evaluate(
               async ({ modulePath, data }) =>
-                (await import(modulePath)).setChecklist(data),
+                (await import(modulePath)).mountChecklist(data),
               { modulePath, data: resolved },
             );
-            await widget
-              .getByRole('button', { name: 'Refresh checklist' })
-              .click();
             await widget
               .getByText('No outstanding requirements', { exact: true })
               .first()

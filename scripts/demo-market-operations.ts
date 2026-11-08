@@ -39,7 +39,11 @@ if (
     'team-permissions-fixtures',
     'team-invitations-fixtures',
     'team-invitations-api',
+    'manna-team-fixtures',
+    'manna-contact-fixtures',
     'market-discovery-fixtures',
+    'finance-history-fixtures',
+    'vendor-analytics-fixtures',
   ].includes(action)
 )
   Object.assign(
@@ -90,7 +94,11 @@ if (['admin', 'storefront'].includes(action)) {
       'team-permissions-fixtures',
       'team-invitations-fixtures',
       'team-invitations-api',
+      'manna-team-fixtures',
+      'manna-contact-fixtures',
       'market-discovery-fixtures',
+      'finance-history-fixtures',
+      'vendor-analytics-fixtures',
       'test',
     ].includes(action)
   )

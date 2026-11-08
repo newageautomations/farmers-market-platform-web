@@ -3,6 +3,7 @@ import type {
   Membership,
   MembershipState,
   Occurrence,
+  VendorBoothAssignment,
 } from '@market/api';
 import type { VendorService } from './service';
 import { safeStorefrontUrl } from '@market/api';
@@ -36,7 +37,7 @@ function applicationRank(row: ApplicantApplicationRow) {
 }
 
 /** Use backend-supplied market origins, never construct domains from slugs. */
-async function readMarketApplications(service: VendorService) {
+export async function readMarketApplications(service: VendorService) {
   const websites = new Map<string, string>();
   const applications = new Map<
     string,
@@ -140,21 +141,29 @@ export interface UpcomingMarketDate {
   booth?: string;
 }
 
-/** Booth labels come from verified assignments; a failed read is never shown as unassigned. */
-async function readBoothLabels(service: VendorService) {
+/** Verified booth assignments by occurrence; a failed read is never shown as unassigned. */
+export async function readBoothAssignments(service: VendorService) {
   if (
     !service.boothAssignments ||
     !hasPermission(service.context.permissions, 'ReadOwnVendorIdentity')
   )
     return undefined;
   try {
-    const booths = new Map<string, string>();
+    const booths = new Map<string, VendorBoothAssignment>();
     for (const assignment of await service.boothAssignments())
-      booths.set(String(assignment.occurrenceId), assignment.space.label);
+      booths.set(String(assignment.occurrenceId), assignment);
     return booths;
   } catch {
     return undefined;
   }
+}
+/** Booth labels come from verified assignments; a failed read is never shown as unassigned. */
+async function readBoothLabels(service: VendorService) {
+  const assignments = await readBoothAssignments(service);
+  return (
+    assignments &&
+    new Map([...assignments].map(([id, a]) => [id, a.space.label] as const))
+  );
 }
 
 /** Scheduled dates for approved memberships only; participation and booths remain separate authorities. */

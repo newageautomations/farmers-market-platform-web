@@ -37,12 +37,15 @@ export type OperationsAction =
   | 'CLONE_APPLICATION'
   | 'PUBLISH_APPLICATION'
   | 'RETIRE_APPLICATION'
+  | 'ARCHIVE_APPLICATION'
+  | 'UNARCHIVE_APPLICATION'
   | 'REVIEW_APPLICATION'
   | 'SEND_INFORMATION_REQUEST'
   | 'RESOLVE_INFORMATION_REQUEST'
   | 'CANCEL_INFORMATION_REQUEST'
   | 'ACCEPT_ASSIGN'
   | 'SAVE_DIRECTORY'
+  | 'SAVE_VENDOR_NOTES'
   | 'REQUEST_VENDOR_LINK'
   | 'CONVERT_OCCURRENCE_IDENTITY'
   | 'REVIEW_OCCURRENCE'
@@ -133,11 +136,27 @@ export interface MapElement {
   groupId?: string;
   /** LINE paths: at most 512 normalized x,y pairs within [0,1]. */
   points?: number[];
+  /** Trusted bundled illustration reference, only meaningful on IMAGE objects. */
+  assetId?: string;
+  strokePattern?: 'solid' | 'dashed' | 'dotted';
+  cornerRadius?: number;
+  shadow?: 'none' | 'soft';
+  /** Existing LINE geometry can be a smooth walkway or closed landscape region. */
+  closed?: boolean;
+  curved?: boolean;
+  outlineColor?: string;
+  outlineWidth?: number;
+  fontFamily?: 'sans' | 'serif' | 'mono';
+  labelBackground?: string;
+  labelPadding?: number;
+  /** Reference IMAGE objects are never part of published content. */
+  referenceOnly?: boolean;
 }
 export interface MapDefinition {
   pixelsPerFoot: number;
   areas: Array<{ id: string; name: string }>;
   elements: MapElement[];
+  background?: { color: string; gridColor?: string; gridOpacity?: number };
 }
 export interface SpaceDetails {
   label: string;
@@ -154,6 +173,10 @@ export interface SpaceDetails {
 export interface RentalDetails {
   name: string;
   description: string;
+  /** Optional media metadata stored with the existing rental details JSON. */
+  imageAssetId?: string | null;
+  imageStockId?: string | null;
+  image?: string | null;
   enabled: boolean;
   priceMinor: number;
   currency: string;
@@ -190,12 +213,26 @@ export interface ApplicationTemplate extends OperationsRecord {
   slug: string;
   visibility: 'PUBLIC' | 'PRIVATE' | 'RETIRED';
   advertised: boolean;
+  /** Set while archived: closed to applicants and hidden from the active list. */
+  archivedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+/** Submitted (non-draft) applications received through one template. */
+export interface ApplicationActivity {
+  templateId: number;
+  total: number;
+  /** Submitted or under review. */
+  awaiting: number;
+  latestSubmittedAt: string | null;
 }
 export interface ApplicationVersion extends OperationsRecord {
   templateId: number;
   versionNumber: number;
   status: 'DRAFT' | 'PUBLISHED' | 'RETIRED';
   definition: ApplicationDefinition;
+  createdAt?: string;
+  updatedAt?: string;
 }
 export interface ApplicationSubmission extends OperationsRecord {
   createdAt?: string;
@@ -282,6 +319,10 @@ export interface DirectoryEntry extends OperationsRecord {
   kind: 'EXTERNAL' | 'PLATFORM_LINKED';
   linkedVendorId: number | null;
   managerNotes: string;
+}
+export interface VendorNote extends OperationsRecord {
+  vendorId: number;
+  notes: string;
 }
 export interface RentalOption extends OperationsRecord {
   details: RentalDetails;
@@ -434,8 +475,13 @@ export interface MarketOperationsData {
   }>;
   templates?: ApplicationTemplate[];
   versions?: ApplicationVersion[];
+  /** Default definition for a new, not yet saved application. */
+  applicationDefaults?: ApplicationDefinition;
+  applicationActivity?: ApplicationActivity[];
   submissions?: ApplicationSubmission[];
   directory?: DirectoryEntry[];
+  /** Private manager notes about platform Vendors (their details are Vendor-owned). */
+  vendorNotes?: VendorNote[];
   rentals?: RentalOption[];
   eligibleVendors?: Array<{ id: number; name: string; slug: string }>;
   layouts?: Layout[];

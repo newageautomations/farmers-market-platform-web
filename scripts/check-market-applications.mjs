@@ -98,7 +98,7 @@ try {
         .getByRole('region', { name: 'Application details' })
         .getByRole('link', { name: 'Open application' })
         .count(),
-      1,
+      0,
     );
     const violations = (
       await new AxeBuilder({ page }).include('main').analyze()

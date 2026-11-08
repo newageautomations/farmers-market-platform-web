@@ -449,8 +449,17 @@ export function Tabs({
   initialTab,
   onChange,
   split = false,
+  className = '',
 }: {
-  items: readonly { label: string; content: ReactNode; disabled?: boolean }[];
+  items: readonly {
+    label: string;
+    content: ReactNode;
+    disabled?: boolean;
+    /** Decorative icon; the label remains the accessible tab name. */
+    icon?: ReactNode;
+  }[];
+  /** Extra tablist classes for an approved presentation variant. */
+  className?: string;
   /** Display both mounted panels as labelled regions in responsive workspaces. */
   split?: boolean;
   initialTab?: string;
@@ -480,7 +489,12 @@ export function Tabs({
   }, [split, selected]);
   return (
     <div ref={root}>
-      <div role="tablist" className="ui-tabs" aria-label="Views" hidden={split}>
+      <div
+        role="tablist"
+        className={`ui-tabs ${className}`.trim()}
+        aria-label="Views"
+        hidden={split}
+      >
         {items.map((item, index) => (
           <button
             type="button"
@@ -518,6 +532,7 @@ export function Tabs({
               refs.current[next]?.focus();
             }}
           >
+            {item.icon}
             {item.label}
           </button>
         ))}
@@ -581,6 +596,7 @@ export function DataTable({
         label={label}
         columns={recordDetails}
         sort={sort}
+        className={className}
       >
         {children}
       </RecordDetailsTable>
@@ -662,6 +678,9 @@ export function Pagination({
 export { MarketMap, boothTooltipPosition, type BoothStatus } from './MarketMap';
 export { MapCanvas, type MapCanvasHandle, type MapTool } from './map/MapCanvas';
 export * from './map/model';
+export * from './map/assets';
+export * from './map/visuals';
+export * from './map/smart-design';
 export { ApplicationFields } from './ApplicationFields';
 
 export {

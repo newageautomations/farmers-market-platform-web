@@ -1,0 +1,37 @@
+/* Read-only Harvest product preview (HarvestProductPreview): vendor product
+   setup and the Market's listing review. Moved from product-editor.css. */
+.product-harvest-preview {
+  padding: clamp(1.25rem, 4vw, 3rem);
+  background: var(--brand-background);
+  color: var(--brand-foreground);
+  font-family: var(--font-body);
+  border-radius: var(--storefront-card-radius);
+}
+.product-harvest-preview .product-summary > h2 {
+  font-family: var(--font-heading);
+  font-size: clamp(2.25rem, 4vw, 4rem);
+  font-weight: 400;
+  line-height: 1.08;
+  margin: 0.5rem 0 1.5rem;
+}
+.product-harvest-preview .product-placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--brand-surface);
+  color: var(--brand-muted);
+}
+.product-harvest-preview .purchase-form {
+  display: grid;
+}
+.product-harvest-preview .product-description {
+  white-space: pre-wrap;
+}
+.product-harvest-preview {
+  width: 75%;
+  margin-inline: auto;
+}
+.product-harvest-preview .product-summary .product-information {
+  margin-block: 0;
+  width: 100%;
+  min-width: 0;
+}

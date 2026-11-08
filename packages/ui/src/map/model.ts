@@ -338,47 +338,113 @@ export function reorder(
     },
   };
 }
+/** Complete decoration groups move as single units, retaining internal spacing. */
+export function arrangementUnits(d: Drawing, ids: string[]) {
+  const selected = new Set(ids),
+    items = d.definition.elements.filter((e) => selected.has(e.id));
+  if (
+    !items.length ||
+    items.some((e) => e.locked || e.editorHidden) ||
+    new Set(items.map((e) => e.areaId)).size > 1
+  )
+    return [];
+  const groups = new Map<string, MapElement[]>(),
+    partialGroups = new Set(
+      d.definition.elements
+        .filter((e) => e.groupId && !selected.has(e.id))
+        .map((e) => e.groupId),
+    );
+  for (const e of items) {
+    if (e.groupId && partialGroups.has(e.groupId)) return [];
+    const key = e.groupId ? `group:${e.groupId}` : `element:${e.id}`;
+    const members = groups.get(key) ?? [];
+    members.push(e);
+    groups.set(key, members);
+  }
+  return [...groups.values()].map((elements) => {
+    const boxes = elements.map(bounds),
+      x = Math.min(...boxes.map((b) => b.x)),
+      y = Math.min(...boxes.map((b) => b.y));
+    return {
+      elements,
+      box: {
+        x,
+        y,
+        width: Math.max(...boxes.map((b) => b.x + b.width)) - x,
+        height: Math.max(...boxes.map((b) => b.y + b.height)) - y,
+      },
+    };
+  });
+}
 export function align(d: Drawing, ids: string[], command: string): Drawing {
-  const items = d.definition.elements.filter((e) => ids.includes(e.id));
-  if (items.length < 2 || items.some((e) => e.locked || e.editorHidden))
+  if (
+    ![
+      'left',
+      'center',
+      'right',
+      'top',
+      'middle',
+      'bottom',
+      'horizontal',
+      'vertical',
+    ].includes(command)
+  )
     return d;
+  const units = arrangementUnits(d, ids);
+  if (units.length < 2) return d;
   const horizontal = ['left', 'center', 'right', 'horizontal'].includes(
       command,
     ),
     axis = horizontal ? 'x' : 'y',
     length = horizontal ? 'width' : 'height',
-    boxes = items.map(bounds),
+    boxes = units.map((unit) => unit.box),
     start = Math.min(...boxes.map((b) => b[axis])),
     end = Math.max(...boxes.map((b) => b[axis] + b[length]));
   if (command === 'horizontal' || command === 'vertical') {
-    if (items.length < 3) return d;
-    const sorted = items.sort((a, b) => bounds(a)[axis] - bounds(b)[axis]),
+    if (units.length < 3) return d;
+    const sorted = units.sort((a, b) => a.box[axis] - b.box[axis]),
       gap =
         (end - start - boxes.reduce((sum, b) => sum + b[length], 0)) /
-        (items.length - 1);
+        (units.length - 1);
     let cursor = start;
-    return geometry(
-      d,
-      sorted.map((e) => {
-        const b = bounds(e),
-          next = { ...e, [axis]: e[axis] + cursor - b[axis] };
-        cursor += b[length] + gap;
-        return next;
-      }),
-    );
+    const changed = sorted.flatMap((unit) => {
+      const b = unit.box,
+        next = unit.elements.map((e) => ({
+          ...e,
+          [axis]: round(e[axis] + cursor - b[axis]),
+        }));
+      cursor += b[length] + gap;
+      return next;
+    });
+    const updates = new Map(changed.map((e) => [e.id, e]));
+    return {
+      ...d,
+      definition: {
+        ...d.definition,
+        elements: d.definition.elements.map((e) => updates.get(e.id) ?? e),
+      },
+    };
   }
-  return geometry(
-    d,
-    items.map((e) => {
-      const b = bounds(e),
-        pos = ['left', 'top'].includes(command)
-          ? start
-          : ['right', 'bottom'].includes(command)
-            ? end - b[length]
-            : (start + end - b[length]) / 2;
-      return { ...e, [axis]: round(e[axis] + pos - b[axis]) };
-    }),
-  );
+  const changed = units.flatMap((unit) => {
+    const b = unit.box,
+      pos = ['left', 'top'].includes(command)
+        ? start
+        : ['right', 'bottom'].includes(command)
+          ? end - b[length]
+          : (start + end - b[length]) / 2;
+    return unit.elements.map((e) => ({
+      ...e,
+      [axis]: round(e[axis] + pos - b[axis]),
+    }));
+  });
+  const updates = new Map(changed.map((e) => [e.id, e]));
+  return {
+    ...d,
+    definition: {
+      ...d.definition,
+      elements: d.definition.elements.map((e) => updates.get(e.id) ?? e),
+    },
+  };
 }
 export const baseSpace = (label: string): SpaceDetails => ({
   label,

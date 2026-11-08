@@ -11,7 +11,7 @@ import {
   FarmstandTable,
 } from '@market/ui/farmstand';
 import '@market/ui/farmstand.css';
-import { WorkspaceMenu } from '../WorkspaceMenu';
+import { WorkspaceFrame } from '../WorkspaceFrame';
 import { go, ReadState, useRead } from './common';
 import { UpcomingMarketDates } from './UpcomingMarketDates';
 import type { VendorService } from './service';
@@ -64,41 +64,33 @@ export function MarketsWorkspace({
     setView(next);
   }
   return (
-    <div className="markets-workspace">
-      <header className="markets-heading">
-        <FarmstandIcon name="store" />
-        <div>
-          <h1>Markets</h1>
-          <p>
-            Your markets, applications and upcoming dates, all in one place.
-          </p>
-        </div>
-      </header>
-      <WorkspaceMenu
-        label="Markets"
-        value={view}
-        onChange={changeView}
-        items={[
-          {
-            value: 'overview',
-            label: 'Overview',
-            href: '/vendor/markets#overview',
-            icon: <FarmstandIcon name="store" />,
-          },
-          {
-            value: 'applications',
-            label: 'Applications',
-            href: '/vendor/markets#applications',
-            icon: <FarmstandIcon name="receipt-text" />,
-          },
-          {
-            value: 'upcoming-dates',
-            label: 'Upcoming Dates',
-            href: '/vendor/markets#upcoming-dates',
-            icon: <FarmstandIcon name="calendar-days" />,
-          },
-        ]}
-      />
+    <WorkspaceFrame
+      icon="store"
+      title="Markets"
+      description="Your markets, applications and upcoming dates, all in one place."
+      value={view}
+      onChange={changeView}
+      tabs={[
+        {
+          value: 'overview',
+          label: 'Overview',
+          href: '/vendor/markets#overview',
+          icon: 'store',
+        },
+        {
+          value: 'applications',
+          label: 'Applications',
+          href: '/vendor/markets#applications',
+          icon: 'receipt-text',
+        },
+        {
+          value: 'upcoming-dates',
+          label: 'Upcoming Dates',
+          href: '/vendor/markets#upcoming-dates',
+          icon: 'calendar-days',
+        },
+      ]}
+    >
       <div className="markets-view" key={view}>
         {view === 'overview' && (
           <MarketsOverview
@@ -121,7 +113,7 @@ export function MarketsWorkspace({
         )}
         {view === 'upcoming-dates' && <UpcomingMarketDates service={service} />}
       </div>
-    </div>
+    </WorkspaceFrame>
   );
 }
 
@@ -140,9 +132,10 @@ function MarketAction({
     row.membership.status === 'approved' &&
     row.participation?.status !== 'confirmed' &&
     mayCommand(service.context, 'ManageOwnMarketParticipation');
+  // Requesting attendance opens that date's page; configuring opens the market page.
   const href =
     `/vendor/markets/${encodeURIComponent(row.membership.id)}` +
-    (request ? '#attendance=' + encodeURIComponent(row.next!.id) : '');
+    (request ? '/dates/' + encodeURIComponent(row.next!.id) : '');
   return (
     <FarmstandLink
       href={href}

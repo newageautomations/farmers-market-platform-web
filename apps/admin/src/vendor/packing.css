@@ -1,10 +1,179 @@
-.packing-workspace,
-.packing-list-content,
+/* Page shell, toolbar and summary reuse the Orders/Customers Farmstand composition. */
+/* Requested: about 20% narrower than the full-width Orders container. */
+.admin-content:has(.packing-page) {
+  width: calc((100% - 4rem) * 0.8);
+}
+@media (max-width: 1100px) {
+  .admin-content:has(.packing-page) {
+    width: calc(100% - 4rem);
+  }
+}
+@media (max-width: 767px) {
+  .admin-content:has(.packing-page) {
+    width: calc(100% - 2rem);
+  }
+}
+.packing-list-content {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
 .packing-forms,
 .packing-forms form {
   display: grid;
-  gap: 1.5rem;
+  gap: 1.25rem;
   min-width: 0;
+}
+.packing-page .packing-toolbar.orders-toolbar {
+  margin-bottom: 0 !important;
+}
+.packing-toolbar .farmstand-select-wrap,
+.packing-forms .farmstand-select-wrap {
+  width: 100%;
+}
+.packing-forms .farmstand-select-with-icon > .farmstand-icon {
+  top: 50%;
+  transform: translateY(-50%);
+}
+/* Left column: stacked market/date selectors, then the list menu. Right
+   column: the summary card, spanning both so all bottoms line up. The
+   selectors stay in the page so a date change never remounts them; the
+   per-date section and the Tabs wrapper join this grid through
+   display: contents, so the list panels still run full width below. */
+.packing-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  gap: 18px;
+  align-items: start;
+  min-width: 0;
+}
+.packing-workspace > *,
+.packing-occurrence > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.packing-occurrence,
+.packing-occurrence > div:has(> .packing-tabs) {
+  display: contents;
+}
+.packing-occurrence > div:has(> .packing-tabs) > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.packing-workspace > .packing-toolbar {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+}
+.packing-occurrence > div > .packing-tabs.workspace-menu {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: end;
+}
+.packing-occurrence > .packing-summary {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: stretch;
+}
+.packing-occurrence [role='tabpanel'] {
+  padding-top: 0;
+}
+.packing-occurrence-filters {
+  display: grid;
+  gap: 16px;
+}
+.packing-summary.farmstand-panel.card.ui-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 18px;
+}
+.packing-summary h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+.packing-summary-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.packing-summary-list > li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.packing-summary-list > li + li {
+  border-top: 1px solid var(--order-border);
+}
+.packing-summary-list > li > :is(.farmstand-icon, svg) {
+  flex: none;
+}
+.packing-summary-list > .packing-summary-primary {
+  color: var(--brand-primary);
+  background: var(--order-soft);
+  border-radius: 8px;
+}
+.packing-summary-warning > svg {
+  width: 18px;
+  height: 18px;
+  color: var(--status-warning-fg);
+}
+.packing-summary-success > .farmstand-icon {
+  color: var(--status-success-fg);
+}
+.packing-summary-list > .packing-summary-progress {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding-top: 10px;
+  font-weight: 500;
+}
+.packing-summary-list > li > .farmstand-icon {
+  --farmstand-icon-width: 17px;
+}
+.packing-summary-list > .packing-summary-warning > svg {
+  width: 17px;
+  height: 17px;
+}
+.packing-summary .packing-summary-action {
+  width: 100%;
+  margin-top: auto;
+}
+.packing-summary-action .farmstand-icon {
+  --farmstand-icon-width: 16px;
+}
+.packing-summary-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.packing-summary-header > .packing-save-status {
+  min-height: 0;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--status-success-fg);
+  white-space: nowrap;
+}
+@container (max-width: 640px) {
+  .packing-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .packing-workspace > .packing-toolbar,
+  .packing-occurrence > div > .packing-tabs.workspace-menu,
+  .packing-occurrence > .packing-summary {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+.packing-tabs.workspace-menu {
+  --workspace-menu-columns: 2;
 }
 .packing-list {
   list-style: none;
@@ -13,7 +182,7 @@
 }
 .packing-list {
   display: grid;
-  gap: 1rem;
+  gap: 12px;
 }
 .packing-row {
   display: flex;
@@ -80,8 +249,27 @@
   min-height: 1.6em;
   margin: 0;
 }
-.packing-available-summary {
-  min-height: 1.6em;
+/* Customer cards: order number sits beside the name; no reserved empty lines. */
+.attendance-columns .packing-item-card .packing-row.packing-customer-row {
+  gap: 8px;
+}
+.packing-item-card:has(.packing-customer-row) {
+  padding-block: 18px;
+}
+.packing-row > .packing-customer-identity {
+  flex: 1;
+  align-items: baseline;
+  gap: 2px 10px;
+}
+.packing-customer-name {
+  font-weight: 600;
+}
+.packing-row small.packing-order-codes {
+  flex-basis: auto;
+  margin: 0;
+}
+.packing-row small.packing-available-summary {
+  margin: 0;
 }
 .packing-existing-units {
   display: grid;
@@ -97,11 +285,31 @@
 .packing-item-card .ui-record-trigger.sr-only {
   position: absolute;
 }
+.packing-inspector.attendance-inspector {
+  margin-top: 0;
+}
 .packing-inspector {
   max-height: calc(100dvh - 6rem);
   overflow-y: auto;
   overscroll-behavior: contain;
   overflow-anchor: none;
+}
+.packing-inspector > p {
+  margin: 0;
+}
+.packing-inspector-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.packing-inspector-status > p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.packing-inspector-status > :last-child {
+  flex: none;
 }
 .packing-inspector-customer {
   max-height: calc(75dvh - 4.5rem);
@@ -152,6 +360,14 @@
     transition: none;
   }
 }
+/* With the side panel open, the list column narrows: progress drops below the name. */
+.attendance-columns.has-selection .packing-row {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.attendance-columns.has-selection .packing-row > .packing-item-progress {
+  flex: 1 1 100%;
+}
 @media (max-width: 700px) {
   .packing-row {
     flex-wrap: wrap;
@@ -159,5 +375,16 @@
   }
   .packing-row > .packing-item-progress {
     flex: 1 1 100%;
+  }
+}
+/* Walk-up dialog: the closed product results list must not create a
+   scrollbar, and on normal-height screens the open list floats over the
+   dialog edge instead of being clipped. Short screens keep dialog scrolling. */
+.packing-walkup-dialog .market-select-options:not(.is-open) {
+  display: none;
+}
+@media (min-height: 640px) {
+  dialog.ui-dialog.ui-dialog.packing-walkup-dialog {
+    overflow: visible;
   }
 }

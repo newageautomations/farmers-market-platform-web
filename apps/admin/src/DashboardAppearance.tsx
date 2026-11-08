@@ -148,18 +148,22 @@ export function DashboardAppearanceProvider({
     </Appearance.Provider>
   );
 }
-export function DashboardAppearanceSettings() {
+/** `embedded` uses the shared embedded card surface inside a host panel. */
+export function DashboardAppearanceSettings({
+  embedded = false,
+}: { embedded?: boolean } = {}) {
   const appearance = useDashboardAppearance();
+  const surface = embedded ? 'embedded' : 'card';
   if (!appearance.available)
     return (
-      <Card>
+      <Card surface={surface}>
         <p>Sign in to save your dashboard colors.</p>
       </Card>
     );
   if (!appearance.loaded) return <Spinner label="Loading dashboard colors" />;
   if (appearance.error)
     return (
-      <Card>
+      <Card surface={surface}>
         <Alert severity="error">{appearance.error}</Alert>
         <Button onClick={appearance.retry}>Retry</Button>
       </Card>
@@ -169,6 +173,7 @@ export function DashboardAppearanceSettings() {
       saved={appearance.palette}
       defaults={appearance.defaults}
       save={appearance.save}
+      embedded={embedded}
     />
   );
 }
@@ -176,10 +181,12 @@ function PaletteEditor({
   saved,
   defaults,
   save,
+  embedded,
 }: {
   saved: DashboardPalette;
   defaults: DashboardPalette;
   save: (p: DashboardPalette) => Promise<void>;
+  embedded: boolean;
 }) {
   const [draft, setDraft] = useState(saved),
     [busy, setBusy] = useState(false),
@@ -201,13 +208,18 @@ function PaletteEditor({
       ),
     )?.id ?? 'custom';
   return (
-    <Card as="section" aria-label="Dashboard colors">
+    <Card
+      as={embedded ? 'div' : 'section'}
+      aria-label={embedded ? undefined : 'Dashboard colors'}
+      surface={embedded ? 'embedded' : 'card'}
+    >
       <p>
         Dashboard colors apply to your account across your admin workspaces.
         Choose a preset or adjust the colors below, then Save to apply. Contrast
         tips are optional and do not prevent saving your colors.
       </p>
       <form
+        className="dashboard-colors-form"
         onSubmit={(e) => {
           e.preventDefault();
           if (validation || busy) return;
@@ -271,7 +283,9 @@ function PaletteEditor({
               </option>
             ))}
           </SelectField>
-          <div className="ui-palette-fields">
+          <div
+            className={`ui-palette-fields${embedded ? ' ui-palette-fields-row' : ''}`}
+          >
             {Object.entries({
               primary: 'Primary',
               secondary: 'Secondary',

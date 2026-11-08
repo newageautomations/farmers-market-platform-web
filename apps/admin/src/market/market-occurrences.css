@@ -1,0 +1,546 @@
+/* Market Occurrences composes the vendor Markets/Upcoming Dates panels,
+   the reward wizard stages and the vendor detail panels. Only the
+   occurrence-specific arrangements live here, using the same tokens. */
+
+/* Heading actions wrap below the title on narrow pages, as in Documents. */
+.market-occurrences > .markets-heading {
+  flex-wrap: wrap;
+}
+.market-occurrences > .markets-heading > div:not(.workspace-heading-actions) {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.market-occurrences .workspace-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.market-occurrences .workspace-heading-actions .farmstand-icon {
+  width: 16px;
+  height: 16px;
+  color: currentColor;
+}
+
+/* List: three filters (search, date range, status). */
+.markets-filters.market-dates-filters.occurrence-filters {
+  grid-template-columns: minmax(160px, 1fr) repeat(2, minmax(150px, 210px));
+}
+.market-applications-main .occurrence-list .farmstand-data-table {
+  min-width: 760px;
+}
+.market-applications-main
+  .occurrence-list
+  .farmstand-data-table
+  th:first-child {
+  width: 30%;
+}
+.occurrence-list .markets-identity > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+.occurrence-list .markets-identity small {
+  /* A table rule makes this block-level; flex centers the pin on the text. */
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.4;
+  white-space: normal;
+  /* Venues are shown as entered, not with the table heading capitalization. */
+  text-transform: none;
+}
+.occurrence-list .markets-identity small .farmstand-icon {
+  flex: none;
+  vertical-align: 0;
+}
+/* The Manage column keeps its header cell for table semantics only. */
+.occurrence-list .farmstand-data-table thead th:last-child {
+  font-size: 0;
+}
+.occurrence-booth-cell {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+}
+.occurrence-booth-cell small {
+  color: var(--brand-muted);
+  font-size: 11px;
+}
+.occurrence-booth-cell > span {
+  font-weight: 600;
+}
+.occurrence-list .farmstand-link.occurrence-manage,
+.occurrence-list a.occurrence-manage {
+  gap: 4px;
+}
+.occurrence-manage .farmstand-icon {
+  width: 14px;
+  height: 14px;
+  transition: transform 180ms ease;
+}
+.occurrence-manage:is(:hover, :focus-visible) .farmstand-icon {
+  transform: translateX(2px);
+}
+
+/* Selected-occurrence side panel. */
+.occurrence-details-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.occurrence-details .markets-next-content > a.farmstand-button {
+  width: 100%;
+  gap: 8px;
+  font-size: 14px;
+}
+.occurrence-details .markets-next-content > a.farmstand-button > svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.occurrence-booth-meter {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 9px;
+  background: var(--markets-soft);
+  font-size: 12px;
+}
+.occurrence-booth-meter > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.occurrence-booth-meter strong {
+  font-size: 15px;
+  color: var(--brand-foreground);
+}
+.occurrence-booth-meter span {
+  color: var(--brand-muted);
+}
+.occurrence-booth-meter progress {
+  width: 100%;
+  height: 8px;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  appearance: none;
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 16%,
+    var(--brand-surface)
+  );
+  accent-color: var(--brand-primary);
+}
+.occurrence-booth-meter progress::-webkit-progress-bar {
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 16%,
+    var(--brand-surface)
+  );
+}
+.occurrence-booth-meter progress::-webkit-progress-value {
+  background: var(--brand-primary);
+  border-radius: 8px;
+}
+.occurrence-booth-meter progress::-moz-progress-bar {
+  background: var(--brand-primary);
+  border-radius: 8px;
+}
+
+/* Next 7 days and booth occupancy. */
+.occurrence-insights {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 18px;
+  align-items: stretch;
+  min-width: 0;
+}
+.occurrence-insights .markets-list h2 {
+  margin-bottom: 4px;
+}
+.markets-list-note.occurrence-panel-lead {
+  margin: 0 0 14px;
+}
+.occurrence-week-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.occurrence-week-list > li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 1px solid var(--markets-border);
+  border-radius: 10px;
+}
+.occurrence-week-list > li > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.occurrence-week-list a {
+  color: var(--brand-foreground);
+  font-size: 14px;
+}
+.occurrence-week-list li:is(:hover, :focus-within) .market-application-name {
+  background-size: 100% 1px;
+}
+.occurrence-week-list small {
+  color: var(--brand-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.occurrence-day-chip {
+  display: grid;
+  justify-items: center;
+  min-width: 62px;
+  padding: 6px 8px;
+  border-radius: 9px;
+  background: var(--markets-soft);
+  color: var(--brand-primary);
+  line-height: 1.2;
+}
+.occurrence-day-chip span {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.occurrence-day-chip strong {
+  font-size: 13px;
+  white-space: nowrap;
+}
+/* FinanceDonut keeps its markup; here its key and the rate card (passed as
+   the donut's controls) stack to the right of the ring. */
+.occurrence-occupancy-body .finance-donut {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 240px);
+  grid-template-rows: 1fr auto auto 1fr;
+  column-gap: 24px;
+  row-gap: 14px;
+  align-items: center;
+}
+.occurrence-occupancy-body .finance-donut-plot {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  margin: 8px auto;
+}
+.occurrence-occupancy-body .finance-donut-legend {
+  grid-column: 2;
+  grid-row: 2;
+}
+.occurrence-occupancy-body .finance-donut-controls {
+  grid-column: 2;
+  grid-row: 3;
+}
+.occurrence-occupancy-rate {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--markets-soft);
+}
+.occurrence-occupancy-rate strong {
+  color: var(--brand-primary);
+  font-size: 30px;
+  line-height: 1.1;
+}
+.occurrence-occupancy-rate span {
+  font-size: 13px;
+  font-weight: 600;
+}
+.occurrence-occupancy-rate small {
+  color: var(--brand-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+@container (max-width: 900px) {
+  .occurrence-insights {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container (max-width: 600px) {
+  .occurrence-occupancy-body .finance-donut {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+  .occurrence-occupancy-body
+    :is(.finance-donut-plot, .finance-donut-legend, .finance-donut-controls) {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .markets-filters.market-dates-filters.occurrence-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .occurrence-week-list > li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .occurrence-week-list > li > .ui-status {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .occurrence-manage .farmstand-icon {
+    transition: none;
+  }
+}
+
+/* Generate occurrences wizard (reward wizard stages and choice cards). */
+.generate-schedule,
+.generate-schedule-form,
+.generate-range,
+.generate-review {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.generate-schedule-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* Include checkbox, summary, actions; a delete confirmation spans the card. */
+.generate-schedule-card.card.ui-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px 14px;
+  align-items: center;
+  margin: 0;
+  padding: 14px 16px;
+  border-color: var(--reward-border);
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+.generate-schedule-card.card.ui-card[data-selected='true'] {
+  border-color: var(--brand-primary);
+  background: var(--reward-soft);
+}
+.generate-schedule-summary {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--brand-muted);
+  cursor: pointer;
+}
+.generate-schedule-summary strong {
+  color: var(--brand-foreground);
+  font-size: 15px;
+}
+.generate-schedule-venue {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-wrap: anywhere;
+}
+.generate-schedule-venue .farmstand-icon,
+.generate-dates h4 small .farmstand-icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.generate-schedule-card .generate-remove {
+  grid-column: 1 / -1;
+}
+.generate-dates h4 {
+  display: grid;
+  gap: 3px;
+}
+.generate-dates h4 small {
+  /* Addresses read as entered, not with heading capitalization. */
+  text-transform: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--brand-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.generate-schedule-form h4 {
+  margin: 0;
+  font-size: 15px;
+}
+.generate-schedule-actions,
+.generate-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.generate-schedule-actions svg {
+  width: 16px;
+  height: 16px;
+}
+.generate-wizard .command-section {
+  margin: 0;
+}
+.generate-wizard .command-section .ui-actions {
+  margin-top: 18px;
+}
+.generate-remove .command-section {
+  border-color: var(--status-danger-border, var(--reward-border));
+}
+.generate-remove p {
+  margin: 0;
+}
+.generate-presets .farmstand-button[aria-pressed='true'] {
+  border-color: var(--brand-primary);
+  background: var(--reward-soft);
+  color: var(--brand-primary);
+}
+.generate-review .reward-review-card.card.ui-card {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+.generate-dates h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+.generate-dates ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.generate-dates li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--reward-border);
+  border-radius: 9px;
+  font-size: 13px;
+}
+.generate-dates li > .ui-status {
+  white-space: nowrap;
+}
+.generate-schedule-form p:not(.field-help) {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.generate-dates .reward-field-help + .reward-field-help {
+  margin-top: 4px;
+}
+/* Creating state: a spinning ring that gives way to the published check. */
+.generate-creating-ring {
+  display: block;
+  width: 80px;
+  height: 80px;
+  margin-inline: auto;
+  box-sizing: border-box;
+  border: 5px solid var(--reward-border);
+  border-top-color: var(--brand-primary);
+  border-radius: 50%;
+  animation: generate-creating-spin 850ms linear infinite;
+}
+@keyframes generate-creating-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .generate-creating-ring {
+    animation: none;
+  }
+}
+@media (max-width: 650px) {
+  .generate-review .reward-review-card.card.ui-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .generate-schedule-card.card.ui-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .generate-schedule-actions {
+    grid-column: 2;
+  }
+}
+
+/* Individual occurrence. */
+.occurrence-detail .application-detail-title .ui-status {
+  font-size: 13px;
+}
+.occurrence-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.occurrence-detail-actions svg,
+.occurrence-detail .application-detail-quick-actions svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.occurrence-detail .occurrence-detail-lead {
+  margin: -8px 0 0;
+  color: var(--brand-muted);
+  font-size: 13px;
+}
+.occurrence-map-body {
+  display: grid;
+  gap: 14px;
+  padding: 10px 20px 20px;
+  min-width: 0;
+}
+.occurrence-map-body > p {
+  margin: 0;
+}
+.occurrence-map-panel .application-detail-panel-header .farmstand-button {
+  gap: 6px;
+}
+.occurrence-detail .application-detail-summary dd p {
+  margin: 0;
+}
+@container (max-width: 600px) {
+  .occurrence-detail-actions {
+    width: 100%;
+  }
+  .occurrence-detail-actions > .farmstand-button {
+    flex: 1;
+  }
+}
+
+/* Explanatory copy inside occurrence dialogs matches dialog descriptions. */
+:is(.market-occurrences, .occurrence-detail)
+  dialog
+  .command-section
+  fieldset
+  p:not(.field-help) {
+  margin: 0 0 4px;
+  color: var(--brand-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Layout actions share the Market layout heading with Manage booths. */
+.occurrence-map-actions,
+.occurrence-map-actions .occurrence-layout-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.occurrence-map-actions .button.ui-button {
+  gap: 6px;
+}
+.occurrence-map-actions :is(svg, .farmstand-icon) {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}

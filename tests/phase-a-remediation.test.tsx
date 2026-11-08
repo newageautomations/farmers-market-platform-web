@@ -460,9 +460,10 @@ it('searches the authoritative vendor directory beyond its initial page and subm
   ) as typeof service.eligibleVendors;
   service.membershipStatus = vi.fn().mockResolvedValue({ id: 'created' });
   render(<MarketVendors service={service} />);
-  fireEvent.click(screen.getByRole('button', { name: 'Add Vendor' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Add business' }));
   const dialog = screen.getByRole('dialog');
-  const picker = within(dialog).getByRole('combobox', {
+  fireEvent.click(within(dialog).getByRole('button', { name: /Next/ }));
+  const picker = await within(dialog).findByRole('combobox', {
     name: 'Vendor business',
   });
   fireEvent.change(picker, { target: { value: 'Far away' } });
@@ -483,9 +484,9 @@ it('searches the authoritative vendor directory beyond its initial page and subm
   expect(
     within(dialog).getByRole('button', { name: 'Close' }).parentElement,
   ).toHaveClass('ui-dialog-header');
-  fireEvent.click(
-    within(dialog).getByRole('button', { name: 'Create relationship' }),
-  );
+  fireEvent.click(within(dialog).getByRole('button', { name: /Next/ }));
+  fireEvent.click(within(dialog).getByRole('button', { name: /Next/ }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Add business' }));
   await waitFor(() =>
     expect(service.membershipStatus).toHaveBeenCalledWith(
       service.marketId,

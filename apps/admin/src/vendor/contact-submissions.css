@@ -1,0 +1,159 @@
+/* Arranges the reused Customers/Orders Farmstand presentation for contact messages. */
+.contact-table-toolbar {
+  padding: 16px 22px;
+}
+.contact-table-toolbar .field {
+  width: min(100%, 260px);
+  min-width: 0;
+  gap: 5px;
+  margin: 0;
+}
+.contact-table-toolbar .farmstand-select-wrap,
+.contact-table-toolbar .farmstand-select.ui-select {
+  width: 100%;
+}
+.contact-table-panel .farmstand-data-table th:first-child {
+  width: 34%;
+}
+/* Long subjects stay on one line; the full text is in the title and preview. */
+.contact-subject > span {
+  display: block;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Compact rows: the shared 82px catalog row height suits product images, not two text lines. */
+.contact-table-panel .farmstand-data-table tbody tr {
+  height: auto;
+}
+.contact-table-panel .farmstand-data-table tbody :is(th, td) {
+  padding-block: 10px;
+}
+.contact-page .contact-sender {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+.contact-table-panel th small {
+  display: block;
+  margin-top: 2px;
+  color: var(--brand-muted);
+  font-size: 12px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.contact-page .contact-unread .contact-sender,
+.contact-page .contact-unread .contact-subject {
+  font-weight: 700;
+}
+.contact-table-panel time {
+  white-space: nowrap;
+}
+.contact-preview .customers-identity > .ui-status {
+  flex-shrink: 0;
+  align-self: start;
+}
+.contact-page .contact-facts dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0;
+  align-self: center;
+}
+.contact-page .contact-facts dd a {
+  overflow-wrap: anywhere;
+}
+.contact-message-panel.card.ui-card {
+  margin-top: 18px;
+}
+.contact-page .contact-message-panel h3 {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--order-border);
+}
+.contact-message {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.contact-notice {
+  margin: 14px 0 0;
+  font-size: 13px;
+}
+.contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.contact-actions > * {
+  flex: 1 1 160px;
+}
+.contact-page .order-heading-icon svg {
+  width: 22px;
+  height: 22px;
+}
+.contact-table-panel .ui-status {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+/* Opening a submission slides the preview in from the table and briefly rings it. */
+.contact-preview-enter {
+  animation:
+    contact-preview-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    contact-preview-ring 900ms ease-out;
+}
+@keyframes contact-preview-in {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes contact-preview-ring {
+  0% {
+    box-shadow: 0 0 0 0
+      color-mix(in srgb, var(--brand-primary) 45%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 10px
+      color-mix(in srgb, var(--brand-primary) 0%, transparent);
+  }
+}
+/* Keep a quick load from flashing a spinner between messages. */
+.contact-preview-pending .progress {
+  animation: contact-preview-reveal 0s linear 400ms both;
+}
+@keyframes contact-preview-reveal {
+  from {
+    visibility: hidden;
+  }
+  to {
+    visibility: visible;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contact-preview-enter {
+    animation: none;
+  }
+}
+@container (max-width: 560px) {
+  /* Received stays in the message preview; keep sender, subject and status readable. */
+  .contact-table-panel .farmstand-data-table :is(th, td):nth-child(3) {
+    display: none;
+  }
+  .contact-subject > span {
+    max-width: 120px;
+  }
+}
+.contact-page .contact-footer {
+  padding-block: 8px;
+}

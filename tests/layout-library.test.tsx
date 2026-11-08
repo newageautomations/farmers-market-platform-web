@@ -174,3 +174,50 @@ it('keeps an archived layout out of the editor until it is restored', () => {
     screen.getByText('This layout is unavailable or archived.'),
   ).toBeVisible();
 });
+
+it('renames from the editor header and keeps the workspace in place while saving', async () => {
+  const data = managerData();
+  data.layoutVersions![0] = { ...data.layoutVersions![0]!, status: 'DRAFT' };
+  let finish: (value: unknown) => void = () => undefined;
+  const api = {
+    read: vi.fn().mockResolvedValue(data),
+    command: vi.fn(
+      () => new Promise((resolve) => (finish = resolve)),
+    ),
+    vendorAssignments: vi.fn(),
+  };
+  render(
+    <Phase14Routes
+      api={api}
+      path="/market/layouts/1/edit"
+      permissions={['ReadOwnMarketLayouts', 'ManageOwnMarketLayouts']}
+    />,
+  );
+  const name = await screen.findByLabelText('Layout name');
+  fireEvent.change(name, { target: { value: '  ' } });
+  expect(screen.getByRole('button', { name: 'Save layout' })).toBeDisabled();
+  expect(screen.getByText('Layout name required')).toBeInTheDocument();
+  fireEvent.change(name, { target: { value: 'Riverside lot ' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Layers' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save layout' }));
+  expect(screen.getByText('Saving…')).toBeInTheDocument();
+  expect(screen.queryByText('Saving changes')).toBeNull();
+  expect(api.command).toHaveBeenCalledWith(
+    expect.objectContaining({
+      action: 'SAVE_LAYOUT',
+      data: expect.objectContaining({ name: 'Riverside lot' }),
+    }),
+  );
+  const saved = data.layoutVersions![0]!;
+  data.layouts![0] = { ...data.layouts![0]!, name: 'Riverside lot' };
+  data.layoutVersions![0] = { ...saved, revision: saved.revision + 1 };
+  finish({ ...saved, revision: saved.revision + 1 });
+  await waitFor(() =>
+    expect(screen.getByText('All changes saved')).toBeInTheDocument(),
+  );
+  expect(screen.getByLabelText('Layout name')).toHaveValue('Riverside lot');
+  expect(screen.getByRole('button', { name: 'Layers' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});

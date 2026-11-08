@@ -6,8 +6,11 @@ import { CommandForm, ReadState, useRead } from './vendor/common';
 /** Personal preference, independent of the selected vendor or market business. */
 export function AccountTimezoneSettings({
   connection,
+  embedded = false,
 }: {
   connection: { endpoint: string; channelToken: string };
+  /** Host panel supplies the heading and surface. */
+  embedded?: boolean;
 }) {
   const api = useMemo(
     () =>
@@ -31,12 +34,13 @@ export function AccountTimezoneSettings({
     ]),
   ];
   return (
-    <Card spacing="contained">
-      <h2>Account time zone</h2>
+    <Card spacing="contained" surface={embedded ? 'embedded' : 'card'}>
+      {!embedded && <h2>Account time zone</h2>}
       <ReadState {...saved} retry={saved.refresh} />
       {saved.data !== undefined && (
         <CommandForm
           title="Account time zone"
+          hideTitle={embedded}
           submitLabel="Save time zone"
           embedded
           run={async () => {

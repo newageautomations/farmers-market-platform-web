@@ -108,9 +108,7 @@ export async function cloverBrowserChecks(ready: PosReady) {
           (request) =>
             request.postData()?.includes('ownCloverIntegration') ?? false,
         );
-        await page
-          .getByRole('link', { name: 'Payment Integrations', exact: true })
-          .click();
+        await page.getByRole('link', { name: 'Payments', exact: true }).click();
         const channel = (await settingsRequest).headers()['vendure-token'];
         assert.ok(channel);
         await page
@@ -184,7 +182,7 @@ export async function cloverBrowserChecks(ready: PosReady) {
           'Return handler removes opaque state from browser history',
         );
         await page
-          .getByRole('link', { name: 'Return to Payment Integrations' })
+          .getByRole('link', { name: 'Return to Payments settings' })
           .click();
         await page
           .getByText('Controlled Honey merchant · controlled-honey-merchant')

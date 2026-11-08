@@ -297,79 +297,52 @@ test('CRM search, pagination, detail and customer orders', async ({ page }) => {
   await expect(page.locator('main')).not.toContainText('Address');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
-test('Market participation, pending listing, offering caps and publication commands', async ({
+test('Market page listing requests, date attendance and offering caps', async ({
   page,
 }) => {
   await vendor(page, '/vendor/markets/1821');
+  await page.getByRole('switch', { name: /Auto-enroll/ }).check();
+  await expect(page.getByText(/Auto-enroll is on/)).toHaveCount(0);
+  await expect(page.getByText('Loading current records')).toHaveCount(0);
   await expect(
-    page.getByRole('table', { name: 'Market variant listings' }),
-  ).toContainText('approved');
-  await page
-    .getByRole('button', { name: 'Configure participation', exact: true })
-    .click();
-  const participation = page.locator('.command-section').filter({
-    has: page.getByRole('heading', { name: 'Participation', exact: true }),
-  });
-  await participation
-    .getByLabel('Attendance', { exact: true })
-    .selectOption('planned');
-  await participation
-    .getByLabel('Pickup instructions', { exact: true })
-    .fill('Synthetic A revised pickup');
-  await participation
-    .getByRole('button', { name: 'Save', exact: true })
-    .click();
+    page.getByRole('switch', { name: /Auto-enroll enabled/ }),
+  ).toBeChecked();
+  const items = page.getByRole('table', { name: 'Items for preordering' });
+  await expect(items).toContainText('Active');
   await expect(
-    page.getByRole('table', { name: 'Market occurrences' }),
-  ).toContainText('planned');
-  await page.getByLabel('Owned variant', { exact: true }).selectOption('1102');
-  const listing = page.locator('.command-section').filter({
-    has: page.getByRole('heading', { name: 'Request listing', exact: true }),
-  });
-  await listing.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(
-    page.getByRole('table', { name: 'Market variant listings' }),
-  ).toContainText('pending');
-  await expect(page.getByRole('button', { name: /Approve/ })).toHaveCount(0);
-  await page.getByLabel('Participation', { exact: true }).selectOption('1831');
-  await page
-    .getByLabel('Approved listing', { exact: true })
-    .selectOption('1841');
-  await page.getByLabel('Occurrence sales cap', { exact: true }).fill('25');
-  const offering = page.locator('.command-section').filter({
-    has: page.getByRole('heading', {
-      name: 'Offering settings',
-      exact: true,
-    }),
-  });
-  await offering.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(
-    page.getByRole('table', { name: 'Occurrence offerings' }),
-  ).toContainText('25');
-  await page.getByRole('button', { name: 'Publish', exact: true }).click();
-  await expect(
-    page
-      .getByRole('table', { name: 'Market variant listings' })
-      .getByText('published', { exact: true }),
-  ).toBeVisible();
-  await page
+    page.getByRole('button', { name: /Manage application/ }),
+  ).toHaveCount(0);
+  const unlisted = items
     .getByRole('row')
-    .filter({ has: page.getByText('published', { exact: true }) })
-    .getByRole('button', { name: 'Review unpublish', exact: true })
-    .click();
+    .filter({ hasText: 'Not listed' })
+    .first();
+  await unlisted.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Request listing (1)' }).click();
+  await expect(items).toContainText('Pending');
   await page
-    .getByRole('dialog')
-    .getByRole('button', { name: 'Confirm change' })
+    .getByRole('table', { name: 'Upcoming market dates' })
+    .getByRole('link', { name: /Manage/ })
+    .first()
     .click();
+  const tentative = page.getByRole('button', {
+    name: 'Tentative',
+    exact: true,
+  });
+  await tentative.click();
+  await expect(tentative).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText(/You are marked as/)).toHaveCount(0);
+  // The date page reuses the market page's items table, scoped to this date.
+  const dateItems = page.getByRole('table', { name: 'Items for preordering' });
+  await expect(dateItems).toContainText('Active');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(
-    page
-      .getByRole('table', { name: 'Market variant listings' })
-      .getByText('unpublished', { exact: true })
-      .first(),
+    page.getByRole('dialog', { name: 'Preorder settings' }),
   ).toBeVisible();
+  await page.getByRole('button', { name: 'Create override' }).click();
   await expect(
-    page.getByRole('table', { name: 'Market variant listings' }),
-  ).toContainText('unpublished');
+    page.getByRole('dialog', { name: 'Preorder settings' }),
+  ).toHaveCount(0);
+  await expect(page.getByText(/override was saved/)).toHaveCount(0);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 test('permission presets and owner versus staff boundaries fail closed', async ({

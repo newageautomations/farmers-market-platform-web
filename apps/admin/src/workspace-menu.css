@@ -1,5 +1,8 @@
-/* Explicitly requested route-menu variant. Native links preserve navigation. */
-.workspace-menu {
+/* Explicitly requested route-menu variant. Native links preserve navigation.
+   The same presentation also styles shared in-page Tabs given the
+   `workspace-menu` class; those keep their tab roles and keyboard behavior. */
+.workspace-menu,
+.workspace-menu.ui-tabs {
   --workspace-border: color-mix(
     in srgb,
     var(--brand-primary) 14%,
@@ -22,7 +25,8 @@
   background: var(--brand-surface);
   box-shadow: 0 2px 5px color-mix(in srgb, var(--brand-primary) 4%, transparent);
 }
-.workspace-menu a {
+.workspace-menu a,
+.workspace-menu.ui-tabs > [role='tab'] {
   position: relative;
   display: flex;
   align-items: center;
@@ -37,7 +41,18 @@
   line-height: 1.3;
   transition: background 160ms ease;
 }
-.workspace-menu a + a::before {
+.workspace-menu.ui-tabs > [role='tab'] {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+}
+.workspace-menu.ui-tabs > [role='tab']::after {
+  display: none;
+}
+.workspace-menu a + a::before,
+.workspace-menu.ui-tabs > [role='tab'] + [role='tab']::before {
   content: '';
   position: absolute;
   left: -3px;
@@ -45,7 +60,8 @@
   width: 1px;
   background: var(--workspace-border);
 }
-.workspace-menu a[aria-current] {
+.workspace-menu a[aria-current],
+.workspace-menu.ui-tabs > [role='tab'][aria-selected='true'] {
   color: var(--brand-primary);
   background: color-mix(
     in srgb,
@@ -54,21 +70,25 @@
   );
   font-weight: 650;
 }
-.workspace-menu a:hover {
+.workspace-menu a:hover,
+.workspace-menu.ui-tabs > [role='tab']:not([aria-selected='true']):hover {
   background: var(--workspace-soft);
 }
-.workspace-menu a:focus-visible {
+.workspace-menu a:focus-visible,
+.workspace-menu.ui-tabs > [role='tab']:focus-visible {
   outline: 2px solid var(--brand-primary);
   outline-offset: 1px;
 }
-.workspace-menu svg {
+.workspace-menu svg,
+.workspace-menu.ui-tabs > [role='tab'] > .farmstand-icon {
   width: 21px;
   height: 21px;
   flex: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .workspace-menu a {
+  .workspace-menu a,
+  .workspace-menu.ui-tabs > [role='tab'] {
     transition: none;
   }
 }

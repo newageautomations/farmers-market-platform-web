@@ -1,10 +1,12 @@
 import { useCallback, useId, useState, type FormEvent } from 'react';
+import './notification-preferences.css';
 import type {
   NotificationsApi,
   NotificationPreferencesData,
 } from '@market/api';
 import type { AdminContext } from '@market/admin-core';
 import { Alert, Button, Card, Checkbox, ErrorState } from '@market/ui';
+import { replayCheck } from '@market/ui/notifications';
 import { ReadState, useRead } from '../vendor/common';
 
 const labels: Record<string, string> = {
@@ -25,12 +27,50 @@ const labels: Record<string, string> = {
   'documents.request.overdue': 'Overdue document requests',
   'documents.compliance.changed': 'Document compliance changes',
 };
+/** Preference sections, in display order. Unlisted types fall into Other. */
+const sections: Array<{
+  title: string;
+  description: string;
+  match: (type: string) => boolean;
+  thresholds?: boolean;
+}> = [
+  {
+    title: 'Document requests',
+    description: 'New and overdue requests for documents.',
+    match: (type) => type.startsWith('documents.request.'),
+  },
+  {
+    title: 'Submissions and reviews',
+    description: 'Uploads, approvals, rejections and waivers.',
+    match: (type) =>
+      type.startsWith('documents.submission.') ||
+      type === 'documents.requirement.waived',
+  },
+  {
+    title: 'Expiration and compliance',
+    description: 'Expiring documents and compliance changes.',
+    match: (type) =>
+      ['documents.expiring', 'documents.expired'].includes(type) ||
+      type.startsWith('documents.compliance.') ||
+      type.startsWith('compliance.'),
+    thresholds: true,
+  },
+  {
+    title: 'Agreements',
+    description: 'Acknowledgment requests, revisions and new versions.',
+    match: (type) => type.startsWith('agreements.'),
+  },
+];
+export { replayCheck };
 export function NotificationPreferences({
   api,
   context,
+  embedded = false,
 }: {
   api: NotificationsApi;
   context: AdminContext;
+  /** Host panel supplies the section semantics and surface. */
+  embedded?: boolean;
 }) {
   const [saved, setSaved] = useState(false);
   const read = useCallback(() => api.preferences(), [api]);
@@ -41,7 +81,11 @@ export function NotificationPreferences({
       : 'ManageOwnStorefront',
   );
   return (
-    <Card as="section" aria-label="Notification preferences">
+    <Card
+      as={embedded ? 'div' : 'section'}
+      aria-label={embedded ? undefined : 'Notification preferences'}
+      surface={embedded ? 'embedded' : 'card'}
+    >
       <p>
         Choose document notifications for this{' '}
         {context.scope === 'MARKET' ? 'Market' : 'Vendor business'}. These
@@ -105,38 +149,75 @@ function PreferenceForm({
       setBusy(false);
     }
   }
+  const groups = sections
+    .map((section) => ({
+      ...section,
+      types: value.supported.filter((type) => section.match(type)),
+    }))
+    .filter((section) => section.types.length || section.thresholds);
+  const other = value.supported.filter(
+    (type) => !sections.some((section) => section.match(type)),
+  );
+  const option = (type: string) => (
+    <label
+      className="ops-check notification-option"
+      key={type}
+      htmlFor={`${id}-${type}`}
+    >
+      <Checkbox
+        id={`${id}-${type}`}
+        name={type}
+        defaultChecked={value.enabled[type] === true}
+        onChange={replayCheck}
+      />
+      <span>{labels[type] ?? type}</span>
+    </label>
+  );
   return (
-    <form onSubmit={submit}>
+    <form onSubmit={submit} className="notification-preferences">
       <fieldset disabled={busy || !canWrite}>
         <legend className="sr-only">Notification preferences</legend>
-        {value.supported.map((type) => (
-          <label className="ops-check" key={type} htmlFor={`${id}-${type}`}>
-            <Checkbox
-              id={`${id}-${type}`}
-              name={type}
-              defaultChecked={value.enabled[type] === true}
-            />{' '}
-            {labels[type] ?? type}
-          </label>
-        ))}
-        <fieldset>
-          <legend>Remind me before expiration</legend>
-          <p>
-            Applies when approaching-expiration notifications are enabled. A
-            document remains valid through its expiration date.
-          </p>
-          {[30, 14, 7].map((days) => (
-            <label className="ops-check" key={days} htmlFor={`${id}-${days}`}>
-              <Checkbox
-                id={`${id}-${days}`}
-                name="thresholds"
-                value={days}
-                defaultChecked={value.thresholds.includes(days)}
-              />{' '}
-              {days} days before
-            </label>
+        <div className="notification-sections">
+          {groups.map((section) => (
+            <fieldset className="notification-section" key={section.title}>
+              <legend>{section.title}</legend>
+              <p>{section.description}</p>
+              {section.types.map(option)}
+              {section.thresholds && (
+                <fieldset className="notification-thresholds">
+                  <legend>Remind me before expiration</legend>
+                  <p>
+                    Applies when approaching-expiration notifications are
+                    enabled. A document remains valid through its expiration
+                    date.
+                  </p>
+                  {[30, 14, 7].map((days) => (
+                    <label
+                      className="ops-check notification-option"
+                      key={days}
+                      htmlFor={`${id}-${days}`}
+                    >
+                      <Checkbox
+                        id={`${id}-${days}`}
+                        name="thresholds"
+                        value={days}
+                        defaultChecked={value.thresholds.includes(days)}
+                        onChange={replayCheck}
+                      />
+                      <span>{days} days before</span>
+                    </label>
+                  ))}
+                </fieldset>
+              )}
+            </fieldset>
           ))}
-        </fieldset>
+          {other.length > 0 && (
+            <fieldset className="notification-section">
+              <legend>Other notifications</legend>
+              {other.map(option)}
+            </fieldset>
+          )}
+        </div>
         <Button type="submit" loading={busy}>
           Save notification preferences
         </Button>

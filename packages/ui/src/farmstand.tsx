@@ -1,5 +1,14 @@
 import type { ComponentProps, CSSProperties, ReactNode } from 'react';
-import { Badge, Button, Card, DataTable, Input, Select } from './index';
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  Input,
+  Pagination,
+  Select,
+  scrollToPaginatedTable,
+} from './index';
 import { buttonClassName } from './presentation';
 
 /** Opt-in Figma appearance. Existing primitives retain behavior and semantics. */
@@ -96,6 +105,48 @@ export function FarmstandSelect({
   );
 }
 
+/** Paging footer (first built for vendor Markets as MarketsPagination), with
+ * caller-owned paging. Shared so package-level compositions can reuse it. */
+export function FarmstandPagination({
+  summary,
+  label = 'Pagination',
+  hasPrevious,
+  hasNext,
+  onPrevious,
+  onNext,
+}: ComponentProps<typeof Pagination>) {
+  return (
+    <div className="markets-pagination-footer">
+      <span>{summary}</span>
+      {(hasPrevious || hasNext) && (
+        <nav
+          aria-label={label}
+          onClickCapture={(event) =>
+            scrollToPaginatedTable(event.currentTarget)
+          }
+        >
+          <FarmstandButton
+            variant="secondary"
+            size="compact"
+            disabled={!hasPrevious}
+            onClick={onPrevious}
+          >
+            Previous
+          </FarmstandButton>
+          <FarmstandButton
+            variant="secondary"
+            size="compact"
+            disabled={!hasNext}
+            onClick={onNext}
+          >
+            Next
+          </FarmstandButton>
+        </nav>
+      )}
+    </div>
+  );
+}
+
 export type FarmstandIconName =
   | 'shopping-cart'
   | 'layers'
@@ -124,7 +175,26 @@ export type FarmstandIconName =
   | 'egg'
   | 'archive'
   | 'arrow-right'
-  | 'triangle-alert';
+  | 'triangle-alert'
+  | 'settings'
+  | 'palette'
+  | 'bell'
+  | 'bell-off'
+  | 'inbox'
+  | 'trash'
+  | 'sliders-horizontal'
+  | 'percent'
+  | 'plug'
+  | 'file-text'
+  | 'file-image'
+  | 'file-check'
+  | 'folder-open'
+  | 'clipboard-list'
+  | 'shield-check'
+  | 'chart-column'
+  | 'book-open'
+  | 'upload'
+  | 'download';
 export function FarmstandIcon({ name }: { name: FarmstandIconName }) {
   return (
     <span

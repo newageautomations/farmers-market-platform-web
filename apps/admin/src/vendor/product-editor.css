@@ -25,32 +25,6 @@
     animation: none;
   }
 }
-.product-harvest-preview {
-  padding: clamp(1.25rem, 4vw, 3rem);
-  background: var(--brand-background);
-  color: var(--brand-foreground);
-  font-family: var(--font-body);
-  border-radius: var(--storefront-card-radius);
-}
-.product-harvest-preview .product-summary > h2 {
-  font-family: var(--font-heading);
-  font-size: clamp(2.25rem, 4vw, 4rem);
-  font-weight: 400;
-  line-height: 1.08;
-  margin: 0.5rem 0 1.5rem;
-}
-.product-harvest-preview .product-placeholder {
-  display: grid;
-  place-items: center;
-  background: var(--brand-surface);
-  color: var(--brand-muted);
-}
-.product-harvest-preview .purchase-form {
-  display: grid;
-}
-.product-harvest-preview .product-description {
-  white-space: pre-wrap;
-}
 .product-editor .command-section.product-editor-command {
   max-width: none;
 }
@@ -67,50 +41,6 @@
 .product-editor .command-form-heading {
   justify-content: space-between;
   margin-bottom: 24px;
-}
-.product-enabled-switch {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  cursor: pointer;
-}
-.product-enabled-switch > input {
-  position: absolute;
-  width: 44px;
-  height: 26px;
-  margin: 0;
-  opacity: 0;
-}
-.product-enabled-track {
-  display: inline-block;
-  width: 44px;
-  height: 26px;
-  padding: 3px;
-  border-radius: 20px;
-  background: var(--status-danger-fg);
-}
-.product-enabled-track::before {
-  content: '';
-  display: block;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--brand-surface);
-}
-.product-enabled-switch > input:checked + .product-enabled-track {
-  background: var(--status-success-fg);
-}
-.product-enabled-switch > input:checked + .product-enabled-track::before {
-  transform: translateX(18px);
-}
-.product-enabled-switch > input:focus-visible + .product-enabled-track {
-  outline: 2px solid var(--brand-foreground);
-  outline-offset: 3px;
-}
-.product-enabled-switch:has(> input:disabled) {
-  opacity: 0.6;
-  cursor: default;
 }
 .product-editor-heading > a {
   flex-shrink: 0;
@@ -538,15 +468,6 @@
   }
 }
 
-.product-harvest-preview {
-  width: 75%;
-  margin-inline: auto;
-}
-.product-harvest-preview .product-summary .product-information {
-  margin-block: 0;
-  width: 100%;
-  min-width: 0;
-}
 .product-category-dialog .product-category-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -1,7 +1,209 @@
 .notification-center {
+  --notification-border: color-mix(
+    in srgb,
+    var(--brand-primary) 16%,
+    var(--brand-surface)
+  );
   display: grid;
-  gap: 1rem;
+  gap: 16px;
   min-width: 0;
+  container-type: inline-size;
+}
+.notification-center .notification-retry {
+  justify-self: start;
+}
+.notification-muted {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+/* Inbox panel with a details side panel (Loyalty redemptions layout). The
+   second track grows from zero so the list narrows as the panel slides in. */
+.notification-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 0px;
+  align-items: start;
+  column-gap: 0;
+  min-width: 0;
+  transition:
+    grid-template-columns 240ms ease,
+    column-gap 240ms ease;
+}
+.notification-columns-open {
+  grid-template-columns: minmax(0, 1fr) 320px;
+  column-gap: 20px;
+}
+/* Clips the panel while its track resizes; `clip` keeps the slot sticky. */
+.notification-detail-slot {
+  position: sticky;
+  top: 18px;
+  min-width: 0;
+  overflow: clip;
+}
+.notification-detail-slot > .notification-detail {
+  width: 320px;
+  animation: notification-panel-in 240ms ease-out;
+}
+.notification-detail-slot.is-closing > .notification-detail {
+  animation: notification-panel-out 240ms ease-in forwards;
+}
+@keyframes notification-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+}
+@keyframes notification-panel-out {
+  to {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+}
+.notification-inbox.farmstand-panel.card.ui-card,
+.notification-settings-panel.farmstand-panel.card.ui-card {
+  min-width: 0;
+  padding: 18px;
+}
+.notification-toolbar {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(150px, 190px) auto;
+  align-items: center;
+  gap: 10px;
+}
+.notification-toolbar > * {
+  min-width: 0;
+  margin: 0;
+}
+.notification-toolbar .farmstand-select-wrap,
+.notification-toolbar .farmstand-select.ui-select.ui-select {
+  width: 100%;
+}
+.notification-toolbar .farmstand-select.ui-select.ui-select {
+  height: 38px;
+  min-height: 38px;
+}
+.notification-toolbar .notification-filters-toggle.button.ui-button {
+  --ui-control-height: 38px;
+  min-height: 38px;
+}
+.notification-filter-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--brand-primary);
+  color: var(--brand-surface);
+  font-size: 12px;
+  font-weight: 700;
+}
+/* The Filters button opens the card further to reveal the remaining filters. */
+.notification-more-filters:not([hidden]) {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--notification-border);
+  animation: notification-filters-open 220ms ease-out;
+}
+@keyframes notification-filters-open {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+.notification-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr));
+  align-items: end;
+  gap: 12px;
+}
+.notification-filter-grid > * {
+  min-width: 0;
+  margin: 0;
+}
+.notification-filter-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.notification-settings {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.notification-settings-panel h2,
+.notification-detail h2 {
+  margin: 0 0 14px;
+  font-size: 17px;
+  font-weight: 650;
+  text-transform: none;
+  letter-spacing: normal;
+  overflow-wrap: anywhere;
+}
+.notification-settings-form {
+  display: grid;
+  gap: 16px;
+}
+.notification-settings-form > .button {
+  justify-self: start;
+}
+.notification-detail.farmstand-panel.card.ui-card {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 18px 18px;
+}
+.notification-detail h2 {
+  margin: 0;
+}
+.notification-detail h2:focus {
+  outline: none;
+}
+.notification-detail h2:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 3px;
+}
+.notification-detail p {
+  margin: 0;
+}
+.notification-detail-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.notification-detail-action {
+  padding-top: 12px;
+  border-top: 1px solid var(--notification-border);
+}
+.notification-detail-action > .button {
+  width: 100%;
+}
+@container (max-width: 900px) {
+  .notification-columns,
+  .notification-columns-open {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 20px;
+  }
+  .notification-detail-slot {
+    position: static;
+  }
+  .notification-detail-slot > .notification-detail {
+    width: auto;
+  }
+}
+@container (max-width: 600px) {
+  .notification-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .notification-toolbar > :first-child {
+    grid-column: 1 / -1;
+  }
 }
 .notification-checklist {
   display: grid;
@@ -58,34 +260,67 @@
     --notification-context-fg: #e3c8ff;
   }
 }
-.notification-filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 0.75rem;
-}
-.notification-filters > .field,
-.notification-filters > .ui-field {
-  flex: 1 1 180px;
-  min-width: 0;
-}
 .notification-list,
 .notification-rules {
   list-style: none;
   margin: 0;
   padding: 0;
 }
+.notification-list {
+  margin-inline: -18px;
+  border-top: 1px solid var(--notification-border);
+}
 .notification-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.85rem;
-  border-bottom: 1px solid var(--brand-border, var(--color-border, #ddd));
+  padding: 0.85rem 18px;
+  border-bottom: 1px solid var(--notification-border);
   background: var(--brand-surface);
   min-width: 0;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+/* The whole row opens the notification: the open button stretches over it,
+   while the checkbox and icon actions sit above and keep their own clicks. */
+.notification-row .notification-open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.notification-row > :not(.notification-open) {
+  position: relative;
+  z-index: 1;
+}
+/* An open Actions menu stays above the rows that follow it. */
+.notification-row > .notification-mobile-actions:has(details[open]) {
+  z-index: 3;
+}
+.notification-row:hover {
+  background: color-mix(in srgb, var(--brand-primary) 7%, var(--brand-surface));
+}
+.notification-row:has(.notification-open:focus-visible) {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: -2px;
 }
 .notification-unread {
-  background: color-mix(in srgb, var(--brand-primary) 7%, var(--brand-surface));
+  background: color-mix(in srgb, var(--brand-primary) 4%, var(--brand-surface));
+}
+.notification-row.notification-selected,
+.notification-rules > li.notification-selected {
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--brand-surface)
+  );
+}
+.notification-row-select {
+  display: flex;
+  flex: none;
+}
+.notification-row-select > input {
+  margin: 0;
 }
 .notification-open {
   display: grid;
@@ -100,9 +335,29 @@
   cursor: pointer;
   padding: 0.25rem;
 }
+/* A row's open control is a text region, not an action button: outrank the
+   dashboard-wide button hover shadow and brightness so only the row reacts. */
+.notification-open.notification-open,
+:is(.notification-row, .notification-preview-item)
+  button.notification-open.notification-open.notification-open:is(
+    :hover,
+    :focus,
+    :active
+  ):not(:disabled) {
+  box-shadow: none;
+  filter: none;
+}
 .notification-open:focus-visible {
   outline: 2px solid var(--brand-primary);
   outline-offset: 3px;
+}
+.notification-row .notification-open,
+.notification-row .notification-open:is(:hover, :focus, :active) {
+  background: transparent;
+  transform: none;
+}
+.notification-row .notification-open:focus-visible {
+  outline: none;
 }
 .notification-open strong,
 .notification-text,
@@ -129,7 +384,14 @@
 }
 .notification-bulk {
   flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: 8px 14px;
+  margin: 14px 0 12px;
+}
+.notification-bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-inline-start: auto;
 }
 .notification-body {
   white-space: pre-wrap;
@@ -170,13 +432,50 @@
   box-shadow: 0 6px 24px #0002;
   max-width: calc(100vw - 2rem);
 }
+.notification-list.notification-list,
+.notification-rules.notification-rules {
+  margin-block: 0;
+}
+.notification-rules.notification-rules {
+  margin: 0 -18px 14px;
+  border-top: 1px solid var(--notification-border);
+}
 .notification-rules > li {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-  padding: 1rem 0;
-  border-bottom: 1px solid var(--brand-border, #ddd);
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--notification-border);
+}
+.notification-rule-name {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand-primary);
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+.notification-rule-name:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.notification-rule-name:is(:hover, :focus-visible) .farmstand-text-link::after {
+  transform: scaleX(1);
+}
+.notification-rule-scope {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+}
+.notification-rules > li > .button {
+  margin-inline-start: auto;
 }
 .notification-mobile-actions {
   display: none;
@@ -195,7 +494,7 @@
   }
   .notification-mobile-actions .ui-disclosure-content {
     position: absolute;
-    right: 1rem;
+    right: 0;
     background: var(--brand-surface);
     z-index: 5;
   }
@@ -204,11 +503,99 @@
     white-space: normal;
     overflow-wrap: anywhere;
   }
-  .notification-filters > * {
-    flex: 1 1 100%;
-    min-width: 0;
+  .notification-bulk-actions {
+    margin-inline-start: 0;
   }
   .notification-preview {
     width: min(330px, calc(100vw - 3rem));
   }
+}
+
+/* Animated option checkboxes (Settings notification preferences, Team access
+   and the inbox). Checkboxes stay native (accent-color); only the row and
+   press feedback are presented here. */
+.notification-option.ops-check {
+  min-height: 40px;
+  margin: 0 -8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+.notification-option.ops-check:hover {
+  background: color-mix(in srgb, var(--brand-primary) 7%, var(--brand-surface));
+}
+.notification-option.ops-check:has(input:checked) {
+  font-weight: 600;
+}
+.notification-option input[type='checkbox'] {
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+.notification-option:hover input[type='checkbox']:not(:disabled) {
+  transform: scale(1.08);
+}
+.notification-option input[type='checkbox']:active:not(:disabled) {
+  transform: scale(0.86);
+}
+.notification-option input[type='checkbox'].is-toggled {
+  animation: notification-check 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes notification-check {
+  0% {
+    transform: scale(0.8);
+  }
+  60% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.notification-center .notification-option.ops-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-weight: 500;
+}
+.notification-center .notification-option.ops-check > input {
+  margin: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .notification-columns,
+  .notification-row {
+    transition: none;
+  }
+  .notification-detail-slot > .notification-detail,
+  .notification-detail-slot.is-closing > .notification-detail {
+    animation: none;
+  }
+  .notification-option.ops-check,
+  .notification-option input[type='checkbox'] {
+    transition: none;
+  }
+  .notification-option input[type='checkbox'].is-toggled,
+  .notification-more-filters:not([hidden]) {
+    animation: none;
+  }
+  .notification-option:hover input[type='checkbox']:not(:disabled),
+  .notification-option input[type='checkbox']:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* Trash: a short retention note and each item's permanent-deletion countdown. */
+.notification-trash-note {
+  margin: 0 0 14px;
+}
+.notification-purge {
+  color: var(--status-warning-fg, var(--brand-muted));
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.notification-detail p.notification-purge {
+  margin: 0;
 }

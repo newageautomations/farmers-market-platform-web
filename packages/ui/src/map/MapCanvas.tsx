@@ -14,6 +14,8 @@ import { Stage, Layer, Line, Rect, Transformer } from 'react-konva';
 import type { MapDefinition, MapElement } from '@market/api';
 import { KonvaElement, type Space, type BoothStatus } from './KonvaElement';
 import { MapGrid } from './MapGrid';
+import { visibleMapElements } from './visuals';
+import { mapLegendEntries, isMapLegend } from './smart-design';
 import {
   bounds,
   fit,
@@ -31,11 +33,15 @@ import {
   type Point,
   type Viewport,
 } from './model';
-export type MapTool = 'select' | 'pan' | 'draw';
+export type MapTool = 'select' | 'pan' | 'draw' | 'points';
 export interface MapCanvasHandle {
   center: () => Point;
   locate: (id: string) => void;
   fit: () => void;
+  /** Multiplies the zoom around the viewport center. */
+  zoomBy: (factor: number) => void;
+  /** Returns to 100% around the viewport center. */
+  resetZoom: () => void;
 }
 type Event = Konva.KonvaEventObject<MouseEvent | TouchEvent>;
 interface Gesture {
@@ -63,10 +69,25 @@ export function MapCanvas({
   tool = 'select',
   grid = false,
   snap = false,
+  snapObjects = true,
   spacing = 10,
+  showNavigation = true,
+  onViewChange,
+  initialView,
   ref,
 }: {
   navigationEnd?: import('react').ReactNode;
+  /** Default true. Hosts that render their own zoom controls through the
+   *  handle can omit the built-in navigation row and hint. */
+  showNavigation?: boolean;
+  /** Reports the screen viewport so hosts can place overlays and zoom readouts. */
+  onViewChange?: (
+    view: Viewport,
+    size: { width: number; height: number },
+  ) => void;
+  /** Restores a previous viewport (for example after a save remount)
+   *  instead of fitting the area on mount. */
+  initialView?: Viewport;
   definition: MapDefinition;
   spaces?: Space[];
   selectedIds?: string[];
@@ -81,6 +102,7 @@ export function MapCanvas({
   tool?: MapTool;
   grid?: boolean;
   snap?: boolean;
+  snapObjects?: boolean;
   spacing?: number;
   ref?: Ref<MapCanvasHandle>;
 }) {
@@ -89,30 +111,36 @@ export function MapCanvas({
     transformer = useRef<Konva.Transformer>(null),
     nodes = useRef(new Map<string, Konva.Group>()),
     gesture = useRef<Gesture | null>(null),
-    drag = useRef<{ start: Point; elements: MapElement[] } | null>(null),
+    grab = useRef<Point | null>(null),
+    drag = useRef<{ id: string; start: Point; elements: MapElement[] } | null>(
+      null,
+    ),
     chosen = useRef(selectedIds),
     pinch = useRef<{ distance: number; center: Point; view: Viewport } | null>(
       null,
     );
   const [size, setSize] = useState({ width: 0, height: 0 }),
-    [view, setView] = useState<Viewport>({ x: 40, y: 40, scale: 1 }),
+    [view, setView] = useState<Viewport>(
+      initialView ?? { x: 40, y: 40, scale: 1 },
+    ),
     [modifier, setModifier] = useState(false),
     [shift, setShift] = useState(false),
     [guides, setGuides] = useState<Guide[]>([]),
     [box, setBox] = useState<{ a: Point; b: Point } | null>(null),
     [path, setPath] = useState<Point[]>([]);
   const panning = modifier || tool === 'pan',
-    elements = useMemo(
-      () =>
-        definition.elements
-          .filter((e) => e.areaId === areaId && (!editable || !e.editorHidden))
-          .sort((a, b) => a.zIndex - b.zIndex),
-      [definition.elements, areaId, editable],
-    ),
-    spaceMap = useMemo(
-      () => new Map(spaces.map((s) => [s.elementId, s])),
-      [spaces],
-    );
+    { elements, spaceMap, legendEntries } = useMemo(() => {
+      const elements = visibleMapElements(definition.elements, editable)
+        .filter((e) => e.areaId === areaId)
+        .sort((a, b) => a.zIndex - b.zIndex);
+      return {
+        elements,
+        spaceMap: new Map(spaces.map((s) => [s.elementId, s])),
+        legendEntries: elements.some(isMapLegend)
+          ? mapLegendEntries(elements, spaces, statuses)
+          : [],
+      };
+    }, [definition.elements, areaId, editable, spaces, statuses]);
   useEffect(() => {
     chosen.current = selectedIds;
   }, [selectedIds]);
@@ -130,7 +158,7 @@ export function MapCanvas({
     return () => observer.disconnect();
   }, []);
   // Fit once on area entry, never on each geometry edit.
-  const fitted = useRef('');
+  const fitted = useRef(initialView ? areaId : '');
   const previousSize = useRef({ width: 0, height: 0 });
   const heldPan = useRef({ space: false, alt: false });
   useLayoutEffect(() => {
@@ -221,9 +249,22 @@ export function MapCanvas({
       center: () => worldPoint({ x: size.width / 2, y: size.height / 2 }, view),
       locate,
       fit: () => setView(fit(elements, size)),
+      zoomBy: (factor: number) =>
+        setView((v) =>
+          zoomAt(
+            v,
+            { x: size.width / 2, y: size.height / 2 },
+            v.scale * factor,
+          ),
+        ),
+      resetZoom: () =>
+        setView((v) => zoomAt(v, { x: size.width / 2, y: size.height / 2 }, 1)),
     }),
     [view, size, locate, elements],
   );
+  useEffect(() => {
+    onViewChange?.(view, size);
+  }, [view, size, onViewChange]);
   const nodeRef = useCallback((id: string, node: Konva.Group | null) => {
     if (node) nodes.current.set(id, node);
     else nodes.current.delete(id);
@@ -264,6 +305,7 @@ export function MapCanvas({
       id = node?.id(),
       p = point(),
       world = worldPoint(p, view);
+    grab.current = world;
     leave();
     if (panning || !editable) {
       gesture.current = {
@@ -357,6 +399,9 @@ export function MapCanvas({
   const dragStart = useCallback(
     (event: Event) => {
       gesture.current = null;
+      // Transformer starts a drag on every selected node. Keep one gesture
+      // origin rather than replacing it with each follower's object center.
+      if (drag.current) return;
       const id = event.target.id(),
         e = elements.find((e) => e.id === id);
       if (!e) return;
@@ -364,51 +409,54 @@ export function MapCanvas({
         ? chosen.current
         : selectIds(elements, [], id);
       drag.current = {
-        start: { x: e.x + e.width / 2, y: e.y + e.height / 2 },
+        id,
+        start: grab.current ?? worldPoint(point(), view),
         elements: elements.filter(
           (e) => ids.includes(e.id) && !e.locked && !e.editorHidden,
         ),
       };
       leave();
     },
-    [elements, leave],
+    [elements, leave, view],
   );
-  const dragMove = useCallback(
-    (event: Event) => {
-      const d = drag.current;
-      if (!d) return;
-      const original = d.elements.find((e) => e.id === event.target.id());
-      if (!original) return;
-      let dx = event.target.x() - d.start.x,
-        dy = event.target.y() - d.start.y;
-      let e = { ...original, x: original.x + dx, y: original.y + dy };
-      if (snap) {
-        e = { ...e, x: snapGrid(e.x, spacing), y: snapGrid(e.y, spacing) };
-      }
-      const adjusted = objectSnap(
-        e,
-        elements.filter((e) => !d.elements.some((o) => o.id === e.id)),
-      );
-      dx = adjusted.x - original.x;
-      dy = adjusted.y - original.y;
-      setGuides((previous) =>
-        JSON.stringify(previous) === JSON.stringify(adjusted.guides)
-          ? previous
-          : adjusted.guides,
-      );
-      for (const member of d.elements)
-        nodes.current.get(member.id)?.position({
-          x: member.x + member.width / 2 + dx,
-          y: member.y + member.height / 2 + dy,
-        });
-      transformer.current?.forceUpdate();
-      stage.current?.batchDraw();
-    },
-    [elements, snap, spacing],
-  );
+  const dragMove = useCallback(() => {
+    const d = drag.current;
+    if (!d) return;
+    const original = d.elements.find((e) => e.id === d.id);
+    if (!original) return;
+    const pointer = worldPoint(point(), view);
+    let dx = pointer.x - d.start.x,
+      dy = pointer.y - d.start.y;
+    let e = { ...original, x: original.x + dx, y: original.y + dy };
+    if (snap) {
+      e = { ...e, x: snapGrid(e.x, spacing), y: snapGrid(e.y, spacing) };
+    }
+    const adjusted = snapObjects
+      ? objectSnap(
+          e,
+          elements.filter((e) => !d.elements.some((o) => o.id === e.id)),
+          5 / view.scale,
+        )
+      : { x: e.x, y: e.y, guides: [] };
+    dx = adjusted.x - original.x;
+    dy = adjusted.y - original.y;
+    setGuides((previous) =>
+      JSON.stringify(previous) === JSON.stringify(adjusted.guides)
+        ? previous
+        : adjusted.guides,
+    );
+    for (const member of d.elements)
+      nodes.current.get(member.id)?.position({
+        x: member.x + member.width / 2 + dx,
+        y: member.y + member.height / 2 + dy,
+      });
+    transformer.current?.forceUpdate();
+    stage.current?.batchDraw();
+  }, [elements, snap, spacing, snapObjects, view]);
   const dragEnd = useCallback(() => {
     const d = drag.current;
     drag.current = null;
+    grab.current = null;
     setGuides([]);
     if (d)
       onChange?.(
@@ -481,6 +529,7 @@ export function MapCanvas({
     elements.some((e) => selectedIds.includes(e.id) && e.type === 'SPACE');
   return (
     <div className="map-canvas-shell">
+      {showNavigation && (
       <div className="map-navigation" aria-label="Map navigation">
         <button
           className={buttonClassName({
@@ -545,6 +594,7 @@ export function MapCanvas({
         </button>
         {navigationEnd}
       </div>
+      )}
       <div
         ref={container}
         className={`ops-map-viewport ops-canvas konva-viewport ${panning ? 'is-panning' : ''}`}
@@ -594,18 +644,31 @@ export function MapCanvas({
           }}
         >
           <Layer>
-            {grid && (
+            {definition.background && (
+              <Rect
+                x={-view.x / view.scale}
+                y={-view.y / view.scale}
+                width={size.width / view.scale}
+                height={size.height / view.scale}
+                fill={definition.background.color}
+                listening={false}
+              />
+            )}
+            {grid && editable && (
               <MapGrid
                 view={view}
                 width={size.width}
                 height={size.height}
                 spacing={spacing}
+                color={definition.background?.gridColor}
+                opacity={definition.background?.gridOpacity}
               />
             )}
             {elements.map((e) => (
               <KonvaElement
                 key={e.id}
                 element={e}
+                legendEntries={legendEntries}
                 space={spaceMap.get(e.id)}
                 selected={selectedIds.includes(e.id)}
                 editable={editable && tool === 'select'}
@@ -618,6 +681,16 @@ export function MapCanvas({
                 onDragStart={dragStart}
                 onDragMove={dragMove}
                 onDragEnd={dragEnd}
+                onPointChange={
+                  editable &&
+                  tool === 'points' &&
+                  !panning &&
+                  selectedIds.includes(e.id) &&
+                  e.type === 'LINE' &&
+                  !e.locked
+                    ? (element) => onChange?.([element])
+                    : undefined
+                }
               />
             ))}
             {editable && (
@@ -636,7 +709,8 @@ export function MapCanvas({
                 borderStroke="#2456b8"
                 anchorStroke="#2456b8"
                 anchorFill="#fff"
-                anchorSize={10}
+                anchorSize={8}
+                anchorCornerRadius={2}
                 rotateAnchorOffset={28}
                 onTransformEnd={transformed}
                 boundBoxFunc={(old, next) =>
@@ -693,12 +767,14 @@ export function MapCanvas({
           </Layer>
         </Stage>
       </div>
-      <p className="map-hint">
-        {editable
-          ? 'Shift-click or drag empty space to select. Space or Alt + drag to pan.'
-          : 'Drag to pan.'}{' '}
-        Scroll to zoom.
-      </p>
+      {showNavigation && (
+        <p className="map-hint">
+          {editable
+            ? 'Shift-click or drag empty space to select. Space or Alt + drag to pan.'
+            : 'Drag to pan.'}{' '}
+          Scroll to zoom.
+        </p>
+      )}
     </div>
   );
 }

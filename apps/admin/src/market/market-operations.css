@@ -1,0 +1,191 @@
+/* Market Operations composes the Market Occurrences list, the vendor detail
+   panels and their document rows. Only the readiness arrangements live
+   here, using the same tokens. */
+
+/* Icons resized here scale their glyph instead of clipping it. */
+:is(
+    .operations-readiness,
+    .operations-attention,
+    .operations-ready,
+    .operations-checklist-clear,
+    .operations-checklist-group,
+    .operations-checklist-aside
+  )
+  .farmstand-icon {
+  mask-size: contain;
+}
+
+/* List: readiness badge and the side panel's attention summary. */
+.operations-readiness {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.operations-readiness .farmstand-icon {
+  --farmstand-icon-width: 13px;
+  width: 13px;
+  height: 13px;
+  color: currentColor;
+}
+.operations-attention {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 9px;
+  color: var(--status-warning-fg);
+  background: var(--status-warning-bg);
+}
+.operations-attention h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.operations-attention ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.operations-attention li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.operations-attention :is(h4, li) .farmstand-icon {
+  --farmstand-icon-width: 15px;
+  width: 15px;
+  height: 15px;
+  color: currentColor;
+}
+.operations-attention a {
+  color: var(--brand-foreground);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.operations-attention-count {
+  min-width: 24px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--brand-surface);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+.operations-ready,
+.operations-checklist-clear {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+  border-radius: 9px;
+  color: var(--status-success-fg);
+  background: var(--status-success-bg);
+  font-size: 13px;
+  font-weight: 600;
+}
+:is(.operations-ready, .operations-checklist-clear) .farmstand-icon {
+  --farmstand-icon-width: 16px;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: currentColor;
+}
+
+/* Detail: grouped checklist rows reuse the document compliance rows. */
+.operations-checklist-time {
+  color: var(--brand-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.operations-checklist-body {
+  display: grid;
+  gap: 14px;
+  padding: 6px 24px 20px;
+}
+.operations-detail .operations-checklist-note {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.operations-detail .operations-checklist-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.operations-checklist-group .farmstand-icon {
+  --farmstand-icon-width: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--brand-primary);
+}
+.operations-checklist-count {
+  min-width: 22px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--application-soft);
+  color: var(--brand-muted);
+  font-size: 12px;
+  text-align: center;
+}
+.application-detail-documents.operations-checklist-items {
+  gap: 0;
+  padding: 0 !important;
+}
+.operations-checklist-items > li + li {
+  border-top: 1px solid var(--application-border);
+}
+.operations-checklist-items > li {
+  padding-block: 12px;
+}
+.operations-checklist-aside {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+.operations-checklist-aside .farmstand-text-action {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.operations-checklist-aside .farmstand-text-action .farmstand-icon {
+  --farmstand-icon-width: 14px;
+  width: 14px;
+  height: 14px;
+}
+.operations-booths {
+  display: grid;
+  gap: 4px;
+  padding-top: 8px;
+}
+.operations-booths > .occurrence-booth-meter {
+  margin: 0 24px 4px;
+}
+.operations-booths > :is(.ui-spinner, .error-state) {
+  margin: 8px 24px;
+}
+
+@container (max-width: 560px) {
+  .operations-checklist-items > li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .operations-checklist-aside {
+    grid-column: 2;
+    justify-items: start;
+  }
+}

@@ -54,6 +54,10 @@ export interface InboxNotification {
   created_at: string;
   read_at: string | null;
   starred: boolean;
+  /** Set while the notification is in Trash. */
+  deleted_at?: string | null;
+  /** When a Trash item is permanently deleted (30 days after deletion). */
+  purge_at?: string | null;
 }
 export interface InboxFilter {
   skip?: number;
@@ -111,7 +115,9 @@ export interface InboxSettings {
   rules: InboxRule[];
   truncated: boolean;
 }
-export type InboxAction = 'read' | 'unread' | 'star' | 'unstar' | 'delete';
+/** `delete` moves to Trash; `restore` and `purge` (delete forever) act on Trash. */
+export type InboxAction =
+  'read' | 'unread' | 'star' | 'unstar' | 'delete' | 'restore' | 'purge';
 export interface InboxApi {
   list(input?: InboxFilter): Promise<InboxPage>;
   detail(id: string): Promise<InboxNotification>;

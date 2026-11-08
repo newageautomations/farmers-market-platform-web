@@ -25,7 +25,7 @@ import {
   useRead,
 } from '../apps/admin/src/vendor/common';
 import { analyticsRange } from '../apps/admin/src/vendor/analytics';
-import { Overview } from '../apps/admin/src/vendor/overview';
+import { VendorDashboard } from '../apps/admin/src/vendor/VendorDashboard';
 import { AdminApp } from '../apps/admin/src/AdminApp';
 
 const context = fixtureContexts.VENDOR;
@@ -106,7 +106,7 @@ describe('Vendor authority and boundary', () => {
     };
     expect(visibleNavigation(operations).map((n) => n.label)).toEqual([
       'Notifications',
-      'Overview',
+      'Dashboard',
       'Inventory',
       'Orders',
       'Markets',
@@ -709,19 +709,12 @@ describe('read and command lifecycle', () => {
     expect(screen.queryByText(/command confirmed/)).not.toBeInTheDocument();
     expect(run).toHaveBeenCalledOnce();
   });
-  it('keeps Overview core reads usable without analytics', async () => {
+  it('keeps the Dashboard usable without analytics', async () => {
     const service = createFixtureVendorService(context, 'denied'),
       totals = vi.spyOn(service, 'totals');
-    render(<Overview service={service} />);
-    await waitFor(() =>
-      expect(
-        screen.getByText('Vendor customer relationships').nextElementSibling,
-      ).toHaveTextContent(/^23$/),
-    );
-    expect(
-      screen.getByRole('link', { name: 'Find an order' }),
-    ).toBeInTheDocument();
+    render(<VendorDashboard service={service} />);
+    await screen.findByRole('heading', { name: 'Dashboard', level: 1 });
+    await screen.findByRole('region', { name: 'Next upcoming market' });
     expect(totals).not.toHaveBeenCalled();
-    expect(screen.queryByText('Captured')).not.toBeInTheDocument();
   });
 });

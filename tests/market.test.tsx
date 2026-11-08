@@ -232,10 +232,14 @@ describe('Market authority and named contracts', () => {
         service = createFixtureMarketService(context);
       expect(await service.configuration('1')).toMatchObject({ id: '1' });
       expect(
-        visibleNavigation(context).some((item) => item.label === 'Billing'),
+        visibleNavigation(context).some(
+          (item) => item.label === 'Subscription',
+        ),
       ).toBe(context.permissions.includes('ReadOwnBilling'));
+      // Analytics now opens the Finances overview, which billing roles also reach.
       expect(routeAllowed(context, '/market/analytics')).toBe(
-        context.permissions.includes('ReadOwnMarketAnalytics'),
+        context.permissions.includes('ReadOwnMarketAnalytics') ||
+          context.permissions.includes('ReadOwnMarketBilling'),
       );
       if (preset === 'operations' || preset === 'analytics')
         await expect(service.cancelOccurrence('101', 1)).rejects.toMatchObject({
@@ -339,9 +343,10 @@ describe('Market overview, configuration and recurrence', () => {
   });
   it('revises recurrence using Market version and authoritative reread', async () => {
     const service = createFixtureMarketService(marketFixtureContext()),
-      mutate = vi.spyOn(service, 'recurrence'),
+      mutate = vi.spyOn(service, 'saveSchedule'),
       reread = vi.spyOn(service, 'configuration');
     render(<MarketOccurrences service={service} view="generate" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
     await screen.findByLabelText('Market starts at');
     fireEvent.change(screen.getByLabelText('Market starts at'), {
       target: { value: '11:30' },
@@ -351,7 +356,12 @@ describe('Market overview, configuration and recurrence', () => {
       expect(mutate).toHaveBeenCalledWith(
         '1',
         1,
-        expect.objectContaining({ startTime: '11:30', weekdays: [6] }),
+        expect.objectContaining({
+          id: 'legacy',
+          startTime: '11:30',
+          weekdays: [6],
+          venue: 'Synthetic Market A fixture venue',
+        }),
       ),
     );
     await waitFor(() => expect(reread).toHaveBeenCalledTimes(2));
@@ -365,6 +375,7 @@ describe('Market overview, configuration and recurrence', () => {
     const view = render(
       <MarketOccurrences service={service} view="generate" />,
     );
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
     await screen.findByLabelText('Market starts at');
     await service.recurrence('1', 1, null);
     fireEvent.click(screen.getByRole('button', { name: 'Save schedule' }));
@@ -420,33 +431,87 @@ describe('Market occurrences', () => {
         service={createFixtureMarketService(marketFixtureContext())}
       />,
     );
-    await screen.findByRole('table', { name: 'Market occurrences' });
-    expect(screen.getAllByText('Scheduled')).toHaveLength(2);
+    const table = await screen.findByRole('table', {
+      name: 'Market occurrences',
+    });
+    expect(within(table).getAllByText('Scheduled')).toHaveLength(2);
+    expect(within(table).queryByText('Manual')).toBeNull();
+    expect(
+      within(table).queryByRole('columnheader', { name: 'Action' }),
+    ).toBeNull();
     expect(screen.queryByRole('columnheader', { name: 'Version' })).toBeNull();
     expect(document.body).toHaveTextContent('2 occurrences in this date range');
     expect(screen.queryByRole('button', { name: /Delete/ })).toBeNull();
   });
-  it.each(['synchronous', 'queued'])(
-    'uses only the selected %s generation command and rereads',
-    async (mode) => {
-      const service = createFixtureMarketService(marketFixtureContext()),
-        generate = vi.spyOn(service, 'generate'),
-        enqueue = vi.spyOn(service, 'enqueue'),
-        reread = vi.spyOn(service, 'configuration');
-      render(<MarketOccurrences service={service} view="generate" />);
-      await screen.findByLabelText('Generation execution');
-      fireEvent.change(screen.getByLabelText('Generation execution'), {
-        target: { value: mode },
-      });
-      fireEvent.click(
-        screen.getByRole('button', { name: 'Generate occurrences' }),
-      );
-      await waitFor(() => expect(reread).toHaveBeenCalledTimes(2));
-      expect(generate).toHaveBeenCalledTimes(mode === 'synchronous' ? 1 : 0);
-      expect(enqueue).toHaveBeenCalledTimes(mode === 'queued' ? 1 : 0);
-      if (mode === 'queued') expect(document.body).toHaveTextContent('Pending');
-    },
-  );
+  it('adds a second schedule and generates now from the selected schedules', async () => {
+    const service = createFixtureMarketService(marketFixtureContext()),
+      generate = vi.spyOn(service, 'generate'),
+      save = vi.spyOn(service, 'saveSchedule'),
+      enqueue = vi.spyOn(service, 'enqueue');
+    render(<MarketOccurrences service={service} view="generate" />);
+    const dialog = within(await screen.findByRole('dialog'));
+    expect(
+      await dialog.findByText('Synthetic Market A fixture venue'),
+    ).toBeInTheDocument();
+    fireEvent.click(dialog.getByRole('button', { name: 'New schedule' }));
+    fireEvent.change(await dialog.findByLabelText('Market address'), {
+      target: { value: 'River Road Park' },
+    });
+    fireEvent.click(dialog.getByRole('button', { name: 'Save schedule' }));
+    await waitFor(() =>
+      expect(save).toHaveBeenCalledWith(
+        '1',
+        1,
+        expect.objectContaining({ id: null, venue: 'River Road Park' }),
+      ),
+    );
+    expect(await dialog.findByText('River Road Park')).toBeInTheDocument();
+    // The original schedule is left out of this run.
+    fireEvent.click(
+      dialog.getByRole('checkbox', {
+        name: /Synthetic Market A fixture venue/,
+      }),
+    );
+    fireEvent.click(dialog.getByRole('button', { name: 'Next' }));
+    fireEvent.click(await dialog.findByRole('button', { name: 'Next' }));
+    fireEvent.click(
+      await dialog.findByRole('button', { name: 'Generate occurrences' }),
+    );
+    expect(
+      await dialog.findByRole('heading', { name: 'Creating market dates' }),
+    ).toBeInTheDocument();
+    expect(
+      await dialog.findByRole(
+        'heading',
+        { name: 'Market dates created' },
+        { timeout: 3000 },
+      ),
+    ).toBeInTheDocument();
+    const added = (await service.configuration('1')).schedules.find(
+      (s) => s.venue === 'River Road Park',
+    )!;
+    expect(generate).toHaveBeenCalledWith(
+      '1',
+      expect.any(String),
+      expect.any(String),
+      [added.id],
+    );
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+  it('deletes a schedule after an in-place confirmation', async () => {
+    const service = createFixtureMarketService(marketFixtureContext()),
+      remove = vi.spyOn(service, 'deleteSchedule');
+    render(<MarketOccurrences service={service} view="generate" />);
+    const dialog = within(await screen.findByRole('dialog'));
+    fireEvent.click(await dialog.findByRole('button', { name: 'Delete' }));
+    expect(remove).not.toHaveBeenCalled();
+    fireEvent.click(dialog.getByRole('button', { name: 'Delete schedule' }));
+    await waitFor(() => expect(remove).toHaveBeenCalledWith('1', 1, 'legacy'));
+    // With no schedules left, the wizard offers a new one.
+    expect(
+      await dialog.findByRole('heading', { name: 'New schedule' }),
+    ).toBeInTheDocument();
+  });
   it('creates a manual occurrence with an explicit stable manual intent key', async () => {
     clock();
     const service = createFixtureMarketService(marketFixtureContext()),
@@ -491,13 +556,16 @@ describe('Market occurrences', () => {
       mutate = vi.spyOn(service, 'reviseOccurrence'),
       reread = vi.spyOn(service, 'occurrence');
     render(<MarketOccurrences service={service} id="102" />);
-    await screen.findByLabelText('Venue');
-    fireEvent.change(screen.getByLabelText('Venue'), {
+    fireEvent.click(
+      (await screen.findAllByRole('button', { name: 'Edit occurrence' }))[0]!,
+    );
+    const dialog = within(
+      screen.getByRole('dialog', { name: 'Edit occurrence' }),
+    );
+    fireEvent.change(dialog.getByLabelText('Venue'), {
       target: { value: 'Changed synthetic venue' },
     });
-    fireEvent.click(
-      form('Revise occurrence').getByRole('button', { name: 'Save' }),
-    );
+    fireEvent.click(dialog.getByRole('button', { name: 'Save changes' }));
     await waitFor(() =>
       expect(mutate).toHaveBeenCalledWith(
         '102',
@@ -514,16 +582,14 @@ describe('Market occurrences', () => {
     await screen.findByRole('button', { name: 'Cancel occurrence' });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel occurrence' }));
     expect(cancel).not.toHaveBeenCalled();
-    expect(screen.getByRole('dialog')).toHaveTextContent(
+    const dialog = screen.getByRole('dialog', {
+      name: 'Cancel this occurrence?',
+    });
+    expect(dialog).toHaveTextContent(
       'does not automatically refund purchases, restock inventory or notify customers',
     );
     fireEvent.click(
-      within(screen.getByRole('dialog', { name: /Confirm/ })).getByRole(
-        'button',
-        {
-          name: 'Confirm change',
-        },
-      ),
+      within(dialog).getByRole('button', { name: 'Cancel occurrence' }),
     );
     await waitFor(() =>
       expect(screen.getByText('Cancelled')).toBeInTheDocument(),
@@ -554,12 +620,12 @@ describe('Vendor relationships, listings, participation and offerings', () => {
         service={createFixtureMarketService(marketFixtureContext())}
       />,
     );
-    await screen.findByRole('table');
-    expect(screen.getByText('Pending')).toBeInTheDocument();
-    expect(screen.getByText('Suspended')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Open Synthetic Market A Vendor 1' }),
-    ).toBeInTheDocument();
+    const table = await screen.findByRole('table', {
+      name: 'Market businesses',
+    });
+    await within(table).findByText('Synthetic Market A Vendor 1');
+    expect(within(table).getAllByText('Membership pending').length).toBeGreaterThan(0);
+    expect(within(table).getAllByText('Membership suspended').length).toBeGreaterThan(0);
     expect(document.body.textContent).not.toMatch(
       /Seller|credentials|Stripe|private money/,
     );
@@ -567,7 +633,7 @@ describe('Vendor relationships, listings, participation and offerings', () => {
   it('approves business membership then separately approves/withdraws a listing with authoritative state', async () => {
     const service = createFixtureMarketService(marketFixtureContext()),
       update = vi.spyOn(service, 'membershipStatus');
-    const view = render(<MarketVendors service={service} id="11" />);
+    render(<MarketVendors service={service} id="11" />);
     await screen.findByLabelText('Business membership status');
     fireEvent.change(screen.getByLabelText('Business membership status'), {
       target: { value: 'approved' },
@@ -581,15 +647,20 @@ describe('Vendor relationships, listings, participation and offerings', () => {
         'approved',
       ),
     );
-    view.rerender(<MarketVendors service={service} id="11" tab="listings" />);
+    // Views switch in place under the menu; the page is not reloaded.
+    fireEvent.click(screen.getByRole('link', { name: 'Listing approvals' }));
+    expect(window.location.hash).toBe('#listings');
     const listings = await screen.findByRole('table', {
       name: 'Listing approvals',
     });
     fireEvent.click(within(listings).getAllByRole('button')[0]!);
-    await screen.findByLabelText('Listing approval status');
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Update listing approval' }),
-    );
+    const review = await screen.findByRole('dialog', { name: /^Review / });
+    // The Market sees the product as customers would, with no editing controls.
+    await within(review).findByRole('region', {
+      name: 'Harvest product preview',
+    });
+    expect(within(review).queryByRole('button', { name: /Edit/ })).toBeNull();
+    fireEvent.click(within(review).getByRole('button', { name: /Approve/ }));
     await waitFor(() =>
       expect(
         screen.getByRole('table', {
@@ -604,27 +675,17 @@ describe('Vendor relationships, listings, participation and offerings', () => {
         screen.getByRole('table', { name: 'Listing approvals' }),
       ).getAllByRole('button')[0]!,
     );
-    fireEvent.change(screen.getByLabelText('Listing approval status'), {
-      target: { value: 'withdrawn' },
-    });
+    const again = await screen.findByRole('dialog', { name: /^Review / });
+    fireEvent.click(within(again).getByRole('button', { name: 'Deny' }));
     fireEvent.click(
-      screen.getByRole('button', { name: 'Update listing approval' }),
-    );
-    expect(screen.getByRole('dialog', { name: /Confirm/ })).toBeVisible();
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: /Confirm/ })).getByRole(
-        'button',
-        {
-          name: 'Confirm change',
-        },
-      ),
+      within(again).getByRole('button', { name: 'Deny listing' }),
     );
     await waitFor(() =>
       expect(
         screen.getByRole('table', {
           name: 'Listing approvals',
         }),
-      ).toHaveTextContent('Withdrawn'),
+      ).toHaveTextContent('Denied'),
     );
   });
   it('membership suspension requires deliberate confirmation', async () => {
@@ -693,40 +754,78 @@ describe('Vendor relationships, listings, participation and offerings', () => {
       'ManageOwnMarketParticipation',
     );
   });
-  it('shows offering flags/window and cap separately from stock, configures and explicitly rematerializes', async () => {
+  it('filters Vendor market dates, listings and products by date', async () => {
+    const service = createFixtureMarketService(marketFixtureContext());
+    render(<MarketVendors service={service} id="11" tab="participation" />);
+    const dates = await screen.findByRole('table', {
+      name: 'Occurrence participation',
+    });
+    const before = within(dates).getAllByRole('row').length;
+    fireEvent.change(screen.getByLabelText('Participation'), {
+      target: { value: 'not participating' },
+    });
+    await waitFor(() =>
+      expect(
+        within(
+          screen.queryByRole('table', { name: 'Occurrence participation' }) ??
+            document.body,
+        ).queryAllByText('Planned'),
+      ).toHaveLength(0),
+    );
+    expect(screen.getByLabelText('Date range')).toHaveValue('next-30');
+    fireEvent.change(screen.getByLabelText('Date range'), {
+      target: { value: 'custom' },
+    });
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(before).toBeGreaterThan(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Listing approvals' }));
+    await screen.findByRole('table', { name: 'Listing approvals' });
+    fireEvent.change(screen.getByLabelText('Approval'), {
+      target: { value: 'approved' },
+    });
+    expect(await screen.findByText('No matching listings')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: 'Products by date' }));
+    expect(await screen.findByLabelText('Market date')).toHaveValue('all');
+    expect(screen.getByLabelText('Status')).toHaveValue('all');
+  });
+  it('lets a Market only disable and re-enable a Vendor offering', async () => {
     const service = createFixtureMarketService(marketFixtureContext()),
+      configure = vi.spyOn(service, 'offering'),
       rematerialize = vi.spyOn(service, 'rematerialize');
     render(<MarketVendors service={service} id="12" tab="offerings" />);
     const table = await screen.findByRole('table', {
-      name: 'Product offerings',
+      name: 'Products by date',
     });
     expect(table).toHaveTextContent('20');
-    fireEvent.click(within(table).getAllByRole('button')[0]!);
-    expect(document.body).not.toHaveTextContent('20 items in inventory');
-    fireEvent.change(
-      form('Offering Settings').getByLabelText(
-        'Occurrence sales cap (optional)',
-      ),
-      { target: { value: '25' } },
+    // No way to add a product to a date or change its preorder settings.
+    expect(screen.queryByRole('button', { name: /Add product/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Edit/ })).toBeNull();
+    fireEvent.click(within(table).getByRole('button', { name: /^Disable / }));
+    const confirm = await screen.findByRole('dialog', { name: /^Disable / });
+    fireEvent.click(
+      within(confirm).getByRole('button', { name: 'Disable product' }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Save offering' }));
     await waitFor(() =>
-      expect(
-        screen.getByRole('table', { name: 'Product offerings' }),
-      ).toHaveTextContent('25'),
+      expect(configure).toHaveBeenLastCalledWith(
+        expect.objectContaining({ enabled: false }),
+      ),
+    );
+    const call = configure.mock.calls.at(-1)![0];
+    const reEnable = await within(
+      await screen.findByRole('table', { name: 'Products by date' }),
+    ).findByRole('button', { name: /^Re-enable / });
+    fireEvent.click(reEnable);
+    await waitFor(() =>
+      expect(configure).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          enabled: true,
+          preorderEnabled: call.preorderEnabled,
+          salesCap: call.salesCap,
+        }),
+      ),
     );
     expect(rematerialize).not.toHaveBeenCalled();
-    fireEvent.click(
-      within(
-        screen.getByRole('table', { name: 'Product offerings' }),
-      ).getAllByRole('button')[0]!,
-    );
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Apply current window configuration',
-      }),
-    );
-    await waitFor(() => expect(rematerialize).toHaveBeenCalledWith('12001', 2));
   });
   it('partial read-only operators get no business/listing/participation/offering commands', async () => {
     render(
@@ -739,7 +838,7 @@ describe('Vendor relationships, listings, participation and offerings', () => {
       />,
     );
     await screen.findByRole('table', {
-      name: 'Product offerings',
+      name: 'Products by date',
     });
     for (const label of [
       'Update membership',
@@ -766,19 +865,20 @@ describe('Vendor relationships, listings, participation and offerings', () => {
 });
 
 describe('Operations privacy and complete server paging', () => {
-  it('pages 23 operational purchases using bounded skip/take without deriving a total', async () => {
+  it('keeps preorder purchases out of the operations page while the read stays available', async () => {
     const service = createFixtureMarketService(marketFixtureContext()),
       read = vi.spyOn(service, 'operations');
     render(<MarketOperations service={service} id="101" />);
-    await screen.findByText(
-      '23 operational purchases in this occurrence. Showing 1 to 20.',
+    await screen.findByRole('region', { name: 'Market Day Checklist' });
+    expect(
+      screen.getByRole('link', { name: 'Back to operations' }),
+    ).toHaveAttribute('href', '/market/operations');
+    expect(document.body.textContent).not.toMatch(
+      /operational purchases|Original units/i,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    await screen.findByText(
-      '23 operational purchases in this occurrence. Showing 21 to 23.',
-    );
-    expect(read).toHaveBeenLastCalledWith('101', 20);
-    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /refresh/i })).toBeNull();
+    expect(read).not.toHaveBeenCalled();
+    expect(typeof service.operations).toBe('function');
   });
   it('renders allowed operational fields only even when an HTTP mock injects private extras', () => {
     const data = createMarketFixtureData('1').operations;
@@ -882,7 +982,18 @@ describe('Optional operational analytics', () => {
         ...(await original(id, range)),
         nextCursor: range.after ? null : '1501:20',
       }));
-    render(<MarketAnalytics service={service} />);
+    const today = new Date().toISOString().slice(0, 10),
+      later = (days: number) =>
+        new Date(Date.parse(`${today}T00:00:00Z`) + days * 86400000)
+          .toISOString()
+          .slice(0, 10);
+    const period = {
+      from: today,
+      through: later(30),
+      currency: 'USD',
+      timezone: 'UTC',
+    };
+    const view = render(<MarketAnalytics service={service} scope={period} />);
     await screen.findByText('Purchase count');
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     await waitFor(() =>
@@ -891,11 +1002,20 @@ describe('Optional operational analytics', () => {
         expect.objectContaining({ after: '1501:20' }),
       ),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Apply dates' }));
+    // A new finance period restarts paging with an exclusive UTC end date.
+    view.rerender(
+      <MarketAnalytics
+        service={service}
+        scope={{ ...period, through: later(45) }}
+      />,
+    );
     await waitFor(() =>
       expect(read).toHaveBeenLastCalledWith(
         '1',
-        expect.objectContaining({ after: null }),
+        expect.objectContaining({
+          after: null,
+          end: `${later(46)}T00:00:00.000Z`,
+        }),
       ),
     );
   });

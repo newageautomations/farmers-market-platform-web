@@ -14,7 +14,9 @@ export function CommandForm({
   onPendingChange,
   submitVariant = 'primary',
   embedded = false,
+  hideTitle = false,
   secondaryAction,
+  submitClassName,
 }: {
   title: string;
   run: (data: FormData, operationKey: string) => Promise<unknown>;
@@ -26,7 +28,11 @@ export function CommandForm({
   onPendingChange?: (pending: boolean) => void;
   submitVariant?: ButtonVariant;
   embedded?: boolean;
+  /** Omit the visible heading when a host panel already names the form. */
+  hideTitle?: boolean;
   secondaryAction?: ReactNode;
+  /** Optional presentation class, e.g. `farmstand-button`, as in the vendor CommandForm. */
+  submitClassName?: string;
 }) {
   const [pending, setPending] = useState(false),
     [error, setError] = useState<AppError | null>(null),
@@ -87,7 +93,7 @@ export function CommandForm({
       className="command-section"
       surface={embedded ? 'embedded' : 'card'}
     >
-      <h2 className="ui-section-title-dashboard">{title}</h2>
+      {!hideTitle && <h2 className="ui-section-title-dashboard">{title}</h2>}
       <form
         onSubmit={submit}
         aria-busy={pending}
@@ -104,6 +110,7 @@ export function CommandForm({
           <Button
             type="submit"
             variant={submitVariant}
+            className={submitClassName}
             disabled={pending || uncertain || requiresRefresh}
           >
             {pending ? 'Saving' : submitLabel}

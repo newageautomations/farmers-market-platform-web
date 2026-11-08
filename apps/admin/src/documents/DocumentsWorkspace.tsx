@@ -1,4 +1,11 @@
-import { useEffect, useId, useMemo, useState, type FormEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
 import {
   createDocumentsApi,
   type ComplianceData,
@@ -10,26 +17,36 @@ import {
 } from '@market/api';
 import {
   Alert,
-  Button,
-  Card,
-  RecordCard,
+  Badge,
   IconButton,
   SearchableMultiSelect,
-  DataTable,
   Dialog,
   EmptyState,
   Field,
   Input,
-  Pagination,
   SelectField,
   Spinner,
   Tabs,
 } from '@market/ui';
+import {
+  FarmstandButton as Button,
+  FarmstandIcon,
+  FarmstandPagination as Pagination,
+  FarmstandTable as DataTable,
+} from '@market/ui/farmstand';
 import type { AdminContext } from '@market/admin-core';
+import { WorkspaceFrame } from '../WorkspaceFrame';
+import { SettingsPanel } from '../settings/SettingsPanel';
 import './documents.css';
 import { Agreements } from './Agreements';
 import { ComplianceReports } from './ComplianceReports';
 import { ComplianceGuidance } from './ComplianceGuidance';
+import {
+  DocumentCard,
+  DocumentFacts,
+  DocumentSection,
+  documentDate,
+} from './DocumentCard';
 import {
   DocumentFeedback as Feedback,
   DocumentStatus as Status,
@@ -56,12 +73,19 @@ function AutomationSettings({
     [error, setError] = useState<unknown>();
   const settings = data.settings ?? { automation_enabled: false, revision: 0 };
   return (
-    <Card>
-      <p>
+    <SettingsPanel
+      icon="settings"
+      title="Automatic requests"
+      description="Each requirement must also use automatic distribution. Enabling this does not assign historical vendors or deliver notifications."
+      actions={
+        <Badge tone={settings.automation_enabled ? 'success' : 'neutral'}>
+          {settings.automation_enabled ? 'Enabled' : 'Off'}
+        </Badge>
+      }
+    >
+      <p className="documents-note">
         Automatic document requests are{' '}
-        {settings.automation_enabled ? 'enabled' : 'off'} for this market. Each
-        requirement must also use automatic distribution. Enabling this switch
-        does not assign historical vendors or deliver notifications.
+        {settings.automation_enabled ? 'enabled' : 'off'} for this market.
       </p>
       <Button
         variant="secondary"
@@ -85,7 +109,7 @@ function AutomationSettings({
           : 'Enable automatic requests'}
       </Button>
       {!!error && <Feedback error={error} />}
-    </Card>
+    </SettingsPanel>
   );
 }
 function DistributionSettings({
@@ -107,7 +131,7 @@ function DistributionSettings({
     [error, setError] = useState<unknown>();
   return (
     <form
-      className="ui-control-row"
+      className="documents-requirement-form"
       onSubmit={(e) => {
         e.preventDefault();
         setBusy(true);
@@ -162,7 +186,7 @@ function DistributionSettings({
         </option>
       </SelectField>
       {stage === 'Application' && automatic && r.required && (
-        <label>
+        <label className="document-checkbox">
           <input
             type="checkbox"
             checked={blocking}
@@ -172,20 +196,22 @@ function DistributionSettings({
           Must be shared before submission
         </label>
       )}
-      <p>
+      <p className="documents-note">
         {automatic
           ? `Automatically requests documents ${stage === 'Application' ? 'when an authorized vendor begins or submits an application' : 'when a vendor is accepted or their membership is approved'}, only while market automation is enabled. Existing assignments keep their reviews.`
           : 'Only an explicit manager request or synchronization creates assignments.'}
       </p>
       {!r.market_wide && (
-        <p>
+        <p className="documents-note">
           Automatic distribution is available for market-wide requirements.
           Create a market-wide requirement to apply it to future vendors.
         </p>
       )}
-      <Button type="submit" disabled={disabled || busy}>
-        Save
-      </Button>
+      <div className="documents-form-actions">
+        <Button type="submit" variant="secondary" disabled={disabled || busy}>
+          Save
+        </Button>
+      </div>
       {!!error && <Feedback error={error} />}
     </form>
   );
@@ -238,7 +264,7 @@ function EditDialog({
         </Button>
       }
     >
-      <p>
+      <p className="documents-note">
         Previously shared submissions keep the file version and dates that were
         submitted. Share again to submit updated information.
       </p>
@@ -378,7 +404,7 @@ export function RequirementDialog({
         cannot be used to request sensitive personal, tax, identity, banking,
         payment or medical documents.
       </Alert>
-      <p>
+      <p className="documents-note">
         Suggested categories are starting points. They do not determine what
         vendors legally need.
       </p>
@@ -467,7 +493,7 @@ export function RequirementDialog({
             </option>
           </SelectField>
           {automatic && (
-            <p>
+            <p className="documents-note">
               Requires this market's automation switch. No existing vendors are
               assigned when this requirement is created.
             </p>
@@ -479,7 +505,9 @@ export function RequirementDialog({
             </label>
           )}
           {stage === 'On request' && automatic && (
-            <p>Choose manual distribution for an on-request requirement.</p>
+            <p className="documents-note">
+              Choose manual distribution for an on-request requirement.
+            </p>
           )}
           {!automatic && (
             <label className="document-checkbox">
@@ -559,7 +587,7 @@ function ReviewDialog({
         </Button>
       }
     >
-      <p>
+      <p className="documents-note">
         {request.vendor_name}: {request.title}. The decision applies to this
         market's submission only.
       </p>
@@ -619,6 +647,16 @@ export function DocumentsWorkspace({
     />
   );
 }
+
+function fileKind(doc: ComplianceDocument) {
+  const current = doc.files.find((f) => f.status === 'Available');
+  return current?.mime === 'application/pdf'
+    ? 'PDF'
+    : current
+      ? 'Image'
+      : 'File';
+}
+
 export function Workspace({
   api,
   manager,
@@ -704,44 +742,68 @@ export function Workspace({
       setBusy(false);
     }
   }
-  if (!result || result.skip !== skip)
-    return <Spinner label="Loading documents" />;
-  if (result.error)
-    return (
-      <>
-        <Feedback error={result.error} />
-        <Button onClick={refresh}>Retry</Button>
-      </>
-    );
-  const data = result.data!;
-  const requestedVendor = Number(
-    new URLSearchParams(window.location.search).get('vendor'),
-  );
-  const requestedMarket = Number(
-    new URLSearchParams(window.location.search).get('market'),
-  );
-  const visibleVendors =
-    manager && requestedVendor
-      ? data.vendors.filter((v) => v.id === requestedVendor)
-      : data.vendors;
-  const library = (
-    <>
-      <div className="ui-actions">
-        <Button onClick={() => setUpload({})} disabled={!canWrite || busy}>
+  const search = new URLSearchParams(window.location.search);
+  const loaded = !!result && result.skip === skip;
+  const data = loaded ? result.data : undefined;
+  const frame = (content: ReactNode) => (
+    <WorkspaceFrame
+      className="documents-workspace farmstand-controls"
+      icon="file-text"
+      title="Documents"
+      description={
+        manager
+          ? 'Requirements, vendor compliance, agreements and reports for your market.'
+          : 'Your private document library, market requests and agreements.'
+      }
+      tabs={[]}
+      value=""
+      onChange={() => undefined}
+      // In-page Tabs take the workspace menu presentation; one column each.
+      style={{ ['--workspace-tabs' as string]: manager ? 6 : 3 }}
+      actions={
+        <Button
+          onClick={() => setUpload({})}
+          disabled={!canWrite || busy || !data}
+        >
+          <FarmstandIcon name="upload" />
           Upload document
         </Button>
+      }
+    >
+      {content}
+    </WorkspaceFrame>
+  );
+  if (!loaded) return frame(<Spinner label="Loading documents" />);
+  if (result.error)
+    return frame(
+      <div className="documents-error">
+        <Feedback error={result.error} />
+        <Button variant="secondary" onClick={refresh}>
+          Retry
+        </Button>
+      </div>,
+    );
+  const ready = data!;
+  const requestedVendor = Number(search.get('vendor'));
+  const requestedMarket = Number(search.get('market'));
+  const visibleVendors =
+    manager && requestedVendor
+      ? ready.vendors.filter((v) => v.id === requestedVendor)
+      : ready.vendors;
+  const library = (
+    <SettingsPanel
+      icon="folder-open"
+      title="Document library"
+      description={`Private to this ${manager ? 'market' : 'business'}. Dates use ${ready.timezone}; expiring soon means within 30 days. Use Delete to remove prohibited content and revoke future access.`}
+      actions={
         <IconButton
           icon="refresh"
           label="Refresh documents"
           onClick={refresh}
         />
-      </div>
-      <p>
-        This library is private to the current business or market. Dates use{' '}
-        {data.timezone}; expiring soon means within 30 days. Use Delete to
-        remove prohibited content and revoke future access.
-      </p>
-      {!data.documents.length ? (
+      }
+    >
+      {!ready.documents.length ? (
         <EmptyState title="No documents saved">
           <p>
             Upload a participation document to keep it in your private library.
@@ -749,483 +811,585 @@ export function Workspace({
         </EmptyState>
       ) : (
         <div className="documents-grid">
-          {data.documents.map((doc) => {
+          {ready.documents.map((doc) => {
             const current = doc.files.find((f) => f.status === 'Available'),
-              latest = doc.files[0];
+              latest = doc.files[0],
+              kind = fileKind(doc);
             return (
-              <RecordCard
+              <DocumentCard
                 key={doc.id}
                 title={doc.metadata.title}
-                summary={
+                icon={kind === 'Image' ? 'file-image' : 'file-text'}
+                subtitle={`${kind} · ${doc.metadata.category}`}
+                statuses={
                   <>
-                    {' '}
-                    <div
-                      className="document-placeholder"
-                      aria-label="File type placeholder"
-                    >
-                      {current?.mime === 'application/pdf'
-                        ? 'PDF'
-                        : current
-                          ? 'Image'
-                          : 'File'}
-                    </div>
-                    <p>{doc.metadata.category}</p>
-                    <Status value={latest?.status ?? 'Scanning'} />{' '}
+                    <Status value={latest?.status ?? 'Scanning'} />
                     <Status value={doc.expiration} />
-                    <p>
-                      {doc.metadata.noExpiration
-                        ? 'No expiration'
-                        : `Expires ${doc.metadata.expiresOn}`}
-                    </p>
                   </>
                 }
-              >
-                <p>{doc.metadata.category}</p>
-                <Status value={latest?.status ?? 'Scanning'} />{' '}
-                <Status value={doc.expiration} />
-                <p>
-                  {doc.metadata.noExpiration
+                meta={
+                  doc.metadata.noExpiration
                     ? 'No expiration'
-                    : 'Expires ' + doc.metadata.expiresOn}
-                </p>
-                {!!error && <Feedback error={error} />}
-                {doc.metadata.issuedOn && <p>Issued {doc.metadata.issuedOn}</p>}
-                {doc.metadata.notes && <p>{doc.metadata.notes}</p>}
-                <p>
-                  Uploaded {new Date(doc.created_at).toLocaleDateString()}.
-                  Updated {new Date(doc.updated_at).toLocaleDateString()}.
-                </p>
-                {latest?.status !== 'Available' && current && (
-                  <p>
-                    The replacement is unavailable. The previous scanned version
-                    can still be downloaded.
-                  </p>
-                )}
-                <div className="ui-actions">
-                  <IconButton
-                    icon="edit"
-                    label="Edit document information"
-                    disabled={!canWrite || busy}
-                    onClick={() => setEdit(doc)}
+                    : `Expires ${documentDate(doc.metadata.expiresOn)}`
+                }
+              >
+                <div className="documents-dialog-body">
+                  {!!error && <Feedback error={error} />}
+                  <DocumentFacts
+                    items={[
+                      ['Type', doc.metadata.category],
+                      [
+                        'Status',
+                        <span className="document-card-statuses">
+                          <Status value={latest?.status ?? 'Scanning'} />
+                          <Status value={doc.expiration} />
+                        </span>,
+                      ],
+                      [
+                        'Expiration',
+                        doc.metadata.noExpiration
+                          ? 'No expiration'
+                          : documentDate(doc.metadata.expiresOn),
+                      ],
+                      !!doc.metadata.issuedOn && [
+                        'Issued',
+                        documentDate(doc.metadata.issuedOn),
+                      ],
+                      ['Uploaded', documentDate(doc.created_at)],
+                      ['Updated', documentDate(doc.updated_at)],
+                      !!doc.metadata.notes && ['Notes', doc.metadata.notes],
+                    ]}
                   />
-                  <Button
-                    variant="secondary"
-                    disabled={!canWrite}
-                    onClick={() => setUpload({ doc })}
-                  >
-                    Replace
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    disabled={!canWrite}
-                    onClick={() =>
-                      setConfirm({
-                        title: 'Delete document',
-                        message:
-                          'This removes every file version from the library and revokes future downloads. Existing external downloads cannot be recalled. Review history is retained.',
-                        run: () => command('DELETE', {}, doc.id, doc.revision),
-                      })
-                    }
-                  >
-                    Delete
-                  </Button>
-                </div>
-                <DocumentVersionPicker
-                  document={doc}
-                  busy={busy}
-                  onDownload={(id) => void download(id)}
-                />
-                {doc.shares.length === 0 ? (
-                  <p>No markets have been granted access.</p>
-                ) : (
-                  doc.shares.map((s) => (
-                    <div key={s.id}>
-                      <p>
-                        {s.market_name} ·{' '}
-                        {s.revoked_at ? 'Access revoked' : 'Access granted'}
+                  {latest?.status !== 'Available' && current && (
+                    <Alert severity="info">
+                      The replacement is unavailable. The previous scanned
+                      version can still be downloaded.
+                    </Alert>
+                  )}
+                  <div className="documents-actions">
+                    <Button
+                      variant="secondary"
+                      disabled={!canWrite || busy}
+                      onClick={() => setEdit(doc)}
+                    >
+                      Edit information
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      disabled={!canWrite}
+                      onClick={() => setUpload({ doc })}
+                    >
+                      <FarmstandIcon name="upload" />
+                      Replace
+                    </Button>
+                    <Button
+                      variant="destructive-outline"
+                      disabled={!canWrite}
+                      onClick={() =>
+                        setConfirm({
+                          title: 'Delete document',
+                          message:
+                            'This removes every file version from the library and revokes future downloads. Existing external downloads cannot be recalled. Review history is retained.',
+                          run: () =>
+                            command('DELETE', {}, doc.id, doc.revision),
+                        })
+                      }
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                  <DocumentSection title="File versions">
+                    <DocumentVersionPicker
+                      document={doc}
+                      busy={busy}
+                      onDownload={(id) => void download(id)}
+                    />
+                  </DocumentSection>
+                  <DocumentSection title="Market access">
+                    {doc.shares.length === 0 ? (
+                      <p className="documents-note">
+                        No markets have been granted access.
                       </p>
-                      {!s.revoked_at && canWrite && (
-                        <Button
-                          variant="secondary"
-                          onClick={() =>
-                            setConfirm({
-                              title: 'Revoke market access',
-                              message:
-                                'This prevents future access to this submission. Previously downloaded copies cannot be recalled. Other submissions retain their individual grants.',
-                              run: () =>
-                                command('REVOKE', { documentId: doc.id }, s.id),
-                            })
-                          }
-                        >
-                          Revoke
-                        </Button>
-                      )}
-                    </div>
-                  ))
-                )}
-              </RecordCard>
+                    ) : (
+                      <ul className="documents-access">
+                        {doc.shares.map((s) => (
+                          <li key={s.id}>
+                            <span>{s.market_name}</span>
+                            <Badge tone={s.revoked_at ? 'neutral' : 'success'}>
+                              {s.revoked_at
+                                ? 'Access revoked'
+                                : 'Access granted'}
+                            </Badge>
+                            {!s.revoked_at && canWrite && (
+                              <Button
+                                variant="destructive-outline"
+                                size="compact"
+                                onClick={() =>
+                                  setConfirm({
+                                    title: 'Revoke market access',
+                                    message:
+                                      'This prevents future access to this submission. Previously downloaded copies cannot be recalled. Other submissions retain their individual grants.',
+                                    run: () =>
+                                      command(
+                                        'REVOKE',
+                                        { documentId: doc.id },
+                                        s.id,
+                                      ),
+                                  })
+                                }
+                              >
+                                Revoke
+                              </Button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </DocumentSection>
+                </div>
+              </DocumentCard>
             );
           })}
         </div>
       )}
       <Pagination
-        summary={`${data.total} documents`}
+        summary={`${ready.total} documents`}
         hasPrevious={skip > 0}
-        hasNext={skip + 20 < data.total}
+        hasNext={skip + 20 < ready.total}
         onPrevious={() => setSkip(Math.max(0, skip - 20))}
         onNext={() => setSkip(skip + 20)}
       />
-    </>
+    </SettingsPanel>
   );
-  const requestCards = (v: { id: number; name: string }) => (
-    <div id={`vendor-${v.id}`} key={v.id}>
-      {data.requests
-        .filter((r) =>
-          manager
-            ? r.vendor_id === v.id
-            : !requestedMarket || r.market_id === requestedMarket,
-        )
-        .map((request) => (
-          <RecordCard
+  const requestCards = (v: { id: number; name: string }) => {
+    const items = ready.requests.filter((r) =>
+      manager
+        ? r.vendor_id === v.id
+        : !requestedMarket || r.market_id === requestedMarket,
+    );
+    return (
+      <div id={`vendor-${v.id}`} key={v.id} className="documents-grid">
+        {items.map((request) => (
+          <DocumentCard
             key={request.id}
             title={request.title}
-            summary={
+            icon="clipboard-list"
+            subtitle={`${manager ? request.vendor_name : request.market_name} · ${request.category}`}
+            statuses={
               <>
-                <p>{request.category}</p>
                 <Status value={request.status} />
-                {request.expiration && <Status value={request.expiration} />}
+                {request.expiration &&
+                  request.expiration !== request.status && (
+                    <Status value={request.expiration} />
+                  )}
               </>
             }
+            meta={
+              request.due_on
+                ? `Due ${documentDate(request.due_on)}`
+                : request.stage
+            }
           >
-            {!!error && <Feedback error={error} />}
-            <p>
-              {manager ? request.vendor_name : request.market_name} ·{' '}
-              {request.category} · {request.required ? 'Required' : 'Optional'}
-            </p>
-            <Status value={request.status} />{' '}
-            {request.expiration && <Status value={request.expiration} />}
-            <p>{request.instructions}</p>
-            {request.source && (
-              <p>
-                Requested by: {request.source.replaceAll('_', ' ')}
-                {request.created_at
-                  ? ` on ${new Date(request.created_at).toLocaleDateString()}`
-                  : ''}
-                .
-              </p>
-            )}
-            <p>
-              {request.stage}
-              {request.due_on ? ` · Due ${request.due_on}` : ''}
-            </p>
-            {request.submission && (
-              <p>
-                Submitted{' '}
-                {new Date(request.submission.created_at).toLocaleDateString()}:{' '}
-                {request.submission.metadata.title}. Expiration:{' '}
-                {request.submission.metadata.noExpiration
-                  ? 'No expiration'
-                  : request.submission.metadata.expiresOn}
-                .
-              </p>
-            )}
-            <div className="ui-actions">
-              {manager ? (
-                <>
-                  {request.submission &&
-                    !['Access revoked', 'Missing'].includes(request.status) && (
+            <div className="documents-dialog-body">
+              {!!error && <Feedback error={error} />}
+              <DocumentFacts
+                items={[
+                  [
+                    manager ? 'Vendor' : 'Market',
+                    manager ? request.vendor_name : request.market_name,
+                  ],
+                  ['Category', request.category],
+                  [
+                    'Status',
+                    <span className="document-card-statuses">
+                      <Status value={request.status} />
+                      {request.expiration &&
+                        request.expiration !== request.status && (
+                          <Status value={request.expiration} />
+                        )}
+                    </span>,
+                  ],
+                  ['Requirement', request.required ? 'Required' : 'Optional'],
+                  ['Stage', request.stage],
+                  !!request.due_on && ['Due', documentDate(request.due_on)],
+                  !!request.source && [
+                    'Requested by',
+                    `${request.source.replaceAll('_', ' ')}${
+                      request.created_at
+                        ? ` on ${documentDate(request.created_at)}`
+                        : ''
+                    }`,
+                  ],
+                  !!request.submission && [
+                    'Submitted',
+                    `${documentDate(request.submission.created_at)}: ${request.submission.metadata.title}. Expiration: ${
+                      request.submission.metadata.noExpiration
+                        ? 'No expiration'
+                        : request.submission.metadata.expiresOn
+                    }.`,
+                  ],
+                ]}
+              />
+              {request.instructions && (
+                <p className="documents-instructions">{request.instructions}</p>
+              )}
+              <div className="documents-actions">
+                {manager ? (
+                  <>
+                    {request.submission &&
+                      !['Access revoked', 'Missing'].includes(
+                        request.status,
+                      ) && (
+                        <Button
+                          variant="secondary"
+                          disabled={busy}
+                          onClick={() =>
+                            void download(request.submission!.file_id)
+                          }
+                        >
+                          <FarmstandIcon name="download" />
+                          Download
+                        </Button>
+                      )}
+                    {request.submission && canWrite && !request.waived && (
+                      <>
+                        <Button
+                          disabled={
+                            request.status === 'Expired' ||
+                            request.status === 'Access revoked'
+                          }
+                          onClick={() =>
+                            setReview({ request, decision: 'Approved' })
+                          }
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="destructive-outline"
+                          disabled={request.status === 'Access revoked'}
+                          onClick={() =>
+                            setReview({ request, decision: 'Rejected' })
+                          }
+                        >
+                          Reject
+                        </Button>
+                      </>
+                    )}
+                    {canWrite && (
                       <Button
                         variant="secondary"
-                        disabled={busy}
                         onClick={() =>
-                          void download(request.submission!.file_id)
+                          setReview({
+                            request,
+                            decision: request.waived ? 'Required' : 'Waived',
+                          })
                         }
                       >
-                        Download
+                        {request.waived
+                          ? 'Restore requirement'
+                          : 'Waive requirement'}
                       </Button>
                     )}
-                  {request.submission && canWrite && !request.waived && (
+                  </>
+                ) : (
+                  canWrite &&
+                  !request.waived && (
                     <>
-                      <Button
-                        disabled={
-                          request.status === 'Expired' ||
-                          request.status === 'Access revoked'
-                        }
-                        onClick={() =>
-                          setReview({ request, decision: 'Approved' })
-                        }
-                      >
-                        Approve
+                      <Button onClick={() => setShare(request)}>
+                        Choose saved document
                       </Button>
                       <Button
                         variant="secondary"
-                        disabled={request.status === 'Access revoked'}
-                        onClick={() =>
-                          setReview({ request, decision: 'Rejected' })
-                        }
+                        onClick={() => setUpload({ request })}
                       >
-                        Reject
+                        <FarmstandIcon name="upload" />
+                        Upload for request
                       </Button>
                     </>
-                  )}
-                  {canWrite && (
-                    <Button
-                      variant="secondary"
-                      onClick={() =>
-                        setReview({
-                          request,
-                          decision: request.waived ? 'Required' : 'Waived',
-                        })
-                      }
-                    >
-                      {request.waived
-                        ? 'Restore requirement'
-                        : 'Waive requirement'}
-                    </Button>
-                  )}
-                </>
-              ) : (
-                canWrite &&
-                !request.waived && (
-                  <>
-                    <Button onClick={() => setShare(request)}>
-                      Choose saved document
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => setUpload({ request })}
-                    >
-                      Upload for request
-                    </Button>
-                  </>
-                )
+                  )
+                )}
+              </div>
+              {request.reviews.length > 0 && (
+                <details className="ui-disclosure documents-history">
+                  <summary>Decision history</summary>
+                  <ul>
+                    {request.reviews.map((r, i) => (
+                      <li key={i}>
+                        <strong>{r.decision}</strong> ·{' '}
+                        {documentDate(r.created_at)} · Manager {r.actor_id}
+                        {r.reason ? `: ${r.reason}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
               )}
             </div>
-            {request.reviews.length > 0 && (
-              <details>
-                <summary>Decision history</summary>
-                {request.reviews.map((r, i) => (
-                  <p key={i}>
-                    {r.decision} · {new Date(r.created_at).toLocaleDateString()}{' '}
-                    · Manager {r.actor_id}
-                    {r.reason ? `: ${r.reason}` : ''}
-                  </p>
-                ))}
-              </details>
-            )}
-          </RecordCard>
+          </DocumentCard>
         ))}
-    </div>
-  );
+      </div>
+    );
+  };
+  const readiness = manager
+    ? undefined
+    : ready.market_readiness?.filter(
+        (summary) => !requestedMarket || summary.market_id === requestedMarket,
+      );
   const requests = (
-    <>
-      <p>
-        {manager
-          ? 'Review the submitted file and manually entered dates. Documentation readiness is separate from vendor acceptance.'
-          : 'Share a saved document or upload a new one for a specific market. Each market reviews its own submission.'}
-      </p>
-      {data.truncated && (
+    <div className="documents-view">
+      {ready.truncated && (
         <Alert severity="warning">
           This view is limited to 500 vendors and assignments. Overall readiness
           cannot be established for omitted records.
         </Alert>
       )}
-      {!manager &&
-        data.market_readiness
-          ?.filter(
-            (summary) =>
-              !requestedMarket || summary.market_id === requestedMarket,
-          )
-          .map((summary) => (
-            <Card key={summary.market_id} surface="embedded">
-              <p>
-                {summary.market_name}: <Status value={summary.status} />
-              </p>
-              <p>
-                {summary.complete} of {summary.total} complete. Outstanding
-                required: {summary.outstandingRequired}.
-              </p>
-            </Card>
-          ))}
-      {manager && (
-        <DataTable
-          label="Vendor documentation readiness"
-          recordDetails={{
-            status: 7,
-            labels: visibleVendors.map((v) => v.name),
-          }}
-          headings={[
-            'Vendor',
-            'Outstanding required',
-            'Awaiting review',
-            'Complete',
-            'Rejected',
-            'Expired',
-            'Expiring soon',
-            'Readiness',
-            'Requests',
-          ]}
+      {!!readiness?.length && (
+        <SettingsPanel
+          icon="shield-check"
+          title="Market readiness"
+          description="Each market reviews its own submission."
         >
-          {visibleVendors.map((v) => {
-            const summary = data.readiness?.find((r) => r.vendor_id === v.id);
-            return (
-              <tr key={v.id}>
-                <th scope="row">{v.name}</th>
-                <td>{summary?.outstandingRequired ?? 'Unavailable'}</td>
-                <td>{summary?.pending ?? 'Unavailable'}</td>
-                <td>{summary?.complete ?? 'Unavailable'}</td>
-                <td>{summary?.rejected ?? 'Unavailable'}</td>
-                <td>{summary?.expired ?? 'Unavailable'}</td>
-                <td>{summary?.expiringSoon ?? 'Unavailable'}</td>
-                <td>
-                  <Status value={summary?.status ?? 'Incomplete view'} />
-                </td>
-                <td>{requestCards(v)}</td>
-              </tr>
-            );
-          })}
-        </DataTable>
+          <ul className="documents-readiness">
+            {readiness.map((summary) => (
+              <li key={summary.market_id}>
+                <div className="documents-readiness-top">
+                  <strong>{summary.market_name}</strong>
+                  <Status value={summary.status} />
+                </div>
+                <div
+                  className="documents-progress"
+                  aria-hidden
+                  style={{
+                    ['--progress' as string]: `${summary.total ? (summary.complete / summary.total) * 100 : 0}%`,
+                  }}
+                />
+                <p>
+                  {summary.complete} of {summary.total} complete. Outstanding
+                  required: {summary.outstandingRequired}.
+                </p>
+              </li>
+            ))}
+          </ul>
+        </SettingsPanel>
       )}
-      {!data.requests.length && (
-        <EmptyState
-          title={manager ? 'No document assignments' : 'No document requests'}
-        >
-          <p>
-            {manager
-              ? 'Create a requirement and assign it to associated vendors.'
-              : 'Requests from your associated markets will appear here.'}
-          </p>
-        </EmptyState>
-      )}
-      {!manager && requestCards({ id: 0, name: '' })}
-    </>
+      <SettingsPanel
+        className={manager ? 'documents-table-panel' : ''}
+        icon={manager ? 'shield-check' : 'inbox'}
+        title={manager ? 'Vendor compliance' : 'Market requests'}
+        description={
+          manager
+            ? 'Review the submitted file and manually entered dates. Documentation readiness is separate from vendor acceptance.'
+            : 'Share a saved document or upload a new one for a specific market. Each market reviews its own submission.'
+        }
+      >
+        {manager && (
+          <DataTable
+            label="Vendor documentation readiness"
+            recordDetails={{
+              status: 7,
+              labels: visibleVendors.map((v) => v.name),
+            }}
+            headings={[
+              'Vendor',
+              'Outstanding required',
+              'Awaiting review',
+              'Complete',
+              'Rejected',
+              'Expired',
+              'Expiring soon',
+              'Readiness',
+              'Requests',
+            ]}
+          >
+            {visibleVendors.map((v) => {
+              const summary = ready.readiness?.find(
+                (r) => r.vendor_id === v.id,
+              );
+              return (
+                <tr key={v.id}>
+                  <th scope="row">{v.name}</th>
+                  <td>{summary?.outstandingRequired ?? 'Unavailable'}</td>
+                  <td>{summary?.pending ?? 'Unavailable'}</td>
+                  <td>{summary?.complete ?? 'Unavailable'}</td>
+                  <td>{summary?.rejected ?? 'Unavailable'}</td>
+                  <td>{summary?.expired ?? 'Unavailable'}</td>
+                  <td>{summary?.expiringSoon ?? 'Unavailable'}</td>
+                  <td>
+                    <Status value={summary?.status ?? 'Incomplete view'} />
+                  </td>
+                  <td>{requestCards(v)}</td>
+                </tr>
+              );
+            })}
+          </DataTable>
+        )}
+        {!ready.requests.length && (
+          <EmptyState
+            title={manager ? 'No document assignments' : 'No document requests'}
+          >
+            <p>
+              {manager
+                ? 'Create a requirement and assign it to associated vendors.'
+                : 'Requests from your associated markets will appear here.'}
+            </p>
+          </EmptyState>
+        )}
+        {!manager && requestCards({ id: 0, name: '' })}
+      </SettingsPanel>
+    </div>
   );
   const requirements = (
-    <>
+    <div className="documents-view">
       <AutomationSettings
         api={api}
-        data={data}
+        data={ready}
         disabled={!canWrite || busy}
         onSaved={refresh}
       />
-      <div className="ui-actions">
-        <Button disabled={!canWrite} onClick={() => setRequirement(true)}>
-          Request documents
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={!canWrite || busy}
-          onClick={() => {
-            setBusy(true);
-            void api
-              .command('SYNC_PREVIEW', {})
-              .then((result) => {
-                const preview = result as {
-                  vendorCount: number;
-                  assignmentCount: number;
-                };
-                setConfirm({
-                  title: 'Assign existing vendors',
-                  message: `Create ${preview.assignmentCount} requests for ${preview.vendorCount} vendors? Existing requests and review decisions are preserved.`,
-                  run: () =>
-                    command('SYNC', {
-                      assignmentCount: preview.assignmentCount,
-                    }),
-                });
-              })
-              .catch(setError)
-              .finally(() => setBusy(false));
-          }}
-        >
-          Assign market-wide requirements to new vendors
-        </Button>
-      </div>
-      <p>
-        Assignments use current vendor relationships. Documentation does not
-        change application acceptance or attendance.
-      </p>
-      {!data.requirements.length && (
-        <EmptyState title="No requirements yet">
-          <p>
-            Use an optional participation template to create your first request.
-          </p>
-        </EmptyState>
-      )}
-      {data.requirements.map((r) => (
-        <Card key={r.id}>
-          <h2>{r.title}</h2>
-          <p>{r.instructions}</p>
-          <p>
-            {r.required ? 'Required' : 'Optional'} ·{' '}
-            {r.market_wide ? 'All associated vendors' : 'Selected vendors'}
-          </p>
-          <DistributionSettings
-            key={`${r.id}:${r.stage}:${r.automatic}:${r.submission_blocking}`}
-            api={api}
-            requirement={r}
-            disabled={!canWrite || busy}
-            onSaved={refresh}
-          />
-          <form
-            className="ui-control-row"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const vendors = new FormData(e.currentTarget)
-                .getAll('vendorIds')
-                .map(Number);
-              setBusy(true);
-              void command('ASSIGN', { vendorIds: vendors }, r.id)
-                .catch(setError)
-                .finally(() => setBusy(false));
-            }}
-          >
-            <SearchableMultiSelect
-              id={`assign-${r.id}`}
-              label="Add vendors"
-              name="vendorIds"
-              required
+      <SettingsPanel
+        icon="clipboard-list"
+        title="Document requirements"
+        description="Assignments use current vendor relationships. Documentation does not change application acceptance or attendance."
+        actions={
+          <>
+            <Button
+              variant="secondary"
               disabled={!canWrite || busy}
-              options={data.vendors.map((v) => ({
-                value: String(v.id),
-                label: v.name,
-              }))}
-            />
-            <Button type="submit" disabled={!canWrite || busy}>
-              Assign
+              onClick={() => {
+                setBusy(true);
+                void api
+                  .command('SYNC_PREVIEW', {})
+                  .then((result) => {
+                    const preview = result as {
+                      vendorCount: number;
+                      assignmentCount: number;
+                    };
+                    setConfirm({
+                      title: 'Assign existing vendors',
+                      message: `Create ${preview.assignmentCount} requests for ${preview.vendorCount} vendors? Existing requests and review decisions are preserved.`,
+                      run: () =>
+                        command('SYNC', {
+                          assignmentCount: preview.assignmentCount,
+                        }),
+                    });
+                  })
+                  .catch(setError)
+                  .finally(() => setBusy(false));
+              }}
+            >
+              Assign market-wide requirements to new vendors
             </Button>
-          </form>
-        </Card>
-      ))}
-    </>
+            <Button disabled={!canWrite} onClick={() => setRequirement(true)}>
+              <FarmstandIcon name="plus" />
+              Request documents
+            </Button>
+          </>
+        }
+      >
+        {!ready.requirements.length && (
+          <EmptyState title="No requirements yet">
+            <p>
+              Use an optional participation template to create your first
+              request.
+            </p>
+          </EmptyState>
+        )}
+        {!!ready.requirements.length && (
+          <ul className="documents-requirements">
+            {ready.requirements.map((r) => (
+              <li key={r.id} className="documents-requirement">
+                <div className="documents-requirement-heading">
+                  <span className="markets-stat-icon" aria-hidden>
+                    <FarmstandIcon name="file-check" />
+                  </span>
+                  <div>
+                    <h3>{r.title}</h3>
+                    {r.instructions && <p>{r.instructions}</p>}
+                  </div>
+                  <span className="document-card-statuses">
+                    <Badge tone={r.required ? 'warning' : 'neutral'}>
+                      {r.required ? 'Required' : 'Optional'}
+                    </Badge>
+                    <Badge tone="neutral">
+                      {r.market_wide
+                        ? 'All associated vendors'
+                        : 'Selected vendors'}
+                    </Badge>
+                  </span>
+                </div>
+                <DistributionSettings
+                  key={`${r.id}:${r.stage}:${r.automatic}:${r.submission_blocking}`}
+                  api={api}
+                  requirement={r}
+                  disabled={!canWrite || busy}
+                  onSaved={refresh}
+                />
+                <form
+                  className="documents-assign-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const vendors = new FormData(e.currentTarget)
+                      .getAll('vendorIds')
+                      .map(Number);
+                    setBusy(true);
+                    void command('ASSIGN', { vendorIds: vendors }, r.id)
+                      .catch(setError)
+                      .finally(() => setBusy(false));
+                  }}
+                >
+                  <SearchableMultiSelect
+                    id={`assign-${r.id}`}
+                    label="Add vendors"
+                    name="vendorIds"
+                    required
+                    disabled={!canWrite || busy}
+                    options={ready.vendors.map((v) => ({
+                      value: String(v.id),
+                      label: v.name,
+                    }))}
+                  />
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    disabled={!canWrite || busy}
+                  >
+                    Assign
+                  </Button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+      </SettingsPanel>
+    </div>
   );
-  return (
-    <div
-      className="documents-workspace"
-      aria-busy={result.revision !== revision}
-    >
+  const view = search.get('view');
+  return frame(
+    <div className="documents-body" aria-busy={result.revision !== revision}>
       {!!error && <Feedback error={error} />}
       <fieldset disabled={result.revision !== revision}>
         <legend className="sr-only">Document workspace</legend>
         <Tabs
+          className={`workspace-menu documents-menu${manager ? ' documents-menu-six' : ''}`}
           initialTab={
-            new URLSearchParams(window.location.search).get('view') ===
-            'reports'
+            view === 'reports'
               ? 'Readiness and reports'
-              : new URLSearchParams(window.location.search).get('view') ===
-                  'agreements'
+              : view === 'agreements'
                 ? 'Agreements'
-                : new URLSearchParams(window.location.search).has('vendor') ||
-                    new URLSearchParams(window.location.search).get('view') ===
-                      'requests'
+                : search.has('vendor') || view === 'requests'
                   ? manager
                     ? 'Vendor compliance'
                     : 'Market requests'
                   : undefined
           }
           items={[
-            { label: 'Library', content: library },
+            {
+              label: 'Library',
+              icon: <FarmstandIcon name="folder-open" />,
+              content: library,
+            },
             {
               label: 'Agreements',
+              icon: <FarmstandIcon name="file-check" />,
               content: (
                 <Agreements
                   api={api}
@@ -1237,38 +1401,54 @@ export function Workspace({
             },
             ...(manager
               ? [
-                  { label: 'Requirements', content: requirements },
-                  { label: 'Vendor compliance', content: requests },
+                  {
+                    label: 'Requirements',
+                    icon: <FarmstandIcon name="clipboard-list" />,
+                    content: requirements,
+                  },
+                  {
+                    label: 'Vendor compliance',
+                    icon: <FarmstandIcon name="shield-check" />,
+                    content: requests,
+                  },
                   {
                     label: 'Readiness and reports',
+                    icon: <FarmstandIcon name="chart-column" />,
                     content: (
                       <ComplianceReports
                         api={api}
-                        data={data}
+                        data={ready}
                         canWrite={canWrite}
                       />
                     ),
                   },
                   {
                     label: 'Templates and guidance',
+                    icon: <FarmstandIcon name="book-open" />,
                     content: (
                       <ComplianceGuidance
                         api={api}
-                        data={data}
+                        data={ready}
                         canWrite={canWrite}
                         onChanged={refresh}
                       />
                     ),
                   },
                 ]
-              : [{ label: 'Market requests', content: requests }]),
+              : [
+                  {
+                    label: 'Market requests',
+                    icon: <FarmstandIcon name="inbox" />,
+                    content: requests,
+                  },
+                ]),
           ]}
         />
       </fieldset>
       {upload && (
         <UploadDialog
           api={api}
-          categories={data.categories}
+          categories={ready.categories}
           document={upload.doc}
           assignment={upload.request}
           onClose={() => setUpload(undefined)}
@@ -1278,7 +1458,7 @@ export function Workspace({
       {edit && (
         <EditDialog
           api={api}
-          categories={data.categories}
+          categories={ready.categories}
           doc={edit}
           onClose={() => setEdit(undefined)}
           onSaved={refresh}
@@ -1287,7 +1467,7 @@ export function Workspace({
       {share && (
         <ShareDialog
           api={api}
-          data={data}
+          data={ready}
           request={share}
           onClose={() => setShare(undefined)}
           onSaved={refresh}
@@ -1296,11 +1476,8 @@ export function Workspace({
       {requirement && (
         <RequirementDialog
           api={api}
-          data={data}
-          vendorId={
-            Number(new URLSearchParams(window.location.search).get('vendor')) ||
-            undefined
-          }
+          data={ready}
+          vendorId={Number(search.get('vendor')) || undefined}
           onClose={() => setRequirement(false)}
           onSaved={refresh}
         />
@@ -1322,6 +1499,6 @@ export function Workspace({
           <p>{confirm.message}</p>
         </ConfirmAction>
       )}
-    </div>
+    </div>,
   );
 }

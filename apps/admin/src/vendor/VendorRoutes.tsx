@@ -6,13 +6,13 @@ import {
   VendorDraftPreview,
 } from './application-continuation';
 import { RouteLink } from './common';
+import { VendorApplicationDetail } from './application-detail';
 import { ApplicantApplications } from '@market/ui';
 import { ContactSubmissions } from './contact-submissions';
-import { VendorTaxSettings } from './tax';
 import { VendorPos } from './pos';
 import { Finances } from '../finance/Finances';
 import { CloverOAuthReturn } from './clover';
-import { VendorPaymentIntegrations, SquareMobileReturn } from './square';
+import { SquareMobileReturn } from './square';
 import { VendorLoyalty } from './loyalty';
 import { vendorPath } from '@market/admin-core';
 import type { VendorService } from './service';
@@ -22,8 +22,7 @@ import { Orders } from './orders';
 import { VendorPickup } from './pickup';
 import { Customers } from './customers';
 import { Markets } from './markets';
-import { Analytics } from './analytics';
-import { Overview } from './overview';
+import { VendorDashboard } from './VendorDashboard';
 import { VendorBooths } from './booths';
 export function VendorRoutes({
   service,
@@ -36,22 +35,21 @@ export function VendorRoutes({
     vendorPath(path).split('/');
   if (module === 'team')
     return <TeamWorkspace api={service.team} context={service.context} />;
-  if (module === 'finances')
+  if (module === 'finances' || module === 'analytics')
     return (
       <Finances
-        key={`${service.vendorId}:${id ?? 'dashboard'}`}
+        key={service.vendorId}
         api={service.finance}
         path={path}
+        canReadFinance={service.context.permissions.includes(
+          'ReadOwnVendorFinance',
+        )}
       />
     );
   if (module === 'settings' && id === 'clover-return')
     return <CloverOAuthReturn service={service} />;
   if (module === 'pos' && id === 'square-return')
     return <SquareMobileReturn service={service} />;
-  if (module === 'settings' && id === 'taxes')
-    return <VendorTaxSettings service={service} />;
-  if (module === 'settings' && id === 'payments')
-    return <VendorPaymentIntegrations service={service} />;
   if (module === 'contact-submissions')
     return <ContactSubmissions key={service.vendorId} api={service.contact} />;
   if (module === 'pos') return <VendorPos service={service} />;
@@ -65,6 +63,17 @@ export function VendorRoutes({
     );
   if (module === 'applications' && !id)
     return <Markets service={service} initialView="applications" />;
+  if (module === 'applications' && /^[1-9]\d*$/.test(id ?? '') && !child)
+    return service.applications ? (
+      <VendorApplicationDetail
+        key={`${service.vendorId}:${id}`}
+        api={service.applications}
+        id={Number(id)}
+        vendorId={Number(service.vendorId)}
+      />
+    ) : (
+      <p>Applications are unavailable in this environment.</p>
+    );
   if (module === 'applications')
     return service.applications ? (
       <ApplicantApplications
@@ -138,7 +147,14 @@ export function VendorRoutes({
     return <VendorPacking key={service.vendorId} service={service} />;
   if (module === 'orders') return <Orders service={service} id={id} />;
   if (module === 'customers') return <Customers service={service} id={id} />;
-  if (module === 'markets') return <Markets service={service} id={id} />;
-  if (module === 'analytics') return <Analytics service={service} />;
-  return <Overview service={service} />;
+  if (module === 'markets')
+    return (
+      <Markets
+        key={`${service.vendorId}:${id ?? ''}:${child ?? ''}:${variantId ?? ''}`}
+        service={service}
+        id={id}
+        occurrenceId={child === 'dates' ? variantId : undefined}
+      />
+    );
+  return <VendorDashboard key={service.vendorId} service={service} />;
 }

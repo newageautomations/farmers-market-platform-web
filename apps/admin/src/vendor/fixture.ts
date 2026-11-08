@@ -21,6 +21,7 @@ import type {
   OrderView,
   VendorService,
 } from './service';
+import { createFixtureContactApi } from './contact-fixture';
 
 export type FixtureFault =
   'none' | 'unavailable' | 'conflict' | 'forbidden' | 'validation';
@@ -222,6 +223,7 @@ export function createFixtureVendorService(
             status: ['approved', 'pending', 'suspended', 'withdrawn'][i]!,
             version: 1,
             preorderDefault: null,
+            autoEnroll: false,
           },
           occurrences: [
             {
@@ -802,6 +804,20 @@ export function createFixtureVendorService(
       states.set(id, { ...s, membership });
       return clone(membership);
     },
+    autoEnroll: async (id, expected, enabled) => {
+      const s = currentState(id);
+      version(s.membership.version, expected);
+      if (enabled && s.membership.status !== 'approved')
+        throw new AppError('validation');
+      if (s.membership.autoEnroll === enabled) return clone(s.membership);
+      const membership = {
+        ...s.membership,
+        autoEnroll: enabled,
+        version: s.membership.version + 1,
+      };
+      states.set(id, { ...s, membership });
+      return clone(membership);
+    },
     attendance: async (input) => {
       const s = currentState(String(input.membershipId));
       ensure(s.occurrences.find((o) => o.id === input.occurrenceId));
@@ -990,6 +1006,7 @@ export function createFixtureVendorService(
     ...guarded,
     context,
     vendorId,
+    contact: createFixtureContactApi(),
     availability: async () =>
       hasPermission(context.permissions, 'ReadOwnVendorAnalytics')
         ? availability

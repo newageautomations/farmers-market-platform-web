@@ -10,9 +10,22 @@ import { Button } from './index';
 import { navigationIconPaths } from './presentation';
 
 const utilityPaths = {
+  cursor: 'M4 3l7 18 3-7 7-3L4 3Z',
+  hand: 'M8 13V5a2 2 0 0 1 4 0v7M12 11V4a2 2 0 0 1 4 0v8M16 11V6a2 2 0 0 1 4 0v9c0 4-3 7-7 7h-1c-2 0-4-1-5-3l-4-6a2 2 0 0 1 3-2l2 2',
+  square: 'M4 4h16v16H4z',
+  circle: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+  triangle: 'M12 3 22 21H2L12 3Z',
+  line: 'M4 20 20 4',
+  text: 'M4 5V3h16v2M12 3v18M8 21h8',
+  image: 'M3 3h18v18H3zM3 17l6-6 4 4 3-3 5 5M9 7h.01',
+  path: 'M3 18c0-8 18 2 18-6s-18 2-18-6',
+  layers: 'm12 3 10 5-10 5L2 8l10-5ZM2 12l10 5 10-5M2 16l10 5 10-5',
+  lock: 'M5 10h14v11H5zM8 10V6a4 4 0 0 1 8 0v4',
+  copy: 'M8 8h13v13H8zM16 8V3H3v13h5',
   close: 'm6 6 12 12M18 6 6 18',
   trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7',
   plus: 'M12 5v14M5 12h14',
+  minus: 'M5 12h14',
   user: 'M20 21v-2a7 7 0 0 0-14 0v2M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
   menu: 'M4 6h16M4 12h16M4 18h16',
   check: 'm5 12 4 4L19 6',
@@ -55,6 +68,29 @@ const utilityPaths = {
   'chevron-down': 'm6 9 6 6 6-6',
   'arrow-up': 'M12 20V4m-7 7 7-7 7 7',
   'arrow-down': 'M12 4v16m-7-7 7 7 7-7',
+  /** Drag handle: two columns of three dots. */
+  grip: 'M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01',
+  eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
+  link: 'M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1',
+  undo: 'M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3',
+  redo: 'm15 14 5-5-5-5M20 9H9a5 5 0 0 0 0 10h3',
+  search: 'M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14ZM21 21l-5-5',
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
+  settings:
+    'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z',
+  sparkle:
+    'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3ZM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z',
+  unlock: 'M5 10h14v11H5zM8 10V6a4 4 0 0 1 7.5-2',
+  'eye-off':
+    'M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2',
+  exit: 'M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l-5-5 5-5M5 12h12',
+  booth: 'M3 9 5 4h14l2 5M3 9h18M3 9v11h18V9M9 20v-6h6v6',
+  'booth-double': 'M2 9l2-5h16l2 5M2 9h20M2 9v11h20V9M12 9v11',
+  align: 'M4 3v18M8 6h12v4H8zM8 14h7v4H8z',
+  paste:
+    'M9 4h6v3H9zM15 5h3a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h3',
+  legend: 'M4 5h3v3H4zM10 6.5h10M4 11h3v3H4zM10 12.5h10M4 17h3v3H4zM10 18.5h10',
+  grid: 'M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18',
 };
 export function UtilityIcon({
   name,
@@ -70,7 +106,7 @@ export function UtilityIcon({
       viewBox="0 0 24 24"
       fill={filled ? 'currentColor' : 'none'}
       stroke="currentColor"
-      strokeWidth={name === 'heart' ? 2 : 1.8}
+      strokeWidth={name === 'heart' ? 2 : name === 'grip' ? 3 : 1.8}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"

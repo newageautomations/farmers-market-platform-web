@@ -31,7 +31,7 @@ try {
     await choices.first().waitFor();
     const href = await choices.first().getAttribute('href');
     await choices.first().click();
-    await page.getByText(/operational purchases in this occurrence/).waitFor();
+    await page.getByRole('region', { name: 'Market Day Checklist' }).waitFor();
     assert.equal(new URL(page.url()).pathname, href);
     assert.equal(await page.getByRole('alert').count(), 0);
     assert.ok(
@@ -39,7 +39,7 @@ try {
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     );
-    await page.getByRole('link', { name: 'Choose another occurrence' }).click();
+    await page.getByRole('link', { name: 'Back to operations' }).click();
     await choices.first().waitFor();
     console.log(
       `PASS live Operations occurrence list and detail at ${width}px`,

@@ -1,0 +1,349 @@
+/*
+ * Vendor market page and market date page. Layout, panels, overview strip and
+ * fact rows come from application-detail.css; this file only adds the pieces
+ * that page has no equivalent for (preorder windows, booth tile, filters row).
+ */
+.market-detail-title {
+  flex: 1;
+  min-width: 0;
+}
+.market-detail .market-detail-title p {
+  margin: 4px 0 0;
+  color: var(--brand-muted);
+  font-size: 14px;
+}
+.market-detail .application-detail-overview dl > div {
+  align-items: center;
+  /* Keep label and value together when a neighbouring fact wraps and the row grows. */
+  align-content: center;
+  column-gap: 14px;
+  row-gap: 2px;
+}
+.market-detail .application-detail-overview dd {
+  margin: 0;
+  align-self: center;
+  line-height: 1.3;
+}
+.market-detail .application-detail-overview dt {
+  line-height: 1.3;
+}
+/* Larger overview icons, spanning both the label and value lines. */
+.market-detail .application-detail-overview dt > :is(.farmstand-icon, svg) {
+  --farmstand-icon-width: 32px;
+  width: 32px;
+  height: 32px;
+}
+
+/* Compact rows: the shared Farmstand table sets catalog-height 82px rows. */
+.market-detail .application-detail-panel .farmstand-data-table tbody tr {
+  height: auto;
+}
+.market-detail .application-detail-panel .farmstand-data-table tbody td,
+.market-detail .application-detail-panel .farmstand-data-table tbody th {
+  padding-block: 7px;
+}
+/* Controls centre as blocks instead of sitting on the text baseline. */
+.market-detail .farmstand-data-table td > input[type='checkbox'] {
+  display: block;
+  margin: 0;
+}
+.market-detail .farmstand-data-table td > .product-enabled-switch {
+  display: flex;
+  width: max-content;
+}
+
+/* Tables end the same distance from the card edge as the heading band starts. */
+.market-detail .application-detail-panel .table-scroll.table-scroll {
+  margin-bottom: 10px;
+}
+.market-detail-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Panel body spacing for content that is not a table or fact list. */
+.market-detail .market-detail-lead {
+  margin: 4px 24px 10px;
+  padding: 0;
+  font-size: 13px;
+}
+.market-detail-pagination {
+  padding: 0 24px 14px;
+}
+.market-detail .application-detail-panel > .market-discovery-more {
+  margin: 4px 0 12px;
+}
+
+/* Content-sized columns, as in the Markets lists; the panel scrolls rather than overlapping cells. */
+.market-detail .application-detail-panel .farmstand-data-table {
+  table-layout: auto;
+}
+.market-detail .application-detail-panel .farmstand-data-table :is(th, td) {
+  padding-inline: 8px;
+}
+.market-detail .application-detail-panel .farmstand-data-table thead th,
+.market-detail
+  .application-detail-panel
+  .farmstand-data-table
+  td.market-detail-wrap {
+  white-space: normal;
+}
+.market-detail td.market-detail-wrap {
+  min-width: 96px;
+}
+
+/* Auto-enroll. */
+.market-detail-auto-enroll {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 24px;
+  padding: 8px 24px 18px;
+}
+.market-detail-auto-enroll > div {
+  padding-left: 24px;
+  border-left: 1px solid var(--application-border);
+}
+.market-detail .market-detail-auto-enroll p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.market-detail-auto-enroll .product-enabled-switch {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.market-detail-auto-enroll-result {
+  padding: 0 24px 16px;
+}
+.market-detail-auto-enroll-result > .ui-alert {
+  margin: 0;
+}
+
+/* Preorder windows. */
+.market-detail-preorder {
+  display: grid;
+  gap: 12px;
+  padding: 0 24px 6px;
+}
+.market-detail-preorder > .ui-alert {
+  margin: 0;
+}
+.market-detail-preorder .application-detail-panel-actions {
+  padding: 0 0 10px;
+}
+.market-detail .market-detail-zone {
+  margin: 0;
+  padding: 0;
+}
+.market-detail-windows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.market-detail-window {
+  min-width: 0;
+  margin: 0;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--application-border);
+  border-radius: 10px;
+}
+.market-detail-window legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.market-detail-window legend > .farmstand-icon {
+  color: var(--brand-primary);
+  --farmstand-icon-width: 17px;
+}
+.market-detail-window-fields {
+  display: grid;
+  grid-template-columns: auto auto minmax(110px, max-content);
+  justify-content: start;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.market-detail-window-fields > span {
+  white-space: nowrap;
+}
+/* Open lists show about five options and scroll for the rest. */
+.market-detail-preorder .ui-select::picker(select) {
+  max-height: 13.5rem;
+  overflow-y: auto;
+}
+.market-detail-window-fields > * {
+  min-width: 0;
+  margin: 0;
+}
+.market-detail-window-fields .farmstand-select-wrap {
+  width: 100%;
+}
+
+/* Settings dialog: the dialog supplies padding; windows stack so each row reads in full. */
+.market-detail-settings .market-detail-preorder {
+  padding: 0;
+}
+.market-detail-settings .market-detail-windows {
+  grid-template-columns: minmax(0, 1fr);
+}
+.market-detail-settings
+  .market-detail-preorder
+  .application-detail-panel-actions {
+  padding: 4px 0 0;
+}
+
+/* Approved items. */
+.market-detail .market-detail-item-filters {
+  grid-template-columns: auto minmax(160px, 1fr) 170px;
+  align-items: center;
+  margin: 0 24px 12px;
+}
+/* The hidden field labels keep no gap, so the controls centre with Select all. */
+.market-detail .market-detail-item-filters > .field {
+  gap: 0;
+}
+.market-detail-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.market-detail-preordering > .ui-alert {
+  margin: 0 24px 12px;
+}
+.market-detail-preordering .empty-state,
+.market-detail-preordering .ui-empty-state {
+  margin: 0 24px 18px;
+}
+.market-detail .market-detail-switch-note {
+  display: block;
+  margin-top: 4px;
+  color: var(--brand-muted);
+  font-size: 11px;
+}
+
+/* Booth tile. */
+.market-detail-booth {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 24px 20px;
+}
+.market-detail .market-detail-booth h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.market-detail .market-detail-booth p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.market-detail-booth-art {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  border: 1px solid var(--application-border);
+  border-radius: 10px;
+  background: var(--application-soft);
+  color: var(--brand-primary);
+  --farmstand-icon-width: 44px;
+}
+.market-detail-booth-art .farmstand-icon {
+  width: 44px;
+  height: 44px;
+}
+.market-detail-booth-art span:last-child {
+  color: var(--brand-foreground);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Market date page. */
+/* Attendance choices are white until chosen; the chosen one takes its status fill. */
+/* Colours ease in and out as the selection moves between choices. */
+.market-occurrence-choice.button.ui-button {
+  transition:
+    background-color 260ms ease,
+    color 260ms ease,
+    border-color 260ms ease,
+    box-shadow 180ms ease;
+}
+.market-occurrence-choice.button.ui-button[aria-pressed='true'] {
+  --button-hover-transform: none;
+  text-decoration: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-occurrence-choice.button.ui-button {
+    transition: none;
+  }
+}
+.market-occurrence-choice-success.button.ui-button[aria-pressed='true'] {
+  --button-fill: var(--status-success-bg);
+  --button-ink: var(--status-success-fg);
+  --button-edge: var(--status-success-fg);
+  --button-hover-fill: var(--status-success-bg);
+  --button-hover-ink: var(--status-success-fg);
+  --button-hover-edge: var(--status-success-fg);
+}
+.market-occurrence-choice-warning.button.ui-button[aria-pressed='true'] {
+  --button-fill: var(--status-warning-bg);
+  --button-ink: var(--status-warning-fg);
+  --button-edge: var(--status-warning-fg);
+  --button-hover-fill: var(--status-warning-bg);
+  --button-hover-ink: var(--status-warning-fg);
+  --button-hover-edge: var(--status-warning-fg);
+}
+.market-occurrence-choice-danger.button.ui-button[aria-pressed='true'] {
+  --button-fill: var(--status-danger-bg);
+  --button-ink: var(--status-danger-fg);
+  --button-edge: var(--status-danger-fg);
+  --button-hover-fill: var(--status-danger-bg);
+  --button-hover-ink: var(--status-danger-fg);
+  --button-hover-edge: var(--status-danger-fg);
+}
+.market-occurrence-attendance {
+  display: grid;
+  gap: 14px;
+  padding: 6px 24px 20px;
+}
+.market-occurrence-attendance .ui-field,
+.market-occurrence-attendance .field {
+  margin: 0;
+}
+.market-occurrence-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@container (max-width: 760px) {
+  .market-detail-windows,
+  .market-detail-auto-enroll {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .market-detail-auto-enroll > div {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .market-detail .market-detail-item-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The selection column keeps its heading for screen readers only, as market discovery does for actions. */
+.market-detail-preordering .farmstand-data-table thead th:first-child {
+  width: 1%;
+  font-size: 0;
+}

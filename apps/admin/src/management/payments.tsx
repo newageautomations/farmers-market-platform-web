@@ -12,7 +12,15 @@ import {
   Unavailable,
 } from '../vendor/common';
 import { Choice } from './common';
-export function Payments({ service }: { service: ManagementService }) {
+import { codeLabel } from '../settings/providers';
+export function Payments({
+  service,
+  embedded = false,
+}: {
+  service: ManagementService;
+  /** Host panel supplies the Marketplace Stripe Connect heading and surface. */
+  embedded?: boolean;
+}) {
   const [mode, setMode] = useState<'TEST' | 'LIVE'>('TEST'),
     read = useCallback(() => service.payments(mode), [service, mode]);
   const result = useRead(`payments:${mode}`, read);
@@ -41,17 +49,30 @@ export function Payments({ service }: { service: ManagementService }) {
       <ReadState {...result} retry={result.refresh} />
       {config && (
         <>
-          <Card>
-            <h2 className="ui-section-title-dashboard">
-              Marketplace Stripe Connect
-            </h2>
-            <p>
-              {config.state === 'NOT_CONFIGURED'
-                ? 'Not configured'
-                : config.state}
-            </p>
-            <p>External qualification: {config.qualification}</p>
-            <p>FundsFlowPolicy: {config.fundsFlowPolicy}</p>
+          <Card surface={embedded ? 'embedded' : 'card'}>
+            {!embedded && (
+              <h2 className="ui-section-title-dashboard">
+                Marketplace Stripe Connect
+              </h2>
+            )}
+            <dl className="provider-facts">
+              <div>
+                <dt>Configuration</dt>
+                <dd>
+                  <Badge tone={managementStatusTone('readiness', config.state)}>
+                    {codeLabel(config.state)}
+                  </Badge>
+                </dd>
+              </div>
+              <div>
+                <dt>External qualification</dt>
+                <dd>{codeLabel(config.qualification)}</dd>
+              </div>
+              <div>
+                <dt>Funds flow policy</dt>
+                <dd>{codeLabel(config.fundsFlowPolicy)}</dd>
+              </div>
+            </dl>
             <p>
               Shopper payment confirmation remains unavailable. CHECKOUT-B1 is
               open.
@@ -59,7 +80,7 @@ export function Payments({ service }: { service: ManagementService }) {
           </Card>
           {account ? (
             <>
-              <dl className="facts">
+              <dl className="provider-facts">
                 <div>
                   <dt>Connection</dt>
                   <dd>
@@ -69,7 +90,7 @@ export function Payments({ service }: { service: ManagementService }) {
                         account.connectionStatus,
                       )}
                     >
-                      {account.connectionStatus}
+                      {codeLabel(account.connectionStatus)}
                     </Badge>
                   </dd>
                 </div>

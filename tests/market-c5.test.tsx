@@ -20,17 +20,29 @@ import { MarketGenerationStatus } from '../apps/admin/src/market/generation-stat
 function service(id = '1') {
   return createFixtureMarketService(marketFixtureContext(id));
 }
+async function openPlatformSearch() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Add business' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Add business' });
+  // Without the operations connection only platform Vendors can be added.
+  expect(
+    within(dialog).getByRole('radio', { name: 'Platform Vendor' }),
+  ).toBeChecked();
+  expect(
+    within(dialog).getByRole('radio', { name: 'External business' }),
+  ).toBeDisabled();
+  fireEvent.click(within(dialog).getByRole('button', { name: /Next/ }));
+  const business = await within(dialog).findByRole('combobox', {
+    name: 'Vendor business',
+  });
+  return { dialog, business };
+}
 it('selects a safe directory Vendor with deliberate pending status and authoritative relationship reread', async () => {
   const api = service(),
     mutation = vi.spyOn(api, 'membershipStatus'),
     read = vi.spyOn(api, 'relationshipPage');
   render(<MarketVendors service={api} />);
-  await screen.findByRole('table', { name: 'Vendor business relationships' });
-  fireEvent.click(screen.getByRole('button', { name: 'Add Vendor' }));
-  const dialog = await screen.findByRole('dialog', { name: 'Add Vendor' });
-  const business = await within(dialog).findByRole('combobox', {
-    name: 'Vendor business',
-  });
+  await screen.findByRole('table', { name: 'Market businesses' });
+  const { dialog, business } = await openPlatformSearch();
   expect(
     within(dialog).queryByRole('textbox', { name: /Vendor ID/i }),
   ).toBeNull();
@@ -44,26 +56,28 @@ it('selects a safe directory Vendor with deliberate pending status and authorita
     }),
   );
   expect(business).toHaveValue('Synthetic Market A Eligible Vendor 1');
-  fireEvent.click(
-    within(dialog).getByRole('button', { name: 'Create relationship' }),
-  );
+  fireEvent.click(within(dialog).getByRole('button', { name: /Next/ }));
+  expect(
+    within(dialog).getByText(/is added as a pending member/),
+  ).toBeInTheDocument();
+  expect(within(dialog).queryByLabelText('Membership status')).toBeNull();
+  fireEvent.click(within(dialog).getByRole('button', { name: /Next/ }));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Add business' }));
   await waitFor(() =>
     expect(mutation).toHaveBeenCalledWith('1', '1900', 'pending'),
   );
-  await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
-  await screen.findByRole('button', {
-    name: 'Open Synthetic Market A Eligible Vendor 1',
-  });
+  const reads = read.mock.calls.length;
+  await waitFor(() => expect(read.mock.calls.length).toBeGreaterThan(reads - 1));
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Done' }));
+  await within(
+    await screen.findByRole('table', { name: 'Market businesses' }),
+  ).findByText('Synthetic Market A Eligible Vendor 1');
 });
 it('finds an eligible Vendor beyond the first page through bounded server search', async () => {
   const api = service(),
     read = vi.spyOn(api, 'eligibleVendors');
   render(<MarketVendors service={api} />);
-  fireEvent.click(screen.getByRole('button', { name: 'Add Vendor' }));
-  const dialog = await screen.findByRole('dialog');
-  const business = await within(dialog).findByRole('combobox', {
-    name: 'Vendor business',
-  });
+  const { dialog, business } = await openPlatformSearch();
   await waitFor(() =>
     expect(read).toHaveBeenLastCalledWith({ take: 20, skip: 0, search: '' }),
   );
@@ -72,7 +86,9 @@ it('finds an eligible Vendor beyond the first page through bounded server search
     name: 'Vendor business',
   });
   await waitFor(() =>
-    expect(within(choices).getAllByRole('option')).toHaveLength(20),
+    expect(
+      within(choices).getAllByRole('option', { name: /Eligible Vendor/ }),
+    ).toHaveLength(20),
   );
   expect(
     within(choices).queryByRole('option', { name: /Eligible Vendor 21$/ }),
@@ -88,7 +104,9 @@ it('finds an eligible Vendor beyond the first page through bounded server search
   const vendor = await within(choices).findByRole('option', {
     name: 'Synthetic Market A Eligible Vendor 21',
   });
-  expect(within(choices).getAllByRole('option')).toHaveLength(1);
+  expect(
+    within(choices).getAllByRole('option', { name: /Eligible Vendor/ }),
+  ).toHaveLength(1);
   fireEvent.click(vendor);
   expect(business).toHaveValue('Synthetic Market A Eligible Vendor 21');
   // The adapter still supports explicit pages for other callers.
@@ -111,13 +129,10 @@ it('discards a delayed B1 Market A page after switching to Market B', async () =
   );
   const view = render(<MarketVendors service={a} />);
   view.rerender(<MarketVendors service={b} />);
-  await screen.findByRole('button', {
-    name: 'Open Synthetic Market B Vendor 1',
-  });
+  const table = await screen.findByRole('table', { name: 'Market businesses' });
+  await within(table).findByText('Synthetic Market B Vendor 1');
   await act(async () => finish(original));
-  expect(
-    screen.queryByRole('button', { name: 'Open Synthetic Market A Vendor 1' }),
-  ).toBeNull();
+  expect(within(table).queryByText('Synthetic Market A Vendor 1')).toBeNull();
 });
 it('direct occurrence detail succeeds without requesting the date list', async () => {
   const api = service(),

@@ -12,6 +12,7 @@ import {
   FinancialGraph,
   FinanceDonut,
   buckets,
+  donutSegments,
 } from '../apps/admin/src/finance/charts';
 import { visibleNavigation, routeAllowed } from '@market/admin-core';
 import { fixtureContexts } from '../apps/admin/src/FixtureAdmin';
@@ -132,7 +133,7 @@ const report: FinanceReport = {
 function apiMock() {
   return {
     options: vi.fn(async () => options),
-    report: vi.fn(async () => report),
+    report: vi.fn(async (_scope?: FinanceScope) => report),
     export: vi.fn(async () => ({ filename: 'report.csv', content: 'sample' })),
     detail: vi.fn(async () => ({
       expense,
@@ -198,8 +199,21 @@ describe('combined finance workspace', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent(
       '25% of absolute total',
     );
-    expect(slice).toHaveAttribute('stroke-width', '40');
+    expect(slice).toHaveAttribute('data-active', 'true');
     expect(donut.querySelectorAll('.finance-donut-slice')).toHaveLength(2);
+  });
+  it('gives tiny donut slices a minimum visible share without overlapping', () => {
+    const items = [
+      { id: 'big', value: 9000 },
+      ...Array.from({ length: 12 }, (_, i) => ({ id: 'tiny' + i, value: 5 })),
+    ];
+    const segments = donutSegments(items, 9060);
+    expect(segments[0]!.start).toBe(0);
+    expect(segments.at(-1)!.end).toBeCloseTo(1, 10);
+    for (const [i, s] of segments.entries()) {
+      expect(s.end - s.start).toBeGreaterThanOrEqual(0.026 - 1e-9);
+      if (i) expect(s.start).toBeCloseTo(segments[i - 1]!.end, 12);
+    }
   });
   it('uses the selected account calendar at UTC midnight', () => {
     const at = new Date('2026-10-20T01:00:00Z');
@@ -211,24 +225,28 @@ describe('combined finance workspace', () => {
     const { container } = render(
       <Finances api={api} path="/vendor/finances" />,
     );
-    await screen.findByText('$800.00', { selector: 'strong' });
+    await screen.findByText('$800.00', { selector: 'dd' });
     const graph = container.querySelector('.finance-main-graph');
     let complete!: (value: FinanceReport) => void;
-    api.report.mockImplementationOnce(
-      () =>
-        new Promise<FinanceReport>((resolve) => {
-          complete = resolve;
-        }),
+    const pending = new Promise<FinanceReport>((resolve) => {
+      complete = resolve;
+    });
+    // Hold only the selected-period report; the weekly comparison resolves.
+    api.report.mockImplementation((requested?: FinanceScope) =>
+      requested?.market === '5' && requested.from === scope.from
+        ? pending
+        : Promise.resolve(report),
     );
     fireEvent.change(screen.getByLabelText('Sales scope'), {
       target: { value: '5' },
     });
-    await waitFor(() => expect(api.report).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('Updating chart…')).toBeVisible();
     expect(container.querySelector('.finance-main-graph')).toBe(graph);
+    const calls = api.report.mock.calls.length;
     fireEvent.change(screen.getByLabelText('Group by'), {
       target: { value: 'weekly' },
     });
-    expect(api.report).toHaveBeenCalledTimes(2);
+    expect(api.report).toHaveBeenCalledTimes(calls);
     complete({ ...report, scope: { ...scope, market: '5' } });
     await waitFor(() =>
       expect(screen.queryByText('Updating chart…')).not.toBeInTheDocument(),
@@ -253,6 +271,122 @@ describe('combined finance workspace', () => {
     expect(routeAllowed(restricted, '/market/finances')).toBe(false);
     expect(routeAllowed(restricted, '/market/finances/quickbooks')).toBe(false);
   });
+  it('consolidates finance views into one workspace menu that keeps the reporting period', async () => {
+    history.replaceState(null, '', '/vendor/finances');
+    render(<Finances api={apiMock()} path="/vendor/finances" />);
+    await screen.findByText('$800.00', { selector: 'dd' });
+    const menu = screen.getByRole('navigation', { name: 'Finances' });
+    expect(
+      within(menu)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Overview', 'Transactions', 'Expenses']);
+    expect(
+      within(menu).getByRole('link', { name: 'Overview' }),
+    ).toHaveAttribute('aria-current', 'page');
+    expect(
+      within(menu).getByRole('link', { name: 'Transactions' }),
+    ).toHaveAttribute(
+      'href',
+      expect.stringMatching(/^\/vendor\/finances\/transactions\?.*from=/),
+    );
+    expect(screen.getByRole('button', { name: 'Export Report' })).toBeVisible();
+  });
+  it('keeps heading actions mounted and reads once while switching finance tabs', async () => {
+    const api = apiMock();
+    const view = render(<Finances api={api} path="/vendor/finances" />);
+    const add = await screen.findByRole('button', { name: 'Add Expense' });
+    const exportButton = screen.getByRole('button', { name: 'Export Report' });
+    for (const path of [
+      '/vendor/finances/transactions',
+      '/vendor/finances/expenses',
+      '/vendor/finances',
+    ]) {
+      view.rerender(<Finances api={api} path={path} />);
+      expect(screen.getByRole('button', { name: 'Add Expense' })).toBe(add);
+      expect(screen.getByRole('button', { name: 'Export Report' })).toBe(
+        exportButton,
+      );
+    }
+    expect(api.options).toHaveBeenCalledTimes(1);
+  });
+  it('chooses graph metrics from a closable Farmstand menu', async () => {
+    render(<Finances api={apiMock()} path="/vendor/finances" />);
+    await screen.findByText('$800.00', { selector: 'dd' });
+    const menu = screen.getByText('All metrics').closest('details')!;
+    fireEvent.click(screen.getByText('All metrics'));
+    // jsdom does not dispatch the native toggle event that browsers send.
+    fireEvent(menu, new Event('toggle'));
+    expect(menu).toHaveProperty('open', true);
+    fireEvent.click(screen.getByLabelText('Expenses'));
+    expect(screen.getByText('2 metrics')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(menu).toHaveProperty('open', false));
+  });
+  it('shows insights without finance reads for analytics-only roles', async () => {
+    const api = apiMock();
+    render(
+      <Finances
+        api={api}
+        path="/vendor/analytics"
+        canReadFinance={false}
+        insights={(insight) => <p>Insights from {insight.from}</p>}
+      />,
+    );
+    expect(await screen.findByText(/^Insights from \d{4}-/)).toBeVisible();
+    expect(api.options).not.toHaveBeenCalled();
+    expect(api.report).not.toHaveBeenCalled();
+    expect(screen.queryByRole('navigation', { name: 'Finances' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Export Report' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add Expense' })).toBeNull();
+  });
+  it('hosts market booth invoices as a finance tab', async () => {
+    const api = apiMock();
+    api.options.mockResolvedValue({ ...options, kind: 'MARKET' });
+    render(
+      <Finances
+        api={api}
+        path="/market/finances/invoices"
+        manager
+        invoices={<p>Booth invoice workspace</p>}
+      />,
+    );
+    expect(screen.getByText('Booth invoice workspace')).toBeVisible();
+    const menu = screen.getByRole('navigation', { name: 'Finances' });
+    expect(
+      within(menu).getByRole('link', { name: 'Booth invoices' }),
+    ).toHaveAttribute('aria-current', 'page');
+    expect(
+      screen.queryByRole('region', { name: 'Reporting period' }),
+    ).toBeNull();
+  });
+  it('opens the finance overview for analytics-only roles and keeps money views billing-gated', () => {
+    const analyst = {
+      ...fixtureContexts.MARKET,
+      permissions: ['ReadOwnMarket', 'ReadOwnMarketAnalytics'] as const,
+    };
+    expect(
+      visibleNavigation(analyst).find((item) => item.label === 'Finances')
+        ?.path,
+    ).toBe('/market/finances');
+    expect(
+      visibleNavigation(analyst).some((i) => i.label === 'Analytics'),
+    ).toBe(false);
+    expect(routeAllowed(analyst, '/market/finances')).toBe(true);
+    expect(routeAllowed(analyst, '/market/analytics')).toBe(true);
+    expect(routeAllowed(analyst, '/market/finances/expenses')).toBe(false);
+    expect(routeAllowed(analyst, '/market/finances/invoices')).toBe(false);
+    expect(routeAllowed(analyst, '/market/booth-billing')).toBe(false);
+    const billing = {
+      ...fixtureContexts.MARKET,
+      permissions: ['ReadOwnMarket', 'ReadOwnMarketBilling'] as const,
+    };
+    expect(routeAllowed(billing, '/market/finances/invoices')).toBe(true);
+    expect(routeAllowed(billing, '/market/booth-billing')).toBe(true);
+    expect(
+      visibleNavigation(billing).some((i) => i.label === 'Booth billing'),
+    ).toBe(false);
+  });
   it('computes inclusive presets and exact month boundaries', () => {
     const now = new Date('2026-10-20T12:00:00Z');
     expect(financeDates('7', now)).toEqual({
@@ -275,15 +409,14 @@ describe('combined finance workspace', () => {
     const api = apiMock(),
       { container } = render(<Finances api={api} path="/vendor/finances" />);
     expect(
-      await screen.findByText('$800.00', { selector: 'strong' }),
+      await screen.findByText('$800.00', { selector: 'dd' }),
     ).toBeVisible();
-    expect(screen.getByText('$310.00', { selector: 'strong' })).toBeVisible();
-    expect(screen.getByText('$475.00', { selector: 'strong' })).toBeVisible();
+    expect(screen.getByText('$310.00', { selector: 'dd' })).toBeVisible();
+    expect(screen.getByText('$475.00', { selector: 'dd' })).toBeVisible();
     expect(
       container.querySelector('.finance-main-graph .finance-zero'),
     ).toBeTruthy();
-    fireEvent.focus(screen.getByRole('combobox', { name: 'Metric' }));
-    fireEvent.click(screen.getByRole('option', { name: 'Gross sales' }));
+    fireEvent.click(screen.getByLabelText('Gross sales'));
     expect(container.querySelector('[data-series="gross"]')).toBeNull();
     expect(container.querySelector('[data-value="-27500"]')).toBeTruthy();
     expect(screen.getByText(/2 units without production costs/)).toBeVisible();
@@ -292,7 +425,7 @@ describe('combined finance workspace', () => {
   it('updates date, market and cards together without mixing stale results', async () => {
     const api = apiMock();
     render(<Finances api={api} path="/vendor/finances" />);
-    await screen.findByText('$800.00', { selector: 'strong' });
+    await screen.findByText('$800.00', { selector: 'dd' });
     fireEvent.change(screen.getByLabelText('Sales scope'), {
       target: { value: 'INDEPENDENT' },
     });
@@ -308,9 +441,23 @@ describe('combined finance workspace', () => {
     await waitFor(() =>
       expect(api.report).toHaveBeenLastCalledWith({ ...scope, market: '5' }),
     );
-    fireEvent.change(screen.getByLabelText('From'), {
-      target: { value: '2026-09-03' },
+    // Custom ranges use the shared date-range calendar dialog.
+    fireEvent.change(screen.getByLabelText('Period'), {
+      target: { value: 'custom' },
     });
+    const calendar = screen.getByRole('dialog', { name: 'Custom date range' });
+    fireEvent.click(
+      within(calendar).getByRole('button', { name: /September 3, 2026/ }),
+    );
+    fireEvent.click(
+      within(calendar).getByRole('button', { name: /September 30, 2026/ }),
+    );
+    fireEvent.click(
+      within(calendar).getByRole('button', { name: 'Apply date range' }),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Edit date range' }),
+    ).toBeVisible();
     await waitFor(() =>
       expect(api.report).toHaveBeenLastCalledWith({
         ...scope,
@@ -322,13 +469,13 @@ describe('combined finance workspace', () => {
   it('keeps product details in shared dialogs and switches product sales metrics', async () => {
     const api = apiMock();
     render(<Finances api={api} path="/vendor/finances" />);
-    await screen.findByText('$800.00', { selector: 'strong' });
+    await screen.findByText('$800.00', { selector: 'dd' });
     fireEvent.change(screen.getByLabelText('Show product sales by'), {
       target: { value: 'revenue' },
     });
     expect(screen.getByRole('region', { name: 'Product sales' })).toBeTruthy();
     fireEvent.click(
-      screen.getAllByRole('button', { name: 'Green Garden Juice' })[0]!,
+      screen.getAllByRole('button', { name: /^Green Garden Juice:/ })[0]!,
     );
     const dialog = screen.getByRole('dialog', { name: 'Green Garden Juice' });
     expect(within(dialog).getByText('Estimated contribution')).toBeVisible();
@@ -338,7 +485,7 @@ describe('combined finance workspace', () => {
   });
   it('opens daily values with negative profits and preserves keyboard-readable figures', async () => {
     render(<Finances api={apiMock()} path="/vendor/finances" />);
-    await screen.findByText('$800.00', { selector: 'strong' });
+    await screen.findByText('$800.00', { selector: 'dd' });
     fireEvent.click(screen.getByRole('button', { name: 'Daily values' }));
     expect(
       within(screen.getByRole('dialog')).getByText('-$275.00'),
@@ -347,7 +494,7 @@ describe('combined finance workspace', () => {
   it('records an expense with an explicit production-cost classification', async () => {
     const api = apiMock();
     render(<Finances api={api} path="/vendor/finances" />);
-    await screen.findByText('$800.00', { selector: 'strong' });
+    await screen.findByText('$800.00', { selector: 'dd' });
     fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }));
     const dialog = screen.getByRole('dialog', { name: 'Add Expense' });
     fireEvent.change(within(dialog).getByLabelText('Expense description'), {
@@ -379,9 +526,9 @@ describe('combined finance workspace', () => {
   it('keeps expense rows compact and edits inside the existing detail modal', async () => {
     const api = apiMock();
     render(<Finances api={api} path="/vendor/finances/expenses" />);
-    await screen.findByRole('button', { name: 'Open Juicer repair' });
-    expect(screen.getAllByRole('columnheader')).toHaveLength(2);
-    fireEvent.click(screen.getByRole('button', { name: 'Open Juicer repair' }));
+    const expenseRow = await screen.findByText('Juicer repair');
+    expect(screen.getAllByRole('columnheader')).toHaveLength(5);
+    fireEvent.click(expenseRow);
     await screen.findByRole('button', { name: 'Edit expense' });
     expect(
       within(screen.getByRole('dialog')).getByText('Expense history'),
@@ -434,9 +581,7 @@ describe('combined finance workspace', () => {
       receipts: [],
     });
     render(<Finances api={api} path="/vendor/finances/expenses" />);
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Open Juicer repair' }),
-    );
+    fireEvent.click(await screen.findByText('Juicer repair'));
     const loadedDialog = await screen.findByRole('dialog', {
       name: 'Juicer repair',
     });
@@ -456,16 +601,14 @@ describe('combined finance workspace', () => {
     expect(audit).toEqual(unchanged);
     expect(api.save).not.toHaveBeenCalled();
   });
-  it('keeps transaction rows compact and details accessible', async () => {
+  it('keeps transaction rows compact with details in the side panel', async () => {
     render(<Finances api={apiMock()} path="/vendor/finances/transactions" />);
-    const row = await screen.findByRole('button', {
-      name: 'Open Green Garden Juice · 30',
-    });
-    expect(screen.getAllByRole('columnheader')).toHaveLength(2);
-    fireEvent.click(row);
-    expect(
-      within(screen.getByRole('dialog')).getByText('Production cost'),
-    ).toBeVisible();
+    const table = await screen.findByRole('table');
+    expect(within(table).getAllByRole('columnheader')).toHaveLength(5);
+    fireEvent.click(within(table).getByText('Green Garden Juice · 30'));
+    const details = screen.getByRole('region', { name: 'Transaction details' });
+    expect(within(details).getByText('Production cost')).toBeVisible();
+    expect(within(details).getByText('Processing fee')).toBeVisible();
   });
   it('searches and paginates order rows while keeping products, taxes and refund events inside details', async () => {
     const api = apiMock();
@@ -541,16 +684,15 @@ describe('combined finance workspace', () => {
       })),
     });
     render(<Finances api={api} path="/vendor/finances/transactions" />);
-    const row = await screen.findByRole('button', {
-      name: 'Open Order CHECKOUT-0',
-    });
-    expect(screen.getAllByRole('columnheader')).toHaveLength(2);
-    expect(
-      screen.getAllByRole('button', { name: /Open Order CHECKOUT-/ }),
-    ).toHaveLength(20);
+    const table = await screen.findByRole('table');
+    expect(within(table).getAllByRole('columnheader')).toHaveLength(5);
+    expect(within(table).getAllByText(/^Order CHECKOUT-/)).toHaveLength(20);
     expect(screen.getByText('21 records')).toBeVisible();
-    fireEvent.click(row);
-    const dialog = within(screen.getByRole('dialog'));
+    fireEvent.click(within(table).getByText('Order CHECKOUT-1'));
+    const dialog = within(
+      screen.getByRole('region', { name: 'Transaction details' }),
+    );
+    expect(dialog.getByText('Order CHECKOUT-1')).toBeVisible();
     for (const name of ['Honey', 'Jam', 'Bread'])
       expect(dialog.getByText(new RegExp(name))).toBeVisible();
     expect(
@@ -566,16 +708,15 @@ describe('combined finance workspace', () => {
       dialog.getByText('Refunded to customer').parentElement,
     ).toHaveTextContent('$4.33');
     expect(dialog.getByText(/Refund ·/)).toBeVisible();
-    fireEvent.click(dialog.getByRole('button', { name: 'Close' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(
-      screen.getAllByRole('button', { name: /Open Order CHECKOUT-/ }),
+      within(screen.getByRole('table')).getAllByText(/^Order CHECKOUT-/),
     ).toHaveLength(1);
     fireEvent.change(screen.getByLabelText('Search transactions'), {
       target: { value: 'CHECKOUT-20' },
     });
     expect(
-      screen.getByRole('button', { name: 'Open Order CHECKOUT-20' }),
+      within(screen.getByRole('table')).getByText('Order CHECKOUT-20'),
     ).toBeVisible();
     expect(screen.getByText('1 records')).toBeVisible();
   });
