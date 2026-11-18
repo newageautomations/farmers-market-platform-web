@@ -78,3 +78,130 @@
     display: none;
   }
 }
+/* Profile picture: the shared identity tile, enlarged, beside its actions. */
+.profile-image-settings {
+  display: grid;
+  gap: 14px;
+}
+.profile-image-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.profile-image-settings .markets-identity-icon.profile-image-preview {
+  width: 88px;
+  height: 88px;
+  border-radius: 18px;
+}
+.profile-image-preview .farmstand-icon {
+  width: 36px;
+  height: 36px;
+}
+.profile-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.profile-image-actions > .stack {
+  margin: 0;
+}
+.profile-image-settings > p[role='status'] {
+  margin: 0;
+}
+/* Online payment fee settings: intro, recovery choices, then a priced example.
+   Example rows reuse .provider-facts; dd stays centered beside its dt. */
+.preorder-fee-settings {
+  display: grid;
+  gap: 18px;
+}
+.preorder-fee-modes {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.preorder-fee-modes > legend {
+  margin-bottom: 4px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.preorder-fee-mode {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--farmstand-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.preorder-fee-mode:has(input:checked) {
+  border-color: var(--brand-primary);
+  background: color-mix(in srgb, var(--brand-primary) 6%, var(--brand-surface));
+}
+.preorder-fee-mode > input {
+  flex: none;
+  margin: 2px 0 0;
+}
+.preorder-fee-mode > span {
+  display: grid;
+  gap: 2px;
+}
+.preorder-fee-mode-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.preorder-fee-mode small,
+.preorder-fee-example dt small {
+  display: block;
+  color: var(--brand-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.preorder-fee-modes > :is(.field, .ui-field) {
+  max-width: 260px;
+  margin: 4px 0 0;
+}
+.preorder-fee-example {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--farmstand-border);
+  border-radius: 12px;
+}
+.preorder-fee-example h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.preorder-fee-example .provider-facts > div {
+  grid-template-columns: minmax(0, 1fr) auto;
+  font-size: 14px;
+}
+.preorder-fee-example .provider-facts > div > dt {
+  color: var(--brand-foreground);
+  font-weight: 500;
+}
+.preorder-fee-example .provider-facts > div > dd {
+  margin: 0;
+  align-self: center;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.preorder-fee-example .provider-facts > .preorder-fee-part > dt {
+  padding-left: 14px;
+}
+.preorder-fee-example .provider-facts > .preorder-fee-part {
+  color: var(--brand-muted);
+}
+.preorder-fee-example .provider-facts > :is(.preorder-fee-subtotal, .preorder-fee-total) > * {
+  font-weight: 600;
+}
+.preorder-fee-example .provider-facts > .preorder-fee-total {
+  padding-top: 10px;
+  border-top: 1px solid var(--farmstand-border);
+  font-size: 15px;
+}

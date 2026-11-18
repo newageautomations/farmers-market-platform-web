@@ -95,12 +95,25 @@ export function transport<K extends ApiKind>(
             const error = backendError(
               staleDomain
                 ? 'STALE_DOMAIN_VERSION'
-                : code === 'BAD_USER_INPUT' &&
+                : (code === 'BAD_USER_INPUT' || code === 'USER_INPUT_ERROR') &&
                     first &&
                     typeof first === 'object' &&
                     'message' in first &&
                     typeof first.message === 'string' &&
                     [
+                      'PREORDER_FEE_REQUOTE_REQUIRED',
+                      'ACCOUNT_NOT_READY',
+                      'STRIPE_ONBOARDING_NOT_CONFIGURED',
+                      'STRIPE_ACCOUNT_CONFIGURATION_BLOCKED',
+                      'STRIPE_ONBOARDING_UNAVAILABLE',
+                      'ONBOARDING_CREATION_REVIEW_REQUIRED',
+                      'ONBOARDING_STATE_EXPIRED_OR_USED',
+                      'ONBOARDING_ACCOUNT_CHANGED',
+                      'STRIPE_PLATFORM_MISMATCH',
+                      'OAUTH_RECONCILIATION_REQUIRED',
+                      'OAUTH_STATE_ALREADY_USED',
+                      'OAUTH_STATE_EXPIRED',
+                      'VENDOR_PICKUP_COVERAGE_REQUIRED',
                       'INVALID_REWARD_FIELD',
                       'INVALID_REWARD_CONFIGURATION',
                       'REWARD_PRODUCT_UNAVAILABLE',

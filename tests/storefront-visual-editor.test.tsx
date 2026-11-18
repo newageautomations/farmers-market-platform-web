@@ -7,6 +7,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { StorefrontAppearanceSettings } from '../apps/admin/src/StorefrontAppearance';
+import { VisualStorefrontEditor } from '../apps/admin/src/VisualStorefrontEditor';
 import {
   defaultStorefrontAppearance,
   storefrontAppearanceSchema,
@@ -69,6 +70,100 @@ function message(
   });
 }
 describe('visual storefront editor', () => {
+  it('previews the market shop and browses its product details without vendor product controls', async () => {
+    const { api, record } = fixture();
+    render(
+      <VisualStorefrontEditor
+        market
+        api={api}
+        record={record}
+        onSaved={vi.fn()}
+      />,
+    );
+    const frame = await screen.findByTitle<HTMLIFrameElement>(
+      'Actual storefront preview',
+    );
+    const post = vi.spyOn(frame.contentWindow!, 'postMessage');
+    fireEvent.change(screen.getByLabelText('Preview page'), {
+      target: { value: 'products' },
+    });
+    message(frame, { type: 'ready' });
+    expect(post).toHaveBeenLastCalledWith(
+      expect.objectContaining({ path: '/shop' }),
+      url,
+    );
+    expect(screen.getByLabelText('Preview page')).toHaveValue('products');
+    message(frame, { type: 'navigate', path: '/shop/products/21' });
+    expect(screen.getByLabelText('Preview page')).toHaveValue('product');
+    expect(screen.queryByLabelText('Example product')).toBeNull();
+    expect(
+      screen.getByText(/Products are managed by their vendors/),
+    ).toBeInTheDocument();
+  });
+  it('shows category settings only while their hierarchy row is selected', async () => {
+    const { api } = fixture();
+    const hierarchy = vi.fn(async () => [
+      {
+        id: '1',
+        code: 'produce',
+        name: 'Produce',
+        active: true,
+        parentId: null,
+        assignable: true,
+        children: [],
+      },
+    ]);
+    render(
+      <StorefrontAppearanceSettings
+        market={false}
+        api={{ ...api, hierarchy }}
+      />,
+    );
+    const categories = await screen.findByRole('button', {
+      name: 'Category presentation',
+    });
+    const inspector = screen.getByRole('complementary', {
+      name: 'Selection settings',
+    });
+    expect(categories).toHaveAttribute('aria-expanded', 'false');
+    expect(
+      inspector.querySelector('#storefront-category-presentation'),
+    ).toBeNull();
+    expect(inspector).not.toHaveTextContent(
+      'Order, visibility and images apply',
+    );
+
+    fireEvent.click(categories);
+    expect(await screen.findByLabelText('Category')).toBeInTheDocument();
+    expect(screen.getByLabelText('Category').closest('aside')).toBe(inspector);
+    expect(categories).toHaveAttribute('aria-expanded', 'true');
+    expect(inspector).not.toHaveTextContent('Select a section or block');
+
+    fireEvent.click(categories);
+    expect(screen.queryByLabelText('Category')).toBeNull();
+    expect(inspector).not.toHaveTextContent(
+      'Order, visibility and images apply',
+    );
+
+    fireEvent.click(categories);
+    fireEvent.click(screen.getByRole('button', { name: 'Hero' }));
+    expect(screen.getByLabelText('Hero heading')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Category')).toBeNull();
+    expect(categories).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(categories);
+    expect(screen.queryByLabelText('Hero heading')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Preview page'), {
+      target: { value: 'faq' },
+    });
+    expect(screen.queryByLabelText('Category')).toBeNull();
+    expect(inspector).not.toHaveTextContent(
+      'Order, visibility and images apply',
+    );
+    expect(categories).toHaveAttribute('aria-expanded', 'false');
+    expect(api.save).not.toHaveBeenCalled();
+  });
+
   it('retains the last renderable preview when another editor section is temporarily invalid', async () => {
     const { api } = fixture();
     render(<StorefrontAppearanceSettings market={false} api={api} />);
@@ -99,6 +194,9 @@ describe('visual storefront editor', () => {
     const hero = await screen.findByRole('button', { name: 'Hero' });
     expect(hero.tagName).toBe('SUMMARY');
     expect(screen.queryByLabelText('Hero heading')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Storefront editor' }),
+    ).toHaveClass('website-editor-workspace');
     expect(api.products).not.toHaveBeenCalled();
     expect(screen.getByText('Saved draft')).toHaveClass('ui-status-success');
     fireEvent.click(hero);
@@ -111,18 +209,16 @@ describe('visual storefront editor', () => {
     fireEvent.click(hero);
     expect(screen.getByLabelText('Hero heading')).toHaveValue('Fresh today');
     fireEvent.click(screen.getByRole('button', { name: 'Theme settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Appearance' }));
+    expect(
+      screen.getByLabelText('Color palette').closest('aside'),
+    ).toHaveAttribute('aria-label', 'Selection settings');
     expect(
       screen
         .getByLabelText('Color palette')
         .querySelectorAll('.ui-palette-swatch'),
     ).toHaveLength(16);
-    for (const name of [
-      'Desktop',
-      'Tablet',
-      'Mobile',
-      'Reconnect preview',
-      'Expand preview',
-    ]) {
+    for (const name of ['Desktop', 'Tablet', 'Mobile', 'Reconnect preview']) {
       const button = screen.getByRole('button', { name });
       expect(button.querySelector('svg')).not.toBeNull();
       expect(button.textContent).toBe('');
@@ -192,6 +288,7 @@ describe('visual storefront editor', () => {
     expect(api.save).not.toHaveBeenCalled();
     expect(api.publish).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Theme settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Appearance' }));
     fireEvent.change(screen.getByLabelText('Typography'), {
       target: { value: 'friendly' },
     });
@@ -302,6 +399,7 @@ describe('visual storefront editor', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: 'Theme settings' }),
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Appearance' }));
     fireEvent.change(screen.getByLabelText('Typography'), {
       target: { value: 'warm' },
     });

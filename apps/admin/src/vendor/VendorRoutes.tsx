@@ -1,4 +1,9 @@
+import {
+  PreparationWorkspace,
+  type PreparationDates,
+} from '../preparation/PreparationWorkspace';
 import { TeamWorkspace } from '../team/TeamWorkspace';
+import { VendorMarketDay } from '../market-day/MarketDayWorkspace';
 import { AttendanceHistory } from '../market/phase14/Attendance';
 import { VendorPacking, PackingCardStatus } from './packing';
 import {
@@ -27,12 +32,29 @@ import { VendorBooths } from './booths';
 export function VendorRoutes({
   service,
   path,
+  preparationDates,
 }: {
   service: VendorService;
   path: string;
+  preparationDates?: PreparationDates;
 }) {
   const [, , module, id, child, variantId, setupVariantId] =
     vendorPath(path).split('/');
+  if (
+    module === 'preparation' ||
+    (module === 'markets' &&
+      child === 'dates' &&
+      setupVariantId === 'preparation')
+  )
+    return (
+      <PreparationWorkspace
+        vendor={service}
+        dates={preparationDates}
+        occurrenceId={
+          Number(module === 'preparation' ? id : variantId) || undefined
+        }
+      />
+    );
   if (module === 'team')
     return <TeamWorkspace api={service.team} context={service.context} />;
   if (module === 'finances' || module === 'analytics')
@@ -88,7 +110,7 @@ export function VendorRoutes({
     ) : (
       <p>Applications are unavailable in this environment.</p>
     );
-  if (module === 'day')
+  if (module === 'day' && id === 'history')
     return service.marketAttendance ? (
       <>
         <p>
@@ -113,7 +135,19 @@ export function VendorRoutes({
         />
       </>
     ) : (
-      <p>Market Day is unavailable in this environment.</p>
+      <p>Attendance unavailable.</p>
+    );
+  if (module === 'day')
+    return (
+      <VendorMarketDay
+        service={service}
+        dates={preparationDates}
+        occurrenceId={
+          Number(
+            id ?? new URLSearchParams(window.location.search).get('occurrence'),
+          ) || undefined
+        }
+      />
     );
   if (module === 'booths') return <VendorBooths service={service} />;
   // IDs remain opaque backend resource references. They never establish tenant context.

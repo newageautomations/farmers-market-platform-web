@@ -384,6 +384,7 @@ export function FinanceOverview({
           open
           onClose={() => setDaily(false)}
           title="Daily financial values"
+          className="finance-detail-dialog"
         >
           <DataTable
             wide
@@ -400,11 +401,11 @@ export function FinanceOverview({
             {data.daily.map((d) => (
               <tr key={d.date}>
                 <th scope="row">{d.date}</th>
-                <td>{money(d.gross)}</td>
-                <td>{money(d.discounts)}</td>
-                <td>{money(d.refunds)}</td>
-                <td>{money(d.totalExpenses)}</td>
-                <td>{money(d.profit)}</td>
+                <td data-label="Gross sales">{money(d.gross)}</td>
+                <td data-label="Discounts">{money(d.discounts)}</td>
+                <td data-label="Refunds">{money(d.refunds)}</td>
+                <td data-label="Costs">{money(d.totalExpenses)}</td>
+                <td data-label="Estimated profit">{money(d.profit)}</td>
               </tr>
             ))}
           </DataTable>
@@ -415,6 +416,7 @@ export function FinanceOverview({
           open
           title="Expense categories"
           onClose={() => setCategoryDetails(false)}
+          className="finance-detail-dialog"
         >
           <DataTable
             label="Recorded spending and costs by category"
@@ -423,8 +425,8 @@ export function FinanceOverview({
             {data.categories.map((c) => (
               <tr key={c.name}>
                 <th scope="row">{c.name}</th>
-                <td>{money(c.spending)}</td>
-                <td>{money(c.deducted)}</td>
+                <td data-label="Recorded spending">{money(c.spending)}</td>
+                <td data-label="Deducted from profit">{money(c.deducted)}</td>
               </tr>
             ))}
           </DataTable>
@@ -436,8 +438,13 @@ export function FinanceOverview({
         </Dialog>
       )}
       {product && (
-        <Dialog open onClose={() => setProduct(undefined)} title={product.name}>
-          <dl className="facts">
+        <Dialog
+          open
+          onClose={() => setProduct(undefined)}
+          title={product.name}
+          className="finance-detail-dialog"
+        >
+          <dl className="facts finance-detail-facts">
             {[
               ['Units sold', String(product.units)],
               ['Gross product sales', money(product.gross)],
@@ -448,7 +455,10 @@ export function FinanceOverview({
               ['Estimated contribution', money(product.contribution)],
               ['Units without known cost', String(product.missingCostUnits)],
             ].map(([k, v]) => (
-              <div key={k}>
+              <div
+                key={k}
+                data-total={k === 'Estimated contribution' || undefined}
+              >
                 <dt>{k}</dt>
                 <dd>{v}</dd>
               </div>

@@ -1,4 +1,14 @@
 import { z } from 'zod';
+import {
+  createWebsiteSection,
+  editorialHomepageTarget,
+  homepageDesignSchema,
+  isEditorialHomepageComposition,
+  editorialOriginalSections,
+  editorialMarketOriginalSections,
+  isEditorialMarketHomepageComposition,
+  type EditorialHomepageSection,
+} from './website-sections';
 
 const cleanText = (max: number) =>
   z
@@ -54,6 +64,10 @@ export const editorialMarketTemplateSchema = z
     settings: z
       .object({
         version: z.literal(1),
+        homepageDesign: homepageDesignSchema.optional(),
+        composition: z
+          .custom<EditorialHomepageSection[]>(isEditorialHomepageComposition)
+          .optional(),
         assets: z
           .object({
             desktopHero: editorialMarketPhotoSchema,
@@ -204,4 +218,84 @@ export function isEditorialMarket(value: unknown): value is {
       (value as { template?: unknown }).template,
     ).success
   );
+}
+
+/** Copy for a market's original call-to-action banner (its market text). */
+export type EditorialMarketClosing = {
+  heading: string;
+  body: string;
+  label: string;
+  destination: string;
+};
+export const editorialMarketClosingSectionId = 'cta-banner-market-closing';
+
+/** Upgrade old homepage slots to the same editable instances used by Add Section.
+ * An explicit composition is authoritative: deleted instances never regenerate. */
+export function editorialHomepageComposition(
+  settings: EditorialMarketSettings,
+  catalog: { productIds?: string[]; categoryIds?: string[] } = {},
+  market = false,
+  closing?: EditorialMarketClosing,
+): EditorialHomepageSection[] {
+  // Market natives render live market data, so they are never converted to
+  // showcases. The static call-to-action banner becomes the styleable
+  // Call-to-Action Banner section, seeded with the market's banner copy.
+  if (market)
+    return (
+      isEditorialMarketHomepageComposition(settings.composition)
+        ? settings.composition!
+        : editorialMarketOriginalSections.map((id) => ({ id }))
+    ).map((section) => {
+      if ('type' in section || section.id !== 'closing' || !closing)
+        return section;
+      const banner = createWebsiteSection(
+        'cta-banner',
+        editorialMarketClosingSectionId,
+        editorialHomepageTarget,
+      );
+      banner.content = { ...closing };
+      banner.presentation = {
+        ...banner.presentation,
+        alignment: 'left',
+        background: 'paper',
+      };
+      return banner;
+    });
+  return (
+    settings.composition ?? editorialOriginalSections.map((id) => ({ id }))
+  ).map((section) => {
+    if (
+      'type' in section ||
+      (section.id !== 'products' && section.id !== 'categories')
+    )
+      return section;
+    if (section.id === 'products') {
+      const showcase = createWebsiteSection(
+        'product-showcase',
+        'product-showcase-homepage',
+        editorialHomepageTarget,
+      );
+      showcase.visible = settings.products.visible;
+      showcase.content.heading = settings.products.heading;
+      showcase.content.body = '';
+      showcase.content.productIds = settings.products.productIds.length
+        ? [...settings.products.productIds]
+        : (catalog.productIds ?? []).slice(0, 4);
+      showcase.presentation.columns = 4;
+      return showcase;
+    }
+    const showcase = createWebsiteSection(
+      'category-showcase',
+      'category-showcase-homepage',
+      editorialHomepageTarget,
+    );
+    showcase.visible = settings.categories.visible;
+    showcase.content.heading = settings.categories.heading;
+    showcase.content.body = '';
+    showcase.content.categoryIds = (catalog.categoryIds ?? []).slice(
+      0,
+      Math.min(8, settings.categories.limit),
+    );
+    return showcase;
+  });
 }

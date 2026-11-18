@@ -1,0 +1,15 @@
+/* PriceInput: currency symbol inside the shared Input (moved from
+   vendor/product-editor.css so market pages share it). */
+.product-price-input {
+  position: relative;
+}
+.product-price-input > span {
+  position: absolute;
+  inset-inline-start: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.product-price-input > .ui-input.ui-input {
+  padding-inline-start: calc(20px + var(--price-symbol-width, 1ch));
+}

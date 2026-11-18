@@ -19,6 +19,9 @@ const status = (changes: Partial<CheckoutView> = {}): CheckoutView => ({
   frozen: true,
   committed: false,
   paymentStatus: 'SUCCEEDED',
+  paymentGroup: null,
+  preorderFee: null,
+  preorderFeeTestAvailable: false,
   pickupPromise: {
     mode: 'PICKUP',
     venue: 'Demo venue',

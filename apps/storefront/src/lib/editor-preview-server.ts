@@ -36,7 +36,10 @@ export async function authorizeEditorRender(context: APIContext) {
     throw new Error('Invalid preview');
   const config = storefrontAppearanceSchema.parse(payload.config);
   const storefront = context.locals.storefront;
-  if (storefront?.kind !== 'VENDOR' || storefront.source !== 'backend')
+  if (
+    (storefront?.kind !== 'VENDOR' && storefront?.kind !== 'MARKET') ||
+    storefront.source !== 'backend'
+  )
     throw new Error('Invalid storefront');
   const endpoint =
     process.env.PUBLIC_ADMIN_API_URL ?? import.meta.env.PUBLIC_ADMIN_API_URL;

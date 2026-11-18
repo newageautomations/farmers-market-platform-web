@@ -1,3 +1,4 @@
+import { EditVendorMarketDate } from './VendorManagedMarkets';
 import { useCallback, useId, useMemo, useState } from 'react';
 import { mayCommand } from '@market/admin-core';
 import type { AttendanceInput, PreorderInput } from '@market/api';
@@ -28,7 +29,7 @@ import {
   readMarketDetail,
   type MarketDetail,
 } from './market-detail-data';
-import './markets-workspace.css';
+import '@market/ui/workspace.css';
 import './market-detail.css';
 
 /** One market date: attendance, its preorder window and per-product offerings. */
@@ -179,11 +180,34 @@ function OccurrenceContent({
   const nextBooth = detail.booths?.get(String(date.occurrence.id));
   // Declined dates have no offerings to configure.
   const active =
-    participation && participation.status !== 'cancelled'
+    date.occurrence.status === 'scheduled' &&
+    participation &&
+    participation.status !== 'cancelled'
       ? participation
       : undefined;
   return (
     <>
+      {date.occurrence.status === 'cancelled' && (
+        <Alert severity="info">
+          {state.membership.market.ownerVendorId
+            ? 'You cancelled this market date.'
+            : 'The market cancelled this date. Your booth assignment and invoices are cancelled. No payment is due.'}
+        </Alert>
+      )}
+      <div className="ui-actions">
+        <FarmstandLink
+          href={`/vendor/day/${date.occurrence.id}`}
+          onClick={navigate}
+        >
+          Open Market Day
+        </FarmstandLink>
+        <FarmstandLink
+          href={`/vendor/markets/${state.membership.id}/dates/${date.occurrence.id}/preparation`}
+          onClick={navigate}
+        >
+          Market preparation
+        </FarmstandLink>
+      </div>
       <header className="application-detail-heading">
         <div className="market-detail-title">
           <h1>
@@ -195,6 +219,15 @@ function OccurrenceContent({
           </p>
         </div>
       </header>
+      {state.membership.market.ownerVendorId &&
+        service.managedMarkets &&
+        can && (
+          <EditVendorMarketDate
+            api={service.managedMarkets}
+            occurrence={date.occurrence}
+            refresh={refresh}
+          />
+        )}
       <FarmstandPanel
         as="section"
         aria-label="Market date overview"
@@ -208,14 +241,20 @@ function OccurrenceContent({
             {marketTime(date.occurrence)}
           </Fact>
           <Fact icon={{ farmstand: 'store' }} label="Your booth">
-            {date.booth
-              ? `Booth ${date.booth}`
-              : detail.boothsAvailable
-                ? 'Not assigned'
-                : 'Unavailable'}
+            {state.membership.market.ownerVendorId
+              ? 'Not required'
+              : date.booth
+                ? `Booth ${date.booth}`
+                : detail.boothsAvailable
+                  ? 'Not assigned'
+                  : 'Unavailable'}
           </Fact>
           <Fact icon={{ farmstand: 'user-round' }} label="Attendance">
-            <AttendanceBadge value={attendance} />
+            {date.occurrence.status === 'cancelled' ? (
+              'Cancelled'
+            ) : (
+              <AttendanceBadge value={attendance} />
+            )}
           </Fact>
         </dl>
       </FarmstandPanel>
@@ -229,7 +268,7 @@ function OccurrenceContent({
         <div className="application-detail-main">
           <Panel icon={{ farmstand: 'circle-check' }} title="Attendance">
             <div className="market-occurrence-attendance">
-              {can ? (
+              {can && !state.membership.market.ownerVendorId ? (
                 <div
                   className="market-occurrence-choices"
                   role="group"
@@ -261,9 +300,11 @@ function OccurrenceContent({
                 </div>
               ) : (
                 <p className="markets-muted">
-                  {date.occurrence.status === 'scheduled'
-                    ? 'Your account can view this date but not change attendance.'
-                    : 'This market date is no longer scheduled.'}
+                  {state.membership.market.ownerVendorId
+                    ? 'You automatically attend your own scheduled market dates.'
+                    : date.occurrence.status === 'scheduled'
+                      ? 'Your account can view this date but not change attendance.'
+                      : 'This market date is no longer scheduled.'}
                 </p>
               )}
               <Field
@@ -323,11 +364,13 @@ function OccurrenceContent({
               )}
             </dl>
           </Panel>
-          <BoothAssignment
-            marketName={state.membership.market.name}
-            assignment={nextBooth}
-            available={detail.boothsAvailable}
-          />
+          {!state.membership.market.ownerVendorId && (
+            <BoothAssignment
+              marketName={state.membership.market.name}
+              assignment={nextBooth}
+              available={detail.boothsAvailable}
+            />
+          )}
         </aside>
       </div>
       <PreorderingPanel
@@ -338,7 +381,7 @@ function OccurrenceContent({
         participations={active ? [active] : []}
         scope={{
           lead: active
-            ? 'Choose which approved products customers can preorder on this date. These switches change this market date only; your other dates keep their own settings.'
+            ? `Choose which ${state.membership.market.ownerVendorId ? '' : 'approved '}products customers can preorder on this date. These switches change this market date only; your other dates keep their own settings.`
             : 'Mark yourself attending or tentative to choose products for this date.',
           noDates: 'Mark yourself attending or tentative for this date first',
         }}

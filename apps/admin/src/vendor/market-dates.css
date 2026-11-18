@@ -2,17 +2,6 @@
 .markets-summary.market-dates-summary {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-.markets-stat-danger {
-  --markets-stat-color: var(--status-danger-fg);
-  --markets-stat-background: var(--status-danger-bg);
-}
-.markets-stat.markets-stat-danger .markets-stat-icon {
-  color: var(--markets-stat-color);
-  background: var(--markets-stat-background);
-}
-.markets-stat.markets-stat-danger dd {
-  color: var(--markets-stat-color);
-}
 .markets-filters.market-dates-filters {
   grid-template-columns: minmax(160px, 1fr) repeat(3, minmax(130px, 150px));
 }
@@ -67,4 +56,19 @@
   .markets-filters.market-dates-filters > :first-child {
     grid-column: 1 / -1;
   }
+}
+
+.market-date-booth-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: end;
+  gap: 6px;
+}
+.market-date-details .market-application-facts > div {
+  align-items: center;
+}
+.market-date-details .market-application-facts dd {
+  margin: 0;
+  align-self: center;
 }

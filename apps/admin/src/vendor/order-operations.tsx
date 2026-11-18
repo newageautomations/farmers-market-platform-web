@@ -5,6 +5,7 @@ import { FarmstandTable } from '@market/ui/farmstand';
 import type { OrderView, VendorService } from './service';
 import { CommandForm, TextField, Unavailable, integer } from './common';
 import { OrderStatus } from './OrderStatus';
+import { usePhoneRecords } from '../market/mobile';
 
 export function OrderOperations({
   service,
@@ -17,6 +18,7 @@ export function OrderOperations({
   view: OrderView;
   refresh: () => void;
 }) {
+  const records = usePhoneRecords();
   const query = { data: view, refresh };
   const canFulfill = mayCommand(service.context, 'FulfillOwnOrders');
   const canCancel = mayCommand(service.context, 'CancelOwnOrders');
@@ -110,6 +112,7 @@ export function OrderOperations({
         })}
       <FarmstandTable
         label="Existing fulfillments"
+        recordDetails={records({ status: 1, action: 3 })}
         headings={['Fulfillment', 'State', 'Lines', 'Actions']}
       >
         {query.data.portion.fulfillments.map((f) => (

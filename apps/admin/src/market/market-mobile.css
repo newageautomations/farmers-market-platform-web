@@ -1,0 +1,1094 @@
+/*
+ * Market Manager and Vendor phone and tablet presentation.
+ *
+ * Scope: every rule is under `:is(.market-dashboard, .vendor-admin)` (the
+ * Market Manager and Vendor shell roots; `:is()` keeps single-class
+ * specificity) and a width query, so desktop and the customer and platform
+ * dashboards are untouched. Vendor-only deviations live in
+ * `vendor/vendor-mobile.css`, loaded after this file. Two tiers, matching
+ * `MARKET_COMPACT_QUERY`:
+ *   compact  <= 1200px  phones and tablets up to iPad landscape
+ *   phone    <= 767px   the shell's hamburger-navigation breakpoint
+ * Layout inside a workspace follows the workspace container width, because a
+ * tablet with the sidebar open has less room than its viewport suggests.
+ * The layout and website editors are deliberately not styled here.
+ */
+
+/* Desktop shows a compact action's label alone. */
+.compact-action-icon {
+  display: none;
+}
+
+@media (max-width: 1200px) {
+  /* ---- Icon-only actions ------------------------------------------------ */
+  :is(.market-dashboard, .vendor-admin) .compact-action-icon {
+    display: inline-flex;
+  }
+  :is(.market-dashboard, .vendor-admin) .compact-action-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  :is(.market-dashboard, .vendor-admin) .compact-action-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    :is(.button, .farmstand-text-action):has(> .compact-action-label) {
+    position: relative;
+    flex: none;
+    justify-content: center;
+    gap: 0;
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+    min-height: 38px;
+    padding: 0;
+  }
+
+  /* ---- Selected-record sheet -------------------------------------------- */
+  :is(.market-dashboard, .vendor-admin)
+    dialog.ui-dialog:is(.market-detail-sheet, .ui-record-sheet) {
+    width: min(440px, 100vw);
+    max-width: 100vw;
+    padding: 18px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    :is(.market-detail-sheet, .ui-record-sheet)
+    .ui-dialog-header {
+    align-items: center;
+    margin-block-end: 12px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    dialog:is(.market-detail-sheet, .ui-record-sheet)
+    .ui-dialog-header
+    > h2 {
+    font-size: 18px;
+    letter-spacing: -0.3px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .market-detail-sheet
+    > .farmstand-panel.card.ui-card {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    animation: none;
+  }
+  /* The dialog title replaces the panel's own heading. */
+  :is(.market-dashboard, .vendor-admin)
+    .market-detail-sheet
+    > .markets-next
+    > h2 {
+    display: none;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .market-detail-sheet
+    .markets-next-content {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .market-detail-sheet
+    .markets-next-content
+    > * {
+    grid-column: 1 / -1;
+  }
+
+  /* ---- Summary cards ---------------------------------------------------- */
+  :is(.market-dashboard, .vendor-admin) .markets-summary.ui-kpi-grid {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .markets-stat.farmstand-panel.card.ui-card {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 2px 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-stat .markets-stat-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .markets-stat
+    .markets-stat-icon
+    .farmstand-icon {
+    width: 19px;
+    height: 19px;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-stat dl {
+    min-width: 0;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-stat dt {
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-stat dd {
+    margin: 1px 0 0;
+    font-size: 21px;
+    line-height: 1.15;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-stat > p {
+    overflow: hidden;
+    margin: 2px 0 0;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ---- List and its detail panel ---------------------------------------- */
+  /* The detail panel opens in the sheet, so the list takes the full width. */
+  :is(.market-dashboard, .vendor-admin) .markets-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-filters {
+    margin-bottom: 14px;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-filters .farmstand-search {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  @container (max-width: 760px) {
+    :is(.market-dashboard, .vendor-admin) .markets-stat .markets-stat-icon {
+      display: none;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      .markets-stat.farmstand-panel.card.ui-card {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* Rows become cards once the table can no longer show its columns. The
+     Vendor Orders and Pickup tables (`.orders-table-panel`, `.pickup-queue`)
+     share the treatment. */
+  @container (max-width: 640px) {
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      .table-scroll {
+      overflow: visible;
+      border: 0;
+      border-radius: 0;
+      background: none;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      table.farmstand-data-table {
+      display: block;
+      width: 100%;
+      /* Page rules give their tables a wide minimum for desktop columns. */
+      min-width: 0 !important;
+      border: 0;
+      background: none;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      .farmstand-data-table
+      thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      .farmstand-data-table
+      tbody {
+      display: grid;
+      gap: 8px;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      .farmstand-data-table
+      tbody
+      > tr {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+      height: auto;
+      min-height: 0;
+      padding: 12px;
+      border: 1px solid var(--markets-border);
+      border-radius: 12px;
+      background: var(--brand-surface);
+    }
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      .farmstand-data-table
+      tbody
+      > tr.market-application-selected {
+      border-color: color-mix(
+        in srgb,
+        var(--brand-primary) 38%,
+        var(--brand-surface)
+      );
+      background: var(--markets-soft);
+    }
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      .farmstand-data-table
+      tbody
+      > tr
+      > * {
+      display: block;
+      order: 2;
+      width: auto;
+      min-width: 0;
+      height: auto;
+      padding: 0;
+      font-size: 13px;
+      border: 0;
+      background: none;
+      text-align: left;
+    }
+    /* Line one: the row's name, with its action beside it. */
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      .farmstand-data-table
+      tbody
+      > tr
+      > :first-child {
+      order: 0;
+      flex: 1 1 0;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      .farmstand-data-table
+      tbody
+      > tr
+      > td:has(> :is(.button, .farmstand-text-action, .markets-row-actions)) {
+      order: 1;
+      flex: none;
+      margin-left: auto;
+    }
+    /* Everything else starts on the next line. */
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      .farmstand-data-table
+      tbody
+      > tr::after {
+      content: '';
+      order: 1;
+      flex: 0 0 100%;
+      height: 0;
+      margin-top: -8px;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      .markets-identity,
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      .markets-date {
+      min-width: 0;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      :is(.markets-list, .orders-table-panel, .pickup-queue)
+      .farmstand-data-table
+      td:empty {
+      display: none;
+    }
+  }
+}
+
+/* Tablet and wider phones keep the hint on one line; small phones drop it. */
+@media (max-width: 767px) {
+  /* ---- Shell content ---------------------------------------------------- */
+  :is(.market-dashboard, .vendor-admin)
+    .admin-content:has(.markets-workspace, .application-detail) {
+    width: calc(100% - 1.5rem);
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-workspace {
+    gap: 12px;
+  }
+
+  /* ---- Workspace heading ------------------------------------------------ */
+  :is(.market-dashboard, .vendor-admin) .markets-heading {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 0 2px;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-heading > .farmstand-icon {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-heading h1 {
+    font-size: 21px;
+    letter-spacing: -0.5px;
+  }
+  /* The static page description gives way to the page itself. */
+  :is(.market-dashboard, .vendor-admin) .markets-heading > div > h1 + p {
+    display: none;
+  }
+  /* Actions get their own evenly divided row under the title... */
+  :is(.market-dashboard, .vendor-admin) .markets-heading > :nth-child(3) {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+  }
+  /* ...except one icon action, which joins the title row as an icon button. */
+  :is(.market-dashboard, .vendor-admin)
+    .markets-heading
+    > :nth-child(3):has(> :is(button, a).button:only-child > .farmstand-icon) {
+    grid-column: 3;
+    display: flex;
+    justify-content: flex-end;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .markets-heading
+    > :nth-child(3)
+    > :is(button, a).button:only-child:has(> .farmstand-icon) {
+    flex: none;
+    justify-content: center;
+    gap: 0;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    font-size: 0;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .markets-heading
+    > :nth-child(3)
+    > :is(button, a).button:only-child
+    > .farmstand-icon {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .markets-heading
+    > :nth-child(3)
+    > :is(button, a).button:not(:only-child) {
+    justify-content: center;
+    min-width: 0;
+    padding-inline: 10px;
+    overflow: hidden;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-heading > :nth-child(3) .field,
+  :is(.market-dashboard, .vendor-admin)
+    .markets-heading
+    > :nth-child(3)
+    .farmstand-select-wrap,
+  :is(.market-dashboard, .vendor-admin)
+    .markets-heading
+    > :nth-child(3)
+    select {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+  }
+
+  /* ---- Summary cards: two compact tiles per row ------------------------- */
+  :is(.market-dashboard, .vendor-admin) .markets-summary.ui-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+    gap: 8px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .markets-summary.ui-kpi-grid:has(> :nth-child(3):last-child) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .markets-stat.farmstand-panel.card.ui-card {
+    padding: 9px 12px;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-stat dd {
+    font-size: 19px;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-stat > p {
+    display: none;
+  }
+  /* Three tiles are narrow: let a long label take a second line. */
+  :is(.market-dashboard, .vendor-admin)
+    .markets-summary.ui-kpi-grid:has(> :nth-child(3):last-child)
+    .markets-stat
+    dt {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 11.5px;
+    white-space: normal;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .markets-summary.ui-kpi-grid:has(> :nth-child(3):last-child)
+    .markets-stat.farmstand-panel.card.ui-card {
+    align-content: space-between;
+    padding: 9px 10px;
+  }
+
+  /* ---- Workspace tabs --------------------------------------------------- */
+  :is(.market-dashboard, .vendor-admin) .workspace-menu:is(nav, .ui-tabs) {
+    gap: 4px;
+    padding: 3px;
+  }
+  :is(.market-dashboard, .vendor-admin) .workspace-menu :is(a, [role='tab']) {
+    min-width: 0;
+    min-height: 40px;
+    gap: 6px;
+    padding: 6px 4px;
+    font-size: 12.5px;
+    line-height: 1.25;
+    text-align: center;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .workspace-menu
+    :is(a, [role='tab'])
+    :is(svg, .farmstand-icon) {
+    width: 17px;
+    height: 17px;
+  }
+  /* Four or five tabs share one row with the icon above its label; more
+     than that wrap three to a row. */
+  :is(.market-dashboard, .vendor-admin) .workspace-menu:has(> :nth-child(4)) {
+    display: flex;
+  }
+  :is(.market-dashboard, .vendor-admin) .workspace-menu:has(> :nth-child(6)) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .workspace-menu:has(> :nth-child(4))
+    > :is(a, [role='tab']) {
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 11px;
+  }
+
+  /* ---- Empty states ----------------------------------------------------- */
+  :is(.market-dashboard, .vendor-admin) .markets-workspace .empty-state {
+    padding-block: 12px;
+    min-height: 0;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .markets-workspace
+    .empty-state
+    :is(h2, h3) {
+    margin: 0 0 4px;
+    font-size: 16px;
+    letter-spacing: -0.2px;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-workspace .empty-state p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  :is(.market-dashboard, .vendor-admin) .markets-next > .empty-state {
+    padding-inline: 14px;
+  }
+
+  /* ---- Lists ------------------------------------------------------------ */
+  :is(.market-dashboard, .vendor-admin)
+    .markets-list.farmstand-panel.card.ui-card {
+    padding: 12px;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-list h2 {
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+  /* ---- Sheet rises from the bottom edge --------------------------------- */
+  :is(.market-dashboard, .vendor-admin)
+    dialog.ui-dialog:is(.market-detail-sheet, .ui-record-sheet) {
+    inset: auto 0 0;
+    width: 100vw;
+    height: auto;
+    max-height: 88dvh;
+    padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
+    border-width: 1px 0 0;
+    border-radius: 18px 18px 0 0;
+    animation-name: market-sheet-enter;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    dialog.ui-dialog:is(.market-detail-sheet, .ui-record-sheet).is-closing {
+    animation-name: market-sheet-exit;
+  }
+}
+
+@keyframes market-sheet-enter {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes market-sheet-exit {
+  from {
+    transform: none;
+    opacity: 1;
+  }
+  to {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.market-dashboard, .vendor-admin)
+    dialog.ui-dialog:is(.market-detail-sheet, .ui-record-sheet),
+  :is(.market-dashboard, .vendor-admin)
+    dialog.ui-dialog:is(.market-detail-sheet, .ui-record-sheet).is-closing {
+    animation: none;
+  }
+}
+
+/* ---- Overview ----------------------------------------------------------- */
+@media (max-width: 1200px) {
+  /* One column: sections take their content's height instead of fixed grid
+     rows, so an empty section no longer fills the screen. Charts keep their
+     cell, which they size themselves from. */
+  @container (max-width: 600px) {
+    :is(.market-dashboard, .vendor-admin) .vendor-dashboard-grid {
+      grid-auto-rows: auto;
+      gap: 12px;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      .vendor-dashboard-widget:not(:has(.finance-donut)) {
+      grid-row: auto;
+      container-type: inline-size;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      .vendor-dashboard-widget:not(:has(.finance-donut))
+      > :is(.farmstand-panel.card.ui-card, section) {
+      height: auto;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      .vendor-dashboard-widget:has(.finance-donut) {
+      grid-row: span 2;
+      min-height: 300px;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      .vendor-dashboard-widget
+      :is(
+        .vendor-dashboard-tasks,
+        .vendor-dashboard-products-list,
+        .vendor-dashboard-orders-scroll
+      ) {
+      max-height: 320px;
+    }
+    :is(.market-dashboard, .vendor-admin) .vendor-dashboard-stack {
+      gap: 12px;
+    }
+  }
+}
+
+/* ---- Read-only booth maps (never the layout editor) --------------------- */
+@media (max-width: 1200px) {
+  /* One toolbar row: zoom out, level, zoom in, fit, reset, then the area. */
+  :is(.market-dashboard, .vendor-admin) .map-read-surface .map-navigation {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .map-read-surface
+    .map-navigation
+    > output {
+    min-width: 2.6rem;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .map-read-surface
+    .map-navigation
+    > button {
+    flex: none;
+  }
+  /* "Fit map" and "Reset zoom" become their icons; the names stay readable
+     to assistive technology. */
+  :is(.market-dashboard, .vendor-admin)
+    .map-read-surface
+    .map-navigation
+    > button:nth-of-type(n + 3) {
+    width: 32px;
+    min-width: 32px;
+    padding: 0;
+    font-size: 0;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .map-read-surface
+    .map-navigation
+    > button:nth-of-type(n + 3)::before {
+    content: '';
+    width: 16px;
+    height: 16px;
+    background: currentColor;
+    mask: var(--map-action-icon) center / contain no-repeat;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .map-read-surface
+    .map-navigation
+    > button:nth-of-type(3) {
+    --map-action-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 3H3v6M15 3h6v6M3 15v6h6M21 15v6h-6'/%3E%3C/svg%3E");
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .map-read-surface
+    .map-navigation
+    > button:nth-of-type(4) {
+    --map-action-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3'/%3E%3C/svg%3E");
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .map-read-surface
+    .map-navigation
+    > div:last-child {
+    flex: 1 1 96px;
+    min-width: 96px;
+    max-width: 190px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .map-read-surface
+    .map-navigation
+    > div:last-child
+    select {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ---- Panels on a phone -------------------------------------------------- */
+@media (max-width: 767px) {
+  :is(.market-dashboard, .vendor-admin)
+    .settings-panel.farmstand-panel.card.ui-card {
+    padding: 14px;
+  }
+  :is(.market-dashboard, .vendor-admin) .settings-panel-heading {
+    gap: 10px 12px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .settings-panel-heading
+    > .markets-stat-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .settings-panel-heading
+    > .markets-stat-icon
+    .farmstand-icon {
+    width: 19px;
+    height: 19px;
+  }
+  :is(.market-dashboard, .vendor-admin) .settings-panel-heading h2 {
+    font-size: 17px;
+  }
+  :is(.market-dashboard, .vendor-admin) .settings-panel-heading p {
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+  :is(.market-dashboard, .vendor-admin) .settings-panel-actions,
+  :is(.market-dashboard, .vendor-admin) .occurrence-map-actions,
+  :is(.market-dashboard, .vendor-admin) .occurrence-layout-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  /* A card inside a panel reads as a second frame on a narrow screen. */
+  :is(.market-dashboard, .vendor-admin) .settings-panel .ops-map,
+  :is(.market-dashboard, .vendor-admin)
+    .settings-panel
+    .markets-list.farmstand-panel.card.ui-card,
+  :is(.market-dashboard, .vendor-admin) .application-detail .ops-map,
+  :is(.market-dashboard, .vendor-admin) .markets-list .ops-map {
+    margin: 12px 0 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+}
+
+/* ---- Narrow workspaces: phones, and tablets with the sidebar open -------- */
+@media (max-width: 1200px) {
+  :is(.market-dashboard, .vendor-admin) .map-read-surface .ops-canvas {
+    height: clamp(300px, 46vh, 520px);
+  }
+
+  @container (max-width: 760px) {
+    /* Four tiles in a row: labels may wrap, and the hint line gives way. */
+    :is(.market-dashboard, .vendor-admin) .markets-stat dt {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      white-space: normal;
+    }
+    :is(.market-dashboard, .vendor-admin) .markets-stat > p {
+      display: none;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      .markets-stat.farmstand-panel.card.ui-card {
+      align-content: space-between;
+    }
+  }
+
+  @container (max-width: 640px) {
+    :is(.market-dashboard, .vendor-admin) .settings-panel-heading {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 10px 12px;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      .settings-panel-heading
+      > .settings-panel-actions {
+      grid-column: 1 / -1;
+      justify-content: flex-start;
+      margin: 0;
+    }
+    /* One icon action stays beside the panel title. */
+    :is(.market-dashboard, .vendor-admin)
+      .settings-panel-heading
+      > .settings-panel-actions:has(
+        > :is(.button, .ui-tooltip-anchor):only-child
+          > :is(.compact-action-label, .button-icon),
+        > .button-icon:only-child
+      ) {
+      grid-column: 3;
+    }
+
+    /* Search on its own row, then filters two to a row. */
+    :is(.market-dashboard, .vendor-admin)
+      .markets-workspace
+      .markets-filters.markets-filters {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      .markets-workspace
+      .markets-filters.markets-filters
+      > * {
+      grid-column: auto;
+      width: auto;
+      min-width: 0;
+      max-width: none;
+      margin: 0;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      .markets-workspace
+      .markets-filters.markets-filters
+      > :is(:first-child, :nth-child(2):last-child, :nth-child(4):last-child) {
+      grid-column: 1 / -1;
+    }
+    :is(.market-dashboard, .vendor-admin)
+      .markets-filters
+      :is(.farmstand-select-wrap, select) {
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+    }
+    :is(.market-dashboard, .vendor-admin) .markets-pagination-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 12px;
+      font-size: 12px;
+    }
+    :is(.market-dashboard, .vendor-admin) .markets-pagination-footer > nav {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
+    }
+  }
+}
+@media (max-width: 767px) {
+  /* The map captures touch gestures, so leave room to scroll past it. */
+  :is(.market-dashboard, .vendor-admin) .map-read-surface .ops-canvas {
+    height: clamp(240px, 44vh, 380px);
+  }
+}
+/* Layout library thumbnails keep their own fixed preview height. */
+@media (max-width: 1200px) {
+  :is(.market-dashboard, .vendor-admin)
+    .layout-card-preview
+    .map-read-surface
+    .ops-canvas {
+    height: 200px;
+    min-height: 200px;
+  }
+}
+@media (max-width: 767px) {
+  :is(.market-dashboard, .vendor-admin)
+    .layout-card-preview
+    .map-read-surface
+    .ops-canvas {
+    height: 150px;
+    min-height: 150px;
+  }
+  :is(.market-dashboard, .vendor-admin) .layout-card-grid {
+    gap: 12px;
+    padding: 0 12px 12px;
+  }
+  :is(.market-dashboard, .vendor-admin) .layout-card-info {
+    padding: 10px 12px;
+  }
+  :is(.market-dashboard, .vendor-admin) .layout-card-actions {
+    padding: 0 12px 12px;
+  }
+}
+
+/* ---- Notifications on a phone ------------------------------------------- */
+@media (max-width: 767px) {
+  /* Two lines of the message; opening the notification shows all of it. */
+  :is(.market-dashboard, .vendor-admin) .notification-row .notification-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+  /* The row's "Actions" menu becomes a more button. */
+  :is(.market-dashboard, .vendor-admin)
+    .notification-mobile-actions
+    > details
+    > summary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    font-size: 0;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .notification-mobile-actions
+    > details
+    > summary::after {
+    display: none;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .notification-mobile-actions
+    > details
+    > summary::before {
+    content: '';
+    width: 18px;
+    height: 18px;
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M5 12h.01M12 12h.01M19 12h.01'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+  /* Bulk actions stay on one row and scroll sideways if they must. */
+  :is(.market-dashboard, .vendor-admin) .notification-bulk-actions {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  :is(.market-dashboard, .vendor-admin) .notification-bulk-actions > * {
+    flex: none;
+  }
+}
+
+/* ---- Record pages (a market date, a vendor, a submission) on a phone ----- */
+@media (max-width: 767px) {
+  :is(.market-dashboard, .vendor-admin) .application-detail {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+  }
+  :is(.market-dashboard, .vendor-admin) .application-detail > * {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  /* "Back to ..." becomes a back arrow beside whatever follows it. */
+  :is(.market-dashboard, .vendor-admin)
+    .application-detail
+    > .application-detail-back {
+    grid-column: 1;
+    align-self: start;
+    justify-content: center;
+    gap: 0;
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+    min-height: 38px;
+    padding: 0;
+    font-size: 0;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .application-detail
+    > .application-detail-back
+    + * {
+    grid-column: 2;
+    align-self: center;
+    min-height: 38px;
+  }
+  :is(.market-dashboard, .vendor-admin) .application-detail-heading {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+  }
+  :is(.market-dashboard, .vendor-admin) .application-detail-heading h1 {
+    font-size: 22px;
+    line-height: 1.2;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .application-detail
+    .occurrence-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .application-detail
+    .occurrence-detail-actions
+    > .button:not(:has(> .compact-action-label)) {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding-inline: 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .application-detail
+    .occurrence-detail-lead {
+    margin: 0;
+    font-size: 12.5px;
+  }
+  /* Overview facts sit two to a row instead of one long column. */
+  :is(.market-dashboard, .vendor-admin) .application-detail-overview {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+  :is(.market-dashboard, .vendor-admin) .application-detail-overview > dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 14px;
+    margin: 0;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .application-detail-overview
+    > dl
+    > div {
+    padding: 0;
+    border: 0;
+  }
+  /* Short facts keep the value beside its label; long values wrap below. */
+  :is(.market-dashboard, .vendor-admin) .application-detail-summary > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px 12px;
+  }
+  :is(.market-dashboard, .vendor-admin) .application-detail-summary > div > dd {
+    margin: 0;
+    align-self: center;
+    text-align: right;
+  }
+  :is(.market-dashboard, .vendor-admin) .application-detail-panel-header {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+  :is(.market-dashboard, .vendor-admin) .application-detail .ui-status {
+    white-space: nowrap;
+  }
+}
+
+/* ---- Small fixes shared by phones and tablets --------------------------- */
+@media (max-width: 1200px) {
+  /* Status pills never break mid-word. */
+  :is(.market-dashboard, .vendor-admin) .markets-workspace .ui-status {
+    white-space: nowrap;
+  }
+  :is(.market-dashboard, .vendor-admin) .markets-next > .empty-state {
+    padding-inline: 14px;
+  }
+}
+@media (max-width: 767px) {
+  /* Narrow tables: headings wrap between words, never inside one. */
+  :is(.market-dashboard, .vendor-admin)
+    .markets-workspace
+    .farmstand-data-table
+    th {
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+    font-size: 11.5px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .markets-workspace
+    .farmstand-data-table
+    :is(th, td) {
+    padding-inline: 8px;
+  }
+  /* Market Day attendance: title and its actions share one row. */
+  :is(.market-dashboard, .vendor-admin) .market-day-list-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  :is(.market-dashboard, .vendor-admin) .market-day-list-heading > h2 {
+    margin: 0;
+  }
+  :is(.market-dashboard, .vendor-admin) .market-day-list-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+  /* Booth invoices: the due date and Issue invoices share a row. */
+  :is(.market-dashboard, .vendor-admin) .markets-list .ui-control-row-lookup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 8px;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .markets-list
+    .ui-control-row-lookup
+    > .field {
+    min-width: 0;
+    margin: 0;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .markets-list
+    .ui-control-row-lookup
+    input {
+    width: 100%;
+    min-width: 0;
+  }
+  :is(.market-dashboard, .vendor-admin)
+    .application-detail-overview
+    > dl
+    > div {
+    align-content: start;
+  }
+}

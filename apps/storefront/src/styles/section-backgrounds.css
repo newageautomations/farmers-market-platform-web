@@ -1,0 +1,31 @@
+/* Background extent is independent of the selected theme color. */
+section[data-background-type='full'] {
+  position: relative;
+  isolation: isolate;
+  border-radius: 0 !important;
+}
+section[data-background-type='full']::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: inherit;
+  z-index: -1;
+  pointer-events: none;
+}
+section[data-background='surface'] {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+section[data-website-section='text'][data-background='paper'] {
+  background: var(--brand-background);
+}
+section[data-website-section='text'][data-background='surface'] {
+  background: var(--brand-surface);
+}
+section[data-website-section='text'][data-background='ink'] {
+  background: var(--brand-primary);
+  color: var(--brand-background);
+}

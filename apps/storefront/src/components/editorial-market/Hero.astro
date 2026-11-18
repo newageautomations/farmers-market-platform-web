@@ -1,0 +1,54 @@
+---
+import type { EditorialMarketSettings } from '@market/theme/storefront';
+import { safeAsset } from '@market/storefront-core';
+import Button from '../ui/Button.astro';
+
+/**
+ * The Editorial Market hero, shared by the vendor homepage, the market
+ * homepage and Market Day mode. Market Day passes fixed copy and `marketDay`,
+ * which switches the heading to the section heading typeface.
+ */
+interface Props {
+  settings: EditorialMarketSettings;
+  heading?: string;
+  introduction?: string;
+  action: { href: string; label: string; arrow?: string };
+  marketDay?: boolean;
+}
+const {
+  settings,
+  heading = settings.hero.heading,
+  introduction = settings.hero.introduction,
+  action,
+  marketDay = false,
+} = Astro.props;
+const desktopHero = safeAsset(settings.assets.desktopHero.url);
+const mobileHero = safeAsset(settings.assets.mobileHero.url);
+---
+
+<section
+  class="em-hero"
+  data-editor-section="editorial:hero"
+  data-market-day={marketDay ? 'true' : undefined}
+>
+  {(desktopHero || mobileHero) && (
+    <picture class="em-hero-art" aria-hidden="true">
+      {mobileHero && <source media="(max-width: 960px)" srcset={mobileHero} />}
+      <img
+        src={desktopHero ?? mobileHero}
+        alt=""
+        width="1680"
+        height="945"
+        fetchpriority="high"
+        decoding="async"
+      />
+    </picture>
+  )}
+  <div class="em-hero-copy">
+    <h1>{heading}</h1>
+    <p>{introduction}</p>
+    <Button href={action.href}>
+      {action.label} <span aria-hidden="true">{action.arrow ?? '→'}</span>
+    </Button>
+  </div>
+</section>

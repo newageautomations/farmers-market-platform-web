@@ -1,6 +1,7 @@
 import { buttonClassName } from '@market/ui/presentation';
 import { Select, Button, Input } from '@market/ui';
 import { useProductPurchase } from '../lib/use-product-purchase';
+import { AnimatedCartButton } from './AnimatedCartButton';
 import {
   type PublicProduct,
   type VendorPreorderAvailability,
@@ -19,6 +20,7 @@ export function ProductPurchase({
   priceFallback = '',
   preview = false,
   presentation = 'default',
+  market = false,
 }: {
   storefrontId: string;
   variants: PublicProduct['variants'];
@@ -31,6 +33,7 @@ export function ProductPurchase({
   priceFallback?: string;
   preview?: boolean;
   presentation?: 'default' | 'editorial-market';
+  market?: boolean;
 }) {
   const {
     variantId,
@@ -48,6 +51,7 @@ export function ProductPurchase({
     maximum,
     validQuantity,
     submit,
+    cartFeedback,
   } = useProductPurchase({
     storefrontId,
     variants,
@@ -59,6 +63,7 @@ export function ProductPurchase({
     priceTarget,
     priceFallback,
     preview,
+    market,
   });
   const editorial = presentation === 'editorial-market';
   return (
@@ -154,7 +159,9 @@ export function ProductPurchase({
           />
         )}
       </div>
-      <Button
+      <AnimatedCartButton
+        enabled={market}
+        feedback={cartFeedback}
         type="submit"
         variant="primary"
         className={editorial ? 'em-product-add' : undefined}
@@ -176,7 +183,7 @@ export function ProductPurchase({
               : preview
                 ? 'Preview only'
                 : 'Add to cart'}
-      </Button>
+      </AnimatedCartButton>
       {!eligible && (
         <p role="status">
           {!selected
@@ -188,8 +195,10 @@ export function ProductPurchase({
           <a
             href={
               occurrenceId
-                ? `/products?occurrence=${encodeURIComponent(occurrenceId)}`
-                : '/products'
+                ? `${market ? '/shop' : '/products'}?occurrence=${encodeURIComponent(occurrenceId)}`
+                : market
+                  ? '/shop'
+                  : '/products'
             }
           >
             Browse markets and products
@@ -217,6 +226,7 @@ export function ProductPurchase({
         }
         role="status"
         aria-live="polite"
+        hidden={market && !pending && !!message}
       >
         {pending ? 'Updating your cart…' : message}
         {message && (

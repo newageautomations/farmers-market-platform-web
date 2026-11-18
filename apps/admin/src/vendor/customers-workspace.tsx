@@ -29,6 +29,7 @@ import '@market/ui/farmstand.css';
 import './order-detail.css';
 import './orders.css';
 import './customers.css';
+import { DetailSheet, usePhoneRecords } from '../market/mobile';
 
 function navigate(event: MouseEvent<HTMLAnchorElement>) {
   if (
@@ -52,10 +53,13 @@ function orderDate(value: string) {
 }
 
 export function CustomersWorkspace({ service }: { service: VendorService }) {
+  const records = usePhoneRecords();
   const load = useCallback(() => readCustomersWorkspace(service), [service]);
   const query = useRead(`customers-workspace:${service.vendorId}`, load);
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
+  // Phones open a tapped customer's preview in a bottom sheet.
+  const [sheet, setSheet] = useState(false);
   const [filters, setFilters] = useState<CustomerFilters>({
     search: '',
     segment: 'all',
@@ -267,6 +271,15 @@ export function CustomersWorkspace({ service }: { service: VendorService }) {
               <FarmstandPanel className="customers-table-panel">
                 <FarmstandTable
                   label="Owned customer relationships"
+                  recordDetails={records({
+                    status: 2,
+                    onOpen: (index) => {
+                      const row = shown[index];
+                      if (!row) return;
+                      setSelected(row.id);
+                      setSheet(true);
+                    },
+                  })}
                   headings={['Customer', 'Orders', 'Total spent', 'Last order']}
                 >
                   {shown.map((row) => {
@@ -353,145 +366,154 @@ export function CustomersWorkspace({ service }: { service: VendorService }) {
                 />
               </FarmstandPanel>
               {showDetails ? (
-                <FarmstandPanel
-                  as="section"
-                  id="customer-preview"
-                  className="customers-preview"
-                  aria-label={`${customerName(customer)} details`}
+                <DetailSheet
+                  phoneOnly
+                  title={customerName(customer)}
+                  open={sheet}
+                  onClose={() => setSheet(false)}
                 >
-                  <div className="customers-identity">
-                    <span className="customers-avatar">
-                      <FarmstandIcon name="user-round" />
-                    </span>
-                    <div>
-                      <h2>{customerName(customer)}</h2>
-                      <p>
-                        <UtilityIcon name="email" />
-                        {customer.emailAddress || 'Email unavailable'}
-                      </p>
-                    </div>
-                  </div>
-                  <FarmstandPanel className="customers-facts-panel">
-                    <h3>Customer details</h3>
-                    <dl className="customers-facts">
-                      <div>
-                        <dt>
-                          <FarmstandIcon name="user-round" />
-                          Name
-                        </dt>
-                        <dd>{customerName(customer)}</dd>
-                      </div>
-                      <div>
-                        <dt>
-                          <UtilityIcon name="email" />
-                          Email
-                        </dt>
-                        <dd>{customer.emailAddress || 'Unavailable'}</dd>
-                      </div>
-                      <div>
-                        <dt>
-                          <FarmstandIcon name="shopping-cart" />
-                          Purchases
-                        </dt>
-                        <dd>
-                          {customer.purchaseCount}{' '}
-                          {customer.purchaseCount === 1 ? 'order' : 'orders'}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>
-                          <FarmstandIcon name="layers" />
-                          Total spent
-                        </dt>
-                        <dd>
-                          <strong>{customerSpend(customer)}</strong>
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>
-                          <UtilityIcon name="trophy" />
-                          Loyalty points
-                        </dt>
-                        <dd>
-                          <span title="The current loyalty API does not link wallet balances to CRM customer records.">
-                            Unavailable
-                          </span>
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>
-                          <FarmstandIcon name="calendar-days" />
-                          Last order
-                        </dt>
-                        <dd>
-                          {latest
-                            ? orderDate(latest.purchasedAt)
-                            : previews.loading
-                              ? 'Loading…'
-                              : preview?.error
-                                ? 'Unavailable'
-                                : 'No orders'}
-                        </dd>
-                      </div>
-                    </dl>
-                  </FarmstandPanel>
-                  <FarmstandLink
-                    variant="primary"
-                    href={destination}
-                    onClick={navigate}
-                    className="customers-history-link"
+                  <FarmstandPanel
+                    as="section"
+                    id="customer-preview"
+                    className="customers-preview"
+                    aria-label={`${customerName(customer)} details`}
                   >
-                    <FarmstandIcon name="receipt-text" />
-                    View Purchase History
-                  </FarmstandLink>
-                  <FarmstandPanel className="customers-recent-panel">
-                    <div className="customers-recent-heading">
-                      <h3>Recent orders</h3>
-                      <FarmstandLink
-                        appearance="text"
-                        href={destination}
-                        onClick={navigate}
-                      >
-                        <span className="farmstand-text-link">View All</span>
-                      </FarmstandLink>
+                    <div className="customers-identity">
+                      <span className="customers-avatar">
+                        <FarmstandIcon name="user-round" />
+                      </span>
+                      <div>
+                        <h2>{customerName(customer)}</h2>
+                        <p>
+                          <UtilityIcon name="email" />
+                          {customer.emailAddress || 'Email unavailable'}
+                        </p>
+                      </div>
                     </div>
-                    <ReadState
-                      loading={previews.loading}
-                      error={preview?.error}
-                      retry={previews.refresh}
-                    />
-                    {preview?.items?.length ? (
-                      <ul className="customers-recent-orders">
-                        {preview.items.map((order) => (
-                          <li key={order.operationalOrderId}>
-                            <span className="customers-order-icon">
-                              <FarmstandIcon name="package" />
+                    <FarmstandPanel className="customers-facts-panel">
+                      <h3>Customer details</h3>
+                      <dl className="customers-facts">
+                        <div>
+                          <dt>
+                            <FarmstandIcon name="user-round" />
+                            Name
+                          </dt>
+                          <dd>{customerName(customer)}</dd>
+                        </div>
+                        <div>
+                          <dt>
+                            <UtilityIcon name="email" />
+                            Email
+                          </dt>
+                          <dd>{customer.emailAddress || 'Unavailable'}</dd>
+                        </div>
+                        <div>
+                          <dt>
+                            <FarmstandIcon name="shopping-cart" />
+                            Purchases
+                          </dt>
+                          <dd>
+                            {customer.purchaseCount}{' '}
+                            {customer.purchaseCount === 1 ? 'order' : 'orders'}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>
+                            <FarmstandIcon name="layers" />
+                            Total spent
+                          </dt>
+                          <dd>
+                            <strong>{customerSpend(customer)}</strong>
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>
+                            <UtilityIcon name="trophy" />
+                            Loyalty points
+                          </dt>
+                          <dd>
+                            <span title="The current loyalty API does not link wallet balances to CRM customer records.">
+                              Unavailable
                             </span>
-                            <div>
-                              <strong>#{order.operationalOrderId}</strong>
-                              <small>
-                                {orderDate(order.purchasedAt)} ·{' '}
-                                {order.lines.reduce(
-                                  (total, line) => total + line.quantity,
-                                  0,
-                                )}{' '}
-                                items
-                              </small>
-                            </div>
-                            <Badge tone="success">
-                              {formatMoney(order.original, order.currency)}
-                            </Badge>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      !previews.loading &&
-                      !preview?.error && (
-                        <p className="customers-no-orders">No recent orders.</p>
-                      )
-                    )}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>
+                            <FarmstandIcon name="calendar-days" />
+                            Last order
+                          </dt>
+                          <dd>
+                            {latest
+                              ? orderDate(latest.purchasedAt)
+                              : previews.loading
+                                ? 'Loading…'
+                                : preview?.error
+                                  ? 'Unavailable'
+                                  : 'No orders'}
+                          </dd>
+                        </div>
+                      </dl>
+                    </FarmstandPanel>
+                    <FarmstandLink
+                      variant="primary"
+                      href={destination}
+                      onClick={navigate}
+                      className="customers-history-link"
+                    >
+                      <FarmstandIcon name="receipt-text" />
+                      View Purchase History
+                    </FarmstandLink>
+                    <FarmstandPanel className="customers-recent-panel">
+                      <div className="customers-recent-heading">
+                        <h3>Recent orders</h3>
+                        <FarmstandLink
+                          appearance="text"
+                          href={destination}
+                          onClick={navigate}
+                        >
+                          <span className="farmstand-text-link">View All</span>
+                        </FarmstandLink>
+                      </div>
+                      <ReadState
+                        loading={previews.loading}
+                        error={preview?.error}
+                        retry={previews.refresh}
+                      />
+                      {preview?.items?.length ? (
+                        <ul className="customers-recent-orders">
+                          {preview.items.map((order) => (
+                            <li key={order.operationalOrderId}>
+                              <span className="customers-order-icon">
+                                <FarmstandIcon name="package" />
+                              </span>
+                              <div>
+                                <strong>#{order.operationalOrderId}</strong>
+                                <small>
+                                  {orderDate(order.purchasedAt)} ·{' '}
+                                  {order.lines.reduce(
+                                    (total, line) => total + line.quantity,
+                                    0,
+                                  )}{' '}
+                                  items
+                                </small>
+                              </div>
+                              <Badge tone="success">
+                                {formatMoney(order.original, order.currency)}
+                              </Badge>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        !previews.loading &&
+                        !preview?.error && (
+                          <p className="customers-no-orders">
+                            No recent orders.
+                          </p>
+                        )
+                      )}
+                    </FarmstandPanel>
                   </FarmstandPanel>
-                </FarmstandPanel>
+                </DetailSheet>
               ) : (
                 <FarmstandPanel className="customers-preview">
                   <EmptyState title="No customer selected">

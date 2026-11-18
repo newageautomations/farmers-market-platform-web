@@ -15,7 +15,7 @@ import ProductGallery from '../../components/ProductGallery.astro';
 import ProductLayout from '../../components/legacy-modern-farmhouse/ProductLayout.astro';
 import ProductCards from '../../components/ProductCards.astro';
 import VendorPreorderBanner from '../../components/VendorPreorderBanner.astro';
-import { disclosureClassName } from '@market/ui/presentation';
+import ProductInformation from '../../components/ProductInformation.astro';
 import { readProductInformation, type PublicCatalog } from '@market/api';
 import { storefrontText } from '@market/theme/storefront';
 import {
@@ -30,7 +30,6 @@ import { Purchase as PremiumPurchase } from '../../components/modern-farmhouse/P
 import { ProductPurchase } from '../../components/ProductPurchase';
 import { requestShop } from '../../lib/shop';
 import { vendorPreorder } from '../../lib/vendor-preorder';
-import { occurrenceLabel } from '@market/storefront-core';
 import { AppError, safeError, type PublicProduct } from '@market/api';
 import { ErrorState } from '@market/ui';
 import {
@@ -273,72 +272,7 @@ const structured =
             {premium ? (
               <PremiumInformation info={info} preorder={preorder} />
             ) : (
-              <div
-                class="product-information"
-                data-editor-section="information"
-                aria-label="Product information"
-              >
-                {(
-                  [
-                    ['Ingredients', info.ingredients],
-                    ['Allergens', info.allergens],
-                    ['Storage & Care', info.storage],
-                  ] as const
-                ).map(
-                  ([title, entry]) =>
-                    entry.enabled &&
-                    entry.content.trim() && (
-                      <details class={disclosureClassName()}>
-                        <summary>{title}</summary>
-                        <div class="ui-disclosure-content product-information-text">
-                          {entry.content}
-                        </div>
-                      </details>
-                    ),
-                )}
-                {info.pickupEnabled &&
-                  (preorder.selected ||
-                    (info.pickup.enabled && info.pickup.content.trim())) && (
-                    <details class={disclosureClassName()}>
-                      <summary>Pickup Information</summary>
-                      <div class="ui-disclosure-content">
-                        {preorder.selected && (
-                          <>
-                            <p>
-                              {preorder.selected.marketName} ·{' '}
-                              {occurrenceLabel(preorder.selected)}
-                            </p>
-                            {preorder.selected.venue && (
-                              <p>{preorder.selected.venue}</p>
-                            )}
-                          </>
-                        )}
-                        {preorder.selected?.pickupInstructions && (
-                          <p class="product-information-text">
-                            {preorder.selected.pickupInstructions}
-                          </p>
-                        )}
-                        {info.pickup.enabled && (
-                          <p class="product-information-text">
-                            {info.pickup.content}
-                          </p>
-                        )}
-                      </div>
-                    </details>
-                  )}
-                {info.custom
-                  .filter(
-                    (v) => v.enabled && v.title.trim() && v.content.trim(),
-                  )
-                  .map((entry) => (
-                    <details class={disclosureClassName()}>
-                      <summary>{entry.title}</summary>
-                      <div class="ui-disclosure-content product-information-text">
-                        {entry.content}
-                      </div>
-                    </details>
-                  ))}
-              </div>
+              <ProductInformation info={info} preorder={preorder} />
             )}
           </Fragment>
         </Layout>

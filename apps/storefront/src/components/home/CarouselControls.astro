@@ -1,0 +1,54 @@
+---
+import Button from '../ui/Button.astro';
+const { trackId, noun = 'photographs' } = Astro.props as {
+  trackId: string;
+  noun?: string;
+};
+---
+
+<div class="ui-actions" data-gallery-controls>
+  <Button
+    type="button"
+    variant="secondary"
+    data-gallery-direction="-1"
+    aria-label={`Previous ${noun}`}
+    iconOnly
+    aria-controls={trackId}
+  >
+    <svg
+      aria-hidden="true"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path d="m15 5-7 7 7 7" />
+    </svg>
+  </Button>
+  <Button
+    type="button"
+    variant="secondary"
+    data-gallery-direction="1"
+    aria-label={`Next ${noun}`}
+    iconOnly
+    aria-controls={trackId}
+  >
+    <svg
+      aria-hidden="true"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path d="m9 5 7 7-7 7" />
+    </svg>
+  </Button>
+</div>
+<script>
+  import { installGalleryCarousel } from '../../lib/gallery-carousel';
+  installGalleryCarousel();
+</script>

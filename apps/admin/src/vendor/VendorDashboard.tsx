@@ -1,5 +1,4 @@
 import {
-  createContext,
   useCallback,
   useContext,
   useEffect,
@@ -18,21 +17,28 @@ import type {
   FinanceReport,
   PackingView,
 } from '@market/api';
-import { Badge, EmptyState, Field, UtilityIcon } from '@market/ui';
+import { EmptyState, Field, UtilityIcon } from '@market/ui';
 import {
   FarmstandButton,
   FarmstandIcon,
-  FarmstandLink,
   FarmstandPanel,
   FarmstandSelect,
 } from '@market/ui/farmstand';
 import '@market/ui/farmstand.css';
 import { WorkspaceFrame } from '../WorkspaceFrame';
+import {
+  DashboardCells,
+  DashboardLink,
+  DateTile,
+  PanelHeader,
+  UrgentRequests,
+  WidgetSize,
+} from '../DashboardWidgets';
 import { FinancialGraph, FinanceDonut } from '../finance/charts';
 import { financeDates } from '../finance/finance-dates';
 import '../finance/finance.css';
 import '../finance/finance-workspace.css';
-import './market-applications.css';
+import '@market/ui/workspace-records.css';
 import { ReadState, useRead } from './common';
 import { MarketsSummary } from './MarketsSummary';
 import { navigate } from './MarketApplications';
@@ -44,7 +50,6 @@ import {
   marketTime,
   readBoothAssignments,
   readUpcomingMarketDates,
-  type UpcomingMarketDate,
 } from './markets-data';
 import {
   applicationUrgencies,
@@ -79,30 +84,11 @@ import {
 import { compact, type GridItem } from './dashboard-grid';
 import { DashboardLayoutEditor } from './DashboardLayoutEditor';
 import type { VendorService } from './service';
+import '@market/ui/dashboard-layout.css';
 import './vendor-dashboard.css';
 
 type Read<T> = ReturnType<typeof useRead<T>>;
 const DAY = 86400000;
-/** The cell a widget occupies, in grid units, for size-aware content. */
-const WidgetSize = createContext<GridItem>({ id: '', x: 0, y: 0, w: 4, h: 2 });
-/**
- * Splits settled cells into full-width content-height bands and the grid
- * runs between them. Bands span every column, so no grid cell shares their
- * rows; each run keeps its rows relative to its own top.
- */
-function sections(cells: readonly GridItem[]) {
-  const result: Array<
-    | { band: GridItem; cells?: undefined; top?: undefined }
-    | { band?: undefined; cells: GridItem[]; top: number }
-  > = [];
-  for (const cell of [...cells].sort((a, b) => a.y - b.y || a.x - b.x)) {
-    const last = result[result.length - 1];
-    if (contentHeightWidgets.includes(cell.id)) result.push({ band: cell });
-    else if (last && !last.band) last.cells.push(cell);
-    else result.push({ cells: [cell], top: cell.y });
-  }
-  return result;
-}
 /** Ranked rows that fit: two columns from four units wide, more when taller. */
 function rankRows(cell: GridItem) {
   const perColumn = cell.h >= 3 ? 7 : 4;
@@ -111,55 +97,6 @@ function rankRows(cell: GridItem) {
 function relativeDay(date: string, now: number) {
   const days = daysUntil(date, now);
   return days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`;
-}
-
-/** In-app link with the shared Farmstand action presentation. */
-function DashboardLink({
-  href,
-  children,
-  variant = 'secondary',
-  appearance,
-}: {
-  href: string;
-  children: ReactNode;
-  variant?: 'primary' | 'secondary' | 'tertiary';
-  appearance?: 'button' | 'text';
-}) {
-  return (
-    <FarmstandLink
-      href={href}
-      variant={variant}
-      appearance={appearance}
-      onClick={navigate}
-    >
-      {children}
-    </FarmstandLink>
-  );
-}
-
-function PanelHeader({
-  id,
-  title,
-  link,
-  children,
-}: {
-  id: string;
-  title: string;
-  link?: { href: string; label: string };
-  children?: ReactNode;
-}) {
-  return (
-    <div className="finance-card-header vendor-dashboard-panel-header">
-      <h2 id={id}>{title}</h2>
-      {children}
-      {link && (
-        <DashboardLink href={link.href} appearance="text">
-          {link.label}
-          <FarmstandIcon name="arrow-right" />
-        </DashboardLink>
-      )}
-    </div>
-  );
 }
 
 function Change({ change }: { change: PeriodChange }) {
@@ -392,7 +329,12 @@ export function VendorDashboard({ service }: { service: VendorService }) {
     dashboardPeriods.find(([value]) => value === period)?.[1] ?? '';
 
   const widgets: Record<DashboardWidgetId, ReactNode> = {
-    urgent: <UrgentRequests items={urgent} />,
+    urgent: (
+      <UrgentRequests
+        items={urgent}
+        dismissalScope={`vendor:${service.vendorId}`}
+      />
+    ),
     kpis: (
       <KeyMetrics
         period={period}
@@ -517,47 +459,12 @@ export function VendorDashboard({ service }: { service: VendorService }) {
       <p className="sr-only" aria-live="polite">
         Showing {periodLabel.toLowerCase()}.
       </p>
-      <div className="vendor-dashboard-stack" ref={grid}>
-        {sections(cells).map((section) =>
-          section.band ? (
-            <div
-              key={section.band.id}
-              className="vendor-dashboard-band"
-              data-widget={section.band.id}
-            >
-              <WidgetSize.Provider value={section.band}>
-                {widgets[section.band.id as DashboardWidgetId]}
-              </WidgetSize.Provider>
-            </div>
-          ) : (
-            <div key={section.cells[0]!.id} className="vendor-dashboard-grid">
-              {section.cells.map((cell) => (
-                <div
-                  key={cell.id}
-                  className="vendor-dashboard-widget"
-                  data-widget={cell.id}
-                  data-w={cell.w}
-                  data-h={cell.h}
-                  style={
-                    {
-                      '--x': cell.x + 1,
-                      '--y': cell.y - section.top + 1,
-                      '--w': cell.w,
-                      '--h': cell.h,
-                      // Two-column (tablet) layout: wide sections take both columns.
-                      '--wn': cell.w >= 4 ? 2 : 1,
-                    } as CSSProperties
-                  }
-                >
-                  <WidgetSize.Provider value={cell}>
-                    {widgets[cell.id as DashboardWidgetId]}
-                  </WidgetSize.Provider>
-                </div>
-              ))}
-            </div>
-          ),
-        )}
-      </div>
+      <DashboardCells
+        ref={grid}
+        cells={cells}
+        bands={contentHeightWidgets}
+        widgets={widgets}
+      />
       {cells.length === 0 && (
         <EmptyState title="Every dashboard section is hidden">
           <p>Use Customize to choose the sections you want to see.</p>
@@ -573,59 +480,6 @@ export function VendorDashboard({ service }: { service: VendorService }) {
         />
       )}
     </WorkspaceFrame>
-  );
-}
-
-function UrgentRequests({ items }: { items: UrgentItem[] }) {
-  const [expanded, setExpanded] = useState(false);
-  const id = useId();
-  if (items.length === 0) return null;
-  const visible = expanded ? items : items.slice(0, 4);
-  return (
-    <FarmstandPanel
-      as="section"
-      className="finance-panel vendor-dashboard-urgent"
-      aria-labelledby={id}
-    >
-      <div className="finance-card-header vendor-dashboard-panel-header">
-        <h2 id={id}>
-          <FarmstandIcon name="triangle-alert" />
-          Urgent requests
-          <Badge tone="danger">{items.length}</Badge>
-        </h2>
-        {items.length > 4 && (
-          <FarmstandButton
-            variant="tertiary"
-            size="compact"
-            aria-expanded={expanded}
-            onClick={() => setExpanded((value) => !value)}
-          >
-            {expanded ? 'Show fewer' : `View all ${items.length}`}
-          </FarmstandButton>
-        )}
-      </div>
-      <ul className="vendor-dashboard-urgent-list">
-        {visible.map((item) => (
-          <li key={item.id}>
-            <a
-              href={item.href}
-              onClick={navigate}
-              className="vendor-dashboard-urgent-card"
-              data-tone={item.tone}
-            >
-              <span className="vendor-dashboard-urgent-icon">
-                <FarmstandIcon name={item.icon} />
-              </span>
-              <span>
-                <strong>{item.title}</strong>
-                <small>{item.detail}</small>
-              </span>
-              <FarmstandIcon name="chevron-right" />
-            </a>
-          </li>
-        ))}
-      </ul>
-    </FarmstandPanel>
   );
 }
 
@@ -733,7 +587,7 @@ function NextMarket({
   );
   const next = upcoming[0];
   const cell = useContext(WidgetSize);
-  const later = upcoming.slice(1, cell.h >= 3 ? 6 : 4);
+  const later = upcoming.slice(1, cell.h < 3 ? 4 : cell.w >= 5 ? 6 : 5);
   return (
     <FarmstandPanel
       as="section"
@@ -748,7 +602,10 @@ function NextMarket({
       {dates.data &&
         (next ? (
           <div className="vendor-dashboard-next-body">
-            <DateTile date={next} />
+            <DateTile
+              startsAt={next.occurrence.startsAt}
+              timezone={next.occurrence.timezone}
+            />
             <div className="markets-next-content">
               <h3>{next.membership.market.name}</h3>
               <dl className="vendor-dashboard-next-facts">
@@ -854,24 +711,6 @@ function NextMarket({
           </EmptyState>
         ))}
     </FarmstandPanel>
-  );
-}
-
-function DateTile({ date }: { date: UpcomingMarketDate }) {
-  const part = (options: Intl.DateTimeFormatOptions) =>
-    new Date(date.occurrence.startsAt).toLocaleDateString(undefined, {
-      ...options,
-      timeZone: date.occurrence.timezone,
-    });
-  return (
-    <div
-      className="markets-next-art vendor-dashboard-date-tile"
-      aria-hidden="true"
-    >
-      <span>{part({ month: 'short' })}</span>
-      <strong>{part({ day: 'numeric' })}</strong>
-      <span>{part({ weekday: 'long' })}</span>
-    </div>
   );
 }
 

@@ -2,6 +2,7 @@ import type { APIContext } from 'astro';
 import {
   safeError,
   type CustomerDashboard,
+  type CustomerDashboardLayout,
   type CustomerPurchase,
   type CustomerSubjectPage,
 } from '@market/api';
@@ -102,6 +103,18 @@ export function customerApi(
             following,
           })
         : merchant().follow(kind, id, following),
+    /** Saved Overview arrangement, or null; the page falls back to the default. */
+    layout: async () =>
+      central
+        ? bridge<Partial<CustomerDashboardLayout> | null>(
+            'customerDashboardLayout',
+          )
+        : merchant().layout(),
+    saveLayout: async (layout: CustomerDashboardLayout) => {
+      if (central)
+        await bridge<boolean>('saveCustomerDashboardLayout', { layout });
+      else await merchant().saveLayout(layout);
+    },
     purchases: (skip = 0, take = 10) =>
       central
         ? bridge<{ totalItems: number; items: CustomerPurchase[] }>(

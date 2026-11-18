@@ -1,0 +1,72 @@
+---
+import { disclosureClassName } from '@market/ui/presentation';
+import { readProductInformation } from '@market/api';
+import { occurrenceLabel } from '@market/storefront-core';
+import type { VendorPreorderState } from '../lib/vendor-preorder';
+interface Props {
+  info: ReturnType<typeof readProductInformation>;
+  preorder: Pick<VendorPreorderState, 'selected'>;
+}
+const { info, preorder } = Astro.props;
+---
+
+<div
+  class="product-information"
+  data-editor-section="information"
+  aria-label="Product information"
+>
+  {(
+    [
+      ['Ingredients', info.ingredients],
+      ['Allergens', info.allergens],
+      ['Storage & Care', info.storage],
+    ] as const
+  ).map(
+    ([title, entry]) =>
+      entry.enabled &&
+      entry.content.trim() && (
+        <details class={disclosureClassName()}>
+          <summary>{title}</summary>
+          <div class="ui-disclosure-content product-information-text">
+            {entry.content}
+          </div>
+        </details>
+      ),
+  )}
+  {info.pickupEnabled &&
+    (preorder.selected ||
+      (info.pickup.enabled && info.pickup.content.trim())) && (
+      <details class={disclosureClassName()}>
+        <summary>Pickup Information</summary>
+        <div class="ui-disclosure-content">
+          {preorder.selected && (
+            <>
+              <p>
+                {preorder.selected.marketName} ·{' '}
+                {occurrenceLabel(preorder.selected)}
+              </p>
+              {preorder.selected.venue && <p>{preorder.selected.venue}</p>}
+            </>
+          )}
+          {preorder.selected?.pickupInstructions && (
+            <p class="product-information-text">
+              {preorder.selected.pickupInstructions}
+            </p>
+          )}
+          {info.pickup.enabled && (
+            <p class="product-information-text">{info.pickup.content}</p>
+          )}
+        </div>
+      </details>
+    )}
+  {info.custom
+    .filter((v) => v.enabled && v.title.trim() && v.content.trim())
+    .map((entry) => (
+      <details class={disclosureClassName()}>
+        <summary>{entry.title}</summary>
+        <div class="ui-disclosure-content product-information-text">
+          {entry.content}
+        </div>
+      </details>
+    ))}
+</div>

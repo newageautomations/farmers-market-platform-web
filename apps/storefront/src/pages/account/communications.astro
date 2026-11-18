@@ -1,6 +1,8 @@
 ---
 import { buttonClassName } from '@market/ui/presentation';
-import SiteLayout from '../../layouts/SiteLayout.astro';
+import CustomerLayout from '../../layouts/CustomerLayout.astro';
+import WorkspacePanel from '../../components/ui/WorkspacePanel.astro';
+import FarmstandIcon from '../../components/ui/FarmstandIcon.astro';
 import { requestCheckout, requestPreferences } from '../../lib/shop';
 import CommunicationPreferences from '../../components/ResilientSurfaces';
 import { safeError } from '@market/api';
@@ -21,14 +23,28 @@ Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 ---
 
-<SiteLayout
-  context={Astro.locals.storefront}
-  path="/account/communications"
+<CustomerLayout
+  path="/account/settings"
   title="Communication preferences"
-  noindex
+  icon="bell"
+  description="Choose which messages this storefront may send you."
 >
-  <section class="py-12 account-panel">
-    <h1>Communication preferences</h1>
+  <a
+    slot="actions"
+    class={buttonClassName({
+      variant: 'secondary',
+      className: 'farmstand-button',
+    })}
+    href="/account/settings"
+  >
+    <FarmstandIcon name="arrow-left" />
+    Account settings
+  </a>
+  <WorkspacePanel
+    icon="bell"
+    title="This storefront"
+    description="Saving a preference does not promise delivery. Promotions require separate explicit consent."
+  >
     {preferences && Astro.locals.storefront?.storefrontId ? (
       <CommunicationPreferences
         client:load
@@ -42,19 +58,8 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
           : 'Communication settings are temporarily unavailable. Refresh to try again.'}
       </p>
     )}
-    <p>
-      <a
-        class={buttonClassName({
-          variant: 'secondary',
-          className: 'button secondary',
-        })}
-        href="/account"
-      >
-        Return to your account
-      </a>
-    </p>
-  </section>
-</SiteLayout>
+  </WorkspacePanel>
+</CustomerLayout>
 <style is:global>
   .preference-grid {
     display: grid;

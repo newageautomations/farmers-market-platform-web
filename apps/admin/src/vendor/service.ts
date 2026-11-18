@@ -1,3 +1,9 @@
+import { createPreparationApi, type PreparationApi } from '@market/api';
+import { createMarketDayApi, type MarketDayApi } from '@market/api';
+import { createVendorManagedMarketsApi, type VendorManagedMarketsApi } from '@market/api';
+import { createOrderRefundsApi, type OrderRefundsApi } from '@market/api';
+import { orderFinancials } from './order-financials';
+import { createBoothInvoiceApi, type BoothInvoiceApi } from '@market/api';
 import { createProductTaxonomyApi, type ProductTaxonomyApi } from '@market/api';
 import { createTeamService } from '../team/service';
 import type { MarketDiscoveryApi } from './market-applications-data';
@@ -15,6 +21,10 @@ import {
 } from '@market/api';
 import { createVendorContactApi, type VendorContactApi } from '@market/api';
 import { createVendorCategoryApi, type VendorCategoryApi } from '@market/api';
+import {
+  createBusinessProfileImageApi,
+  type BusinessProfileImageApi,
+} from '@market/api';
 import {
   createFinanceApi,
   type FinanceApi,
@@ -65,6 +75,9 @@ export interface OrderPage {
 }
 export type Availability = 'allowed' | 'denied' | 'unknown' | 'unconfigured';
 export interface VendorService extends VendorApi {
+  managedMarkets?: VendorManagedMarketsApi;
+  preparation?: PreparationApi;
+  marketDay?: MarketDayApi;
   team?: TeamApi;
   packing?: PackingApi;
   marketAttendance?: AttendanceApi;
@@ -72,9 +85,13 @@ export interface VendorService extends VendorApi {
   marketDiscovery?: MarketDiscoveryApi;
   contact?: VendorContactApi;
   categories?: VendorCategoryApi;
+  /** This Vendor's own profile picture, and other businesses' for tables. */
+  profileImage?: BusinessProfileImageApi;
   taxonomy?: ProductTaxonomyApi;
   finance?: FinanceApi;
   pos?: InPersonApi;
+  orderRefunds?: OrderRefundsApi;
+  boothInvoices?: BoothInvoiceApi;
   loyalty?: LoyaltyApi;
   notifications?: NotificationsApi;
   /** Document library and Market requests, for dashboard reminders. */
@@ -115,6 +132,11 @@ export function createLiveVendorService(
     throw new AppError('forbidden');
   const vendorId = context.subject.vendorId;
   const api = createVendorApi({ endpoint, channelToken });
+  const finance = createFinanceApi({
+    endpoint,
+    channelToken,
+    onAuthorityFailure,
+  });
   const catalogCommands = [
     'createProduct',
     'saveTaxSettings',
@@ -150,8 +172,12 @@ export function createLiveVendorService(
     get(target, property: keyof VendorApi) {
       const method = target[property];
       return async (...args: unknown[]) => {
-        const permission =
-          property === 'featureAvailability'
+        const permission = [
+          'preorderFeeSettings',
+          'savePreorderFeeSettings',
+        ].includes(property)
+          ? 'ReadOwnPaymentAccount'
+          : property === 'featureAvailability'
             ? 'ReadOwnBilling'
             : property === 'inventory'
               ? 'ReadOwnInventory'
@@ -199,7 +225,10 @@ export function createLiveVendorService(
   });
   return {
     ...guarded,
+    managedMarkets: createVendorManagedMarketsApi({ endpoint, channelToken }),
     marketAttendance: createAttendanceApi({ endpoint, channelToken }),
+    preparation: createPreparationApi({ endpoint, channelToken }),
+    marketDay: createMarketDayApi({ endpoint, channelToken }),
     packing: createPackingApi({ endpoint, channelToken }),
     applications: createApplicantApplicationsApi(
       { endpoint, channelToken },
@@ -208,8 +237,11 @@ export function createLiveVendorService(
     marketDiscovery: createMarketDiscoveryApi({ endpoint, channelToken }),
     taxonomy: createProductTaxonomyApi({ endpoint, channelToken }),
     categories: createVendorCategoryApi({ endpoint, channelToken }),
-    finance: createFinanceApi({ endpoint, channelToken, onAuthorityFailure }),
+    profileImage: createBusinessProfileImageApi({ endpoint, channelToken }),
+    finance,
     pos: createInPersonApi({ endpoint, channelToken }),
+    orderRefunds: createOrderRefundsApi({ endpoint, channelToken }),
+    boothInvoices: createBoothInvoiceApi({ endpoint, channelToken }),
     loyalty: createLoyaltyApi({ endpoint, channelToken }, 'admin'),
     notifications: createNotificationsApi({
       endpoint,
@@ -281,13 +313,17 @@ export function createLiveVendorService(
       });
       return {
         totalItems: page.totalItems,
-        items: page.items.map((portion) => ({ portion, context: null })),
+        items: context.permissions.includes('ReadOwnVendorFinance')
+          ? await orderFinancials(finance, page.items)
+          : page.items.map((portion) => ({ portion, context: null })),
       };
     },
-    order: async (id) => ({
-      portion: await guarded.portion(id),
-      context: null,
-    }),
+    order: async (id) => {
+      const portion = await guarded.portion(id);
+      return context.permissions.includes('ReadOwnVendorFinance')
+        ? (await orderFinancials(finance, [portion]))[0]!
+        : { portion, context: null };
+    },
     variantName: (id) => `Variant reference ${id}`,
     marketName: (id) => `Market reference ${id}`,
   };

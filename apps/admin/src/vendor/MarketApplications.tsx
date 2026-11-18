@@ -30,6 +30,9 @@ import {
 } from '@market/ui/farmstand';
 import { go, ReadState, useRead } from './common';
 import type { VendorService } from './service';
+import type { BusinessProfileImageApi } from '@market/api';
+import { IdentityIcon } from '@market/ui/workspace';
+import { useProfileImages } from '../profile-images';
 import { MarketsSummary } from './MarketsSummary';
 import {
   applicationDate,
@@ -42,8 +45,9 @@ import {
   type DiscoverableMarket,
   type MarketDiscoveryApi,
 } from './market-applications-data';
-import './market-applications.css';
+import '@market/ui/workspace-records.css';
 import { MarketsPagination as Pagination } from './MarketsPagination';
+import { DetailSheet, usePhoneRecords } from '../market/mobile';
 
 /** Same-origin /vendor/ links navigate in-app; modified clicks keep browser behavior. */
 export function navigate(event: MouseEvent<HTMLAnchorElement>) {
@@ -199,7 +203,15 @@ function DiscoveryApply({ market }: { market: DiscoverableMarket }) {
       );
   }
 }
-export function FindMarketApplications({ api }: { api?: MarketDiscoveryApi }) {
+export function FindMarketApplications({
+  api,
+  profileImages: profileApi,
+}: {
+  api?: MarketDiscoveryApi;
+  /** Market profile pictures for the result rows; icons only without it. */
+  profileImages?: Pick<BusinessProfileImageApi, 'lookup'>;
+}) {
+  const records = usePhoneRecords();
   const id = useId();
   const [search, setSearch] = useState(''),
     [debouncedSearch, setDebouncedSearch] = useState(''),
@@ -226,6 +238,9 @@ export function FindMarketApplications({ api }: { api?: MarketDiscoveryApi }) {
   );
   const readCities = useCallback(() => api!.cities(), [api]);
   const cities = useRead('market-discovery-cities', readCities, !!api);
+  const profileImages = useProfileImages(profileApi, {
+    markets: query.data?.items.map((market) => market.id) ?? [],
+  });
   return (
     <FarmstandPanel
       as="section"
@@ -292,6 +307,7 @@ export function FindMarketApplications({ api }: { api?: MarketDiscoveryApi }) {
             (query.data.items.length ? (
               <FarmstandTable
                 label="Markets accepting applications"
+                recordDetails={records({ status: 3, action: 4 })}
                 wide
                 headings={[
                   'Market',
@@ -305,9 +321,10 @@ export function FindMarketApplications({ api }: { api?: MarketDiscoveryApi }) {
                   <tr key={market.id}>
                     <th scope="row">
                       <div className="markets-identity">
-                        <span className="markets-identity-icon">
-                          <FarmstandIcon name="store" />
-                        </span>
+                        <IdentityIcon
+                          icon="store"
+                          image={profileImages.market(market.id)}
+                        />
                         <span className="market-application-name">
                           {market.name}
                         </span>
@@ -387,6 +404,7 @@ export function MarketApplications({ service }: { service: VendorService }) {
       api={service.applications!}
       vendorId={Number(service.vendorId)}
       discovery={service.marketDiscovery}
+      profileImages={service.profileImage}
     />
   );
 }
@@ -394,10 +412,12 @@ export function MarketApplicationRecords({
   api,
   vendorId,
   discovery,
+  profileImages: profileApi,
 }: {
   api: ApplicantApplicationsApi;
   vendorId: number;
   discovery?: MarketDiscoveryApi;
+  profileImages?: Pick<BusinessProfileImageApi, 'lookup'>;
 }) {
   const id = useId();
   const load = useCallback(
@@ -409,7 +429,10 @@ export function MarketApplicationRecords({
     [status, setStatus] = useState('all'),
     [sort, setSort] = useState('newest'),
     [page, setPage] = useState(0),
-    [selected, setSelected] = useState<string>();
+    [selected, setSelected] = useState<string>(),
+    // Phones open a tapped application's details in a bottom sheet.
+    [sheet, setSheet] = useState(false);
+  const records = usePhoneRecords();
   const visible = useMemo(
     () =>
       (query.data ?? [])
@@ -448,6 +471,9 @@ export function MarketApplicationRecords({
   const detail = row ? steps.data?.get(applicationKey(row)) : undefined;
   const current = detail ?? row;
   const next = current ? applicationNextStep(current, detail) : undefined;
+  const profileImages = useProfileImages(profileApi, {
+    markets: shown.map((application) => application.marketId),
+  });
   function changeFilter(update: () => void) {
     update();
     setPage(0);
@@ -488,7 +514,7 @@ export function MarketApplicationRecords({
               ]}
             />
           )}
-          <FindMarketApplications api={discovery} />
+          <FindMarketApplications api={discovery} profileImages={profileApi} />
           <FarmstandPanel
             as="section"
             className="markets-list market-applications-list"
@@ -557,6 +583,15 @@ export function MarketApplicationRecords({
                 <>
                   <FarmstandTable
                     label="Your applications"
+                    recordDetails={records({
+                      status: 3,
+                      onOpen: (index) => {
+                        const application = shown[index];
+                        if (!application) return;
+                        setSelected(applicationKey(application));
+                        setSheet(true);
+                      },
+                    })}
                     wide
                     headings={[
                       'Market',
@@ -583,9 +618,12 @@ export function MarketApplicationRecords({
                         >
                           <th scope="row">
                             <div className="markets-identity">
-                              <span className="markets-identity-icon">
-                                <FarmstandIcon name="store" />
-                              </span>
+                              <IdentityIcon
+                                icon="store"
+                                image={profileImages.market(
+                                  application.marketId,
+                                )}
+                              />
                               <span className="market-application-name">
                                 {application.marketName}
                               </span>
@@ -637,66 +675,77 @@ export function MarketApplicationRecords({
               ))}
           </FarmstandPanel>
         </div>
-        <FarmstandPanel
-          as="section"
-          className="markets-next market-application-details"
-          aria-label="Application details"
+        <DetailSheet
+          phoneOnly
+          title="Application details"
+          open={sheet}
+          onClose={() => setSheet(false)}
         >
-          <h2>
-            <FarmstandIcon name="receipt-text" />
-            Application details
-          </h2>
-          {row && current && next ? (
-            <>
-              <div className="markets-next-art" aria-hidden="true">
-                <FarmstandIcon name="store" />
-              </div>
-              <div className="markets-next-content">
-                <h3>{current.marketName}</h3>
-                <p className="markets-venue">
-                  <FarmstandIcon name="map-pin" />
-                  {applicationLocation(current)}
-                </p>
-                <dl className="market-application-facts">
-                  <div>
-                    <dt>Application</dt>
-                    <dd>{current.name}</dd>
-                  </div>
-                  <div>
-                    <dt>Status</dt>
-                    <dd>
-                      <Status value={current.status} />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Submitted</dt>
-                    <dd>
-                      {row.status === 'DRAFT'
-                        ? 'Not submitted'
-                        : applicationDate(row.createdAt)}
-                    </dd>
-                  </div>
-                  {row.status === 'DRAFT' && (
+          <FarmstandPanel
+            as="section"
+            className="markets-next market-application-details"
+            aria-label="Application details"
+          >
+            <h2>
+              <FarmstandIcon name="receipt-text" />
+              Application details
+            </h2>
+            {row && current && next ? (
+              <>
+                <IdentityIcon
+                  className="markets-next-art"
+                  icon="store"
+                  image={profileImages.market(current.marketId)}
+                />
+                <div className="markets-next-content">
+                  <h3>{current.marketName}</h3>
+                  <p className="markets-venue">
+                    <FarmstandIcon name="map-pin" />
+                    {applicationLocation(current)}
+                  </p>
+                  <dl className="market-application-facts">
                     <div>
-                      <dt>Last saved</dt>
-                      <dd>{applicationDate(row.updatedAt)}</dd>
+                      <dt>Application</dt>
+                      <dd>{current.name}</dd>
                     </div>
-                  )}
-                </dl>
-                <ReadState {...steps} retry={steps.refresh} />
-                <p className="market-application-guidance">{next.detail}</p>
-                <ApplicationLink href={next.href} primary>
-                  {next.label}
-                </ApplicationLink>
-                <Website href={current.origin} label="View market" />
-              </div>
-            </>
-          ) : (
-            <EmptyState title="No application selected">
-              <p>Select an application to review its details and next step.</p>
-            </EmptyState>
-          )}
-        </FarmstandPanel>
+                    <div>
+                      <dt>Status</dt>
+                      <dd>
+                        <Status value={current.status} />
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Submitted</dt>
+                      <dd>
+                        {row.status === 'DRAFT'
+                          ? 'Not submitted'
+                          : applicationDate(row.createdAt)}
+                      </dd>
+                    </div>
+                    {row.status === 'DRAFT' && (
+                      <div>
+                        <dt>Last saved</dt>
+                        <dd>{applicationDate(row.updatedAt)}</dd>
+                      </div>
+                    )}
+                  </dl>
+                  <ReadState {...steps} retry={steps.refresh} />
+                  <p className="market-application-guidance">{next.detail}</p>
+                  <ApplicationLink href={next.href} primary>
+                    {next.label}
+                  </ApplicationLink>
+                  <Website href={current.origin} label="View market" />
+                </div>
+              </>
+            ) : (
+              <EmptyState title="No application selected">
+                <p>
+                  Select an application to review its details and next step.
+                </p>
+              </EmptyState>
+            )}
+          </FarmstandPanel>
+        </DetailSheet>
       </div>
     </>
   );

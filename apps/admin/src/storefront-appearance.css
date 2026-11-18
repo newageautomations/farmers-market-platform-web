@@ -257,6 +257,73 @@
 .visual-editor-sections > .ui-disclosure {
   margin: 0;
 }
+.farmhouse-section-row {
+  min-width: 0;
+  border-block: 3px solid transparent;
+}
+.farmhouse-section-row[data-drop='before'] {
+  border-block-start-color: var(--brand-primary);
+}
+.farmhouse-section-row[data-drop='after'] {
+  border-block-end-color: var(--brand-primary);
+}
+.farmhouse-section-row[data-dragging] {
+  opacity: 0.55;
+}
+.farmhouse-section-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.35rem;
+  align-items: start;
+}
+.farmhouse-section-heading > .ui-disclosure {
+  min-width: 0;
+  margin: 0;
+}
+.farmhouse-section-heading > .ui-disclosure[data-selected] {
+  --ui-disclosure-border-color: var(--brand-primary);
+}
+.farmhouse-section-heading [draggable='true'] {
+  cursor: grab;
+}
+.farmhouse-section-management {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  border: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0.4rem 0 0.4rem 0.35rem;
+}
+.farmhouse-section-management .ui-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+}
+.farmhouse-section-picker {
+  display: grid;
+  gap: 0.8rem;
+  margin-block: 1.25rem;
+}
+.farmhouse-section-picker .farmhouse-section-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  justify-content: start;
+  gap: 1rem;
+  padding: 1rem;
+  text-align: left;
+  white-space: normal;
+}
+.farmhouse-section-option > span {
+  display: grid;
+  gap: 0.35rem;
+}
+.farmhouse-section-option > span > span {
+  font-weight: 400;
+}
 .story-editor-list {
   display: grid;
   gap: 0.325rem;

@@ -11,6 +11,7 @@ export function ShopMarketSelection({
   preview = false,
   disabled = false,
   onBusyChange,
+  buttonLabel = 'Change Market',
 }: {
   storefrontId: string;
   occurrences: readonly VendorPreorderOccurrence[];
@@ -18,6 +19,7 @@ export function ShopMarketSelection({
   preview?: boolean;
   disabled?: boolean;
   onBusyChange?: (busy: boolean) => void;
+  buttonLabel?: string;
 }) {
   const [open, setOpen] = useState(false),
     [pending, setPending] = useState(false),
@@ -65,7 +67,7 @@ export function ShopMarketSelection({
           setOpen(true);
         }}
       >
-        Change Market
+        {buttonLabel}
       </Button>
       <Dialog
         open={open}

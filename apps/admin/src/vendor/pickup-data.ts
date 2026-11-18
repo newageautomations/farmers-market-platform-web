@@ -32,8 +32,11 @@ export async function readOrderSummaries(
   service: VendorService,
   kind: 'all' | 'MARKET_OCCURRENCE',
   scope?: CustomerOrderScope,
+  occurrenceId?: string,
 ): Promise<PickupOrder[]> {
-  const orders = await allPages((skip) => service.orders(skip, kind));
+  const orders = (await allPages((skip) => service.orders(skip, kind))).filter(
+    (o) => !occurrenceId || o.portion.occurrenceId === occurrenceId,
+  );
   const identities = new Map<string, { customer: string; payment: Purchase }>();
   if (scope) {
     for (const payment of scope.purchases)
@@ -41,7 +44,10 @@ export async function readOrderSummaries(
         customer: scope.customer,
         payment,
       });
-  } else if (service.context.permissions.includes('ReadOwnCRM')) {
+  } else if (
+    !occurrenceId &&
+    service.context.permissions.includes('ReadOwnCRM')
+  ) {
     const customers = await allPages((skip) =>
       service.customers({ skip, take: 20, search: '' }),
     );
@@ -97,8 +103,17 @@ export async function readOrderSummaries(
 
 export async function readPickupOrders(
   service: VendorService,
+  occurrenceId?: string,
 ): Promise<PickupOrder[]> {
-  let result = await readOrderSummaries(service, 'MARKET_OCCURRENCE');
+  let result = await readOrderSummaries(
+    service,
+    'MARKET_OCCURRENCE',
+    undefined,
+    occurrenceId,
+  );
+  // Market Day uses the existing line names and scoped packing projection.
+  // Avoid fetching the entire catalog and image library for a handoff queue.
+  if (occurrenceId) return result;
   if (service.context.permissions.includes('ReadOwnCatalog')) {
     const catalog = await allPages((skip) => service.catalog('', skip));
     const images = new Map<string, string>();

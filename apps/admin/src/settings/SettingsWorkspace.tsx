@@ -1,3 +1,4 @@
+import { PreorderFeeSettings } from './PreorderFeeSettings';
 import { EmptyState } from '@market/ui';
 import { hasPermission } from '@market/auth';
 import {
@@ -28,11 +29,13 @@ import type { VendorService } from '../vendor/service';
 import type { MarketService } from '../market/service';
 import type { ManagementService } from '../management/service';
 import { SettingsLink, SettingsPanel } from './SettingsPanel';
+import { ProfileImageSettings } from './ProfileImageSettings';
 import { ProviderLogo } from './providers';
 import './settings-workspace.css';
 
 const tabs: Record<SettingsView, { label: string; icon: FarmstandIconName }> = {
   preferences: { label: 'Preferences', icon: 'palette' },
+  profile: { label: 'Profile', icon: 'user-round' },
   market: { label: 'Market', icon: 'store' },
   notifications: { label: 'Notifications', icon: 'bell' },
   taxes: { label: 'Taxes', icon: 'percent' },
@@ -40,11 +43,17 @@ const tabs: Record<SettingsView, { label: string; icon: FarmstandIconName }> = {
   pos: { label: 'POS', icon: 'shopping-cart' },
   integrations: { label: 'Integrations', icon: 'plug' },
 };
+/**
+ * Square and Clover panels are hidden from Settings > Payments for now. Their
+ * services, routes (including the Clover OAuth return) and backend
+ * capabilities are unchanged; set this to true to show them again.
+ */
+const showInPersonProviders = false as boolean;
 const descriptions = {
   VENDOR:
-    'Your preferences, notifications, taxes, payments and POS connections, all in one place.',
+    'Your profile, preferences, notifications, taxes, payments and POS connections, all in one place.',
   MARKET:
-    'Market details, your preferences and notifications, all in one place.',
+    'Market details, profile picture, your preferences and notifications, all in one place.',
   PLATFORM: 'Your preferences and platform integration readiness.',
 };
 
@@ -74,12 +83,19 @@ export function SettingsWorkspace({
     !!management && hasPermission(context.permissions, 'ReadOwnPaymentAccount');
   const inPerson =
     !!vendor?.pos && mayCommand(context, 'ManageOwnPosIntegrations');
+  const profileImage =
+    scope === 'MARKET'
+      ? market?.profileImage
+      : scope === 'VENDOR'
+        ? vendor?.profileImage
+        : undefined;
   const supplied: Record<SettingsView, boolean> = {
     preferences: true,
+    profile: !!profileImage,
     market: !!market,
     notifications: !!notifications,
     taxes: !!vendor,
-    payments: stripe || inPerson,
+    payments: stripe || (inPerson && showInPersonProviders),
     pos: !!management,
     integrations: !!management,
   };
@@ -133,6 +149,23 @@ export function SettingsWorkspace({
             </SettingsPanel>
           </div>
         )}
+        {view === 'profile' && profileImage && (
+          <SettingsPanel
+            icon="user-round"
+            title="Profile picture"
+            description="Identifies your business across dashboards. Separate from your storefront website."
+          >
+            <ProfileImageSettings
+              key={connection?.channelToken}
+              api={profileImage}
+              kind={scope === 'MARKET' ? 'market' : 'vendor'}
+              editable={
+                context.membershipRole === 'owner' ||
+                context.membershipRole === 'administrator'
+              }
+            />
+          </SettingsPanel>
+        )}
         {view === 'market' && market && (
           <SettingsPanel
             icon="store"
@@ -170,18 +203,23 @@ export function SettingsWorkspace({
         )}
         {view === 'payments' && (
           <>
+            {vendor && context.permissions.includes('ReadOwnPaymentAccount') && (
+              <SettingsPanel icon="percent" title="Online payment fee settings" module="vendor-workspace">
+                <PreorderFeeSettings key={connection?.channelToken} service={vendor} />
+              </SettingsPanel>
+            )}
             {stripe && (
               <SettingsPanel
                 icon="credit-card"
                 media={<ProviderLogo code="stripe" />}
                 title="Marketplace Stripe Connect"
-                description="Stripe Connect account for marketplace payouts. A connected account does not qualify shopper payment confirmation."
+                description="Connect your organization to Stripe in test mode. Payment collection remains disabled."
                 module="management-workspace"
               >
                 <Payments service={management!} embedded />
               </SettingsPanel>
             )}
-            {inPerson && (
+            {inPerson && showInPersonProviders && (
               <>
                 <SettingsPanel
                   icon="credit-card"

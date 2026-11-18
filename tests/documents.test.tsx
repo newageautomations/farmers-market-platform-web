@@ -5,7 +5,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Workspace } from '../apps/admin/src/documents/DocumentsWorkspace';
 import {
   AppError,
@@ -22,6 +22,7 @@ import { DocumentStatus } from '@market/ui/documents';
 import { ApplicationDocuments } from '../apps/storefront/src/components/ApplicationDocuments';
 import type { PublicApplication } from '@market/api';
 const category = 'General Liability Insurance';
+afterEach(() => window.history.replaceState(null, '', '/'));
 function data(): ComplianceData {
   return {
     documents: [
@@ -114,6 +115,100 @@ function api(value = data()): DocumentsApi {
   };
 }
 describe('Documents dashboard', () => {
+  it('selects Readiness and reports with Pending review for the manager overview link', async () => {
+    window.history.replaceState(
+      null,
+      '',
+      '/market/documents?view=reports&status=Pending+review',
+    );
+    const service = api();
+    render(<Workspace api={service} manager canWrite />);
+    await waitFor(() =>
+      expect(service.advanced).toHaveBeenCalledWith(
+        expect.objectContaining({
+          view: 'report',
+          report: 'vendors',
+          status: 'Pending review',
+        }),
+      ),
+    );
+    expect(
+      screen.getByRole('tab', { name: 'Readiness and reports' }),
+    ).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
+    expect(screen.getByLabelText('Compliance status')).toHaveValue(
+      'Pending review',
+    );
+  });
+  it('opens the exact library document from an overview alert', async () => {
+    window.history.replaceState(null, '', '/vendor/documents?document=doc');
+    const service = api();
+    render(<Workspace api={service} manager={false} canWrite />);
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Insurance certificate',
+    });
+    expect(
+      within(dialog).getByRole('button', { name: 'Replace' }),
+    ).toBeEnabled();
+    expect(screen.getByRole('tab', { name: 'Library' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(service.command).not.toHaveBeenCalled();
+  });
+  it('opens the exact market request from an overview alert', async () => {
+    window.history.replaceState(
+      null,
+      '',
+      '/vendor/documents?view=requests&market=1&requestId=request',
+    );
+    const service = api();
+    render(<Workspace api={service} manager={false} canWrite />);
+    const dialog = await screen.findByRole('dialog', { name: 'Insurance' });
+    expect(dialog).toHaveTextContent('Market A');
+    expect(
+      screen.getByRole('tab', { name: 'Market requests' }),
+    ).toHaveAttribute('aria-selected', 'true');
+    expect(service.command).not.toHaveBeenCalled();
+  });
+  it('previews the submitted version without downloading and releases its URL on close', async () => {
+    const value = data();
+    value.requests[0]!.status = 'Pending review';
+    value.requests[0]!.submission = {
+      id: 'submission',
+      file_id: 'submitted-file',
+      document_id: 'doc',
+      metadata: value.documents[0]!.metadata,
+      status: 'Pending review',
+      created_at: '2026-10-14',
+    };
+    const service = api(value);
+    vi.mocked(service.download).mockResolvedValue({
+      filename: 'submitted.pdf',
+      mime: 'application/pdf',
+      bytesBase64: btoa('%PDF-1.4'),
+    });
+    const create = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:preview');
+    const revoke = vi.spyOn(URL, 'revokeObjectURL');
+    render(<Workspace api={service} manager canWrite={false} />);
+    await screen.findByText('Insurance certificate');
+    fireEvent.click(screen.getByRole('tab', { name: 'Vendor compliance' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Insurance' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Preview document' }));
+    const frame = await screen.findByTitle('Document: submitted.pdf');
+    expect(frame).toHaveAttribute('src', 'blob:preview');
+    expect(service.download).toHaveBeenCalledExactlyOnceWith('submitted-file');
+    expect(create.mock.calls[0]![0]).toHaveProperty('type', 'application/pdf');
+    const dialog = screen.getByRole('dialog', {
+      name: 'Preview: Insurance certificate',
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(revoke).toHaveBeenCalledWith('blob:preview'));
+    expect(screen.getByRole('dialog', { name: 'Insurance' })).toBeVisible();
+    expect(service.command).not.toHaveBeenCalled();
+  });
   it('uses the backend readiness including optional requests and expiring-soon validity', async () => {
     const value = data();
     value.readiness = [
@@ -134,12 +229,124 @@ describe('Documents dashboard', () => {
     render(<Workspace api={api(value)} manager canWrite />);
     await screen.findByText('Insurance certificate');
     fireEvent.click(screen.getByRole('tab', { name: 'Vendor compliance' }));
-    expect(screen.getByText('Ready', { selector: '.ui-status' })).toHaveClass(
-      'ui-status-success',
+    const table = screen.getByRole('table', {
+      name: 'Vendor documentation readiness',
+    });
+    expect(
+      within(table).getByText('Ready', { selector: '.ui-status' }),
+    ).toHaveClass('ui-status-success');
+    // The first vendor opens in the side panel, not a modal.
+    const panel = screen.getByRole('region', {
+      name: 'Vendor compliance details',
+    });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(
+      within(panel).getByText('Missing', { selector: '.ui-status' }),
+    ).toHaveClass('ui-status-danger');
+  });
+  it('searches vendor compliance and sorts it by readiness', async () => {
+    const value = data();
+    value.vendors = [
+      { id: 1, name: 'Vendor A' },
+      { id: 2, name: 'Vendor B' },
+    ];
+    const readiness = (vendor_id: number, status: string) => ({
+      vendor_id,
+      status,
+      total: 1,
+      complete: status === 'Ready' ? 1 : 0,
+      missing: status === 'Ready' ? 0 : 1,
+      pending: 0,
+      expired: 0,
+      rejected: 0,
+      expiringSoon: 0,
+      outstandingRequired: status === 'Ready' ? 0 : 1,
+      outstanding: [],
+    });
+    value.readiness = [readiness(1, 'Ready'), readiness(2, 'Incomplete')];
+    render(<Workspace api={api(value)} manager canWrite />);
+    await screen.findByText('Insurance certificate');
+    fireEvent.click(screen.getByRole('tab', { name: 'Vendor compliance' }));
+    const names = () =>
+      within(
+        screen.getByRole('table', { name: 'Vendor documentation readiness' }),
+      )
+        .getAllByRole('rowheader')
+        .map((cell) => cell.textContent);
+    expect(names()).toEqual(['Vendor B', 'Vendor A']);
+    fireEvent.change(screen.getByLabelText('Sort vendors'), {
+      target: { value: 'ready' },
+    });
+    expect(names()).toEqual(['Vendor A', 'Vendor B']);
+    fireEvent.change(screen.getByLabelText('Search vendors'), {
+      target: { value: 'b' },
+    });
+    expect(names()).toEqual(['Vendor B']);
+    fireEvent.click(screen.getByRole('rowheader', { name: 'Vendor B' }));
+    expect(
+      within(
+        screen.getByRole('region', { name: 'Vendor compliance details' }),
+      ).getByRole('heading', { name: 'Vendor B' }),
+    ).toBeVisible();
+  });
+  it('shows collapsible requirements with their assigned vendors and removes one after confirmation', async () => {
+    const value = data();
+    value.requirements = [
+      {
+        id: 'req',
+        title: 'Insurance requirement',
+        category,
+        instructions: 'Participation insurance only',
+        required: true,
+        stage: 'Before participation',
+        due_on: null,
+        approval_required: true,
+        expiration_required: false,
+        market_wide: false,
+        automatic: false,
+        submission_blocking: false,
+      },
+    ];
+    value.vendors = [
+      { id: 1, name: 'Vendor A' },
+      { id: 2, name: 'Vendor B' },
+    ];
+    const service = api(value);
+    const { container } = render(<Workspace api={service} manager canWrite />);
+    await screen.findByText('Insurance certificate');
+    fireEvent.click(screen.getByRole('tab', { name: 'Requirements' }));
+    const card = container.querySelector('details.documents-requirement')!;
+    expect(card).not.toHaveAttribute('open');
+    expect(
+      within(card as HTMLElement).getByText(/Assigned to 1 vendor ·/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Only an explicit manager request/),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Create a market-wide requirement/)).toBeNull();
+    (card as HTMLDetailsElement).open = true;
+    // Vendor A already has the request, so the card lists them as assigned.
+    const assigned = card.querySelector('.documents-assigned') as HTMLElement;
+    expect(within(assigned).getByText('Vendor A')).toBeInTheDocument();
+    expect(within(assigned).queryByText('Vendor B')).toBeNull();
+    fireEvent.click(
+      within(card as HTMLElement).getByRole('button', {
+        name: 'Remove requirement',
+      }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Open Vendor A' }));
-    expect(screen.getByText('Missing', { selector: '.ui-status' })).toHaveClass(
-      'ui-status-danger',
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Remove document requirement',
+    });
+    expect(within(dialog).getByText(/stay in their libraries/)).toBeVisible();
+    expect(service.command).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm' }));
+    await waitFor(() =>
+      expect(service.command).toHaveBeenCalledWith(
+        'REMOVE_REQUIREMENT',
+        {},
+        'req',
+        undefined,
+      ),
     );
   });
   it('keeps market automation off by default and saves an explicit scoped opt-in', async () => {
@@ -287,7 +494,7 @@ describe('Documents dashboard', () => {
     render(<Workspace api={api(value)} manager canWrite />);
     await screen.findByText('Insurance certificate');
     fireEvent.click(screen.getByRole('tab', { name: 'Vendor compliance' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Open Vendor A' }));
+    fireEvent.click(screen.getByRole('rowheader', { name: 'Vendor A' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open Insurance' }));
     fireEvent.click(screen.getByRole('button', { name: 'Reject' }));
     expect(
@@ -302,7 +509,11 @@ describe('Documents dashboard', () => {
     render(<Workspace api={api(value)} manager canWrite />);
     await screen.findByText('Insurance certificate');
     fireEvent.click(screen.getByRole('tab', { name: 'Vendor compliance' }));
-    expect(screen.getByText('Incomplete view')).toBeVisible();
+    expect(
+      within(
+        screen.getByRole('table', { name: 'Vendor documentation readiness' }),
+      ).getByText('Incomplete view'),
+    ).toBeVisible();
   });
   it('adds only authorized vendor and market navigation', () => {
     for (const scope of ['VENDOR', 'MARKET'] as const) {

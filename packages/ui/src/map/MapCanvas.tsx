@@ -64,6 +64,7 @@ export function MapCanvas({
   onHover,
   statuses = {},
   overlays = {},
+  highlightedIds = [],
   areaId,
   editable = false,
   tool = 'select',
@@ -97,6 +98,7 @@ export function MapCanvas({
   onHover?: (id: string | null, box?: ReturnType<typeof bounds>) => void;
   statuses?: Record<string, BoothStatus>;
   overlays?: Record<string, string>;
+  highlightedIds?: readonly string[];
   areaId: string;
   editable?: boolean;
   tool?: MapTool;
@@ -530,70 +532,76 @@ export function MapCanvas({
   return (
     <div className="map-canvas-shell">
       {showNavigation && (
-      <div className="map-navigation" aria-label="Map navigation">
-        <button
-          className={buttonClassName({
-            variant: 'secondary',
-            size: 'compact',
-            iconOnly: true,
-          })}
-          type="button"
-          aria-label="Zoom out"
-          onClick={() =>
-            setView((v) =>
-              zoomAt(
-                v,
-                { x: size.width / 2, y: size.height / 2 },
-                v.scale / 1.25,
-              ),
-            )
-          }
-        >
-          −
-        </button>
-        <output aria-label="Zoom percentage">
-          {Math.round(view.scale * 100)}%
-        </output>
-        <button
-          className={buttonClassName({
-            variant: 'secondary',
-            size: 'compact',
-            iconOnly: true,
-          })}
-          type="button"
-          aria-label="Zoom in"
-          onClick={() =>
-            setView((v) =>
-              zoomAt(
-                v,
-                { x: size.width / 2, y: size.height / 2 },
-                v.scale * 1.25,
-              ),
-            )
-          }
-        >
-          +
-        </button>
-        <button
-          className={buttonClassName({ variant: 'secondary', size: 'compact' })}
-          type="button"
-          onClick={() => setView(fit(elements, size))}
-        >
-          Fit map
-        </button>
-        <button
-          className={buttonClassName({ variant: 'secondary', size: 'compact' })}
-          type="button"
-          onClick={() =>
-            setView((v) =>
-              zoomAt(v, { x: size.width / 2, y: size.height / 2 }, 1),
-            )
-          }
-        >
-          Reset zoom
-        </button>
-        {navigationEnd}
-      </div>
+        <div className="map-navigation" aria-label="Map navigation">
+          <button
+            className={buttonClassName({
+              variant: 'secondary',
+              size: 'compact',
+              iconOnly: true,
+            })}
+            type="button"
+            aria-label="Zoom out"
+            onClick={() =>
+              setView((v) =>
+                zoomAt(
+                  v,
+                  { x: size.width / 2, y: size.height / 2 },
+                  v.scale / 1.25,
+                ),
+              )
+            }
+          >
+            −
+          </button>
+          <output aria-label="Zoom percentage">
+            {Math.round(view.scale * 100)}%
+          </output>
+          <button
+            className={buttonClassName({
+              variant: 'secondary',
+              size: 'compact',
+              iconOnly: true,
+            })}
+            type="button"
+            aria-label="Zoom in"
+            onClick={() =>
+              setView((v) =>
+                zoomAt(
+                  v,
+                  { x: size.width / 2, y: size.height / 2 },
+                  v.scale * 1.25,
+                ),
+              )
+            }
+          >
+            +
+          </button>
+          <button
+            className={buttonClassName({
+              variant: 'secondary',
+              size: 'compact',
+            })}
+            type="button"
+            onClick={() => setView(fit(elements, size))}
+          >
+            Fit map
+          </button>
+          <button
+            className={buttonClassName({
+              variant: 'secondary',
+              size: 'compact',
+            })}
+            type="button"
+            onClick={() =>
+              setView((v) =>
+                zoomAt(v, { x: size.width / 2, y: size.height / 2 }, 1),
+              )
+            }
+          >
+            Reset zoom
+          </button>
+          {navigationEnd}
+        </div>
       )}
       <div
         ref={container}
@@ -675,6 +683,7 @@ export function MapCanvas({
                 panning={panning}
                 status={statuses[e.id]}
                 overlay={overlays[e.id]}
+                highlighted={highlightedIds.includes(e.id)}
                 nodeRef={nodeRef}
                 onEnter={enter}
                 onLeave={leave}

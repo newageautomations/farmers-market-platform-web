@@ -1,0 +1,215 @@
+/* Website-specific composition of the layout creator's dark chrome and shared controls. */
+.website-editor-workspace.visual-storefront-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+}
+.website-editor-workspace .visual-editor-toolbar {
+  flex: none;
+  gap: 0.6rem;
+  padding: 0.4rem 0.8rem;
+  min-height: 60px;
+  border: 0;
+  border-bottom: 1px solid var(--designer-line);
+  border-radius: 0;
+  background: var(--designer-shell);
+}
+.website-editor-workspace .visual-editor-toolbar > a:first-child {
+  border-right: 1px solid var(--designer-line);
+  border-radius: 0;
+}
+.website-editor-workspace .designer-title {
+  margin-right: auto;
+}
+.website-editor-workspace .visual-editor-history,
+.website-editor-workspace .visual-editor-preview-tools {
+  margin: 0;
+  gap: 0.35rem;
+}
+.website-editor-workspace .visual-editor-feedback {
+  flex: none;
+  padding-inline: 1rem;
+  background: var(--designer-shell);
+  font-size: 0.8rem;
+}
+.website-editor-workspace .visual-editor-feedback p {
+  margin-block: 0.3rem;
+}
+.website-editor-workspace .visual-editor-body,
+.website-editor-workspace
+  .visual-editor-body:has(> .visual-editor-sidebar details[open]) {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 310px;
+  min-height: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.website-editor-workspace .visual-editor-sidebar,
+.website-editor-workspace .website-editor-inspector {
+  overflow: auto;
+  min-width: 0;
+  max-height: none;
+  padding: 1rem;
+  background: var(--designer-panel);
+}
+.website-editor-workspace .visual-editor-sidebar {
+  border-right: 1px solid var(--designer-line);
+}
+.website-editor-workspace .website-editor-inspector {
+  border-left: 1px solid var(--designer-line);
+}
+.website-editor-workspace .visual-editor-sidebar nav {
+  margin-top: 1rem;
+}
+.website-editor-workspace .visual-editor-page-selector .field {
+  width: 100%;
+}
+.website-editor-workspace .visual-editor-preview {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 1rem 1rem;
+  background: var(--designer-canvas);
+}
+.website-editor-workspace .visual-editor-preview-status {
+  min-height: 40px;
+  flex: none;
+  font-size: 0.75rem;
+  color: var(--designer-ink);
+}
+.website-editor-workspace .visual-editor-viewport {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  background: transparent;
+  border: 0;
+}
+.website-editor-workspace .visual-editor-viewport iframe {
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.2);
+}
+.website-editor-workspace .visual-editor-section-content {
+  padding: 0;
+  border: 0;
+}
+.website-editor-workspace fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.website-editor-workspace .website-editor-inspector .field {
+  margin-block: 0.85rem;
+}
+.website-editor-workspace .website-inspector-title {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--designer-line);
+  font-weight: 600;
+}
+.website-editor-workspace .website-inspector-empty {
+  color: var(--designer-ink-muted);
+  font-size: 0.875rem;
+}
+.website-editor-workspace .farmhouse-section-row {
+  border: 0;
+  border-bottom: 1px solid var(--designer-line);
+  border-radius: 0;
+  padding-block: 0.4rem;
+}
+.website-editor-workspace .farmhouse-section-heading {
+  gap: 0.2rem;
+}
+.website-editor-workspace .ui-disclosure {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+}
+.website-editor-workspace .ui-disclosure > summary {
+  padding: 0.6rem 0.4rem;
+  font-size: 0.85rem;
+}
+.website-editor-workspace .ui-disclosure[data-selected] > summary,
+.website-editor-workspace .ui-disclosure[open] > summary {
+  background: var(--designer-accent-soft);
+}
+.website-block-hierarchy {
+  margin: 0.3rem 0 0.4rem 1rem;
+  padding-left: 0.4rem;
+  border-left: 1px solid var(--designer-line);
+}
+.website-block-row {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  border-radius: 6px;
+}
+.website-block-row[data-selected] {
+  background: var(--designer-accent-soft);
+}
+.website-block-row > .ui-button:last-child {
+  justify-content: start;
+  flex: 1;
+  min-width: 0;
+}
+.website-editor-workspace .farmhouse-section-management {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--designer-line);
+}
+.website-editor-workspace :is(summary, button, a):focus-visible {
+  outline: 2px solid var(--designer-accent);
+  outline-offset: 2px;
+}
+@media (max-width: 1390px) {
+  .website-editor-workspace .visual-editor-body,
+  .website-editor-workspace
+    .visual-editor-body:has(> .visual-editor-sidebar details[open]) {
+    grid-template-columns: 240px minmax(0, 1fr) 280px;
+  }
+  .website-editor-workspace .visual-editor-toolbar {
+    gap: 0.35rem;
+  }
+  .website-editor-workspace .visual-editor-toolbar .button.ui-button {
+    --ui-button-padding-inline: 8px;
+    font-size: 0.78rem;
+  }
+}
+
+.website-block-row[data-drop='before'] {
+  box-shadow: 0 -2px var(--designer-accent);
+}
+.website-block-row[data-drop='after'] {
+  box-shadow: 0 2px var(--designer-accent);
+}
+
+/* Match the layout creator's dedicated screen while removing obscured shell tab stops. */
+.admin-dashboard:has(.website-editor-workspace):not(
+    :has([hidden] .website-editor-workspace)
+  )
+  :is(.admin-sidebar, .admin-topbar, .fixture-notice, .skip-link) {
+  display: none;
+}
+body:has(.website-editor-workspace):not(
+    :has([hidden] .website-editor-workspace)
+  ) {
+  overflow: hidden;
+}
+
+/* Native textarea adapter consumes the same designer field tokens as inputs. */
+.website-editor-workspace .website-editor-inspector textarea {
+  background: var(--designer-field, var(--designer-raised));
+  color: var(--designer-ink);
+  border: 1px solid var(--designer-field-edge, var(--designer-line));
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  padding: 0.5rem 0.65rem;
+}

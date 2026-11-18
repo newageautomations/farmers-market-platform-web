@@ -1,9 +1,22 @@
 /* Opt-in Farmstand presentation requested for the vendor catalog. */
-.farmstand-text-link {
+.farmstand-icon-shopping-bag {
+  --farmstand-icon-width: 22px;
+  --farmstand-icon-source: url('./assets/farmstand/shopping-bag.svg');
+  mask-size: contain;
+}
+.farmstand-text-link,
+.market-text-links
+  a:not(:where(.button, .market-vendor-storefront, .product-card-link)):not(
+    :has(img, svg)
+  ) {
   position: relative;
   text-decoration: none;
 }
-.farmstand-text-link::after {
+.farmstand-text-link::after,
+.market-text-links
+  a:not(:where(.button, .market-vendor-storefront, .product-card-link)):not(
+    :has(img, svg)
+  )::after {
   content: '';
   position: absolute;
   left: 0;
@@ -16,6 +29,11 @@
   transition: transform 0.35s ease;
   pointer-events: none;
 }
+.market-text-links
+  a:not(:where(.button, .market-vendor-storefront, .product-card-link)):not(
+    :has(img, svg)
+  ):is(:hover, :focus-visible)::after,
+.market-text-links a:is(:hover, :focus-visible) .farmstand-text-link::after,
 .farmstand-text-link:is(:hover, :focus-visible)::after,
 :is(.farmstand-button, .farmstand-text-action):is(:hover, :focus-visible)
   > .farmstand-text-link::after {
@@ -34,7 +52,11 @@
   cursor: pointer;
 }
 @media (prefers-reduced-motion: reduce) {
-  .farmstand-text-link::after {
+  .farmstand-text-link::after,
+  .market-text-links
+    a:not(:where(.button, .market-vendor-storefront, .product-card-link)):not(
+      :has(img, svg)
+    )::after {
     transition: none;
   }
 }
@@ -633,6 +655,11 @@
 :is(.catalog-table, .farmstand-data-table) :is(th, td):first-child {
   padding-left: 22px;
 }
+/* Opt-in checkbox column, including inside workspace record lists. */
+.farmstand-data-table.farmstand-data-table-selectable thead th:first-child {
+  width: 1%;
+  white-space: nowrap;
+}
 :is(.catalog-table, .farmstand-data-table) :is(th, td):last-child {
   padding-right: 22px;
 }
@@ -677,4 +704,21 @@
 .markets-pagination-footer nav {
   display: flex;
   gap: 8px;
+}
+
+/* Customer dashboard glyphs (Lucide, same license as the set above). */
+.farmstand-icon-heart {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/heart.svg');
+  mask-size: contain;
+}
+.farmstand-icon-gift {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/gift.svg');
+  mask-size: contain;
+}
+.farmstand-icon-clock {
+  --farmstand-icon-width: 20px;
+  --farmstand-icon-source: url('./assets/farmstand/clock.svg');
+  mask-size: contain;
 }

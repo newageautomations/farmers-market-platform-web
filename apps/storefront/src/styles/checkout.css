@@ -49,7 +49,7 @@
 }
 .pickup-choice {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.6rem;
   margin: 0.75rem 0;
 }
@@ -71,12 +71,14 @@
 }
 .checkout-totals div {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   margin: 0.6rem 0;
 }
 .checkout-totals dd {
   margin: 0;
+  align-self: center;
   white-space: nowrap;
 }
 .checkout-shell button,
@@ -189,4 +191,64 @@
   .password-checklist {
     grid-template-columns: 1fr;
   }
+}
+
+.checkout-card-entry {
+  margin-block: 1.5rem;
+}
+.checkout-card-entry > p:first-child {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.checkout-card-host {
+  padding: 1.25rem;
+  min-height: 3.5rem;
+  border: 1px solid var(--brand-muted);
+  border-radius: 6px;
+  background: white;
+  color: #222;
+}
+.checkout-card-host:focus-within {
+  outline: 2px solid var(--brand-primary, currentColor);
+  outline-offset: 2px;
+}
+.checkout-summary-product {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.checkout-account-invitation {
+  margin-block: 2rem;
+  padding: 1.5rem;
+  border: 1px solid var(--brand-muted);
+  border-radius: 6px;
+}
+
+.checkout-stage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 1rem;
+}
+.checkout-stage-actions > .ui-button {
+  margin: 0;
+}
+/* Platform account screens opt into the Farmstand controls; long labels on
+   their full-width actions may still wrap. */
+.account-panel.farmstand-controls .button.ui-button {
+  white-space: normal;
+}
+/* INP-03 OTP keeps its own legend presentation. */
+.account-panel.farmstand-controls .otp-fieldset > legend {
+  color: inherit;
+  font-size: inherit;
+  font-weight: 600;
+}
+/* Inline field actions (password Show, lookups) match the 40px field. */
+.account-panel.farmstand-controls
+  :is(.ui-inline-controls, .ui-control-row)
+  .button.ui-button:not(.button-tertiary) {
+  --ui-control-height: 40px;
 }

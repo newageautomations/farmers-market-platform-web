@@ -1,0 +1,131 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import WebsitePageRegion from '../components/WebsitePageRegion.astro';
+import MarketDateList from '../components/market/MarketDateList.astro';
+import EmptyState from '../components/ui/EmptyState.astro';
+import Button from '../components/ui/Button.astro';
+import { ErrorState } from '@market/ui';
+import { isEditorialMarket, marketPage } from '@market/theme/storefront';
+import {
+  safeError,
+  type AppError,
+  type PublicMarketOccurrence,
+} from '@market/api';
+import { requestMarketShop } from '../lib/shop';
+import { marketPageAvailable } from '../lib/market-website';
+import '../styles/market-website.css';
+
+const { storefront, editorPreview } = Astro.locals;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+const preview = !!editorPreview;
+// Editorial Market pages share its content-page hero and spacing.
+const editorial = isEditorialMarket(storefront?.appearance);
+const market = storefront?.kind === 'MARKET' && storefront.source === 'backend';
+const enabled =
+  market && marketPageAvailable(storefront.appearance, 'market-dates', preview);
+const page = marketPage(storefront?.appearance, 'market-dates');
+const pageSize = 12;
+const rawPage = Number(Astro.url.searchParams.get('page') ?? 1);
+const current =
+  Number.isSafeInteger(rawPage) && rawPage > 0 && rawPage <= 1000 ? rawPage : 1;
+let occurrences: readonly PublicMarketOccurrence[] = [],
+  totalItems = 0,
+  error: AppError | undefined;
+if (enabled) {
+  try {
+    const result = await requestMarketShop(Astro).occurrences({
+      options: { skip: (current - 1) * pageSize, take: pageSize },
+    });
+    occurrences = result.marketStorefrontOccurrences.items;
+    totalItems = result.marketStorefrontOccurrences.totalItems;
+  } catch (value) {
+    error = safeError(value);
+    Astro.response.status = 503;
+  }
+} else Astro.response.status = storefront ? 404 : 503;
+const vendorsPage =
+  enabled && marketPageAvailable(storefront.appearance, 'vendors', preview);
+---
+
+<SiteLayout
+  context={storefront}
+  path="/market-dates"
+  title={enabled ? page.title : 'Page unavailable'}
+  noindex={!enabled}
+>
+  {enabled ? (
+    <>
+      <WebsitePageRegion
+        context={storefront}
+        page="market-dates"
+        region="before"
+      />
+      <article
+        class:list={[
+          editorial ? 'em-content-page em-market-page' : 'market-page',
+        ]}
+        data-template={editorial ? 'editorial-market-market-dates' : undefined}
+        aria-labelledby="market-dates-title"
+      >
+        <header
+          class={editorial ? 'em-content-hero' : 'market-page-intro'}
+          data-editor-section="market-dates-settings"
+        >
+          <h1 id="market-dates-title">{page.title}</h1>
+          {page.description && <p>{page.description}</p>}
+        </header>
+        {error ? (
+          <ErrorState error={error} />
+        ) : !occurrences.length ? (
+          <EmptyState title="Your next visit is in the making" level={2}>
+            <p>
+              Upcoming market dates will appear here when they are announced.
+            </p>
+          </EmptyState>
+        ) : (
+          <MarketDateList
+            cardTheme={storefront?.appearance?.market?.marketsCardTheme}
+            occurrences={occurrences}
+            detailed
+            vendorsHref={vendorsPage}
+          />
+        )}
+        {(totalItems > pageSize || current > 1) && (
+          <nav class="pagination ui-pagination" aria-label="Market date pages">
+            <p>
+              {totalItems} market dates. Showing{' '}
+              {occurrences.length ? (current - 1) * pageSize + 1 : 0} to{' '}
+              {(current - 1) * pageSize + occurrences.length}.
+            </p>
+            {current > 1 && (
+              <Button
+                href={`/market-dates?page=${current - 1}`}
+                variant="secondary"
+              >
+                Earlier dates
+              </Button>
+            )}
+            {current * pageSize < totalItems && (
+              <Button
+                href={`/market-dates?page=${current + 1}`}
+                variant="secondary"
+              >
+                More market dates
+              </Button>
+            )}
+          </nav>
+        )}
+      </article>
+      <WebsitePageRegion
+        context={storefront}
+        page="market-dates"
+        region="after"
+      />
+    </>
+  ) : (
+    <section class="market-page">
+      <h1>Page unavailable</h1>
+      <p>This page is not available on this website.</p>
+    </section>
+  )}
+</SiteLayout>

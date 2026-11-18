@@ -1,0 +1,97 @@
+---
+import {
+  effectiveWebsiteBlocks,
+  websiteSectionStyle,
+  websiteSectionAttributes,
+  websiteObjectStyle,
+  websiteButtonStyle,
+  type WebsiteImageWithTextSection,
+} from '@market/theme/storefront';
+import { safeAsset, type StorefrontContext } from '@market/storefront-core';
+import { websiteSectionDestination } from '../website-section-navigation';
+import Button from '../ui/Button.astro';
+import '../../styles/website-sections.css';
+import '../../styles/harvest-sections.css';
+const { section, context, editorId } = Astro.props as {
+  section: WebsiteImageWithTextSection;
+  context: StorefrontContext;
+  editorId?: string;
+};
+const { presentation } = section;
+const blocks = effectiveWebsiteBlocks(section).filter((b) => b.visible);
+const photo = blocks.flatMap((b) =>
+  b.type === 'image' ? [b.content] : [],
+)[0]!;
+const image = safeAsset(photo.url);
+---
+
+<section
+  class="harvest-section harvest-authored harvest-image-story website-section"
+  {...websiteSectionAttributes(section)}
+  style={websiteSectionStyle(section)}
+  data-editor-section={editorId ?? `harvest:${section.id}`}
+  data-image-layout={
+    presentation.imageSide === 'background' ? 'overlay' : undefined
+  }
+  data-variant={presentation.variant ?? 'standard'}
+  data-background={presentation.background}
+  data-alignment={presentation.alignment}
+  data-image-side={presentation.imageSide}
+  data-image-size={presentation.imageSize}
+  data-column-ratio={presentation.columnRatio}
+  data-vertical-alignment={presentation.verticalAlignment}
+  data-internal-spacing={presentation.spacing}
+>
+  <div class="harvest-authored-image website-image">
+    {image ? (
+      <img
+        src={image}
+        alt={photo.alt}
+        width="960"
+        height="1080"
+        loading="lazy"
+        decoding="async"
+      />
+    ) : (
+      <div class="harvest-photo-placeholder" aria-hidden="true">
+        ✿
+      </div>
+    )}
+  </div>
+  <div class="harvest-authored-copy website-copy">
+    {blocks.map((block) =>
+      block.type === 'image' ? null : block.type === 'button' ? (
+        websiteSectionDestination(context, block.content.destination) && (
+          <Button
+            href={block.content.destination}
+            variant={websiteButtonStyle(section, block)}
+            data-block-id={block.id}
+            style={websiteObjectStyle(section, 'button', block)}
+          >
+            {block.content.label}
+            <span aria-hidden="true">↗</span>
+          </Button>
+        )
+      ) : block.type === 'heading' ? (
+        block.content.text && (
+          <h2
+            data-block-id={block.id}
+            data-block-size={block.presentation.size}
+            style={websiteObjectStyle(section, 'heading', block)}
+          >
+            {block.content.text}
+          </h2>
+        )
+      ) : (
+        <p
+          data-block-id={block.id}
+          data-block-size={block.presentation.size}
+          class:list={{ 'website-eyebrow': block.type === 'eyebrow' }}
+          style={websiteObjectStyle(section, block.type, block)}
+        >
+          {block.content.text}
+        </p>
+      ),
+    )}
+  </div>
+</section>

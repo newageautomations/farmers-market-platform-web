@@ -1,0 +1,279 @@
+.market-day-home section {
+  scroll-margin-top: 7rem;
+}
+.market-day-pickups {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+.market-day-instructions {
+  white-space: pre-line;
+}
+.market-day-home [data-market-day-follow] {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* The hero buttons are in-page jumps; glide instead of jumping. */
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.market-day-home) {
+    scroll-behavior: smooth;
+  }
+}
+/*
+ * The countdown makes the copy column much taller than the photo, so the
+ * centered photo left a large empty band above it. Start both at the top.
+ */
+.market-day-home .harvest-hero {
+  align-items: start;
+  padding-top: clamp(1.5rem, 3vw, 2.75rem);
+}
+.market-day-home .harvest-hero-copy {
+  padding-top: 0;
+}
+
+.market-day-home #market-day-map {
+  padding-bottom: 1.5rem;
+}
+/* Pickups: a compact strip under the map, not a full homepage section. */
+.market-day-home .market-day-pickups-section {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+  padding: 1rem 1.25rem;
+  border-radius: var(--storefront-card-radius, 1rem);
+  background: var(--brand-surface);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 14%, transparent);
+}
+.market-day-pickups-section h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.market-day-pickups-section > p {
+  margin: 0;
+}
+.market-day-pickups-section .market-day-sign-in {
+  font-weight: 700;
+}
+.market-day-hero-details {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 2.5rem;
+  max-width: 32rem;
+}
+.market-day-venue {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-size: 0.95rem;
+}
+.market-day-venue span {
+  font-size: 1.2rem;
+  color: var(--brand-primary);
+}
+.market-day-regular {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--brand-muted);
+}
+
+/* Countdown card. */
+.market-day-countdown {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 1.4rem;
+  border-radius: var(--storefront-card-radius, 1.2rem);
+  background: var(--brand-surface);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent);
+  box-shadow: 0 18px 40px -28px
+    color-mix(in srgb, var(--brand-foreground) 45%, transparent);
+}
+.market-day-countdown p {
+  margin: 0;
+}
+.market-day-countdown-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 600;
+  color: var(--brand-foreground);
+}
+.market-day-countdown-hours {
+  margin-left: auto;
+  font-weight: 400;
+  font-size: 0.9rem;
+  color: var(--brand-muted);
+}
+.market-day-countdown-note {
+  color: var(--brand-muted);
+}
+.market-day-live {
+  position: relative;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--brand-primary);
+}
+.market-day-live::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: market-day-pulse 2s ease-out infinite;
+}
+.market-day-clock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+.market-day-clock-lead {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brand-muted);
+}
+.market-day-tiles {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.market-day-tile {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+}
+.market-day-digits {
+  display: flex;
+  gap: 0.25rem;
+}
+.market-day-digit {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 3.4rem;
+  overflow: hidden;
+  border-radius: 0.6rem;
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+  font-size: 2rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+/* A faint fold line gives the tiles a split-flap feel. */
+.market-day-digit::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: 1px;
+  background: color-mix(in srgb, var(--brand-on-primary) 18%, transparent);
+}
+.market-day-digit > span {
+  grid-area: 1 / 1;
+}
+.market-day-digit > .is-entering {
+  animation: market-day-roll-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.market-day-digit > .is-leaving {
+  animation: market-day-roll-out 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.market-day-unit {
+  font-size: 0.75rem;
+  color: var(--brand-muted);
+}
+.market-day-separator {
+  height: 3.4rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--brand-primary);
+  animation: market-day-blink 2s steps(1) infinite;
+}
+.market-day-progress {
+  height: 0.4rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--brand-primary) 14%, transparent);
+}
+.market-day-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand-primary);
+  transition: inline-size 1s linear;
+}
+
+@keyframes market-day-roll-in {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes market-day-roll-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+@keyframes market-day-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+@keyframes market-day-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.market-day-choices {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 760px) {
+  .market-day-hero-details {
+    margin-top: 1.7rem;
+  }
+  .market-day-countdown-hours {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-day-digit > .is-entering,
+  .market-day-digit > .is-leaving,
+  .market-day-live::after,
+  .market-day-separator {
+    animation: none;
+  }
+  .market-day-digit > .is-leaving {
+    display: none;
+  }
+  .market-day-progress > span {
+    transition: none;
+  }
+}

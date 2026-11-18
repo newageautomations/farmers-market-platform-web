@@ -1,7 +1,10 @@
+import { createPortal } from 'react-dom';
 import { cardClassName } from '@market/ui/presentation';
 import { CommandForm as SharedCommandForm } from './CommandForm';
 import {
   useId,
+  useEffect,
+  useRef,
   useState,
   type ComponentProps,
   type FormEvent,
@@ -43,8 +46,16 @@ export function CommandForm({
   ...props
 }: ComponentProps<typeof SharedCommandForm> & { danger?: boolean }) {
   const [dirty, setDirty] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const [header, setHeader] = useState<Element | null>(null);
+  useEffect(() => {
+    setHeader(
+      root.current?.closest('dialog')?.querySelector('.ui-dialog-header') ??
+        null,
+    );
+  }, []);
   return (
-    <div className={danger ? 'market-danger-command' : undefined}>
+    <div ref={root} className={danger ? 'market-danger-command' : undefined}>
       <SharedCommandForm
         {...props}
         submitVariant={danger ? 'destructive' : props.submitVariant}
@@ -55,7 +66,17 @@ export function CommandForm({
         }}
       >
         <div onChange={() => setDirty(true)}>{props.children}</div>
-        {dirty && <p role="status">Unsaved changes</p>}
+        {dirty &&
+          (header ? (
+            createPortal(
+              <span className="schedule-unsaved" role="status">
+                Unsaved changes
+              </span>,
+              header,
+            )
+          ) : (
+            <p role="status">Unsaved changes</p>
+          ))}
       </SharedCommandForm>
     </div>
   );
@@ -232,38 +253,50 @@ export function RuleFields({
           onChange={setEnabled}
         />
       )}
-      {(!optional || enabled) && (
-        <div className="form-grid">
-          <TextField
-            name={`${prefix}opensDaysBefore`}
-            label="Days before market day that preorders open"
-            info="For a Saturday market, 7 days before means the previous Saturday; 0 means market day."
-            type="number"
-            value={rule?.opensDaysBefore ?? 7}
-          />
-          <TextField
-            name={`${prefix}opensTime`}
-            label="Preorders open at (local time)"
-            info="The time on the opening day, using the market's time zone."
-            type="time"
-            value={rule?.opensTime ?? '09:00'}
-          />
-          <TextField
-            name={`${prefix}closesDaysBefore`}
-            label="Days before market day that preorders close"
-            info="For a Saturday market, 1 day before means Friday; 0 means market day."
-            type="number"
-            value={rule?.closesDaysBefore ?? 1}
-          />
-          <TextField
-            name={`${prefix}closesTime`}
-            label="Preorders close at (local time)"
-            info="The time on the closing day, using the market's time zone."
-            type="time"
-            value={rule?.closesTime ?? '18:00'}
-          />
+      <div
+        className="preorder-rule-reveal"
+        data-open={!optional || enabled}
+        aria-hidden={optional && !enabled}
+        inert={optional && !enabled}
+      >
+        <div className="preorder-rule-reveal-inner">
+          <fieldset
+            className="preorder-rule-fields"
+            disabled={optional && !enabled}
+          >
+            <div className="form-grid">
+              <TextField
+                name={`${prefix}opensDaysBefore`}
+                label="Days before market day that preorders open"
+                info="For a Saturday market, 7 days before means the previous Saturday; 0 means market day."
+                type="number"
+                value={rule?.opensDaysBefore ?? 7}
+              />
+              <TextField
+                name={`${prefix}opensTime`}
+                label="Preorders open at (local time)"
+                info="The time on the opening day, using the market's time zone."
+                type="time"
+                value={rule?.opensTime ?? '09:00'}
+              />
+              <TextField
+                name={`${prefix}closesDaysBefore`}
+                label="Days before market day that preorders close"
+                info="For a Saturday market, 1 day before means Friday; 0 means market day."
+                type="number"
+                value={rule?.closesDaysBefore ?? 1}
+              />
+              <TextField
+                name={`${prefix}closesTime`}
+                label="Preorders close at (local time)"
+                info="The time on the closing day, using the market's time zone."
+                type="time"
+                value={rule?.closesTime ?? '18:00'}
+              />
+            </div>
+          </fieldset>
         </div>
-      )}
+      </div>
     </>
   );
 }

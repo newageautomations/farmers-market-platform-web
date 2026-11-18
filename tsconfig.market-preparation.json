@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "apps/admin/src/preparation/**/*.tsx",
+    "apps/admin/src/market-day/**/*.tsx",
+    "packages/api/src/preparation.ts",
+    "tests/setup.ts",
+    "tests/market-preparation.test.tsx",
+    "tests/market-day.test.tsx",
+    "tests/market-day-actions.test.tsx",
+    "apps/storefront/src/env.d.ts",
+    "apps/admin/src/env.d.ts",
+    "apps/admin/src/account-env.d.ts"
+  ]
+}

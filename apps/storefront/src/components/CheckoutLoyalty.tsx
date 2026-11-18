@@ -21,8 +21,10 @@ export default function CheckoutLoyalty({
   disabled,
   revision,
   onBusyChange,
+  earnedOnly = false,
 }: {
   vendors?: readonly string[];
+  earnedOnly?: boolean;
   onApplied: () => Promise<unknown>;
   disabled: boolean;
   revision?: string;
@@ -117,8 +119,16 @@ export default function CheckoutLoyalty({
     }
   }
   if (!data) return null;
-  const wallets = data.wallets.filter((w) =>
-    vendors ? vendors.includes(String(w.vendor_id)) : w.inCart,
+  const wallets = data.wallets.filter(
+    (w) =>
+      (vendors ? vendors.includes(String(w.vendor_id)) : w.inCart) &&
+      (!earnedOnly ||
+        w.rewards.some((reward) => reward.available) ||
+        data.redemptions.some(
+          (redemption) =>
+            redemption.wallet_id === w.id &&
+            ['SELECTED', 'RESERVED', 'COMPLETED'].includes(redemption.status),
+        )),
   );
   if (!wallets.length) return null;
   const selectedReward = wallet?.rewards.find((r) => r.versionId === selected);

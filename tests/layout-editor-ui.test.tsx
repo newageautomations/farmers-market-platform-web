@@ -66,6 +66,64 @@ function editor(
   return { run, version };
 }
 
+test('booth placement formats a price and reuses it for future standard and double booths', async () => {
+  const { run } = editor([]);
+  fireEvent.click(screen.getByRole('button', { name: 'Add booth' }));
+  const dialog = screen.getByRole('dialog', {
+    name: 'Set default price for this booth',
+  });
+  const price = within(dialog).getByLabelText('Default price');
+  expect(price.parentElement).toHaveTextContent('$');
+  fireEvent.change(price, { target: { value: '25.5' } });
+  fireEvent.blur(price);
+  expect(price).toHaveValue('25.50');
+  fireEvent.click(
+    within(dialog).getByLabelText('Use this price for all future booths'),
+  );
+  fireEvent.submit(price.closest('form')!);
+  fireEvent.click(screen.getByRole('button', { name: 'Add double booth' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add booth' }));
+  expect(
+    screen.queryByRole('dialog', { name: 'Set default price for this booth' }),
+  ).not.toBeInTheDocument();
+  expect(canvas.props.definition.elements).toHaveLength(3);
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Save layout' }));
+  });
+  const savedSpaces = run.mock.calls[0]![0].data.spaces;
+  const spaces = canvas.props.definition.elements.map(
+    (element) => savedSpaces[element.id],
+  );
+  expect(spaces).toHaveLength(3);
+  expect(spaces).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ feeMinor: 2550, widthFeet: 10 }),
+      expect.objectContaining({ feeMinor: 2550, widthFeet: 20 }),
+    ]),
+  );
+  expect(
+    spaces.every((space) => (space as { feeMinor: number }).feeMinor === 2550),
+  ).toBe(true);
+});
+
+test('without opting in, each booth asks for a price and accepts zero', () => {
+  editor([]);
+  fireEvent.click(screen.getByRole('button', { name: 'Add booth' }));
+  let price = screen.getByLabelText('Default price');
+  fireEvent.change(price, { target: { value: '0' } });
+  fireEvent.submit(price.closest('form')!);
+  fireEvent.click(screen.getByRole('button', { name: 'Add double booth' }));
+  expect(
+    screen.getByRole('dialog', { name: 'Set default price for this booth' }),
+  ).toBeInTheDocument();
+  price = screen.getByLabelText('Default price');
+  expect(price).toHaveValue('');
+  fireEvent.change(price, { target: { value: '10' } });
+  fireEvent.submit(price.closest('form')!);
+  fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+  expect(canvas.props.definition.elements).toHaveLength(1);
+});
+
 test('tool groups preserve insertion and open the requested smart tool directly', () => {
   editor([]);
   expect(screen.getByRole('group', { name: 'Navigation' })).toBeInTheDocument();
@@ -198,7 +256,11 @@ test('properties panel can collapse and inserting an element reopens it', () => 
 test('images can be uploaded, chosen from the library and replaced', async () => {
   const media = {
     images: vi.fn().mockResolvedValue([
-      { id: '7', name: 'Sponsor banner', preview: 'https://cdn.test/banner.png' },
+      {
+        id: '7',
+        name: 'Sponsor banner',
+        preview: 'https://cdn.test/banner.png',
+      },
     ]),
     upload: vi.fn().mockResolvedValue({
       id: '8',
@@ -224,8 +286,9 @@ test('images can be uploaded, chosen from the library and replaced', async () =>
   fireEvent.click(screen.getByRole('button', { name: 'Replace image' }));
   const file = new File(['png'], 'site-plan.png', { type: 'image/png' });
   fireEvent.change(
-    within(screen.getByRole('dialog', { name: 'Choose an image' }))
-      .getByLabelText('Upload image (PNG or JPEG)'),
+    within(
+      screen.getByRole('dialog', { name: 'Choose an image' }),
+    ).getByLabelText('Upload image (PNG or JPEG)'),
     { target: { files: [file] } },
   );
   await waitFor(() => expect(media.upload).toHaveBeenCalledWith(file));
@@ -244,6 +307,8 @@ test('without the image library, Image still inserts a URL frame and explains ac
   expect(screen.getByLabelText('Image or logo URL')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Assets' }));
   expect(
-    screen.getByText(/Uploads and the image library require website management access/),
+    screen.getByText(
+      /Uploads and the image library require website management access/,
+    ),
   ).toBeInTheDocument();
 });

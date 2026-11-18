@@ -62,6 +62,9 @@ const testCheckout: CheckoutView = {
   frozen: false,
   committed: false,
   paymentStatus: 'NONE',
+  paymentGroup: null,
+  preorderFee: null,
+  preorderFeeTestAvailable: false,
   pickupPromise: {
     mode: 'VENDOR_BOOTH_PICKUP',
     venue: '106 City Park Road',
@@ -1033,8 +1036,12 @@ try {
   assert.equal(premiumUnsaved.template?.id, 'modern-farmhouse');
   if (premiumUnsaved.template?.id !== 'modern-farmhouse')
     throw new Error('Expected the Modern Farmhouse fixture');
-  premiumUnsaved.template!.settings.sections[0]!.heading =
-    'Unpublished premium headline';
+  const opening = premiumUnsaved.template.settings.sections.find(
+    (section) => !('type' in section) && section.id === 'cinematic',
+  );
+  if (!opening || 'type' in opening)
+    throw new Error('Expected the cinematic section');
+  opening.heading = 'Unpublished premium headline';
   const premiumPreview = await read(
     'vendor',
     '/storefront-editor-preview/render',

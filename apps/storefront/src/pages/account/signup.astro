@@ -6,9 +6,26 @@ import SiteLayout from '../../layouts/SiteLayout.astro';
 import { platformName } from '@market/config';
 import { isCentral, centralSignIn, accountBridge } from '../../lib/account';
 import { SignupPasswords } from '../../components/SignupPasswords';
+import { requestCheckout } from '../../lib/shop';
+import {
+  openCheckoutData,
+  sealCheckoutData,
+} from '../../lib/private-checkout-data';
+import type { CheckoutView } from '@market/api';
 if (!isCentral(Astro.url)) {
   try {
-    return Astro.redirect(await centralSignIn(Astro, '/account', 'signup'));
+    const order = Astro.url.searchParams.get('order');
+    const checkout =
+      order && /^[1-9]\d*$/.test(order)
+        ? await requestCheckout(Astro, Astro.response.headers).status(order)
+        : null;
+    const prefill =
+      checkout?.committed && checkout.contact
+        ? sealCheckoutData(checkout.contact, 'signup')
+        : undefined;
+    return Astro.redirect(
+      await centralSignIn(Astro, '/account/orders', 'signup', prefill),
+    );
   } catch {
     return new Response('Account registration is temporarily unavailable.', {
       status: 503,
@@ -17,6 +34,22 @@ if (!isCentral(Astro.url)) {
 }
 const origin = Astro.url.searchParams.get('origin'),
   correlation = Astro.url.searchParams.get('correlation');
+const prefillToken =
+  Astro.url.searchParams.get('prefill') ??
+  Astro.cookies.get('checkout-signup-prefill')?.value;
+const prefill = openCheckoutData<CheckoutView['contact']>(
+  prefillToken,
+  'signup',
+);
+if (prefill && prefillToken)
+  Astro.cookies.set('checkout-signup-prefill', prefillToken, {
+    httpOnly: true,
+    secure: Astro.url.protocol === 'https:',
+    sameSite: 'lax',
+    path: '/account/signup',
+    maxAge: 1800,
+  });
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
 if (origin && correlation && /^[A-Za-z0-9_-]{43}$/.test(correlation)) {
   try {
     const { accountBridge } = await import('../../lib/account');
@@ -83,7 +116,7 @@ const vendorContext =
 ---
 
 <SiteLayout title={`Create your free ${platformName} account`} noindex>
-  <section class="py-12 account-panel signup-panel">
+  <section class="py-12 account-panel signup-panel farmstand-controls">
     <h1>
       {vendorContext
         ? 'Create your Vendor account'
@@ -108,6 +141,7 @@ const vendorContext =
         <input
           class={inputClassName('text')}
           name="firstName"
+          value={prefill?.firstName ?? ''}
           autocomplete="given-name"
           required
           maxlength="100"
@@ -118,6 +152,7 @@ const vendorContext =
         <input
           class={inputClassName('text')}
           name="lastName"
+          value={prefill?.lastName ?? ''}
           autocomplete="family-name"
           required
           maxlength="100"
@@ -128,6 +163,7 @@ const vendorContext =
         <input
           class={inputClassName('email')}
           name="email"
+          value={prefill?.emailAddress ?? ''}
           type="email"
           autocomplete="email"
           required
@@ -136,6 +172,7 @@ const vendorContext =
       </label>
       <PhoneInput
         name="phone"
+        defaultValue={prefill?.phoneNumber ?? ''}
         label="Personal phone number"
         required
         client:load

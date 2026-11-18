@@ -30,6 +30,7 @@ import type { VendorService } from './service';
 import '@market/ui/farmstand.css';
 import './order-detail.css';
 import './orders.css';
+import { usePhoneRecords } from '../market/mobile';
 
 function navigate(event: MouseEvent<HTMLAnchorElement>) {
   if (
@@ -88,6 +89,7 @@ export function OrdersWorkspace({
   customerScope?: CustomerOrderScope;
   header?: (orders: OrdersRow[] | undefined) => ReactNode;
 }) {
+  const records = usePhoneRecords();
   const read = useCallback(
     () => readOrdersWorkspace(service, customerScope),
     [service, customerScope],
@@ -98,7 +100,8 @@ export function OrdersWorkspace({
   const [filters, setFilters] = useState<OrderFilters>({
     search: '',
     market: 'all',
-    occurrence: 'all',
+    occurrence:
+      new URLSearchParams(window.location.search).get('occurrence') || 'all',
     range: 'all',
     custom: { from: '', to: '' },
     saleType: 'all',
@@ -421,6 +424,12 @@ export function OrdersWorkspace({
           <div className="orders-table-panel">
             <FarmstandTable
               label="Vendor orders"
+              recordDetails={records({
+                status: 4,
+                labels: shown.map(
+                  (order) => `#${order.orderCode} · ${order.customer}`,
+                ),
+              })}
               headings={[
                 'Order',
                 'Customer',

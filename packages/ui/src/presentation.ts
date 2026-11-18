@@ -50,16 +50,24 @@ export function sectionHeadingClassName(
 ) {
   return `ui-section-heading ui-section-heading-${variant}`;
 }
-/** Native SSR enhancement for SID-01. Without JS the sidebar stays available. */
-export function installDashboardSidebarToggle(button: HTMLButtonElement) {
+/**
+ * Native SSR enhancement for SID-01. Without JS the sidebar stays available.
+ * `rail`: the collapsed sidebar stays on screen as the compact shell's icon
+ * rail (and holds this toggle), so it is not made inert.
+ */
+export function installDashboardSidebarToggle(
+  button: HTMLButtonElement,
+  { rail = false }: { rail?: boolean } = {},
+) {
   const frame = button.closest<HTMLElement>('.ui-dashboard');
   const sidebar = frame?.querySelector<HTMLElement>('.admin-sidebar');
   if (!frame || !sidebar || button.getAttribute('aria-controls') !== sidebar.id)
     return;
   const sync = () => {
     const collapsed = frame.classList.contains('sidebar-collapsed');
-    if (collapsed && sidebar.contains(document.activeElement)) button.focus();
-    sidebar.inert = collapsed;
+    if (collapsed && !rail && sidebar.contains(document.activeElement))
+      button.focus();
+    sidebar.inert = collapsed && !rail;
     button.setAttribute('aria-expanded', String(!collapsed));
     button.setAttribute(
       'aria-label',
@@ -74,6 +82,51 @@ export function installDashboardSidebarToggle(button: HTMLButtonElement) {
   button.hidden = false;
   button.addEventListener('click', toggle);
   return () => button.removeEventListener('click', toggle);
+}
+/**
+ * HDR-01 floating header menu (`.ui-header-menu` native details). Closing
+ * plays the panel's exit animation first unless reduced motion is preferred.
+ */
+export function closeHeaderMenu(menu: HTMLDetailsElement) {
+  if (!menu.open || menu.dataset.closing) return;
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    menu.open = false;
+    return;
+  }
+  menu.dataset.closing = 'true';
+  window.setTimeout(() => {
+    delete menu.dataset.closing;
+    menu.open = false;
+  }, 160);
+}
+/** Shared by the React HeaderMenu and Astro adapters: a pointer press outside,
+ * Escape or the trigger closes the menu with its animation. */
+export function installHeaderMenu(menu: HTMLDetailsElement) {
+  const summary = menu.querySelector<HTMLElement>(':scope > summary');
+  const pointer = (event: PointerEvent) => {
+    if (menu.open && !menu.contains(event.target as Node))
+      closeHeaderMenu(menu);
+  };
+  const key = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape' || !menu.open) return;
+    closeHeaderMenu(menu);
+    summary?.focus();
+  };
+  const toggle = (event: MouseEvent) => {
+    // Animate closing instead of letting the native toggle hide it at once.
+    if (menu.open) {
+      event.preventDefault();
+      closeHeaderMenu(menu);
+    }
+  };
+  document.addEventListener('pointerdown', pointer, true);
+  menu.addEventListener('keydown', key);
+  summary?.addEventListener('click', toggle);
+  return () => {
+    document.removeEventListener('pointerdown', pointer, true);
+    menu.removeEventListener('keydown', key);
+    summary?.removeEventListener('click', toggle);
+  };
 }
 /** Enhances native disclosure only. One mounted toolbar survives viewport changes. */
 export function installDashboardMenu(menu: HTMLDetailsElement) {

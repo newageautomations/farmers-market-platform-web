@@ -516,6 +516,17 @@ input[type='radio'] {
   min-height: 100px;
   border-radius: 6px;
   background: #e1e6e1;
+  animation: ui-skeleton-pulse 1.4s ease-in-out infinite;
+}
+@keyframes ui-skeleton-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
 }
 .progress {
   display: flex;
@@ -864,16 +875,31 @@ td {
 .admin-content .card:not(.ui-card) {
   margin-block: 1.5rem;
 }
+/* Admin session screens (signed out, loading, unavailable): a Farmstand
+   panel; AdminApp adds `farmstand-controls` for the button geometry. */
 .login {
+  display: grid;
+  gap: 14px;
   width: min(100% - 2.5rem, 440px);
   margin: 10vh auto;
-  padding: 2rem;
-  background: white;
-  border: 1px solid #d5dcd5;
-  border-radius: 6px;
+  padding: 28px;
+  background: var(--brand-surface, #fff);
+  border: 1px solid
+    color-mix(in srgb, var(--brand-primary) 16%, var(--brand-surface, #fff));
+  border-radius: 16px;
+}
+.login > * {
+  margin: 0;
+}
+.login .button {
+  justify-self: start;
+  height: auto;
+  white-space: normal;
 }
 .login h1 {
-  font-size: 2.2rem;
+  font-size: 26px;
+  line-height: 1.2;
+  letter-spacing: -0.7px;
 }
 @media (max-width: 800px) {
   .hero {
@@ -2138,11 +2164,13 @@ select:not([multiple]):is([size='0'], [size='1']):open {
   overflow-x: auto;
   max-width: 100%;
 }
-.ops-invoice .invoice-lines {
+.ops-invoice .invoice-lines,
+.booth-invoice-lines .invoice-lines {
   min-width: 640px;
   table-layout: auto;
 }
-.ops-invoice .invoice-lines[data-columns] {
+.ops-invoice .invoice-lines[data-columns],
+.booth-invoice-lines .invoice-lines[data-columns] {
   table-layout: fixed;
 }
 .invoice-lines[data-columns] col:nth-child(1) {
@@ -2161,7 +2189,8 @@ select:not([multiple]):is([size='0'], [size='1']):open {
   .invoice-line-scroll {
     overflow: visible;
   }
-  .ops-invoice .invoice-lines[data-columns] {
+  .ops-invoice .invoice-lines[data-columns],
+  .booth-invoice-lines .invoice-lines[data-columns] {
     table-layout: auto;
   }
   .invoice-lines[data-columns] col:nth-child(n) {
@@ -2496,4 +2525,112 @@ select:not([multiple]):is([size='0'], [size='1']):open {
   display: grid;
   gap: 1rem;
   min-width: 0;
+}
+
+/* Optional preorder fields use the disclosure's intrinsic-height reveal pattern. */
+.preorder-rule-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 250ms ease;
+}
+.preorder-rule-reveal[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+.preorder-rule-reveal-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.preorder-rule-fields {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .preorder-rule-reveal {
+    transition: none;
+  }
+}
+
+/* HeaderMenu: compact icon trigger with a floating panel (dashboard topbar). */
+.ui-header-menu {
+  position: relative;
+  flex: none;
+}
+.ui-header-menu > summary {
+  list-style: none;
+}
+.ui-header-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.ui-header-menu > summary.ui-header-menu-trigger.button.ui-button {
+  --ui-control-height: 36px;
+  --button-fill: transparent;
+  --button-edge: transparent;
+  --button-ink: var(--brand-secondary);
+  --button-hover-fill: color-mix(
+    in srgb,
+    var(--brand-primary) 8%,
+    var(--brand-surface)
+  );
+  --button-hover-edge: transparent;
+  --button-hover-ink: var(--brand-primary);
+  position: relative;
+  width: 36px;
+  cursor: pointer;
+}
+.ui-header-menu[open] > summary.ui-header-menu-trigger.button.ui-button {
+  --button-fill: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--brand-surface)
+  );
+  --button-ink: var(--brand-primary);
+}
+.ui-header-menu-trigger svg {
+  width: 20px;
+  height: 20px;
+}
+.ui-header-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  min-width: 240px;
+  max-width: calc(100vw - 1.5rem);
+  background: var(--brand-surface);
+  color: var(--brand-foreground);
+  border: 1px solid
+    color-mix(in srgb, var(--brand-primary) 14%, var(--brand-surface));
+  border-radius: 12px;
+  box-shadow:
+    0 12px 32px rgb(23 57 37 / 0.14),
+    0 2px 6px rgb(23 57 37 / 0.06);
+  overflow: hidden;
+  animation: ui-header-menu-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.ui-header-menu[data-closing] > .ui-header-menu-panel {
+  animation: ui-header-menu-out 160ms ease-in both;
+  pointer-events: none;
+}
+.ui-header-menu-panel {
+  transform-origin: top right;
+}
+@keyframes ui-header-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.94);
+  }
+}
+@keyframes ui-header-menu-out {
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.94);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-header-menu-panel,
+  .ui-header-menu[data-closing] > .ui-header-menu-panel {
+    animation: none;
+  }
 }

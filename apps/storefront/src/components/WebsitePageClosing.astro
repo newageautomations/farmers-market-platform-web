@@ -1,0 +1,74 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import {
+  defaultAboutCta,
+  defaultContact,
+  defaultFaq,
+  defaultPolicies,
+  defaultFindUs,
+  isFarmhouse,
+  type WebsiteEditorialPage,
+} from '@market/theme/storefront';
+import ClosingInvitation from './ClosingInvitation.astro';
+import Invitation from './modern-farmhouse/Invitation.astro';
+const { context, page } = Astro.props as {
+  context: StorefrontContext;
+  page: WebsiteEditorialPage;
+};
+const a = context.appearance!;
+// Market websites have no product listing or Find Us page: invitations lead to market dates.
+const market = context.kind === 'MARKET';
+const config =
+  page === 'about'
+    ? a.about
+    : page === 'find-us'
+      ? (a.findUs ?? defaultFindUs)
+      : page === 'contact'
+        ? (a.contact ?? defaultContact)
+        : page === 'faq'
+          ? (a.faq ?? defaultFaq)
+          : (a.policies ?? defaultPolicies);
+const cta = page === 'about' ? (a.about.cta ?? defaultAboutCta) : config.cta!;
+const section =
+  page === 'about'
+    ? 'story-cta'
+    : page === 'find-us'
+      ? 'find-cta'
+      : `${page}-cta`;
+const enabled =
+  page === 'contact'
+    ? market || a.findUs?.enabled
+    : page === 'faq' || page === 'policies'
+      ? a.contact?.enabled
+      : true;
+const resolved =
+  page === 'contact'
+    ? '/find-us'
+    : page === 'faq' || page === 'policies'
+      ? '/contact'
+      : page === 'about'
+        ? (a.about.cta ?? defaultAboutCta).destination
+        : (a.findUs ?? defaultFindUs).cta.destination;
+const destination =
+  market && (resolved === '/find-us' || resolved === '/products')
+    ? '/market-dates'
+    : resolved;
+---
+
+{enabled &&
+  (isFarmhouse(a) ? (
+    <Invitation composition cta={{ ...cta, destination }} section={section} />
+  ) : (
+    <ClosingInvitation
+      composition
+      cta={{ ...cta, destination }}
+      section={section}
+    />
+  ))}
+
+{!enabled && Astro.locals.editorPreview && (
+  <p data-editor-section={section}>
+    Enable {page === 'contact' ? 'Find Us' : 'Contact'} to show the closing
+    invitation.
+  </p>
+)}

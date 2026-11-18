@@ -1,12 +1,16 @@
-import { EmptyState } from '@market/ui';
-import { Badge } from '@market/ui';
-import { managementStatusTone } from './status-presentation';
 import { useCallback } from 'react';
-import { Button, Card } from '@market/ui';
+import { Badge, EmptyState } from '@market/ui';
+import {
+  FarmstandButton as Button,
+  FarmstandPanel,
+} from '@market/ui/farmstand';
 import { formatMoney } from '@market/config';
+import { managementStatusTone } from './status-presentation';
 import type { ManagementService } from './service';
 import { ReadState, useRead, date, Unavailable } from '../vendor/common';
 import { Entitlements } from './common';
+import { WorkspaceFrame } from '../WorkspaceFrame';
+import { SettingsPanel } from '../settings/SettingsPanel';
 export function Billing({ service }: { service: ManagementService }) {
   const subject = service.context.subject;
   const read = useCallback(() => {
@@ -17,21 +21,32 @@ export function Billing({ service }: { service: ManagementService }) {
     data = result.data,
     s = data?.ownSubscription;
   return (
-    <>
+    <WorkspaceFrame
+      icon="credit-card"
+      title="Subscription"
+      description="Your plan, included features, usage and available offers."
+      tabs={[]}
+      value="billing"
+      onChange={() => {}}
+      className="management-billing farmstand-controls"
+    >
       <ReadState {...result} retry={result.refresh} />
       {data && (
         <>
-          <Card>
-            <h2 className="ui-section-title-dashboard">Subscription</h2>
-            <p>
-              {s ? (
+          <SettingsPanel
+            icon="receipt-text"
+            title="Subscription"
+            description={
+              s ? (
                 <Badge tone={managementStatusTone('subscription', s.status)}>
                   {s.status}
                 </Badge>
               ) : (
                 'No subscription assigned'
-              )}
-            </p>
+              )
+            }
+            module="management-workspace"
+          >
             <p>
               Source:{' '}
               {data.ownBillingConfiguration.subscriptionSource ??
@@ -68,10 +83,29 @@ export function Billing({ service }: { service: ManagementService }) {
                 {date(s.pendingChange.effectiveAt)}
               </p>
             )}
-          </Card>
-          <Entitlements items={data.ownEntitlements} />
-          <section>
-            <h2 className="ui-section-title-dashboard">Usage</h2>
+            <div className="actions">
+              <Button disabled>Request plan change</Button>
+              <Button disabled variant="secondary">
+                Cancel subscription
+              </Button>
+              <Button disabled variant="secondary">
+                Open billing portal
+              </Button>
+            </div>
+          </SettingsPanel>
+          <SettingsPanel
+            icon="shield-check"
+            title="Features"
+            description="What your current plan includes."
+            module="management-workspace"
+          >
+            <Entitlements items={data.ownEntitlements} />
+          </SettingsPanel>
+          <SettingsPanel
+            icon="chart-column"
+            title="Usage"
+            module="management-workspace"
+          >
             {data.ownUsage.length ? (
               <Entitlements items={data.ownUsage} />
             ) : (
@@ -79,41 +113,44 @@ export function Billing({ service }: { service: ManagementService }) {
                 <p>No metered usage definitions apply to this tenant.</p>
               </EmptyState>
             )}
-          </section>
-          <section>
-            <h2 className="ui-section-title-dashboard">Available offers</h2>
-            <div className="management-grid">
-              {data.availableBillingOffers.map((o) => (
-                <Card key={o.id}>
-                  <h3>{o.code}</h3>
-                  <p>
-                    {formatMoney(o.amount, o.currency)} per {o.cadenceCount}{' '}
-                    {o.cadenceInterval}
-                  </p>
-                  <p>Exact plan version {o.planVersionId}</p>
-                  <Button disabled>Select offer</Button>
-                </Card>
-              ))}
-            </div>
-            {!data.availableBillingOffers.length && (
+          </SettingsPanel>
+          <SettingsPanel
+            icon="tag"
+            title="Available offers"
+            module="management-workspace"
+          >
+            {data.availableBillingOffers.length ? (
+              <div className="management-grid">
+                {data.availableBillingOffers.map((o) => (
+                  <FarmstandPanel
+                    as="article"
+                    className="management-entitlement"
+                    key={o.id}
+                  >
+                    <h3>{o.code}</h3>
+                    <p>
+                      {formatMoney(o.amount, o.currency)} per {o.cadenceCount}{' '}
+                      {o.cadenceInterval}
+                    </p>
+                    <p>Exact plan version {o.planVersionId}</p>
+                    <Button disabled>Select offer</Button>
+                  </FarmstandPanel>
+                ))}
+              </div>
+            ) : (
               <EmptyState title="No offers configured">
                 <p>No approved offers are configured.</p>
               </EmptyState>
             )}
-          </section>
+          </SettingsPanel>
           <Unavailable>
             External billing actions are unavailable in Phase 13G. Internal
             no-charge assignments are administered by the Platform. Refunds,
             inventory release, reconciliation, unsubscribe, purchase history and
             billing resolution remain outside optional entitlement gating.
           </Unavailable>
-          <div className="actions">
-            <Button disabled>Request plan change</Button>
-            <Button disabled>Cancel subscription</Button>
-            <Button disabled>Open billing portal</Button>
-          </div>
         </>
       )}
-    </>
+    </WorkspaceFrame>
   );
 }

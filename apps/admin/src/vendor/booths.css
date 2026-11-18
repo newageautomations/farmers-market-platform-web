@@ -1,0 +1,173 @@
+/* Vendor › Booth assignments. The page is a WorkspaceFrame inside the
+ * farmstand-controls container, so the shared Dropdown (DDN-03), the map's
+ * shared buttons and its Area select take the Farmstand presentation. Only
+ * the arrangement below is local; colors come from existing tokens. */
+.vendor-booths-list {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.vendor-booths .vendor-booth.ui-disclosure {
+  --ui-disclosure-radius: 12px;
+  --ui-disclosure-summary-padding: 12px 16px;
+  --ui-disclosure-content-padding: 16px;
+}
+.vendor-booth-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.vendor-booth-summary-title {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.vendor-booth-summary-title strong {
+  color: var(--brand-primary);
+  font-size: 15px;
+  font-weight: 650;
+}
+.vendor-booth-summary-title > span {
+  color: var(--brand-muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+.vendor-booth-body {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Booth facts: icon, small label, value (the Market date overview pattern). */
+.vendor-booth-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+.vendor-booth-facts > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  padding: 2px 16px;
+  min-width: 0;
+}
+.vendor-booth-facts > div:first-child {
+  padding-left: 0;
+}
+.vendor-booth-facts > div + div {
+  border-left: 1px solid var(--markets-border);
+}
+.vendor-booth-facts dt {
+  display: contents;
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+.vendor-booth-facts dt > :is(.farmstand-icon, svg) {
+  grid-row: span 2;
+  align-self: center;
+  color: var(--brand-primary);
+  --farmstand-icon-width: 20px;
+  width: 20px;
+  height: 20px;
+}
+.vendor-booth-facts dd {
+  margin: 0;
+  align-self: center;
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.vendor-booth-instructions {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--markets-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.vendor-booth-invoices {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vendor-booth-invoices > li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--markets-border);
+  border-radius: 10px;
+}
+.vendor-booth-invoice-name {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.vendor-booth-invoice-name strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.vendor-booth-invoice-name span {
+  color: var(--brand-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The shared map's toolbar sits flush with the map; the Area select matches
+   the compact toolbar buttons, as on Market › Assignments. */
+/* Scoped by the page so it outranks the app-wide `.admin-content .ops-map` card. */
+.vendor-booths .vendor-booth-map .ops-map {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.vendor-booth-map .map-navigation {
+  min-height: 0;
+  padding: 0 0 12px;
+}
+.vendor-booth-map .map-hint {
+  padding: 8px 0 0;
+}
+.vendor-booth-map .map-navigation .ui-select.ui-select {
+  --ui-control-height: 32px;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  min-height: 32px;
+  padding-block: 0;
+  font-weight: 600;
+}
+.vendor-booth-map .map-navigation output {
+  color: var(--brand-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.vendor-booth-map .ops-canvas {
+  border-color: var(--markets-border);
+  border-radius: 10px;
+}
+
+@media (max-width: 700px) {
+  .vendor-booth-facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .vendor-booth-facts > div,
+  .vendor-booth-facts > div:first-child {
+    padding: 0;
+  }
+  .vendor-booth-facts > div + div {
+    border-left: 0;
+  }
+}

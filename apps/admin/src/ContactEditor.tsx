@@ -1,3 +1,4 @@
+import { WebsiteInspectorContent } from './WebsiteEditorContext';
 import { Checkbox, Field, Input, PhoneInput, Textarea } from '@market/ui';
 import { disclosureClassName } from '@market/ui/presentation';
 import {
@@ -17,6 +18,9 @@ const sections = {
   'contact-cta': 'Closing invitation',
 } as const;
 export function ContactEditor({
+  onlyClosing = false,
+  hideClosing = false,
+  sectionHero = false,
   value = defaultContact,
   selected,
   collapsed,
@@ -24,13 +28,19 @@ export function ContactEditor({
   collapse,
   onChange,
   busy,
+  formAvailable = true,
 }: {
+  /** Market websites have no contact inbox, so they show contact information only. */
+  formAvailable?: boolean;
   value?: ContactConfig;
   selected: StorefrontEditorSection;
   collapsed: boolean;
   choose: (id: StorefrontEditorSection) => void;
   collapse: () => void;
   onChange: (v: ContactConfig) => void;
+  sectionHero?: boolean;
+  onlyClosing?: boolean;
+  hideClosing?: boolean;
   busy: boolean;
 }) {
   const patch = (v: Partial<ContactConfig>) => onChange({ ...value, ...v });
@@ -96,164 +106,176 @@ export function ContactEditor({
   );
   return (
     <fieldset disabled={busy} className="contact-editor">
-      {Object.entries(sections).map(([key, label]) => {
-        const id = key as keyof typeof sections;
-        return (
-          <details
-            key={id}
-            className={disclosureClassName('visual-editor-group')}
-            open={!collapsed && selected === id}
-          >
-            <summary
-              role="button"
-              aria-expanded={!collapsed && selected === id}
-              onClick={(e) => {
-                e.preventDefault();
-                if (!collapsed && selected === id) collapse();
-                else choose(id);
-              }}
+      {Object.entries(sections)
+        .filter(([key]) =>
+          onlyClosing
+            ? key === 'contact-cta'
+            : !hideClosing || key !== 'contact-cta',
+        )
+        .filter(
+          ([key]) =>
+            !sectionHero ||
+            !['contact-intro', 'contact-settings'].includes(key),
+        )
+        .filter(([key]) => formAvailable || key !== 'contact-form')
+        .map(([key, label]) => {
+          const id = key as keyof typeof sections;
+          return (
+            <details
+              key={id}
+              className={disclosureClassName('visual-editor-group')}
+              open={!collapsed && selected === id}
             >
-              {label}
-            </summary>
-            {!collapsed && selected === id && (
-              <div className="ui-disclosure-content">
-                {id === 'contact-settings' && (
-                  <>
-                    <label>
-                      <Checkbox
-                        checked={value.enabled}
-                        onChange={(e) => patch({ enabled: e.target.checked })}
-                      />{' '}
-                      Enable Contact page
-                    </label>
-                    {field('title', 'Page title', 160)}
-                  </>
-                )}
-                {id === 'contact-intro' && (
-                  <>
-                    {field('heading', 'Heading', 160)}
-                    {field('description', 'Description', 600, true)}
-                  </>
-                )}
-                {id === 'contact-form' && (
-                  <p>
-                    The form requires a full name, email, subject and message.
-                    Phone and order reference are optional. Customers contact
-                    you through this form; you respond outside the platform.
-                    Preview never sends a message.
-                  </p>
-                )}
-                {id === 'contact-information' && (
-                  <>
+              <summary
+                role="button"
+                aria-expanded={!collapsed && selected === id}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (!collapsed && selected === id) collapse();
+                  else choose(id);
+                }}
+              >
+                {label}
+              </summary>
+              {!collapsed && selected === id && (
+                <WebsiteInspectorContent>
+                  {id === 'contact-settings' && (
+                    <>
+                      <label>
+                        <Checkbox
+                          checked={value.enabled}
+                          onChange={(e) => patch({ enabled: e.target.checked })}
+                        />{' '}
+                        Enable Contact page
+                      </label>
+                      {field('title', 'Page title', 160)}
+                    </>
+                  )}
+                  {id === 'contact-intro' && (
+                    <>
+                      {field('heading', 'Heading', 160)}
+                      {field('description', 'Description', 600, true)}
+                    </>
+                  )}
+                  {id === 'contact-form' && (
                     <p>
-                      Leave a field blank to omit it from your public Contact
-                      page. Only enter an address you want customers to see.
+                      The form requires a full name, email, subject and message.
+                      Phone and order reference are optional. Customers contact
+                      you through this form; you respond outside the platform.
+                      Preview never sends a message.
                     </p>
-                    {contactEntryTypes.map((type) =>
-                      type === 'phone' ? (
-                        <PhoneInput
-                          key={type}
-                          id="contact-public-phone"
-                          label="Phone"
-                          value={details.phone}
-                          onChange={(input) => setDetail('phone', input)}
-                          validationMode="immediate"
-                          advisory
-                        />
-                      ) : (
+                  )}
+                  {id === 'contact-information' && (
+                    <>
+                      <p>
+                        Leave a field blank to omit it from your public Contact
+                        page. Only enter an address you want customers to see.
+                      </p>
+                      {contactEntryTypes.map((type) =>
+                        type === 'phone' ? (
+                          <PhoneInput
+                            key={type}
+                            id="contact-public-phone"
+                            label="Phone"
+                            value={details.phone}
+                            onChange={(input) => setDetail('phone', input)}
+                            validationMode="immediate"
+                            advisory
+                          />
+                        ) : (
+                          <Field
+                            key={type}
+                            id={`contact-public-${type}`}
+                            error={contactValueAdvice(type, details[type])}
+                            label={
+                              {
+                                email: 'Email',
+                                address: 'Address',
+                                facebook: 'Facebook',
+                                instagram: 'Instagram',
+                              }[type]
+                            }
+                          >
+                            <Input
+                              id={`contact-public-${type}`}
+                              aria-describedby={
+                                contactValueAdvice(type, details[type])
+                                  ? `contact-public-${type}-error`
+                                  : undefined
+                              }
+                              type={
+                                type === 'email'
+                                  ? 'email'
+                                  : type === 'address'
+                                    ? 'text'
+                                    : 'url'
+                              }
+                              maxLength={-1}
+                              value={details[type]}
+                              onChange={(event) =>
+                                setDetail(type, event.target.value)
+                              }
+                            />
+                          </Field>
+                        ),
+                      )}
+                    </>
+                  )}
+                  {id === 'contact-cta' && (
+                    <>
+                      {(['heading', 'text', 'label'] as const).map((key) => (
                         <Field
-                          key={type}
-                          id={`contact-public-${type}`}
-                          error={contactValueAdvice(type, details[type])}
+                          key={key}
+                          id={`contact-cta-${key}`}
+                          error={contactTextAdvice(
+                            value.cta[key],
+                            key === 'heading' ? 160 : key === 'text' ? 600 : 80,
+                            key !== 'text',
+                          )}
                           label={
                             {
-                              email: 'Email',
-                              address: 'Address',
-                              facebook: 'Facebook',
-                              instagram: 'Instagram',
-                            }[type]
+                              heading: 'Heading',
+                              text: 'Supporting text',
+                              label: 'Button label',
+                            }[key]
                           }
                         >
                           <Input
-                            id={`contact-public-${type}`}
+                            id={`contact-cta-${key}`}
                             aria-describedby={
-                              contactValueAdvice(type, details[type])
-                                ? `contact-public-${type}-error`
+                              contactTextAdvice(
+                                value.cta[key],
+                                key === 'heading'
+                                  ? 160
+                                  : key === 'text'
+                                    ? 600
+                                    : 80,
+                                key !== 'text',
+                              )
+                                ? `contact-cta-${key}-error`
                                 : undefined
                             }
-                            type={
-                              type === 'email'
-                                ? 'email'
-                                : type === 'address'
-                                  ? 'text'
-                                  : 'url'
-                            }
                             maxLength={-1}
-                            value={details[type]}
-                            onChange={(event) =>
-                              setDetail(type, event.target.value)
+                            value={value.cta[key]}
+                            onChange={(e) =>
+                              patch({
+                                cta: { ...value.cta, [key]: e.target.value },
+                              })
                             }
                           />
                         </Field>
-                      ),
-                    )}
-                  </>
-                )}
-                {id === 'contact-cta' && (
-                  <>
-                    {(['heading', 'text', 'label'] as const).map((key) => (
-                      <Field
-                        key={key}
-                        id={`contact-cta-${key}`}
-                        error={contactTextAdvice(
-                          value.cta[key],
-                          key === 'heading' ? 160 : key === 'text' ? 600 : 80,
-                          key !== 'text',
-                        )}
-                        label={
-                          {
-                            heading: 'Heading',
-                            text: 'Supporting text',
-                            label: 'Button label',
-                          }[key]
-                        }
-                      >
-                        <Input
-                          id={`contact-cta-${key}`}
-                          aria-describedby={
-                            contactTextAdvice(
-                              value.cta[key],
-                              key === 'heading'
-                                ? 160
-                                : key === 'text'
-                                  ? 600
-                                  : 80,
-                              key !== 'text',
-                            )
-                              ? `contact-cta-${key}-error`
-                              : undefined
-                          }
-                          maxLength={-1}
-                          value={value.cta[key]}
-                          onChange={(e) =>
-                            patch({
-                              cta: { ...value.cta, [key]: e.target.value },
-                            })
-                          }
-                        />
-                      </Field>
-                    ))}
-                    <p>
-                      Links to your Find Us page. The invitation appears when
-                      Find Us is enabled.
-                    </p>
-                  </>
-                )}
-              </div>
-            )}
-          </details>
-        );
-      })}
+                      ))}
+                      <p>
+                        Links to your Find Us page. The invitation appears when
+                        Find Us is enabled.
+                      </p>
+                    </>
+                  )}
+                </WebsiteInspectorContent>
+              )}
+            </details>
+          );
+        })}
     </fieldset>
   );
 }

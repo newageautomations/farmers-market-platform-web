@@ -1,4 +1,6 @@
 ---
+import { supportsWebsitePageHero } from '@market/theme/storefront';
+import WebsitePageRegion from '../components/WebsitePageRegion.astro';
 import PremiumContent from '../components/modern-farmhouse/Content.astro';
 import EditorialContent from '../components/editorial-market/Content.astro';
 import { isEditorialMarket, isFarmhouse } from '@market/theme/storefront';
@@ -14,8 +16,7 @@ const { storefront, storefrontError } = Astro.locals;
 const about =
   storefront?.appearance?.about ?? defaultStorefrontAppearance.about;
 const enabled =
-  about?.enabled === true ||
-  !!(Astro.locals.editorPreview && storefront?.kind === 'VENDOR');
+  about?.enabled === true || !!(Astro.locals.editorPreview && !!storefront);
 const sections = about ? aboutSections(about) : [];
 const cta = about?.cta ?? defaultAboutCta;
 const preview = Astro.locals.editorPreview;
@@ -23,6 +24,9 @@ Astro.response.headers.set('Cache-Control', 'private, no-store');
 if (!enabled)
   Astro.response.status =
     storefront || storefrontError?.kind === 'not-found' ? 404 : 503;
+const sectionHero =
+  !!storefront?.appearance &&
+  supportsWebsitePageHero(storefront.appearance, 'about');
 ---
 
 <SiteLayout
@@ -31,19 +35,24 @@ if (!enabled)
   title={enabled ? about.title : 'Page unavailable'}
   noindex={!enabled}
 >
+  {enabled && (
+    <WebsitePageRegion context={storefront} page="about" region="before" />
+  )}
   {enabled && storefront && isFarmhouse(storefront.appearance) ? (
     <PremiumContent
       context={storefront}
+      hideHero={sectionHero}
       page="about"
       preview={!!Astro.locals.editorPreview}
     />
   ) : enabled && storefront && isEditorialMarket(storefront.appearance) ? (
     <EditorialContent
       context={storefront}
+      hideHero={sectionHero}
       page="about"
       preview={!!Astro.locals.editorPreview}
     />
-  ) : enabled && storefront?.kind === 'VENDOR' ? (
+  ) : enabled && storefront ? (
     <article class="story-page" aria-label={about.title}>
       <h1 class="sr-only" data-story-title>
         {about.title}
@@ -52,7 +61,10 @@ if (!enabled)
         const hasText =
           section.layout !== 'image' && !!(section.heading || section.body);
         const hasImage = section.layout !== 'text' && !!section.image;
-        if ((!section.visible || (!hasText && !hasImage)) && !preview)
+        if (
+          (!section.visible && !preview) ||
+          (!hasText && !hasImage && (!preview || sectionHero))
+        )
           return null;
         return (
           <section
@@ -133,5 +145,8 @@ if (!enabled)
       )}
       <a href="/">Return to the storefront</a>
     </article>
+  )}
+  {enabled && (
+    <WebsitePageRegion context={storefront} page="about" region="after" />
   )}
 </SiteLayout>

@@ -1,3 +1,4 @@
+import { OrderRefunds } from './OrderRefunds';
 import { useCallback, type ReactNode } from 'react';
 import { mayCommand } from '@market/admin-core';
 import { nativePaymentLabel, type PosSale } from '@market/api';
@@ -17,6 +18,7 @@ import { ReadState, date, go, useRead } from './common';
 import type { OrderView, VendorService } from './service';
 import '@market/ui/farmstand.css';
 import './order-detail.css';
+import { usePhoneRecords } from '../market/mobile';
 
 function OrderPanel({
   icon,
@@ -129,6 +131,7 @@ function OrderWorkspace({
   sale: PosSale | null;
   paymentControls?: ReactNode;
 }) {
+  const records = usePhoneRecords();
   const { portion, context } = view;
   const inPerson = portion.kind === 'IN_PERSON';
   const kind = inPerson
@@ -341,6 +344,10 @@ function OrderWorkspace({
           >
             <FarmstandTable
               label="Operational order lines"
+              recordDetails={records({
+                status: 4,
+                labels: portion.lines.map((line) => line.variantName),
+              })}
               headings={[
                 'Variant',
                 'Ordered',
@@ -545,6 +552,21 @@ function OrderWorkspace({
                 ))}
               </ul>
             )}
+            {!inPerson &&
+              service.orderRefunds &&
+              mayCommand(service.context, 'RequestOwnVendorRefund') && (
+                <OrderRefunds
+                  api={service.orderRefunds}
+                  orderId={id}
+                  names={Object.fromEntries(
+                    portion.lines.map((line) => [
+                      line.operationalLineId,
+                      line.variantName,
+                    ]),
+                  )}
+                  onUpdated={refresh}
+                />
+              )}
             {paymentControls && (
               <div className="order-payment-controls">{paymentControls}</div>
             )}

@@ -1,10 +1,15 @@
 ---
 import { buttonClassName } from '@market/ui/presentation';
 import { Checkout as PremiumCheckout } from '../../components/modern-farmhouse/Checkout';
-import { isFarmhouse } from '@market/theme/storefront';
+import { isFarmhouse, marketOnlyTheme } from '@market/theme/storefront';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { Checkout } from '../../components/ResilientSurfaces';
-import { requestCheckout, requestShop } from '../../lib/shop';
+import {
+  requestCheckout,
+  requestMarketShop,
+  requestShop,
+} from '../../lib/shop';
+import { marketPreorder } from '../../lib/market-preorder';
 import { vendorPreorder } from '../../lib/vendor-preorder';
 import { VendorCheckout } from '../../components/VendorCheckout';
 import '../../styles/vendor-cart.css';
@@ -13,10 +18,28 @@ import '../../styles/vendor-checkout.css';
 import { safeError } from '@market/api';
 const { storefront } = Astro.locals;
 let view, error, cart, preorder;
+let images: Record<string, string> = {};
 try {
   if (!Astro.locals.editorPreview) {
     view = await requestCheckout(Astro, Astro.response.headers).status();
-    if (storefront?.kind === 'VENDOR') {
+    if (storefront?.kind === 'MARKET') {
+      preorder = await marketPreorder(Astro);
+      try {
+        const marketCart = (
+          await requestMarketShop(Astro, Astro.response.headers).bootstrap()
+        ).cart;
+        if (marketCart && marketCart.id === view?.orderId)
+          images = Object.fromEntries(
+            marketCart.groups.flatMap((group) =>
+              group.lines
+                .filter((line) => line.featuredAsset?.preview)
+                .map((line) => [line.id, line.featuredAsset!.preview]),
+            ),
+          );
+      } catch {
+        /* Optional images never prevent checkout. */
+      }
+    } else if (storefront?.kind === 'VENDOR') {
       cart = (await requestShop(Astro, Astro.response.headers).bootstrap())
         .cart;
       if (cart?.id !== view?.orderId) cart = null;
@@ -40,9 +63,7 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     class={
       isFarmhouse(storefront?.appearance)
         ? 'farmhouse-checkout-route'
-        : storefront?.kind === 'VENDOR'
-          ? 'vendor-checkout-page'
-          : 'py-12'
+        : 'vendor-checkout-page'
     }
   >
     {(!preorder || !view?.groups.length) && <h1>Checkout</h1>}
@@ -51,7 +72,17 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     ) : error ? (
       <p>Checkout is temporarily unavailable. Please try again later.</p>
     ) : view && view.groups.length ? (
-      preorder && isFarmhouse(storefront?.appearance) ? (
+      storefront?.kind === 'MARKET' ? (
+        <Checkout
+          initial={view}
+          storefrontId={storefront.storefrontId ?? ''}
+          preorder={preorder}
+          images={images}
+          marketLayout
+          concise={!!marketOnlyTheme(storefront.appearance)}
+          client:load
+        />
+      ) : preorder && isFarmhouse(storefront?.appearance) ? (
         <PremiumCheckout
           storefrontId={storefront?.storefrontId ?? ''}
           initial={view}

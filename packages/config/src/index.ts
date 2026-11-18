@@ -1,4 +1,5 @@
 export { safeAdminDestination } from './account-destination.ts';
+export * from './remote-demo.ts';
 import { z } from 'zod';
 import {
   normalizeOrigin,

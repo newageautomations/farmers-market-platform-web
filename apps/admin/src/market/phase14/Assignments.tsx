@@ -1,56 +1,81 @@
-import { date } from '../presentation';
 import { MarketDialog as Dialog } from '../presentation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type {
   MarketOperationsData,
   OccurrenceApproval,
   OperationsCommand,
   SpaceAssignment,
   RentalSnapshot,
+  SpaceDetails,
 } from '@market/api';
-import { Button, Select, Card, MarketMap, ErrorState } from '@market/ui';
+import {
+  Alert,
+  Button,
+  Select,
+  Card,
+  MarketMap,
+  ErrorState,
+  UtilityIcon,
+} from '@market/ui';
 import { Check, Control, Entry, moneyLabel } from './common';
 import { Invoice } from './Billing';
 import { OccurrenceLayoutActions } from './OccurrenceLayoutActions';
 import { boothStatus } from './booth-status';
+import './assignment-rentals.css';
+import './booth-dialog.css';
+import { BoothDetailsFields } from './BoothDetailsFields';
+import { useWizardDialogHeight } from '../../WizardProgress';
+import { MinorPriceInput } from '../../PriceInput';
+import { FarmstandIcon } from '@market/ui/farmstand';
 export { boothStatus } from './booth-status';
 
 type Run = (c: OperationsCommand) => Promise<unknown>;
-export function Assignments({
-  data,
-  run,
-  occurrenceId,
-  day = false,
-  canAssign,
-  canDay,
-  canBill,
-  commandError,
-  canEditLayout = false,
-}: {
-  data: MarketOperationsData;
-  run: Run;
-  occurrenceId: number;
-  day?: boolean;
-  canAssign: boolean;
-  canDay: boolean;
-  canBill: boolean;
-  commandError?: unknown;
-  canEditLayout?: boolean;
-}) {
-  const [directory, setDirectory] = useState(''),
-    [previous, setPrevious] = useState(''),
-    [copy, setCopy] = useState<{
-      proposals: Array<{
-        directoryId: number;
-        spaceId: number;
-        rentals: RentalSnapshot[];
-      }>;
-      conflicts: Array<{ directoryId: number; reason: string }>;
-      newVendors: number[];
-    } | null>(null),
-    [search, setSearch] = useState(''),
-    [mapSelection, setMapSelection] = useState(''),
-    [vendorDetail, setVendorDetail] = useState<number | null>(null);
+
+/**
+ * Why a directory business cannot be approved for the selected date, or null.
+ * Verified platform Vendors need an approved membership and confirmed
+ * attendance (the backend's rule); external businesses have no such check.
+ */
+export function approvalBlocker(
+  data: MarketOperationsData,
+  directoryId: number,
+): string | null {
+  const state = data.platformEligibility?.find(
+    (e) => e.directoryId === directoryId,
+  )?.state;
+  const name =
+    data.directory?.find((d) => d.id === directoryId)?.contact.businessName ??
+    'This vendor';
+  if (state === 'MEMBERSHIP_REQUIRED')
+    return `${name} needs an approved market membership before it can be approved for a date.`;
+  if (state === 'PARTICIPATION_CANCELLED')
+    return `${name} cancelled attendance for this date. They need to confirm attendance again before you can approve them.`;
+  if (state === 'PARTICIPATION_REQUIRED')
+    return `${name} has not confirmed attendance for this date yet. You can approve them after they confirm.`;
+  return null;
+}
+/** Short dropdown suffix for a business that cannot be approved yet. */
+export function approvalBlockerLabel(
+  data: MarketOperationsData,
+  directoryId: number,
+) {
+  const state = data.platformEligibility?.find(
+    (e) => e.directoryId === directoryId,
+  )?.state;
+  return state === 'MEMBERSHIP_REQUIRED'
+    ? ' · Membership not approved'
+    : state === 'PARTICIPATION_CANCELLED'
+      ? ' · Attendance cancelled'
+      : state === 'PARTICIPATION_REQUIRED'
+        ? ' · Attendance not confirmed'
+        : '';
+}
+
+/** One date's plan, layout, approvals, assignments and booths. */
+export function occurrenceBooths(
+  data: MarketOperationsData,
+  occurrenceId: number,
+) {
   const plan = data.plans?.find((p) => p.occurrenceId === occurrenceId),
     version = data.layoutVersions?.find((v) => v.id === plan?.layoutVersionId),
     assignments =
@@ -59,7 +84,32 @@ export function Assignments({
       data.approvals?.filter((a) => a.occurrenceId === occurrenceId) ?? [],
     spaces =
       data.spaces?.filter((s) => s.layoutVersionId === version?.id) ?? [];
-  const selectedBooth = spaces.find((s) => s.elementId === mapSelection);
+  return { plan, version, assignments, approvals, spaces };
+}
+
+/**
+ * The date's booth map with assignment statuses, invoice/rental overlays and
+ * booth facts. Shared by the Assignments workspace and the Market Day page.
+ */
+export function BoothMap({
+  data,
+  occurrenceId,
+  selectedId,
+  onSelect,
+  showBoothList = true,
+}: {
+  data: MarketOperationsData;
+  occurrenceId: number;
+  selectedId: string;
+  onSelect: (elementId: string) => void;
+  /** Off where the page shows its own booth table. */
+  showBoothList?: boolean;
+}) {
+  const { version, assignments, approvals, spaces } = occurrenceBooths(
+    data,
+    occurrenceId,
+  );
+  if (!version) return null;
   const statuses = Object.fromEntries(
     spaces.map((s) => [
       s.elementId,
@@ -93,53 +143,99 @@ export function Assignments({
     }),
   );
   return (
-    <>
-      {!day && data.daySummary && (
-        <dl
-          className="ops-day-summary ui-kpi-grid"
-          aria-label="Occurrence summary"
-          aria-live="polite"
-        >
-          <div>
-            <dt>Expected vendors</dt>
-            <dd>{data.daySummary.expected}</dd>
-            <dd className="ops-day-summary-detail">
-              {data.daySummary.assigned} assigned · {data.daySummary.unassigned}{' '}
-              unassigned
-            </dd>
-          </div>
-          <div>
-            <dt>Accepted rentals</dt>
-            <dd>
-              {Object.values(data.daySummary.rentalQuantities).reduce(
-                (sum, quantity) => sum + quantity,
-                0,
-              )}
-            </dd>
-            <dd className="ops-day-summary-detail">
-              {Object.entries(data.daySummary.rentalQuantities).map(
-                ([name, quantity]) => (
-                  <span key={name}>
-                    {name}: {quantity}
-                  </span>
-                ),
-              )}
-              {!Object.keys(data.daySummary.rentalQuantities).length &&
-                'No accepted rentals'}
-            </dd>
-          </div>
-          {data.billingSummary && (
+    <MarketMap
+      key={`map:${version.id}`}
+      boothListLimit={10}
+      boothCards
+      showBoothList={showBoothList}
+      definition={version.definition}
+      spaces={mapSpaces}
+      overlays={overlays}
+      statuses={statuses}
+      renderSpaceDetails={(id) => {
+        const booth = spaces.find((s) => s.elementId === id)!;
+        return (
+          <dl className="facts">
             <div>
-              <dt>Paid invoices</dt>
-              <dd>{data.billingSummary.paid}</dd>
-              <dd className="ops-day-summary-detail">
-                {data.billingSummary.open} open · {data.billingSummary.pastDue}{' '}
-                past due
+              <dt>Booth type</dt>
+              <dd>
+                {booth.details.spaceType.toLowerCase().replaceAll('_', ' ')}
               </dd>
             </div>
-          )}
-        </dl>
-      )}
+            <div>
+              <dt>Booth fee</dt>
+              <dd>
+                {moneyLabel(booth.details.feeMinor, booth.details.currency)}
+              </dd>
+            </div>
+            {booth.details.description && (
+              <div>
+                <dt>Description</dt>
+                <dd>{booth.details.description}</dd>
+              </div>
+            )}
+            {booth.details.managerNotes && (
+              <div>
+                <dt>Manager notes</dt>
+                <dd>{booth.details.managerNotes}</dd>
+              </div>
+            )}
+            {booth.details.preferredDirectoryId && (
+              <div>
+                <dt>Preferred business</dt>
+                <dd>
+                  {data.directory?.find(
+                    (d) => d.id === booth.details.preferredDirectoryId,
+                  )?.contact.businessName ?? 'Not available'}
+                </dd>
+              </div>
+            )}
+          </dl>
+        );
+      }}
+      selectedId={selectedId}
+      onSelect={(id) => {
+        if (spaces.some((s) => s.elementId === id)) onSelect(id);
+      }}
+    />
+  );
+}
+
+/**
+ * Market Day map, vendor list and closeout. The Assignments route uses
+ * `AssignmentsWorkspace`, which owns date approval, copying and the summary.
+ */
+export function Assignments({
+  data,
+  run,
+  occurrenceId,
+  day = false,
+  canAssign,
+  canDay,
+  canBill,
+  commandError,
+  canEditLayout = false,
+}: {
+  data: MarketOperationsData;
+  run: Run;
+  occurrenceId: number;
+  day?: boolean;
+  canAssign: boolean;
+  canDay: boolean;
+  canBill: boolean;
+  commandError?: unknown;
+  canEditLayout?: boolean;
+}) {
+  const [search, setSearch] = useState(''),
+    [mapSelection, setMapSelection] = useState(''),
+    [vendorDetail, setVendorDetail] = useState<number | null>(null);
+  const { plan, version, assignments, approvals, spaces } = occurrenceBooths(
+    data,
+    occurrenceId,
+  );
+  const selectedBooth = spaces.find((s) => s.elementId === mapSelection);
+  return (
+    <>
       <Card as="section" className="attendance-map-card">
         <div className="attendance-map-actions">
           <OccurrenceLayoutActions
@@ -179,66 +275,11 @@ export function Assignments({
           )}
         </div>
         {version && (
-          <MarketMap
-            key={`map:${version.id}`}
-            boothListLimit={10}
-            boothCards
-            definition={version.definition}
-            spaces={mapSpaces}
-            overlays={overlays}
-            statuses={statuses}
-            renderSpaceDetails={(id) => {
-              const booth = spaces.find((s) => s.elementId === id)!;
-              return (
-                <dl className="facts">
-                  <div>
-                    <dt>Booth type</dt>
-                    <dd>
-                      {booth.details.spaceType
-                        .toLowerCase()
-                        .replaceAll('_', ' ')}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Booth fee</dt>
-                    <dd>
-                      {moneyLabel(
-                        booth.details.feeMinor,
-                        booth.details.currency,
-                      )}
-                    </dd>
-                  </div>
-                  {booth.details.description && (
-                    <div>
-                      <dt>Description</dt>
-                      <dd>{booth.details.description}</dd>
-                    </div>
-                  )}
-                  {booth.details.managerNotes && (
-                    <div>
-                      <dt>Manager notes</dt>
-                      <dd>{booth.details.managerNotes}</dd>
-                    </div>
-                  )}
-                  {booth.details.preferredDirectoryId && (
-                    <div>
-                      <dt>Preferred business</dt>
-                      <dd>
-                        {data.directory?.find(
-                          (d) => d.id === booth.details.preferredDirectoryId,
-                        )?.contact.businessName ?? 'Not available'}
-                      </dd>
-                    </div>
-                  )}
-                </dl>
-              );
-            }}
+          <BoothMap
+            data={data}
+            occurrenceId={occurrenceId}
             selectedId={mapSelection}
-            onSelect={(id) => {
-              const booth = spaces.find((s) => s.elementId === id);
-              if (!booth) return;
-              setMapSelection(id);
-            }}
+            onSelect={setMapSelection}
           />
         )}
       </Card>
@@ -255,133 +296,6 @@ export function Assignments({
           commandError={commandError}
           onClose={() => setMapSelection('')}
         />
-      )}
-      {!day && canAssign && (
-        <>
-          <form
-            className="ops-toolbar ui-control-row ui-control-row-lookup"
-            onSubmit={(e) => {
-              e.preventDefault();
-              return run({
-                action: 'APPROVE_OCCURRENCE',
-                data: { occurrenceId, directoryId: Number(directory) },
-              });
-            }}
-          >
-            <Control label="Approve directory business">
-              {(id) => (
-                <Select
-                  id={id}
-                  required
-                  value={directory}
-                  onChange={(e) => setDirectory(e.target.value)}
-                >
-                  <option value="">Choose business</option>
-                  {data.directory
-                    ?.filter(
-                      (d) => !approvals.some((a) => a.directoryId === d.id),
-                    )
-                    .map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.contact.businessName}
-                        {assignments.some((a) => a.directoryId === d.id)
-                          ? ` · Assigned to Booth ${assignments
-                              .filter((a) => a.directoryId === d.id)
-                              .map((a) => a.spaceSnapshot.label)
-                              .join(', ')}`
-                          : ' · Unassigned'}
-                      </option>
-                    ))}
-                </Select>
-              )}
-            </Control>
-            <div className="ui-field-action">
-              <Button type="submit" variant="primary">
-                Approve occurrence
-              </Button>
-            </div>
-          </form>
-          <form
-            className="ops-toolbar ui-control-row ui-control-row-lookup"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setCopy(
-                (await run({
-                  action: 'COPY_ASSIGNMENTS',
-                  data: { occurrenceId, fromOccurrenceId: Number(previous) },
-                })) as NonNullable<typeof copy>,
-              );
-            }}
-          >
-            <Control label="Previous occurrence">
-              {(id) => (
-                <Select
-                  id={id}
-                  value={previous}
-                  required
-                  onChange={(e) => setPrevious(e.target.value)}
-                >
-                  <option value="">Choose earlier occurrence</option>
-                  {data.occurrences
-                    .filter(
-                      (o) =>
-                        new Date(o.startsAt) <
-                        new Date(
-                          data.occurrences.find((o) => o.id === occurrenceId)
-                            ?.startsAt ?? '',
-                        ),
-                    )
-                    .map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {date(o.startsAt)}
-                      </option>
-                    ))}
-                </Select>
-              )}
-            </Control>
-            <div className="ui-field-action">
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={!plan || plan.state !== 'DRAFT'}
-              >
-                Prepare copy suggestions
-              </Button>
-            </div>
-          </form>
-          {copy && (
-            <section>
-              <h2 className="ui-section-title-dashboard">Draft copy review</h2>
-              <p>
-                {copy.proposals.length} suggestions · {copy.conflicts.length}{' '}
-                conflicts · {copy.newVendors.length} Vendors needing placement
-              </p>
-              {copy.conflicts.map((c) => (
-                <p key={c.directoryId}>
-                  Business {c.directoryId}:{' '}
-                  {c.reason.toLowerCase().replaceAll('_', ' ')}
-                </p>
-              ))}
-              {copy.proposals.map((p) => (
-                <Button
-                  variant="secondary"
-                  size="compact"
-                  type="button"
-                  key={p.directoryId}
-                  onClick={() =>
-                    run({ action: 'ASSIGN', data: { occurrenceId, ...p } })
-                  }
-                >
-                  Confirm{' '}
-                  {
-                    data.directory?.find((d) => d.id === p.directoryId)?.contact
-                      .businessName
-                  }
-                </Button>
-              ))}
-            </section>
-          )}
-        </>
       )}
       <Card as="section" className="attendance-vendors-card">
         <Entry
@@ -503,6 +417,7 @@ export function BoothAssignmentDialog({
   canBill,
   commandError,
   onClose,
+  presentation = 'dialog',
 }: {
   data: MarketOperationsData;
   occurrenceId: number;
@@ -513,6 +428,8 @@ export function BoothAssignmentDialog({
   canBill: boolean;
   commandError?: unknown;
   onClose: () => void;
+  /** `panel` renders inline (the Assignments booth side panel). */
+  presentation?: 'dialog' | 'panel';
 }) {
   const mapSelection = elementId;
   const plan = data.plans?.find((p) => p.occurrenceId === occurrenceId),
@@ -534,14 +451,106 @@ export function BoothAssignmentDialog({
         '',
     ),
   );
+  // Edit swaps the dialog body for the booth details form; the dialog eases
+  // between the two heights, as the wizard dialogs do.
+  const [editing, setEditing] = useState<SpaceDetails | null>(null),
+    [saving, setSaving] = useState(false),
+    [saveError, setSaveError] = useState('');
+  const root = useRef<HTMLDivElement>(null);
+  const captureHeight = useWizardDialogHeight(root, editing ? 'edit' : 'view');
   if (!selectedBooth) return null;
-  return (
-    <Dialog
-      open
-      title={`Booth ${selectedBooth.details.label}`}
-      focusTitle
-      onClose={onClose}
+  const version = data.layoutVersions?.find(
+    (v) => v.id === plan?.layoutVersionId,
+  );
+  const canEditBooth = canAssign && !!plan && !!version;
+  function switchView(next: SpaceDetails | null) {
+    captureHeight();
+    setSaveError('');
+    setEditing(next);
+  }
+  async function saveBooth() {
+    if (!editing || !plan || !version || saving) return;
+    setSaving(true);
+    setSaveError('');
+    const result = await run({
+      action: 'SAVE_LAYOUT',
+      id: version.id,
+      expectedRevision: version.revision,
+      data: {
+        definition: version.definition,
+        spaces: Object.fromEntries(
+          spaces.map((s) => [
+            s.elementId,
+            s.elementId === elementId ? editing : s.details,
+          ]),
+        ),
+        occurrenceId,
+        expectedPlanRevision: plan.revision,
+      },
+    });
+    setSaving(false);
+    if (result) switchView(null);
+    else
+      setSaveError(
+        'The booth could not be saved. Your changes are still here.',
+      );
+  }
+  const title = editing
+    ? `Edit booth ${selectedBooth.details.label}`
+    : `Booth ${selectedBooth.details.label}`;
+  const editButton = canEditBooth && !editing && (
+    <Button
+      variant="secondary"
+      size="compact"
+      type="button"
+      onClick={() => switchView({ ...selectedBooth.details })}
     >
+      <UtilityIcon name="edit" />
+      Edit booth
+    </Button>
+  );
+  const editActions = editing && (
+    <>
+      <Button
+        variant="secondary"
+        type="button"
+        disabled={saving}
+        onClick={() => switchView(null)}
+      >
+        Cancel
+      </Button>
+      <Button
+        variant="primary"
+        type="button"
+        disabled={saving}
+        onClick={saveBooth}
+      >
+        {saving ? 'Saving booth...' : 'Save booth'}
+      </Button>
+    </>
+  );
+  const body = editing ? (
+    <div ref={root} key="edit" className="booth-dialog-view booth-edit">
+      <p className="booth-modal-info">
+        {selectedBooth.details.widthFeet} × {selectedBooth.details.depthFeet} ft
+        · Changes apply to this market date only. Assignments and accepted
+        rentals are kept.
+      </p>
+      {saveError && <Alert severity="error">{saveError}</Alert>}
+      {!!commandError && <ErrorState error={commandError} />}
+      <BoothDetailsFields
+        details={editing}
+        data={data}
+        onChange={(patch) =>
+          setEditing((current) => current && { ...current, ...patch })
+        }
+      />
+      {presentation === 'panel' && (
+        <div className="ui-actions booth-edit-actions">{editActions}</div>
+      )}
+    </div>
+  ) : (
+    <div ref={root} key="view" className="booth-dialog-view">
       <p className="booth-modal-info">
         {selectedBooth.details.widthFeet} × {selectedBooth.details.depthFeet} ft
         ·{' '}
@@ -586,6 +595,9 @@ export function BoothAssignmentDialog({
                             .map((a) => a.spaceSnapshot.label)
                             .join(', ')}`
                         : ' · Unassigned'}
+                      {approvals.some((a) => a.directoryId === d.id)
+                        ? ''
+                        : approvalBlockerLabel(data, d.id)}
                     </option>
                   ))}
                 </Select>
@@ -599,10 +611,16 @@ export function BoothAssignmentDialog({
                   This business needs approval for this market date before it
                   can receive a booth.
                 </p>
+                {approvalBlocker(data, Number(mapDirectory)) && (
+                  <Alert severity="warning">
+                    {approvalBlocker(data, Number(mapDirectory))}
+                  </Alert>
+                )}
                 <Button
                   variant="secondary"
                   size="compact"
                   type="button"
+                  disabled={!!approvalBlocker(data, Number(mapDirectory))}
                   onClick={() =>
                     run({
                       action: 'APPROVE_OCCURRENCE',
@@ -629,6 +647,7 @@ export function BoothAssignmentDialog({
                 canAssign={canAssign}
                 canDay={canDay}
                 canBill={canBill}
+                embedded={presentation === 'panel'}
                 initialSpaceId={
                   spaces.find((s) => s.elementId === mapSelection)?.id
                 }
@@ -642,11 +661,43 @@ export function BoothAssignmentDialog({
             : 'This booth is available. Assignment permission is required to add a business.'}
         </p>
       )}
+    </div>
+  );
+  if (presentation === 'panel')
+    return (
+      <section
+        className="booth-panel"
+        aria-label={title}
+        aria-busy={saving}
+        data-height-ease=""
+      >
+        <header className="booth-panel-header">
+          <h2>
+            <FarmstandIcon name="store" />
+            {title}
+          </h2>
+          {editButton}
+        </header>
+        {body}
+      </section>
+    );
+  return (
+    <Dialog
+      open
+      title={title}
+      focusTitle
+      className="booth-dialog"
+      busy={saving}
+      onClose={onClose}
+      headerActions={editButton || undefined}
+      actions={editActions || undefined}
+    >
+      {body}
     </Dialog>
   );
 }
 
-function AssignmentCard({
+export function AssignmentCard({
   approval: a,
   data,
   assignments,
@@ -676,7 +727,8 @@ function AssignmentCard({
       String(initialSpaceId ?? assignments[0]?.spaceId ?? ''),
     ),
     [notes, setNotes] = useState(a.managerNotes),
-    [multiple, setMultiple] = useState(false),
+    [confirmAssignment, setConfirmAssignment] = useState(false),
+    [savingAssignment, setSavingAssignment] = useState(false),
     [keep, setKeep] = useState(false);
   const assignment = assignments.find((x) => x.id === selected),
     plan = data.plans?.find((p) => p.occurrenceId === a.occurrenceId),
@@ -695,6 +747,94 @@ function AssignmentCard({
       (i) => i.assignmentId === assignment?.id && i.status !== 'VOID',
     ),
     issued = invoice && invoice.status !== 'DRAFT';
+  // What the vendor asked for on the application, shown first; every other
+  // enabled rental sits in the Additional rentals disclosure.
+  const requests = submission?.rentalRequests ?? [];
+  const requestedRentals = (data.rentals ?? []).filter((r) =>
+      requests.some((x) => x.optionId === r.id),
+    ),
+    additionalRentals = (data.rentals ?? []).filter(
+      (r) => r.details.enabled && !requests.some((x) => x.optionId === r.id),
+    );
+  const rentalField = (
+    r: NonNullable<MarketOperationsData['rentals']>[number],
+  ) => {
+    const accepted = rentals.find((x) => x.optionId === r.id),
+      requested = requests.find((x) => x.optionId === r.id);
+    return (
+      <div className="assignment-rental" key={r.id}>
+        <Entry
+          label={`${r.details.name} quantity`}
+          type="number"
+          min={0}
+          max={r.details.maxQuantity}
+          value={accepted?.quantity ?? 0}
+          onChange={(v) =>
+            setRentals((rows) => [
+              ...rows.filter((x) => x.optionId !== r.id),
+              {
+                optionId: r.id,
+                quantity: Number(v),
+                unitMinor: accepted?.unitMinor ?? r.details.priceMinor,
+                currency: accepted?.currency ?? r.details.currency,
+                name: accepted?.name ?? r.details.name,
+                requiredAmenity: r.details.requiredAmenity,
+              },
+            ])
+          }
+        />
+        {requested && (
+          <p className="assignment-rental-requested">
+            Requested {requested.quantity}
+            {!r.details.enabled && ' · no longer offered'}
+          </p>
+        )}
+        {accepted && (
+          <Control label={`${r.details.name} price`}>
+            {(id) => (
+              <MinorPriceInput
+                id={id}
+                currency={accepted.currency}
+                valueMinor={accepted.unitMinor}
+                onMinorChange={(unitMinor) =>
+                  setRentals((rows) =>
+                    rows.map((x) =>
+                      x.optionId === r.id ? { ...x, unitMinor } : x,
+                    ),
+                  )
+                }
+              />
+            )}
+          </Control>
+        )}
+      </div>
+    );
+  };
+  const otherAssignments = assignments.filter(
+    (x) => x.spaceId !== Number(space),
+  );
+  async function saveAssignment(additional = false) {
+    if (savingAssignment) return;
+    setSavingAssignment(true);
+    try {
+      await run({
+        action: 'ASSIGN',
+        id: additional ? undefined : assignment?.id,
+        expectedRevision: additional ? undefined : assignment?.revision,
+        data: {
+          occurrenceId: a.occurrenceId,
+          directoryId: a.directoryId,
+          spaceId: Number(space),
+          rentals,
+          allowMultipleSpaces: additional,
+          billingAction: keep ? 'KEEP' : null,
+        },
+      });
+    } finally {
+      setSavingAssignment(false);
+      setConfirmAssignment(false);
+    }
+  }
   const update = (d: Record<string, unknown>) =>
     run({
       action: 'DAY_UPDATE',
@@ -776,19 +916,14 @@ function AssignmentCard({
           className="ops-assignment"
           onSubmit={(e) => {
             e.preventDefault();
-            return run({
-              action: 'ASSIGN',
-              id: assignment?.id,
-              expectedRevision: assignment?.revision,
-              data: {
-                occurrenceId: a.occurrenceId,
-                directoryId: a.directoryId,
-                spaceId: Number(space),
-                rentals,
-                allowMultipleSpaces: multiple,
-                billingAction: keep ? 'KEEP' : null,
-              },
-            });
+            if (
+              otherAssignments.length &&
+              assignment?.spaceId !== Number(space)
+            ) {
+              setConfirmAssignment(true);
+              return;
+            }
+            return saveAssignment();
           }}
         >
           {assignments.length > 1 && (
@@ -849,53 +984,36 @@ function AssignmentCard({
               </Select>
             )}
           </Control>
-          {data.rentals
-            ?.filter((r) => r.details.enabled)
-            .map((r) => {
-              const accepted = rentals.find((x) => x.optionId === r.id);
-              return (
-                <div key={r.id}>
-                  <Entry
-                    label={`${r.details.name} accepted quantity`}
-                    type="number"
-                    min={0}
-                    max={r.details.maxQuantity}
-                    value={accepted?.quantity ?? 0}
-                    onChange={(v) =>
-                      setRentals((rows) => [
-                        ...rows.filter((x) => x.optionId !== r.id),
-                        {
-                          optionId: r.id,
-                          quantity: Number(v),
-                          unitMinor:
-                            accepted?.unitMinor ?? r.details.priceMinor,
-                          currency: accepted?.currency ?? r.details.currency,
-                          name: accepted?.name ?? r.details.name,
-                          requiredAmenity: r.details.requiredAmenity,
-                        },
-                      ])
-                    }
-                  />
-                  {accepted && (
-                    <Entry
-                      label={`${r.details.name} accepted unit price in minor units`}
-                      type="number"
-                      min={0}
-                      value={accepted.unitMinor}
-                      onChange={(v) =>
-                        setRentals((rows) =>
-                          rows.map((x) =>
-                            x.optionId === r.id
-                              ? { ...x, unitMinor: Number(v) }
-                              : x,
-                          ),
-                        )
-                      }
-                    />
-                  )}
-                </div>
-              );
-            })}
+          {requestedRentals.length > 0 ? (
+            <section
+              className="assignment-rentals"
+              aria-label="Requested rentals"
+            >
+              <h3>Requested rentals</h3>
+              <div className="assignment-rental-grid">
+                {requestedRentals.map(rentalField)}
+              </div>
+            </section>
+          ) : (
+            <p className="assignment-rentals-none">
+              {submission
+                ? 'No rentals were requested on the application.'
+                : 'No application is linked, so no rentals were requested.'}
+            </p>
+          )}
+          {additionalRentals.length > 0 && (
+            <details
+              className="ui-disclosure assignment-rentals-more"
+              open={additionalRentals.some((r) =>
+                rentals.some((x) => x.optionId === r.id && x.quantity > 0),
+              )}
+            >
+              <summary>Additional rentals ({additionalRentals.length})</summary>
+              <div className="ui-disclosure-content assignment-rental-grid">
+                {additionalRentals.map(rentalField)}
+              </div>
+            </details>
+          )}
           {issued && (
             <Check
               label="Keep the issued invoice unchanged after this move or rental change"
@@ -903,52 +1021,78 @@ function AssignmentCard({
               onChange={setKeep}
             />
           )}
-          <Check
-            label="Deliberately allocate an additional space"
-            checked={multiple}
-            onChange={setMultiple}
-          />
           <div className="ui-actions attendance-assignment-actions">
             <Button
               type="submit"
               variant="primary"
               size="compact"
-              disabled={!!issued && !keep}
+              disabled={savingAssignment || (!!issued && !keep)}
             >
               {assignment
                 ? 'Save booth and rental changes'
                 : 'Confirm booth and accepted rentals'}
             </Button>
-            {assignment && (
-              <Button
-                variant="secondary"
-                size="compact"
-                type="button"
-                onClick={() => {
-                  setSelected(0);
-                  setSpace('');
-                  setMultiple(true);
-                  setRentals([]);
-                }}
-              >
-                Assign an additional space
-              </Button>
-            )}
           </div>
         </form>
       )}
-      <p>
-        Accepted rentals:{' '}
-        {prior.map((r) => `${r.name} × ${r.quantity}`).join(', ') || 'None'}
-      </p>
+      <Dialog
+        open={confirmAssignment}
+        title="Vendor already has a booth"
+        size="standard"
+        className="farmstand-controls"
+        busy={savingAssignment}
+        onClose={() => setConfirmAssignment(false)}
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={savingAssignment}
+              onClick={() => saveAssignment(true)}
+            >
+              Keep existing booth and add this booth
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={savingAssignment}
+              onClick={() => saveAssignment()}
+            >
+              Move to this booth
+            </Button>
+          </>
+        }
+      >
+        <p>
+          This vendor is already assigned to Booth{' '}
+          {otherAssignments.map((x) => x.spaceSnapshot.label).join(', ')} for
+          this market date. Move their selected assignment to Booth{' '}
+          {booths.find((s) => s.id === Number(space))?.details.label}, or keep
+          their existing booth and add this one.
+        </p>
+      </Dialog>
+      <div className="assignment-rentals-summary">
+        <span>Rentals:</span>
+        {prior.length ? (
+          <ul>
+            {prior.map((r) => (
+              <li key={r.optionId}>
+                {r.name} <strong>× {r.quantity}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <span className="assignment-rentals-summary-none">None</span>
+        )}
+      </div>
       {invoice && (
-        <details className="ui-disclosure">
+        <details className="ui-disclosure assignment-invoice">
           <summary>
             Invoice {invoice.id}: {invoice.status.toLowerCase()}
           </summary>
           <div className="ui-disclosure-content">
             <Invoice
-              key={`${invoice.id}:${invoice.revision}`}
+              key={invoice.id}
               invoice={invoice}
               run={run}
               canManage={canBill}

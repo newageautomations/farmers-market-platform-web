@@ -29,6 +29,9 @@ import {
   MarketChallengeTermsView,
 } from '@market/ui/loyalty';
 import '@market/ui/loyalty.css';
+import { MarketsSummary } from '@market/ui/workspace';
+import { WorkspaceFrame } from '../WorkspaceFrame';
+import { SettingsPanel } from '../settings/SettingsPanel';
 import type { MarketService } from './service';
 import { go, RouteLink, useRead } from './common';
 import { ReadState } from '../vendor/common';
@@ -702,9 +705,19 @@ export function MarketLoyalty({
   }
   if (!api)
     return (
-      <Alert severity="info">
-        Market loyalty is unavailable in this environment.
-      </Alert>
+      <WorkspaceFrame
+        icon="gift"
+        title="Loyalty"
+        description="Run market-wide challenges and fulfill the rewards customers earn."
+        tabs={[]}
+        value="overview"
+        onChange={() => {}}
+        className="market-loyalty-workspace farmstand-controls"
+      >
+        <Alert severity="info">
+          Market loyalty is unavailable in this environment.
+        </Alert>
+      </WorkspaceFrame>
     );
   const routeId = Number(path.split('/')[4]),
     original = data?.challenges.find((c) => c.id === routeId),
@@ -716,24 +729,40 @@ export function MarketLoyalty({
     ),
     claim = data?.claims.find((c) => c.id === claimId);
   const section = path.split('/')[3] ?? '';
+  const view =
+    section === 'challenges' || section === 'rewards' ? section : 'overview';
   return (
-    <>
-      <nav className="ui-tabs" aria-label="Market loyalty">
-        {[
-          ['Overview', ''],
-          ['Manage challenges', '/challenges'],
-          ['Reward claims', '/rewards'],
-        ].map(([label, suffix]) => (
-          <RouteLink
-            key={label}
-            to={'/market/loyalty' + suffix}
-            variant="tab"
-            current={path === '/market/loyalty' + suffix}
-          >
-            {label}
-          </RouteLink>
-        ))}
-      </nav>
+    <WorkspaceFrame
+      icon="gift"
+      title="Loyalty"
+      description="Run market-wide challenges and fulfill the rewards customers earn."
+      menuLabel="Market loyalty"
+      tabs={[
+        {
+          value: 'overview',
+          label: 'Overview',
+          href: '/market/loyalty',
+          icon: 'chart-column',
+        },
+        {
+          value: 'challenges',
+          label: 'Manage challenges',
+          href: '/market/loyalty/challenges',
+          icon: 'clipboard-list',
+        },
+        {
+          value: 'rewards',
+          label: 'Reward claims',
+          href: '/market/loyalty/rewards',
+          icon: 'gift',
+        },
+      ]}
+      value={view}
+      onChange={(next) =>
+        go(next === 'overview' ? '/market/loyalty' : `/market/loyalty/${next}`)
+      }
+      className="market-loyalty-workspace farmstand-controls"
+    >
       <ReadState {...query} retry={query.refresh} />
       {error && <Alert severity="error">{error}</Alert>}
       {data &&
@@ -761,12 +790,17 @@ export function MarketLoyalty({
           <>
             {section === '' && (
               <>
-                <Card>
-                  <div className="actions">
+                <SettingsPanel
+                  icon="gift"
+                  title="Market loyalty program"
+                  description={
                     <Badge tone={data.enabled ? 'success' : 'neutral'}>
                       {data.enabled ? 'Program enabled' : 'Program disabled'}
                     </Badge>
-                    {writable && (
+                  }
+                  module="market-workspace"
+                  actions={
+                    writable && (
                       <Button
                         loading={busy}
                         onClick={() =>
@@ -777,30 +811,51 @@ export function MarketLoyalty({
                           ? 'Disable program'
                           : 'Enable market loyalty'}
                       </Button>
-                    )}
-                  </div>
+                    )
+                  }
+                >
                   <p>
                     Disabling stops new purchase contributions. Already admitted
                     purchases can finish fulfillment. Completed rewards, claims
                     and history remain available.
                   </p>
-                </Card>
-                <div className="ui-kpi-grid">
-                  {[
-                    ['Active challenges', data.metrics.active],
-                    ['Participating customers', data.metrics.participants],
-                    ['Completed challenges', data.metrics.completed],
-                    ['Rewards claimed', data.metrics.claimed],
-                    ['Awaiting fulfillment', data.metrics.awaiting],
-                  ].map(([label, value]) => (
-                    <Card key={label}>
-                      <dl>
-                        <dt>{label}</dt>
-                        <dd>{value}</dd>
-                      </dl>
-                    </Card>
-                  ))}
-                </div>
+                </SettingsPanel>
+                <MarketsSummary
+                  className="market-loyalty-summary"
+                  items={[
+                    {
+                      label: 'Active challenges',
+                      value: data.metrics.active,
+                      hint: 'Open to customers now',
+                      icon: 'clipboard-list',
+                    },
+                    {
+                      label: 'Participating customers',
+                      value: data.metrics.participants,
+                      hint: 'Customers with progress',
+                      icon: 'user-round',
+                    },
+                    {
+                      label: 'Completed challenges',
+                      value: data.metrics.completed,
+                      hint: 'Challenges customers finished',
+                      icon: 'circle-check',
+                    },
+                    {
+                      label: 'Rewards claimed',
+                      value: data.metrics.claimed,
+                      hint: 'Claims customers made',
+                      icon: 'gift',
+                    },
+                    {
+                      label: 'Awaiting fulfillment',
+                      value: data.metrics.awaiting,
+                      hint: 'Rewards still to hand over',
+                      icon: 'package',
+                      tone: data.metrics.awaiting ? 'warning' : undefined,
+                    },
+                  ]}
+                />
                 <div className="loyalty-wallet-grid">
                   <MarketOccurrenceActivityCard
                     data={data.trend}
@@ -1045,6 +1100,6 @@ export function MarketLoyalty({
             </Dialog>
           </>
         ))}
-    </>
+    </WorkspaceFrame>
   );
 }

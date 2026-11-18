@@ -71,9 +71,24 @@ describe('shared phone input', () => {
     expect(input.checkValidity()).toBe(false);
     fireEvent.change(input, { target: { value: '2105550123' } });
     expect(input.checkValidity()).toBe(true);
-    fireEvent.focus(screen.getByRole('combobox'));
+    fireEvent.click(screen.getByRole('combobox'));
     fireEvent.click(screen.getByRole('option', { name: 'United Kingdom +44' }));
     expect(input.checkValidity()).toBe(false);
+  });
+  it('keeps US first and dismisses the country menu without changing an autofilled phone', async () => {
+    const user = userEvent.setup();
+    render(<Form initial="+442079460018" />);
+    const country = screen.getByRole('combobox');
+    fireEvent.focus(country);
+    expect(country).toHaveAttribute('aria-expanded', 'false');
+    await user.click(country);
+    expect(screen.getAllByRole('option')[0]).toHaveTextContent(
+      'United States +1',
+    );
+    await user.click(document.body);
+    expect(country).toHaveAttribute('aria-expanded', 'false');
+    expect(country).toHaveValue('+44');
+    expect(screen.getByLabelText('Contact phone')).toHaveValue('020 7946 0018');
   });
   it('allows optional blank and requires a number when required', () => {
     const { rerender } = render(<PhoneInput label="Phone" />);
@@ -85,7 +100,7 @@ describe('shared phone input', () => {
   it('preserves Canada and Australia parsing and rejects misplaced country prefixes', () => {
     render(<Form />);
     const input = screen.getByLabelText('Contact phone') as HTMLInputElement;
-    fireEvent.focus(screen.getByRole('combobox'));
+    fireEvent.click(screen.getByRole('combobox'));
     fireEvent.click(screen.getByRole('option', { name: 'Canada +1' }));
     fireEvent.change(input, { target: { value: '4165550160' } });
     expect(input).toHaveValue('(416) 555-0160');

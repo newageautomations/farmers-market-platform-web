@@ -1,44 +1,115 @@
-dialog.ui-dialog.catalog-stock-dialog-edit {
-  width: min(640px, calc(100vw - 2rem));
-}
+/* Adjust stock: product, current stock as label/value rows, the new total
+   and one full-width action. Same row presentation as the Finances and
+   Documents details; on Vendor phones the dialog is the bottom sheet. */
 .catalog-stock-stage {
+  display: grid;
+  gap: 16px;
   animation: catalog-stock-stage-enter 220ms ease both;
 }
+.catalog-stock-stage > form {
+  display: grid;
+  gap: 16px;
+}
 .catalog-stock-identity {
-  margin-block: 0.5rem 1.5rem;
+  display: grid;
+  gap: 2px;
+  margin: 0;
 }
 .catalog-stock-dialog .catalog-stock-product {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 16px;
   font-weight: 600;
+  line-height: 1.35;
 }
 .catalog-stock-dialog .catalog-stock-sku {
-  margin: 0.35rem 0 0;
+  margin: 0;
   color: var(--brand-muted);
-  font-weight: 400;
+  font-size: 13px;
 }
 .catalog-stock-facts {
+  display: grid;
+  gap: 8px;
+}
+.catalog-stock-facts-heading {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-block-end: 1.5rem;
+  gap: 6px;
+  color: var(--brand-muted);
+  font-size: 13px;
+  font-weight: 600;
 }
-.catalog-stock-cards {
+.catalog-stock-dialog .catalog-stock-rows {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  flex: 1;
-  min-width: 0;
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--farmstand-border, var(--brand-border, #e3e6e3));
+  border-radius: 12px;
+  overflow: hidden;
+}
+.catalog-stock-dialog .catalog-stock-rows > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 14px;
+}
+.catalog-stock-dialog .catalog-stock-rows > div + div {
+  border-top: 1px solid var(--farmstand-border, var(--brand-border, #e3e6e3));
+}
+.catalog-stock-dialog .catalog-stock-rows dt {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 14px;
+}
+.catalog-stock-dialog .catalog-stock-rows dd {
+  margin: 0;
+  align-self: center;
+  color: var(--brand-foreground);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* The change being confirmed, set apart like a result row. */
+.catalog-stock-dialog .catalog-stock-rows > .catalog-stock-total {
+  background: color-mix(in srgb, var(--brand-primary) 8%, var(--brand-surface));
+}
+.catalog-stock-dialog .catalog-stock-rows > .catalog-stock-total dt {
+  color: var(--brand-foreground);
+  font-weight: 600;
+}
+.catalog-stock-dialog .catalog-stock-rows > .catalog-stock-total dd {
+  color: var(--brand-primary);
+  font-size: 18px;
+}
+.catalog-stock-note {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.catalog-stock-dialog .field {
   margin: 0;
 }
-.catalog-stock-cards dt {
-  color: var(--brand-muted);
-  font-size: 0.9rem;
+/* The stepper spans the dialog: minus, the total, plus. */
+.catalog-stock-dialog .packing-quantity-stepper {
+  grid-template-columns: var(--ui-control-height) minmax(0, 1fr) var(
+      --ui-control-height
+    );
 }
-.catalog-stock-cards dd {
-  margin: 0.4rem 0 0;
-  font-size: 1.75rem;
+.catalog-stock-dialog .packing-quantity-stepper input {
+  font-size: 18px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* Actions fill the row; two actions share it evenly. */
+.catalog-stock-dialog .ui-actions.ui-modal-actions {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+}
+.catalog-stock-dialog .ui-actions.ui-modal-actions > .button {
+  flex: 1 1 0;
+  justify-content: center;
 }
 .catalog-stock-change {
   font-weight: 600;
@@ -79,14 +150,6 @@ dialog.ui-dialog.catalog-stock-dialog-edit {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-@media (max-width: 420px) {
-  .catalog-stock-facts {
-    align-items: start;
-  }
-  .catalog-stock-cards {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 @media (prefers-reduced-motion: reduce) {

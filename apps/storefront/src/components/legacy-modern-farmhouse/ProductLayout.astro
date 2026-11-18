@@ -2,14 +2,15 @@
 import type { StorefrontThemeId } from '@market/theme/storefront';
 interface Props {
   theme?: StorefrontThemeId;
+  market?: boolean;
 }
-const { theme = 'harvest' } = Astro.props;
+const { theme = 'harvest', market = false } = Astro.props;
 ---
 
 {theme === 'modern-farmhouse' ? (
   <div
     class="mf-product-layout"
-    data-composition="vendor"
+    data-composition={market ? 'market' : 'vendor'}
     data-editor-section="product"
   >
     <slot name="gallery" />
@@ -25,7 +26,7 @@ const { theme = 'harvest' } = Astro.props;
     <slot name="market" />
     <div
       class="product-detail"
-      data-composition="vendor"
+      data-composition={market ? 'market' : 'vendor'}
       data-editor-section="product"
     >
       <slot name="gallery" />

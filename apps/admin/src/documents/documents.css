@@ -291,21 +291,51 @@
   padding: 0;
   list-style: none;
 }
-.documents-requirement {
-  display: grid;
-  gap: 16px;
-  padding: 16px;
-  border: 1px solid var(--farmstand-border);
+/* Collapsible requirement card: the shared disclosure supplies the chevron,
+   padding and hover; these rules only lay out the heading row and body. */
+.documents-requirements > li {
+  min-width: 0;
+}
+.documents-requirement.ui-disclosure {
+  margin: 0;
+  border-color: var(--farmstand-border);
   border-radius: 12px;
 }
 .documents-requirement-heading {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  justify-content: flex-start;
 }
-.documents-requirement-heading > div {
+.documents-requirement-title {
   flex: 1;
   min-width: 0;
+  font-weight: 400;
+}
+.documents-requirement-body {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  border-top: 1px solid var(--farmstand-border);
+}
+.documents-requirement-remove {
+  padding-top: 14px;
+  border-top: 1px solid var(--farmstand-border);
+}
+.documents-assigned {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.documents-assigned > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--farmstand-border);
+  border-radius: 9px;
+  font-size: 13px;
 }
 .documents-requirement-heading h3,
 .documents-tile h3 {
@@ -342,17 +372,10 @@
   display: flex;
   align-items: end;
 }
+/* Layout comes from the shared ui-control-row (field above, Assign on the control row). */
 .documents-assign-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 12px;
   padding-top: 14px;
   border-top: 1px solid var(--farmstand-border);
-}
-.documents-assign-form > :first-child {
-  flex: 1 1 18rem;
-  min-width: 0;
 }
 .documents-tile {
   display: flex;
@@ -682,4 +705,145 @@
   .document-card:hover .document-card-chevron {
     transform: none;
   }
+}
+
+/* Vendor compliance: the Vendors list composition (filters, selectable
+   Farmstand table, sticky side panel) inside the Documents tab. */
+.documents-compliance-columns.market-applications-columns {
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+.markets-filters.documents-compliance-filters {
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 240px);
+  margin-bottom: 14px;
+}
+.documents-compliance-list .farmstand-data-table tbody tr {
+  height: 56px;
+}
+.documents-compliance-list .farmstand-data-table tbody tr:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: -2px;
+}
+.markets-list.documents-compliance-list .farmstand-data-table td:last-child,
+.documents-compliance-list .farmstand-data-table td:last-child {
+  text-align: left;
+}
+.documents-vendor-details .markets-next-content {
+  animation: documents-vendor-in 220ms ease;
+}
+@keyframes documents-vendor-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .documents-vendor-details .markets-next-content {
+    animation: none;
+  }
+}
+.documents-vendor-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+.documents-vendor-details .market-application-facts > div {
+  grid-template-columns: 130px minmax(0, 1fr);
+  align-items: center;
+}
+.documents-vendor-details .market-application-facts dd {
+  margin: 0;
+  align-self: center;
+}
+.documents-vendor-section {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--markets-border, var(--brand-border));
+}
+.documents-vendor-section h4 {
+  margin: 0;
+  font-size: 14px;
+}
+.documents-vendor-details .documents-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+.documents-vendor-details > .markets-next-content > .farmstand-button {
+  justify-self: start;
+}
+@container (max-width: 1080px) {
+  .documents-compliance-columns.market-applications-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container (max-width: 600px) {
+  .markets-filters.documents-compliance-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Readiness and reports: the Vendor compliance table and side panel. The
+   table has only Vendor and Documentation, so the panel opens wide on a row
+   click and is absent until then. */
+.documents-report-columns.market-applications-columns {
+  grid-template-columns: minmax(0, 1fr);
+}
+.documents-report-columns.documents-report-open.market-applications-columns {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+}
+.documents-report-details .documents-vendor-title > :last-child {
+  margin-left: auto;
+}
+/* The narrowed results panel moves its commands under the title. */
+.documents-report-open .documents-table-panel .settings-panel-heading {
+  flex-wrap: wrap;
+}
+.documents-report-open .documents-table-panel .settings-panel-heading > div {
+  flex: 1 1 14rem;
+}
+.documents-report-details .market-application-facts {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+}
+.documents-report-details .market-application-facts > div {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.documents-report-details .documents-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 1fr));
+}
+.documents-report-reason {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+@container (max-width: 1080px) {
+  .documents-report-columns.documents-report-open.market-applications-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+dialog.ui-dialog.document-preview-dialog {
+  width: min(76rem, calc(100vw - 2rem));
+}
+
+.document-preview-dialog > .ui-modal-actions {
+  justify-content: flex-end;
+}
+
+.document-preview-pdf {
+  display: block;
+  width: 100%;
+  height: 65dvh;
+  border: 0;
+}
+
+.document-preview-image {
+  max-height: 65dvh;
+  overflow: auto;
+}
+
+.document-preview-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
 }

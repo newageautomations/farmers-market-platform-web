@@ -293,7 +293,7 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnMarketOrders',
   },
   {
-    label: 'Storefront Appearance',
+    label: 'Website',
     path: '/market/storefront',
     scopes: ['MARKET'],
     permission: 'ManageMarketStorefront',
@@ -376,7 +376,7 @@ export function visibleNavigation(context: AdminContext) {
         'Documents',
         'Loyalty',
         'Subscription',
-        'Storefront Appearance',
+        'Website',
         'Team',
         'Settings',
         'Submitted applications',
@@ -430,6 +430,7 @@ export function isLegacyNotificationsPath(path: string) {
 /** Tabs of the consolidated Settings workspace, per role. */
 export type SettingsView =
   | 'preferences'
+  | 'profile'
   | 'market'
   | 'notifications'
   | 'taxes'
@@ -437,8 +438,15 @@ export type SettingsView =
   | 'pos'
   | 'integrations';
 export const settingsViews: Record<AdminScope, readonly SettingsView[]> = {
-  VENDOR: ['preferences', 'notifications', 'taxes', 'payments', 'pos'],
-  MARKET: ['market', 'preferences', 'notifications'],
+  VENDOR: [
+    'preferences',
+    'profile',
+    'notifications',
+    'taxes',
+    'payments',
+    'pos',
+  ],
+  MARKET: ['market', 'profile', 'preferences', 'notifications', 'payments'],
   PLATFORM: ['preferences', 'integrations'],
 };
 /** Former Integrations routes now open their Settings tab. */
@@ -496,6 +504,12 @@ export function settingsViewAllowed(context: AdminContext, view: SettingsView) {
   }
 }
 export function routeAllowed(context: AdminContext, path: string) {
+  if (
+    context.scope === 'VENDOR' &&
+    /^\/vendor\/preparation(?:\/[1-9][0-9]*)?$/.test(vendorPath(path))
+  )
+    return context.permissions.includes('ReadOwnVendorIdentity');
+
   const settings = settingsView(
     context.scope,
     context.scope === 'VENDOR' ? vendorPath(path) : path,
@@ -557,6 +571,8 @@ export function routeAllowed(context: AdminContext, path: string) {
       )
     )
       return context.permissions.includes('ReadOwnMarket');
+    if (/^\/market\/preparation(?:\/[1-9][0-9]*)?$/.test(canonical))
+      return context.permissions.includes('ReadOwnMarketAssignments');
     if (/^\/market\/assignments\/[1-9][0-9]*\/edit-layout$/.test(canonical))
       return context.permissions.includes('ReadOwnMarketAssignments');
     // The former directory pages open the combined Vendors list.
@@ -598,6 +614,13 @@ export function routeAllowed(context: AdminContext, path: string) {
     );
   }
   const canonical = vendorPath(path);
+  if (
+    context.scope === 'VENDOR' &&
+    /^\/vendor\/day\/(?:[1-9][0-9]*|history)$/.test(canonical)
+  )
+    return visibleNavigation(context).some(
+      (item) => item.path === '/vendor/day',
+    );
   if (
     context.scope === 'VENDOR' &&
     /^\/vendor\/finances\/(?:transactions|expenses|quickbooks)$/.test(canonical)
@@ -658,7 +681,7 @@ export function routeAllowed(context: AdminContext, path: string) {
   // Market date pages inherit the Markets entry's visibility; commands stay backend-authorized.
   if (
     context.scope === 'VENDOR' &&
-    /^\/vendor\/markets\/[^/]+\/dates\/[^/]+$/.test(canonical)
+    /^\/vendor\/markets\/[^/]+\/dates\/[^/]+(?:\/preparation)?$/.test(canonical)
   )
     return visibleNavigation(context).some(
       (item) => item.path === '/vendor/markets',

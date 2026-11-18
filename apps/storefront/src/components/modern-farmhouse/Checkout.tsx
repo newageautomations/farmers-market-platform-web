@@ -1,6 +1,7 @@
+import { StripeCheckout } from '../StripeCheckout';
 import type { CheckoutView, PublicCart } from '@market/api';
 import { formatMoney } from '@market/config';
-import { PhoneInput, ErrorBoundary, fieldLimits } from '@market/ui';
+import { Button, PhoneInput, ErrorBoundary, fieldLimits } from '@market/ui';
 import { safeAsset } from '@market/storefront-core/catalog';
 import type { VendorPreorderState } from '../../lib/vendor-preorder';
 import { useVendorCheckout } from '../../lib/use-vendor-checkout';
@@ -10,51 +11,101 @@ import { CartTotals } from '../CartTotals';
 import CheckoutLoyalty from '../CheckoutLoyalty';
 import { shopCall } from '../shop-client';
 
-export function Summary({ view }: { view: CheckoutView }) {
+export function Summary({
+  view,
+  unresolved = false,
+  images = {},
+}: {
+  view: CheckoutView;
+  unresolved?: boolean;
+  images?: Record<string, string>;
+}) {
   return (
     <div className="farmhouse-summary">
       {view.groups.map((group) => (
         <section key={group.vendorId}>
           <h3>{group.vendorName}</h3>
           {group.lines.map((line) => (
-            <p key={line.id}>
-              {line.name} × {line.quantity}{' '}
+            <p className="checkout-summary-product" key={line.id}>
+              {safeAsset(images[line.id]) && (
+                <img
+                  src={safeAsset(images[line.id])}
+                  alt=""
+                  width="64"
+                  height="64"
+                />
+              )}
+              <span>
+                {line.name} × {line.quantity}
+              </span>
               <span>{formatMoney(line.total, view.currency)}</span>
             </p>
           ))}
-          {group.pickup.map((pickup, i) => (
-            <p key={i}>
-              {pickup.name} · {formatMoney(pickup.fee, view.currency)}
-            </p>
-          ))}
+          {!unresolved &&
+            view.preorderFee?.vendors
+              .filter(
+                (v) => v.vendorId === group.vendorId && v.preorderFee !== 0,
+              )
+              .map((v) => (
+                <p key={v.vendorId}>
+                  Preorder fee: {formatMoney(v.preorderFee, view.currency)}
+                </p>
+              ))}
+          {group.pickup
+            .filter((pickup) => pickup.fee !== 0)
+            .map((pickup, i) => (
+              <p key={i}>
+                {pickup.name}
+                {pickup.fee !== 0 &&
+                  ` · ${formatMoney(pickup.fee, view.currency)}`}
+              </p>
+            ))}
         </section>
       ))}
-      <dl>
-        <div>
-          <dt>Subtotal including tax</dt>
-          <dd>{formatMoney(view.subtotal, view.currency)}</dd>
-        </div>
-        {view.discounts.map((d, i) => (
-          <div key={'d' + i}>
-            <dt>{d.name}</dt>
-            <dd>{formatMoney(d.total, view.currency)}</dd>
+      {unresolved ? (
+        <p role="status">Updating order total…</p>
+      ) : (
+        <dl>
+          <div>
+            <dt>Subtotal including tax</dt>
+            <dd>{formatMoney(view.subtotal, view.currency)}</dd>
           </div>
-        ))}
-        {view.taxes.map((t, i) => (
-          <div key={'t' + i}>
-            <dt>{t.name} (included)</dt>
-            <dd>{formatMoney(t.total, view.currency)}</dd>
+          {view.discounts
+            .filter((d) => d.total !== 0)
+            .map((d, i) => (
+              <div key={'d' + i}>
+                <dt>{d.name}</dt>
+                <dd>{formatMoney(d.total, view.currency)}</dd>
+              </div>
+            ))}
+          {view.taxes
+            .filter((t) => t.total !== 0)
+            .map((t, i) => (
+              <div key={'t' + i}>
+                <dt>{t.name} (included)</dt>
+                <dd>{formatMoney(t.total, view.currency)}</dd>
+              </div>
+            ))}
+          {view.shipping !== 0 && (
+            <div>
+              <dt>Pickup fees</dt>
+              <dd>{formatMoney(view.shipping, view.currency)}</dd>
+            </div>
+          )}
+          {!!view.preorderFee?.preorderFee && (
+            <div>
+              <dt>Preorder fee</dt>
+              <dd>
+                {formatMoney(view.preorderFee.preorderFee, view.currency)}
+              </dd>
+            </div>
+          )}
+          <div>
+            <dt>Total</dt>
+            <dd>{formatMoney(view.total, view.currency)}</dd>
           </div>
-        ))}
-        <div>
-          <dt>Pickup fees</dt>
-          <dd>{formatMoney(view.shipping, view.currency)}</dd>
-        </div>
-        <div>
-          <dt>Total</dt>
-          <dd>{formatMoney(view.total, view.currency)}</dd>
-        </div>
-      </dl>
+        </dl>
+      )}
     </div>
   );
 }
@@ -69,12 +120,13 @@ export function Pickup({
   const venue = view.pickupPromise.venue || occurrence?.venue;
   const start = occurrence?.startsAt || view.pickupPromise.startsAt;
   const end = occurrence?.endsAt || view.pickupPromise.endsAt;
-  const timeZone = occurrence?.timezone ?? 'UTC';
+  const timeZone = occurrence?.timezone;
   const date = (value: string) =>
     new Date(value).toLocaleString('en-US', {
       timeZone,
       month: 'long',
       day: 'numeric',
+      year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
     });
@@ -194,7 +246,7 @@ function CheckoutViewContent(props: Parameters<typeof Checkout>[0]) {
         hasItems={!!cart?.lines.length}
         disabled={pending || !!view.attempt || view.committed}
       />
-      {state.issue && !view.committed && (
+      {state.issue && !view.committed && !view.frozen && (
         <p role="alert">
           {state.issue} <a href="/cart">Review your bag</a>
         </p>
@@ -203,6 +255,7 @@ function CheckoutViewContent(props: Parameters<typeof Checkout>[0]) {
         <div>
           {state.legacy ? (
             <CheckoutFlow
+              preorder={preorder}
               storefrontId={props.storefrontId}
               initial={view}
               onViewChange={state.setView}
@@ -301,34 +354,38 @@ function CheckoutViewContent(props: Parameters<typeof Checkout>[0]) {
                   </li>
                 ))}
               </ul>
-              {state.legacy ? (
-                <Summary view={view} />
+              {state.legacy || view.preorderFee ? (
+                <Summary
+                  view={view}
+                  unresolved={
+                    view.availability.mode === 'STRIPE_TEST' &&
+                    !view.preorderFee
+                  }
+                />
               ) : (
                 <CartTotals cart={cart} />
               )}
             </>
           ) : (
-            <Summary view={view} />
+            <Summary
+              view={view}
+              unresolved={
+                view.availability.mode === 'STRIPE_TEST' && !view.preorderFee
+              }
+            />
           )}
           <p>
             Current amounts include tax. Final taxes and pickup fees are
             confirmed during checkout.
           </p>
           <a href="/cart">Edit your bag ↗</a>
-          <button
-            className="farmhouse-text-link"
-            disabled={pending}
-            type="button"
-            onClick={() => void state.refresh()}
-          >
-            Refresh order summary
-          </button>
         </aside>
       </div>
     </article>
   );
 }
 function CheckoutFlow(props: {
+  preorder?: VendorPreorderState;
   storefrontId: string;
   initial: CheckoutView;
   onViewChange: (view: CheckoutView) => void;
@@ -343,6 +400,26 @@ function CheckoutFlow(props: {
     view.paymentStatus === 'FAILED' ||
     view.availability.state !== 'AVAILABLE' ||
     (!!view.attempt && !['HELD', 'COMMITTED'].includes(view.attempt.state));
+  const backAction = !view.committed &&
+    c.stage !== 'Contact' &&
+    c.stage !== 'Confirmation' && (
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={pending || c.paymentBusy}
+        onClick={() =>
+          void c.back(
+            c.stage === 'Payment'
+              ? 'Review'
+              : c.stage === 'Review'
+                ? 'Pickup'
+                : 'Contact',
+          )
+        }
+      >
+        Back
+      </Button>
+    );
   return (
     <div className="farmhouse-checkout-flow" aria-busy={pending}>
       {!view.committed && view.profile && (
@@ -366,10 +443,28 @@ function CheckoutFlow(props: {
           )}
         </ol>
       </nav>
-      <h2 ref={headingRef} tabIndex={-1}>
+      <h2 className="sr-only" ref={headingRef} tabIndex={-1}>
         {c.stage}
       </h2>
-      {c.error && <p role="alert">{c.error}</p>}
+      {c.error && (
+        <>
+          <p role="alert">{c.error}</p>
+          {c.stripeEnabled && (
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={pending || c.quoting}
+              onClick={() =>
+                void c.run(async () => {
+                  await c.refresh();
+                })
+              }
+            >
+              Retry checkout
+            </Button>
+          )}
+        </>
+      )}
       {view.committed ? (
         <p>
           Your order is confirmed.{' '}
@@ -390,25 +485,41 @@ function CheckoutFlow(props: {
         </form>
       ) : c.stage === 'Pickup' ? (
         <form className="farmhouse-form" onSubmit={c.submitPickup}>
+          <Pickup view={view} preorder={props.preorder} />
           {view.groups.map((group) => (
             <fieldset key={group.vendorId} disabled={pending}>
               <legend>{group.vendorName}</legend>
               {c.options
                 .filter((o) => o.vendorId === group.vendorId)
                 .map((option) => (
-                  <label key={option.methodId}>
+                  <label
+                    className="checkout-pickup-choice"
+                    key={option.methodId}
+                  >
                     <input
                       type="radio"
                       name={'pickup-' + group.vendorId}
                       value={option.methodId}
                       required
                       defaultChecked={
-                        c.options.filter((o) => o.vendorId === group.vendorId)
-                          .length === 1
+                        c.pickupSelections[group.vendorId] ===
+                          option.methodId ||
+                        (!c.pickupSelections[group.vendorId] &&
+                          c.options.filter((o) => o.vendorId === group.vendorId)
+                            .length === 1)
+                      }
+                      onChange={() =>
+                        c.setPickupSelections((previous) => ({
+                          ...previous,
+                          [group.vendorId]: option.methodId,
+                        }))
                       }
                     />
-                    {option.name} ·{' '}
-                    {formatMoney(option.price, option.currencyCode)}
+                    <span>
+                      {option.name}
+                      {option.price !== 0 &&
+                        ` · ${formatMoney(option.price, option.currencyCode)}`}
+                    </span>
                   </label>
                 ))}
               {!c.options.some((o) => o.vendorId === group.vendorId) && (
@@ -419,142 +530,157 @@ function CheckoutFlow(props: {
             </fieldset>
           ))}
           <div className="ui-actions">
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => c.go('Contact')}
-            >
-              Edit contact
-            </button>
-            <button
-              className="farmhouse-button"
-              disabled={
-                pending ||
-                view.groups.some(
-                  (g) => !c.options.some((o) => o.vendorId === g.vendorId),
-                )
-              }
-            >
-              Review order ↗
-            </button>
+            <div className="checkout-stage-actions">
+              {backAction}
+              <button
+                className="farmhouse-button"
+                disabled={
+                  pending ||
+                  view.groups.some(
+                    (g) => !c.options.some((o) => o.vendorId === g.vendorId),
+                  )
+                }
+              >
+                Review order ↗
+              </button>
+            </div>
           </div>
         </form>
       ) : c.stage === 'Review' ? (
         <>
-          <Summary view={view} />
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => c.go('Pickup')}
-          >
-            Edit pickup
-          </button>
-          <button
-            className="farmhouse-button"
-            disabled={pending}
-            onClick={() =>
-              void c.run(async () => {
-                await c.refresh();
-                c.go('Payment');
-              })
+          <Summary
+            view={view}
+            unresolved={
+              c.stripeEnabled &&
+              (pending || c.quoting || !!c.error || !view.preorderFee)
             }
-          >
-            Continue to payment ↗
-          </button>
-        </>
-      ) : (
-        <>
-          <Summary view={view} />
-          {blocked ? (
-            <p role="status">
-              {uncertain
-                ? 'Payment status is uncertain. Do not submit another payment. Refresh the checkout status.'
-                : view.paymentStatus === 'FAILED'
-                  ? 'Payment failed. Your purchase has not been confirmed.'
-                  : view.availability.state !== 'AVAILABLE'
-                    ? 'Online payment is not configured. Your order has not been placed.'
-                    : 'Checkout is no longer available. Return to your bag.'}
-            </p>
-          ) : (
-            <div className="farmhouse-form">
-              {view.availability.mode === 'LOCAL' && (
-                <>
-                  <label htmlFor="farmhouse-payment-method">
-                    Payment method
-                  </label>
-                  <select
-                    id="farmhouse-payment-method"
-                    value={c.paymentMethod}
-                    disabled={pending}
-                    onChange={(e) => c.setPaymentMethod(e.target.value)}
-                  >
-                    <option value="">Select a payment method</option>
-                    <option value="dev-test-payment">
-                      Test payment, no charge
-                    </option>
-                  </select>
-                  <p>This is a test purchase. No real payment will be made.</p>
-                </>
-              )}
-              <button
-                type="button"
-                className="farmhouse-button"
-                disabled={
-                  pending ||
-                  view.availability.mode !== 'LOCAL' ||
-                  c.paymentMethod !== 'dev-test-payment'
-                }
-                onClick={() => void c.pay()}
-              >
-                {pending
-                  ? 'Checking checkout…'
-                  : view.attempt
-                    ? 'Complete purchase'
-                    : 'Place order'}
-              </button>
-            </div>
-          )}
-          {view.attempt && (
+          />
+
+          <div className="checkout-stage-actions">
+            {backAction}
             <button
-              type="button"
+              className="farmhouse-button"
               disabled={pending}
               onClick={() =>
                 void c.run(async () => {
-                  await shopCall(props.storefrontId, 'checkout-release', {
-                    attemptId: view.attempt!.attemptId,
-                  });
                   await c.refresh();
+                  c.go('Payment');
                 })
               }
             >
-              Cancel checkout
+              Continue to payment ↗
             </button>
-          )}
-          <button
-            type="button"
-            className="farmhouse-text-link"
-            disabled={pending}
-            onClick={() =>
-              void c.run(async () => {
-                const status = await c.refresh();
-                c.setPaymentUncertain(
-                  ['PENDING', 'RECONCILIATION_REQUIRED'].includes(
-                    status.paymentStatus,
-                  ),
-                );
-              })
+          </div>
+        </>
+      ) : (
+        <>
+          <Summary
+            view={view}
+            unresolved={
+              c.stripeEnabled &&
+              (pending || c.quoting || !!c.error || !view.preorderFee)
             }
-          >
-            Refresh checkout status
-          </button>
-          {!view.frozen && (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => c.go('Contact')}
-            >
-              Edit contact
-            </button>
+          />
+          {c.stripeEnabled ? (
+            view.preorderFee ? (
+              <StripeCheckout
+                backAction={backAction}
+                onBusyChange={c.setPaymentBusy}
+                disabled={pending || c.quoting || !!c.error}
+                key={view.orderId}
+                storefrontId={props.storefrontId}
+                view={view}
+              />
+            ) : (
+              <p role="status">Updating order total…</p>
+            )
+          ) : (
+            <>
+              {blocked ? (
+                <p role="status">
+                  {uncertain
+                    ? 'Payment status is uncertain. Do not submit another payment. Refresh the checkout status.'
+                    : view.paymentStatus === 'FAILED'
+                      ? 'Payment failed. Your purchase has not been confirmed.'
+                      : view.availability.state !== 'AVAILABLE'
+                        ? 'Online payment is not configured. Your order has not been placed.'
+                        : 'Checkout is no longer available. Return to your bag.'}
+                </p>
+              ) : (
+                <div className="farmhouse-form">
+                  {view.availability.mode === 'LOCAL' && (
+                    <>
+                      <label htmlFor="farmhouse-payment-method">
+                        Payment method
+                      </label>
+                      <select
+                        id="farmhouse-payment-method"
+                        value={c.paymentMethod}
+                        disabled={pending}
+                        onChange={(e) => c.setPaymentMethod(e.target.value)}
+                      >
+                        <option value="">Select a payment method</option>
+                        <option value="dev-test-payment">
+                          Test payment, no charge
+                        </option>
+                      </select>
+                      <p>
+                        This is a test purchase. No real payment will be made.
+                      </p>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    className="farmhouse-button"
+                    disabled={
+                      pending ||
+                      view.availability.mode !== 'LOCAL' ||
+                      c.paymentMethod !== 'dev-test-payment'
+                    }
+                    onClick={() => void c.pay()}
+                  >
+                    {pending
+                      ? 'Checking checkout…'
+                      : view.attempt
+                        ? 'Complete purchase'
+                        : 'Place order'}
+                  </button>
+                </div>
+              )}
+              {view.attempt && (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() =>
+                    void c.run(async () => {
+                      await shopCall(props.storefrontId, 'checkout-release', {
+                        attemptId: view.attempt!.attemptId,
+                      });
+                      await c.refresh();
+                    })
+                  }
+                >
+                  Cancel checkout
+                </button>
+              )}
+              <button
+                type="button"
+                className="farmhouse-text-link"
+                disabled={pending}
+                onClick={() =>
+                  void c.run(async () => {
+                    const status = await c.refresh();
+                    c.setPaymentUncertain(
+                      ['PENDING', 'RECONCILIATION_REQUIRED'].includes(
+                        status.paymentStatus,
+                      ),
+                    );
+                  })
+                }
+              >
+                Refresh checkout status
+              </button>
+            </>
           )}
         </>
       )}

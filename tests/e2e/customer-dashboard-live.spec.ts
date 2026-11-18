@@ -122,27 +122,40 @@ test('authenticated customer completes three real purchases and sees follows, gr
   await page.getByRole('link', { name: 'View cart', exact: true }).click();
   orders.push(await checkout(page));
   await page.goto(central + '/account');
-  await expect(page.locator('.customer-order-list > li')).toHaveCount(3);
+  await expect(page.locator('.customer-overview-orders tbody tr')).toHaveCount(
+    3,
+  );
   await expect(page.locator('[data-event-id]')).toHaveCount(3);
   await verifyLayout(page);
   await page.goto(central + '/account/orders');
-  await expect(page.locator('.customer-order-list > li')).toHaveCount(3);
+  await expect(page.locator('.customer-orders-table tbody tr')).toHaveCount(3);
+  // Choosing an order shows it in the side panel; the full order opens from there.
   await page
     .getByRole('link', { name: `Order ${orders[0]}`, exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: `Order ${orders[0]}`, exact: true }),
+  ).toBeVisible();
+  await page
+    .locator(`[data-select-panel="${orders[0]}"]`)
+    .getByRole('link', { name: 'View full order' })
     .click();
   await expect(
     page.getByRole('heading', { name: 'Vendor A', exact: true }),
   ).toBeVisible();
   await verifyLayout(page);
   await page.goto(central + '/account/markets');
-  await expect(
-    page.locator('.customer-section').first().locator('[data-event-id]'),
-  ).toHaveCount(1);
+  await expect(page.locator('[data-event-id]')).toHaveCount(1);
   await expect(
     page
       .getByRole('button', { name: 'Unfollow Market Alpha', exact: true })
       .first(),
   ).toBeVisible();
+  // Discovery results open in the side panel, which holds Follow and Visit.
+  await page
+    .locator('#discover')
+    .getByRole('link', { name: 'Market Beta', exact: true })
+    .click();
   await expect(
     page.getByRole('button', { name: 'Follow Market Beta', exact: true }),
   ).toBeVisible();
@@ -171,6 +184,10 @@ test('authenticated customer completes three real purchases and sees follows, gr
     .first()
     .click();
   await expect(page.locator('[data-event-id]')).toHaveCount(1);
+  await page
+    .locator('#discover')
+    .getByRole('link', { name: 'Vendor C', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Follow Vendor C', exact: true })
     .click();
@@ -236,5 +253,5 @@ test('authenticated customer completes three real purchases and sees follows, gr
   ).toBeVisible();
   await cleanContext.close();
   await page.goto(central + '/account/orders');
-  await expect(page.locator('.customer-order-list > li')).toHaveCount(3);
+  await expect(page.locator('.customer-orders-table tbody tr')).toHaveCount(3);
 });

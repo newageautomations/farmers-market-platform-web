@@ -1,0 +1,114 @@
+---
+import Art from './Art.astro';
+/**
+ * Hearth's hero illustration: a bakehouse shelf under a warm lamp. Decorative
+ * only. `bunting` strings flags across it for Market Day mode.
+ */
+interface Props {
+  bunting?: boolean;
+}
+const { bunting = false } = Astro.props;
+const flagColors = ['#9B2F3A', '#D9A253', '#6C7A45', '#7B4B2A', '#F3DEAA'];
+// Points along the bunting string M0 26 Q280 96 560 26.
+const flags = Array.from({ length: 9 }, (_, index) => {
+  const t = (index + 1) / 10;
+  return { x: 560 * t, y: 26 + 140 * t * (1 - t) };
+});
+const boards = [70, 140, 210, 280, 350, 420, 490];
+---
+
+<svg
+  class="hw-scene"
+  viewBox="0 0 560 500"
+  aria-hidden="true"
+  focusable="false"
+>
+  <rect width="560" height="500" fill="#F1E3C6"></rect>
+  {boards.map((x) => (
+    <path d={`M${x} 0v420`} stroke="#E6D4AF" stroke-width="2" />
+  ))}
+
+  <g class="hw-scene-lamp">
+    <path d="M280 0v52" stroke="#3D2616" stroke-width="3"></path>
+    <ellipse
+      cx="280"
+      cy="118"
+      rx="96"
+      ry="40"
+      fill="#F6E3A6"
+      opacity=".55"
+    ></ellipse>
+    <path d="M246 88l16-36h36l16 36z" fill="#C98A3C"></path>
+    <ellipse cx="280" cy="88" rx="34" ry="6" fill="#F6E3A6"></ellipse>
+  </g>
+
+  <rect x="44" y="34" width="96" height="66" rx="4" fill="#3D2616"></rect>
+  <rect
+    x="44"
+    y="34"
+    width="96"
+    height="66"
+    rx="4"
+    fill="none"
+    stroke="#8A5A2B"
+    stroke-width="6"
+  ></rect>
+  <g stroke="#F6E6BF" stroke-width="2.5" stroke-linecap="round" fill="none">
+    <path d="M92 88V56"></path>
+    <path d="M92 60c-6-2-9-7-9-12M92 60c6-2 9-7 9-12M92 72c-6-2-9-7-9-12M92 72c6-2 9-7 9-12"></path>
+  </g>
+
+  <path d="M70 192l14 22h-14zM490 192l-14 22h14z" fill="#6E4520"></path>
+  <Art name="jam" x={64} y={115} size={72} />
+  <Art name="jam" x={134} y={124} size={62} />
+  {/* Two wheat stalks fanned out of the crock: each turns about the foot of
+      its stem, which sits inside the crock, below the rim. */}
+  <g transform="rotate(-12 302 168)">
+    <Art name="wheat" x={260} y={88} size={84} />
+  </g>
+  <g transform="rotate(12 324 168)">
+    <Art name="wheat" x={282} y={88} size={84} />
+  </g>
+  <rect x="280" y="152" width="66" height="26" rx="6" fill="#B98A52"></rect>
+  <rect x="276" y="146" width="74" height="10" rx="5" fill="#8A5A2B"></rect>
+  <Art name="pie" x={394} y={99} size={96} />
+  <rect x="40" y="178" width="480" height="14" rx="3" fill="#8A5A2B"></rect>
+
+  <path d="M70 332l14 22h-14zM490 332l-14 22h14z" fill="#6E4520"></path>
+  {/* Both sourdoughs have a flat base (y = 80 of 96), placed exactly on the
+      shelf top at 318: y = 318 - 80 * size / 96. */}
+  <Art name="sourdough" x={52} y={218} size={120} />
+  <Art name="sourdough" x={186} y={234.67} size={100} />
+  <Art name="basket" x={300} y={199} size={130} />
+  <Art name="croissant" x={432} y={258} size={92} />
+  <rect x="40" y="318" width="480" height="14" rx="3" fill="#8A5A2B"></rect>
+
+  <rect y="420" width="560" height="80" fill="#B98A52"></rect>
+  <rect y="420" width="560" height="12" fill="#8A5A2B"></rect>
+  <path d="M0 458h560" stroke="#A9743A" stroke-width="3"></path>
+  <Art name="coffee" x={62} y={334} size={98} class="hw-scene-coffee" />
+  {/* The pin drawing is tilted 28deg; turn it back so it lies flat on the
+      counter, its barrel resting on the counter top. */}
+  <g transform="rotate(28 252 406)">
+    <Art name="pin" x={196} y={350} size={112} />
+  </g>
+  <Art name="cookie" x={366} y={374} size={56} />
+  <Art name="cookie" x={404} y={370} size={60} />
+
+  {bunting && (
+    <g class="hw-scene-bunting">
+      <path
+        d="M0 26Q280 96 560 26"
+        stroke="#3D2616"
+        stroke-width="2.5"
+        fill="none"
+      />
+      {flags.map((flag, index) => (
+        <path
+          d={`M${flag.x - 17} ${flag.y - 1}h34l-17 32z`}
+          fill={flagColors[index % flagColors.length]}
+        />
+      ))}
+    </g>
+  )}
+</svg>

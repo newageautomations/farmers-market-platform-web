@@ -1,0 +1,144 @@
+---
+import { AppError, safeError, type MarketCatalog } from '@market/api';
+import {
+  marketCatalogInputs,
+  taxonomyNavigation,
+} from '@market/storefront-core';
+import WebsitePageRegion from '../../components/WebsitePageRegion.astro';
+import HarvestShop from '../../components/home/HarvestShop.astro';
+import EditorialShopHero from '../../components/editorial-market/ShopHero.astro';
+import EditorialShopCategories from '../../components/editorial-market/ShopCategories.astro';
+import { isEditorialMarket } from '@market/theme/storefront';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { requestMarketShop } from '../../lib/shop';
+import { marketPreorder } from '../../lib/market-preorder';
+import {
+  marketProduct,
+  marketCatalogAvailability,
+  marketProductLink,
+  marketShopCatalog,
+} from '../../lib/market-catalog';
+import type { VendorPreorderState } from '../../lib/vendor-preorder';
+
+const { storefront, storefrontError } = Astro.locals;
+if (storefront?.kind === 'VENDOR')
+  return Astro.redirect('/products' + Astro.url.search, 302);
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+let error = storefrontError;
+let preorder: VendorPreorderState = {
+  occurrences: [],
+  selected: undefined,
+  availability: [],
+  unavailable: false,
+  orderOccurrence: undefined,
+};
+let catalog: MarketCatalog | undefined;
+const query = new URLSearchParams(Astro.url.searchParams);
+// Accept links using the vendor Harvest sort values as well.
+if (query.get('sort') === 'name' || query.get('sort') === 'default')
+  query.set('sort', 'NAME_ASC');
+let { page, options } = marketCatalogInputs(new URLSearchParams());
+try {
+  ({ page, options } = marketCatalogInputs(query));
+  if (storefront?.kind !== 'MARKET') throw new AppError('not-found');
+  preorder = await marketPreorder(Astro);
+  if (preorder.selected) {
+    query.set('occurrence', preorder.selected.id);
+    const api = requestMarketShop(Astro);
+    catalog = await marketShopCatalog(
+      (next) => api.catalog(preorder.selected!.id, next),
+      options,
+    );
+    preorder.availability = marketCatalogAvailability(catalog.items);
+  }
+} catch (value) {
+  error = safeError(value);
+}
+if (error)
+  Astro.response.status = ['not-found', 'forbidden'].includes(error.kind)
+    ? 404
+    : error.kind === 'validation'
+      ? 400
+      : 503;
+const items = catalog?.items.map(marketProduct) ?? [];
+const category = query.get('category') ?? '';
+const categories = catalog
+  ? taxonomyNavigation(
+      catalog.taxonomy,
+      storefront?.appearance?.categoryPresentation,
+    )
+  : [];
+const sellerNames = Object.fromEntries(
+  catalog?.items.map((item) => [item.productId, item.vendorName]) ?? [],
+);
+const productLinks = Object.fromEntries(
+  catalog?.items.map((item) => [
+    item.productId,
+    marketProductLink(item.variantId, preorder.selected?.id),
+  ]) ?? [],
+);
+const link = (next: { category?: string; page?: number }) => {
+  const params = new URLSearchParams(query);
+  if (next.category !== undefined) {
+    params.delete('category');
+    if (next.category) params.set('category', next.category);
+  }
+  params.delete('page');
+  if (next.page && next.page > 1) params.set('page', String(next.page));
+  return `/shop?${params}`;
+};
+// Editorial Market shares the vendor shop artwork and category strip.
+const appearance = storefront?.appearance;
+const editorial = isEditorialMarket(appearance)
+  ? appearance.template.settings
+  : undefined;
+const ShopWrapper = editorial ? 'div' : Fragment;
+const wrapperProps = editorial
+  ? {
+      class: 'em-shop em-market-shop',
+      'data-template': 'editorial-market-shop',
+    }
+  : {};
+---
+
+<SiteLayout context={storefront} path="/shop" title="Shop" noindex={!!error}>
+  <ShopWrapper {...wrapperProps}>
+    {editorial && <EditorialShopHero settings={editorial} />}
+    <WebsitePageRegion context={storefront} page="products" region="before" />
+    {editorial && !error && categories.length > 0 && (
+      <EditorialShopCategories
+        settings={editorial}
+        categories={categories}
+        category={category}
+        link={link}
+      />
+    )}
+    <HarvestShop
+      context={storefront}
+      error={error}
+      market
+      editorialChrome={!!editorial}
+      items={items}
+      visible={items}
+      total={catalog?.totalItems ?? 0}
+      page={page}
+      sort={options.sort ?? 'NAME_ASC'}
+      category={category}
+      search={options.search ?? ''}
+      categories={categories}
+      taxonomy={catalog?.taxonomy}
+      query={query}
+      preorder={preorder}
+      link={link}
+      sellerNames={sellerNames}
+      productLinks={productLinks}
+      preview={!!Astro.locals.editorPreview}
+      sortOptions={[
+        { value: 'NAME_ASC', label: 'Name A to Z' },
+        { value: 'NAME_DESC', label: 'Name Z to A' },
+        { value: 'PRICE_ASC', label: 'Price low to high' },
+        { value: 'PRICE_DESC', label: 'Price high to low' },
+      ]}
+    />
+  </ShopWrapper>
+</SiteLayout>

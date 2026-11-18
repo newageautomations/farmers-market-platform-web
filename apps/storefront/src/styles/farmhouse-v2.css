@@ -90,6 +90,71 @@ html[data-template-version='2'] body {
   margin-inline: auto;
   padding: clamp(2.5rem, 6vw, 6.5rem) clamp(1.25rem, 3vw, 3rem);
 }
+/* Registered static homepage sections share the theme's existing surface and type tokens. */
+.farmhouse-editorial {
+  background: var(--farmhouse-paper);
+  color: var(--farmhouse-ink);
+}
+.farmhouse-editorial[data-background='surface'] {
+  background: var(--farmhouse-surface);
+}
+.farmhouse-editorial[data-background='ink'] {
+  background: var(--farmhouse-ink);
+  color: var(--farmhouse-surface);
+}
+.farmhouse-image-with-text {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: center;
+}
+.farmhouse-image-with-text > .farmhouse-photo {
+  min-width: 0;
+  height: clamp(18rem, 35vw, 35rem);
+}
+.farmhouse-image-with-text[data-image-size='small'] {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+}
+.farmhouse-image-with-text[data-image-size='large'] {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+.farmhouse-image-with-text[data-image-side='right'] > .farmhouse-photo {
+  order: 1;
+}
+.farmhouse-image-with-text[data-image-side='right'][data-image-size='small'] {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+.farmhouse-image-with-text[data-image-side='right'][data-image-size='large'] {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+}
+.farmhouse-editorial-copy {
+  max-width: 45rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.farmhouse-editorial-copy p {
+  white-space: pre-line;
+  line-height: 1.65;
+}
+.farmhouse-editorial[data-alignment='center'] .farmhouse-editorial-copy {
+  text-align: center;
+  margin-inline: auto;
+}
+.farmhouse-editorial[data-alignment='right'] .farmhouse-editorial-copy {
+  text-align: right;
+  margin-inline-start: auto;
+}
+@media (max-width: 720px) {
+  .farmhouse-editorial .farmhouse-image-with-text {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .farmhouse-image-with-text[data-image-side='right'] > .farmhouse-photo {
+    order: 0;
+  }
+  .farmhouse-image-with-text > .farmhouse-photo {
+    height: clamp(18rem, 70vw, 28rem);
+  }
+}
 .farmhouse-button {
   display: inline-flex;
   width: fit-content;
@@ -1838,11 +1903,13 @@ html[data-template-version='2'][data-storefront-hover='outline']
 }
 .farmhouse-summary dl > div {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
 }
 .farmhouse-summary dd {
   margin: 0;
+  align-self: center;
 }
 .farmhouse-checkout-flow button {
   min-height: 44px;
@@ -2061,4 +2128,271 @@ html[data-scroll-fade='true'] [data-fade-pending] {
 }
 .farmhouse-header-search .market-select-options[hidden] {
   display: none;
+}
+/* Curated repeatable variants are opt-in; standard preserves Phase A/B. */
+:is(.farmhouse-home, .farmhouse-page-sections)
+  .farmhouse-text-section[data-variant='featured'] {
+  max-width: none;
+  background: var(--farmhouse-paper);
+  border-block: 1px solid var(--farmhouse-rule);
+  padding-block: clamp(4rem, 8vw, 8rem);
+}
+:is(.farmhouse-home, .farmhouse-page-sections)
+  .farmhouse-text-section[data-variant='featured']
+  > div {
+  max-width: 56rem;
+}
+:is(.farmhouse-home, .farmhouse-page-sections) [data-variant='featured'] h2 {
+  font-size: clamp(2.75rem, 5vw, 4.5rem);
+  font-style: italic;
+}
+:is(.farmhouse-home, .farmhouse-page-sections)
+  .farmhouse-editorial[data-variant='featured']
+  .farmhouse-space {
+  padding-block: clamp(4rem, 8vw, 8rem);
+}
+:is(.farmhouse-home, .farmhouse-page-sections)
+  .farmhouse-editorial[data-variant='featured']
+  .farmhouse-photo {
+  border-radius: 50% 50% 0.5rem 0.5rem;
+  overflow: hidden;
+}
+:is(.farmhouse-home, .farmhouse-page-sections)
+  .farmhouse-editorial[data-variant='featured']
+  .farmhouse-cta-banner {
+  border-block: 1px solid var(--farmhouse-rule);
+}
+:is(.farmhouse-home, .farmhouse-page-sections) [data-variant='framed'] {
+  width: calc(100% - clamp(2rem, 5vw, 6rem));
+  max-width: 80rem;
+  margin: 2rem auto;
+  border: 1px solid var(--farmhouse-rule);
+  border-radius: 1.25rem;
+  box-shadow: inset 0 0 0 0.5rem var(--farmhouse-paper);
+}
+:is(.farmhouse-home, .farmhouse-page-sections)
+  .farmhouse-text-section[data-variant='framed'] {
+  padding: clamp(2rem, 5vw, 5rem);
+}
+.farmhouse-home[data-spacing='compact'] .farmhouse-space {
+  padding-block: clamp(1.75rem, 3vw, 3.5rem);
+}
+.farmhouse-home[data-spacing='spacious'] .farmhouse-space {
+  padding-block: clamp(4rem, 9vw, 9rem);
+}
+.farmhouse-home[data-typography-scale='expressive'] h2 {
+  font-size: clamp(2.75rem, 5vw, 4.75rem);
+}
+.farmhouse-home[data-typography-scale='expressive'] .farmhouse-hero-copy h1 {
+  font-size: clamp(3.25rem, 7vw, 7rem);
+}
+
+/* Image with Text: opt-in curated layouts. Absent attributes retain legacy proportions. */
+.farmhouse-image-with-text[data-column-ratio='50-50'] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.farmhouse-image-with-text[data-column-ratio='40-60'],
+.farmhouse-image-with-text[data-image-side='right'][data-column-ratio='60-40'] {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+}
+.farmhouse-image-with-text[data-column-ratio='60-40'],
+.farmhouse-image-with-text[data-image-side='right'][data-column-ratio='40-60'] {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+.farmhouse-image-with-text[data-vertical-alignment='top']
+  > .farmhouse-editorial-copy {
+  align-self: start;
+}
+.farmhouse-image-with-text[data-vertical-alignment='center']
+  > .farmhouse-editorial-copy {
+  align-self: center;
+}
+.farmhouse-image-with-text[data-vertical-alignment='bottom']
+  > .farmhouse-editorial-copy {
+  align-self: end;
+}
+.farmhouse-image-with-text[data-internal-spacing='compact'] {
+  gap: 1.5rem;
+}
+.farmhouse-image-with-text[data-internal-spacing='balanced'] {
+  gap: clamp(2rem, 6vw, 6rem);
+}
+.farmhouse-image-with-text[data-internal-spacing='spacious'] {
+  gap: clamp(3rem, 8vw, 8rem);
+}
+.farmhouse-editorial-copy .farmhouse-block-eyebrow {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.farmhouse-editorial-copy [data-block-size='large'] {
+  font-size: 1.25em;
+}
+.farmhouse-editorial-copy h2[data-block-size='large'] {
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+}
+.farmhouse-editorial-copy > .farmhouse-button + .farmhouse-button {
+  margin-inline-start: 0.75rem;
+}
+@media (max-width: 720px) {
+  .farmhouse-editorial .farmhouse-image-with-text[data-column-ratio] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Full-width photographic presentation stays outside native commerce structure. */
+.farmhouse-site .farmhouse-editorial[data-image-layout='overlay'] {
+  position: relative;
+  width: 100vw;
+  max-width: none;
+  margin-inline: calc(50% - 50vw);
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  overflow: hidden;
+  color: #fff;
+  background: #17191c;
+}
+.farmhouse-site
+  .farmhouse-editorial[data-image-layout='overlay']
+  .farmhouse-image-with-text {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  border: 0;
+}
+
+.farmhouse-site
+  .farmhouse-editorial[data-image-layout='overlay']
+  .farmhouse-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  border-radius: 0;
+  order: 0;
+}
+.farmhouse-site
+  .farmhouse-editorial[data-image-layout='overlay']
+  .farmhouse-photo
+  img {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  border-radius: 0;
+  aspect-ratio: auto;
+}
+.farmhouse-site
+  .farmhouse-editorial[data-image-layout='overlay']
+  .farmhouse-photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(0 0 0 / 65%), rgb(0 0 0 / 30%));
+}
+.farmhouse-site
+  .farmhouse-editorial[data-image-layout='overlay']
+  .farmhouse-editorial-copy {
+  position: relative;
+  z-index: 1;
+  min-height: clamp(26rem, 65vh, 48rem);
+  width: min(100%, 76rem);
+  max-width: none;
+  margin-inline: auto;
+  padding: clamp(2rem, 6vw, 6rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  color: #fff;
+  box-sizing: border-box;
+}
+.farmhouse-site
+  .farmhouse-editorial[data-image-layout='overlay']
+  .farmhouse-editorial-copy
+  h2,
+.farmhouse-site
+  .farmhouse-editorial[data-image-layout='overlay']
+  .farmhouse-editorial-copy
+  p {
+  color: inherit;
+  max-width: 48rem;
+}
+.farmhouse-site
+  .farmhouse-editorial[data-image-layout='overlay'][data-alignment='center']
+  .farmhouse-editorial-copy {
+  align-items: center;
+  text-align: center;
+}
+.farmhouse-site
+  .farmhouse-editorial[data-image-layout='overlay'][data-alignment='right']
+  .farmhouse-editorial-copy {
+  align-items: flex-end;
+  text-align: right;
+}
+
+/* Checkout composes the existing controls and theme tokens. */
+.farmhouse-checkout-flow .checkout-pickup-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  margin-block: 0.75rem;
+  border: 1px solid var(--brand-muted);
+  border-radius: 6px;
+}
+.farmhouse-checkout-flow .checkout-pickup-choice input[type='radio'] {
+  flex: none;
+  margin: 0;
+}
+.farmhouse-checkout-flow .checkout-pickup-choice span {
+  line-height: 1.5;
+}
+.farmhouse-checkout-flow .farmhouse-checkout-section {
+  padding: 1.5rem;
+  background: var(--farmhouse-paper, #fffdf8);
+  border: 1px solid var(--brand-muted);
+  border-radius: 6px;
+  margin-block: 1rem;
+}
+.farmhouse-checkout-flow .farmhouse-checkout-section h2 {
+  display: none;
+}
+.farmhouse-success .farmhouse-checkout-composition {
+  align-items: start;
+}
+.farmhouse-success .farmhouse-order-panel {
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+}
+.farmhouse-success .farmhouse-summary section {
+  padding-block: 1rem;
+}
+.farmhouse-success .farmhouse-summary dl > div {
+  padding-block: 0.5rem;
+}
+.farmhouse-summary .checkout-summary-product {
+  align-items: center;
+  justify-content: initial;
+}
+.farmhouse-summary .checkout-summary-product > span:first-of-type {
+  flex: 1;
+}
+.checkout-summary-product img {
+  flex: none;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.farmhouse-success .checkout-account-invitation {
+  max-width: 42rem;
+  margin: 2rem auto;
+  padding: 2rem;
+}
+.farmhouse-success .checkout-account-invitation p:first-child {
+  font-size: 1.5rem;
 }

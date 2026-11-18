@@ -22,8 +22,10 @@ import {
   useRead,
 } from './common';
 import '@market/ui/farmstand.css';
-import '../vendor/markets-workspace.css';
+import '@market/ui/workspace.css';
 import './market-occurrences.css';
+import { MarketDayStorefrontSetting } from './MarketDayStorefrontSetting';
+import { CompactLabel } from './mobile';
 
 function inApp(event: MouseEvent<HTMLAnchorElement>, href: string) {
   if (
@@ -101,6 +103,22 @@ export function MarketOccurrenceDetail({
       />
       {occurrence && (
         <>
+          {boothsAllowed && (
+            <div className="ui-actions">
+              <FarmstandLink
+                href={`/market/day/${id}`}
+                onClick={(event) => inApp(event, `/market/day/${id}`)}
+              >
+                Open Market Day
+              </FarmstandLink>
+              <FarmstandLink
+                href={`/market/preparation/${id}`}
+                onClick={(event) => inApp(event, `/market/preparation/${id}`)}
+              >
+                Market preparation
+              </FarmstandLink>
+            </div>
+          )}
           <header className="application-detail-heading">
             <div className="application-detail-title">
               <h1>{marketDate(occurrence, true)}</h1>
@@ -116,7 +134,7 @@ export function MarketOccurrenceDetail({
                 </FarmstandButton>
                 <FarmstandButton onClick={() => setDialog('edit')}>
                   <UtilityIcon name="edit" />
-                  Edit occurrence
+                  <CompactLabel>Edit occurrence</CompactLabel>
                 </FarmstandButton>
               </div>
             )}
@@ -221,6 +239,30 @@ export function MarketOccurrenceDetail({
                       <FarmstandIcon name="arrow-right" />
                     </FarmstandLink>
                   )}
+                  {service.phase14 &&
+                    service.context.permissions.includes(
+                      'ReadOwnMarketBilling',
+                    ) &&
+                    mayMarketCommand(
+                      service.context,
+                      'ManageOwnMarketBilling',
+                    ) && (
+                      <FarmstandLink
+                        href={`/market/finances/invoices?occurrence=${id}&status=DRAFT`}
+                        variant="secondary"
+                        className="application-detail-arrow"
+                        onClick={(event) =>
+                          inApp(
+                            event,
+                            `/market/finances/invoices?occurrence=${id}&status=DRAFT`,
+                          )
+                        }
+                      >
+                        <FarmstandIcon name="receipt-text" />
+                        Issue invoices
+                        <FarmstandIcon name="arrow-right" />
+                      </FarmstandLink>
+                    )}
                   <FarmstandLink
                     href={operations}
                     variant="secondary"
@@ -242,6 +284,13 @@ export function MarketOccurrenceDetail({
               </Panel>
             </aside>
           </div>
+          {boothsAllowed && (
+            <MarketDayStorefrontSetting
+              key={occurrence.id}
+              service={service}
+              occurrenceId={Number(occurrence.id)}
+            />
+          )}
           <Dialog
             open={dialog === 'edit' && !!editable}
             size="wide"
@@ -305,7 +354,9 @@ export function MarketOccurrenceDetail({
               }
             >
               <p>
-                {marketDate(occurrence, true)} will be cancelled. This does not
+                {marketDate(occurrence, true)} will be cancelled, along with
+                vendor attendance, booth assignments and invoices. Recorded
+                payments remain available for refund handling. This does not
                 automatically refund purchases, restock inventory or notify
                 customers; handle those separately.
               </p>

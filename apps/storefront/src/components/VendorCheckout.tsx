@@ -44,7 +44,6 @@ export function VendorCheckout({
     contact,
     legacy,
     issue,
-    refresh,
     submitDetails,
   } = useVendorCheckout({
     storefrontId,
@@ -63,7 +62,7 @@ export function VendorCheckout({
       <header className="checkout-heading">
         <h1>Checkout</h1>
       </header>
-      {issue && !view.committed && (
+      {issue && !view.committed && !view.frozen && (
         <p className="ui-alert ui-alert-warning" role="alert">
           {issue} <a href="/cart">Review your cart</a>
         </p>
@@ -72,6 +71,7 @@ export function VendorCheckout({
         <div>
           {legacy ? (
             <Checkout
+              preorder={preorder}
               storefrontId={storefrontId}
               initial={view}
               onViewChange={setView}
@@ -259,7 +259,7 @@ export function VendorCheckout({
                     );
                   })}
                 </ul>
-                {legacy ? (
+                {legacy || view.preorderFee ? (
                   <CheckoutSummary view={view} totalsOnly />
                 ) : (
                   <CartTotals cart={cart} />
@@ -279,14 +279,6 @@ export function VendorCheckout({
               Edit cart
             </a>
           </Dropdown>
-          <Button
-            type="button"
-            variant="tertiary"
-            disabled={pending}
-            onClick={() => void refresh()}
-          >
-            Refresh order summary
-          </Button>
         </aside>
       </div>
     </div>

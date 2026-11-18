@@ -52,6 +52,10 @@ export type RecordDetailsColumns = {
   statuses?: readonly ReactNode[];
   /** Reuse a feature's existing complete detail dialog when available. */
   onOpen?: (index: number) => void;
+  /** Keep this column's cell (for example row actions) as a last column. */
+  action?: number;
+  /** Open the details as a bottom sheet (`Dialog` drawer) instead. */
+  sheet?: boolean;
 };
 
 /** Opt-in adapter for ordinary tr/cell markup. Controllers and actions stay with callers. */
@@ -103,13 +107,20 @@ export function RecordDetailsTable({
         headings={[
           headings[identifier]!,
           ...(columns.status === undefined ? [] : [headings[columns.status]!]),
+          ...(columns.action === undefined ? [] : [headings[columns.action]!]),
         ]}
         sort={sort}
       >
         {rows.map((row, index) =>
           row.cells.length === 1 && row.cells[0]?.props.colSpan ? (
             <tr key={row.key}>
-              <td colSpan={columns.status === undefined ? 1 : 2}>
+              <td
+                colSpan={
+                  1 +
+                  Number(columns.status !== undefined) +
+                  Number(columns.action !== undefined)
+                }
+              >
                 {row.cells[0].props.children}
               </td>
             </tr>
@@ -139,6 +150,11 @@ export function RecordDetailsTable({
                     row.cells[columns.status]?.props.children}
                 </td>
               )}
+              {columns.action !== undefined && (
+                <td className="ui-record-action">
+                  {row.cells[columns.action]?.props.children}
+                </td>
+              )}
             </tr>
           ),
         )}
@@ -148,6 +164,9 @@ export function RecordDetailsTable({
           open
           title={title(selectedIndex)}
           onClose={() => setSelected(undefined)}
+          drawer={columns.sheet}
+          dismissOnBackdrop={columns.sheet}
+          className={columns.sheet ? 'ui-record-sheet' : undefined}
         >
           <dl className="ui-record-facts">
             {chosen.cells.map((cell, index) => (
@@ -169,6 +188,7 @@ export function RecordCard({
   summary,
   children,
   onOpen,
+  initialOpen = false,
   icon,
   className = '',
   label,
@@ -179,13 +199,15 @@ export function RecordCard({
   summary: ReactNode;
   children?: ReactNode;
   onOpen?: () => void;
+  /** Open a linked record's existing details dialog on first render. */
+  initialOpen?: boolean;
   icon?: ReactNode;
   className?: string;
   label?: string;
   header?: ReactNode;
   renderTrigger?: (props: ComponentProps<typeof Button>) => ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const triggerProps: ComponentProps<typeof Button> = {
     variant: 'disclosure',
     className: 'ui-record-trigger',

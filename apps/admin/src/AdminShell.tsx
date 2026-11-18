@@ -1,3 +1,4 @@
+import { usePreparationDates } from './preparation/PreparationWorkspace';
 import {
   lazy,
   Suspense,
@@ -33,6 +34,9 @@ import {
   Tooltip,
   IconButton,
   MarketPlatformLogo,
+  HeaderMenu,
+  AccountIcon,
+  UtilityIcon,
 } from '@market/ui';
 import {
   adminTheme,
@@ -56,6 +60,7 @@ const MarketRoutes = lazy(() =>
 );
 import type { MarketService } from './market/service';
 import './market.css';
+import { MarketCompactProvider, PhoneSheet } from './market/mobile';
 import type { ManagementService } from './management/service';
 import { isManagementRoute, isSettingsRoute } from './management/routes';
 const SettingsWorkspace = lazy(() =>
@@ -72,6 +77,7 @@ import './management.css';
 import './phase15.css';
 import './phase15b.css';
 import './market/dashboard.css';
+import '@market/ui/shell.css';
 import { NavigationIcon, Chevron } from './NavigationIcon';
 import {
   StorefrontAppearanceSettings,
@@ -154,7 +160,7 @@ function Shell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [inputMode, setInputMode] = useState('pointer');
   useEffect(() => {
-    if (context.scope !== 'MARKET') return;
+    if (context.scope !== 'MARKET' && context.scope !== 'VENDOR') return;
     const pointer = () => setInputMode('pointer');
     const keyboard = (event: KeyboardEvent) => {
       if (event.key === 'Tab') setInputMode('keyboard');
@@ -166,7 +172,8 @@ function Shell({
       document.removeEventListener('keydown', keyboard);
     };
   }, [context.scope]);
-  const items = visibleNavigation(context).filter(
+  const preparationDates = usePreparationDates(vendorService, marketService);
+  const baseItems = visibleNavigation(context).filter(
     (item) =>
       context.scope !== 'MARKET' ||
       ![
@@ -176,11 +183,26 @@ function Shell({
         '/market/vendors/offerings',
       ].includes(item.path),
   );
+  const preparationPath =
+    context.scope === 'MARKET' ? '/market/preparation' : '/vendor/preparation';
+  const preparationActive = path.includes('/preparation');
+  const items =
+    (preparationDates.due || preparationActive) && context.scope !== 'PLATFORM'
+      ? [
+          {
+            path: preparationPath,
+            label: 'Market Preparation',
+            scopes: [context.scope],
+          },
+          ...baseItems,
+        ]
+      : baseItems;
   const current = [...items]
     .sort((a, b) => b.path.length - a.path.length)
     .find(
       (item) =>
         item.path === path ||
+        (preparationActive && item.path === preparationPath) ||
         (context.scope === 'PLATFORM' &&
           ((path === '/' && item.path === '/platform') ||
             (item.path !== '/platform' && path.startsWith(item.path + '/')))) ||
@@ -224,68 +246,106 @@ function Shell({
     window.dispatchEvent(new PopStateEvent('popstate'));
     document.querySelector<HTMLElement>('#main')?.focus();
   }
+  // Market Manager, Vendor and Platform share the compact shell (sidebar
+  // rail, 56px topbar and account menu) and a sectioned sidebar without
+  // dropdowns.
+  const compactShell =
+    context.scope === 'MARKET' ||
+    context.scope === 'VENDOR' ||
+    context.scope === 'PLATFORM';
+  const flatNavigation = compactShell;
+  const renderItem = (item: (typeof items)[number], rail: boolean) => {
+    const children = flatNavigation
+      ? []
+      : items.filter((child) => child.parent === item.path);
+    const isExpanded =
+      current?.path === item.path || current?.parent === item.path;
+    return (
+      <div
+        key={item.path}
+        className={`nav-group ${isExpanded ? 'expanded' : ''}`}
+      >
+        <div className="nav-parent">
+          <Tooltip label={item.label} enabled={rail && sidebarCollapsed}>
+            <a
+              href={item.path}
+              aria-label={item.label}
+              aria-current={current?.path === item.path ? 'page' : undefined}
+              onClick={(event) => navigate(event, item.path)}
+            >
+              <NavigationIcon path={item.path} />
+              <span className="ui-nav-label">{item.label}</span>
+              {children.length > 0 && <Chevron />}
+            </a>
+          </Tooltip>
+        </div>
+        {children.length > 0 && (
+          <div className="nav-subpages">
+            {children.map((child) => (
+              <Tooltip
+                key={child.path}
+                label={child.label}
+                enabled={rail && sidebarCollapsed}
+              >
+                <a
+                  href={child.path}
+                  aria-label={child.label}
+                  aria-current={
+                    current?.path === child.path ? 'page' : undefined
+                  }
+                  onClick={(event) => navigate(event, child.path)}
+                >
+                  <NavigationIcon path={child.path} />
+                  <span className="ui-nav-label">{child.label}</span>
+                </a>
+              </Tooltip>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+  const topLevel = items.filter((item) => !item.parent);
   const links = (rail = false) => (
     <nav aria-label="Workspace navigation">
-      {items
-        .filter((item) => !item.parent)
-        .map((item) => {
-          const children = items.filter((child) => child.parent === item.path);
-          const isExpanded =
-            current?.path === item.path || current?.parent === item.path;
-          return (
+      {flatNavigation
+        ? navigationSections(
+            // Vendor subpages are listed alongside their parents; Market
+            // subsections stay inside their workspaces.
+            context.scope === 'VENDOR' ? items : topLevel,
+            context.scope === 'VENDOR'
+              ? vendorSections
+              : context.scope === 'PLATFORM'
+                ? platformSections
+                : marketSections,
+          ).map((section) => (
             <div
-              key={item.path}
-              className={`nav-group ${isExpanded ? 'expanded' : ''}`}
+              key={section.title ?? 'main'}
+              className="nav-section"
+              role="group"
+              aria-label={section.title ?? 'Main'}
             >
-              <div className="nav-parent">
-                <Tooltip label={item.label} enabled={rail && sidebarCollapsed}>
-                  <a
-                    href={item.path}
-                    aria-label={item.label}
-                    aria-current={
-                      current?.path === item.path ? 'page' : undefined
-                    }
-                    onClick={(event) => navigate(event, item.path)}
-                  >
-                    <NavigationIcon path={item.path} />
-                    <span className="ui-nav-label">{item.label}</span>
-                    {children.length > 0 && <Chevron />}
-                  </a>
-                </Tooltip>
-              </div>
-              {children.length > 0 && (
-                <div className="nav-subpages">
-                  {children.map((child) => (
-                    <Tooltip
-                      key={child.path}
-                      label={child.label}
-                      enabled={rail && sidebarCollapsed}
-                    >
-                      <a
-                        href={child.path}
-                        aria-label={child.label}
-                        aria-current={
-                          current?.path === child.path ? 'page' : undefined
-                        }
-                        onClick={(event) => navigate(event, child.path)}
-                      >
-                        <NavigationIcon path={child.path} />
-                        <span className="ui-nav-label">{child.label}</span>
-                      </a>
-                    </Tooltip>
-                  ))}
-                </div>
+              {section.title && (
+                <span className="nav-section-title" aria-hidden="true">
+                  <span className="ui-nav-label">{section.title}</span>
+                </span>
               )}
+              {section.items.map((item) => renderItem(item, rail))}
             </div>
-          );
-        })}
+          ))
+        : topLevel.map((item) => renderItem(item, rail))}
     </nav>
   );
   return (
     <div
       className={
         'admin-dashboard ' +
-        (context.scope === 'MARKET' ? 'market-dashboard' : '')
+        (compactShell ? 'ui-shell ' : '') +
+        (context.scope === 'MARKET'
+          ? 'market-dashboard'
+          : context.scope === 'VENDOR'
+            ? 'vendor-admin'
+            : '')
       }
       data-input-mode={inputMode}
       style={
@@ -312,7 +372,9 @@ function Shell({
                 href="/"
                 onClick={(event) => navigate(event, '/')}
               >
-                <MarketPlatformLogo compact={sidebarCollapsed} />
+                <MarketPlatformLogo
+                  compact={sidebarCollapsed && !compactShell}
+                />
               </a>
               <IconButton
                 icon="panel"
@@ -327,55 +389,135 @@ function Shell({
           </aside>
         }
         header={
-          <header className="admin-topbar">
-            <span className="brand">
-              {context.branding?.logo && (
-                <img
-                  src={adminTheme(context.branding).logo ?? undefined}
-                  alt=""
-                  width="30"
-                  height="30"
-                />
-              )}
-              {context.name}
-            </span>
-            {documentConnection && (
-              <NotificationCenter
-                view="bell"
-                connection={documentConnection}
-                personalOrigin={notificationAccountOrigin}
-                basePath={notificationsBase(context.scope)}
-                navigate={visit}
-              />
-            )}
-            <DashboardMenu navigation={links()}>
-              {documentConnection &&
-                context.scope !== 'PLATFORM' &&
-                context.subject && (
+          compactShell ? (
+            <header className="admin-topbar shell-topbar">
+              <span className="brand">
+                {context.branding?.logo && (
+                  <img
+                    src={adminTheme(context.branding).logo ?? undefined}
+                    alt=""
+                    width="24"
+                    height="24"
+                  />
+                )}
+                {context.name}
+              </span>
+              <DashboardMenu navigation={links()}>
+                {documentConnection && context.subject && (
                   <ViewStorefront
                     key={`${context.scope}:${documentConnection.channelToken}`}
                     connection={documentConnection}
+                    compact
                   />
                 )}
-              {controls}
-              <Button
-                className="secondary"
-                onClick={() => {
-                  if (
-                    window.dispatchEvent(
-                      new Event('storefront-editor:before-exit', {
-                        cancelable: true,
-                      }),
-                    )
-                  )
-                    onLogout();
-                }}
+              </DashboardMenu>
+              {documentConnection && (
+                <NotificationCenter
+                  view="bell"
+                  compactBell
+                  connection={documentConnection}
+                  personalOrigin={notificationAccountOrigin}
+                  basePath={notificationsBase(context.scope)}
+                  navigate={visit}
+                />
+              )}
+              <HeaderMenu
+                className="shell-account-menu"
+                label="Account"
+                icon={<AccountIcon />}
               >
-                Sign out
-              </Button>
-              {onLogoutEverywhere && (
+                <div className="shell-account-header">
+                  <span className="shell-account-avatar" aria-hidden="true">
+                    <AccountIcon />
+                  </span>
+                  <span>
+                    <strong>{context.name}</strong>
+                    <span>
+                      {context.scope === 'MARKET'
+                        ? 'Market manager'
+                        : context.scope === 'PLATFORM'
+                          ? 'Platform administrator'
+                          : 'Vendor'}
+                    </span>
+                  </span>
+                </div>
+                {controls && (
+                  <div className="shell-account-controls">{controls}</div>
+                )}
+                <div className="shell-account-actions">
+                  <button
+                    type="button"
+                    className="shell-menu-item"
+                    onClick={() => {
+                      if (
+                        window.dispatchEvent(
+                          new Event('storefront-editor:before-exit', {
+                            cancelable: true,
+                          }),
+                        )
+                      )
+                        onLogout();
+                    }}
+                  >
+                    <UtilityIcon name="exit" />
+                    Sign out
+                  </button>
+                  {onLogoutEverywhere && (
+                    <button
+                      type="button"
+                      className="shell-menu-item"
+                      onClick={() => {
+                        if (
+                          window.dispatchEvent(
+                            new Event('storefront-editor:before-exit', {
+                              cancelable: true,
+                            }),
+                          )
+                        )
+                          onLogoutEverywhere();
+                      }}
+                    >
+                      <UtilityIcon name="exit" />
+                      Sign out everywhere
+                    </button>
+                  )}
+                </div>
+              </HeaderMenu>
+            </header>
+          ) : (
+            <header className="admin-topbar">
+              <span className="brand">
+                {context.branding?.logo && (
+                  <img
+                    src={adminTheme(context.branding).logo ?? undefined}
+                    alt=""
+                    width="30"
+                    height="30"
+                  />
+                )}
+                {context.name}
+              </span>
+              {documentConnection && (
+                <NotificationCenter
+                  view="bell"
+                  connection={documentConnection}
+                  personalOrigin={notificationAccountOrigin}
+                  basePath={notificationsBase(context.scope)}
+                  navigate={visit}
+                />
+              )}
+              <DashboardMenu navigation={links()}>
+                {documentConnection &&
+                  context.scope !== 'PLATFORM' &&
+                  context.subject && (
+                    <ViewStorefront
+                      key={`${context.scope}:${documentConnection.channelToken}`}
+                      connection={documentConnection}
+                    />
+                  )}
+                {controls}
                 <Button
-                  variant="secondary"
+                  className="secondary"
                   onClick={() => {
                     if (
                       window.dispatchEvent(
@@ -384,218 +526,326 @@ function Shell({
                         }),
                       )
                     )
-                      onLogoutEverywhere();
+                      onLogout();
                   }}
                 >
-                  Sign out everywhere
+                  Sign out
                 </Button>
-              )}
-            </DashboardMenu>
-          </header>
+                {onLogoutEverywhere && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      if (
+                        window.dispatchEvent(
+                          new Event('storefront-editor:before-exit', {
+                            cancelable: true,
+                          }),
+                        )
+                      )
+                        onLogoutEverywhere();
+                    }}
+                  >
+                    Sign out everywhere
+                  </Button>
+                )}
+              </DashboardMenu>
+            </header>
+          )
         }
       >
         <main className="admin-content" id="main" tabIndex={-1}>
-          {!routeAllowed(context, path) ? (
-            <>
-              <h1>Access restricted</h1>
-              <ErrorState error={new AppError('forbidden')} />
-            </>
-          ) : (
-            <>
-              {!(
-                // The Finances, Settings, Notifications and Documents workspaces render their own heading.
-                isSettingsRoute(context.scope, path) ||
-                !!notificationsView(context.scope, path) ||
-                (!!documentConnection &&
-                  ['/vendor/documents', '/market/documents'].includes(path)) ||
-                (context.scope === 'VENDOR' &&
-                  /^\/vendor\/(finances(\/|$)|analytics$)/.test(
-                    vendorPath(path),
-                  )) ||
-                (context.scope === 'MARKET' &&
-                  /^\/market\/(finances(\/|$)|analytics$|booth-billing(\/|$))/.test(
-                    path,
-                  ))
-              ) &&
-                !(
-                  context.scope === 'VENDOR' &&
-                  // The vendor dashboard renders its own heading.
-                  (path === '/' ||
-                    vendorPath(path) === '/vendor' ||
-                    vendorPath(path) === '/vendor/inventory' ||
-                    vendorPath(path) === '/vendor/products' ||
-                    vendorPath(path) === '/vendor/orders' ||
-                    vendorPath(path) === '/vendor/team' ||
-                    vendorPath(path) === '/vendor/customers' ||
-                    vendorPath(path) === '/vendor/contact-submissions' ||
-                    vendorPath(path) === '/vendor/markets' ||
-                    vendorPath(path).startsWith('/vendor/markets/') ||
-                    vendorPath(path) === '/vendor/applications' ||
-                    /^\/vendor\/applications\/[1-9]\d*$/.test(
+          <MarketCompactProvider
+            enabled={context.scope === 'MARKET' || context.scope === 'VENDOR'}
+            summaryCarousel={context.scope === 'VENDOR'}
+          >
+            {!routeAllowed(context, path) ? (
+              <>
+                <h1>Access restricted</h1>
+                <ErrorState error={new AppError('forbidden')} />
+              </>
+            ) : (
+              <>
+                {!(
+                  // The Finances, Settings, Notifications and Documents workspaces render their own heading.
+                  isSettingsRoute(context.scope, path) ||
+                  !!notificationsView(context.scope, path) ||
+                  (!!documentConnection &&
+                    ['/vendor/documents', '/market/documents'].includes(
+                      path,
+                    )) ||
+                  (context.scope === 'VENDOR' &&
+                    /^\/vendor\/(finances(\/|$)|analytics$)/.test(
                       vendorPath(path),
-                    ) ||
-                    vendorPath(path) === '/vendor/loyalty' ||
-                    vendorPath(path) === '/vendor/loyalty/leaderboard' ||
-                    vendorPath(path) === '/vendor/loyalty/redemptions' ||
-                    vendorPath(path).startsWith('/vendor/customers/') ||
-                    vendorPath(path).startsWith('/vendor/products/') ||
-                    vendorPath(path).startsWith('/vendor/orders/'))
-                ) &&
-                !(
-                  context.scope === 'MARKET' &&
-                  // Team, Occurrences, Operations and Applications render their own heading.
-                  (path === '/market/team' ||
-                    /^\/market\/(occurrences|operations|applications|application-submissions|rentals|directory|vendors)(\/|$)/.test(
+                    )) ||
+                  (context.scope === 'MARKET' &&
+                    /^\/market\/(finances(\/|$)|analytics$|booth-billing(\/|$))/.test(
                       path,
                     ))
-                ) && (
-                  <PageHeader
-                    title={
-                      path === '/vendor/pos/square-return'
-                        ? 'Check Square payment'
-                        : (current?.label ?? 'Overview')
-                    }
-                  >
-                    {context.scope === 'PLATFORM' && (
-                      <p>
-                        {context.scope === 'PLATFORM'
-                          ? 'Shared platform administration'
-                          : 'Your Market workspace'}
-                      </p>
-                    )}
-                  </PageHeader>
-                )}
-              {['/vendor/storefront', '/market/storefront'].includes(path) ? (
-                <StorefrontAppearanceSettings
-                  key={`${context.scope}:${documentConnection?.channelToken}`}
-                  connection={documentConnection}
-                  market={context.scope === 'MARKET'}
-                />
-              ) : notificationsView(context.scope, path) ? (
-                documentConnection ? (
-                  <NotificationsWorkspace
-                    scope={context.scope}
-                    path={path}
-                    navigate={visit}
-                  >
-                    {(view) => (
-                      <NotificationCenter
+                ) &&
+                  !(
+                    context.scope === 'VENDOR' &&
+                    // The vendor dashboard renders its own heading.
+                    (path === '/' ||
+                      vendorPath(path) === '/vendor' ||
+                      vendorPath(path) === '/vendor/inventory' ||
+                      vendorPath(path) === '/vendor/products' ||
+                      vendorPath(path) === '/vendor/orders' ||
+                      vendorPath(path) === '/vendor/team' ||
+                      vendorPath(path) === '/vendor/customers' ||
+                      vendorPath(path) === '/vendor/contact-submissions' ||
+                      vendorPath(path) === '/vendor/markets' ||
+                      vendorPath(path).startsWith('/vendor/markets/') ||
+                      vendorPath(path) === '/vendor/booths' ||
+                      /^\/vendor\/day(?:\/[1-9][0-9]*)?$/.test(
+                        vendorPath(path),
+                      ) ||
+                      vendorPath(path) === '/vendor/applications' ||
+                      /^\/vendor\/applications\/[1-9]\d*$/.test(
+                        vendorPath(path),
+                      ) ||
+                      vendorPath(path) === '/vendor/loyalty' ||
+                      vendorPath(path) === '/vendor/loyalty/leaderboard' ||
+                      vendorPath(path) === '/vendor/loyalty/redemptions' ||
+                      vendorPath(path).startsWith('/vendor/customers/') ||
+                      vendorPath(path).startsWith('/vendor/products/') ||
+                      vendorPath(path).startsWith('/vendor/orders/') ||
+                      // Workspace headings: Website, POS and Market Preparation.
+                      /^\/vendor\/(storefront|pos|preparation(\/.*)?)$/.test(
+                        vendorPath(path),
+                      ))
+                  ) &&
+                  // Management pages (Platform, and Vendor/Market Subscription)
+                  // render their own workspace heading when the module loads.
+                  !(
+                    !!managementService &&
+                    isManagementRoute(context.scope, path)
+                  ) &&
+                  !(
+                    context.scope === 'MARKET' &&
+                    // Overview, Team, Occurrences, Operations and Applications render their own heading.
+                    (marketPath(path) === '/market' ||
+                      path === '/market/team' ||
+                      /^\/market\/(occurrences|preparation|day|operations|applications|application-submissions|rentals|directory|vendors)(\/|$)/.test(
+                        path,
+                      ) ||
+                      // Assignments too; its layout editor keeps the page heading.
+                      /^\/market\/assignments(\/\d+)?$/.test(path) ||
+                      // Workspace headings; the layout editor keeps its own screen.
+                      /^\/market\/(storefront|layouts|loyalty(\/.*)?)$/.test(
+                        path,
+                      ))
+                  ) && (
+                    <PageHeader
+                      title={
+                        path === '/vendor/pos/square-return'
+                          ? 'Check Square payment'
+                          : (current?.label ?? 'Overview')
+                      }
+                    />
+                  )}
+                {['/vendor/storefront', '/market/storefront'].includes(path) ? (
+                  <StorefrontAppearanceSettings
+                    key={`${context.scope}:${documentConnection?.channelToken}`}
+                    connection={documentConnection}
+                    market={context.scope === 'MARKET'}
+                  />
+                ) : notificationsView(context.scope, path) ? (
+                  documentConnection ? (
+                    <NotificationsWorkspace
+                      scope={context.scope}
+                      path={path}
+                      navigate={visit}
+                    >
+                      {(view) => (
+                        <PhoneSheet>
+                          {(sheet) => (
+                            <NotificationCenter
+                              connection={documentConnection}
+                              personalOrigin={notificationAccountOrigin}
+                              view={view}
+                              tabs={false}
+                              basePath={notificationsBase(context.scope)}
+                              navigate={visit}
+                              detailSheet={sheet}
+                            />
+                          )}
+                        </PhoneSheet>
+                      )}
+                    </NotificationsWorkspace>
+                  ) : (
+                    <EmptyState title="Connect to the backend to view notifications" />
+                  )
+                ) : ['/vendor/documents', '/market/documents'].includes(
+                    path,
+                  ) ? (
+                  documentConnection ? (
+                    <Suspense fallback={<Spinner label="Loading documents" />}>
+                      <DocumentsWorkspace
+                        key={`${context.scope}:${documentConnection.channelToken}`}
+                        context={context}
                         connection={documentConnection}
-                        personalOrigin={notificationAccountOrigin}
-                        view={view}
-                        tabs={false}
-                        basePath={notificationsBase(context.scope)}
-                        navigate={visit}
                       />
-                    )}
-                  </NotificationsWorkspace>
-                ) : (
-                  <EmptyState title="Connect to the backend to view notifications" />
-                )
-              ) : ['/vendor/documents', '/market/documents'].includes(path) ? (
-                documentConnection ? (
-                  <Suspense fallback={<Spinner label="Loading documents" />}>
-                    <DocumentsWorkspace
-                      key={`${context.scope}:${documentConnection.channelToken}`}
+                    </Suspense>
+                  ) : (
+                    <EmptyState title="Connect to the backend to manage documents">
+                      <p>
+                        Document uploads and private libraries are available in
+                        the live workspace. This fixture preview has no document
+                        service.
+                      </p>
+                    </EmptyState>
+                  )
+                ) : isSettingsRoute(context.scope, path) ? (
+                  <Suspense fallback={<Spinner label="Loading settings" />}>
+                    <SettingsWorkspace
+                      key={`${context.scope}:${JSON.stringify(context.subject)}`}
                       context={context}
+                      path={path}
+                      vendor={vendorService}
+                      market={marketService}
+                      management={managementService}
                       connection={documentConnection}
                     />
                   </Suspense>
+                ) : managementService &&
+                  isManagementRoute(context.scope, path) ? (
+                  <div className="management-workspace">
+                    <Suspense
+                      fallback={
+                        <Spinner label="Loading administration module" />
+                      }
+                    >
+                      <ManagementRoutes
+                        key={`${context.scope}:${JSON.stringify(context.subject)}:${path}`}
+                        service={managementService}
+                        path={path}
+                        vendor={vendorService}
+                      />
+                    </Suspense>
+                  </div>
+                ) : context.scope === 'VENDOR' && vendorService ? (
+                  <div className="vendor-workspace">
+                    <VendorRoutes
+                      key={`${vendorService.vendorId}:${workspaceKey(vendorPath(path))}`}
+                      service={vendorService}
+                      preparationDates={preparationDates}
+                      path={path}
+                    />
+                  </div>
+                ) : context.scope === 'MARKET' && marketService ? (
+                  <div className="market-workspace">
+                    <Suspense
+                      fallback={<Spinner label="Loading Market module" />}
+                    >
+                      <MarketRoutes
+                        key={`${marketService.marketId}:${workspaceKey(marketPath(path))}`}
+                        service={marketService}
+                        preparationDates={preparationDates}
+                        path={path}
+                      />
+                    </Suspense>
+                  </div>
+                ) : path === '/' ? (
+                  <>
+                    <Card>
+                      <h2 className="ui-section-title-dashboard">
+                        Your workspace is ready
+                      </h2>
+                      <p>
+                        This shared application will connect your operational
+                        tools to the backend as they become available.
+                      </p>
+                      <p>
+                        Orders, catalogs, schedules, and financial records
+                        remain managed by the backend.
+                      </p>
+                    </Card>
+                    <EmptyState title="No operational data is loaded">
+                      <p>
+                        This foundation does not display sample business
+                        metrics.
+                      </p>
+                    </EmptyState>
+                  </>
                 ) : (
-                  <EmptyState title="Connect to the backend to manage documents">
+                  <EmptyState
+                    level={2}
+                    title={`${current?.label ?? 'This area'} will be connected in a later phase`}
+                  >
                     <p>
-                      Document uploads and private libraries are available in
-                      the live workspace. This fixture preview has no document
-                      service.
+                      The route boundary is ready. Operational workflows are not
+                      available yet.
                     </p>
                   </EmptyState>
-                )
-              ) : isSettingsRoute(context.scope, path) ? (
-                <Suspense fallback={<Spinner label="Loading settings" />}>
-                  <SettingsWorkspace
-                    key={`${context.scope}:${JSON.stringify(context.subject)}`}
-                    context={context}
-                    path={path}
-                    vendor={vendorService}
-                    market={marketService}
-                    management={managementService}
-                    connection={documentConnection}
-                  />
-                </Suspense>
-              ) : managementService &&
-                isManagementRoute(context.scope, path) ? (
-                <div className="management-workspace">
-                  <Suspense
-                    fallback={<Spinner label="Loading administration module" />}
-                  >
-                    <ManagementRoutes
-                      key={`${context.scope}:${JSON.stringify(context.subject)}:${path}`}
-                      service={managementService}
-                      path={path}
-                      vendor={vendorService}
-                    />
-                  </Suspense>
-                </div>
-              ) : context.scope === 'VENDOR' && vendorService ? (
-                <div className="vendor-workspace">
-                  <VendorRoutes
-                    key={`${vendorService.vendorId}:${workspaceKey(vendorPath(path))}`}
-                    service={vendorService}
-                    path={path}
-                  />
-                </div>
-              ) : context.scope === 'MARKET' && marketService ? (
-                <div className="market-workspace">
-                  <Suspense
-                    fallback={<Spinner label="Loading Market module" />}
-                  >
-                    <MarketRoutes
-                      key={`${marketService.marketId}:${workspaceKey(marketPath(path))}`}
-                      service={marketService}
-                      path={path}
-                    />
-                  </Suspense>
-                </div>
-              ) : path === '/' ? (
-                <>
-                  <Card>
-                    <h2 className="ui-section-title-dashboard">
-                      Your workspace is ready
-                    </h2>
-                    <p>
-                      This shared application will connect your operational
-                      tools to the backend as they become available.
-                    </p>
-                    <p>
-                      Orders, catalogs, schedules, and financial records remain
-                      managed by the backend.
-                    </p>
-                  </Card>
-                  <EmptyState title="No operational data is loaded">
-                    <p>
-                      This foundation does not display sample business metrics.
-                    </p>
-                  </EmptyState>
-                </>
-              ) : (
-                <EmptyState
-                  level={2}
-                  title={`${current?.label ?? 'This area'} will be connected in a later phase`}
-                >
-                  <p>
-                    The route boundary is ready. Operational workflows are not
-                    available yet.
-                  </p>
-                </EmptyState>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
+          </MarketCompactProvider>
         </main>
       </DashboardFrame>
     </div>
   );
 }
 
+/** Sidebar sections, keyed by the page's last path segment ('' is the
+ * Vendor Dashboard at `/`). Pages not listed fall into the final section. */
+type NavigationSection = { title: string | null; pages: string[] };
+const marketSections: NavigationSection[] = [
+  { title: null, pages: ['market', 'notifications', 'preparation'] },
+  {
+    title: 'Market days',
+    pages: [
+      'occurrences',
+      'day',
+      'operations',
+      'layouts',
+      'assignments',
+      'rentals',
+    ],
+  },
+  { title: 'Vendors', pages: ['vendors', 'applications', 'documents'] },
+  {
+    title: 'Business',
+    pages: ['finances', 'billing', 'loyalty', 'storefront'],
+  },
+  { title: 'Workspace', pages: ['team', 'settings'] },
+];
+const platformSections: NavigationSection[] = [
+  { title: null, pages: ['platform', 'notifications'] },
+  { title: 'Administration', pages: ['tenants', 'billing'] },
+  { title: 'Workspace', pages: ['settings'] },
+];
+const vendorSections: NavigationSection[] = [
+  { title: null, pages: ['', 'notifications', 'preparation'] },
+  {
+    title: 'Selling',
+    pages: ['pos', 'products', 'orders', 'packing', 'pickup'],
+  },
+  { title: 'Markets', pages: ['markets', 'day', 'applications', 'documents'] },
+  {
+    title: 'Customers',
+    pages: ['customers', 'loyalty', 'contact-submissions'],
+  },
+  { title: 'Business', pages: ['finances', 'storefront', 'billing'] },
+  { title: 'Workspace', pages: ['team', 'settings'] },
+];
+function navigationSections<T extends { path: string }>(
+  items: T[],
+  layout: NavigationSection[],
+) {
+  const key = (item: T) => item.path.split('/').filter(Boolean).pop() ?? '';
+  const sections = layout.map((section) => ({
+    title: section.title,
+    items: section.pages.flatMap((page) =>
+      items.filter((item) => key(item) === page),
+    ),
+  }));
+  const placed = new Set(sections.flatMap((section) => section.items));
+  sections[sections.length - 1]!.items.push(
+    ...items.filter((item) => !placed.has(item)),
+  );
+  return sections.filter((section) => section.items.length > 0);
+}
 /** Finance tabs (and their former Analytics/Booth billing routes) share one
  * mounted workspace so its heading, actions and reads persist across tabs;
  * Market occurrence dialogs keep the list mounted the same way. */

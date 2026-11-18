@@ -3,7 +3,6 @@ import { AppError, safeError, type InventoryPage } from '@market/api';
 import {
   Alert,
   Button,
-  Card,
   Dialog,
   Field,
   InfoTip,
@@ -11,6 +10,7 @@ import {
   UtilityIcon,
 } from '@market/ui';
 import { integer } from './common';
+import { usePhoneSheet } from '../market/mobile';
 import { QuantityStepper } from './QuantityStepper';
 import type { VendorService } from './service';
 import './stock-adjustment-dialog.css';
@@ -44,6 +44,9 @@ export function StockAdjustmentDialog({
   const intent = useRef<string | null>(null);
   const content = useRef<HTMLDivElement>(null);
   const previousSize = useRef<{ width: number; height: number } | null>(null);
+  const lastStage = useRef<Stage | null>(null);
+  // Vendor phones show the dialog as a bottom sheet.
+  const sheet = usePhoneSheet();
 
   // Animate the existing native dialog's actual dimensions, without reopening it.
   useLayoutEffect(() => {
@@ -52,11 +55,13 @@ export function StockAdjustmentDialog({
     const bounds = dialog.getBoundingClientRect();
     const previous = previousSize.current;
     previousSize.current = { width: bounds.width, height: bounds.height };
-    if (previous) {
-      if (stage === 'edit')
-        content.current?.querySelector<HTMLInputElement>('input')?.focus();
-      else dialog.querySelector<HTMLElement>('.ui-dialog-header h2')?.focus();
-    }
+    // On a real step change, move focus to the new step's title. The
+    // quantity field is never focused for the user (no keyboard pops up);
+    // a repeated effect run for the same step changes nothing.
+    const from = lastStage.current;
+    lastStage.current = stage;
+    if (from && from !== stage)
+      dialog.querySelector<HTMLElement>('.ui-dialog-header h2')?.focus();
     if (
       !previous ||
       !dialog.animate ||
@@ -127,8 +132,10 @@ export function StockAdjustmentDialog({
     <Dialog
       open
       title={titles[stage]}
-      size={stage === 'edit' ? 'wide' : 'standard'}
-      className={`catalog-stock-dialog catalog-stock-dialog-${stage}`}
+      size="standard"
+      drawer={sheet}
+      dismissOnBackdrop={sheet && stage !== 'saving'}
+      className={`catalog-stock-dialog catalog-stock-dialog-${stage}${sheet ? ' ui-record-sheet' : ''}`}
       busy={stage === 'saving'}
       beforeClose={() => !busy.current}
       onClose={onClose}
@@ -151,27 +158,32 @@ export function StockAdjustmentDialog({
               >
                 <div className="catalog-stock-identity">
                   <p className="catalog-stock-product">
-                    {row.productName} · {row.variantName}
+                    {row.variantName.startsWith(row.productName)
+                      ? row.variantName
+                      : `${row.productName} · ${row.variantName}`}
                   </p>
-                  <p className="catalog-stock-sku">{row.sku}</p>
+                  {row.sku && <p className="catalog-stock-sku">{row.sku}</p>}
                 </div>
                 <div className="catalog-stock-facts">
-                  <dl className="catalog-stock-cards">
+                  <div className="catalog-stock-facts-heading">
+                    <span>Current stock</span>
+                    <InfoTip
+                      label="inventory values"
+                      text="On hand: your physical stock. Allocated: stock committed to orders. Available: stock left after allocations and active checkout holds. These values are managed by the inventory system."
+                    />
+                  </div>
+                  <dl className="catalog-stock-rows">
                     {[
                       ['On hand', row.stockOnHand],
                       ['Allocated', row.stockAllocated],
                       ['Available', row.physicalFree],
                     ].map(([label, value]) => (
-                      <Card key={label} spacing="contained">
+                      <div key={label}>
                         <dt>{label}</dt>
                         <dd>{value}</dd>
-                      </Card>
+                      </div>
                     ))}
                   </dl>
-                  <InfoTip
-                    label="inventory values"
-                    text="On hand: your physical stock. Allocated: stock committed to orders. Available: stock left after allocations and active checkout holds. These values are managed by the inventory system."
-                  />
                 </div>
                 <Field
                   id={`${id}-quantity`}
@@ -220,12 +232,17 @@ export function StockAdjustmentDialog({
               </form>
             ) : stage === 'confirm' ? (
               <>
-                <p>
+                <dl className="catalog-stock-rows">
+                  <div className="catalog-stock-total">
+                    <dt>On hand</dt>
+                    <dd>
+                      {row.stockOnHand} → {candidate}
+                    </dd>
+                  </div>
+                </dl>
+                <p className="catalog-stock-note">
                   Apply this inventory total? Allocations and checkout holds
                   remain backend controlled.
-                </p>
-                <p className="catalog-stock-change">
-                  On hand amount: {row.stockOnHand} → {candidate}
                 </p>
                 <div className="ui-actions ui-modal-actions">
                   <Button onClick={() => void confirm()}>Confirm change</Button>

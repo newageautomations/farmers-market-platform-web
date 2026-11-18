@@ -1,4 +1,6 @@
 ---
+import { supportsWebsitePageHero } from '@market/theme/storefront';
+import WebsitePageRegion from '../components/WebsitePageRegion.astro';
 import PremiumContent from '../components/modern-farmhouse/Content.astro';
 import EditorialContent from '../components/editorial-market/Content.astro';
 import { isEditorialMarket, isFarmhouse } from '@market/theme/storefront';
@@ -15,10 +17,7 @@ const { storefront, editorPreview } = Astro.locals;
 const config =
   storefront?.appearance?.policies ??
   (editorPreview ? defaultPolicies : undefined);
-const enabled =
-  storefront?.kind === 'VENDOR' &&
-  !!config &&
-  (config.enabled || !!editorPreview);
+const enabled = !!storefront && !!config && (config.enabled || !!editorPreview);
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 if (!enabled) Astro.response.status = storefront ? 404 : 503;
 const appearance = storefront?.appearance;
@@ -40,6 +39,9 @@ const date =
   publishedAt && Number.isFinite(Date.parse(publishedAt))
     ? new Date(publishedAt)
     : undefined;
+const sectionHero =
+  !!storefront?.appearance &&
+  supportsWebsitePageHero(storefront.appearance, 'policies');
 ---
 
 <SiteLayout
@@ -48,24 +50,35 @@ const date =
   title={enabled ? config!.title : 'Page unavailable'}
   noindex={!enabled}
 >
+  {enabled && (
+    <WebsitePageRegion context={storefront} page="policies" region="before" />
+  )}
   {enabled && storefront && isFarmhouse(storefront.appearance) ? (
     <PremiumContent
       context={storefront}
+      hideHero={sectionHero}
       page="policies"
       preview={!!Astro.locals.editorPreview}
     />
   ) : enabled && storefront && isEditorialMarket(storefront.appearance) ? (
     <EditorialContent
       context={storefront}
+      hideHero={sectionHero}
       page="policies"
       preview={!!Astro.locals.editorPreview}
     />
   ) : enabled && config ? (
     <article class="story-page policies-page" aria-label={config.title}>
       <section data-editor-section="policies-intro">
-        <h1>{config.heading}</h1>
-        {config.description && (
-          <p class="policies-description">{config.description}</p>
+        {sectionHero && <h1 class="sr-only">{config.title}</h1>}
+        {!sectionHero && (
+          <>
+            {' '}
+            <h1>{config.heading}</h1>
+            {config.description && (
+              <p class="policies-description">{config.description}</p>
+            )}
+          </>
         )}
         {date && (
           <p>
@@ -127,5 +140,8 @@ const date =
       <h1>Page unavailable</h1>
       <p>This Policies page is not available.</p>
     </section>
+  )}
+  {enabled && (
+    <WebsitePageRegion context={storefront} page="policies" region="after" />
   )}
 </SiteLayout>

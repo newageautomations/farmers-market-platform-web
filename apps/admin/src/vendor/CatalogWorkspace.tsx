@@ -9,7 +9,7 @@ import {
   type ProductClassification,
 } from '@market/api';
 import { formatMoney } from '@market/config';
-import { CategoryIcon, EmptyState, UtilityIcon } from '@market/ui';
+import { CategoryIcon, DataTable, EmptyState, UtilityIcon } from '@market/ui';
 import {
   FarmstandButton,
   FarmstandIcon,
@@ -27,6 +27,7 @@ import { StockAdjustmentDialog } from './StockAdjustmentDialog';
 import type { CatalogProduct, VendorService } from './service';
 import './catalog-workspace.css';
 import { catalogCategories } from './product-taxonomy';
+import { usePhoneRecords } from '../market/mobile';
 
 type StockRow = InventoryPage['items'][number];
 type ProductRecord = Pick<CatalogProduct, 'id' | 'name'> & {
@@ -112,6 +113,7 @@ function navigate(event: MouseEvent<HTMLAnchorElement>) {
 }
 
 export function CatalogWorkspace({ service }: { service: VendorService }) {
+  const records = usePhoneRecords();
   const canReadCatalog = hasPermission(
     service.context.permissions,
     'ReadOwnCatalog',
@@ -300,12 +302,11 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
         )}
       </div>
       <div className="catalog-columns">
-        <FarmstandPanel className="catalog-products-panel">
+        <FarmstandPanel
+          className="catalog-products-panel"
+          aria-label="Products and inventory"
+        >
           <div className="catalog-panel-heading">
-            <div>
-              <h2>Products &amp; inventory</h2>
-              <p>Keep your harvest up to date, one product at a time.</p>
-            </div>
             <span>
               {loaded ? `${entries.length} products` : 'Loading products'}
             </span>
@@ -360,180 +361,202 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
           </div>
           {loaded && (
             <>
-              <div className="catalog-table-scroll">
-                <table
-                  className="catalog-table"
-                  aria-label="Products and inventory"
-                >
-                  <thead>
-                    <tr>
-                      <th scope="col">Product</th>
-                      <th scope="col">Category</th>
-                      <th scope="col">Price</th>
-                      <th scope="col">On hand</th>
-                      <th scope="col">Manage stock</th>
-                      <th scope="col">
-                        <span className="sr-only">Details</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.flatMap(
-                      ({ product, variant: selectedVariant }) => {
-                        const variants = [selectedVariant];
-                        const classification =
-                          categories.data?.classifications.get(product.id);
-                        const photo = product.assetIds?.[0]
-                          ? imageMap.get(product.assetIds[0])
-                          : undefined;
-                        const href = `/vendor/products/${encodeURIComponent(product.id)}`;
-                        return variants.map((variant) => {
-                          const row = stocks.get(variant.id);
-                          return (
-                            <tr
-                              key={`${product.id}:${variant.id}`}
-                              className={
-                                canReadCatalog
-                                  ? 'catalog-product-row'
-                                  : undefined
-                              }
-                              onClick={(event) => {
-                                if (
-                                  !canReadCatalog ||
-                                  event.defaultPrevented ||
-                                  (event.target instanceof Element &&
-                                    event.target.closest(
-                                      'a, button, input, select, textarea, label',
-                                    ))
-                                )
-                                  return;
-                                const link =
-                                  event.currentTarget.querySelector<HTMLAnchorElement>(
-                                    '.catalog-product-name a',
-                                  );
-                                if (
-                                  event.ctrlKey ||
-                                  event.metaKey ||
-                                  event.shiftKey
-                                )
-                                  window.open(href, '_blank', 'noopener');
-                                else link?.click();
-                              }}
-                            >
-                              <th scope="row">
-                                <div className="catalog-product-identity">
-                                  <div className="catalog-product-photo">
-                                    {photo ? (
-                                      <img
-                                        src={photo}
-                                        alt=""
-                                        width="42"
-                                        height="42"
-                                        loading="lazy"
-                                      />
-                                    ) : (
-                                      <UtilityIcon name="store" />
-                                    )}
-                                  </div>
-                                  <div className="catalog-product-name">
-                                    {canReadCatalog ? (
-                                      <a
-                                        className="farmstand-text-link"
-                                        href={href}
-                                        onClick={navigate}
-                                      >
-                                        {product.name}
-                                      </a>
-                                    ) : (
-                                      <strong>{product.name}</strong>
-                                    )}
-                                    {product.variants.length > 1 && (
-                                      <small>{variant.name}</small>
-                                    )}
-                                    <small>
-                                      {variant.sku || 'No variants yet'}
-                                    </small>
-                                  </div>
-                                </div>
-                              </th>
-                              <td>
-                                {classification
-                                  ? classification.categoryPath
-                                      .map((category) => category.name)
-                                      .join(' → ') || 'Uncategorized'
-                                  : categories.loading
-                                    ? 'Loading'
-                                    : 'Unavailable'}
-                              </td>
-                              <td>
-                                <div className="catalog-price">
-                                  {'price' in variant &&
-                                  variant.price !== undefined &&
-                                  variant.currency
-                                    ? formatMoney(
-                                        variant.price,
-                                        variant.currency,
-                                      )
-                                    : canReadCatalog
-                                      ? 'Not set'
-                                      : 'Unavailable'}
-                                </div>
-                              </td>
-                              <td>
-                                <div className="catalog-on-hand">
-                                  <strong>
-                                    {inventoryQuantity(
-                                      row?.stockOnHand,
-                                      variant.name,
-                                    )}
-                                  </strong>
-                                  <FarmstandStockBadge
-                                    status={stockStatus(row?.stockOnHand)}
+              {(() => {
+                const rows = visible.flatMap(
+                  ({ product, variant: selectedVariant }) => {
+                    const variants = [selectedVariant];
+                    const classification = categories.data?.classifications.get(
+                      product.id,
+                    );
+                    const photo = product.assetIds?.[0]
+                      ? imageMap.get(product.assetIds[0])
+                      : undefined;
+                    const href = `/vendor/products/${encodeURIComponent(product.id)}`;
+                    return variants.map((variant) => {
+                      const row = stocks.get(variant.id);
+                      return (
+                        <tr
+                          key={`${product.id}:${variant.id}`}
+                          className={
+                            canReadCatalog ? 'catalog-product-row' : undefined
+                          }
+                          onClick={(event) => {
+                            if (
+                              !canReadCatalog ||
+                              event.defaultPrevented ||
+                              (event.target instanceof Element &&
+                                event.target.closest(
+                                  'a, button, input, select, textarea, label',
+                                ))
+                            )
+                              return;
+                            const link =
+                              event.currentTarget.querySelector<HTMLAnchorElement>(
+                                '.catalog-product-name a',
+                              );
+                            if (
+                              event.ctrlKey ||
+                              event.metaKey ||
+                              event.shiftKey
+                            )
+                              window.open(href, '_blank', 'noopener');
+                            else link?.click();
+                          }}
+                        >
+                          <th scope="row">
+                            <div className="catalog-product-identity">
+                              <div className="catalog-product-photo">
+                                {photo ? (
+                                  <img
+                                    src={photo}
+                                    alt=""
+                                    width="42"
+                                    height="42"
+                                    loading="lazy"
                                   />
-                                </div>
-                              </td>
-                              <td>
-                                {canManageStock && row ? (
-                                  <div className="catalog-stock-actions">
-                                    <FarmstandButton
-                                      variant="primary"
-                                      size="compact"
-                                      aria-label={`Adjust stock for ${product.name}${product.variants.length > 1 ? ` ${variant.name}` : ''}`}
-                                      onClick={() => setSelection(row)}
-                                    >
-                                      Adjust stock
-                                    </FarmstandButton>
-                                  </div>
                                 ) : (
-                                  <span className="catalog-muted">
-                                    {canReadStock
-                                      ? canManageStock && !row
-                                        ? 'Stock setup required'
-                                        : 'View only'
-                                      : 'No inventory access'}
-                                  </span>
+                                  <UtilityIcon name="store" />
                                 )}
-                              </td>
-                              <td>
-                                {canReadCatalog && (
+                              </div>
+                              <div className="catalog-product-name">
+                                {canReadCatalog ? (
                                   <a
-                                    className="catalog-detail-link"
+                                    className="farmstand-text-link"
                                     href={href}
                                     onClick={navigate}
-                                    aria-label={`View ${product.name}`}
                                   >
-                                    <FarmstandIcon name="chevron-right" />
+                                    {product.name}
                                   </a>
+                                ) : (
+                                  <strong>{product.name}</strong>
                                 )}
-                              </td>
-                            </tr>
-                          );
-                        });
-                      },
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                                {product.variants.length > 1 && (
+                                  <small>{variant.name}</small>
+                                )}
+                                <small>
+                                  {variant.sku || 'No variants yet'}
+                                </small>
+                              </div>
+                            </div>
+                          </th>
+                          <td>
+                            {classification
+                              ? classification.categoryPath
+                                  .map((category) => category.name)
+                                  .join(' → ') || 'Uncategorized'
+                              : categories.loading
+                                ? 'Loading'
+                                : 'Unavailable'}
+                          </td>
+                          <td>
+                            <div className="catalog-price">
+                              {'price' in variant &&
+                              variant.price !== undefined &&
+                              variant.currency
+                                ? formatMoney(variant.price, variant.currency)
+                                : canReadCatalog
+                                  ? 'Not set'
+                                  : 'Unavailable'}
+                            </div>
+                          </td>
+                          <td>
+                            <div className="catalog-on-hand">
+                              <strong>
+                                {inventoryQuantity(
+                                  row?.stockOnHand,
+                                  variant.name,
+                                )}
+                              </strong>
+                              <FarmstandStockBadge
+                                status={stockStatus(row?.stockOnHand)}
+                              />
+                            </div>
+                          </td>
+                          <td>
+                            {canManageStock && row ? (
+                              <div className="catalog-stock-actions">
+                                <FarmstandButton
+                                  variant="primary"
+                                  size="compact"
+                                  aria-label={`Adjust stock for ${product.name}${product.variants.length > 1 ? ` ${variant.name}` : ''}`}
+                                  onClick={() => setSelection(row)}
+                                >
+                                  Adjust stock
+                                </FarmstandButton>
+                              </div>
+                            ) : (
+                              <span className="catalog-muted">
+                                {canReadStock
+                                  ? canManageStock && !row
+                                    ? 'Stock setup required'
+                                    : 'View only'
+                                  : 'No inventory access'}
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            {canReadCatalog && (
+                              <a
+                                className="catalog-detail-link"
+                                href={href}
+                                onClick={navigate}
+                                aria-label={`View ${product.name}`}
+                              >
+                                <FarmstandIcon name="chevron-right" />
+                              </a>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    });
+                  },
+                );
+                // Phones: the TBL-02 record cards (product, stock, Manage stock) with every
+                // column in a bottom sheet. Other widths keep the full table below.
+                const phone = records({
+                  status: 3,
+                  action: 4,
+                  labels: visible.map(({ product }) => product.name),
+                });
+                return phone ? (
+                  <DataTable
+                    label="Products and inventory"
+                    className="catalog-table"
+                    headings={[
+                      'Product',
+                      'Category',
+                      'Price',
+                      'On hand',
+                      'Manage stock',
+                      'Details',
+                    ]}
+                    recordDetails={phone}
+                  >
+                    {rows}
+                  </DataTable>
+                ) : (
+                  <div className="catalog-table-scroll">
+                    <table
+                      className="catalog-table"
+                      aria-label="Products and inventory"
+                    >
+                      <thead>
+                        <tr>
+                          <th scope="col">Product</th>
+                          <th scope="col">Category</th>
+                          <th scope="col">Price</th>
+                          <th scope="col">On hand</th>
+                          <th scope="col">Manage stock</th>
+                          <th scope="col">
+                            <span className="sr-only">Details</span>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>{rows}</tbody>
+                    </table>
+                  </div>
+                );
+              })()}
               {!filtered.length && (
                 <EmptyState title="No matching products">
                   <p>

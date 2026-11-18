@@ -57,3 +57,31 @@
 .management-workspace input {
   max-width: 100%;
 }
+/* Entitlement, readiness and offer tiles inside Farmstand workspaces. */
+.management-entitlement.farmstand-panel.card.ui-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 16px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.management-entitlement > :is(h2, h3, p) {
+  margin: 0;
+}
+.management-entitlement > :is(h2, h3) {
+  font-size: 15px;
+}
+.management-workspace .settings-panel-body .management-grid {
+  margin: 0;
+}
+.management-billing .settings-panel-body p {
+  margin: 0;
+}
+/* Platform pages: existing CRD-02 cards take the Farmstand panel surface. */
+.platform-workspace .card.ui-card:not(.farmstand-panel) {
+  margin-block: 0;
+  border: 1px solid var(--farmstand-border);
+  border-radius: 16px;
+  box-shadow: none;
+}

@@ -2,6 +2,9 @@ import type { StorefrontTaxonomy } from './storefront-taxonomy';
 import * as shop from './generated/shop';
 import { transport, type TransportOptions } from './transport';
 import { AppError } from './errors';
+import { parse } from 'graphql';
+import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
+import type { PublicProduct } from './storefront';
 
 export type PublicMarketOccurrence = shop.MarketPublicOccurrenceFieldsFragment;
 export type MarketCatalog = Omit<
@@ -14,6 +17,40 @@ export type MarketCart = NonNullable<
 >;
 export type MarketBootstrap = { signedIn: boolean; cart: MarketCart | null };
 export type MarketCatalogOptions = shop.OccurrenceCatalogOptions;
+/** Confirmed vendors for one public market date (public facts only). */
+export interface MarketOccurrenceVendor {
+  vendorId: string;
+  name: string;
+  image: string | null;
+  storefrontUrl: string | null;
+  offeringCount: number;
+}
+const MarketOccurrenceVendorsDocument = parse(
+  'query MarketOccurrenceVendors($occurrenceId: ID!) { marketOccurrenceVendors(occurrenceId: $occurrenceId) { vendorId name image storefrontUrl offeringCount } }',
+) as TypedDocumentNode<
+  { marketOccurrenceVendors: MarketOccurrenceVendor[] },
+  { occurrenceId: string }
+>;
+
+// Native, channel-scoped Shop read. Call only after occurrence eligibility is checked.
+const MarketProductDocument = parse(`
+  query MarketStorefrontProduct($id: ID!) {
+    product(id: $id) {
+      id name slug description productInformation
+      featuredAsset { id preview width height }
+      assets { id preview width height }
+      facetValues { id name facet { id name code } }
+      optionGroups { id name options { id name } }
+      variants {
+        id name sku priceWithTax currencyCode
+        featuredAsset { id preview width height }
+        assets { id preview width height }
+        options { id name groupId }
+        catalogDetails { slug description productInformation assets { id preview width height } }
+      }
+    }
+  }
+`) as TypedDocumentNode<{ product: PublicProduct | null }, { id: string }>;
 
 export function createMarketStorefrontApi(
   options: TransportOptions & { channelToken: string; marketId: string },
@@ -99,6 +136,16 @@ export function createMarketStorefrontApi(
       ).marketOccurrenceCatalog;
       return catalog.items.find((item) => item.variantId === variantId) ?? null;
     },
+    vendors: async (occurrenceId: string) =>
+      (
+        await execute(
+          { api: 'shop', document: MarketOccurrenceVendorsDocument },
+          { occurrenceId },
+        )
+      ).marketOccurrenceVendors,
+    product: async (id: string) =>
+      (await execute({ api: 'shop', document: MarketProductDocument }, { id }))
+        .product,
     bootstrap,
     select,
     async add(occurrenceId: string, variantId: string, quantity: number) {

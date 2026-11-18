@@ -5,8 +5,12 @@ import { safeAsset } from '@market/storefront-core';
 import type { PublicCatalog } from '@market/api';
 import { farmhouseDestination } from './navigation';
 import Photo from './Photo.astro';
+import { websiteSectionRenderers } from './section-renderers';
 import FeaturedCarousel from './FeaturedCarousel.astro';
-import type { FarmhouseSettings } from '@market/theme/storefront';
+import {
+  websiteSectionRegistry,
+  type FarmhouseSettings,
+} from '@market/theme/storefront';
 const { context, catalog, error } = Astro.props as {
   context: StorefrontContext;
   catalog?: PublicCatalog;
@@ -21,10 +25,22 @@ const productImage = (index: number) =>
   safeAsset(products[index]?.featuredAsset?.preview) ?? '';
 ---
 
-<div class="farmhouse-home" data-farmhouse-component="home">
+<div
+  class="farmhouse-home"
+  data-farmhouse-component="home"
+  data-spacing={settings.homepageDesign?.spacing}
+  data-typography-scale={settings.homepageDesign?.typographyScale}
+>
   {settings.sections
     .filter((section) => section.visible)
     .map((section) => {
+      if ('type' in section) {
+        const Renderer =
+          websiteSectionRenderers[
+            websiteSectionRegistry[section.type].renderers['modern-farmhouse']
+          ];
+        return <Renderer section={section} context={context} />;
+      }
       const selected = section.productIds.length
         ? section.productIds.flatMap((id) =>
             products.filter((p) => p.id === id),

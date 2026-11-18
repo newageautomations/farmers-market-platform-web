@@ -27,6 +27,7 @@ import { useWizardDialogHeight, WizardProgress } from '../WizardProgress';
 import { RecurrenceFields, scheduleInput } from './schedule';
 import type { MarketService } from './service';
 import { calendarDate, CommandForm, ReadState, useRead } from './common';
+import { CompactLabel } from './mobile';
 import {
   addDays,
   expectedDates,
@@ -65,8 +66,18 @@ export function GenerateOccurrencesWizard({
   onGenerated,
   onBusyChange,
   onClose,
+  leadingSteps = [],
+  onBack,
 }: {
-  service: MarketService;
+  service: Pick<
+    MarketService,
+    | 'readKey'
+    | 'marketId'
+    | 'occurrencePage'
+    | 'generate'
+    | 'saveSchedule'
+    | 'deleteSchedule'
+  >;
   market: MarketConfiguration;
   /** Inclusive dates offered as the default generation range. */
   initialRange: OccurrenceRange;
@@ -74,6 +85,9 @@ export function GenerateOccurrencesWizard({
   onGenerated: () => void;
   onBusyChange: (busy: boolean) => void;
   onClose: () => void;
+  /** Optional vendor location stage, using the same progress presentation. */
+  leadingSteps?: readonly string[];
+  onBack?: () => void;
 }) {
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -272,8 +286,8 @@ export function GenerateOccurrencesWizard({
   return (
     <div className="reward-wizard generate-wizard" ref={root}>
       <WizardProgress
-        steps={steps}
-        step={step}
+        steps={[...leadingSteps, ...steps]}
+        step={step + leadingSteps.length}
         label="Occurrence generation progress"
       />
       <div className="reward-stage" key={step}>
@@ -596,11 +610,12 @@ export function GenerateOccurrencesWizard({
           onClick={() => {
             setError(null);
             if (step > 0) move(step - 1);
+            else if (onBack) onBack();
             else onClose();
           }}
         >
           <FarmstandIcon name="arrow-right" />
-          {step > 0 ? 'Back' : 'Cancel'}
+          {step > 0 || onBack ? 'Back' : 'Cancel'}
         </FarmstandButton>
         <div>
           {step < 2 ? (
@@ -683,7 +698,7 @@ function ScheduleCard({
               onClick={onEdit}
             >
               <UtilityIcon name="edit" />
-              Edit
+              <CompactLabel>Edit</CompactLabel>
             </FarmstandButton>
             <FarmstandButton
               variant="destructive-outline"
@@ -691,7 +706,7 @@ function ScheduleCard({
               onClick={onDelete}
             >
               <UtilityIcon name="trash" />
-              Delete
+              <CompactLabel>Delete</CompactLabel>
             </FarmstandButton>
           </div>
         )}

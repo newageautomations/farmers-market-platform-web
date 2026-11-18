@@ -265,7 +265,8 @@ it('keeps premium edits inside editor undo, redo and draft save without showing 
   await waitFor(() => expect(save).toHaveBeenCalled());
   const saved = save.mock.calls[0]![2];
   expect(
-    saved.template?.id === 'modern-farmhouse'
+    saved.template?.id === 'modern-farmhouse' &&
+      !('type' in saved.template.settings.sections[0]!)
       ? saved.template.settings.sections[0]!.heading
       : undefined,
   ).toBe('An independent opening');
@@ -273,9 +274,7 @@ it('keeps premium edits inside editor undo, redo and draft save without showing 
     draft.template.id === 'modern-farmhouse'
       ? draft.template.settings.sections[0]!.heading
       : undefined,
-  ).toBe(
-    'Good food. A little closer.',
-  );
+  ).toBe('Good food. A little closer.');
 });
 
 it('uses shared editor dropdowns and retains global header, footer and theme edits across pages', () => {
@@ -471,8 +470,12 @@ it('chooses multiple full-name products in a modal and applies only the confirme
     within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }),
   );
   expect(onChange).toHaveBeenCalledTimes(1);
-  expect(screen.getByRole('switch')).toHaveAccessibleName(/Enable/);
   expect(
-    screen.getByRole('button', { name: /Move up:/ }).querySelector('svg'),
+    screen.queryByRole('switch', { name: 'Enable From our market table' }),
+  ).toBeNull();
+  expect(
+    screen
+      .getByRole('button', { name: 'Move up: From our market table' })
+      .querySelector('svg'),
   ).not.toBeNull();
 });

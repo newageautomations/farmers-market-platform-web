@@ -30,6 +30,7 @@ export function useVendorCheckout({
   const { cart, preorder } = snapshot;
   const contact = initial.contact ?? initial.profile;
   const legacy =
+    view.availability.mode === 'STRIPE_TEST' ||
     view.committed ||
     !!view.attempt ||
     initial.availability.state === 'AVAILABLE';

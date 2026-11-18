@@ -4,10 +4,12 @@ import type { VendorPreorderOccurrence } from '@market/api';
 import { isEditorialMarket } from '@market/theme/storefront';
 import { safeAsset } from '@market/storefront-core';
 import { selectClassName } from '@market/ui/presentation';
+import { marketNavigation } from '../../lib/market-website';
 
 interface Props {
   context: StorefrontContext;
-  occurrences: readonly VendorPreorderOccurrence[];
+  /** Vendor pickup markets, or a market website's upcoming dates. */
+  occurrences: readonly Pick<VendorPreorderOccurrence, 'id' | 'marketName'>[];
   selectedId?: string;
   search?: string;
 }
@@ -19,8 +21,19 @@ if (!isEditorialMarket(context.appearance))
   );
 const settings = context.appearance.template.settings;
 const logo = safeAsset(context.theme.logo);
+const market = context.kind === 'MARKET';
+// Market websites shop by market date at /shop and list their market pages.
+const shopHref = market ? '/shop' : '/products';
 const links = [
-  { href: '/products', label: settings.header.shopLabel, enabled: true },
+  ...(market
+    ? marketNavigation(context.appearance, !!Astro.locals.editorPreview).map(
+        (link) => ({
+          ...link,
+          label: link.href === '/shop' ? settings.header.shopLabel : link.label,
+          enabled: true,
+        }),
+      )
+    : [{ href: '/products', label: settings.header.shopLabel, enabled: true }]),
   {
     href: '/about',
     label: settings.header.storyLabel,
@@ -29,7 +42,7 @@ const links = [
   {
     href: '/find-us',
     label: settings.header.findUsLabel,
-    enabled: context.appearance.findUs?.enabled,
+    enabled: !market && context.appearance.findUs?.enabled,
   },
   {
     href: '/contact',
@@ -44,14 +57,14 @@ const links = [
 ].filter((link) => link.enabled);
 const active = (href: string) =>
   Astro.url.pathname === href ||
-  (href === '/products' && Astro.url.pathname.startsWith('/products/'))
+  (href === shopHref && Astro.url.pathname.startsWith(`${shopHref}/`))
     ? ('page' as const)
     : undefined;
 ---
 
 <div class="em-shop-chrome" data-announcement={!!settings.header.announcement}>
   {settings.header.announcement && (
-    <a class="em-shop-announcement" href="/products">
+    <a class="em-shop-announcement" href={shopHref}>
       <span>{settings.header.announcement}</span>
       <span aria-hidden="true">→</span>
     </a>
@@ -102,7 +115,7 @@ const active = (href: string) =>
 
       <form
         class="em-shop-header-search"
-        action="/products"
+        action={shopHref}
         method="get"
         role="search"
       >
@@ -127,14 +140,14 @@ const active = (href: string) =>
       </form>
 
       {occurrences.length ? (
-        <form class="em-shop-market-form" action="/products" method="get">
+        <form class="em-shop-market-form" action={shopHref} method="get">
           {search && <input type="hidden" name="search" value={search} />}
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path>
             <circle cx="12" cy="10" r="2.5"></circle>
           </svg>
           <label class="sr-only" for="em-shop-market">
-            Pickup market
+            {market ? 'Market date' : 'Pickup market'}
           </label>
           <select
             class={selectClassName()}
@@ -145,6 +158,11 @@ const active = (href: string) =>
             <button type="button">
               <selectedcontent></selectedcontent>
             </button>
+            {market && !selectedId && (
+              <option value="" selected disabled>
+                Choose a market date
+              </option>
+            )}
             {occurrences.map((occurrence) => (
               <option
                 value={occurrence.id}
@@ -159,7 +177,9 @@ const active = (href: string) =>
           </noscript>
         </form>
       ) : (
-        <span class="em-shop-market-empty">No upcoming market</span>
+        <span class="em-shop-market-empty">
+          {market ? 'No upcoming market dates' : 'No upcoming market'}
+        </span>
       )}
 
       <div class="em-shop-account-actions">

@@ -357,8 +357,8 @@ async function main() {
             .click();
           await page.getByLabel('Width in feet', { exact: true }).fill('12');
           await page
-            .getByLabel('Default fee in minor units', { exact: true })
-            .fill('4000');
+            .getByLabel('Booth fee', { exact: true })
+            .fill('40.00');
           await page.getByLabel('electricity', { exact: true }).check();
           await page.getByRole('button', { name: 'Undo', exact: true }).click();
           await page.getByRole('button', { name: 'Redo', exact: true }).click();
@@ -628,7 +628,7 @@ async function main() {
           await p.getByRole('button', { name: 'Sign in', exact: true }).click();
           await p
             .getByRole('heading', {
-              name: 'Your booth assignments',
+              name: 'Booth assignments',
               exact: true,
             })
             .waitFor();

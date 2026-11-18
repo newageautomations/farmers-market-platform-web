@@ -14,9 +14,18 @@ export type PublicProduct = Omit<ShopProduct, 'variants'> & {
 export type PublicCatalog = shop.VendorProductsQuery['products'];
 export type PublicCart = NonNullable<shop.CartSnapshotQuery['activeOrder']>;
 export type StorefrontAction =
+  | 'checkout-restart'
   | 'communication-settings'
   | 'communication-change'
+  | 'checkout-clear-test-preorder-fee'
+  | 'checkout-test-preorder-fee'
   | 'checkout-status'
+  | 'stripe-checkout-enabled'
+  | 'stripe-checkout-prepare'
+  | 'stripe-checkout-start'
+  | 'stripe-checkout-advance'
+  | 'stripe-checkout-cancel'
+  | 'stripe-checkout-status'
   | 'checkout-contact'
   | 'checkout-pickup'
   | 'checkout-select-pickup'

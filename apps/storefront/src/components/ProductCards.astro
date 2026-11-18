@@ -5,6 +5,9 @@ import { FeaturedAdd } from './FeaturedAdd';
 import type { StorefrontThemeId } from '@market/theme/storefront';
 import Button from './ui/Button.astro';
 import HarvestArtwork from './home/HarvestArtwork.astro';
+import MeadowArt from './meadow/Art.astro';
+import HearthArt from './hearth/Art.astro';
+import { usesHarvestContract } from '@market/theme/storefront';
 import {
   safeAsset,
   plainDescription,
@@ -13,6 +16,8 @@ import {
 } from '@market/storefront-core';
 interface Props {
   items: PublicCatalog['items'];
+  editorialFeatured?: boolean;
+  carousel?: boolean;
   featured?: boolean;
   storefrontId?: string;
   shop?: boolean;
@@ -21,9 +26,14 @@ interface Props {
   preview?: boolean;
   theme?: StorefrontThemeId;
   sellerName?: string;
+  sellerNames?: Record<string, string>;
+  productLinks?: Record<string, string>;
+  market?: boolean;
 }
 const {
   items,
+  editorialFeatured = false,
+  carousel = false,
   featured = false,
   storefrontId,
   shop = false,
@@ -32,37 +42,53 @@ const {
   preview = false,
   theme = 'harvest',
   sellerName,
+  sellerNames,
+  productLinks,
+  market = false,
 } = Astro.props;
+// Meadow and Hearth share the Harvest product card structure with their own placeholder art.
+const harvestCards = usesHarvestContract(theme);
 const productLink = (slug: string) =>
   `/products/${encodeURIComponent(slug)}${occurrenceId && !preview ? `?occurrence=${encodeURIComponent(occurrenceId)}` : ''}`;
 ---
 
 <div
+  data-carousel-track={carousel ? true : undefined}
+  tabindex={carousel ? 0 : undefined}
   class:list={[
     'catalog-grid',
-    theme === 'harvest' && (featured || shop) && 'harvest-products',
+    editorialFeatured && 'em-products',
+    harvestCards && (featured || shop) && 'harvest-products',
     theme === 'modern-farmhouse' && 'mf-products',
-    theme === 'editorial-market' && 'em-shop-products',
+    theme === 'editorial-market' && !editorialFeatured && 'em-shop-products',
     shop && 'shop-products',
   ]}
 >
   {items.map((product) => {
     const status = productPreorder(product.variants, availability);
+    const href = productLinks?.[product.id] ?? productLink(product.slug);
+    const seller = sellerNames?.[product.id] ?? sellerName;
     return (
       <article
-        class={cardClassName({
-          className: `product-card card${shop && !status.available ? ' shop-product-unavailable' : ''}`,
-          spacing: 'contained',
-          padding: 'default',
-          surface: theme === 'modern-farmhouse' ? 'embedded' : 'card',
-        })}
+        class={
+          editorialFeatured
+            ? 'product-card em-product-card'
+            : cardClassName({
+                className: `product-card card${shop && !status.available ? ' shop-product-unavailable' : ''}`,
+                spacing: 'contained',
+                padding: 'default',
+                surface: theme === 'modern-farmhouse' ? 'embedded' : 'card',
+              })
+        }
       >
-        <a class="product-card-link" href={productLink(product.slug)}>
+        <a class="product-card-link" href={href}>
           <span
             class:list={[
-              theme === 'editorial-market'
-                ? 'em-shop-image-frame'
-                : 'product-image-contents',
+              editorialFeatured
+                ? 'em-product-image'
+                : theme === 'editorial-market'
+                  ? 'em-shop-image-frame'
+                  : 'product-image-contents',
             ]}
           >
             {safeAsset(product.featuredAsset?.preview) ? (
@@ -75,8 +101,22 @@ const productLink = (slug: string) =>
                 loading="lazy"
               />
             ) : (
-              <div class="product-media product-placeholder" aria-hidden="true">
-                {theme === 'harvest' && (featured || shop) ? (
+              <div
+                class={
+                  editorialFeatured
+                    ? 'em-product-placeholder'
+                    : 'product-media product-placeholder'
+                }
+                aria-hidden="true"
+              >
+                {editorialFeatured ? (
+                  '✦'
+                ) : theme === 'meadow' && (featured || shop) ? (
+                  <MeadowArt name="basket" />
+                ) : theme === 'hearth' && (featured || shop) ? (
+                  <HearthArt name="basket" />
+                ) : (theme === 'harvest' || theme === 'bloom') &&
+                  (featured || shop) ? (
                   <HarvestArtwork />
                 ) : (
                   'No image'
@@ -84,15 +124,25 @@ const productLink = (slug: string) =>
               </div>
             )}
           </span>
-          {featured ? (
-            <h3>{product.name}</h3>
+          {featured || editorialFeatured ? (
+            <h3>
+              <span class:list={[market && !shop && 'farmstand-text-link']}>
+                {product.name}
+              </span>
+            </h3>
           ) : (
-            <h2 class="ui-section-title-consumer">{product.name}</h2>
+            <h2 class="ui-section-title-consumer">
+              <span class:list={[market && !shop && 'farmstand-text-link']}>
+                {product.name}
+              </span>
+            </h2>
           )}
         </a>
-        {sellerName && <p class="product-seller">{sellerName}</p>}
+        {seller && <p class="product-seller">{seller}</p>}
         <p>{priceLabel(product.variants)}</p>
-        {!shop && <p>{plainDescription(product.description).slice(0, 160)}</p>}
+        {!shop && !editorialFeatured && (
+          <p>{plainDescription(product.description).slice(0, 160)}</p>
+        )}
         {shop && (
           <>
             <p class="shop-availability">
@@ -104,10 +154,11 @@ const productLink = (slug: string) =>
                   storefrontId={storefrontId}
                   variantId={status.variantId}
                   occurrenceId={occurrenceId}
+                  market={market}
                   client:load
                 />
               ) : (
-                <Button href={productLink(product.slug)} variant="secondary">
+                <Button href={href} variant="secondary">
                   Choose options
                 </Button>
               )

@@ -165,7 +165,7 @@ it('shows vendor schedule facts and statuses without manager controls or private
     expect.objectContaining({ from: '2026-10-01' }),
   );
 });
-it('routes Vendor Market Day through the existing vendor shell contract', async () => {
+it('retains vendor attendance history through the existing vendor shell contract', async () => {
   const service = createFixtureVendorService({
     scope: 'VENDOR',
     name: 'Orchard',
@@ -174,7 +174,7 @@ it('routes Vendor Market Day through the existing vendor shell contract', async 
     source: 'fixture',
   });
   service.marketAttendance = fixture();
-  render(<VendorRoutes service={service} path="/vendor/day" />);
+  render(<VendorRoutes service={service} path="/vendor/day/history" />);
   expect(await screen.findByText('Creekside Market')).toBeVisible();
   expect(
     screen.getByText(/Market staff record physical attendance/),

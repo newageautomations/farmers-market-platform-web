@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import './workspace-menu.css';
+import '@market/ui/workspace-menu.css';
 
 /** Shared segmented workspace navigation, first used by vendor Loyalty. */
 export function WorkspaceMenu<T extends string>({

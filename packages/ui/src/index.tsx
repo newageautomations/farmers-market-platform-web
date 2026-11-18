@@ -46,7 +46,12 @@ import {
   type ButtonSize,
 } from './presentation';
 export { buttonClassName } from './presentation';
-export { DashboardFrame, DashboardMenu } from './dashboard';
+export {
+  DashboardFrame,
+  DashboardMenu,
+  HeaderMenu,
+  AccountIcon,
+} from './dashboard';
 export { AccountModeSelect, type AccountModeChoice } from './account-mode';
 export class ErrorBoundary extends Component<
   { children: ReactNode },
@@ -366,8 +371,8 @@ export function SectionHeader({
     </header>
   );
 }
-export function Skeleton() {
-  return <div className="skeleton" aria-hidden="true" />;
+export function Skeleton({ className = '' }: { className?: string } = {}) {
+  return <div className={`skeleton ${className}`.trim()} aria-hidden="true" />;
 }
 export function Spinner({ label = 'Loading' }: { label?: string }) {
   return (

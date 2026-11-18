@@ -239,8 +239,8 @@ try {
       await page!.getByLabel('Width in feet', { exact: true }).fill('10');
       await page!.getByLabel('Depth in feet', { exact: true }).fill('10');
       await page!
-        .getByLabel('Default fee in minor units', { exact: true })
-        .fill('4000');
+        .getByLabel('Booth fee', { exact: true })
+        .fill('40.00');
       await page!.getByLabel('electricity', { exact: true }).uncheck();
       await page!.getByLabel('x', { exact: true }).fill('100');
       await page!.getByLabel('y', { exact: true }).fill('200');
@@ -260,7 +260,7 @@ try {
         await page!.getByLabel('Label', { exact: true }).inputValue(),
         'A02',
       );
-      assert.equal(await number('Default fee in minor units'), 4000);
+      assert.equal(await number('Booth fee'), 40);
       await page!.getByLabel('electricity', { exact: true }).check();
       await page!.getByLabel('x', { exact: true }).fill('260');
     },

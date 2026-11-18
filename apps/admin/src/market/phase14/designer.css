@@ -1,14 +1,26 @@
-.layout-library {
-  display: flex;
-  gap: 1rem;
-  align-items: start;
-  flex-wrap: wrap;
-  margin-block: 1rem;
-  flex-direction: column;
+/* Layouts list: a Markets workspace (grid, gap and width from
+   `.markets-workspace`). The saved/archived CRD-04 disclosures keep their
+   behavior and take the Farmstand panel surface. */
+.layout-library .saved-layouts-card {
+  border: 1px solid var(--markets-border);
+  border-radius: 16px;
+  background: var(--brand-surface);
+  box-shadow: none;
 }
-.layout-library details {
-  flex: 1;
-  min-width: 0;
+.layout-library .saved-layouts-card > .market-disclosure-header {
+  padding: 16px 18px;
+}
+.layout-library .layout-card-grid {
+  gap: 14px;
+  padding: 0 18px 18px;
+}
+.layout-library .layout-card {
+  border-color: var(--markets-border);
+  border-radius: 12px;
+  background: var(--brand-surface);
+}
+.layout-library .layout-card-preview {
+  background: var(--markets-soft);
 }
 
 /*
@@ -65,9 +77,10 @@
   --brand-foreground: var(--designer-light-foreground);
   --brand-muted: var(--designer-light-muted);
   --brand-secondary: var(--designer-light-secondary);
-  --ui-control-height: 40px;
-  --ui-button-radius: 22px;
-  --ui-button-padding-inline: 18px;
+  /* Light dialogs over the dark editor use the Farmstand control geometry. */
+  --ui-control-height: 42px;
+  --ui-button-radius: 8px;
+  --ui-button-padding-inline: 16px;
   --ui-input-focus-background: #e5efe8;
   --designer-field: #fff;
   --designer-field-edge: var(--designer-light-muted);
@@ -662,20 +675,6 @@
 .designer-section .ops-check input {
   width: 16px;
   height: 16px;
-}
-.designer-amenities {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 0.5rem;
-}
-.designer-amenities legend {
-  grid-column: 1 / -1;
-  margin-bottom: 0.25rem;
-  font-size: 0.78rem;
-  color: var(--designer-ink-muted);
-}
-.designer-amenities .ops-check label {
-  text-transform: capitalize;
 }
 .designer-facts {
   display: grid;

@@ -5,6 +5,7 @@ import {
   contactHref,
   isEditorialMarket,
 } from '@market/theme/storefront';
+import { marketNavigation } from '../../lib/market-website';
 
 interface Props {
   context: StorefrontContext;
@@ -13,6 +14,7 @@ const { context } = Astro.props;
 if (!isEditorialMarket(context.appearance))
   throw new Error('Editorial Market footer requires its theme configuration.');
 const settings = context.appearance.template.settings;
+const market = context.kind === 'MARKET';
 const details = context.appearance.contact?.enabled
   ? contactDetails(context.appearance.contact)
   : undefined;
@@ -50,14 +52,24 @@ const details = context.appearance.contact?.enabled
     </div>
     <nav aria-label="Shop">
       <h2>{settings.footer.shopLabel}</h2>
-      <a href="/products">All products</a>
+      {market ? (
+        marketNavigation(context.appearance, !!Astro.locals.editorPreview).map(
+          (link) => (
+            <a href={link.href}>
+              {link.href === '/shop' ? 'Shop the market' : link.label}
+            </a>
+          ),
+        )
+      ) : (
+        <a href="/products">All products</a>
+      )}
     </nav>
     <nav aria-label="About">
       <h2>About</h2>
       {context.appearance.about.enabled && (
         <a href="/about">{settings.footer.storyLabel}</a>
       )}
-      {context.appearance.findUs?.enabled && (
+      {!market && context.appearance.findUs?.enabled && (
         <a href="/find-us">{context.appearance.findUs.title}</a>
       )}
       {context.appearance.faq?.enabled && (

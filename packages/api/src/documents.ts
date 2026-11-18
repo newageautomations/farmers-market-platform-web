@@ -97,6 +97,7 @@ export interface ComplianceData {
   truncated: boolean;
 }
 export type ComplianceAction =
+  | 'SEND_EXPIRATION_NOTIFICATION'
   | 'SAVE_AGREEMENT'
   | 'PUBLISH_PREVIEW'
   | 'PUBLISH_AGREEMENT'
@@ -108,6 +109,7 @@ export type ComplianceAction =
   | 'START'
   | 'SET_AUTOMATION'
   | 'CONFIGURE_REQUIREMENT'
+  | 'REMOVE_REQUIREMENT'
   | 'SYNC_PREVIEW'
   | 'EDIT'
   | 'DELETE'

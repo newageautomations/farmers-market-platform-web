@@ -1,14 +1,29 @@
 ---
-const { cta, section = 'closing' } = Astro.props as {
+import { supportsWebsitePageHero } from '@market/theme/storefront';
+const {
+  cta,
+  section = 'closing',
+  composition = false,
+} = Astro.props as {
   cta: { heading: string; text: string; label: string; destination: string };
   section?: string;
+  composition?: boolean;
 };
+const appearance = Astro.locals.storefront?.appearance;
+const managed =
+  !!appearance &&
+  supportsWebsitePageHero(
+    appearance,
+    Astro.url.pathname.replace(/^\/+|\/+$/g, ''),
+  );
 ---
 
-<section class="farmhouse-invitation" data-editor-section={section}>
-  <h2>{cta.heading}</h2>
-  <p>{cta.text}</p>
-  <a class="farmhouse-button" href={cta.destination}>
-    {cta.label} <span aria-hidden="true">↗</span>
-  </a>
-</section>
+{(!managed || composition) && (
+  <section class="farmhouse-invitation" data-editor-section={section}>
+    <h2>{cta.heading}</h2>
+    <p>{cta.text}</p>
+    <a class="farmhouse-button" href={cta.destination}>
+      {cta.label} <span aria-hidden="true">↗</span>
+    </a>
+  </section>
+)}

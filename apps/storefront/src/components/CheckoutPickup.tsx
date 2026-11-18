@@ -5,16 +5,20 @@ import type { VendorPreorderState } from '../lib/vendor-preorder';
 export function CheckoutPickup({
   view,
   preorder,
+  compact = false,
+  timezone,
 }: {
   view: CheckoutView;
   preorder?: VendorPreorderState;
+  compact?: boolean;
+  timezone?: string;
 }) {
   const occurrence = preorder?.selected ?? preorder?.orderOccurrence;
   const pickup = view.pickupPromise;
   const venue = pickup.venue || occurrence?.venue;
   const startsAt = occurrence?.startsAt || pickup.startsAt;
   const endsAt = occurrence?.endsAt || pickup.endsAt;
-  const timeZone = occurrence?.timezone ?? 'UTC';
+  const timeZone = occurrence?.timezone ?? timezone;
   const instructions =
     pickup.instructions || preorder?.selected?.pickupInstructions;
   const time = (value: string) =>
@@ -28,7 +32,7 @@ export function CheckoutPickup({
       className="checkout-section checkout-pickup"
       aria-label="Pickup details"
     >
-      <h2>Pickup Details</h2>
+      {!compact && <h2>Pickup details</h2>}
       {preorder?.selected?.marketName && (
         <strong>{preorder.selected.marketName}</strong>
       )}
@@ -57,7 +61,7 @@ export function CheckoutPickup({
             target="_blank"
             rel="noopener noreferrer"
           >
-            {venue}
+            Get directions
           </a>
         </p>
       )}

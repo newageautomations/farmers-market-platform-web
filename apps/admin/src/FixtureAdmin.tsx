@@ -113,7 +113,7 @@ export default function FixtureAdmin() {
   );
   if (scope === 'MARKET' && marketRevoked)
     return (
-      <main className="login">
+      <main className="login farmstand-controls">
         <h1>Workspace unavailable</h1>
         <p>
           Fixture Market authority was revoked. Protected content has been
@@ -131,7 +131,7 @@ export default function FixtureAdmin() {
     );
   if (signedOut)
     return (
-      <main className="login">
+      <main className="login farmstand-controls">
         <h1>Fixture signed out</h1>
         <p>This preview uses no real account or backend session.</p>
         <Button onClick={() => setSignedOut(false)}>Return to preview</Button>

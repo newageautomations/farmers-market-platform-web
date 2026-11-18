@@ -1,3 +1,7 @@
+import {
+  PreparationWorkspace,
+  type PreparationDates,
+} from '../preparation/PreparationWorkspace';
 import { TeamWorkspace } from '../team/TeamWorkspace';
 import { marketPath } from '@market/admin-core';
 import { Finances } from '../finance/Finances';
@@ -10,14 +14,33 @@ import { MarketOverview } from './overview';
 import { MarketSettings } from './settings';
 import { MarketVendors } from './vendors';
 import { Phase14Routes } from './phase14/OperationsRoutes';
+import { ManagerMarketDay } from '../market-day/MarketDayWorkspace';
 export function MarketRoutes({
   service,
   path,
+  preparationDates,
 }: {
   service: MarketService;
   path: string;
+  preparationDates?: PreparationDates;
 }) {
   const canonical = marketPath(path);
+  if (/^\/market\/day(?:\/[1-9][0-9]*)?$/.test(canonical))
+    return (
+      <ManagerMarketDay
+        service={service}
+        dates={preparationDates}
+        occurrenceId={Number(canonical.split('/')[3]) || undefined}
+      />
+    );
+  if (/^\/market\/preparation(?:\/[1-9][0-9]*)?$/.test(canonical))
+    return (
+      <PreparationWorkspace
+        market={service}
+        dates={preparationDates}
+        occurrenceId={Number(canonical.split('/')[3]) || undefined}
+      />
+    );
   if (canonical === '/market/team')
     return <TeamWorkspace api={service.team} context={service.context} />;
   if (/^\/market\/(finances|analytics|booth-billing)(\/|$)/.test(canonical)) {

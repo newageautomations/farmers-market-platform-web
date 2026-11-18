@@ -2,7 +2,8 @@
   width: min(100% - 5rem, 1320px);
 }
 .harvest-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 2rem;
   padding-block: 1.8rem;
@@ -24,7 +25,8 @@
   max-width: 26rem;
 }
 .harvest-desktop-nav {
-  margin-inline-start: auto;
+  justify-self: center;
+  justify-content: center;
   display: flex;
   align-items: center;
   gap: clamp(1rem, 2vw, 2rem);
@@ -41,6 +43,104 @@
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  justify-self: end;
+}
+.harvest-header .harvest-header-icon {
+  display: inline-flex;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  text-decoration: none;
+}
+.harvest-header .harvest-header-icon::after {
+  content: none;
+}
+.harvest-header .harvest-header-actions .harvest-header-icon.button.ui-button {
+  --button-hover-transform: translateY(-2px);
+  --ui-disclosure-hover-background: transparent;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.harvest-header
+  .harvest-header-actions
+  .harvest-header-icon.button.ui-button:is(:hover, :focus-visible) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  transform: translateY(-2px);
+}
+.harvest-header
+  .harvest-account-content
+  .harvest-account-logout.button.ui-button:is(
+    :enabled,
+    :hover,
+    :focus-visible
+  ) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transform: none;
+}
+.harvest-account-logout:is(:hover, :focus-visible) .farmstand-text-link::after {
+  transform: scaleX(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .harvest-header
+    .harvest-header-actions
+    .harvest-header-icon.button.ui-button:is(:hover, :focus-visible) {
+    transform: none;
+  }
+}
+.harvest-cart-count {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  display: grid;
+  place-items: center;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding-inline: 0.2rem;
+  border-radius: 999px;
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+  font-size: 0.7rem;
+  line-height: 1;
+}
+.harvest-account-menu.ui-disclosure {
+  --ui-disclosure-border-width: 0;
+  --ui-disclosure-background: transparent;
+  margin: 0;
+  position: relative;
+}
+.harvest-account-menu > .harvest-account-content {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  right: 0;
+  z-index: 10;
+  width: min(15rem, calc(100vw - 2.5rem));
+  gap: 0.75rem;
+  border: 1px solid
+    color-mix(in srgb, var(--brand-primary) 16%, var(--brand-surface));
+  border-radius: var(--storefront-card-radius);
+  background: var(--brand-surface);
+  box-shadow: 0 10px 35px #0002;
+}
+.harvest-account-content p,
+.harvest-account-content form {
+  margin: 0;
+}
+.harvest-account-content .ui-button {
+  justify-content: flex-start;
+  padding-inline: 0;
+  min-height: auto;
+  box-shadow: none;
 }
 .harvest-mobile-menu {
   display: none;
@@ -363,6 +463,9 @@
   }
 }
 @media (max-width: 1050px) {
+  .harvest-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
   .harvest-desktop-nav {
     display: none;
   }

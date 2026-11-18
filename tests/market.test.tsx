@@ -294,15 +294,15 @@ describe('Market overview, configuration and recurrence', () => {
   it('shows authoritative core Overview counts without financial metrics', async () => {
     const service = createFixtureMarketService(marketFixtureContext());
     render(<MarketOverview service={service} />);
-    await screen.findByRole('link', { name: 'View Occurrence' });
-    const table = await screen.findByRole('table', {
-      name: 'Vendor relationships',
-    });
+    await screen.findByRole('link', { name: /View date/ });
     expect(
-      within(table)
-        .getAllByRole('columnheader')
+      screen.getByRole('heading', { name: 'Vendor requests' }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('region', { name: 'Key metrics' }))
+        .getAllByRole('term')
         .map((h) => h.textContent),
-    ).toEqual(['Vendor', 'Status']);
+    ).toEqual(['Next market', 'Active vendors']);
     expect(document.body).not.toHaveTextContent('Operational totals');
     expect(screen.queryByLabelText('From Date')).toBeNull();
     expect(document.body.textContent).not.toMatch(
@@ -315,7 +315,8 @@ describe('Market overview, configuration and recurrence', () => {
       const service = createFixtureMarketService(marketFixtureContext(), value),
         analytics = vi.spyOn(service, 'analytics');
       render(<MarketOverview service={service} />);
-      await screen.findByRole('table', { name: 'Vendor relationships' });
+      await screen.findByRole('heading', { name: 'Vendor requests' });
+      await screen.findByRole('link', { name: /View date/ });
       expect(document.body).not.toHaveTextContent(`Market analytics: ${value}`);
       expect(analytics).not.toHaveBeenCalled();
     },

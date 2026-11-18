@@ -1,4 +1,5 @@
 fragment MarketConfiguration on MarketDomain {
+  ownerVendorId
   id
   name
   slug
@@ -507,3 +508,6 @@ query MarketGenerationStatus($jobId: ID!) {
     matchedOccurrences
   }
 }
+
+query VendorManagedMarkets { ownVendorManagedMarkets { ...MarketConfiguration } }
+mutation CreateVendorManagedMarket($input: VendorManagedMarketInput!) { createVendorManagedMarket(input:$input) { ...MarketConfiguration } }

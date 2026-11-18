@@ -83,7 +83,7 @@ describe('authoritative Storefront adapter and paging', () => {
   it('bounds native paging and normalizes search/sort', () => {
     expect(
       catalogInputs(new URLSearchParams('page=2&q=Harvest&sort=desc')),
-    ).toEqual({ page: 2, skip: 12, take: 12, search: 'Harvest', sort: 'desc' });
+    ).toEqual({ page: 2, skip: 20, take: 20, search: 'Harvest', sort: 'desc' });
     for (const page of ['0', '-1', '1.5', 'Infinity', '10001'])
       expect(() => catalogInputs(new URLSearchParams({ page }))).toThrow();
     expect(

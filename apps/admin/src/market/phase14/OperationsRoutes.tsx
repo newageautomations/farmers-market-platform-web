@@ -1,4 +1,4 @@
-import { BoothSchedule } from "./BoothSchedule";
+import { BoothSchedule } from './BoothSchedule';
 import { Attendance } from './Attendance';
 import { cardClassName } from '@market/ui/presentation';
 import { useCallback, useEffect, useState } from 'react';
@@ -17,6 +17,7 @@ import { Rentals } from './Rentals';
 import { Layouts, LayoutScreen } from './Layouts';
 import { OccurrenceLayoutScreen } from './OccurrenceLayoutActions';
 import { Assignments } from './Assignments';
+import { AssignmentsWorkspace } from './AssignmentsWorkspace';
 import { Billing } from './Billing';
 import { Control } from './common';
 import { date } from '../common';
@@ -42,14 +43,25 @@ export function Phase14Routes({
   notifications?: NotificationsApi;
   rentalMedia?: Pick<VendorCategoryApi, 'images' | 'upload'>;
 }) {
-  const [dayView, setDayView] = useState("Map and attendance");
+  const [dayView, setDayView] = useState('Map and attendance');
   const segment = path.split('/')[2] ?? '',
     section = sections[segment] ?? 'APPLICATIONS';
-  const [occurrenceId, setOccurrenceId] = useState(
-      ['ASSIGNMENTS', 'DAY', 'BILLING'].includes(section)
+  const [allBillingDates, setAllBillingDates] = useState(
+    () =>
+      section === 'BILLING' &&
+      new URLSearchParams(window.location.search).get('occurrence') === 'all',
+  );
+  const [occurrenceId, setOccurrenceId] = useState(() => {
+      if (section === 'BILLING') {
+        const requested = Number(
+          new URLSearchParams(window.location.search).get('occurrence'),
+        );
+        if (Number.isSafeInteger(requested) && requested > 0) return requested;
+      }
+      return ['ASSIGNMENTS', 'DAY', 'BILLING'].includes(section)
         ? Number(path.split('/')[3]) || 0
-        : 0,
-    ),
+        : 0;
+    }),
     [error, setError] = useState<ReturnType<typeof safeError> | null>(null),
     [pending, setPending] = useState(false);
   const load = useCallback(async () => {
@@ -58,7 +70,11 @@ export function Phase14Routes({
       occurrenceId || undefined,
       section === 'APPLICATIONS' ? { mode: 'CONTEXT' } : undefined,
     );
-    if (!occurrenceId && ['ASSIGNMENTS', 'DAY', 'BILLING'].includes(section)) {
+    if (
+      !occurrenceId &&
+      !allBillingDates &&
+      ['ASSIGNMENTS', 'DAY', 'BILLING'].includes(section)
+    ) {
       const scheduled = primary.occurrences
         .filter((o) => o.status === 'scheduled')
         .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
@@ -78,8 +94,8 @@ export function Phase14Routes({
     )
       primary.submissions = (await api.read('APPLICATIONS')).submissions;
     return primary;
-  }, [api, section, occurrenceId, permissions]);
-  const viewKey = `${section}:${occurrenceId}`;
+  }, [api, section, occurrenceId, allBillingDates, permissions]);
+  const viewKey = `${section}:${occurrenceId}:${allBillingDates}`;
   const [revision, setRevision] = useState(0);
   const [result, setResult] = useState<{
     key: string;
@@ -100,6 +116,34 @@ export function Phase14Routes({
       current = false;
     };
   }, [load, revision, viewKey]);
+  useEffect(() => {
+    if (section !== 'BILLING' || pending) return;
+    let current = true,
+      running = false;
+    const timer = setInterval(() => {
+      if (running || document.visibilityState === 'hidden') return;
+      running = true;
+      void load()
+        .then((data) => {
+          if (current)
+            setResult((previous) =>
+              previous.key === viewKey && previous.revision === revision
+                ? { ...previous, data, error: undefined }
+                : previous,
+            );
+        })
+        .catch(() => {
+          /* Keep the last verified view; financial commands still revalidate authority and revision. */
+        })
+        .finally(() => {
+          running = false;
+        });
+    }, 5000);
+    return () => {
+      current = false;
+      clearInterval(timer);
+    };
+  }, [section, pending, load, revision, viewKey]);
   const read = {
     loading: result.key !== viewKey || result.revision !== revision,
     error: result.key === viewKey ? result.error : undefined,
@@ -111,7 +155,7 @@ export function Phase14Routes({
     setError(null);
     try {
       const result = await api.command(command);
-      read.refresh();
+      if (command.action !== 'PREVIEW_INVOICE_REFUND') read.refresh();
       return result;
     } catch (e) {
       setError(safeError(e));
@@ -125,124 +169,156 @@ export function Phase14Routes({
   if (read.error) return <ErrorState error={read.error} />;
   if (!data) return <p>Market operations connection is unavailable.</p>;
   const can = (name: string) => permissions.includes(name),
-    active =
-      occurrenceId ||
-      data.selectedOccurrenceId ||
-      data.occurrences.find(
-        (o) => o.status === 'scheduled' && new Date(o.endsAt) > new Date(),
-      )?.id ||
-      data.occurrences[0]?.id ||
-      0;
+    active = allBillingDates
+      ? 0
+      : occurrenceId ||
+        data.selectedOccurrenceId ||
+        data.occurrences.find(
+          (o) => o.status === 'scheduled' && new Date(o.endsAt) > new Date(),
+        )?.id ||
+        data.occurrences[0]?.id ||
+        0;
   const controls = (
-      <fieldset className="ops-controls" disabled={pending || read.loading}>
-        <legend className="sr-only">Market operation controls</legend>
-        {active > 0 && ['DAY', 'ASSIGNMENTS'].includes(section) && (
-          <RouteLink to={`/market/documents?view=reports&occurrence=${active}`}>
-            Review documentation for this Market date
-          </RouteLink>
-        )}
-        {!path.endsWith('/edit-layout') &&
-          ['DAY', 'ASSIGNMENTS', 'BILLING'].includes(section) && (
-            <Control
-              label="Market occurrence"
-              className={cardClassName({ className: 'occurrence-control' })}
+    <fieldset className="ops-controls" disabled={pending || read.loading}>
+      <legend className="sr-only">Market operation controls</legend>
+      {active > 0 && section === 'DAY' && (
+        <RouteLink to={`/market/documents?view=reports&occurrence=${active}`}>
+          Review documentation for this Market date
+        </RouteLink>
+      )}
+      {!path.endsWith('/edit-layout') && section === 'DAY' && (
+        <Control
+          label="Market occurrence"
+          className={cardClassName({ className: 'occurrence-control' })}
+        >
+          {(id) => (
+            <Select
+              id={id}
+              value={active}
+              onChange={(e) => setOccurrenceId(Number(e.target.value))}
             >
-              {(id) => (
-                <Select
-                  id={id}
-                  value={active}
-                  onChange={(e) => setOccurrenceId(Number(e.target.value))}
-                >
-                  {data.occurrences.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {date(o.startsAt)} · {o.venue}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Control>
+              {data.occurrences.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {date(o.startsAt)} · {o.venue}
+                </option>
+              ))}
+            </Select>
           )}
-        {section === 'APPLICATIONS' && (
-          <Applications
-            api={api}
+        </Control>
+      )}
+      {section === 'APPLICATIONS' && (
+        <Applications
+          api={api}
+          data={data}
+          run={run}
+          canManage={can('ManageOwnMarketApplications')}
+          canConfirmDates={can('ManageOwnMarketAssignments')}
+          canBilling={can('ManageOwnMarketBilling')}
+          canRequestDocuments={can('ManageOwnMarketMemberships')}
+          view={
+            segment === 'application-submissions' ? 'submissions' : 'templates'
+          }
+          path={path}
+        />
+      )}
+      {section === 'DIRECTORY' && segment === 'rentals' && (
+        <Rentals
+          data={data}
+          media={rentalMedia}
+          api={can('ReadOwnMarketAssignments') ? api : undefined}
+          run={async (command) => {
+            const saved = await api.command(command);
+            read.refresh();
+            return saved;
+          }}
+          canManage={can('ManageOwnMarketApplications')}
+          view={path.endsWith('/new') ? 'add' : 'list'}
+        />
+      )}
+      {section === 'LAYOUTS' &&
+        (path.endsWith('/edit') ? (
+          <LayoutScreen
+            layoutId={Number(path.split('/')[3])}
             data={data}
             run={run}
-            canManage={can('ManageOwnMarketApplications')}
-            canConfirmDates={can('ManageOwnMarketAssignments')}
-            canBilling={can('ManageOwnMarketBilling')}
-            canRequestDocuments={can('ManageOwnMarketMemberships')}
-            view={
-              segment === 'application-submissions'
-                ? 'submissions'
-                : 'templates'
-            }
-            path={path}
-          />
-        )}
-        {section === 'DIRECTORY' && segment === 'rentals' && (
-          <Rentals
-            data={data}
+            canManage={can('ManageOwnMarketLayouts')}
             media={rentalMedia}
-            api={can('ReadOwnMarketAssignments') ? api : undefined}
-            run={async (command) => {
-              const saved = await api.command(command);
-              read.refresh();
-              return saved;
-            }}
-            canManage={can('ManageOwnMarketApplications')}
-            view={path.endsWith('/new') ? 'add' : 'list'}
           />
-        )}
-        {section === 'LAYOUTS' &&
-          (path.endsWith('/edit') ? (
-            <LayoutScreen
-              layoutId={Number(path.split('/')[3])}
-              data={data}
-              run={run}
-              canManage={can('ManageOwnMarketLayouts')}
-              media={rentalMedia}
-            />
-          ) : (
-            <Layouts
-              data={data}
-              run={run}
-              canManage={can('ManageOwnMarketLayouts')}
-            />
-          ))}
-        {section === 'BILLING' && (
-          <Billing
+        ) : (
+          <Layouts
             data={data}
             run={run}
-            canManage={can('ManageOwnMarketBilling')}
+            canManage={can('ManageOwnMarketLayouts')}
           />
+        ))}
+      {section === 'BILLING' && (
+        <Billing
+          key={active}
+          data={data}
+          run={run}
+          canManage={can('ManageOwnMarketBilling')}
+          error={error}
+          occurrence={{
+            value: active,
+            options: [
+              { id: 0, label: 'All market dates' },
+              ...data.occurrences.map((o) => ({
+                id: o.id,
+                label: `${date(o.startsAt)} · ${o.venue}`,
+              })),
+            ],
+            onChange: (id) => {
+              const url = new URL(window.location.href);
+              url.searchParams.set('occurrence', id === 0 ? 'all' : String(id));
+              window.history.replaceState(null, '', url);
+              setAllBillingDates(id === 0);
+              setOccurrenceId(id);
+            },
+          }}
+        />
+      )}
+      {section === 'DAY' &&
+        active > 0 &&
+        api.attendance &&
+        !path.endsWith('/edit-layout') && (
+          <Attendance key={active} api={api.attendance} occurrenceId={active} />
         )}
-        {section === 'DAY' && active > 0 && api.attendance && !path.endsWith('/edit-layout') && <Attendance key={active} api={api.attendance} occurrenceId={active} />}
-        {['DAY', 'ASSIGNMENTS'].includes(section) &&
-          (path.endsWith('/edit-layout') ? (
-            <OccurrenceLayoutScreen
-              data={data}
-              occurrenceId={active}
-              run={run}
-              media={rentalMedia}
-              canEdit={
-                can('ManageOwnMarketAssignments') &&
-                can('ManageOwnMarketLayouts')
-              }
-            />
-          ) : (
-            <Assignments
-              data={data}
-              run={run}
-              occurrenceId={active}
-              day={section === 'DAY'}
-              canAssign={can('ManageOwnMarketAssignments')}
-              canEditLayout={can('ManageOwnMarketLayouts')}
-              canDay={false}
-              canBill={can('ManageOwnMarketBilling')}
-              commandError={error}
-            />
-          ))}
-      </fieldset>
+      {['DAY', 'ASSIGNMENTS'].includes(section) &&
+        (path.endsWith('/edit-layout') ? (
+          <OccurrenceLayoutScreen
+            data={data}
+            occurrenceId={active}
+            run={run}
+            media={rentalMedia}
+            canEdit={
+              can('ManageOwnMarketAssignments') && can('ManageOwnMarketLayouts')
+            }
+          />
+        ) : section === 'ASSIGNMENTS' ? (
+          <AssignmentsWorkspace
+            data={data}
+            run={run}
+            occurrenceId={active}
+            onOccurrenceChange={setOccurrenceId}
+            canAssign={can('ManageOwnMarketAssignments')}
+            canEditLayout={can('ManageOwnMarketLayouts')}
+            canBill={can('ManageOwnMarketBilling')}
+            commandError={error}
+          />
+        ) : (
+          <Assignments
+            data={data}
+            run={run}
+            occurrenceId={active}
+            day
+            canAssign={can('ManageOwnMarketAssignments')}
+            canEditLayout={can('ManageOwnMarketLayouts')}
+            canDay={false}
+            canBill={can('ManageOwnMarketBilling')}
+            commandError={error}
+          />
+        ))}
+    </fieldset>
   );
   // Full-screen layout editors show their own saving state; in-flow status
   // above them would push the fixed-height workspace down.
@@ -251,7 +327,9 @@ export function Phase14Routes({
     path.endsWith('/edit-layout');
   return (
     <div className="ops-workspace" aria-busy={pending || read.loading}>
+      {/* Booth invoices report command results inside the invoice modal. */}
       {error &&
+        section !== 'BILLING' &&
         (editorRoute ? (
           <div className="ops-floating-error">
             <ErrorState error={error} />
@@ -259,11 +337,32 @@ export function Phase14Routes({
         ) : (
           <ErrorState error={error} />
         ))}
-      {pending && !editorRoute && <Spinner label="Saving changes" />}
-      {section === 'DAY' && !path.endsWith('/edit-layout') && can('ReadOwnMarketAssignments') ? <Tabs items={[
-        { label: 'Map and attendance', content: controls },
-        { label: 'Schedule', content: dayView === 'Schedule' ? <BoothSchedule api={api} canManage={can('ManageOwnMarketAssignments')} canBill={can('ManageOwnMarketBilling')} /> : null },
-      ]} onChange={setDayView} /> : controls}
+      {pending && !editorRoute && section !== 'BILLING' && (
+        <Spinner label="Saving changes" />
+      )}
+      {section === 'DAY' &&
+      !path.endsWith('/edit-layout') &&
+      can('ReadOwnMarketAssignments') ? (
+        <Tabs
+          items={[
+            { label: 'Map and attendance', content: controls },
+            {
+              label: 'Schedule',
+              content:
+                dayView === 'Schedule' ? (
+                  <BoothSchedule
+                    api={api}
+                    canManage={can('ManageOwnMarketAssignments')}
+                    canBill={can('ManageOwnMarketBilling')}
+                  />
+                ) : null,
+            },
+          ]}
+          onChange={setDayView}
+        />
+      ) : (
+        controls
+      )}
     </div>
   );
 }

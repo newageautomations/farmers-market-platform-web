@@ -1,15 +1,28 @@
 ---
-import { cardClassName, buttonClassName } from '@market/ui/presentation';
+import { buttonClassName, statusBadgeClassName } from '@market/ui/presentation';
+import { formatMoney } from '@market/config';
+import type { CustomerPurchase } from '@market/api';
 import CustomerLayout from '../../../layouts/CustomerLayout.astro';
-import PurchaseDetail from '../../../components/PurchaseDetail.astro';
+import EmptyState from '../../../components/ui/EmptyState.astro';
+import FarmstandIcon from '../../../components/ui/FarmstandIcon.astro';
+import WorkspacePanel from '../../../components/ui/WorkspacePanel.astro';
+import WorkspaceTable from '../../../components/ui/WorkspaceTable.astro';
 import {
   customerApi,
   customerAuthenticationError,
 } from '../../../lib/customer-dashboard';
+import {
+  financialStatus,
+  itemCount,
+  pickupStatus,
+  purchaseDate,
+  purchaseKind,
+  purchasePickup,
+} from '../../../lib/customer-presentation';
 import { temporaryUnavailableResponse } from '@market/config';
 const api = customerApi(Astro),
   id = Astro.params.id ?? '';
-let purchase;
+let purchase: CustomerPurchase | undefined;
 try {
   if (!(await api.profile())) return Astro.redirect(api.login);
 } catch (error) {
@@ -24,29 +37,204 @@ try {
     return temporaryUnavailableResponse();
 }
 if (!purchase) Astro.response.status = 404;
+const money = (value: number) =>
+  formatMoney(value, purchase?.financial.currency ?? 'USD');
+const pickupTime = (start: string | null, end: string | null) =>
+  start
+    ? new Date(start).toLocaleString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      }) +
+      (end
+        ? ` to ${new Date(end).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
+        : '')
+    : undefined;
+const payment = purchase && financialStatus(purchase),
+  pickup = purchase && purchasePickup(purchase);
+const state = purchase?.nativeState.replace(/([a-z])([A-Z])/g, '$1 $2');
 ---
 
-<CustomerLayout title="Order detail" path="/account/orders">
-  {purchase ? (
-    <article class={cardClassName({ className: 'card' })}>
-      <p>
-        Order {purchase.orderId} ·{' '}
-        {purchase.nativeState.replace(/([a-z])([A-Z])/g, '$1 $2')}
-      </p>
-      <PurchaseDetail purchase={purchase} />
-    </article>
+<CustomerLayout
+  title={purchase ? `Order ${purchase.orderId}` : 'Order detail'}
+  path="/account/orders"
+  icon="receipt-text"
+  description={
+    purchase
+      ? `Placed ${purchaseDate(purchase.purchasedAt, 'long')} with ${purchase.storefront.displayName}.`
+      : 'This purchase is unavailable.'
+  }
+>
+  <a
+    slot="actions"
+    class={buttonClassName({
+      variant: 'secondary',
+      className: 'farmstand-button',
+    })}
+    href={
+      purchase ? `/account/orders?order=${purchase.orderId}` : '/account/orders'
+    }
+  >
+    <FarmstandIcon name="arrow-left" />
+    Back to orders
+  </a>
+  {purchase && payment && pickup ? (
+    <div class="customer-detail-columns">
+      <div class="customer-detail-main">
+        {purchase.portions.map((portion) => {
+          const status = pickupStatus(portion.pickupStatus);
+          const when = pickupTime(
+            portion.pickupPromise.startsAt ?? portion.occurrenceStartsAt,
+            portion.pickupPromise.endsAt,
+          );
+          return (
+            <WorkspacePanel
+              icon="store"
+              title={portion.vendorName}
+              description={portion.marketName ?? purchaseKind(purchase)}
+              id={`portion-${portion.vendorId}`}
+            >
+              <span slot="actions" class={statusBadgeClassName(status.tone)}>
+                {status.label}
+              </span>
+              {(when ||
+                portion.pickupPromise.venue ||
+                portion.pickupPromise.instructions) && (
+                <dl class="customer-pickup-facts">
+                  {when && (
+                    <div>
+                      <dt>
+                        <FarmstandIcon name="clock" />
+                        <span class="sr-only">Pickup time</span>
+                      </dt>
+                      <dd>{when}</dd>
+                    </div>
+                  )}
+                  {portion.pickupPromise.venue && (
+                    <div>
+                      <dt>
+                        <FarmstandIcon name="map-pin" />
+                        <span class="sr-only">Pickup location</span>
+                      </dt>
+                      <dd>{portion.pickupPromise.venue}</dd>
+                    </div>
+                  )}
+                  {portion.pickupPromise.instructions && (
+                    <div>
+                      <dt>
+                        <FarmstandIcon name="info" />
+                        <span class="sr-only">Pickup instructions</span>
+                      </dt>
+                      <dd>{portion.pickupPromise.instructions}</dd>
+                    </div>
+                  )}
+                </dl>
+              )}
+              <WorkspaceTable
+                label={`${portion.vendorName} items`}
+                class="customer-line-table"
+                headings={[
+                  'Item',
+                  'Ordered',
+                  'Picked up',
+                  'Cancelled',
+                  'Remaining',
+                ]}
+              >
+                {portion.lines.map((line) => (
+                  <tr>
+                    <th scope="row">{line.variantName}</th>
+                    <td>{line.quantity}</td>
+                    <td>{line.fulfilledQuantity}</td>
+                    <td>{line.cancelledQuantity}</td>
+                    <td>{line.remainingQuantity}</td>
+                  </tr>
+                ))}
+              </WorkspaceTable>
+            </WorkspacePanel>
+          );
+        })}
+      </div>
+      <aside aria-label="Order summary">
+        <WorkspacePanel icon="credit-card" title="Payment">
+          <dl class="market-application-facts">
+            <div>
+              <dt>Status</dt>
+              <dd>
+                <span class={statusBadgeClassName(payment.tone)}>
+                  {payment.label}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt>Original paid</dt>
+              <dd>
+                <strong>{money(purchase.financial.originalPaid)}</strong>
+              </dd>
+            </div>
+            <div>
+              <dt>Refunded</dt>
+              <dd>{money(purchase.financial.refunded)}</dd>
+            </div>
+            <div>
+              <dt>Remaining paid</dt>
+              <dd>{money(purchase.financial.remaining)}</dd>
+            </div>
+          </dl>
+        </WorkspacePanel>
+        <WorkspacePanel icon="receipt-text" title="Order">
+          <dl class="market-application-facts">
+            <div>
+              <dt>Placed</dt>
+              <dd>{purchaseDate(purchase.purchasedAt, 'long')}</dd>
+            </div>
+            <div>
+              <dt>Type</dt>
+              <dd>{purchaseKind(purchase)}</dd>
+            </div>
+            <div>
+              <dt>Store</dt>
+              <dd>{purchase.storefront.displayName}</dd>
+            </div>
+            <div>
+              <dt>Items</dt>
+              <dd>{itemCount(purchase)}</dd>
+            </div>
+            <div>
+              <dt>Pickup</dt>
+              <dd>
+                <span class={statusBadgeClassName(pickup.tone)}>
+                  {pickup.label}
+                </span>
+              </dd>
+            </div>
+            {state && (
+              <div>
+                <dt>Order state</dt>
+                <dd>{state}</dd>
+              </div>
+            )}
+          </dl>
+        </WorkspacePanel>
+      </aside>
+    </div>
   ) : (
-    <p class="alert ui-alert ui-alert-neutral">This purchase is unavailable.</p>
+    <section class="card ui-card ui-card-contained ui-card-flush farmstand-panel markets-list">
+      <EmptyState title="This purchase is unavailable">
+        <p>It may belong to another account or no longer be available.</p>
+        <a
+          slot="action"
+          class={buttonClassName({
+            variant: 'secondary',
+            className: 'farmstand-button',
+          })}
+          href="/account/orders"
+        >
+          Your orders
+        </a>
+      </EmptyState>
+    </section>
   )}
-  <p>
-    <a
-      class={buttonClassName({
-        variant: 'secondary',
-        className: 'button secondary',
-      })}
-      href="/account/orders"
-    >
-      Your orders
-    </a>
-  </p>
 </CustomerLayout>

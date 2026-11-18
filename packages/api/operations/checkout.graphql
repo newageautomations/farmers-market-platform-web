@@ -10,6 +10,35 @@ fragment CheckoutView on CustomerCheckoutView {
   frozen
   committed
   paymentStatus
+  preorderFeeTestAvailable
+  preorderFee {
+    quoteId
+    total
+    preorderFee
+    vendors {
+      vendorId
+      platform
+      recovery
+      feeTax
+      preorderFee
+      total
+    }
+  }
+  paymentGroup {
+    id
+    state
+    placement
+    currency
+    total
+    verifiedAmount
+    obligations {
+      id
+      vendorId
+      amount
+      currency
+      state
+    }
+  }
   pickupPromise {
     mode
     venue
@@ -64,6 +93,17 @@ fragment CheckoutView on CustomerCheckoutView {
 query CheckoutStatus($orderId: ID) {
   currentCheckoutStatus(orderId: $orderId) {
     ...CheckoutView
+  }
+}
+query CheckoutProductImages($code: String!) {
+  orderByCode(code: $code) {
+    id
+    lines {
+      id
+      featuredAsset {
+        preview
+      }
+    }
   }
 }
 mutation CheckoutContact($input: CheckoutContactInput!) {
@@ -218,4 +258,24 @@ query AccountPurchase($orderId: ID!) {
   myPurchase(orderId: $orderId) {
     ...CustomerPurchase
   }
+}
+
+mutation FreezeTestPreorderFeeQuote {
+  freezeTestPreorderFeeQuote {
+    quoteId
+    total
+    preorderFee
+    vendors {
+      vendorId
+      platform
+      recovery
+      feeTax
+      preorderFee
+      total
+    }
+  }
+}
+
+mutation ClearTestPreorderFeeQuote {
+  clearTestPreorderFeeQuote
 }

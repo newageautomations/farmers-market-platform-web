@@ -1,0 +1,70 @@
+---
+import { buttonClassName, disclosureClassName } from '@market/ui/presentation';
+import { requestCheckout } from '../../lib/shop';
+import FarmstandIcon from '../ui/FarmstandIcon.astro';
+import Button from '../ui/Button.astro';
+
+// Header-specific composition of DDN-03, the shared icon, and the existing account routes.
+let firstName = '';
+let signedIn = false;
+if (
+  Astro.locals.storefront?.source === 'backend' &&
+  !Astro.locals.editorPreview
+) {
+  Astro.response.headers.set('Cache-Control', 'private, no-store');
+  try {
+    const profile = await requestCheckout(Astro).profile();
+    signedIn = !!profile;
+    firstName = profile?.firstName.trim() ?? '';
+  } catch {
+    // Account navigation remains available when the profile cannot be read.
+  }
+}
+---
+
+<details class={disclosureClassName('harvest-account-menu')}>
+  <summary
+    class={buttonClassName({
+      variant: 'tertiary',
+      iconOnly: true,
+      className: 'harvest-header-icon',
+    })}
+    aria-label="Account menu"
+    aria-expanded="false"
+  >
+    <FarmstandIcon name="user-round" />
+  </summary>
+  <div class="ui-disclosure-content harvest-account-content">
+    <p>{firstName ? `Hi, ${firstName}` : 'Hi there'}</p>
+    <a href="/account">View account</a>
+    {signedIn && (
+      <form method="post" action="/api/account">
+        <input type="hidden" name="action" value="logout" />
+        <Button type="submit" variant="tertiary" class="harvest-account-logout">
+          <span class="farmstand-text-link">Log out</span>
+        </Button>
+      </form>
+    )}
+  </div>
+</details>
+
+<script>
+  for (const menu of document.querySelectorAll<HTMLDetailsElement>(
+    '.harvest-account-menu',
+  )) {
+    const summary = menu.querySelector('summary');
+    menu.addEventListener('toggle', () =>
+      summary?.setAttribute('aria-expanded', String(menu.open)),
+    );
+    menu.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && menu.open) {
+        menu.open = false;
+        summary?.focus();
+      }
+    });
+    document.addEventListener('click', (event) => {
+      if (event.target instanceof Node && !menu.contains(event.target))
+        menu.open = false;
+    });
+  }
+</script>

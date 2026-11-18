@@ -17,11 +17,14 @@ import {
   FarmstandTable,
 } from '@market/ui/farmstand';
 import { WorkspaceFrame } from '../WorkspaceFrame';
+import { IdentityIcon } from '@market/ui/workspace';
+import { useProfileImages } from '../profile-images';
 import { MarketsSummary } from '../vendor/MarketsSummary';
 import { MarketsPagination } from '../vendor/MarketsPagination';
 import { go, ReadState, useRead } from './common';
 import { StatusBadge } from './presentation';
 import type { MarketService } from './service';
+import { DetailSheet } from './mobile';
 import { BusinessWizard, type PlatformVendorAccess } from './BusinessWizard';
 import { VendorNotesDialog } from './VendorNotes';
 import {
@@ -35,8 +38,8 @@ import {
   verifiedVendor,
 } from './vendor-compliance';
 import '@market/ui/farmstand.css';
-import '../vendor/markets-workspace.css';
-import '../vendor/market-applications.css';
+import '@market/ui/workspace.css';
+import '@market/ui/workspace-records.css';
 import './market-occurrences.css';
 import './vendors.css';
 
@@ -99,15 +102,13 @@ export function vendorRows(
     });
   const external = directory
     .filter((d) => verifiedVendor(d) === undefined)
-    .map(
-      (d): BusinessRow => ({
-        key: `directory:${d.id}`,
-        kind: 'external',
-        name: d.contact.businessName,
-        directory: d,
-        notes: d.managerNotes,
-      }),
-    );
+    .map((d): BusinessRow => ({
+      key: `directory:${d.id}`,
+      kind: 'external',
+      name: d.contact.businessName,
+      directory: d,
+      notes: d.managerNotes,
+    }));
   return [...platform, ...linkedOnly, ...external].sort((a, b) =>
     a.name.localeCompare(b.name),
   );
@@ -125,9 +126,7 @@ export function inApp(event: MouseEvent<HTMLAnchorElement>, href: string) {
   go(href);
 }
 function accountState(row: BusinessRow) {
-  return row.kind === 'platform'
-    ? 'LINK_VERIFIED'
-    : linkState(row.directory!);
+  return row.kind === 'platform' ? 'LINK_VERIFIED' : linkState(row.directory!);
 }
 
 /**
@@ -193,10 +192,21 @@ export function VendorsWorkspace({
   const [notesFor, setNotesFor] = useState<BusinessRow>();
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState('');
-  const [account, setAccount] = useState('all');
+  const [account, setAccount] = useState(() => {
+    const account = new URLSearchParams(window.location.search).get('account');
+    return account && ['platform', 'external', 'pending'].includes(account)
+      ? account
+      : 'all';
+  });
   const [readinessFilter, setReadinessFilter] = useState('all');
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string>();
+  // Phones and tablets open the selected record's details in a sheet.
+  const [detailOpen, setDetailOpen] = useState(false);
+  const select = (value: string) => {
+    setSelected(value);
+    setDetailOpen(true);
+  };
 
   const run = service.phase14
     ? async (command: OperationsCommand) => {
@@ -267,6 +277,9 @@ export function VendorsWorkspace({
     shown.find((row) => row.key === selected) ??
     rows.find((row) => row.key === selected) ??
     shown[0];
+  const profileImages = useProfileImages(service.profileImage, {
+    vendors: shown.map((row) => row.vendorId),
+  });
   const attention = rows.filter((row) =>
     needsAttention(compliance.readiness(row.vendorId)),
   ).length;
@@ -288,7 +301,8 @@ export function VendorsWorkspace({
       Add business
     </FarmstandButton>
   );
-  const loading = memberships.loading || (directoryAllowed && directory.loading);
+  const loading =
+    memberships.loading || (directoryAllowed && directory.loading);
   return (
     <WorkspaceFrame
       icon="store"
@@ -311,7 +325,9 @@ export function VendorsWorkspace({
           },
           {
             label: 'Platform Vendors',
-            value: loading ? '…' : rows.filter((r) => r.kind === 'platform').length,
+            value: loading
+              ? '…'
+              : rows.filter((r) => r.kind === 'platform').length,
             tone: 'success',
             hint: 'Manage their own details',
             icon: 'circle-check',
@@ -320,7 +336,9 @@ export function VendorsWorkspace({
             label: 'Pending memberships',
             value: loading ? '…' : pendingMembers,
             tone: pendingMembers ? 'warning' : undefined,
-            hint: pendingMembers ? 'Waiting for your decision' : 'Nothing waiting',
+            hint: pendingMembers
+              ? 'Waiting for your decision'
+              : 'Nothing waiting',
             icon: 'inbox',
           },
           {
@@ -427,24 +445,25 @@ export function VendorsWorkspace({
                           ? 'market-application-selected'
                           : undefined
                       }
-                      onClick={() => setSelected(row.key)}
+                      onClick={() => select(row.key)}
                       onKeyDown={(event) => {
                         if (
                           event.target === event.currentTarget &&
                           (event.key === 'Enter' || event.key === ' ')
                         ) {
                           event.preventDefault();
-                          setSelected(row.key);
+                          select(row.key);
                         }
                       }}
                     >
                       <th scope="row">
                         <div className="markets-identity">
-                          <span className="markets-identity-icon">
-                            <FarmstandIcon
-                              name={row.kind === 'platform' ? 'store' : 'user-round'}
-                            />
-                          </span>
+                          <IdentityIcon
+                            icon={
+                              row.kind === 'platform' ? 'store' : 'user-round'
+                            }
+                            image={profileImages.vendor(row.vendorId)}
+                          />
                           <span>
                             <span className="market-application-name">
                               {row.name}
@@ -465,7 +484,9 @@ export function VendorsWorkspace({
                             <small>{row.directory.contact.email}</small>
                           </div>
                         ) : (
-                          <span className="markets-muted">Managed by the Vendor</span>
+                          <span className="markets-muted">
+                            Managed by the Vendor
+                          </span>
                         )}
                       </td>
                       <td>
@@ -496,7 +517,9 @@ export function VendorsWorkspace({
               </>
             ) : (
               <EmptyState
-                title={rows.length ? 'No matching businesses' : 'No businesses yet'}
+                title={
+                  rows.length ? 'No matching businesses' : 'No businesses yet'
+                }
                 action={rows.length ? undefined : add || undefined}
               >
                 <p>
@@ -508,15 +531,23 @@ export function VendorsWorkspace({
             )}
           </FarmstandPanel>
         </div>
-        <BusinessDetails
-          row={current}
-          data={directory.data}
-          compliance={compliance}
-          canEditExternal={canExternal}
-          canNotes={!!run && permissions.includes('ManageOwnMarketApplications')}
-          onEdit={setEditor}
-          onNotes={setNotesFor}
-        />
+        <DetailSheet
+          title="Business details"
+          open={detailOpen}
+          onClose={() => setDetailOpen(false)}
+        >
+          <BusinessDetails
+            row={current}
+            data={directory.data}
+            compliance={compliance}
+            canEditExternal={canExternal}
+            canNotes={
+              !!run && permissions.includes('ManageOwnMarketApplications')
+            }
+            onEdit={setEditor}
+            onNotes={setNotesFor}
+          />
+        </DetailSheet>
       </div>
       <Dialog
         open={editor !== null}
@@ -654,7 +685,10 @@ function BusinessDetails({
               }
             />
           </section>
-          <section className="vendor-details-section" aria-label="Private notes">
+          <section
+            className="vendor-details-section"
+            aria-label="Private notes"
+          >
             <h4>Private notes</h4>
             <p className="market-application-guidance">
               {row.notes || 'No notes yet.'}

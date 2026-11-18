@@ -1,0 +1,7 @@
+---
+import type { FarmstandIconName } from '@market/ui/farmstand';
+// Astro adapter of FarmstandIcon: the same decorative masked glyph.
+const { name } = Astro.props as { name: FarmstandIconName };
+---
+
+<span aria-hidden="true" class={`farmstand-icon farmstand-icon-${name}`}></span>

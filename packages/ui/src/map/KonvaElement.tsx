@@ -109,6 +109,7 @@ export const KonvaElement = memo(function KonvaElement({
   space,
   status,
   overlay,
+  highlighted = false,
   selected,
   editable,
   panning,
@@ -125,6 +126,7 @@ export const KonvaElement = memo(function KonvaElement({
   space?: Space;
   status?: BoothStatus;
   overlay?: string;
+  highlighted?: boolean;
   selected: boolean;
   editable: boolean;
   panning: boolean;
@@ -379,6 +381,19 @@ export const KonvaElement = memo(function KonvaElement({
             />
           )}
         </>
+      )}
+      {highlighted && e.type === 'SPACE' && (
+        <Rect
+          x={-3}
+          y={-3}
+          width={e.width + 6}
+          height={e.height + 6}
+          stroke="#173925"
+          strokeWidth={4}
+          dash={[8, 4]}
+          strokeScaleEnabled={false}
+          listening={false}
+        />
       )}
       {(selected || (hovered && editable && !panning)) && (
         <Rect

@@ -1,9 +1,11 @@
 ---
 import '@market/ui/styles.css';
+import '@market/ui/farmstand.css';
 import { seo, type StorefrontContext } from '@market/storefront-core';
 import { themeStyle, platformTheme, fonts } from '@market/theme';
 import '../styles/vendor.css';
 import '../styles/market.css';
+import '../styles/market-website.css';
 import '../styles/checkout.css';
 import { MarketCartLink } from '../components/MarketCartLink';
 import {
@@ -24,12 +26,23 @@ import farmhouseStyles from '../styles/farmhouse-v2.css?url';
 import { isFarmhouse, farmhouseTextSizeCss } from '@market/theme/storefront';
 import { isEditorialMarket } from '@market/theme/storefront';
 import EditorialShopHeader from '../components/editorial-market/ShopHeader.astro';
-import { vendorPreorder } from '../lib/vendor-preorder';
+import { preorderCookie, vendorPreorder } from '../lib/vendor-preorder';
+import { requestMarketShop } from '../lib/shop';
+import { marketDateParts } from '../lib/market-website';
 import EditorialFooter from '../components/editorial-market/Footer.astro';
 import editorialStyles from '../styles/editorial-market.css?url';
 import FarmhouseHeader from '../components/legacy-modern-farmhouse/Header.astro';
 import FarmhouseFooter from '../components/legacy-modern-farmhouse/Footer.astro';
 import '../styles/legacy-modern-farmhouse.css';
+import { marketOnlyTheme } from '@market/theme/storefront';
+import HearthHeader from '../components/hearth/Header.astro';
+import HearthFooter from '../components/hearth/Footer.astro';
+import hearthStyles from '../styles/hearth.css?url';
+import MeadowHeader from '../components/meadow/Header.astro';
+import MeadowFooter from '../components/meadow/Footer.astro';
+import meadowStyles from '../styles/meadow.css?url';
+import bloomStyles from '../styles/bloom.css?url';
+import { isBloom } from '@market/theme/storefront';
 interface Props {
   context?: StorefrontContext;
   path?: string;
@@ -50,13 +63,27 @@ const {
 } = Astro.props;
 const appearance = context?.appearance ?? defaultStorefrontAppearance;
 const sharedVendor = context?.kind === 'VENDOR';
+// Market websites are Harvest throughout, so every market page shares its shell.
+const harvestShell = homepage || sharedVendor || context?.kind === 'MARKET';
 const premiumSettings = isFarmhouse(appearance)
   ? (appearance.template!.settings as FarmhouseSettings)
   : undefined;
 const premium = sharedVendor && !!premiumSettings;
-const editorial = sharedVendor && isEditorialMarket(appearance);
+// Editorial Market serves vendor and market websites with one theme shell.
+const editorial =
+  (sharedVendor || context?.kind === 'MARKET') && isEditorialMarket(appearance);
+const editorialMarket = editorial && context?.kind === 'MARKET';
 const farmhouse =
   sharedVendor && appearance.theme === 'modern-farmhouse' && !premium;
+// Meadow and Hearth are market website themes with their own header, footer and styles
+// around the shared Harvest market pages.
+const marketTheme =
+  context?.kind === 'MARKET' ? marketOnlyTheme(appearance) : undefined;
+const meadow = marketTheme === 'meadow';
+const hearth = marketTheme === 'hearth';
+// Bloom is a vendor website theme: the shared Harvest vendor shell and pages with
+// its own stylesheet.
+const bloom = sharedVendor && isBloom(appearance);
 const overlay =
   premium &&
   (imageHero ||
@@ -64,7 +91,7 @@ const overlay =
       premiumSettings?.sections[0]?.id === 'cinematic' &&
       premiumSettings?.sections[0]?.visible));
 const appearanceStyle = context
-  ? `${storefrontThemeStyle(appearance)};${premium ? farmhousePresentationStyle(appearance) : ''}${homepage || sharedVendor ? '' : `;--font-heading:${fonts[context.theme.headingFont]}`}`
+  ? `${storefrontThemeStyle(appearance)};${premium ? farmhousePresentationStyle(appearance) : ''}${harvestShell ? '' : `;--font-heading:${fonts[context.theme.headingFont]}`}`
   : themeStyle(platformTheme);
 const metadata = context ? seo(context, path) : undefined;
 const pageTitle = title
@@ -74,9 +101,37 @@ const pageTitle = title
   : (metadata?.title ?? 'Storefront unavailable');
 const pageDescription =
   description ?? metadata?.description ?? 'Storefront service unavailable.';
-const editorialShop = editorial && path.startsWith('/products');
+const editorialShop =
+  editorial && !editorialMarket && path.startsWith('/products');
 const editorialHeaderPreorder =
-  editorial && !editorialShop ? await vendorPreorder(Astro, []) : undefined;
+  editorial && !editorialShop && !editorialMarket
+    ? await vendorPreorder(Astro, [])
+    : undefined;
+// Market headers choose a market date for the shop instead of a pickup market.
+let editorialMarketDates: { id: string; marketName: string }[] = [];
+if (editorialMarket && context?.source === 'backend') {
+  try {
+    editorialMarketDates = (
+      await requestMarketShop(Astro).occurrences({
+        options: { skip: 0, take: 12 },
+      })
+    ).marketStorefrontOccurrences.items.map((occurrence) => ({
+      id: occurrence.id,
+      marketName: marketDateParts(occurrence).date,
+    }));
+  } catch {
+    /* The header remains usable without its date selector. */
+  }
+}
+// The shop remembers a chosen market date; the header shows it on every page.
+const editorialMarketChosen =
+  Astro.url.searchParams.get('occurrence') ??
+  Astro.cookies.get(preorderCookie(context?.storefrontId ?? ''))?.value;
+const editorialMarketSelected = editorialMarketDates.some(
+  (date) => date.id === editorialMarketChosen,
+)
+  ? editorialMarketChosen
+  : undefined;
 ---
 
 <!doctype html>
@@ -94,13 +149,17 @@ const editorialHeaderPreorder =
   data-template-version={premium ? '2' : undefined}
   data-farmhouse-palette={premium ? premiumSettings?.palette : undefined}
   data-farmhouse-type={premium ? premiumSettings?.typography : undefined}
-  data-storefront-hover={appearance.buttonHover}
+  data-theme-palette={marketTheme || bloom ? appearance.palette : undefined}
+  data-storefront-hover={bloom ? undefined : appearance.buttonHover}
   data-editor-preview={Astro.locals.editorPreview ? 'true' : undefined}
 >
   <head>
     <meta charset="UTF-8" />
     {premium && <link rel="stylesheet" href={farmhouseStyles} />}
     {editorial && <link rel="stylesheet" href={editorialStyles} />}
+    {meadow && <link rel="stylesheet" href={meadowStyles} />}
+    {hearth && <link rel="stylesheet" href={hearthStyles} />}
+    {bloom && <link rel="stylesheet" href={bloomStyles} />}
     <style
       id="storefront-text-sizes"
       is:inline
@@ -148,17 +207,17 @@ const editorialHeaderPreorder =
     )}
     <div
       class:list={[
-        !premium && !editorial && 'container',
+        !premium && !editorial && !marketTheme && !bloom && 'container',
+        bloom && 'bloom-site',
+        meadow && 'meadow-site',
+        hearth && 'hearth-site',
         premium && 'farmhouse-site',
         premium && homepage && 'farmhouse-homepage',
         premium && (homepage || path === '/products') && 'farmhouse-refined',
         editorial && 'editorial-market-site',
-        !editorial &&
-          !farmhouse &&
-          !premium &&
-          (homepage || sharedVendor) &&
-          'harvest-home',
+        !editorial && !farmhouse && !premium && harvestShell && 'harvest-home',
         farmhouse && 'mf-site',
+        context?.kind === 'MARKET' && 'market-text-links',
       ]}
     >
       {context && premium && (
@@ -167,17 +226,28 @@ const editorialHeaderPreorder =
       {context && editorial && !editorialShop && (
         <EditorialShopHeader
           context={context}
-          occurrences={editorialHeaderPreorder?.occurrences ?? []}
-          selectedId={editorialHeaderPreorder?.selected?.id}
+          occurrences={
+            editorialMarket
+              ? editorialMarketDates
+              : (editorialHeaderPreorder?.occurrences ?? [])
+          }
+          selectedId={
+            editorialMarket
+              ? editorialMarketSelected
+              : editorialHeaderPreorder?.selected?.id
+          }
         />
       )}
       {context && farmhouse && <FarmhouseHeader context={context} />}
+      {context && meadow && <MeadowHeader context={context} />}
+      {context && hearth && <HearthHeader context={context} />}
       {context &&
         !editorial &&
         !farmhouse &&
         !premium &&
-        (homepage || sharedVendor) && <HarvestHeader context={context} />}
-      {context && !homepage && !sharedVendor && (
+        !marketTheme &&
+        harvestShell && <HarvestHeader context={context} />}
+      {context && !harvestShell && (
         <header class="site-header">
           <a class="brand" href="/">
             {context.theme.logo && (
@@ -190,7 +260,7 @@ const editorialHeaderPreorder =
             <a href="/account">Account</a>
             {context.kind === 'MARKET' ? (
               <>
-                <a href="/#occurrences">Occurrences</a>
+                <a href="/#markets">Occurrences</a>
                 {context.source === 'backend' && (
                   <MarketCartLink
                     storefrontId={context.storefrontId ?? ''}
@@ -218,9 +288,13 @@ const editorialHeaderPreorder =
         <PremiumFooter context={context} />
       ) : context && editorial ? (
         <EditorialFooter context={context} />
+      ) : context && meadow ? (
+        <MeadowFooter context={context} />
+      ) : context && hearth ? (
+        <HearthFooter context={context} />
       ) : context && farmhouse ? (
         <FarmhouseFooter context={context} />
-      ) : context && (homepage || sharedVendor) ? (
+      ) : context && harvestShell ? (
         <HarvestFooter context={context} />
       ) : (
         <footer class="site-footer">

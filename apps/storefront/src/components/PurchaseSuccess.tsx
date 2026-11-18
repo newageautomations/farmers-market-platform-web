@@ -1,19 +1,20 @@
 import { CheckoutPickup } from './CheckoutPickup';
 import { buttonClassName } from '@market/ui/presentation';
-import { Button } from '@market/ui';
-import { useState } from 'react';
 import type { CheckoutView } from '@market/api';
 import { CheckoutSummary } from './Checkout';
-import { shopCall } from './shop-client';
 export function PurchaseSuccess({
   view,
-  storefrontId,
+  images = {},
+  timezone,
+  shopHref = '/products',
 }: {
   view: CheckoutView;
   storefrontId: string;
+  images?: Record<string, string>;
+  timezone?: string;
+  shopHref?: string;
 }) {
-  const [state, setState] = useState(view.profile ? 'AUTHENTICATED' : ''),
-    [pending, setPending] = useState(false);
+  const contact = view.contact ?? view.profile;
   if (!view.committed || !view.code)
     return (
       <p>
@@ -23,83 +24,84 @@ export function PurchaseSuccess({
     );
   return (
     <div className="checkout-confirmation">
-      <h2>Thank you for your order</h2>
-      <p>Your order is confirmed.</p>
-      <p>
-        Payment status:{' '}
-        {view.paymentStatus === 'SUCCEEDED'
-          ? 'Succeeded'
-          : view.paymentStatus.toLowerCase().replaceAll('_', ' ')}
-      </p>
-      <p>
-        Order reference: <strong>{view.code}</strong>
-      </p>
       <div className="vendor-checkout-layout">
-        <CheckoutPickup view={view} />
+        <div className="checkout-confirmation-details">
+          <h2>Thank you for your order</h2>
+          <p>Your order is confirmed.</p>
+          <p>
+            Payment status:{' '}
+            {view.paymentStatus === 'SUCCEEDED'
+              ? 'Succeeded'
+              : view.paymentStatus.toLowerCase().replaceAll('_', ' ')}
+          </p>
+          <p>
+            Order reference: <strong>{view.code}</strong>
+          </p>
+          {contact && (
+            <section
+              className="checkout-section checkout-contact-details"
+              aria-labelledby="confirmation-contact-title"
+            >
+              <h2 id="confirmation-contact-title">Contact details</h2>
+              <dl className="checkout-contact-facts">
+                <div>
+                  <dt>Name:</dt>
+                  <dd>
+                    {contact.firstName} {contact.lastName}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Email:</dt>
+                  <dd>{contact.emailAddress}</dd>
+                </div>
+                <div>
+                  <dt>Phone:</dt>
+                  <dd>{contact.phoneNumber || 'Not provided'}</dd>
+                </div>
+              </dl>
+            </section>
+          )}
+          <CheckoutPickup view={view} timezone={timezone} />
+        </div>
         <section
           className="checkout-order-summary"
           aria-label="Purchased items"
         >
-          <CheckoutSummary view={view} />
+          <CheckoutSummary
+            view={view}
+            images={images}
+            showPickup={false}
+            showContact={false}
+          />
         </section>
       </div>
-      <a className={buttonClassName({ variant: 'primary' })} href="/products">
-        Continue shopping
-      </a>
-      {state === 'AUTHENTICATED' ? (
+      {view.profile ? (
         <a
-          className={buttonClassName({
-            variant: 'secondary',
-            className: 'button secondary',
-          })}
+          className={buttonClassName({ variant: 'secondary' })}
           href="/account/orders"
         >
           View your orders
         </a>
       ) : (
-        <>
-          <p className="alert ui-alert ui-alert-info" role="status">
-            {state === 'ACCEPTED'
-              ? 'Check your email to access your orders.'
-              : state === 'UNAVAILABLE'
-                ? 'An account access email could not currently be sent. Your order is confirmed. You can request an account link later.'
-                : 'You can access your orders with a one-time email link whenever you choose.'}
-          </p>
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={pending || state === 'ACCEPTED'}
-            onClick={async () => {
-              setPending(true);
-              try {
-                const r = await shopCall<{ state: string }>(
-                  storefrontId,
-                  'purchase-account-link',
-                  { orderId: view.orderId },
-                );
-                setState(r.state);
-              } catch {
-                setState('UNAVAILABLE');
-              } finally {
-                setPending(false);
-              }
-            }}
-          >
-            Email me an account link
-          </Button>
+        <section
+          className="checkout-account-invitation"
+          aria-label="Track your orders"
+        >
+          <p>Want to keep track of your orders?</p>
           <p>
-            <a
-              className={buttonClassName({
-                variant: 'secondary',
-                className: 'button secondary',
-              })}
-              href="/account/login"
-            >
-              Request a fresh account link later
-            </a>
+            Create a free account. We will prefill your details from checkout.
           </p>
-        </>
+          <a
+            className={buttonClassName({ variant: 'primary' })}
+            href={`/account/signup?order=${encodeURIComponent(view.orderId)}`}
+          >
+            Create a free account
+          </a>
+        </section>
       )}
+      <a className={buttonClassName({ variant: 'primary' })} href={shopHref}>
+        Continue shopping
+      </a>
     </div>
   );
 }

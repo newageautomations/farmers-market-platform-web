@@ -81,8 +81,8 @@ describe('Market public contract boundaries', () => {
     ).toEqual({
       page: 2,
       options: {
-        skip: 12,
-        take: 12,
+        skip: 20,
+        take: 20,
         distinctProducts: true,
         sort: 'PRICE_DESC',
         categoryIds: [],

@@ -1,7 +1,7 @@
 import { MarketsWorkspace } from './MarketsWorkspace';
 import { MarketDetailPage } from './MarketDetail';
 import { MarketOccurrencePage } from './MarketOccurrence';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { mayCommand } from '@market/admin-core';
 import { Button } from '@market/ui';
 import type { VendorService } from './service';
@@ -11,13 +11,29 @@ export { PublicationControls } from './PublicationControls';
 function VendorLinkRequests({ service }: { service: VendorService }) {
   const read = useCallback(() => service.linkRequests!(), [service]);
   const query = useRead('vendor-link-requests', read);
+  const requested = new URLSearchParams(window.location.search).get(
+    'linkRequest',
+  );
+  const requestedRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const target = requestedRef.current;
+    if (target) {
+      target.scrollIntoView?.({ block: 'center' });
+      target.focus({ preventScroll: true });
+    }
+  }, [query.data]);
   const [busy, setBusy] = useState(false),
     [failed, setFailed] = useState(false);
   return (
     <section aria-label="Market identity link requests">
       <ReadState {...query} retry={query.refresh} />
       {query.data?.map((r) => (
-        <div key={r.id}>
+        <div
+          key={r.id}
+          ref={String(r.id) === requested ? requestedRef : undefined}
+          tabIndex={-1}
+          aria-label={`Business link request from ${r.marketName}`}
+        >
           <p>
             {r.marketName} requests verification that {r.businessName} is your
             business.

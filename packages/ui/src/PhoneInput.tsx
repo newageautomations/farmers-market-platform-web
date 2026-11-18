@@ -19,8 +19,10 @@ import {
 } from 'libphonenumber-js/max';
 
 const names = { of: (c: string) => countryNames[c] ?? c };
-const countries = getCountries().sort((a, b) =>
-  (names.of(a) ?? a).localeCompare(names.of(b) ?? b),
+const countries = getCountries().sort(
+  (a, b) =>
+    Number(b === 'US') - Number(a === 'US') ||
+    (names.of(a) ?? a).localeCompare(names.of(b) ?? b),
 );
 const subscribeHydration = () => () => {};
 const clientHydration = () => true;
@@ -159,6 +161,7 @@ export function PhoneInput({
       )}
       <div className="phone-controls">
         <SearchSelect
+          openOnFocus={false}
           id={`${inputId}-country`}
           label={`Country calling code${label ? ` for ${label}` : ''}`}
           placeholder="Choose country"

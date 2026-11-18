@@ -139,7 +139,11 @@ describe('vendor dashboard data', () => {
       ['Boerne needs Food Handler Certificate', 'warning'],
     ]);
     expect(items[1]!.detail).toBe('Expires in 12 days (Nov 18, 2026).');
-    expect(items[2]!.href).toBe('/vendor/documents?view=requests&market=2');
+    expect(items[0]!.href).toBe('/vendor/documents?document=a');
+    expect(items[1]!.href).toBe('/vendor/documents?document=b');
+    expect(items[2]!.href).toBe(
+      '/vendor/documents?view=requests&market=2&requestId=r',
+    );
   });
 
   it('asks for attendance only on near dates without a response', () => {
@@ -184,11 +188,51 @@ describe('vendor dashboard data', () => {
       date('1', '2026-11-07T15:00:00Z', 'confirmed'),
     ]);
     expect(items).toHaveLength(1);
+    expect(items[0]!.href).toBe('/vendor/booths?occurrence=1&invoice=1');
+    expect(boothFeeUrgencies(assignments, [])[0]!.href).toBe(
+      '/vendor/booths?occurrence=1&invoice=1',
+    );
     expect(items[0]!.detail).toMatch(/^\$45\.00 due for Riverside/);
     expect(
       sortUrgent([...items, { ...items[0]!, id: 'x', tone: 'danger' }])[0]!.id,
     ).toBe('x');
   });
+
+  it.each(['OPEN', 'PAST_DUE'])(
+    'omits %s booth fees for cancelled dates even when the invoice still has a balance',
+    (status) => {
+      const assignment = {
+        occurrenceId: 1,
+        occurrenceStatus: 'cancelled',
+        startsAt: '2026-11-07T15:00:00Z',
+        space: { label: 'A01' },
+        invoices: [
+          { id: 1, status, currency: 'USD', totalMinor: 4500, paidMinor: 1000 },
+        ],
+      } as VendorBoothAssignment;
+      expect(boothFeeUrgencies(new Map([['1', assignment]]), [])).toEqual([]);
+
+      const cancelledDate = date('1', assignment.startsAt);
+      cancelledDate.occurrence = {
+        ...cancelledDate.occurrence,
+        status: 'cancelled',
+      };
+      expect(
+        boothFeeUrgencies(
+          new Map([['1', { ...assignment, occurrenceStatus: undefined }]]),
+          [cancelledDate],
+        ),
+      ).toEqual([]);
+
+      // Scheduled dates with a remaining balance still need the vendor's attention.
+      expect(
+        boothFeeUrgencies(
+          new Map([['1', { ...assignment, occurrenceStatus: 'scheduled' }]]),
+          [],
+        ),
+      ).toHaveLength(1);
+    },
+  );
 
   it('derives this week from records, open work first', () => {
     const tasks = weekTasks({

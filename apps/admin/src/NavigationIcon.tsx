@@ -11,6 +11,7 @@ const paths: Record<string, string> = {
   applications: 'M7 3h10v3h3v15H4V6h3m0-3v5h10V3M8 12h8m-8 4h5',
   occurrences: 'M5 5h14v16H5V5Zm3-3v6m8-6v6M5 10h14m-10 4h2m3 0h2m-7 4h2',
 
+  preparation: 'M5 3h14v18H5V3Zm3 5 2 2 4-4m-6 8h8m-8 4h6',
   operations: 'M4 4h16v16H4V4Zm4 4h2m4 0h2m-8 4h2m4 0h2m-8 4h8',
   directory: 'M5 3h14v18H5V3Zm-2 4h4m-4 5h4m-4 5h4m4-10h4m-4 5h4m-4 5h4',
   rentals: 'M3 7 12 3l9 4v10l-9 4-9-4V7Zm0 0 9 4 9-4m-9 4v10m-5-16 9 4',

@@ -23,6 +23,7 @@ import { vendorOrderStatus } from './order-presentation';
 import '@market/ui/farmstand.css';
 import './order-detail.css';
 import './pickup.css';
+import { DetailSheet, usePhoneRecords } from '../market/mobile';
 
 function PickupStatusIcon({
   status,
@@ -66,7 +67,7 @@ function Payment({ order }: { order: PickupOrder }) {
     <span className="pickup-muted">Unavailable</span>
   );
 }
-function Status({ order }: { order: PickupOrder }) {
+export function PickupStatus({ order }: { order: PickupOrder }) {
   const state = pickupState(order);
   return (
     <Badge
@@ -93,14 +94,20 @@ function amount(order: PickupOrder) {
 }
 
 export function VendorPickup({ service }: { service: VendorService }) {
+  const records = usePhoneRecords();
   const load = useCallback(() => readPickupOrders(service), [service]);
   const query = useRead(`pickup:${service.vendorId}`, load);
   const [market, setMarket] = useState('all');
-  const [occurrence, setOccurrence] = useState('all');
+  const [occurrence, setOccurrence] = useState(
+    () =>
+      new URLSearchParams(window.location.search).get('occurrence') || 'all',
+  );
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [payment, setPayment] = useState('all');
   const [selected, setSelected] = useState<string | null>(null);
+  // Phones and tablets show the details in a sheet once a row is chosen.
+  const [detailOpen, setDetailOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const orders = query.data ?? [];
   const markets = new Map(
@@ -337,6 +344,16 @@ export function VendorPickup({ service }: { service: VendorService }) {
             <FarmstandTable
               wide
               label="Pickup queue"
+              recordDetails={records({
+                status: 2,
+                labels: visible.map((row) => row.customer),
+                onOpen: (index) => {
+                  const row = visible[index];
+                  if (!row) return;
+                  setSelected(row.portion.operationalOrderId);
+                  setDetailOpen(true);
+                },
+              })}
               headings={[
                 'Customer',
                 'Payment',
@@ -368,9 +385,10 @@ export function VendorPickup({ service }: { service: VendorService }) {
                       className="farmstand-text-action pickup-customer"
                       aria-pressed={row === order}
                       disabled={busy}
-                      onClick={() =>
-                        setSelected(row.portion.operationalOrderId)
-                      }
+                      onClick={() => {
+                        setSelected(row.portion.operationalOrderId);
+                        setDetailOpen(true);
+                      }}
                     >
                       <span className="farmstand-text-link">
                         {row.customer}
@@ -392,7 +410,7 @@ export function VendorPickup({ service }: { service: VendorService }) {
                     <Payment order={row} />
                   </td>
                   <td>
-                    <Status order={row} />
+                    <PickupStatus order={row} />
                   </td>
                   <td>{row.portion.quantity}</td>
                   <td>
@@ -410,47 +428,56 @@ export function VendorPickup({ service }: { service: VendorService }) {
               </EmptyState>
             )}
           </FarmstandPanel>
-          <FarmstandPanel
-            as="section"
-            className="pickup-details"
-            aria-label="Pickup details"
+          <DetailSheet
+            title="Pickup details"
+            open={detailOpen && !!order}
+            onClose={() => setDetailOpen(false)}
           >
-            <div className="pickup-panel-heading">
-              <FarmstandIcon name="package" />
-              <div>
-                <h2>Pickup details</h2>
-                <p>Order information for a quick handoff at the market.</p>
+            <FarmstandPanel
+              as="section"
+              className="pickup-details"
+              aria-label="Pickup details"
+            >
+              <div className="pickup-panel-heading">
+                <FarmstandIcon name="package" />
+                <div>
+                  <h2>Pickup details</h2>
+                  <p>Order information for a quick handoff at the market.</p>
+                </div>
               </div>
-            </div>
-            {order ? (
-              <PickupDetails
-                key={`${order.portion.operationalOrderId}:${JSON.stringify(order.portion.lines)}`}
-                order={order}
-                service={service}
-                refresh={refresh}
-                onPendingChange={setBusy}
-              />
-            ) : (
-              <EmptyState title="Select an order" />
-            )}
-          </FarmstandPanel>
+              {order ? (
+                <PickupDetails
+                  key={`${order.portion.operationalOrderId}:${JSON.stringify(order.portion.lines)}`}
+                  order={order}
+                  service={service}
+                  refresh={refresh}
+                  onPendingChange={setBusy}
+                />
+              ) : (
+                <EmptyState title="Select an order" />
+              )}
+            </FarmstandPanel>
+          </DetailSheet>
         </div>
       )}
     </div>
   );
 }
 
-function PickupDetails({
+export function PickupDetails({
   order,
   service,
   refresh,
   onPendingChange,
+  itemChecklist = false,
 }: {
+  itemChecklist?: boolean;
   order: PickupOrder;
   service: VendorService;
   refresh: () => void;
   onPendingChange: (busy: boolean) => void;
 }) {
+  const [gathered, setGathered] = useState<Set<string>>(() => new Set());
   return (
     <div className="pickup-detail-body">
       <div className="pickup-identity">
@@ -462,7 +489,7 @@ function PickupDetails({
       </div>
       <div className="pickup-detail-status">
         <Payment order={order} />
-        <Status order={order} />
+        <PickupStatus order={order} />
       </div>
       <div className="pickup-location">
         <FarmstandIcon name="map-pin" />
@@ -479,10 +506,35 @@ function PickupDetails({
       </div>
       <FarmstandTable
         label="Pickup order items"
-        headings={['Item', 'Variant / SKU', 'Qty']}
+        headings={
+          itemChecklist
+            ? ['Gathered', 'Item', 'Variant / SKU', 'Qty']
+            : ['Item', 'Variant / SKU', 'Qty']
+        }
       >
         {order.portion.lines.map((line) => (
           <tr key={line.operationalLineId}>
+            {itemChecklist && (
+              <td>
+                <Checkbox
+                  aria-label={`Gather ${line.quantity} × ${line.variantName}`}
+                  checked={
+                    line.fulfilledQuantity >= line.quantity ||
+                    gathered.has(line.operationalLineId)
+                  }
+                  disabled={line.remainingQuantity === 0}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setGathered((previous) => {
+                      const next = new Set(previous);
+                      if (checked) next.add(line.operationalLineId);
+                      else next.delete(line.operationalLineId);
+                      return next;
+                    });
+                  }}
+                />
+              </td>
+            )}
             <th scope="row">
               <span className="pickup-item">
                 {order.itemDetails?.[line.variantId]?.image ? (
@@ -544,18 +596,20 @@ function PickupDetails({
               : 'There are no eligible items to hand off in this order.'}
         </p>
       )}
-      <FarmstandLink
-        href={`/vendor/orders/${encodeURIComponent(order.portion.operationalOrderId)}`}
-        variant="secondary"
-      >
-        <FarmstandIcon name="arrow-up-right" />
-        View Full Order
-      </FarmstandLink>
-      <RouteLink
-        to={`/vendor/orders/packing?occurrence=${encodeURIComponent(order.portion.occurrenceId ?? '')}`}
-      >
-        View packing list
-      </RouteLink>
+      <div className="pickup-detail-links">
+        <FarmstandLink
+          href={`/vendor/orders/${encodeURIComponent(order.portion.operationalOrderId)}`}
+          variant="secondary"
+        >
+          <FarmstandIcon name="arrow-up-right" />
+          View Full Order
+        </FarmstandLink>
+        <RouteLink
+          to={`/vendor/orders/packing?occurrence=${encodeURIComponent(order.portion.occurrenceId ?? '')}`}
+        >
+          View packing list
+        </RouteLink>
+      </div>
     </div>
   );
 }

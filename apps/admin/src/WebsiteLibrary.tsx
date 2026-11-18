@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   createStorefrontAppearanceApi,
   createWebsiteLibraryApi,
@@ -12,23 +12,61 @@ import {
 } from '@market/api';
 import {
   Badge,
-  Button,
-  Card,
   Dialog,
   EmptyState,
   ErrorState,
   Field,
+  IconButton,
   Input,
   Pagination,
   SelectField,
   Spinner,
+  Tooltip,
   UtilityIcon,
 } from '@market/ui';
 import { buttonClassName } from '@market/ui/presentation';
-import { storefrontThemes } from '@market/theme/storefront';
+import {
+  FarmstandButton as Button,
+  FarmstandIcon,
+  FarmstandPanel,
+} from '@market/ui/farmstand';
+import {
+  marketOnlyTheme,
+  marketStorefrontThemes,
+  storefrontThemes,
+  usesHarvestContract,
+  type StorefrontThemeId,
+} from '@market/theme/storefront';
 import { VisualStorefrontEditor } from './VisualStorefrontEditor';
 import type { StorefrontConnection } from './StorefrontAppearance';
+import { WorkspaceFrame } from './WorkspaceFrame';
+import { WebsiteThumbnail } from './WebsiteThumbnail';
+import { Panel } from './vendor/application-detail';
 import './website-library.css';
+
+/** Website workspace heading shared by the library and its desktop notice. */
+export function WebsiteWorkspace({
+  actions,
+  children,
+}: {
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <WorkspaceFrame
+      icon="store"
+      title="Website"
+      description="Create, edit and publish the websites for your storefront."
+      tabs={[]}
+      value="website"
+      onChange={() => {}}
+      className="website-library farmstand-controls"
+      actions={actions}
+    >
+      {children}
+    </WorkspaceFrame>
+  );
+}
 
 export function websiteEditorHref(
   storefrontId: string,
@@ -49,8 +87,11 @@ export function WebsiteLibrary({
   connection,
   library: suppliedLibrary,
   appearance: suppliedAppearance,
+  market = false,
 }: {
   connection: StorefrontConnection;
+  /** Market websites reuse this library with the Harvest and Editorial Market templates. */
+  market?: boolean;
   library?: WebsiteLibraryApi;
   appearance?: StorefrontAppearanceApi;
 }) {
@@ -156,16 +197,19 @@ export function WebsiteLibrary({
   if (websiteId) {
     if (!selected)
       return (
-        <>
+        <WebsiteWorkspace>
           {feedback}
           {!error && <Spinner label="Loading website" />}
           <a
-            className={buttonClassName({ variant: 'secondary' })}
+            className={buttonClassName({
+              variant: 'secondary',
+              className: 'farmstand-button',
+            })}
             href={websiteEditorHref(storefrontId)}
           >
             Back to Website Library
           </a>
-        </>
+        </WebsiteWorkspace>
       );
     const instanceApi: StorefrontAppearanceApi = {
       ...appearance,
@@ -182,114 +226,143 @@ export function WebsiteLibrary({
         api={instanceApi}
         dashboardHref={websiteEditorHref(storefrontId)}
         backLabel="Back to Website Library"
+        market={market}
         initialMode={params.get('preview') === '1' ? 'browse' : 'inspect'}
         onSaved={(value) => setSelected(value as StorefrontWebsiteRecord)}
       />
     );
   }
   const card = (record: StorefrontWebsiteRecord) => (
-    <Card key={record.id}>
-      <div className="website-library-card-title">
-        <h3>{record.name}</h3>
-        <Badge tone={record.isLive ? 'success' : 'neutral'}>
-          {record.isLive ? 'Live' : 'Draft'}
-        </Badge>
-      </div>
-      <p>
-        {storefrontThemes[record.draft.theme].label}
-        {record.templateId === 'modern-farmhouse' &&
-        record.templateVersion === 1
-          ? ' · Legacy compatibility'
-          : storefrontThemes[record.draft.theme].premium
-            ? ' · Premium'
-            : ''}
-      </p>
-      <p>
-        {record.isLive && record.publishedAt
-          ? `Published ${new Date(record.publishedAt).toLocaleString()}`
-          : `Edited ${new Date(record.updatedAt).toLocaleString()}`}
-      </p>
-      <div className="ui-actions">
-        <a
-          className={buttonClassName()}
-          href={websiteEditorHref(storefrontId, record.id)}
-        >
-          <UtilityIcon name="edit" /> Edit
-        </a>
-        {record.isLive && url && (
-          <a
-            className={buttonClassName({ variant: 'secondary' })}
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Visit Website <UtilityIcon name="external" />
-          </a>
-        )}
-
-        <Button
-          variant="tertiary"
-          disabled={
-            busy ||
-            (record.templateId !== 'harvest' &&
-              !(
-                record.templateId === 'modern-farmhouse' &&
-                record.templateVersion === 2
-              ) &&
-              !(
-                record.templateId === 'editorial-market' &&
-                record.templateVersion === 1
-              ))
-          }
-          onClick={() =>
-            void run(async () => {
-              const copy = await library.create(
-                storefrontId,
-                `${record.name.slice(0, 193)} (copy)`,
-                record.templateId,
-                record.id,
-              );
-              window.location.assign(websiteEditorHref(storefrontId, copy.id));
-            })
-          }
-        >
-          Duplicate
-        </Button>
-        <Button
-          variant="tertiary"
-          disabled={busy}
-          onClick={() => open('rename', record)}
-        >
-          Rename
-        </Button>
-        {!record.isLive && (
-          <Button
-            variant="secondary"
+    <FarmstandPanel
+      key={record.id}
+      className="website-library-card"
+      data-live={record.isLive || undefined}
+    >
+      <WebsiteThumbnail
+        record={record}
+        storefrontId={storefrontId}
+        preview={library.preview}
+      />
+      <div className="website-library-card-body">
+        <div className="website-library-card-title">
+          <h3>{record.name}</h3>
+          <IconButton
+            icon="text"
+            label="Rename"
+            variant="tertiary"
             disabled={busy}
-            onClick={() => open('publish', record)}
-          >
-            Publish
-          </Button>
-        )}
-        {!record.isLive && (
-          <Button
-            variant="destructive-outline"
-            disabled={busy}
-            onClick={() => open('delete', record)}
-          >
-            Delete
-          </Button>
-        )}
+            onClick={() => open('rename', record)}
+          />
+          <Badge tone={record.isLive ? 'success' : 'neutral'}>
+            {record.isLive ? 'Live' : 'Draft'}
+          </Badge>
+        </div>
+        <p>
+          {storefrontThemes[record.draft.theme].label}
+          {record.templateId === 'modern-farmhouse' &&
+          record.templateVersion === 1
+            ? ' · Legacy compatibility'
+            : storefrontThemes[record.draft.theme].premium
+              ? ' · Premium'
+              : ''}
+        </p>
+        <p>
+          {record.isLive && record.publishedAt
+            ? `Published ${new Date(record.publishedAt).toLocaleString()}`
+            : `Edited ${new Date(record.updatedAt).toLocaleString()}`}
+        </p>
+        <div className="ui-actions website-library-card-actions">
+          <Tooltip label="Edit">
+            <a
+              className={buttonClassName({
+                iconOnly: true,
+                className: 'farmstand-button',
+              })}
+              href={websiteEditorHref(storefrontId, record.id)}
+              aria-label="Edit"
+            >
+              <UtilityIcon name="edit" />
+            </a>
+          </Tooltip>
+          <IconButton
+            icon="copy"
+            label="Duplicate"
+            disabled={
+              busy ||
+              (!usesHarvestContract(record.templateId) &&
+                !(
+                  record.templateId === 'modern-farmhouse' &&
+                  record.templateVersion === 2
+                ) &&
+                !(
+                  record.templateId === 'editorial-market' &&
+                  record.templateVersion === 1
+                ))
+            }
+            onClick={() =>
+              void run(async () => {
+                const copy = await library.create(
+                  storefrontId,
+                  `${record.name.slice(0, 193)} (copy)`,
+                  record.templateId,
+                  record.id,
+                );
+                window.location.assign(
+                  websiteEditorHref(storefrontId, copy.id),
+                );
+              })
+            }
+          />
+          {record.isLive && url && (
+            <a
+              className={buttonClassName({
+                variant: 'secondary',
+                size: 'compact',
+                className: 'farmstand-button',
+              })}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Visit Website <UtilityIcon name="external" />
+            </a>
+          )}
+          {!record.isLive && (
+            <IconButton
+              icon="trash"
+              label="Delete"
+              variant="destructive-outline"
+              disabled={busy}
+              onClick={() => open('delete', record)}
+            />
+          )}
+          <span className="website-library-card-spacer" />
+          {!record.isLive && (
+            <Button
+              variant="secondary"
+              size="compact"
+              disabled={busy}
+              onClick={() => open('publish', record)}
+            >
+              <FarmstandIcon name="upload" />
+              Publish
+            </Button>
+          )}
+        </div>
       </div>
-    </Card>
+    </FarmstandPanel>
   );
   return (
-    <div className="website-library">
-      <div className="ui-actions">
+    <WebsiteWorkspace
+      actions={
         <Button disabled={busy || !storefrontId} onClick={() => open('create')}>
-          New Website <UtilityIcon name="plus" />
+          <FarmstandIcon name="plus" />
+          New Website
         </Button>
-        {links && links.length > 1 && (
+      }
+    >
+      {links && links.length > 1 && (
+        <div className="ui-actions">
           <SelectField
             id="library-storefront"
             label="Storefront"
@@ -305,8 +378,8 @@ export function WebsiteLibrary({
               </option>
             ))}
           </SelectField>
-        )}
-      </div>
+        </div>
+      )}
       {!dialog && feedback}
       {links?.length === 0 && (
         <EmptyState title="No storefront is configured" />
@@ -315,34 +388,58 @@ export function WebsiteLibrary({
         <Spinner label="Loading Website Library" />
       )}
       {page && (
-        <>
-          {page.live && (
-            <section aria-label="Live Website">{card(page.live)}</section>
-          )}
-          <section aria-label="Draft Websites" className="website-library-grid">
-            {page.items.filter((record) => !record.isLive).map(card)}
-            {!page.items.some((record) => !record.isLive) && (
-              <EmptyState
-                title={
-                  page.totalItems <= 1
-                    ? 'Create your next website'
-                    : 'No drafts on this page'
-                }
+        <div className="website-library-columns">
+          <div className="website-library-main">
+            {page.live && (
+              <section
+                aria-label="Live Website"
+                className="website-library-live"
               >
-                <p>
-                  Start from a theme template or duplicate an existing website.
-                </p>
-              </EmptyState>
+                {card(page.live)}
+              </section>
             )}
-          </section>
-          <Pagination
-            hasPrevious={skip > 0}
-            hasNext={skip + 20 < page.totalItems}
-            onPrevious={() => setSkip(Math.max(0, skip - 20))}
-            onNext={() => setSkip(skip + 20)}
-            summary={`${page.totalItems} websites`}
-          />
-        </>
+            <section
+              aria-label="Draft Websites"
+              className="website-library-grid"
+            >
+              {page.items.filter((record) => !record.isLive).map(card)}
+              {!page.items.some((record) => !record.isLive) && (
+                <EmptyState
+                  title={
+                    page.totalItems <= 1
+                      ? 'Create your next website'
+                      : 'No drafts on this page'
+                  }
+                >
+                  <p>
+                    Start from a theme template or duplicate an existing
+                    website.
+                  </p>
+                </EmptyState>
+              )}
+            </section>
+            <Pagination
+              hasPrevious={skip > 0}
+              hasNext={skip + 20 < page.totalItems}
+              onPrevious={() => setSkip(Math.max(0, skip - 20))}
+              onNext={() => setSkip(skip + 20)}
+              summary={`${page.totalItems} websites`}
+            />
+          </div>
+          <aside
+            className="website-library-sidebar application-detail"
+            aria-label="Website statistics"
+          >
+            <Panel
+              icon={{ farmstand: 'chart-column' }}
+              title="Website statistics"
+            >
+              <p className="website-library-analytics">
+                Site analytics coming soon.
+              </p>
+            </Panel>
+          </aside>
+        </div>
       )}
       {dialog && (
         <Dialog
@@ -402,7 +499,15 @@ export function WebsiteLibrary({
                 onChange={(event) => setTemplate(event.target.value)}
               >
                 {Object.entries(storefrontThemes)
-                  .filter(([, theme]) => theme.available)
+                  .filter(
+                    ([id, theme]) =>
+                      theme.available &&
+                      (market
+                        ? marketStorefrontThemes.includes(
+                            id as StorefrontThemeId,
+                          )
+                        : !marketOnlyTheme({ theme: id })),
+                  )
                   .map(([id, theme]) => (
                     <option key={id} value={id}>
                       {theme.label}
@@ -462,6 +567,6 @@ export function WebsiteLibrary({
           </form>
         </Dialog>
       )}
-    </div>
+    </WebsiteWorkspace>
   );
 }

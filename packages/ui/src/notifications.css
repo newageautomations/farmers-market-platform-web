@@ -599,3 +599,157 @@
 .notification-detail p.notification-purge {
   margin: 0;
 }
+
+/* Compact bell (opt-in `compactBell`, Market Manager topbar). */
+.notification-menu-count {
+  position: absolute;
+  top: 2px;
+  right: -7px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 999px;
+  border: 2px solid var(--brand-surface);
+  box-sizing: content-box;
+  background: var(--status-danger-fg, #b33535);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+  pointer-events: none;
+}
+.notification-menu > .ui-header-menu-panel {
+  width: min(380px, calc(100vw - 1.5rem));
+  display: flex;
+  flex-direction: column;
+  max-height: min(520px, calc(100dvh - 5rem));
+}
+.notification-menu-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem 0.7rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--brand-primary) 11%, var(--brand-surface));
+}
+.notification-menu-header strong {
+  font-size: 0.95rem;
+}
+.notification-menu-unread {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--brand-primary);
+}
+.notification-menu-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.notification-menu-body > :is(.ui-spinner, .spinner, .ui-alert, .error-state) {
+  margin: 0.75rem 1rem;
+}
+.notification-menu-empty {
+  margin: 0;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--brand-muted);
+  font-size: 0.9rem;
+}
+.notification-menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem;
+}
+.notification-menu-list > li {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  border-radius: 8px;
+}
+.notification-menu-list > li:hover,
+.notification-menu-list > li:has(.notification-open:focus-visible) {
+  background: color-mix(in srgb, var(--brand-primary) 6%, var(--brand-surface));
+}
+.notification-menu-list .notification-open.notification-open {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0.25rem 0.6rem 0.6rem;
+  border-radius: 8px;
+}
+.notification-menu-list .notification-open:focus-visible {
+  outline: none;
+}
+.notification-menu-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.4rem;
+  border-radius: 50%;
+}
+.notification-menu-new .notification-menu-dot {
+  background: var(--brand-primary);
+}
+.notification-menu-text {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.notification-menu-text > * {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.notification-menu-text strong {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.notification-menu-new .notification-menu-text strong {
+  font-weight: 650;
+}
+.notification-menu-text > span {
+  font-size: 0.82rem;
+  color: var(--brand-muted);
+}
+.notification-menu-text > .notification-menu-meta {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+.notification-menu-list > li > .ui-tooltip-anchor {
+  flex: none;
+  align-self: center;
+  margin-right: 0.3rem;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.notification-menu-list > li:is(:hover, :focus-within) > .ui-tooltip-anchor {
+  opacity: 1;
+}
+@media (hover: none) {
+  .notification-menu-list > li > .ui-tooltip-anchor {
+    opacity: 1;
+  }
+}
+.notification-menu-list > li > .ui-tooltip-anchor .ui-button {
+  --ui-control-height: 30px;
+  width: 30px;
+  border-radius: 8px;
+}
+.notification-menu-footer {
+  display: block;
+  padding: 0.7rem 1rem;
+  border-top: 1px solid
+    color-mix(in srgb, var(--brand-primary) 11%, var(--brand-surface));
+  color: var(--brand-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+.notification-menu-footer:is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--brand-primary) 6%, var(--brand-surface));
+}

@@ -30,6 +30,7 @@ import { LoyaltyIcon } from './LoyaltyIcon';
 import { LoyaltyRewardWizard } from './LoyaltyRewardWizard';
 import type { VendorService } from './service';
 import './loyalty-rewards.css';
+import { usePhoneRecords } from '../market/mobile';
 
 const statusLabels: Record<string, string> = {
   ACTIVE: 'Active',
@@ -187,6 +188,7 @@ export function LoyaltyRewards({
   initialRewardId?: number;
   onEditorClose: () => void;
 }) {
+  const records = usePhoneRecords();
   const api = service.loyalty!;
   const read = useCallback(() => api.overview(), [api]);
   const query = useRead(`loyalty-rewards:${service.vendorId}`, read);
@@ -376,6 +378,11 @@ export function LoyaltyRewards({
             <FarmstandPanel className="rewards-table-panel">
               <FarmstandTable
                 label="Loyalty rewards"
+                recordDetails={records({
+                  status: 3,
+                  action: 5,
+                  labels: shown.map((reward) => reward.terms.name),
+                })}
                 headings={[
                   'Reward',
                   'Points Cost',

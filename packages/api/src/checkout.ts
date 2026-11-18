@@ -1,6 +1,10 @@
 import * as shop from './generated/shop';
 import { transport, type TransportOptions } from './transport';
 export type CheckoutView = shop.CheckoutViewFragment;
+export type StripeCheckoutStatus = shop.StripeCheckoutFragment;
+export type CheckoutPaymentCoverage = NonNullable<CheckoutView['paymentGroup']>;
+export type VendorPaymentObligation =
+  CheckoutPaymentCoverage['obligations'][number];
 export type PickupOption =
   shop.CheckoutPickupQuery['availableOwnedPickup'][number];
 export type CustomerPurchase = shop.CustomerPurchaseFragment;
@@ -10,6 +14,55 @@ export function createCheckoutApi(
 ) {
   const execute = transport('shop', options);
   return {
+    images: async (code: string) =>
+      (
+        await execute(
+          { api: 'shop', document: shop.CheckoutProductImagesDocument },
+          { code },
+        )
+      ).orderByCode?.lines ?? [],
+    stripeEnabled: async () =>
+      (
+        await execute(
+          { api: 'shop', document: shop.StripeCheckoutEnabledDocument },
+          {},
+        )
+      ).stripeCheckoutEnabled,
+    stripePrepare: async () =>
+      (
+        await execute(
+          { api: 'shop', document: shop.PrepareStripeCheckoutDocument },
+          {},
+        )
+      ).prepareStripeCheckout,
+    stripeStart: async (consent: string) =>
+      (
+        await execute(
+          { api: 'shop', document: shop.StartStripeCheckoutDocument },
+          { consent },
+        )
+      ).startStripeCheckout,
+    stripeAdvance: async (groupId: string) =>
+      (
+        await execute(
+          { api: 'shop', document: shop.AdvanceStripeCheckoutDocument },
+          { groupId },
+        )
+      ).advanceStripeCheckout,
+    stripeCancel: async (groupId: string) =>
+      (
+        await execute(
+          { api: 'shop', document: shop.CancelStripeCheckoutDocument },
+          { groupId },
+        )
+      ).cancelStripeCheckout,
+    stripeStatus: async (orderId: string) =>
+      (
+        await execute(
+          { api: 'shop', document: shop.StripeCheckoutStatusDocument },
+          { orderId },
+        )
+      ).stripeCheckoutStatus,
     accountContexts: async () =>
       (
         await execute(
@@ -18,6 +71,20 @@ export function createCheckoutApi(
         )
       )
         .platformAccountContexts as import('./market-operations').PlatformAccountContexts,
+    clearTestPreorderFee: async () =>
+      (
+        await execute(
+          { api: 'shop', document: shop.ClearTestPreorderFeeQuoteDocument },
+          {},
+        )
+      ).clearTestPreorderFeeQuote,
+    freezeTestPreorderFee: async () =>
+      (
+        await execute(
+          { api: 'shop', document: shop.FreezeTestPreorderFeeQuoteDocument },
+          {},
+        )
+      ).freezeTestPreorderFeeQuote,
     status: async (orderId?: string) =>
       (
         await execute(

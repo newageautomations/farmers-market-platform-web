@@ -1,7 +1,12 @@
+import { createPreparationApi, type PreparationApi } from '@market/api';
+import { createMarketDayApi, type MarketDayApi } from '@market/api';
+import { createMarketDayStorefrontApi } from '@market/api';
 import { createTeamService } from '../team/service';
 import type { TeamApi } from '@market/api';
 import {
   createFinanceApi,
+  createBusinessProfileImageApi,
+  type BusinessProfileImageApi,
   createStorefrontAppearanceApi,
   type VendorCategoryApi,
   type FinanceApi,
@@ -20,6 +25,8 @@ import {
   createMarketLoyaltyApi,
   type MarketLoyaltyApi,
   type MarketDayChecklist,
+  createMarketDashboardLayoutApi,
+  type MarketDashboardLayoutApi,
 } from '@market/api';
 import { mayMarketCommand, type AdminContext } from '@market/admin-core';
 
@@ -27,6 +34,9 @@ export type MarketAvailability =
   'ALLOWED' | 'DENIED' | 'UNKNOWN' | 'UNCONFIGURED';
 let serviceGeneration = 0;
 export interface MarketService extends MarketApi {
+  preparation?: PreparationApi;
+  marketDay?: MarketDayApi;
+  marketDayStorefront?: ReturnType<typeof createMarketDayStorefrontApi>;
   team?: TeamApi;
   finance?: FinanceApi;
   loyalty?: MarketLoyaltyApi;
@@ -36,6 +46,10 @@ export interface MarketService extends MarketApi {
   documents?: Pick<DocumentsApi, 'read'>;
   phase14?: MarketOperationsApi;
   rentalMedia?: Pick<VendorCategoryApi, 'images' | 'upload'>;
+  /** This Market's own profile picture, and other businesses' for tables. */
+  profileImage?: BusinessProfileImageApi;
+  /** This account's saved Overview arrangement (a presentation preference). */
+  dashboardLayout?: MarketDashboardLayoutApi;
   readKey: string;
   context: AdminContext;
   marketId: string;
@@ -182,10 +196,21 @@ export function createLiveMarketService(
     onAuthorityFailure,
   );
   const operations = createMarketOperationsApi({ endpoint, channelToken });
+  service.profileImage = createBusinessProfileImageApi({
+    endpoint,
+    channelToken,
+  });
   if (context.permissions.includes('ManageMarketStorefront')) {
-    const media = createStorefrontAppearanceApi({ endpoint, channelToken }).media!;
+    const media = createStorefrontAppearanceApi({
+      endpoint,
+      channelToken,
+    }).media!;
     service.rentalMedia = { images: media.images, upload: media.upload };
   }
+  service.dashboardLayout = createMarketDashboardLayoutApi({
+    endpoint,
+    channelToken,
+  });
   service.finance = createFinanceApi({
     endpoint,
     channelToken,
@@ -234,6 +259,9 @@ export function createLiveMarketService(
     });
     service.documents = { read: documents.read };
   }
+  service.preparation = createPreparationApi({ endpoint, channelToken });
+  service.marketDay = createMarketDayApi({ endpoint, channelToken });
+  service.marketDayStorefront = createMarketDayStorefrontApi({ endpoint, channelToken }, 'admin');
   service.phase14 = {
     ...operations,
     read: async (...args) => {

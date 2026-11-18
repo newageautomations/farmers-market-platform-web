@@ -1,0 +1,48 @@
+---
+import {
+  permitsWebsiteSectionPresentation,
+  websiteSectionManifest,
+  type WebsiteSection,
+  type SectionTarget,
+} from '@market/theme/storefront';
+import type { StorefrontContext } from '@market/storefront-core';
+import { websiteSectionRenderers as harvestRenderers } from './home/section-renderers';
+import { websiteSectionRenderers as farmhouseRenderers } from './modern-farmhouse/section-renderers';
+import { websiteSectionRenderers as editorialRenderers } from './editorial-market/section-renderers';
+const { context, sections, target, prefix } = Astro.props as {
+  context: StorefrontContext;
+  sections: WebsiteSection[];
+  target: SectionTarget;
+  prefix: string;
+};
+const renderers = {
+  ...harvestRenderers,
+  ...farmhouseRenderers,
+  ...editorialRenderers,
+};
+---
+
+{sections
+  .filter(
+    (section) =>
+      section.visible && permitsWebsiteSectionPresentation(section, target),
+  )
+  .map((section) => {
+    const theme =
+      target.theme as keyof typeof websiteSectionManifest.text.renderers;
+    const Renderer =
+      renderers[
+        (
+          websiteSectionManifest[section.type].renderers as Partial<
+            Record<typeof theme, keyof typeof renderers>
+          >
+        )[theme]!
+      ];
+    return (
+      <Renderer
+        section={section}
+        context={context}
+        editorId={`${prefix}:${section.id}`}
+      />
+    );
+  })}

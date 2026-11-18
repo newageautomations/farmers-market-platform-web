@@ -1,7 +1,22 @@
 ---
+import MarketDayHome from '../components/market/MarketDayHome.astro';
+import { MarketDayLive } from '../components/market/MarketDayLive';
+import { requestMarketDay } from '../lib/shop';
+import { marketDayLandingAllowed } from '../lib/market-day-routing';
+import {
+  selectMarketDay,
+  type MarketDayPublicState,
+  type PublicOccurrenceMap,
+} from '@market/api';
 import PremiumHome from '../components/modern-farmhouse/Home.astro';
 import { isFarmhouse, type FarmhouseSettings } from '@market/theme/storefront';
-import { isEditorialMarket } from '@market/theme/storefront';
+import {
+  isEditorialMarket,
+  isHearth,
+  isMeadow,
+} from '@market/theme/storefront';
+import HearthMarketHome from '../components/hearth/MarketHome.astro';
+import MeadowMarketHome from '../components/meadow/MarketHome.astro';
 import { farmhouseCatalog } from '../lib/farmhouse-catalog';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import MarketHome from '../components/MarketHome.astro';
@@ -9,6 +24,7 @@ import MarketPublicHome from '../components/MarketPublicHome.astro';
 import VendorHome from '../components/VendorHome.astro';
 import FarmhouseHome from '../components/legacy-modern-farmhouse/Home.astro';
 import EditorialHome from '../components/editorial-market/Home.astro';
+import EditorialMarketHome from '../components/editorial-market/MarketHome.astro';
 import { composition } from '@market/storefront-core';
 import { ErrorState } from '@market/ui';
 import {
@@ -16,23 +32,72 @@ import {
   type PublicCatalog,
   type PublicMarketOccurrence,
   type MarketCatalog,
+  type MarketOccurrenceVendor,
 } from '@market/api';
 import {
   requestShop,
   requestMarketShop,
   requestPublicMarketOperations,
 } from '../lib/shop';
+import { preorderCookie } from '../lib/vendor-preorder';
+import { marketCategorySources } from '../lib/market-website';
 const { storefront, storefrontError } = Astro.locals;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
+let dayState: MarketDayPublicState = {
+  serverNow: new Date().toISOString(),
+  occurrences: [],
+};
+const modeAllowed = marketDayLandingAllowed(
+  storefront,
+  !!Astro.locals.editorPreview,
+  Astro.url,
+);
+if (modeAllowed) {
+  try {
+    dayState = await requestMarketDay(Astro).state();
+  } catch {
+    /* Regular storefront remains available. */
+  }
+}
+const dayOccurrence = selectMarketDay(
+  dayState,
+  Astro.url.searchParams.get('marketDay'),
+);
+let dayMap: PublicOccurrenceMap | null = null;
+let dayVendors: readonly MarketOccurrenceVendor[] = [];
+let dayDirectoryUnavailable = false;
+let dayHeroImage: string | undefined;
+if (dayOccurrence) {
+  const results = await Promise.allSettled([
+    requestPublicMarketOperations(Astro).map(dayOccurrence.id),
+    requestMarketShop(Astro).vendors(String(dayOccurrence.id)),
+    // Same hero photo fallback as the regular market homepage.
+    requestMarketShop(Astro).catalog(String(dayOccurrence.id), {
+      skip: 0,
+      take: 8,
+      distinctProducts: true,
+    }),
+  ]);
+  if (results[0].status === 'fulfilled') dayMap = results[0].value;
+  if (results[1].status === 'fulfilled') dayVendors = results[1].value;
+  else dayDirectoryUnavailable = true;
+  if (results[2].status === 'fulfilled')
+    dayHeroImage = results[2].value.items.find(
+      (item) => item.featuredAsset?.preview,
+    )?.featuredAsset?.preview;
+}
 let catalog: PublicCatalog | undefined, catalogError;
 let advertisedApplication = false;
 let marketCatalog: MarketCatalog | undefined;
-let occurrences: readonly PublicMarketOccurrence[] = [],
-  totalOccurrences = 0;
-const rawPage = Number(Astro.url.searchParams.get('occurrencePage') ?? 1);
-const occurrencePage =
-  Number.isSafeInteger(rawPage) && rawPage > 0 && rawPage <= 1250 ? rawPage : 1;
-if (storefront?.kind === 'MARKET' && storefront.source === 'backend') {
+let marketVendors: readonly MarketOccurrenceVendor[] | undefined;
+let occurrences: readonly PublicMarketOccurrence[] = [];
+let marketCategories: ReturnType<typeof marketCategorySources> | undefined;
+let chosenOccurrence: PublicMarketOccurrence | undefined;
+if (
+  storefront?.kind === 'MARKET' &&
+  storefront.source === 'backend' &&
+  (!modeAllowed || !dayState.occurrences.length)
+) {
   try {
     await requestPublicMarketOperations(Astro).application();
     advertisedApplication = true;
@@ -40,20 +105,50 @@ if (storefront?.kind === 'MARKET' && storefront.source === 'backend') {
     /* Only an advertised published application grants this entry point. */
   }
   try {
-    const result = await requestMarketShop(Astro).occurrences({
-      options: { skip: (occurrencePage - 1) * 8, take: 8 },
+    const shop = requestMarketShop(Astro);
+    const editorialMarket = isEditorialMarket(storefront.appearance);
+    // Editorial categories draw on the same upcoming dates as the header selector.
+    const result = await shop.occurrences({
+      options: { skip: 0, take: editorialMarket ? 12 : 4 },
     });
-    occurrences = result.marketStorefrontOccurrences.items;
-    totalOccurrences = result.marketStorefrontOccurrences.totalItems;
-    if (occurrences[0]) {
-      try {
-        marketCatalog = await requestMarketShop(Astro).catalog(
-          occurrences[0].id,
-          { skip: 0, take: 8, distinctProducts: true },
-        );
-      } catch {
-        /* An unavailable catalog must not hide valid market dates. */
-      }
+    const upcoming = result.marketStorefrontOccurrences.items;
+    occurrences = upcoming.slice(0, 4);
+    const next = occurrences[0];
+    if (next) {
+      const [catalog, vendors] = await Promise.allSettled([
+        shop.catalog(next.id, { skip: 0, take: 8, distinctProducts: true }),
+        shop.vendors(next.id),
+      ]);
+      // An unavailable catalog or directory must not hide valid market dates.
+      if (catalog.status === 'fulfilled') marketCatalog = catalog.value;
+      if (vendors.status === 'fulfilled') marketVendors = vendors.value;
+    }
+    if (editorialMarket && upcoming.length) {
+      // The chosen market date's categories, otherwise every upcoming date's.
+      const chosen =
+        Astro.url.searchParams.get('occurrence') ??
+        Astro.cookies.get(preorderCookie(storefront.storefrontId ?? ''))?.value;
+      chosenOccurrence = upcoming.find((date) => date.id === chosen);
+      const dates = chosenOccurrence ? [chosenOccurrence] : upcoming;
+      const taxonomies = await Promise.allSettled(
+        dates.map((date) =>
+          date.id === next?.id && marketCatalog
+            ? Promise.resolve(marketCatalog)
+            : shop.catalog(date.id, {
+                skip: 0,
+                take: 1,
+                distinctProducts: true,
+              }),
+        ),
+      );
+      marketCategories = marketCategorySources(
+        dates.flatMap((date, index) => {
+          const read = taxonomies[index]!;
+          return read.status === 'fulfilled'
+            ? [{ occurrenceId: date.id, taxonomy: read.value.taxonomy }]
+            : [];
+        }),
+      );
     }
   } catch (error) {
     catalogError = safeError(error);
@@ -67,8 +162,9 @@ if (storefront?.kind === 'VENDOR') {
       : undefined;
     const premiumIds: string[] = [
       ...new Set(
-        farmhouseSettings?.sections.flatMap((section) => section.productIds) ??
-          [],
+        farmhouseSettings?.sections.flatMap((section) =>
+          'type' in section ? [] : section.productIds,
+        ) ?? [],
       ),
     ];
     const editorial = isEditorialMarket(storefront.appearance);
@@ -127,15 +223,51 @@ if (storefrontError)
   homepage
 >
   {storefront ? (
-    composition(storefront) === 'market' ? (
-      storefront.source === 'backend' ? (
+    modeAllowed && dayState.occurrences.length ? (
+      <MarketDayHome
+        context={storefront}
+        heroImage={dayHeroImage}
+        state={dayState}
+        occurrence={dayOccurrence}
+        map={dayMap}
+        vendors={dayVendors}
+        directoryUnavailable={dayDirectoryUnavailable}
+      />
+    ) : composition(storefront) === 'market' ? (
+      storefront.source === 'backend' &&
+      isEditorialMarket(storefront.appearance) ? (
+        <EditorialMarketHome
+          context={storefront}
+          occurrences={occurrences}
+          catalog={marketCatalog}
+          vendors={marketVendors}
+          categorySources={marketCategories}
+          chosenOccurrenceId={chosenOccurrence?.id}
+          error={catalogError}
+        />
+      ) : storefront.source === 'backend' && isHearth(storefront.appearance) ? (
+        <HearthMarketHome
+          context={storefront}
+          occurrences={occurrences}
+          catalog={marketCatalog}
+          vendors={marketVendors}
+          error={catalogError}
+        />
+      ) : storefront.source === 'backend' && isMeadow(storefront.appearance) ? (
+        <MeadowMarketHome
+          context={storefront}
+          occurrences={occurrences}
+          catalog={marketCatalog}
+          vendors={marketVendors}
+          error={catalogError}
+        />
+      ) : storefront.source === 'backend' ? (
         <MarketPublicHome
           advertisedApplication={advertisedApplication}
           context={storefront}
           occurrences={occurrences}
           catalog={marketCatalog}
-          totalItems={totalOccurrences}
-          page={occurrencePage}
+          vendors={marketVendors}
           error={catalogError}
         />
       ) : (
@@ -167,5 +299,8 @@ if (storefrontError)
       <h1>Storefront unavailable</h1>
       <ErrorState error={storefrontError} />
     </div>
+  )}
+  {modeAllowed && !dayState.occurrences.length && (
+    <MarketDayLive client:load state={dayState} />
   )}
 </SiteLayout>

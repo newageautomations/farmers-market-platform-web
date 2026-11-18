@@ -378,9 +378,9 @@ describe('vendor Products & Inventory workspace', () => {
     ).not.toBeInTheDocument();
     const dialog = openStock();
     expect(within(dialog).getAllByRole('heading')).toHaveLength(1);
-    expect(
-      dialog.querySelectorAll('.catalog-stock-cards .ui-card'),
-    ).toHaveLength(3);
+    expect(dialog.querySelectorAll('.catalog-stock-rows > div')).toHaveLength(
+      3,
+    );
     fireEvent.focus(
       within(dialog).getByRole('button', { name: 'About inventory values' }),
     );
@@ -406,9 +406,9 @@ describe('vendor Products & Inventory workspace', () => {
     expect(screen.getByRole('dialog', { name: 'Confirm adjust stock' })).toBe(
       dialog,
     );
-    expect(
-      within(dialog).getByText('On hand amount: 50 → 57'),
-    ).toBeInTheDocument();
+    expect(dialog.querySelector('.catalog-stock-total')).toHaveTextContent(
+      '50 → 57',
+    );
     expect(adjust).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Back' }));
     expect(screen.getByRole('dialog', { name: 'Adjust inventory total' })).toBe(

@@ -1,3 +1,4 @@
+import { WebsiteInspectorContent } from './WebsiteEditorContext';
 import { TextSizeControls } from './TextSizeControls';
 import { useState } from 'react';
 import {
@@ -31,6 +32,9 @@ const layouts = {
 } as const;
 /** About-specific composition of existing fields, disclosure, media picker and Dialog. */
 export function AboutStoryEditor({
+  onlyClosing = false,
+  hideClosing = false,
+  allowAdd = true,
   about,
   api,
   selected,
@@ -43,6 +47,7 @@ export function AboutStoryEditor({
   onTextSizeChange,
   themeId,
 }: {
+  allowAdd?: boolean;
   about: StorefrontAppearance['about'];
   api: StorefrontAppearanceApi;
   selected: StorefrontEditorSection;
@@ -53,6 +58,8 @@ export function AboutStoryEditor({
     value: StorefrontAppearance['about'],
     sizes?: StorefrontAppearance['textSizes'],
   ) => void;
+  onlyClosing?: boolean;
+  hideClosing?: boolean;
   busy: boolean;
   textSizes?: StorefrontAppearance['textSizes'];
   onTextSizeChange: (
@@ -82,394 +89,417 @@ export function AboutStoryEditor({
     item?: AboutSection;
   }> = [
     { id: 'story-settings', label: 'Our Story page' },
-    ...sections.map((item) => ({
-      id: `story:${item.id}` as const,
-      label: `${item.heading || layouts[item.layout]}${item.visible ? '' : ' (hidden)'}`,
-      item,
-    })),
+    ...sections
+      .filter((item) => allowAdd || !!(item.heading || item.body || item.image))
+      .map((item) => ({
+        id: `story:${item.id}` as const,
+        label: `${item.heading || layouts[item.layout]}${item.visible ? '' : ' (hidden)'}`,
+        item,
+      })),
     { id: 'story-cta', label: 'Closing invitation' },
   ];
   return (
     <fieldset disabled={busy} className="story-editor-list">
       <div className="story-editor-add-row">
-        <Button
-          variant="secondary"
-          disabled={limit}
-          onClick={() => setAdding(true)}
-        >
-          Add Section
-        </Button>
-        <label className="story-page-toggle">
-          <Checkbox
-            id="story-enabled"
-            role="switch"
-            className="sr-only"
-            aria-label="Enable the About page"
-            checked={about.enabled}
-            onChange={(e) => patch({ enabled: e.target.checked })}
-          />
-          <span className="story-switch-track" aria-hidden="true" />
-          <span>{about.enabled ? 'Enabled' : 'Disabled'}</span>
-        </label>
+        {allowAdd && (
+          <Button
+            variant="secondary"
+            disabled={limit}
+            onClick={() => setAdding(true)}
+          >
+            Add Section
+          </Button>
+        )}
+        {allowAdd && (
+          <label className="story-page-toggle">
+            <Checkbox
+              id="story-enabled"
+              role="switch"
+              className="sr-only"
+              aria-label="Enable the About page"
+              checked={about.enabled}
+              onChange={(e) => patch({ enabled: e.target.checked })}
+            />
+            <span className="story-switch-track" aria-hidden="true" />
+            <span>{about.enabled ? 'Enabled' : 'Disabled'}</span>
+          </label>
+        )}
       </div>
       {limit && (
         <p role="status">
           You can add up to {aboutSectionLimit} story sections.
         </p>
       )}
-      {entries.map(({ id, label, item }) => {
-        const open = !collapsed && selected === id;
-        const index = item ? sections.findIndex((s) => s.id === item.id) : -1;
-        return (
-          <div
-            key={id}
-            className={`story-editor-row${item ? ' story-editor-movable' : ''}`}
-          >
-            {item && (
-              <div className="story-editor-reorder">
-                {(['up', 'down'] as const).map((direction) => (
-                  <IconButton
-                    key={direction}
-                    icon={direction === 'up' ? 'arrow-up' : 'arrow-down'}
-                    label={`Move ${direction}: ${item.heading || layouts[item.layout]}`}
-                    size="compact"
-                    disabled={
-                      busy ||
-                      (direction === 'up'
-                        ? index === 0
-                        : index === sections.length - 1)
-                    }
-                    onClick={() => {
-                      const next = [...sections],
-                        target = index + (direction === 'up' ? -1 : 1);
-                      if (target < 0 || target >= next.length) return;
-                      [next[index], next[target]] = [
-                        next[target]!,
-                        next[index]!,
-                      ];
-                      saveSections(next);
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-            <details className={disclosureClassName('dropdown')} open={open}>
-              <summary
-                role="button"
-                aria-expanded={open}
-                onClick={(event) => {
-                  event.preventDefault();
-                  if (open) collapse();
-                  else choose(id);
-                }}
-              >
-                {label}
-              </summary>
-              {open && (
-                <div className="ui-disclosure-content visual-editor-section-content">
-                  {id === 'story-settings' && (
-                    <>
-                      <Field id="story-title" label="Page title">
-                        <Input
-                          id="story-title"
-                          maxLength={160}
-                          value={about.title}
-                          onChange={(e) => patch({ title: e.target.value })}
-                        />
-                      </Field>
-                      {themeId === 'editorial-market' && (
-                        <Field
-                          id="story-hero-subheading"
-                          label="Hero subheading"
-                        >
-                          <Textarea
-                            id="story-hero-subheading"
-                            value={
-                              about.sectionsVersion === 1 ? about.content : ''
-                            }
-                            maxLength={600}
-                            rows={3}
-                            onChange={(event) =>
-                              patch({
-                                content: event.target.value,
-                                sectionsVersion: 1,
-                                sections,
-                              })
-                            }
+      {entries
+        .filter((entry) =>
+          onlyClosing
+            ? entry.id === 'story-cta'
+            : !hideClosing || entry.id !== 'story-cta',
+        )
+        .filter((entry) => allowAdd || entry.id !== 'story-settings')
+        .map(({ id, label, item }) => {
+          const open = !collapsed && selected === id;
+          const index = item ? sections.findIndex((s) => s.id === item.id) : -1;
+          return (
+            <div
+              key={id}
+              className={`story-editor-row${item ? ' story-editor-movable' : ''}`}
+            >
+              {item && (
+                <div className="story-editor-reorder">
+                  {(['up', 'down'] as const).map((direction) => (
+                    <IconButton
+                      key={direction}
+                      icon={direction === 'up' ? 'arrow-up' : 'arrow-down'}
+                      label={`Move ${direction}: ${item.heading || layouts[item.layout]}`}
+                      size="compact"
+                      disabled={
+                        busy ||
+                        (direction === 'up'
+                          ? index === 0
+                          : index === sections.length - 1)
+                      }
+                      onClick={() => {
+                        const next = [...sections],
+                          target = index + (direction === 'up' ? -1 : 1);
+                        if (target < 0 || target >= next.length) return;
+                        [next[index], next[target]] = [
+                          next[target]!,
+                          next[index]!,
+                        ];
+                        saveSections(next);
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+              <details className={disclosureClassName('dropdown')} open={open}>
+                <summary
+                  role="button"
+                  aria-expanded={open}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (open) collapse();
+                    else choose(id);
+                  }}
+                >
+                  {label}
+                </summary>
+                {open && (
+                  <WebsiteInspectorContent>
+                    {id === 'story-settings' && (
+                      <>
+                        <Field id="story-title" label="Page title">
+                          <Input
+                            id="story-title"
+                            maxLength={160}
+                            value={about.title}
+                            onChange={(e) => patch({ title: e.target.value })}
                           />
                         </Field>
-                      )}
-                      <p>
-                        The page and navigation link appear after publishing.
-                        Disabling preserves your content.
-                      </p>
-                    </>
-                  )}
-                  {item && (
-                    <>
-                      {item.layout !== 'image' && (
-                        <TextSizeControls
-                          value={textSizes?.[`story:${item.id}`]}
-                          onChange={(value) =>
-                            onTextSizeChange(`story:${item.id}`, value)
-                          }
-                        />
-                      )}
-                      <SelectField
-                        id="story-layout"
-                        label="Section type"
-                        value={item.layout}
-                        onChange={(e) => {
-                          const layout = e.target
-                            .value as AboutSection['layout'];
-                          if (layout !== item.layout)
-                            setChanging({ id: item.id, layout });
-                        }}
-                      >
-                        {Object.entries(layouts).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </SelectField>
-                      {item.layout !== 'image' && (
-                        <>
-                          <SelectField
-                            id="story-align"
-                            label="Text alignment"
-                            value={item.textAlign ?? 'left'}
-                            onChange={(e) =>
-                              updateSection(item.id, {
-                                textAlign: e.target.value as
-                                  'left' | 'center' | 'right',
-                              })
-                            }
-                          >
-                            <option value="left">Left</option>
-                            <option value="center">Center</option>
-                            <option value="right">Right</option>
-                          </SelectField>
-                          <Field id="story-heading" label="Heading">
-                            <Input
-                              id="story-heading"
-                              maxLength={160}
-                              value={item.heading}
-                              onChange={(e) =>
-                                updateSection(item.id, {
-                                  heading: e.target.value,
-                                })
-                              }
-                            />
-                          </Field>
-                          <Field id="story-body" label="Body text">
-                            <Textarea
-                              id="story-body"
-                              maxLength={20000}
-                              rows={8}
-                              value={item.body}
-                              onChange={(e) =>
-                                updateSection(item.id, { body: e.target.value })
-                              }
-                            />
-                          </Field>
-                        </>
-                      )}
-                      {item.layout !== 'text' && (
-                        <>
-                          {api.media ? (
-                            <CategoryImageField
-                              key={item.id}
-                              api={api.media}
-                              themeId={themeId}
-                              value={item.imageAssetId}
-                              preview={item.image}
-                              label="Section image"
-                              presentation="library"
-                              onImageChange={(image) =>
-                                updateSection(item.id, {
-                                  imageAssetId: image?.id ?? null,
-                                  image: image?.preview ?? '',
-                                })
-                              }
-                            />
-                          ) : (
-                            <p>
-                              Connect your vendor session to select or upload
-                              images.
-                            </p>
-                          )}
-                          <SelectField
-                            id="story-size"
-                            label="Image size"
-                            value={item.imageSize ?? 'medium'}
-                            onChange={(e) =>
-                              updateSection(item.id, {
-                                imageSize: e.target.value as
-                                  'small' | 'medium' | 'large',
-                              })
-                            }
-                          >
-                            <option value="small">Small</option>
-                            <option value="medium">Medium</option>
-                            <option value="large">Large</option>
-                          </SelectField>
+                        {themeId === 'editorial-market' && (
                           <Field
-                            id="story-alt"
-                            label="Image alternative text"
-                            info="A short description of what the image shows. Screen readers read it aloud, and it can appear if the image cannot load. Describe meaningful details; leave it blank for a purely decorative image."
+                            id="story-hero-subheading"
+                            label="Hero subheading"
                           >
-                            <Input
-                              id="story-alt"
-                              maxLength={200}
-                              value={item.alt}
-                              onChange={(e) =>
-                                updateSection(item.id, { alt: e.target.value })
+                            <Textarea
+                              id="story-hero-subheading"
+                              value={
+                                about.sectionsVersion === 1 ? about.content : ''
+                              }
+                              maxLength={600}
+                              rows={3}
+                              onChange={(event) =>
+                                patch({
+                                  content: event.target.value,
+                                  sectionsVersion: 1,
+                                  sections,
+                                })
                               }
                             />
                           </Field>
-                          <ImageShapeField
-                            id="story-shape"
-                            label="Image shape"
-                            value={item.shape}
-                            includeNatural
-                            onChange={(shape) =>
-                              updateSection(item.id, { shape })
+                        )}
+                        <p>
+                          The page and navigation link appear after publishing.
+                          Disabling preserves your content.
+                        </p>
+                      </>
+                    )}
+                    {item && (
+                      <>
+                        {item.layout !== 'image' && (
+                          <TextSizeControls
+                            value={textSizes?.[`story:${item.id}`]}
+                            onChange={(value) =>
+                              onTextSizeChange(`story:${item.id}`, value)
                             }
                           />
-                          {item.layout === 'text-image' && (
+                        )}
+                        <SelectField
+                          id="story-layout"
+                          label="Section type"
+                          value={item.layout}
+                          onChange={(e) => {
+                            const layout = e.target
+                              .value as AboutSection['layout'];
+                            if (layout !== item.layout)
+                              setChanging({ id: item.id, layout });
+                          }}
+                        >
+                          {Object.entries(layouts).map(([value, label]) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                        </SelectField>
+                        {item.layout !== 'image' && (
+                          <>
                             <SelectField
-                              id="story-position"
-                              label="Image position"
-                              value={item.imagePosition}
+                              id="story-align"
+                              label="Text alignment"
+                              value={item.textAlign ?? 'left'}
                               onChange={(e) =>
                                 updateSection(item.id, {
-                                  imagePosition: e.target.value as
-                                    'left' | 'right',
+                                  textAlign: e.target.value as
+                                    'left' | 'center' | 'right',
                                 })
                               }
                             >
                               <option value="left">Left</option>
+                              <option value="center">Center</option>
                               <option value="right">Right</option>
                             </SelectField>
-                          )}
-                        </>
-                      )}
-                      <Field id="story-visible" label="Show section">
-                        <Checkbox
-                          id="story-visible"
-                          checked={item.visible}
-                          onChange={(e) =>
-                            updateSection(item.id, {
-                              visible: e.target.checked,
-                            })
+                            <Field id="story-heading" label="Heading">
+                              <Input
+                                id="story-heading"
+                                maxLength={160}
+                                value={item.heading}
+                                onChange={(e) =>
+                                  updateSection(item.id, {
+                                    heading: e.target.value,
+                                  })
+                                }
+                              />
+                            </Field>
+                            <Field id="story-body" label="Body text">
+                              <Textarea
+                                id="story-body"
+                                maxLength={20000}
+                                rows={8}
+                                value={item.body}
+                                onChange={(e) =>
+                                  updateSection(item.id, {
+                                    body: e.target.value,
+                                  })
+                                }
+                              />
+                            </Field>
+                          </>
+                        )}
+                        {item.layout !== 'text' && (
+                          <>
+                            {api.media ? (
+                              <CategoryImageField
+                                key={item.id}
+                                api={api.media}
+                                themeId={themeId}
+                                value={item.imageAssetId}
+                                preview={item.image}
+                                label="Section image"
+                                presentation="library"
+                                onImageChange={(image) =>
+                                  updateSection(item.id, {
+                                    imageAssetId: image?.id ?? null,
+                                    image: image?.preview ?? '',
+                                  })
+                                }
+                              />
+                            ) : (
+                              <p>
+                                Connect your vendor session to select or upload
+                                images.
+                              </p>
+                            )}
+                            <SelectField
+                              id="story-size"
+                              label="Image size"
+                              value={item.imageSize ?? 'medium'}
+                              onChange={(e) =>
+                                updateSection(item.id, {
+                                  imageSize: e.target.value as
+                                    'small' | 'medium' | 'large',
+                                })
+                              }
+                            >
+                              <option value="small">Small</option>
+                              <option value="medium">Medium</option>
+                              <option value="large">Large</option>
+                            </SelectField>
+                            <Field
+                              id="story-alt"
+                              label="Image alternative text"
+                              info="A short description of what the image shows. Screen readers read it aloud, and it can appear if the image cannot load. Describe meaningful details; leave it blank for a purely decorative image."
+                            >
+                              <Input
+                                id="story-alt"
+                                maxLength={200}
+                                value={item.alt}
+                                onChange={(e) =>
+                                  updateSection(item.id, {
+                                    alt: e.target.value,
+                                  })
+                                }
+                              />
+                            </Field>
+                            <ImageShapeField
+                              id="story-shape"
+                              label="Image shape"
+                              value={item.shape}
+                              includeNatural
+                              onChange={(shape) =>
+                                updateSection(item.id, { shape })
+                              }
+                            />
+                            {item.layout === 'text-image' && (
+                              <SelectField
+                                id="story-position"
+                                label="Image position"
+                                value={item.imagePosition}
+                                onChange={(e) =>
+                                  updateSection(item.id, {
+                                    imagePosition: e.target.value as
+                                      'left' | 'right',
+                                  })
+                                }
+                              >
+                                <option value="left">Left</option>
+                                <option value="right">Right</option>
+                              </SelectField>
+                            )}
+                          </>
+                        )}
+                        <Field id="story-visible" label="Show section">
+                          <Checkbox
+                            id="story-visible"
+                            checked={item.visible}
+                            onChange={(e) =>
+                              updateSection(item.id, {
+                                visible: e.target.checked,
+                              })
+                            }
+                          />
+                        </Field>
+                        <div className="ui-actions">
+                          <Button
+                            variant="secondary"
+                            disabled={limit}
+                            onClick={() => {
+                              if (limit) return;
+                              const copy = { ...item, id: crypto.randomUUID() };
+                              const next = [...sections];
+                              next.splice(index + 1, 0, copy);
+                              const size = textSizes?.[`story:${item.id}`];
+                              onChange(
+                                {
+                                  ...about,
+                                  sections: next,
+                                  sectionsVersion: 1,
+                                },
+                                size
+                                  ? {
+                                      ...textSizes,
+                                      [`story:${copy.id}`]: { ...size },
+                                    }
+                                  : textSizes,
+                              );
+                              choose(`story:${copy.id}`);
+                            }}
+                          >
+                            Duplicate
+                          </Button>
+                          <Button
+                            variant="destructive-outline"
+                            onClick={() => setDeleting(item.id)}
+                          >
+                            Delete section
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                    {id === 'story-cta' && (
+                      <>
+                        <TextSizeControls
+                          value={textSizes?.['story-cta']}
+                          onChange={(value) =>
+                            onTextSizeChange('story-cta', value)
                           }
                         />
-                      </Field>
-                      <div className="ui-actions">
-                        <Button
-                          variant="secondary"
-                          disabled={limit}
-                          onClick={() => {
-                            if (limit) return;
-                            const copy = { ...item, id: crypto.randomUUID() };
-                            const next = [...sections];
-                            next.splice(index + 1, 0, copy);
-                            const size = textSizes?.[`story:${item.id}`];
-                            onChange(
-                              { ...about, sections: next, sectionsVersion: 1 },
-                              size
-                                ? {
-                                    ...textSizes,
-                                    [`story:${copy.id}`]: { ...size },
-                                  }
-                                : textSizes,
-                            );
-                            choose(`story:${copy.id}`);
-                          }}
-                        >
-                          Duplicate
-                        </Button>
-                        <Button
-                          variant="destructive-outline"
-                          onClick={() => setDeleting(item.id)}
-                        >
-                          Delete section
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                  {id === 'story-cta' && (
-                    <>
-                      <TextSizeControls
-                        value={textSizes?.['story-cta']}
-                        onChange={(value) =>
-                          onTextSizeChange('story-cta', value)
-                        }
-                      />
-                      {(['heading', 'text', 'label'] as const).map((key) => (
-                        <Field
-                          key={key}
-                          id={`story-cta-${key}`}
-                          label={
-                            {
-                              heading: 'CTA heading',
-                              text: 'Supporting text',
-                              label: 'Button label',
-                            }[key]
+                        {(['heading', 'text', 'label'] as const).map((key) => (
+                          <Field
+                            key={key}
+                            id={`story-cta-${key}`}
+                            label={
+                              {
+                                heading: 'CTA heading',
+                                text: 'Supporting text',
+                                label: 'Button label',
+                              }[key]
+                            }
+                          >
+                            {key === 'text' ? (
+                              <Textarea
+                                id={`story-cta-${key}`}
+                                maxLength={600}
+                                value={cta[key]}
+                                onChange={(e) =>
+                                  patch({
+                                    cta: { ...cta, [key]: e.target.value },
+                                  })
+                                }
+                              />
+                            ) : (
+                              <Input
+                                id={`story-cta-${key}`}
+                                maxLength={key === 'label' ? 80 : 160}
+                                value={cta[key]}
+                                onChange={(e) =>
+                                  patch({
+                                    cta: { ...cta, [key]: e.target.value },
+                                  })
+                                }
+                              />
+                            )}
+                          </Field>
+                        ))}
+                        <SelectField
+                          id="story-cta-destination"
+                          label="Button destination"
+                          value={cta.destination}
+                          onChange={(e) =>
+                            patch({
+                              cta: {
+                                ...cta,
+                                destination: e.target.value as
+                                  '/products' | '/',
+                              },
+                            })
                           }
                         >
-                          {key === 'text' ? (
-                            <Textarea
-                              id={`story-cta-${key}`}
-                              maxLength={600}
-                              value={cta[key]}
-                              onChange={(e) =>
-                                patch({
-                                  cta: { ...cta, [key]: e.target.value },
-                                })
-                              }
-                            />
-                          ) : (
-                            <Input
-                              id={`story-cta-${key}`}
-                              maxLength={key === 'label' ? 80 : 160}
-                              value={cta[key]}
-                              onChange={(e) =>
-                                patch({
-                                  cta: { ...cta, [key]: e.target.value },
-                                })
-                              }
-                            />
-                          )}
-                        </Field>
-                      ))}
-                      <SelectField
-                        id="story-cta-destination"
-                        label="Button destination"
-                        value={cta.destination}
-                        onChange={(e) =>
-                          patch({
-                            cta: {
-                              ...cta,
-                              destination: e.target.value as '/products' | '/',
-                            },
-                          })
-                        }
-                      >
-                        <option value="/products">Shop</option>
-                        <option value="/">Homepage</option>
-                      </SelectField>
-                      <p>
-                        This invitation always stays below your story sections.
-                      </p>
-                    </>
-                  )}
-                </div>
-              )}
-            </details>
-          </div>
-        );
-      })}
+                          <option value="/products">Shop</option>
+                          <option value="/">Homepage</option>
+                        </SelectField>
+                        <p>
+                          This invitation always stays below your story
+                          sections.
+                        </p>
+                      </>
+                    )}
+                  </WebsiteInspectorContent>
+                )}
+              </details>
+            </div>
+          );
+        })}
       <Dialog
         open={adding}
         title="Add Section"

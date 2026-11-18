@@ -1,0 +1,14 @@
+query OwnOrderRefunds($orderId: ID!) {
+  ownOrderRefunds(orderId: $orderId)
+}
+query PreviewOwnRefund($allocationId: ID!, $unitIds: [ID!]!) {
+  previewOwnOriginalUnitRefund(allocationId: $allocationId, unitIds: $unitIds)
+}
+mutation RequestOwnRefund($input: OriginalUnitRefundInput!) {
+  requestOwnOriginalUnitRefund(input: $input) {
+    id
+    state
+    amount
+    currency
+  }
+}

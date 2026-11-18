@@ -51,6 +51,18 @@ function allowed(key: string) {
 export const onRequest = defineMiddleware(async (context, next) => {
   const requestId = crypto.randomUUID();
   const production = runtimeMode(process.env) === 'production';
+  // The populated demo registers localhost, not the numeric loopback authority.
+  // Canonicalize browser navigation only; preserve POST origin checks and production routing.
+  if (
+    !production &&
+    process.env.DEMO_LOCAL_HOST_ALIASES === 'true' &&
+    context.url.hostname === '127.0.0.1' &&
+    ['GET', 'HEAD'].includes(context.request.method)
+  ) {
+    const target = new URL(context.url);
+    target.hostname = 'localhost';
+    return context.redirect(target.href, 302);
+  }
   const headers = new Headers(responseSecurityHeaders(production));
   if (
     context.url.pathname === '/account/invitation' &&

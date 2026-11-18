@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./stripe-card": "./src/stripe-card.ts",
     ".": "./src/index.tsx",
     "./presentation": "./src/presentation.ts",
     "./category-icons": "./src/category-icons.ts",
@@ -17,7 +18,16 @@
     "./loyalty.css": "./src/loyalty.css",
     "./farmstand": "./src/farmstand.tsx",
     "./farmstand.css": "./src/farmstand.css",
-    "./harvest-product.css": "./src/harvest-product.css"
+    "./harvest-product.css": "./src/harvest-product.css",
+    "./workspace": "./src/workspace.tsx",
+    "./workspace.css": "./src/workspace.css",
+    "./workspace-records.css": "./src/workspace-records.css",
+    "./settings-panel.css": "./src/settings-panel.css",
+    "./dashboard-grid": "./src/dashboard-grid.ts",
+    "./dashboard-layout": "./src/dashboard-layout.tsx",
+    "./dashboard-layout.css": "./src/dashboard-layout.css",
+    "./workspace-menu.css": "./src/workspace-menu.css",
+    "./shell.css": "./src/shell.css"
   },
   "dependencies": {
     "@market/api": "0.1.0",

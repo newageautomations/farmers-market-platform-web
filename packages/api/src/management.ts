@@ -220,6 +220,26 @@ export function createManagementApi(options: TransportOptions) {
         { api: 'admin', document: g.PaymentManagementDocument },
         { mode },
       ),
+    startStripeOnboarding: () =>
+      execute(
+        { api: 'admin', document: g.ManagementStartOnboardingDocument },
+        {},
+      ),
+    completeStripeOnboarding: (nonce: string, refresh: boolean) =>
+      execute(
+        { api: 'admin', document: g.ManagementCompleteOnboardingDocument },
+        { nonce, refresh },
+      ),
+    stripeDashboard: () =>
+      execute(
+        { api: 'admin', document: g.ManagementStripeDashboardDocument },
+        {},
+      ),
+    completeStripeConnect: (state: string, code: string) =>
+      execute(
+        { api: 'admin', document: g.ManagementCompleteStripeConnectDocument },
+        { state, code },
+      ),
     connectStripe: (mode: g.StripeAccountMode) =>
       execute(
         { api: 'admin', document: g.ManagementConnectStripeDocument },

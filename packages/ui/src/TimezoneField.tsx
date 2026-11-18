@@ -1,4 +1,4 @@
-import { selectClassName } from './presentation';
+import { Select } from './index';
 import { useId } from 'react';
 
 export const usTimezones = [
@@ -24,8 +24,7 @@ export function TimezoneField({
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      <select
-        className={selectClassName()}
+      <Select
         id={id}
         name={name}
         defaultValue={usTimezones.some(([zone]) => zone === value) ? value : ''}
@@ -39,7 +38,7 @@ export function TimezoneField({
             {title}
           </option>
         ))}
-      </select>
+      </Select>
     </div>
   );
 }

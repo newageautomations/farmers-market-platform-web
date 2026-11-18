@@ -28,6 +28,7 @@ import {
 import type { VendorService } from './service';
 import { PosCartQueue } from './pos-queue';
 import { PosPaymentDialog, unresolvedPayment } from './pos-payments';
+import { WorkspaceFrame } from '../WorkspaceFrame';
 import './pos.css';
 
 const message = (error: unknown) =>
@@ -44,26 +45,42 @@ function imageUrl(value: string | null) {
 }
 
 export function VendorPos({ service }: { service: VendorService }) {
-  if (!service.pos || !service.context.permissions.includes('OperateOwnPos'))
-    return (
-      <Alert severity="warning">
-        In-Person Checkout is unavailable for this vendor account.
-      </Alert>
-    );
   return (
-    <PosRegister
-      key={service.vendorId}
-      api={service.pos}
-      vendorName={service.context.name}
-    />
+    <WorkspaceFrame
+      icon="shopping-cart"
+      title="In-Person Checkout"
+      description="Ring up sales at the market or anywhere you sell in person."
+      tabs={[]}
+      value="pos"
+      onChange={() => {}}
+      className="vendor-pos farmstand-controls"
+    >
+      {!service.pos ||
+      !service.context.permissions.includes('OperateOwnPos') ? (
+        <Alert severity="warning">
+          In-Person Checkout is unavailable for this vendor account.
+        </Alert>
+      ) : (
+        <PosRegister
+          key={service.vendorId}
+          api={service.pos}
+          vendorName={service.context.name}
+          initialOccurrence={
+            new URLSearchParams(window.location.search).get('occurrence') ?? ''
+          }
+        />
+      )}
+    </WorkspaceFrame>
   );
 }
 export function PosRegister({
   api,
   vendorName,
+  initialOccurrence = '',
 }: {
   api: InPersonApi;
   vendorName: string;
+  initialOccurrence?: string;
 }) {
   const [catalog, setCatalog] = useState<PosCatalog | null>(null),
     [contexts, setContexts] = useState<PosContext[]>([]),
@@ -92,7 +109,7 @@ export function PosRegister({
   const [blocked, setBlocked] = useState(false),
     [quantities, setQuantities] = useState(new Map<string, number>()),
     [variantInfo, setVariantInfo] = useState(new Map<string, PosVariant>());
-  const [occurrence, setOccurrence] = useState(''),
+  const [occurrence, setOccurrence] = useState(initialOccurrence),
     [checkoutStarted, setCheckoutStarted] = useState(false),
     [initialPending, setInitialPending] = useState(false),
     [busy, setBusy] = useState(false),
@@ -822,32 +839,30 @@ export function PosRegister({
           </div>
         </Alert>
       )}
-      {sale && (
-        <div className="pos-payment-actions">
-          <Button variant="secondary" onClick={() => setPaymentOpen(true)}>
-            {sale.state === 'COMPLETED'
-              ? 'View Completed Sale'
-              : 'View Payment Status'}
+      <div className="pos-toolbar">
+        <p>Selling as {vendorName}</p>
+        <div className="pos-toolbar-actions">
+          {sale && (
+            <Button variant="secondary" onClick={() => setPaymentOpen(true)}>
+              {sale.state === 'COMPLETED'
+                ? 'View Completed Sale'
+                : 'View Payment Status'}
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            disabled={busy || pending > 0 || blocked || initialPending}
+            onClick={() => {
+              setDraft(null);
+              setCheckoutStarted(false);
+              queue.current?.dispose();
+              queue.current = null;
+              setRefresh((n) => n + 1);
+            }}
+          >
+            Saved drafts
           </Button>
         </div>
-      )}
-      <div className="pos-toolbar">
-        <div>
-          <p>{vendorName}</p>
-        </div>
-        <Button
-          variant="secondary"
-          disabled={busy || pending > 0 || blocked || initialPending}
-          onClick={() => {
-            setDraft(null);
-            setCheckoutStarted(false);
-            queue.current?.dispose();
-            queue.current = null;
-            setRefresh((n) => n + 1);
-          }}
-        >
-          Saved drafts
-        </Button>
       </div>
       {error && (
         <Alert severity="error">

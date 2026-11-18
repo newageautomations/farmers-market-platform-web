@@ -46,45 +46,53 @@ export function WizardProgress({
 }
 
 /**
- * Animates the enclosing dialog's height between wizard stages. Call
+ * Animates the enclosing dialog's size between wizard stages. Call
  * `capture()` immediately before changing stage; the effect then eases from
- * the captured height to the new one (reduced motion jumps directly).
+ * the captured height (and width, when a stage changes the dialog's width) to
+ * the new one (reduced motion jumps directly).
  */
 export function useWizardDialogHeight(
   root: RefObject<HTMLElement | null>,
   stage: unknown,
 ) {
-  const height = useRef<number | null>(null);
+  const size = useRef<{ height: number; width: number } | null>(null);
+  const measure = () => {
+    const box = root.current
+      ?.closest('dialog, [data-height-ease]')
+      ?.getBoundingClientRect();
+    return box ? { height: box.height, width: box.width } : null;
+  };
   useLayoutEffect(() => {
-    const dialog = root.current?.closest('dialog');
+    // Dialogs, or an inline container that opts in (a side panel).
+    const dialog = root.current?.closest<HTMLElement>(
+      'dialog, [data-height-ease]',
+    );
     if (!dialog) return;
-    const target = dialog.getBoundingClientRect().height;
-    const previous = height.current;
-    height.current = target;
+    const box = dialog.getBoundingClientRect();
+    const target = { height: box.height, width: box.width };
+    const previous = size.current;
+    size.current = target;
     if (previous == null) return;
     const reduced = window.matchMedia?.(
       '(prefers-reduced-motion: reduce)',
     )?.matches;
+    const widthChanged = previous.width !== target.width;
+    const frame = (s: { height: number; width: number }) => ({
+      height: `${s.height}px`,
+      ...(widthChanged ? { width: `${s.width}px` } : {}),
+    });
     const animation =
-      previous !== target && !reduced
-        ? dialog.animate(
-            [{ height: `${previous}px` }, { height: `${target}px` }],
-            { duration: 300, easing: 'cubic-bezier(.22,1,.36,1)' },
-          )
+      (previous.height !== target.height || widthChanged) && !reduced
+        ? dialog.animate([frame(previous), frame(target)], {
+            duration: 300,
+            easing: 'cubic-bezier(.22,1,.36,1)',
+          })
         : undefined;
-    const previousOverflow = dialog.style.overflow;
-    dialog.style.overflow = 'hidden';
-    const release = window.setTimeout(() => {
-      dialog.style.overflow = previousOverflow;
-    }, 450);
     return () => {
-      window.clearTimeout(release);
-      dialog.style.overflow = previousOverflow;
       animation?.cancel();
     };
   }, [root, stage]);
   return () => {
-    height.current =
-      root.current?.closest('dialog')?.getBoundingClientRect().height ?? null;
+    size.current = measure();
   };
 }

@@ -1,4 +1,5 @@
 import { taxonomyFilters } from './taxonomy';
+import { SHOP_PAGE_SIZE } from './catalog';
 import type { MarketCatalogOptions, PublicMarketOccurrence } from '@market/api';
 import { formatDate } from '@market/config';
 export function occurrenceLabel(
@@ -42,8 +43,8 @@ export function marketCatalogInputs(search: URLSearchParams): {
   return {
     page,
     options: {
-      skip: (page - 1) * 12,
-      take: 12,
+      skip: (page - 1) * SHOP_PAGE_SIZE,
+      take: SHOP_PAGE_SIZE,
       distinctProducts: true,
       sort,
       ...taxonomyFilters(search),

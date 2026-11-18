@@ -10,6 +10,7 @@ import {
 import type { FinanceOptions, FinanceReport } from '@market/api';
 import { MarketsPagination } from '../vendor/MarketsPagination';
 import { useResettingState } from './resetting-state';
+import { usePhoneRecords } from '../market/mobile';
 
 const PAGE = 20;
 
@@ -25,6 +26,7 @@ export function FinanceExpenses({
   money: (value: number) => string;
   onOpen: (id: string) => void;
 }) {
+  const records = usePhoneRecords();
   const id = useId();
   const [search, setSearch] = useState(''),
     [category, setCategory] = useState('ALL'),
@@ -111,6 +113,7 @@ export function FinanceExpenses({
         {shown.length ? (
           <FarmstandTable
             label="Expense history"
+            recordDetails={records({ status: 3 })}
             wide
             headings={['Expense', 'Date', 'Category', 'Amount', 'Status']}
           >

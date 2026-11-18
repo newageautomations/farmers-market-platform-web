@@ -1,3 +1,4 @@
+import { VendorManagedMarkets } from './VendorManagedMarkets';
 import { useCallback, useId, useMemo, useState } from 'react';
 import { mayCommand } from '@market/admin-core';
 import type { PreorderInput, VendorBoothAssignment } from '@market/api';
@@ -46,9 +47,10 @@ import {
   type MarketDetail,
   type MarketItem,
 } from './market-detail-data';
-import './market-applications.css';
-import './markets-workspace.css';
+import '@market/ui/workspace-records.css';
+import '@market/ui/workspace.css';
 import './market-detail.css';
+import { usePhoneRecords } from '../market/mobile';
 
 /**
  * Vendor market page. Composes the application-detail panels and overview
@@ -143,7 +145,9 @@ function MarketDetailContent({
             {dates.length}
           </Fact>
           <Fact icon={{ farmstand: 'store' }} label="Your booth assignment">
-            {boothText(next, detail.boothsAvailable)}
+            {state.membership.market.ownerVendorId
+              ? 'Not required'
+              : boothText(next, detail.boothsAvailable)}
           </Fact>
           <Fact
             icon={{ farmstand: 'user-round' }}
@@ -168,12 +172,24 @@ function MarketDetailContent({
       </FarmstandPanel>
       <div className="application-detail-columns">
         <div className="application-detail-main">
-          <AutoEnroll
-            service={service}
-            detail={detail}
-            refresh={refresh}
-            can={can}
-          />
+          {state.membership.market.ownerVendorId ? (
+            <div className="ui-actions">
+              {can && (
+                <VendorManagedMarkets
+                  service={service}
+                  marketId={state.membership.marketId}
+                  refresh={refresh}
+                />
+              )}
+            </div>
+          ) : (
+            <AutoEnroll
+              service={service}
+              detail={detail}
+              refresh={refresh}
+              can={can}
+            />
+          )}
           <MarketDates detail={detail} />
         </div>
         <aside
@@ -198,7 +214,9 @@ function MarketDetailContent({
                   </Fact>
                 )}
                 <Fact icon={{ farmstand: 'store' }} label="Your booth">
-                  {boothText(next, detail.boothsAvailable)}
+                  {state.membership.market.ownerVendorId
+                    ? 'Not required'
+                    : boothText(next, detail.boothsAvailable)}
                 </Fact>
                 <Fact icon={{ farmstand: 'circle-check' }} label="Attendance">
                   <AttendanceBadge value={dateAttendance(next.participation)} />
@@ -210,11 +228,13 @@ function MarketDetailContent({
               </p>
             )}
           </Panel>
-          <BoothAssignment
-            marketName={state.membership.market.name}
-            assignment={nextBooth}
-            available={detail.boothsAvailable}
-          />
+          {!state.membership.market.ownerVendorId && (
+            <BoothAssignment
+              marketName={state.membership.market.name}
+              assignment={nextBooth}
+              available={detail.boothsAvailable}
+            />
+          )}
         </aside>
       </div>
       <Preordering
@@ -252,6 +272,11 @@ export function BoothAssignment({
         <div className="market-detail-booth">
           <div>
             <h3>Booth {assignment.space.label}</h3>
+            {assignment.occurrenceStatus === 'cancelled' && (
+              <Alert severity="info">
+                Cancelled because the market cancelled this date.
+              </Alert>
+            )}
             <p className="markets-venue">
               <FarmstandIcon name="map-pin" />
               {marketName}
@@ -355,6 +380,7 @@ function AutoEnroll({
 }
 
 function MarketDates({ detail }: { detail: MarketDetail }) {
+  const records = usePhoneRecords();
   const { dates, state } = detail;
   const [expanded, setExpanded] = useState(false),
     [page, setPage] = useState(0);
@@ -366,6 +392,7 @@ function MarketDates({ detail }: { detail: MarketDetail }) {
       {shown.length ? (
         <FarmstandTable
           label="Upcoming market dates"
+          recordDetails={records({ status: 4, action: 5 })}
           headings={[
             'Date',
             'Time',
@@ -395,7 +422,11 @@ function MarketDates({ detail }: { detail: MarketDetail }) {
                 <td>
                   {date.booth ?? (
                     <span className="markets-muted">
-                      {detail.boothsAvailable ? 'Not assigned' : 'Unavailable'}
+                      {state.membership.market.ownerVendorId
+                        ? 'Not required'
+                        : detail.boothsAvailable
+                          ? 'Not assigned'
+                          : 'Unavailable'}
                     </span>
                   )}
                 </td>
@@ -713,7 +744,7 @@ function Preordering({
       can={can}
       participations={participations}
       scope={{
-        lead: `Choose which approved products customers can preorder at this market. Preorder applies to upcoming dates you haven't declined (${participations.length} ${participations.length === 1 ? 'date' : 'dates'}).`,
+        lead: `Choose which ${detail.state.membership.market.ownerVendorId ? '' : 'approved '}products customers can preorder at this market. Preorder applies to upcoming dates you haven't declined (${participations.length} ${participations.length === 1 ? 'date' : 'dates'}).`,
         noDates: 'RSVP to an upcoming date first',
       }}
       settings={{
@@ -757,6 +788,7 @@ function PreorderItems({
   scope: { lead: string; noDates: string };
   onSettings?: () => void;
 }) {
+  const records = usePhoneRecords();
   const id = useId();
   const { state } = detail;
   const readCatalog = useCallback(() => readMarketCatalog(service), [service]);
@@ -875,7 +907,9 @@ function PreorderItems({
       <header className="application-detail-panel-header">
         <h2>
           <FarmstandIcon name="package" />
-          Approved items for preordering
+          {state.membership.market.ownerVendorId
+            ? 'Items for preordering'
+            : 'Approved items for preordering'}
         </h2>
         <div className="market-detail-header-actions">
           <FarmstandButton
@@ -902,7 +936,9 @@ function PreorderItems({
               onClick={() => void requestListings()}
             >
               <FarmstandIcon name="plus" />
-              Request listing
+              {state.membership.market.ownerVendorId
+                ? 'Add products'
+                : 'Request listing'}
               {requestable.length > 0 && ` (${requestable.length})`}
             </FarmstandButton>
           )}
@@ -965,6 +1001,16 @@ function PreorderItems({
           {visible.length ? (
             <FarmstandTable
               label="Items for preordering"
+              recordDetails={records({
+                identifier: 1,
+                status: 6,
+                action: 0,
+                labels: visible.map((item) =>
+                  item.variant.startsWith(item.product)
+                    ? item.variant
+                    : `${item.product} · ${item.variant}`,
+                ),
+              })}
               headings={[
                 'Select',
                 'Product',

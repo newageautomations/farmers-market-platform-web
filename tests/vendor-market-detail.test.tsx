@@ -245,3 +245,35 @@ describe('vendor market page', () => {
     );
   });
 });
+
+it('uses private market scheduling without attendance responses or booth assignments', async () => {
+  const { service, membership } = await setup();
+  const original = service.membership;
+  service.membership = vi.fn(async (id) => {
+    const state = await original(id);
+    return {
+      ...state,
+      membership: {
+        ...state.membership,
+        market: { ...state.membership.market, ownerVendorId: service.vendorId },
+      },
+    };
+  });
+  service.managedMarkets = {} as NonNullable<typeof service.managedMarkets>;
+  render(<Markets service={service} id={membership.id} occurrenceId="occ-2" />);
+  expect(
+    await screen.findByRole('button', { name: 'Edit market date' }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'Cancel market date' }),
+  ).toBeVisible();
+  expect(screen.queryByRole('group', { name: 'Your attendance' })).toBeNull();
+  expect(
+    screen.queryByRole('heading', { name: 'Booth assignment' }),
+  ).toBeNull();
+  expect(
+    screen.getByText(
+      'You automatically attend your own scheduled market dates.',
+    ),
+  ).toBeVisible();
+});

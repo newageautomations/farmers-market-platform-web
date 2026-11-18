@@ -46,7 +46,21 @@ query CustomerFollowSubjects($kind: String!, $search: String, $skip: Int) {
     hasMore
     items {
       ...CustomerFollow
+      ...CustomerDiscovery
     }
+  }
+}
+fragment CustomerDiscovery on CustomerFollowSubject {
+  image
+  city
+  region
+  venue
+  nextDate {
+    startsAt
+    endsAt
+    timezone
+    venue
+    marketName
   }
 }
 mutation SetCustomerFollow($kind: String!, $id: ID!, $following: Boolean!) {

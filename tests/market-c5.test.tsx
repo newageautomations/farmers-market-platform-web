@@ -153,12 +153,15 @@ it('direct occurrence detail succeeds without requesting the date list', async (
     screen.queryByRole('button', { name: 'Cancel occurrence' }),
   ).toBeNull();
 });
-it('Overview shows the next date and a labeled vendor table without diagnostics', async () => {
+it('Overview shows the next date and vendor requests without diagnostics', async () => {
   const api = service();
   render(<MarketOverview service={api} />);
-  await screen.findByRole('table', { name: 'Vendor relationships' });
+  await screen.findByRole('link', { name: /View date/ });
   expect(
-    screen.getByRole('heading', { name: 'Next Scheduled Occurrence' }),
+    screen.getByRole('heading', { name: 'Next market' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole('heading', { name: 'Vendor requests' }),
   ).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Refresh/ })).toBeNull();
   expect(document.body).not.toHaveTextContent('Operational totals');

@@ -1,3 +1,4 @@
+import { WebsiteInspectorContent } from './WebsiteEditorContext';
 import { StorefrontReorderControls } from './StorefrontReorderControls';
 import { useEffect, useRef, useState } from 'react';
 import { Button, Checkbox, Dialog, Field, Input, Textarea } from '@market/ui';
@@ -10,6 +11,9 @@ import {
 
 /** FAQ composition reusing About disclosure, reorder rail and switch presentation. */
 export function FaqEditor({
+  onlyClosing = false,
+  hideClosing = false,
+  sectionHero = false,
   value,
   selected,
   collapsed,
@@ -24,6 +28,9 @@ export function FaqEditor({
   collapse: () => void;
   choose: (id: StorefrontEditorSection) => void;
   onChange: (v: FaqConfig) => void;
+  sectionHero?: boolean;
+  onlyClosing?: boolean;
+  hideClosing?: boolean;
   busy: boolean;
 }) {
   const [deleting, setDeleting] = useState<string>();
@@ -96,187 +103,204 @@ export function FaqEditor({
         >
           Add Question
         </Button>
-        <label className="story-page-toggle">
-          <Checkbox
-            id="faq-enabled"
-            role="switch"
-            className="sr-only"
-            aria-label="Enable FAQ page"
-            checked={value.enabled}
-            onChange={(e) => patch({ enabled: e.target.checked })}
-          />
-          <span className="story-switch-track" aria-hidden="true" />
-          <span>{value.enabled ? 'Enabled' : 'Disabled'}</span>
-        </label>
+        {!sectionHero && (
+          <label className="story-page-toggle">
+            <Checkbox
+              id="faq-enabled"
+              role="switch"
+              className="sr-only"
+              aria-label="Enable FAQ page"
+              checked={value.enabled}
+              onChange={(e) => patch({ enabled: e.target.checked })}
+            />
+            <span className="story-switch-track" aria-hidden="true" />
+            <span>{value.enabled ? 'Enabled' : 'Disabled'}</span>
+          </label>
+        )}
       </div>
       {value.questions.length >= faqQuestionLimit && (
         <p role="status">Maximum 30 questions. Delete one to add another.</p>
       )}
-      {entries.map(({ id, label, question: q }) => {
-        const open =
-          !collapsed &&
-          (selected === id ||
-            (id === 'faq-settings' && selected === 'faq-intro'));
-        const index = q
-          ? value.questions.findIndex((item) => item.id === q.id)
-          : -1;
-        return (
-          <div
-            key={id}
-            className={`story-editor-row${q ? ' story-editor-movable faq-editor-question' : ''}`}
-            data-faq-id={q?.id}
-          >
-            {q && (
-              <StorefrontReorderControls
-                item="question"
-                label={label}
-                index={index}
-                count={value.questions.length}
-                busy={busy}
-                onMove={(delta) => move(q.id, delta)}
-              />
-            )}
-            <details className={disclosureClassName('dropdown')} open={open}>
-              <summary
-                role="button"
-                aria-expanded={open}
-                onClick={(event) => {
-                  event.preventDefault();
-                  if (open) collapse();
-                  else choose(id);
-                }}
-              >
-                {q ? (
-                  <span className="faq-editor-question-label" title={label}>
-                    {label}
-                  </span>
-                ) : (
-                  label
-                )}
-              </summary>
-              {open && (
-                <div className="ui-disclosure-content visual-editor-section-content">
-                  {id === 'faq-settings' && (
-                    <>
-                      <Field id="faq-title" label="Page title">
-                        <Input
-                          id="faq-title"
-                          maxLength={160}
-                          value={value.title}
-                          onChange={(e) => patch({ title: e.target.value })}
-                        />
-                      </Field>
-                      <Field id="faq-heading" label="Heading">
-                        <Input
-                          id="faq-heading"
-                          maxLength={160}
-                          value={value.heading}
-                          onChange={(e) => patch({ heading: e.target.value })}
-                        />
-                      </Field>
-                      <Field id="faq-description" label="Introduction">
-                        <Textarea
-                          id="faq-description"
-                          maxLength={600}
-                          value={value.description}
-                          onChange={(e) =>
-                            patch({ description: e.target.value })
-                          }
-                        />
-                      </Field>
-                    </>
+      {entries
+        .filter((entry) =>
+          onlyClosing
+            ? entry.id === 'faq-cta'
+            : !hideClosing || entry.id !== 'faq-cta',
+        )
+        .filter((entry) => !sectionHero || entry.id !== 'faq-settings')
+        .map(({ id, label, question: q }) => {
+          const open =
+            !collapsed &&
+            (selected === id ||
+              (id === 'faq-settings' && selected === 'faq-intro'));
+          const index = q
+            ? value.questions.findIndex((item) => item.id === q.id)
+            : -1;
+          return (
+            <div
+              key={id}
+              className={`story-editor-row${q ? ' story-editor-movable faq-editor-question' : ''}`}
+              data-faq-id={q?.id}
+            >
+              {q && (
+                <StorefrontReorderControls
+                  item="question"
+                  label={label}
+                  index={index}
+                  count={value.questions.length}
+                  busy={busy}
+                  onMove={(delta) => move(q.id, delta)}
+                />
+              )}
+              <details className={disclosureClassName('dropdown')} open={open}>
+                <summary
+                  role="button"
+                  aria-expanded={open}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (open) collapse();
+                    else choose(id);
+                  }}
+                >
+                  {q ? (
+                    <span className="faq-editor-question-label" title={label}>
+                      {label}
+                    </span>
+                  ) : (
+                    label
                   )}
-                  {q && (
-                    <>
-                      <Field id={`faq-question-${q.id}`} label="Question">
-                        <Input
-                          id={`faq-question-${q.id}`}
-                          maxLength={300}
-                          value={q.question}
-                          onChange={(e) =>
-                            updateQuestion(q.id, { question: e.target.value })
-                          }
-                        />
-                      </Field>
-                      <Field id={`faq-answer-${q.id}`} label="Answer">
-                        <Textarea
-                          id={`faq-answer-${q.id}`}
-                          maxLength={5000}
-                          rows={5}
-                          value={q.answer}
-                          onChange={(e) =>
-                            updateQuestion(q.id, { answer: e.target.value })
-                          }
-                        />
-                      </Field>
-                      <p>
-                        Use internal links such as [Find Us](/find-us).
-                        Supported destinations: /, /products, /about, /find-us,
-                        /contact, /faq and /policies.
-                      </p>
-                      <Field id={`faq-visible-${q.id}`} label="Show question">
-                        <Checkbox
-                          id={`faq-visible-${q.id}`}
-                          checked={q.visible}
-                          onChange={(e) =>
-                            updateQuestion(q.id, { visible: e.target.checked })
-                          }
-                        />
-                      </Field>
-                      <div className="ui-actions">
-                        <Button
-                          variant="destructive-outline"
-                          onClick={() => setDeleting(q.id)}
-                        >
-                          Delete question
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                  {id === 'faq-cta' && (
-                    <>
-                      {(['heading', 'text', 'label'] as const).map((key) => (
-                        <Field
-                          key={key}
-                          id={`faq-cta-${key}`}
-                          label={
-                            {
-                              heading: 'Invitation heading',
-                              text: 'Invitation text',
-                              label: 'Button label',
-                            }[key]
-                          }
-                        >
+                </summary>
+                {open && (
+                  <WebsiteInspectorContent>
+                    {id === 'faq-settings' && (
+                      <>
+                        <Field id="faq-title" label="Page title">
                           <Input
-                            id={`faq-cta-${key}`}
-                            maxLength={
-                              key === 'heading'
-                                ? 160
-                                : key === 'text'
-                                  ? 600
-                                  : 80
-                            }
-                            value={value.cta[key]}
+                            id="faq-title"
+                            maxLength={160}
+                            value={value.title}
+                            onChange={(e) => patch({ title: e.target.value })}
+                          />
+                        </Field>
+                        {!sectionHero && (
+                          <>
+                            <Field id="faq-heading" label="Heading">
+                              <Input
+                                id="faq-heading"
+                                maxLength={160}
+                                value={value.heading}
+                                onChange={(e) =>
+                                  patch({ heading: e.target.value })
+                                }
+                              />
+                            </Field>
+                            <Field id="faq-description" label="Introduction">
+                              <Textarea
+                                id="faq-description"
+                                maxLength={600}
+                                value={value.description}
+                                onChange={(e) =>
+                                  patch({ description: e.target.value })
+                                }
+                              />
+                            </Field>
+                          </>
+                        )}
+                      </>
+                    )}
+                    {q && (
+                      <>
+                        <Field id={`faq-question-${q.id}`} label="Question">
+                          <Input
+                            id={`faq-question-${q.id}`}
+                            maxLength={300}
+                            value={q.question}
                             onChange={(e) =>
-                              patch({
-                                cta: { ...value.cta, [key]: e.target.value },
+                              updateQuestion(q.id, { question: e.target.value })
+                            }
+                          />
+                        </Field>
+                        <Field id={`faq-answer-${q.id}`} label="Answer">
+                          <Textarea
+                            id={`faq-answer-${q.id}`}
+                            maxLength={5000}
+                            rows={5}
+                            value={q.answer}
+                            onChange={(e) =>
+                              updateQuestion(q.id, { answer: e.target.value })
+                            }
+                          />
+                        </Field>
+                        <p>
+                          Use internal links such as [Find Us](/find-us).
+                          Supported destinations: /, /products, /about,
+                          /find-us, /contact, /faq and /policies.
+                        </p>
+                        <Field id={`faq-visible-${q.id}`} label="Show question">
+                          <Checkbox
+                            id={`faq-visible-${q.id}`}
+                            checked={q.visible}
+                            onChange={(e) =>
+                              updateQuestion(q.id, {
+                                visible: e.target.checked,
                               })
                             }
                           />
                         </Field>
-                      ))}
-                      <p>
-                        The invitation links to Contact and appears when that
-                        page is enabled.
-                      </p>
-                    </>
-                  )}
-                </div>
-              )}
-            </details>
-          </div>
-        );
-      })}
+                        <div className="ui-actions">
+                          <Button
+                            variant="destructive-outline"
+                            onClick={() => setDeleting(q.id)}
+                          >
+                            Delete question
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                    {id === 'faq-cta' && (
+                      <>
+                        {(['heading', 'text', 'label'] as const).map((key) => (
+                          <Field
+                            key={key}
+                            id={`faq-cta-${key}`}
+                            label={
+                              {
+                                heading: 'Invitation heading',
+                                text: 'Invitation text',
+                                label: 'Button label',
+                              }[key]
+                            }
+                          >
+                            <Input
+                              id={`faq-cta-${key}`}
+                              maxLength={
+                                key === 'heading'
+                                  ? 160
+                                  : key === 'text'
+                                    ? 600
+                                    : 80
+                              }
+                              value={value.cta[key]}
+                              onChange={(e) =>
+                                patch({
+                                  cta: { ...value.cta, [key]: e.target.value },
+                                })
+                              }
+                            />
+                          </Field>
+                        ))}
+                        <p>
+                          The invitation links to Contact and appears when that
+                          page is enabled.
+                        </p>
+                      </>
+                    )}
+                  </WebsiteInspectorContent>
+                )}
+              </details>
+            </div>
+          );
+        })}
       <Dialog
         open={!!deleting}
         title="Delete this question?"

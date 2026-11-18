@@ -1,0 +1,9 @@
+query OwnBoothInvoice($invoiceId: Int!) {
+  ownBoothInvoice(invoiceId: $invoiceId)
+}
+mutation PrepareBoothInvoicePayment($invoiceId: Int!) {
+  prepareBoothInvoicePayment(invoiceId: $invoiceId)
+}
+mutation BoothInvoicePayment($invoiceId: Int!, $action: String!, $consent: String) {
+  boothInvoicePayment(invoiceId: $invoiceId, action: $action, consent: $consent)
+}

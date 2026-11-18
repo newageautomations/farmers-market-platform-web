@@ -1,0 +1,799 @@
+/*
+ * Vendor phone and tablet deviations.
+ *
+ * The Vendor dashboard shares the Market Manager phone and tablet
+ * presentation (`market/market-mobile.css`, scoped to `.vendor-admin` as well
+ * as `.market-dashboard`). This file holds the few rules the Vendor has on
+ * top of it, so the Market Manager is unchanged. Loaded after
+ * `market-mobile.css` from `market/mobile.tsx`; every rule is under
+ * `.vendor-admin` (the Vendor shell root) and a width or pointer query, so
+ * desktop is untouched. Exceptions, at every width: the donut chart fixes in
+ * the first section, which the Market Manager shares, and the Vendor's
+ * finance detail-dialog styling.
+ */
+
+/* ---- Donut charts (Market Manager and Vendor, every width) -------------- */
+/* A tapped or clicked slice shows no box: no tap highlight, no focus outline.
+   Keyboard users keep the drop-shadow ring from finance.css, and only while
+   navigating with Tab. */
+:is(.market-dashboard, .vendor-admin) .finance-donut-slice {
+  -webkit-tap-highlight-color: transparent;
+}
+:is(.market-dashboard, .vendor-admin) .finance-donut-slice:focus {
+  outline: none;
+}
+:is(.market-dashboard, .vendor-admin)[data-input-mode='pointer']
+  .finance-donut-slice:focus-visible {
+  filter: none;
+}
+/* Legend rows keep the name: when a row runs out of room, the value and
+   share move under the name instead of squeezing it to nothing. */
+:is(.market-dashboard, .vendor-admin) .finance-donut-legend li {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+  row-gap: 0;
+  padding-left: 18px;
+}
+:is(.market-dashboard, .vendor-admin) .finance-donut-legend li::before {
+  position: absolute;
+  top: 0.3em;
+  left: 0;
+}
+:is(.market-dashboard, .vendor-admin) .finance-donut-legend li > span {
+  flex: 1 1 7.5em;
+  min-width: 0;
+  overflow: visible;
+  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+:is(.market-dashboard, .vendor-admin) .finance-donut-legend li > strong {
+  flex: none;
+  margin-left: auto;
+}
+:is(.market-dashboard, .vendor-admin) .finance-donut-legend li > small {
+  flex: none;
+  min-width: 3.2em;
+}
+/* ---- Finance detail dialogs (Vendor, every width) ----------------------- */
+/* Finance detail dialogs: label on the left, value on the right, one fact
+   per row, and the result (Estimated contribution) set apart. */
+.vendor-admin .finance-detail-dialog .finance-detail-facts {
+  display: grid;
+  gap: 0;
+  margin: 0 0 14px;
+}
+.vendor-admin .finance-detail-dialog .finance-detail-facts > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--brand-border, #e3e6e3);
+}
+.vendor-admin .finance-detail-dialog .finance-detail-facts dt {
+  color: var(--brand-muted);
+  font-size: 14px;
+}
+.vendor-admin .finance-detail-dialog .finance-detail-facts dd {
+  margin: 0;
+  align-self: center;
+  color: var(--brand-foreground);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.vendor-admin .finance-detail-dialog .finance-detail-facts > div[data-total] {
+  order: 1;
+  margin-top: 6px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--brand-primary) 8%, var(--brand-surface));
+}
+.vendor-admin
+  .finance-detail-dialog
+  .finance-detail-facts
+  > div[data-total]
+  dt {
+  color: var(--brand-foreground);
+  font-weight: 600;
+}
+.vendor-admin
+  .finance-detail-dialog
+  .finance-detail-facts
+  > div[data-total]
+  dd {
+  color: var(--brand-primary);
+  font-size: 18px;
+}
+.vendor-admin .finance-detail-dialog > p {
+  color: var(--brand-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---- Touch interaction (phones, tablets, any coarse pointer) -------------- */
+@media (max-width: 1200px), (pointer: coarse) {
+  /* No grey flash box on tap; pressed states come from the components. */
+  .vendor-admin {
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* The keyboard focus ring shows only while navigating with Tab (the shell
+     sets `data-input-mode` from the last pointerdown or Tab keydown). A tap
+     that focuses a button, or focus returning to it after a dialog closes,
+     no longer leaves the ring behind. Text fields keep their own focus fill. */
+  /* `!important` because component rings use up to four classes, and in
+     pointer mode no keyboard ring should draw. Rings that components put on
+     a parent or a sibling of the focused control are listed beside it. */
+  .vendor-admin[data-input-mode='pointer']
+    :is(
+      :focus-visible:not(input, textarea, select),
+      .notification-row:has(.notification-open:focus-visible),
+      .document-card.ui-record-card:has(:focus-visible),
+      .reward-type-choice:has(input:focus-visible),
+      .product-enabled-switch > input:focus-visible + .product-enabled-track,
+      .finance-receipt-upload:focus-within,
+      .ui-record-row:has(:focus-visible)
+    ) {
+    outline: none !important;
+  }
+  /* Fields without the shared `.ui-input` focus fill swap the dark offset
+     outline for a soft brand ring while typing after a tap. */
+  .vendor-admin[data-input-mode='pointer']
+    :is(input, textarea, select):not(.ui-input):focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--brand-primary) 35%, transparent);
+  }
+
+  /* An open modal holds the page still: nothing behind it scrolls. */
+  html:has(.vendor-admin dialog:modal),
+  html:has(.vendor-admin dialog:modal) body {
+    overflow: hidden;
+  }
+  .vendor-admin dialog:modal {
+    overscroll-behavior: contain;
+  }
+}
+
+/* ---- Dashboard "Sales over time" chart ---------------------------------- */
+@media (max-width: 1200px) {
+  /* In a one-column dashboard, sections take their content's height
+     (market-mobile.css), but this chart sizes itself from its own body's
+     height. Left to content height the two feed each other and the chart
+     grows without end, so the body gets a fixed height there. */
+  @container (max-width: 600px) {
+    .vendor-admin .vendor-dashboard-trend .vendor-dashboard-fill {
+      flex: none;
+      height: 230px;
+      min-height: 0;
+      overflow: hidden;
+    }
+  }
+}
+
+/* ---- Selected-record sheets (compact) ----------------------------------- */
+@media (max-width: 1200px) {
+  /* The sheet's title replaces the Pickup panel's own heading. */
+  .vendor-admin .market-detail-sheet .pickup-panel-heading {
+    display: none;
+  }
+}
+
+/* ---- Phones ------------------------------------------------------------- */
+@media (max-width: 767px) {
+  /* The topbar is the shared compact shell (`@market/ui/shell.css`). */
+
+  /* The open navigation menu covers the page like a modal and scrolls
+     itself; the page behind it holds still. */
+  html:has(.vendor-admin .admin-topbar .ui-dashboard-menu[open]),
+  html:has(.vendor-admin .admin-topbar .ui-dashboard-menu[open]) body {
+    overflow: hidden;
+  }
+  .vendor-admin .admin-topbar .ui-dashboard-menu-content {
+    overscroll-behavior: contain;
+  }
+
+  /* Page content: a short gap under the header, the Market Manager's side
+     gutters on every page. `#main` outranks per-workspace width rules. */
+  .vendor-admin #main.admin-content {
+    width: calc(100% - 1.5rem);
+    margin-top: 14px;
+  }
+}
+
+/* ---- Touch screens and phones (including phones in landscape) ----------- */
+@media (max-width: 767px), (pointer: coarse) {
+  /* iOS zooms the page when a field under 16px takes focus. Component rules
+     size their controls at 13-14px with up to three classes, and any one of
+     them losing re-introduces the zoom, so this floor is `!important`. The
+     viewport meta is left alone: it is shared by every role, and blocking
+     zoom there would also block pinch-zoom. */
+  .vendor-admin
+    :is(
+      input:not(
+        [type='checkbox'],
+        [type='radio'],
+        [type='range'],
+        [type='color'],
+        [type='file'],
+        [type='button'],
+        [type='submit'],
+        [type='reset'],
+        [type='image'],
+        [type='hidden']
+      ),
+      select,
+      textarea
+    ) {
+    font-size: 16px !important;
+  }
+}
+
+/* ---- Phones, continued -------------------------------------------------- */
+@media (max-width: 767px) {
+  /* ---- Record tables as cards (usePhoneRecords) ------------------------ */
+  /* Each entry is a separated card, as on Orders: its name, one key value
+     and any row actions on one line, a chevron when the card opens. A tap
+     opens every column in a bottom sheet. The repeated class outranks the
+     Market Manager card-row rules that also match some of these lists. */
+  .vendor-admin :is(.table-scroll, .catalog-table-scroll):has(.ui-record-row) {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+  .vendor-admin table:has(> tbody > .ui-record-row) {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+    border: 0;
+    background: none;
+  }
+  .vendor-admin table:has(> tbody > .ui-record-row) > thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .vendor-admin table:has(> tbody > .ui-record-row) > tbody {
+    display: grid;
+    gap: 8px;
+  }
+  .vendor-admin .ui-record-row.ui-record-row.ui-record-row {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    height: auto;
+    min-height: 0;
+    padding: 12px 34px 12px 14px;
+    border: 1px solid
+      var(--markets-border, var(--farmstand-border, var(--brand-border)));
+    border-radius: 12px;
+    background: var(--brand-surface);
+  }
+  .vendor-admin .ui-record-row.ui-record-row.ui-record-row > * {
+    display: block;
+    order: 0;
+    flex: none;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 13px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  /* The name takes the line; values and actions that no longer fit move to
+     a second line inside the same card. */
+  .vendor-admin .ui-record-row.ui-record-row.ui-record-row > th {
+    flex: 1 1 9em;
+    white-space: normal;
+  }
+  /* A chevron at the card's end says it opens. */
+  .vendor-admin .ui-record-row.ui-record-row.ui-record-row::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    display: block;
+    flex: none;
+    width: 7px;
+    height: 7px;
+    margin: 0;
+    border-top: 2px solid var(--brand-muted);
+    border-right: 2px solid var(--brand-muted);
+    transform: translateY(-50%) rotate(45deg);
+  }
+  /* Cards with row actions end in the actions instead of a chevron. */
+  .vendor-admin
+    .ui-record-row.ui-record-row.ui-record-row:has(> .ui-record-action) {
+    padding-right: 12px;
+  }
+  .vendor-admin
+    .ui-record-row.ui-record-row.ui-record-row:has(> .ui-record-action)::after {
+    display: none;
+  }
+  .vendor-admin
+    .ui-record-row.ui-record-row.ui-record-row
+    > td.ui-record-action {
+    order: 1;
+    margin-left: 0;
+  }
+  /* A selection checkbox leads its card. */
+  .vendor-admin
+    .ui-record-row.ui-record-row.ui-record-row
+    > td.ui-record-action:has(input[type='checkbox']) {
+    order: -1;
+  }
+  .vendor-admin .ui-record-row .farmstand-icon-chevron-right {
+    display: none;
+  }
+  .vendor-admin .ui-record-row .ui-record-trigger.ui-button {
+    display: block;
+    width: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: left;
+  }
+  .vendor-admin .ui-record-row > .ui-record-action :is(.button, button, a) {
+    min-height: 34px;
+    padding-inline: 10px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* Notification and rule details in the bottom sheet: the panel's frame and
+     its own close button give way to the sheet's. */
+  .vendor-admin
+    dialog.notification-sheet
+    > .notification-detail.farmstand-panel.card.ui-card {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    animation: none;
+  }
+  .vendor-admin dialog.notification-sheet .notification-detail-top > button {
+    display: none;
+  }
+
+  /* The sheet: one label/value row per column, as in Documents. */
+  .vendor-admin .ui-record-sheet .ui-record-facts {
+    gap: 0;
+    margin: 0;
+    border: 1px solid var(--farmstand-border, var(--brand-border, #e3e6e3));
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .vendor-admin .ui-record-sheet .ui-record-facts > div {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 8.5rem) minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+  }
+  .vendor-admin .ui-record-sheet .ui-record-facts > div + div {
+    border-top: 1px solid var(--farmstand-border, var(--brand-border, #e3e6e3));
+  }
+  .vendor-admin .ui-record-sheet .ui-record-facts dt {
+    margin: 0;
+    color: var(--brand-muted);
+    font-size: 13px;
+  }
+  .vendor-admin .ui-record-sheet .ui-record-facts dd {
+    margin: 0;
+    align-self: center;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  .vendor-admin .ui-record-sheet .ui-record-facts dd :is(.button, button) {
+    font-weight: 600;
+  }
+
+  /* ---- Dialogs never pan sideways --------------------------------------- */
+  .vendor-admin dialog.ui-dialog {
+    overflow-x: hidden;
+  }
+  /* Tables whose cells carry `data-label` become one card per row: the row
+     heading on top, then each value beside its column name. */
+  .vendor-admin dialog.ui-dialog .table-scroll:has(td[data-label]) {
+    overflow: visible;
+    border: 0;
+    background: none;
+  }
+  .vendor-admin dialog.ui-dialog table:has(td[data-label]) {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+    border: 0;
+  }
+  .vendor-admin dialog.ui-dialog table:has(td[data-label]) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .vendor-admin dialog.ui-dialog table:has(td[data-label]) tbody {
+    display: grid;
+    gap: 8px;
+  }
+  .vendor-admin dialog.ui-dialog table:has(td[data-label]) tbody > tr {
+    display: grid;
+    gap: 4px;
+    padding: 10px 12px;
+    border: 1px solid var(--brand-border, #e3e6e3);
+    border-radius: 12px;
+    background: var(--brand-surface);
+  }
+  .vendor-admin dialog.ui-dialog table:has(td[data-label]) tbody > tr > * {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 14px;
+    text-align: right;
+  }
+  .vendor-admin dialog.ui-dialog table:has(td[data-label]) tbody > tr > th {
+    margin-bottom: 2px;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+  }
+  .vendor-admin dialog.ui-dialog td[data-label]::before {
+    content: attr(data-label);
+    color: var(--brand-muted);
+    font-weight: 400;
+    text-align: left;
+  }
+
+  /* ---- Donut info card docks under the ring ------------------------------ */
+  /* Beside the ring there is no room on a phone, so the card sits centred
+     below it and the leader line is dropped. */
+  .vendor-admin .finance-chart-tooltip.finance-donut-tooltip {
+    top: 100% !important;
+    left: 50% !important;
+    max-width: min(260px, calc(100vw - 32px));
+    transform: translate(-50%, 6px);
+  }
+  .vendor-admin .finance-donut-leader {
+    display: none;
+  }
+
+  /* ---- Page headings ------------------------------------------------------ */
+  /* Orders, Customers, Pickup, Contact Submissions and Products & Inventory
+     have their own heading markup; on a phone it takes the Market Manager
+     `.markets-heading` presentation: a small icon beside a 21px title, the
+     static description dropped, actions on their own row. */
+  .vendor-admin .order-detail .order-page-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 0 2px;
+  }
+  .vendor-admin .order-detail .order-heading-title {
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+  .vendor-admin .order-detail .order-heading-icon {
+    width: auto;
+    height: auto;
+    background: none;
+  }
+  .vendor-admin .order-detail .order-heading-icon .farmstand-icon {
+    width: 24px;
+    height: 24px;
+  }
+  .vendor-admin .order-detail .order-page-heading h1,
+  .vendor-admin .catalog-workspace .catalog-page-heading h1 {
+    font-family: var(--font-heading);
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+  .vendor-admin .order-detail .order-heading-title h1 + p {
+    display: none;
+  }
+  .vendor-admin .order-detail .order-page-heading > :not(.order-heading-title) {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 8px;
+    width: auto;
+    margin: 0;
+  }
+  .vendor-admin .loyalty-dashboard .loyalty-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 0 2px;
+  }
+  .vendor-admin .loyalty-dashboard .loyalty-heading-title {
+    align-items: center;
+    gap: 10px;
+  }
+  .vendor-admin .loyalty-dashboard .loyalty-heading-title > svg {
+    width: 24px;
+    height: 24px;
+  }
+  .vendor-admin .loyalty-dashboard .loyalty-heading h1 {
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+  .vendor-admin .loyalty-dashboard .loyalty-heading-title h1 + p {
+    display: none;
+  }
+  .vendor-admin .loyalty-dashboard .loyalty-heading > .button {
+    justify-content: center;
+    width: 100%;
+  }
+  .vendor-admin .catalog-workspace .catalog-page-heading {
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 2px;
+  }
+
+  /* ---- Products & Inventory ----------------------------------------------- */
+  /* The stock check leads the page, Categories is left to desktop, and the
+     products sit directly on the page as their own cards (no panel frame). */
+  .vendor-admin .catalog-workspace .catalog-sidebar {
+    order: -1;
+  }
+  .vendor-admin
+    .catalog-workspace
+    .catalog-sidebar
+    > .farmstand-panel:not(.catalog-stock-guidance) {
+    display: none;
+  }
+  .vendor-admin
+    .catalog-workspace
+    .catalog-products-panel.farmstand-panel.card.ui-card {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .vendor-admin .catalog-workspace .catalog-products-panel > * {
+    padding-inline: 0;
+  }
+  .vendor-admin .catalog-workspace .catalog-products-panel > .catalog-controls {
+    padding-bottom: 12px;
+  }
+  .vendor-admin .catalog-workspace .catalog-products-panel > .table-scroll {
+    margin-block: 0 12px;
+  }
+  .vendor-admin
+    .catalog-workspace
+    .catalog-products-panel
+    > .catalog-panel-heading {
+    padding-block: 0 10px;
+  }
+
+  /* ---- Summary cards: one swipeable row of short, wide cards ------------- */
+  /* `SummaryCarouselDots` follows the summary only in the Vendor dashboard. */
+  .vendor-admin
+    .markets-summary.markets-summary.ui-kpi-grid:has(+ .summary-carousel-dots),
+  .vendor-admin .loyalty-summary .loyalty-stats:has(+ .summary-carousel-dots) {
+    display: flex;
+    gap: 10px;
+    height: auto;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .vendor-admin
+    .markets-summary.ui-kpi-grid:has(
+      + .summary-carousel-dots
+    )::-webkit-scrollbar,
+  .vendor-admin
+    .loyalty-stats:has(+ .summary-carousel-dots)::-webkit-scrollbar {
+    display: none;
+  }
+  /* Loyalty's stat panels: the same short, wide card. */
+  .vendor-admin
+    .loyalty-dashboard
+    .loyalty-stats:has(+ .summary-carousel-dots)
+    > .loyalty-stat.farmstand-panel.card {
+    flex: 0 0 86%;
+    gap: 12px;
+    min-width: 0;
+    padding: 10px 14px;
+    scroll-snap-align: start;
+  }
+  .vendor-admin
+    .loyalty-stats:has(+ .summary-carousel-dots)
+    .loyalty-stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+  .vendor-admin
+    .loyalty-stats:has(+ .summary-carousel-dots)
+    .loyalty-stat-icon
+    svg {
+    width: 20px;
+    height: 20px;
+  }
+  .vendor-admin .loyalty-stats:has(+ .summary-carousel-dots) .loyalty-stat dl {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .vendor-admin .loyalty-stats:has(+ .summary-carousel-dots) .loyalty-stat dd {
+    margin: 0;
+    align-self: center;
+    font-size: 21px;
+    white-space: nowrap;
+  }
+  .vendor-admin
+    .markets-summary.markets-summary.ui-kpi-grid:has(+ .summary-carousel-dots)
+    > .markets-stat.farmstand-panel.card.ui-card {
+    flex: 0 0 86%;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    align-items: center;
+    gap: 2px 12px;
+    min-width: 0;
+    padding: 10px 14px;
+    scroll-snap-align: start;
+  }
+  .vendor-admin
+    .markets-summary.markets-summary.ui-kpi-grid:has(+ .summary-carousel-dots)
+    > .markets-stat
+    > .markets-stat-icon {
+    display: grid;
+    grid-row: 1 / span 2;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+  .vendor-admin
+    .markets-summary.markets-summary.ui-kpi-grid:has(+ .summary-carousel-dots)
+    > .markets-stat
+    > .markets-stat-icon
+    .farmstand-icon {
+    width: 19px;
+    height: 19px;
+  }
+  .vendor-admin
+    .markets-summary.markets-summary.ui-kpi-grid:has(+ .summary-carousel-dots)
+    > .markets-stat
+    > dl {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+    margin: 0;
+  }
+  .vendor-admin
+    .markets-summary.markets-summary.ui-kpi-grid:has(+ .summary-carousel-dots)
+    > .markets-stat
+    > dl
+    > dt {
+    display: block;
+    overflow: hidden;
+    min-width: 0;
+    font-size: 12.5px;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .vendor-admin
+    .markets-summary.markets-summary.ui-kpi-grid:has(+ .summary-carousel-dots)
+    > .markets-stat
+    > dl
+    > dd {
+    flex: none;
+    margin: 0;
+    align-self: center;
+    font-size: 21px;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+  .vendor-admin
+    .markets-summary.markets-summary.ui-kpi-grid:has(+ .summary-carousel-dots)
+    > .markets-stat
+    > p {
+    display: block;
+    grid-column: 2;
+    overflow: hidden;
+    min-width: 0;
+    margin: 0;
+    font-size: 11.5px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .vendor-admin
+    .markets-summary.markets-summary.ui-kpi-grid:has(+ .summary-carousel-dots)
+    > .markets-stat
+    > p:empty {
+    display: none;
+  }
+
+  /* Position dots under the row; the active card's dot stretches. */
+  .vendor-admin .summary-carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  /* Grid workspaces already put their row gap above the dots. */
+  .vendor-admin
+    :is(
+      .markets-workspace,
+      .markets-view,
+      .markets-view > div,
+      .loyalty-summary
+    )
+    > .summary-carousel-dots {
+    margin-top: -2px;
+  }
+  .vendor-admin .summary-carousel-dots[hidden] {
+    display: none;
+  }
+  .vendor-admin .summary-carousel-dots > span {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--brand-primary) 24%, transparent);
+    transition:
+      width 200ms ease,
+      background-color 200ms ease;
+  }
+  .vendor-admin .summary-carousel-dots > span.is-active {
+    width: 18px;
+    background: var(--brand-primary);
+  }
+}
+
+/* Outside the phone carousel the dots never show. */
+@media (min-width: 768px) {
+  .vendor-admin .summary-carousel-dots {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vendor-admin .summary-carousel-dots > span {
+    transition: none;
+  }
+}

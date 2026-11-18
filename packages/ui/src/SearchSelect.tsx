@@ -25,6 +25,7 @@ type SharedProps = {
   id?: string;
   name?: string;
   required?: boolean;
+  openOnFocus?: boolean;
 };
 export function SearchSelect(
   props: SharedProps & { value: string; onChange: (value: string) => void },
@@ -96,6 +97,7 @@ function SearchChoices({
   id: suppliedId,
   name,
   required,
+  openOnFocus = true,
   multiple = false,
   onReset,
 }: SharedProps & {
@@ -110,6 +112,22 @@ function SearchChoices({
     [open, setOpen] = useState(false),
     [active, setActive] = useState<string>();
   const input = useRef<HTMLInputElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const dismiss = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !root.current?.contains(event.target)
+      ) {
+        setOpen(false);
+        setQuery('');
+        onSearch?.('');
+      }
+    };
+    document.addEventListener('pointerdown', dismiss, true);
+    return () => document.removeEventListener('pointerdown', dismiss, true);
+  }, [open, onSearch]);
   const ordered = useMemo(
     () => (multiple ? sortSearchOptions(options, values) : options),
     [multiple, options, values],
@@ -169,6 +187,7 @@ function SearchChoices({
   }
   return (
     <div
+      ref={root}
       className="ops-field market-search-select ui-search-select"
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget)) close();
@@ -197,10 +216,18 @@ function SearchChoices({
           value={open && !readOnly ? query : selection}
           placeholder={placeholder}
           onFocus={() => {
-            setOpen(true);
-            setActive(undefined);
+            if (openOnFocus) {
+              setOpen(true);
+              setActive(undefined);
+            }
           }}
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            if (open && !openOnFocus) close();
+            else {
+              setOpen(true);
+              setActive(undefined);
+            }
+          }}
           onChange={(e) => {
             if (readOnly) return;
             setQuery(e.target.value);

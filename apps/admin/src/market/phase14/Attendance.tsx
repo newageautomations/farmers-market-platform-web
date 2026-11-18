@@ -34,6 +34,7 @@ import {
 import { useRead } from '../../vendor/common';
 
 import { MarketDialog, date } from '../presentation';
+import { FarmstandSearch } from '@market/ui/farmstand';
 
 export const attendanceLabels: Record<AttendanceStatus, string> = {
   AWAITING: 'Awaiting arrival',
@@ -102,10 +103,15 @@ export function AppearanceFacts({ row }: { row: AttendanceRow }) {
 export function Attendance({
   api,
   occurrenceId,
+  compact = false,
+  canManage = true,
 }: {
   api: AttendanceApi;
   occurrenceId: number;
+  compact?: boolean;
+  canManage?: boolean;
 }) {
+  const [search, setSearch] = useState('');
   const [status, setStatus] = useState(''),
     [skip, setSkip] = useState(0),
     [selected, select] = useState<number | null>(null),
@@ -118,12 +124,26 @@ export function Attendance({
     }, 220);
     return () => clearTimeout(timer);
   }, [panelClosing]);
-  const load = useCallback(
-    () => api.read({ occurrenceId, status, skip }),
-    [api, occurrenceId, status, skip],
-  );
+  const readSkip = compact ? 0 : skip;
+  const load = useCallback(async () => {
+    if (!compact) return api.read({ occurrenceId, status, skip: readSkip });
+    const first = await api.read({ occurrenceId, status, skip: 0 });
+    const items = [...first.items];
+    while (items.length < first.totalItems) {
+      const next = await api.read({ occurrenceId, status, skip: items.length });
+      if (!next.items.length)
+        throw new Error(
+          'Attendance changed while loading. Refresh to try again.',
+        );
+      items.push(...next.items);
+    }
+    return {
+      ...first,
+      items: items.filter((row) => row.occurrenceId === occurrenceId),
+    };
+  }, [api, occurrenceId, status, readSkip, compact]);
   const read = useRead(
-    `attendance:${occurrenceId}:${status}:${skip}`,
+    `attendance:${occurrenceId}:${status}:${readSkip}`,
     load,
     true,
     { retainPreviousData: true },
@@ -155,6 +175,11 @@ export function Attendance({
       serverNow: '',
     },
     row = data?.items.find((r) => r.id === selected);
+  const matching = data.items.filter(
+    (r) =>
+      !compact ||
+      r.snapshot.businessName.toLowerCase().includes(search.toLowerCase()),
+  );
   return (
     <section
       className="attendance-workspace"
@@ -165,27 +190,35 @@ export function Attendance({
       {read.error && <ErrorState error={read.error} />}
       {data && (
         <>
-          <dl className="ui-kpi-grid">
-            {[
-              ['expected', 'Expected vendors'],
-              ['CHECKED_IN', 'Checked in'],
-              ['AWAITING', 'Awaiting arrival'],
-              ['EXCUSED', 'Excused absences'],
-              ['NO_SHOW', 'No-shows'],
-            ].map(([key, label]) => (
-              <Card as="div" key={key}>
-                <dt>{label}</dt>
-                <dd>{data.counts?.[key!] ?? 0}</dd>
-              </Card>
-            ))}
-          </dl>
+          {compact ? (
+            <p>
+              {data.counts?.expected ?? 'Unavailable'} expected vendors ·{' '}
+              {data.counts?.CHECKED_IN ?? 'Unavailable'} checked in ·{' '}
+              {data.counts?.AWAITING ?? 'Unavailable'} awaiting arrival
+            </p>
+          ) : (
+            <dl className="ui-kpi-grid">
+              {[
+                ['expected', 'Expected vendors'],
+                ['CHECKED_IN', 'Checked in'],
+                ['AWAITING', 'Awaiting arrival'],
+                ['EXCUSED', 'Excused absences'],
+                ['NO_SHOW', 'No-shows'],
+              ].map(([key, label]) => (
+                <Card as="div" key={key}>
+                  <dt>{label}</dt>
+                  <dd>{data.counts?.[key!] ?? 0}</dd>
+                </Card>
+              ))}
+            </dl>
+          )}
           <div className="ui-actions">
             {data.session?.finalizedAt ? (
               <Badge tone="success">Attendance finalized</Badge>
             ) : (
               <>
                 <Button
-                  disabled={busy || !data.session}
+                  disabled={!canManage || busy || !data.session}
                   onClick={() => setFinalize(true)}
                 >
                   Finalize attendance
@@ -213,18 +246,30 @@ export function Attendance({
               </Button>
             ))}
           </AttendanceFilters>
+          {compact && (
+            <FarmstandSearch
+              aria-label="Search vendor attendance"
+              placeholder="Search vendor attendance"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setSkip(0);
+              }}
+            />
+          )}
           <div
             className={`attendance-columns ${row && !panelClosing ? 'has-selection' : ''}`}
           >
             <div>
               <AttendanceTable
                 loading={read.loading}
-                rows={data.items}
+                rows={compact ? matching.slice(skip, skip + 50) : matching}
                 onSelect={(r) => {
                   setPanelClosing(false);
                   select(r.id);
                 }}
                 onCheckIn={
+                  canManage &&
                   !data.session?.finalizedAt &&
                   data.occurrence?.status === 'scheduled'
                     ? (r) =>
@@ -241,7 +286,9 @@ export function Attendance({
               />
               <Pagination
                 hasPrevious={skip > 0}
-                hasNext={skip + 50 < data.totalItems}
+                hasNext={
+                  skip + 50 < (compact ? matching.length : data.totalItems)
+                }
                 onPrevious={() => setSkip(Math.max(0, skip - 50))}
                 onNext={() => setSkip(skip + 50)}
               />
@@ -260,7 +307,7 @@ export function Attendance({
                 <AttendanceDetail
                   key={`${row.id}:${row.revision}`}
                   row={row}
-                  busy={busy}
+                  busy={busy || !canManage}
                   run={run}
                   close={() => {
                     if (

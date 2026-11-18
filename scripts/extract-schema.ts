@@ -127,6 +127,7 @@ const sharedExtensions = [
     'customerRelationships',
   ],
   ['src/plugins/payments/api.ts', 'payments'],
+  ['src/plugins/marketplace-commerce/financial/preorder-fee.api.ts', 'preorderFee'],
   ['src/plugins/communications/api.ts', 'communication'],
 ] as const;
 const permissionPaths = [

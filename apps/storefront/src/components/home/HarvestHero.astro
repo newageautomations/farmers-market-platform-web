@@ -7,17 +7,31 @@ import {
 } from '@market/theme/storefront';
 import Button from '../ui/Button.astro';
 import HarvestArtwork from './HarvestArtwork.astro';
-import { storefrontText } from '@market/theme/storefront';
+import { storefrontText, marketText } from '@market/theme/storefront';
 interface Props {
   context: StorefrontContext;
   image?: string;
   href: string;
   action: string;
+  /** Market websites: the secondary button's destination (the Vendors page). */
+  secondaryHref?: string;
+  /**
+   * Market Day mode: fixed copy that replaces the editable homepage title,
+   * introduction and button labels for the day. Omit for the ordinary hero.
+   */
+  override?: {
+    title: string;
+    introduction: string;
+    primaryLabel: string;
+    secondaryLabel: string;
+  };
 }
-const { context, image, href, action } = Astro.props;
+const { context, image, href, action, secondaryHref, override } = Astro.props;
 const home = (context.appearance ?? defaultStorefrontAppearance).homepage;
 const media = safeAsset(home.image) ?? safeAsset(image);
 const market = context.kind === 'MARKET';
+const marketHeroIntroduction =
+  'A little closer to the people who grow, make, and bring good things to your community. Find your next market day.';
 ---
 
 <section
@@ -26,40 +40,79 @@ const market = context.kind === 'MARKET';
   aria-labelledby="home-title"
 >
   <div class="harvest-hero-copy">
-    <h1 id="home-title" data-home-text="title">
-      {home.title || context.name}
-    </h1>
-    <p data-home-text="introduction">
-      {home.introduction ||
-        (market
-          ? 'A little closer to the people who grow, make, and bring good things to your community. Find your next market day.'
-          : vendorHeroIntroduction)}
-    </p>
+    {override ? (
+      <>
+        <h1 id="home-title">{override.title}</h1>
+        <p>{override.introduction}</p>
+      </>
+    ) : (
+      <>
+        <h1 id="home-title" data-home-text="title">
+          {home.title || context.name}
+        </h1>
+        <p
+          data-home-text="introduction"
+          data-fallback={market ? marketHeroIntroduction : undefined}
+        >
+          {home.introduction ||
+            (market ? marketHeroIntroduction : vendorHeroIntroduction)}
+        </p>
+      </>
+    )}
+    {override ? (
+      <div class="actions harvest-hero-actions">
+        <Button href={href}>
+          {override.primaryLabel} <span aria-hidden="true">&#8595;</span>
+        </Button>
+        {secondaryHref && (
+          <Button href={secondaryHref} variant="secondary">
+            {override.secondaryLabel}
+          </Button>
+        )}
+      </div>
+    ) : (
     <div class="actions harvest-hero-actions">
       <Button href={href}>
-        <span data-storefront-text="heroPrimaryLabel">
-          {market
-            ? action
-            : storefrontText(context.appearance, 'heroPrimaryLabel')}
-        </span>{' '}
-        <span aria-hidden="true">↗</span>
+        {market ? (
+          <span data-market-text="heroPrimaryLabel">
+            {context.appearance?.market
+              ? marketText(context.appearance, 'heroPrimaryLabel')
+              : action}
+          </span>
+        ) : (
+          <span data-storefront-text="heroPrimaryLabel">
+            {storefrontText(context.appearance, 'heroPrimaryLabel')}
+          </span>
+        )}{' '}
+        <span aria-hidden="true">&#8599;</span>
       </Button>
-      {context.appearance?.about.enabled && (
-        <Button href="/about" variant="tertiary">
-          <span data-storefront-text="heroSecondaryLabel">
-            {market
-              ? 'Our story'
-              : storefrontText(context.appearance, 'heroSecondaryLabel')}
+      {market && secondaryHref ? (
+        <Button href={secondaryHref} variant="secondary">
+          <span data-market-text="heroSecondaryLabel">
+            {marketText(context.appearance, 'heroSecondaryLabel')}
           </span>
         </Button>
+      ) : (
+        context.appearance?.about.enabled && (
+          <Button href="/about" variant="tertiary">
+            <span data-storefront-text="heroSecondaryLabel">
+              {market
+                ? 'Our story'
+                : storefrontText(context.appearance, 'heroSecondaryLabel')}
+            </span>
+          </Button>
+        )
       )}
-      <slot name="action" />
+      {!market && <slot name="action" />}
     </div>
+    )}
     <slot name="details" />
   </div>
   <div
     data-hero-shape={
-      !market ? (context.appearance?.vendor?.heroShape ?? 'dome') : undefined
+      !market
+        ? (context.appearance?.vendor?.heroShape ?? 'dome')
+        : context.appearance?.market?.heroShape
     }
     class:list={['harvest-hero-visual', !media && 'harvest-hero-illustration']}
   >

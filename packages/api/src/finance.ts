@@ -67,6 +67,11 @@ export interface FinanceExpense {
   voided: boolean;
 }
 export interface FinanceOrderTransaction {
+  preorderFee?: {
+    platform: number; recovery: number; feeTax: number;
+    platformRefunded: number; recoveryRefunded: number; feeTaxRefunded: number;
+    applicationFeeReturnedToVendor: number;
+  };
   id: string;
   orderId: string;
   orderCode: string;

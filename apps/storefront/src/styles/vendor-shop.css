@@ -12,29 +12,28 @@
   font-size: 1.1rem;
   margin-bottom: 1rem;
 }
-.shop-categories nav {
+.shop-category-filters {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.125rem;
 }
-.shop-categories a {
-  padding: 0.75rem;
-  min-height: 44px;
-  text-decoration: none;
+.shop-categories .shop-category-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding-block: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.35;
   overflow-wrap: anywhere;
-  border-radius: calc(var(--storefront-card-radius) * 0.5);
+  cursor: pointer;
 }
-.shop-categories a[aria-current='page'],
-.shop-categories a:hover,
-.shop-categories a:focus-visible {
-  background: color-mix(
-    in srgb,
-    var(--brand-primary) 10%,
-    var(--brand-surface)
-  );
-  color: var(--brand-primary);
+.shop-category-option input {
+  flex-shrink: 0;
+  margin: 0;
 }
-.shop-categories a[aria-current='page'] {
-  font-weight: 600;
+.shop-products .product-card-link:is(:hover, :focus-visible) {
+  text-decoration: none;
 }
 .shop-catalog {
   min-width: 0;
@@ -88,6 +87,7 @@
 }
 .shop-products .product-card {
   gap: 0.65rem;
+  align-items: stretch;
 }
 .shop-products .product-media {
   margin-bottom: 0.75rem;
@@ -102,9 +102,15 @@
 .shop-products .product-card > .button,
 .shop-products .featured-purchase {
   margin-top: auto;
-}
-.shop-products .featured-purchase .ui-button {
   width: 100%;
+  align-self: stretch;
+}
+.shop-products .product-card > .ui-button,
+.shop-products .featured-purchase > .ui-button {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+  align-self: stretch;
 }
 .shop-products .shop-availability {
   font-size: 0.85rem;
@@ -124,7 +130,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
   .shop-categories {
-    display: none;
+    display: block;
   }
   .shop-mobile-categories {
     display: block;
@@ -141,4 +147,26 @@
   .shop-products.catalog-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+.vendor-shop .shop-date-empty {
+  width: 100%;
+  max-width: 36rem;
+  justify-self: center;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 1.25rem;
+}
+.vendor-shop .shop-date-empty > h1 {
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  margin: 0;
+}
+.vendor-shop .shop-date-empty .shop-market-picker {
+  display: flex;
+  justify-content: center;
 }

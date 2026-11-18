@@ -1,0 +1,36 @@
+---
+/**
+ * Astro adapter of the shared React `HeaderMenu` (HDR-01 floating header
+ * menu): the same native details markup and classes, with the shared
+ * `installHeaderMenu` behavior, so the SSR header needs no hydration.
+ */
+import { buttonClassName } from '@market/ui/presentation';
+const { label, class: className = '' } = Astro.props as {
+  /** Accessible name of the trigger. */
+  label: string;
+  class?: string;
+};
+---
+
+<details class={`ui-header-menu ${className}`} data-header-menu>
+  <summary
+    class={buttonClassName({
+      variant: 'secondary',
+      iconOnly: true,
+      className: 'farmstand-button ui-header-menu-trigger',
+    })}
+    aria-label={label}
+  >
+    <slot name="icon" />
+  </summary>
+  <div class="ui-header-menu-panel">
+    <slot />
+  </div>
+</details>
+<script>
+  import { installHeaderMenu } from '@market/ui/presentation';
+  for (const menu of document.querySelectorAll<HTMLDetailsElement>(
+    'details[data-header-menu]',
+  ))
+    installHeaderMenu(menu);
+</script>

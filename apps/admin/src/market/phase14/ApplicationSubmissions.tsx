@@ -30,6 +30,7 @@ import { MarketsPagination as Pagination } from '../../vendor/MarketsPagination'
 import { useRead } from '../../vendor/common';
 import { StatusBadge, friendlyLabel } from '../presentation';
 import { navigateApplication } from './application-navigation';
+import { CompactLabel, DetailSheet } from '../mobile';
 
 type Props = {
   api: MarketOperationsApi;
@@ -89,12 +90,26 @@ export function ApplicationSubmissions({ api, data }: Props) {
   const filterTrigger = useRef<HTMLButtonElement>(null);
   const filterCardId = useId();
   const viewId = useId();
-  const [filters, setFilters] = useState(defaults);
+  const [filters, setFilters] = useState<ApplicationReviewInput>(() => {
+    const quickView = new URLSearchParams(window.location.search).get(
+      'quickView',
+    );
+    return quickView === 'REVIEW' || quickView === 'VENDOR'
+      ? { ...defaults, quickView }
+      : defaults;
+  });
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<number | null>(() => {
     const value = new URLSearchParams(window.location.search).get('submission');
     return value && /^[1-9]\d*$/.test(value) ? Number(value) : null;
   });
+  // Phones and tablets open the selected record's details in a sheet; a
+  // link that names a submission opens it straight away.
+  const [detailOpen, setDetailOpen] = useState(selected !== null);
+  const select = (value: number) => {
+    setSelected(value);
+    setDetailOpen(true);
+  };
   const [revision, setRevision] = useState(0);
   const refresh = useCallback(() => setRevision((v) => v + 1), []);
   useEffect(() => {
@@ -437,14 +452,14 @@ export function ApplicationSubmissions({ api, data }: Props) {
                             ? 'market-application-selected'
                             : undefined
                         }
-                        onClick={() => setSelected(row.id)}
+                        onClick={() => select(row.id)}
                         onKeyDown={(event) => {
                           if (
                             event.target === event.currentTarget &&
                             ['Enter', ' '].includes(event.key)
                           ) {
                             event.preventDefault();
-                            setSelected(row.id);
+                            select(row.id);
                           }
                         }}
                       >
@@ -472,7 +487,7 @@ export function ApplicationSubmissions({ api, data }: Props) {
                             }}
                             aria-label={`Open ${row.businessName}`}
                           >
-                            Open
+                            <CompactLabel>Open</CompactLabel>
                             <FarmstandIcon name="chevron-right" />
                           </FarmstandLink>
                         </td>
@@ -514,82 +529,88 @@ export function ApplicationSubmissions({ api, data }: Props) {
           )}
         </FarmstandPanel>
       </div>
-      <FarmstandPanel
-        as="section"
-        className="markets-next market-application-details application-template-details"
-        aria-label="Submission details"
+      <DetailSheet
+        title="Submission details"
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
       >
-        <h2>
-          <FarmstandIcon name="file-text" />
-          Submission details
-        </h2>
-        <div className="markets-next-content">
-          {current ? (
-            <>
-              <div className="occurrence-details-title">
-                <h3>{current.businessName}</h3>
-                <StatusBadge>{current.status}</StatusBadge>
-              </div>
-              {detailQuery.error ? (
-                <>
-                  <ErrorState error={detailQuery.error} />
-                  <FarmstandButton
-                    variant="secondary"
-                    onClick={detailQuery.refresh}
+        <FarmstandPanel
+          as="section"
+          className="markets-next market-application-details application-template-details"
+          aria-label="Submission details"
+        >
+          <h2>
+            <FarmstandIcon name="file-text" />
+            Submission details
+          </h2>
+          <div className="markets-next-content">
+            {current ? (
+              <>
+                <div className="occurrence-details-title">
+                  <h3>{current.businessName}</h3>
+                  <StatusBadge>{current.status}</StatusBadge>
+                </div>
+                {detailQuery.error ? (
+                  <>
+                    <ErrorState error={detailQuery.error} />
+                    <FarmstandButton
+                      variant="secondary"
+                      onClick={detailQuery.refresh}
+                    >
+                      Retry details
+                    </FarmstandButton>
+                  </>
+                ) : s?.id === current.id ? (
+                  <dl className="market-application-facts">
+                    <div>
+                      <dt>Application</dt>
+                      <dd>{s.templateName || 'Original application'}</dd>
+                    </div>
+                    <div>
+                      <dt>Submitted</dt>
+                      <dd>{date(s.createdAt, detail?.timeZone)}</dd>
+                    </div>
+                    <div>
+                      <dt>Contact</dt>
+                      <dd>
+                        {[s.applicant.firstName, s.applicant.lastName]
+                          .filter(Boolean)
+                          .join(' ') || 'Not provided'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Email</dt>
+                      <dd>{s.applicant.email || 'Not provided'}</dd>
+                    </div>
+                    <div>
+                      <dt>Category</dt>
+                      <dd>{s.applicant.category || 'Not provided'}</dd>
+                    </div>
+                    <div>
+                      <dt>Requested dates</dt>
+                      <dd>{s.requestedOccurrenceIds.length}</dd>
+                    </div>
+                  </dl>
+                ) : (
+                  <Spinner label="Loading submission details" />
+                )}
+                <div className="application-details-actions">
+                  <FarmstandLink
+                    href={`/market/application-submissions/${current.id}`}
+                    variant="primary"
+                    onClick={navigateApplication}
                   >
-                    Retry details
-                  </FarmstandButton>
-                </>
-              ) : s?.id === current.id ? (
-                <dl className="market-application-facts">
-                  <div>
-                    <dt>Application</dt>
-                    <dd>{s.templateName || 'Original application'}</dd>
-                  </div>
-                  <div>
-                    <dt>Submitted</dt>
-                    <dd>{date(s.createdAt, detail?.timeZone)}</dd>
-                  </div>
-                  <div>
-                    <dt>Contact</dt>
-                    <dd>
-                      {[s.applicant.firstName, s.applicant.lastName]
-                        .filter(Boolean)
-                        .join(' ') || 'Not provided'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Email</dt>
-                    <dd>{s.applicant.email || 'Not provided'}</dd>
-                  </div>
-                  <div>
-                    <dt>Category</dt>
-                    <dd>{s.applicant.category || 'Not provided'}</dd>
-                  </div>
-                  <div>
-                    <dt>Requested dates</dt>
-                    <dd>{s.requestedOccurrenceIds.length}</dd>
-                  </div>
-                </dl>
-              ) : (
-                <Spinner label="Loading submission details" />
-              )}
-              <div className="application-details-actions">
-                <FarmstandLink
-                  href={`/market/application-submissions/${current.id}`}
-                  variant="primary"
-                  onClick={navigateApplication}
-                >
-                  Open application
-                  <FarmstandIcon name="arrow-right" />
-                </FarmstandLink>
-              </div>
-            </>
-          ) : (
-            <p>Select a submission to see its details.</p>
-          )}
-        </div>
-      </FarmstandPanel>
+                    Open application
+                    <FarmstandIcon name="arrow-right" />
+                  </FarmstandLink>
+                </div>
+              </>
+            ) : (
+              <p>Select a submission to see its details.</p>
+            )}
+          </div>
+        </FarmstandPanel>
+      </DetailSheet>
     </div>
   );
 }

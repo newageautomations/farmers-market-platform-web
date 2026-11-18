@@ -8,6 +8,7 @@ const { path } = Astro.props as { path: string };
   {customerNavigation.map((item) => (
     <a
       href={item.href}
+      aria-label={item.label}
       aria-current={
         path === item.href ||
         (item.href === '/account/notifications' &&
@@ -37,7 +38,7 @@ const { path } = Astro.props as { path: string };
           }
         />
       </svg>
-      <span>{item.label}</span>
+      <span class="ui-nav-label">{item.label}</span>
     </a>
   ))}
 </nav>

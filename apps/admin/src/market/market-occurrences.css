@@ -3,20 +3,24 @@
    occurrence-specific arrangements live here, using the same tokens. */
 
 /* Heading actions wrap below the title on narrow pages, as in Documents. */
-.market-occurrences > .markets-heading {
+.market-occurrences > .markets-heading,
+.vendor-markets > .markets-heading {
   flex-wrap: wrap;
 }
-.market-occurrences > .markets-heading > div:not(.workspace-heading-actions) {
+.market-occurrences > .markets-heading > div:not(.workspace-heading-actions),
+.vendor-markets > .markets-heading > div:not(.workspace-heading-actions) {
   flex: 1 1 260px;
   min-width: 0;
 }
-.market-occurrences .workspace-heading-actions {
+.market-occurrences .workspace-heading-actions,
+.vendor-markets .workspace-heading-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
-.market-occurrences .workspace-heading-actions .farmstand-icon {
+.market-occurrences .workspace-heading-actions .farmstand-icon,
+.vendor-markets .workspace-heading-actions .farmstand-icon {
   width: 16px;
   height: 16px;
   color: currentColor;
@@ -386,7 +390,33 @@
   margin: 0;
 }
 .generate-wizard .command-section .ui-actions {
-  margin-top: 18px;
+  margin-top: 6px;
+}
+
+/* Keep scheduling stages content-sized instead of reserving empty wizard space. */
+.generate-wizard .reward-step-caption {
+  margin-bottom: 6px;
+}
+.generate-wizard .reward-progress {
+  margin-bottom: 8px;
+}
+.generate-wizard .reward-stage {
+  min-height: 0;
+}
+.generate-wizard .reward-stage-heading {
+  margin-bottom: 6px;
+}
+.generate-wizard .reward-wizard-actions {
+  margin-top: 6px;
+}
+.generate-wizard
+  :is(
+    .generate-schedule,
+    .generate-schedule-form,
+    .generate-range,
+    .generate-review
+  ) {
+  gap: 6px;
 }
 .generate-remove .command-section {
   border-color: var(--status-danger-border, var(--reward-border));
@@ -437,28 +467,6 @@
 .generate-dates .reward-field-help + .reward-field-help {
   margin-top: 4px;
 }
-/* Creating state: a spinning ring that gives way to the published check. */
-.generate-creating-ring {
-  display: block;
-  width: 80px;
-  height: 80px;
-  margin-inline: auto;
-  box-sizing: border-box;
-  border: 5px solid var(--reward-border);
-  border-top-color: var(--brand-primary);
-  border-radius: 50%;
-  animation: generate-creating-spin 850ms linear infinite;
-}
-@keyframes generate-creating-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .generate-creating-ring {
-    animation: none;
-  }
-}
 @media (max-width: 650px) {
   .generate-review .reward-review-card.card.ui-card {
     grid-template-columns: minmax(0, 1fr);
@@ -494,11 +502,24 @@
 .occurrence-map-body {
   display: grid;
   gap: 14px;
-  padding: 10px 20px 20px;
+  padding: 0 20px 20px;
   min-width: 0;
 }
 .occurrence-map-body > p {
   margin: 0;
+}
+.occurrence-map-panel .ops-map {
+  margin-block: 0;
+}
+.occurrence-map-panel .map-navigation {
+  min-height: 0;
+  padding: 0 0 12px;
+}
+.occurrence-map-panel .map-navigation .ui-select.ui-select {
+  --ui-control-height: 32px;
+  height: var(--ui-control-height);
+  min-height: var(--ui-control-height);
+  padding-block: 0;
 }
 .occurrence-map-panel .application-detail-panel-header .farmstand-button {
   gap: 6px;
@@ -543,4 +564,53 @@
   width: 15px;
   height: 15px;
   flex: none;
+}
+
+/* Scheduling dialogs keep the established controls and responsive form grid. */
+.admin-dashboard .ui-dialog:has(.generate-wizard) {
+  overflow-y: auto;
+}
+.ui-dialog:has(.generate-wizard) .form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 16px;
+}
+.ui-dialog:has(.generate-wizard) .market-toggle,
+.ui-dialog:has(.generate-wizard) label.market-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ui-dialog-header .schedule-unsaved {
+  order: 1;
+  margin-inline-start: auto;
+  color: var(--brand-muted);
+  font-size: 13px;
+}
+.ui-dialog-header:has(.schedule-unsaved) .ui-dialog-close {
+  order: 2;
+}
+@media (max-width: 600px) {
+  .ui-dialog:has(.generate-wizard) .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Fields carry their own default margins, independently of the layout gap. */
+.ui-dialog .generate-wizard .field,
+.ui-dialog .generate-wizard .ops-field,
+.ui-dialog .generate-wizard .form-grid {
+  margin-block: 0;
+}
+.ui-dialog .generate-wizard .command-section form > fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.ui-dialog .generate-wizard .command-section p {
+  margin-block: 6px;
+}
+.ui-dialog .generate-wizard .market-toggle {
+  margin-block: 6px;
 }

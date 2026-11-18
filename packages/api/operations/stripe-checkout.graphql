@@ -1,0 +1,40 @@
+fragment StripeCheckout on StripeCheckoutStatus {
+  groupId
+  orderId
+  state
+  publishableKey
+  consentPolicy
+  setupSecret
+  actionSecret
+  actionAccount
+  charges {
+    vendorId
+    amount
+    currency
+  }
+}
+mutation StripeCheckoutEnabled {
+  stripeCheckoutEnabled
+}
+mutation StartStripeCheckout($consent: String!) {
+  startStripeCheckout(consent: $consent) {
+    ...StripeCheckout
+  }
+}
+mutation AdvanceStripeCheckout($groupId: ID!) {
+  advanceStripeCheckout(groupId: $groupId) {
+    ...StripeCheckout
+  }
+}
+mutation CancelStripeCheckout($groupId: ID!) {
+  cancelStripeCheckout(groupId: $groupId) {
+    ...StripeCheckout
+  }
+}
+mutation StripeCheckoutStatus($orderId: ID!) {
+  stripeCheckoutStatus(orderId: $orderId) {
+    ...StripeCheckout
+  }
+}
+
+mutation PrepareStripeCheckout { prepareStripeCheckout { ...StripeCheckout } }

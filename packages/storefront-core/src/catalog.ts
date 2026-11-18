@@ -1,6 +1,7 @@
 import { AppError } from '@market/api';
 import type { PublicCatalog, PublicProduct } from '@market/api';
 import { formatMoney } from '@market/config';
+export const SHOP_PAGE_SIZE = 20;
 
 export function catalogInputs(params: URLSearchParams) {
   const raw = params.get('page') ?? '1',
@@ -14,7 +15,13 @@ export function catalogInputs(params: URLSearchParams) {
     throw new AppError('validation');
   const search = (params.get('q') ?? '').trim().slice(0, 200),
     sort = params.get('sort') === 'desc' ? 'desc' : 'asc';
-  return { page, search, sort, skip: (page - 1) * 12, take: 12 };
+  return {
+    page,
+    search,
+    sort,
+    skip: (page - 1) * SHOP_PAGE_SIZE,
+    take: SHOP_PAGE_SIZE,
+  };
 }
 export function plainDescription(value: string) {
   // Render descriptions as escaped text. Never trust catalog HTML as executable markup.

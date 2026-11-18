@@ -200,6 +200,14 @@
   gap: 18px;
   min-width: 0;
 }
+/* QuickBooks cards take the Farmstand panel surface of the other tabs. */
+.quickbooks-workspace > .card.ui-card:not(.farmstand-panel) {
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--farmstand-border);
+  border-radius: 16px;
+  box-shadow: none;
+}
 .finance-invoices {
   display: grid;
   gap: 18px;

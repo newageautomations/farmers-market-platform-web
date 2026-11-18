@@ -19,8 +19,10 @@ import {
   SelectField,
   SearchSelect,
   Spinner,
+  Tooltip,
 } from './index';
 import { documentStatusTone } from './document-status';
+import { FarmstandIcon } from './farmstand';
 export function DocumentUploadWarning() {
   return (
     <Alert severity="warning">
@@ -436,13 +438,17 @@ export function DocumentVersionPicker({
               </dd>
             </div>
           </dl>
-          <Button
-            variant="secondary"
-            disabled={busy || file.status !== 'Available'}
-            onClick={() => onDownload(file.id)}
-          >
-            Download
-          </Button>
+          <Tooltip label="Download">
+            <Button
+              variant="secondary"
+              disabled={busy || file.status !== 'Available'}
+              onClick={() => onDownload(file.id)}
+              iconOnly
+              aria-label="Download"
+            >
+              <FarmstandIcon name="download" />
+            </Button>
+          </Tooltip>
         </>
       ) : (
         <p>No file versions available.</p>

@@ -1,7 +1,21 @@
+export * from './website-page-heroes';
+import {
+  isHarvestHomepageComposition,
+  isWebsitePageCompositions,
+  appearanceWebsiteSections,
+  uniqueWebsiteSectionIds,
+  type HarvestHomepageSection,
+  type WebsitePageCompositions,
+} from './website-section-contract';
 import { policiesSchema } from './policies';
 import { farmhouseTemplateSchema } from './modern-farmhouse';
-import { editorialMarketTemplateSchema } from './editorial-market';
+import {
+  editorialHomepageComposition,
+  editorialMarketTemplateSchema,
+  type EditorialMarketSettings,
+} from './editorial-market';
 export * from './modern-farmhouse';
+export * from './website-sections';
 export * from './editorial-market';
 export {
   policiesSchema,
@@ -58,8 +72,84 @@ export const storefrontThemes = {
       'A bright illustrated market storefront with an editorial homepage.',
     premium: false,
   },
+  meadow: {
+    label: 'Meadow',
+    available: true,
+    description:
+      'A sunny, illustrated market storefront with bright produce, bees and farm friends.',
+    premium: false,
+  },
+  hearth: {
+    label: 'Hearth',
+    available: true,
+    description:
+      'A rustic bakehouse storefront in kraft and roast tones for breads, preserves, coffee and pastries.',
+    premium: false,
+  },
+  bloom: {
+    label: 'Bloom',
+    available: true,
+    description:
+      'A lively, curvy vendor storefront with wavy section edges and hand-drawn photo shapes.',
+    premium: false,
+  },
 } as const;
 export type StorefrontThemeId = keyof typeof storefrontThemes;
+/** Themes a market website can use. Vendor-only themes are never offered to markets. */
+export const marketStorefrontThemes: readonly StorefrontThemeId[] = [
+  'harvest',
+  'editorial-market',
+  'meadow',
+  'hearth',
+];
+/** Themes that only a market website can use. */
+export const marketOnlyStorefrontThemes = ['meadow', 'hearth'] as const;
+export type MarketOnlyStorefrontTheme =
+  (typeof marketOnlyStorefrontThemes)[number];
+/** Themes that only a vendor website can use. Markets are never offered them. */
+export const vendorOnlyStorefrontThemes = ['bloom'] as const;
+export type VendorOnlyStorefrontTheme =
+  (typeof vendorOnlyStorefrontThemes)[number];
+/** Meadow, Hearth and Bloom store their homepage, copy and page sections in the Harvest contract. */
+export function usesHarvestContract(theme: unknown): boolean {
+  return (
+    theme === 'harvest' ||
+    (marketOnlyStorefrontThemes as readonly unknown[]).includes(theme) ||
+    (vendorOnlyStorefrontThemes as readonly unknown[]).includes(theme)
+  );
+}
+/** Bloom: the curvy vendor theme on the Harvest vendor contract. */
+export function isBloom(value: unknown): value is { theme: 'bloom' } {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    (value as { theme?: unknown }).theme === 'bloom'
+  );
+}
+/** The market-only theme of an appearance: Meadow or Hearth. */
+export function marketOnlyTheme(
+  value: unknown,
+): MarketOnlyStorefrontTheme | undefined {
+  const theme =
+    value && typeof value === 'object'
+      ? (value as { theme?: unknown }).theme
+      : undefined;
+  return marketOnlyStorefrontThemes.find((id) => id === theme);
+}
+export function isHearth(
+  value: unknown,
+): value is { theme: 'hearth'; market?: MarketAppearance } {
+  return marketOnlyTheme(value) === 'hearth';
+}
+export function isMeadow(
+  value: unknown,
+): value is { theme: 'meadow'; market?: MarketAppearance } {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    (value as { theme?: unknown }).theme === 'meadow'
+  );
+}
 
 const text = (max: number) =>
   z
@@ -93,6 +183,9 @@ export const textSizeSections = [
   'find-intro',
   'find-cta',
   'story-cta',
+  'markets',
+  'vendors',
+  'categories',
 ] as const;
 export const storefrontTextSizesSchema = z
   .record(
@@ -378,8 +471,234 @@ export const categoryPresentationSchema = z
       .refine((value) => !!value.image === !!value.imageAssetId),
   )
   .refine((value) => Object.keys(value).length <= 200);
+/** Market Harvest homepage copy. Every key falls back to a template default. */
+export const marketTextFields = {
+  heroPrimaryLabel: {
+    section: 'hero',
+    label: 'Primary button label',
+    fallback: 'Find your next market day',
+    max: 80,
+  },
+  heroSecondaryLabel: {
+    section: 'hero',
+    label: 'Secondary button label',
+    fallback: 'Meet the vendors',
+    max: 80,
+  },
+  marketsHeading: {
+    section: 'markets',
+    label: 'Section heading',
+    fallback: 'A good day starts at the market.',
+    max: 160,
+  },
+  marketsText: {
+    section: 'markets',
+    label: 'Supporting text',
+    fallback: 'Pick a date. Meet the makers. Find something wonderful.',
+    max: 600,
+  },
+  marketsLinkLabel: {
+    section: 'markets',
+    label: 'All dates link label',
+    fallback: 'See every market date',
+    max: 80,
+  },
+  vendorsHeading: {
+    section: 'vendors',
+    label: 'Section heading',
+    fallback: 'Get to know your local favorites.',
+    max: 160,
+  },
+  vendorsText: {
+    section: 'vendors',
+    label: 'Supporting text',
+    fallback: 'Meet the growers and makers coming to our next market day.',
+    max: 600,
+  },
+  vendorsLinkLabel: {
+    section: 'vendors',
+    label: 'All vendors link label',
+    fallback: 'Meet every vendor',
+    max: 80,
+  },
+  categoriesHeading: {
+    section: 'categories',
+    label: 'Section heading',
+    fallback: 'Shop by category',
+    max: 160,
+  },
+  categoriesText: {
+    section: 'categories',
+    label: 'Supporting text',
+    fallback: "Browse what's coming to the next market day.",
+    max: 600,
+  },
+  closingHeading: {
+    section: 'closing',
+    label: 'Banner heading',
+    fallback: 'Come for the market.\nStay for the community.',
+    max: 160,
+  },
+  closingText: {
+    section: 'closing',
+    label: 'Banner supporting text',
+    fallback: 'Fresh food, good neighbors and something new every week.',
+    max: 600,
+  },
+  closingLabel: {
+    section: 'closing',
+    label: 'Banner button label',
+    fallback: 'Find your next market day',
+    max: 80,
+  },
+  footerTagline: {
+    section: 'footer',
+    label: 'Footer tagline',
+    fallback: 'Make a little room for local.',
+    max: 200,
+  },
+} as const;
+export type MarketTextKey = keyof typeof marketTextFields;
+export const marketPageDefaults = {
+  'market-dates': {
+    enabled: true,
+    title: 'Market Dates',
+    description:
+      'Plan your visit. Every upcoming market day, with times and location.',
+  },
+  vendors: {
+    enabled: true,
+    title: 'Vendors',
+    description:
+      'Choose a market day to see who will be there, then visit their shop or browse what they are bringing.',
+  },
+  applications: {
+    enabled: true,
+    title: 'Become a Vendor',
+    description:
+      'Grow with us. Choose an open application to join an upcoming market.',
+  },
+} as const;
+export type MarketPageId = keyof typeof marketPageDefaults;
+const marketPageSchema = z
+  .object({
+    enabled: z.boolean(),
+    title: text(160).refine((value) => !!value),
+    description: text(600),
+  })
+  .strict();
+export const marketHeroDestinations = [
+  ['/', 'Homepage'],
+  ['/market-dates', 'Market dates'],
+  ['/vendors', 'Vendors'],
+  ['/shop', 'Shop'],
+  ['/applications', 'Applications'],
+  ['/about', 'Our story'],
+  ['/contact', 'Contact'],
+  ['/faq', 'FAQ'],
+  ['/policies', 'Policies'],
+  ['#markets', 'Upcoming markets section'],
+  ['#vendors', 'Vendors section'],
+] as const;
+const marketDestination = text(200).refine((value) =>
+  marketHeroDestinations.some(([path]) => path === value),
+);
+export const marketAppearanceSchema = z
+  .object({
+    text: z
+      .object(
+        Object.fromEntries(
+          Object.entries(marketTextFields).map(([key, field]) => [
+            key,
+            text(field.max).optional(),
+          ]),
+        ) as Record<MarketTextKey, z.ZodOptional<ReturnType<typeof text>>>,
+      )
+      .strict()
+      .optional(),
+    heroPrimaryDestination: marketDestination.optional(),
+    heroSecondaryDestination: marketDestination.optional(),
+    heroImageAssetId: text(200).nullable().optional(),
+    marketsCardTheme: z.enum(['standard', 'inverse', 'soft']).optional(),
+    vendorsCardTheme: z.enum(['standard', 'inverse', 'soft']).optional(),
+    heroShape: z.enum(storefrontImageShapes),
+    typography: z.enum(['editorial', 'minimal', 'warm', 'friendly', 'refined']),
+    pages: z
+      .object({
+        'market-dates': marketPageSchema,
+        vendors: marketPageSchema,
+        applications: marketPageSchema,
+      })
+      .strict(),
+  })
+  .strict();
+export type MarketAppearance = z.infer<typeof marketAppearanceSchema>;
+export const marketAppearanceDefaults: MarketAppearance = {
+  heroShape: 'dome',
+  typography: 'editorial',
+  pages: {
+    'market-dates': { ...marketPageDefaults['market-dates'] },
+    vendors: { ...marketPageDefaults.vendors },
+    applications: { ...marketPageDefaults.applications },
+  },
+};
+export function marketText(
+  config: { market?: MarketAppearance } | undefined,
+  key: MarketTextKey,
+) {
+  return config?.market?.text?.[key] || marketTextFields[key].fallback;
+}
+export function marketPage(
+  config: { market?: MarketAppearance } | undefined,
+  page: MarketPageId,
+) {
+  return config?.market?.pages[page] ?? marketPageDefaults[page];
+}
+/** Market homepage text that Meadow does not show: its sections use their
+ * headings alone. */
+export const meadowHiddenText: readonly MarketTextKey[] = [
+  'marketsText',
+  'vendorsText',
+  'categoriesText',
+  'closingText',
+];
+/** Market homepage text a theme does not show. Meadow and Hearth sections use
+ * their headings alone. */
+export function headingOnlyMarketText(
+  theme: unknown,
+): readonly MarketTextKey[] {
+  return (marketOnlyStorefrontThemes as readonly unknown[]).includes(theme)
+    ? meadowHiddenText
+    : [];
+}
+/** Market homepage text that Editorial Market does not show: its dates and
+ * vendor sections use their headings alone. */
+export const editorialMarketHiddenText: readonly MarketTextKey[] = [
+  'marketsText',
+  'vendorsText',
+];
+/** An Editorial Market market homepage, with the original call-to-action
+ * banner seeded from the market's banner copy as an editable CTA section. */
+export function editorialMarketHomepageComposition(config: {
+  market?: MarketAppearance;
+  template: { settings: EditorialMarketSettings };
+}) {
+  return editorialHomepageComposition(config.template.settings, {}, true, {
+    heading: marketText(config, 'closingHeading'),
+    body: marketText(config, 'closingText'),
+    label: marketText(config, 'closingLabel'),
+    destination: marketPage(config, 'market-dates').enabled
+      ? '/market-dates'
+      : '/',
+  });
+}
 export const storefrontAppearanceSchema = z
   .object({
+    market: marketAppearanceSchema.optional(),
+    harvestComposition: z
+      .custom<HarvestHomepageSection[]>(isHarvestHomepageComposition)
+      .optional(),
+    pageSections: z.custom<WebsitePageCompositions>().optional(),
     categoryPresentation: categoryPresentationSchema.optional(),
     template: z
       .union([farmhouseTemplateSchema, editorialMarketTemplateSchema])
@@ -423,7 +742,14 @@ export const storefrontAppearanceSchema = z
     contact: contactSchema.optional(),
     policies: policiesSchema.optional(),
     faq: faqSchema.optional(),
-    theme: z.enum(['harvest', 'modern-farmhouse', 'editorial-market']),
+    theme: z.enum([
+      'harvest',
+      'modern-farmhouse',
+      'editorial-market',
+      'meadow',
+      'hearth',
+      'bloom',
+    ]),
     palette: z.enum(['sage', 'terracotta', 'blue', 'charcoal']),
     buttonShape: z.enum(['square', 'soft', 'pill']),
     buttonHover: z.enum(['lift', 'darken', 'outline']),
@@ -454,6 +780,28 @@ export const storefrontAppearanceSchema = z
       .strict(),
   })
   .strict()
+  .refine(
+    (value) =>
+      (!value.harvestComposition || usesHarvestContract(value.theme)) &&
+      (!value.market || marketStorefrontThemes.includes(value.theme)) &&
+      // Meadow and Hearth are market website themes only.
+      (!marketOnlyTheme(value) || !value.vendor) &&
+      // Bloom is a vendor website theme only.
+      (!isBloom(value) || !value.market) &&
+      (value.pageSections === undefined ||
+        isWebsitePageCompositions(value.pageSections, {
+          theme: value.theme,
+          themeVersion: value.template?.version ?? 1,
+        })) &&
+      uniqueWebsiteSectionIds([
+        ...appearanceWebsiteSections(value),
+        ...(value.template?.id === 'modern-farmhouse'
+          ? value.template.settings.sections
+          : (value.template?.settings.composition ?? [])
+        ).filter((s) => 'type' in s),
+      ]),
+    { message: 'Invalid page composition or duplicate section identity.' },
+  )
   .refine((value) => !value.template || value.theme === value.template.id, {
     message: 'Template identity does not match appearance.',
   })
@@ -506,14 +854,30 @@ export function isStorefrontEditorSection(
 ): value is StorefrontEditorSection {
   return (
     typeof value === 'string' &&
+    !/\s/u.test(value) &&
     (Object.hasOwn(storefrontEditorSections, value) ||
-      /^(?:farmhouse:(?:cinematic|discovery|products|story|collection|invitation|shop-settings|story-layout|gallery)|editorial:(?:header|hero|categories|products|impact|footer|shop-settings))$/.test(
+      /^harvest:(?:hero|featured|about|closing|markets|vendors|categories|(?:text|image-with-text|cta-banner|image-banner|image-gallery|feature-grid|product-showcase|category-showcase)-[a-zA-Z0-9][a-zA-Z0-9_-]{0,58})$/.test(
+        value,
+      ) ||
+      /^page:(?:(?:about|contact|faq|policies|find-us|market-dates|vendors|applications):(?:before|after)|products:before):(?:text|image-with-text|cta-banner|image-banner|image-gallery|feature-grid|product-showcase|category-showcase)-[a-zA-Z0-9][a-zA-Z0-9_-]{0,58}$/.test(
+        value,
+      ) ||
+      /^(?:farmhouse:(?:cinematic|discovery|products|story|collection|invitation|(?:text|image-with-text|cta-banner|image-banner|image-gallery|feature-grid|product-showcase|category-showcase)-[a-zA-Z0-9][a-zA-Z0-9_-]{0,58}|shop-settings|story-layout|gallery)|editorial:(?:header|hero|categories|products|impact|markets|vendors|closing|footer|theme|(?:text|image-with-text|cta-banner|image-banner|image-gallery|feature-grid|product-showcase|category-showcase)-[a-zA-Z0-9][a-zA-Z0-9_-]{0,58}|shop-settings))$/.test(
         value,
       ) ||
       /^(?:story|faq|policy):[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(value))
   );
 }
 export function storefrontEditorSectionLabel(value: StorefrontEditorSection) {
+  if (value.startsWith('harvest:')) {
+    const native = value.slice(8);
+    return (
+      storefrontEditorSections[
+        native as keyof typeof storefrontEditorSections
+      ] ?? 'Harvest section'
+    );
+  }
+  if (value.startsWith('page:')) return 'Page section';
   return value.startsWith('farmhouse:')
     ? 'Modern Farmhouse section'
     : value.startsWith('editorial:')
@@ -570,9 +934,17 @@ export const storefrontEditorSections = {
   'find-cta': 'Closing invitation',
   'story-settings': 'Our Story page',
   'story-cta': 'Closing invitation',
+  markets: 'Upcoming markets',
+  vendors: 'Vendors',
+  categories: 'Product categories',
+  'market-dates-settings': 'Market dates',
+  'vendors-settings': 'Vendor directory',
+  'applications-settings': 'Open applications',
 } as const;
 export type StorefrontEditorSection =
   | keyof typeof storefrontEditorSections
+  | `harvest:${string}`
+  | `page:${string}`
   | `story:${string}`
   | `faq:${string}`
   | `policy:${string}`
@@ -583,7 +955,7 @@ export function storefrontPreviewPath(value: unknown): value is string {
   return (
     typeof value === 'string' &&
     value.length <= 400 &&
-    /^\/$|^\/about$|^\/find-us$|^\/contact$|^\/faq$|^\/policies$|^\/products(?:\/[a-zA-Z0-9_%~-]+)?$/.test(
+    /^\/$|^\/about$|^\/find-us$|^\/contact$|^\/faq$|^\/policies$|^\/market-dates$|^\/vendors$|^\/applications$|^\/occurrences\/[1-9][0-9]{0,9}$|^\/shop(?:\/products\/[1-9][0-9]{0,9})?$|^\/products(?:\/[a-zA-Z0-9_%~-]+)?$/.test(
       value,
     ) &&
     !/%(?:2f|5c|2e|00)/i.test(value)
@@ -639,6 +1011,81 @@ export const storefrontPalettes = {
     accent: '#CCB78F',
   },
 } as const;
+/**
+ * Bloom's own reading of the Colors setting: a complete, matched set for each
+ * choice, from the page background to the accent blobs behind product photos.
+ * `styles/bloom.css` declares the same values per `data-theme-palette`
+ * (tests keep them identical); the editor's swatches read them from here.
+ */
+export const bloomPalettes = {
+  sage: {
+    label: 'Fern & sunshine',
+    paper: '#FDF8EC',
+    cream: '#FFFDF6',
+    ink: '#22261F',
+    muted: '#5E6356',
+    primary: '#2F6B4A',
+    deep: '#1C4A32',
+    soft: '#DDEFE1',
+    pop: '#FF8A5C',
+    sun: '#FFCD4F',
+    lilac: '#C3B5F2',
+    mint: '#A5DCB8',
+    sky: '#A9DCD9',
+  },
+  terracotta: {
+    label: 'Paprika & apricot',
+    paper: '#FFF6EE',
+    cream: '#FFFCF8',
+    ink: '#2C1F1A',
+    muted: '#6E5A50',
+    primary: '#B4432B',
+    deep: '#7D2B1A',
+    soft: '#FBE2D8',
+    pop: '#F2A65A',
+    sun: '#F4CF62',
+    lilac: '#F2B5B0',
+    mint: '#B9D3A3',
+    sky: '#F5CFB6',
+  },
+  blue: {
+    label: 'Lagoon & lemon',
+    paper: '#F7F9FD',
+    cream: '#FDFEFF',
+    ink: '#1C2331',
+    muted: '#566074',
+    primary: '#2457A0',
+    deep: '#163A6E',
+    soft: '#DDE7F7',
+    pop: '#FF8F6E',
+    sun: '#FFD75E',
+    lilac: '#B9B4F4',
+    mint: '#9FDED0',
+    sky: '#A6D4F4',
+  },
+  charcoal: {
+    label: 'Plum & blush',
+    paper: '#FCF6F7',
+    cream: '#FFFCFD',
+    ink: '#2A2030',
+    muted: '#66596D',
+    primary: '#5B3A70',
+    deep: '#3D2650',
+    soft: '#EEE3F4',
+    pop: '#FF9EB5',
+    sun: '#F2C15A',
+    lilac: '#CDB7F0',
+    mint: '#B7DCC8',
+    sky: '#F7C6D4',
+  },
+} as const satisfies Record<
+  keyof typeof storefrontPalettes,
+  Record<string, string>
+>;
+/** Bloom always uses its default button hover; the setting is not offered. */
+export function themeOffersButtonHover(theme: unknown): boolean {
+  return theme !== 'bloom';
+}
 /** Shared by Astro pages and the dashboard preview. Only validated preset values enter CSS. */
 export function storefrontThemeVariables(input: StorefrontAppearance) {
   const config = storefrontAppearanceSchema.parse(input);
@@ -656,9 +1103,13 @@ export function storefrontThemeVariables(input: StorefrontAppearance) {
       headingFont: 'serif',
     }),
     '--font-heading':
-      storefrontFonts[input.vendor?.typography ?? 'editorial'].heading,
+      storefrontFonts[
+        input.vendor?.typography ?? input.market?.typography ?? 'editorial'
+      ].heading,
     '--font-body':
-      storefrontFonts[input.vendor?.typography ?? 'editorial'].body,
+      storefrontFonts[
+        input.vendor?.typography ?? input.market?.typography ?? 'editorial'
+      ].body,
     '--storefront-card-radius': { square: '0px', soft: '12px', pill: '28px' }[
       config.buttonShape
     ],

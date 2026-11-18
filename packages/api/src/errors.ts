@@ -1,6 +1,74 @@
 import { applicationErrorMessages } from './application-rules';
 
 const catalogMessages: Record<string, string> = {
+  INVOICE_FINANCIAL_OPERATION_PENDING:
+    'A payment or refund is unresolved. Wait for reconciliation before changing this invoice.',
+  REFUND_REQUIRED_BEFORE_REDUCTION:
+    'Return and record the excess payment before reducing the invoice below its net settled payments.',
+  INVOICE_IDEMPOTENCY_CONFLICT:
+    'This request reference already belongs to a different invoice change. Check the invoice history before starting another request.',
+  REFUND_EXCEEDS_AVAILABLE_PAYMENT:
+    'The refund exceeds the original payment remaining available, or an earlier refund is unresolved.',
+  REFUND_ATTESTATION_REQUIRED:
+    'Confirm the refund, its actual date and original payment method. Offline funds must already have been returned.',
+  INVOICE_CANCELLATION_PENDING:
+    'Finish returning the original payments before this cancellation can complete.',
+  NON_MONETARY_SETTLEMENT_REQUIRES_REVIEW:
+    'This invoice contains a waiver or complimentary settlement. It needs a separate non-monetary correction before cancellation.',
+
+  INVOICE_ONLINE_PAYMENT_PENDING:
+    'An online payment is reserved or being verified. Wait for it to resolve before recording a manual payment or replacing the invoice.',
+  INVOICE_MARKET_ACCOUNT_NOT_READY:
+    'The market must complete Stripe setup before this invoice can be paid online.',
+  INVOICE_ORIGINAL_MARKET_ACCOUNT_NOT_READY:
+    'The original market payment account is unavailable. Contact the market before making another payment.',
+  INVOICE_NOT_PAYABLE:
+    'This invoice is not eligible for an online payment. Check its issued status and remaining balance.',
+  INVOICE_PAYMENT_PROCESSING:
+    'This invoice payment is already being checked. Wait for the original payment result.',
+  ONLY_UNPAID_MANUAL_INVOICE_CAN_BE_REPLACED:
+    'Only an unpaid invoice without an unresolved online payment can be replaced. Recorded payments require an approved invoice credit policy.',
+  ORIGINAL_REFUND_ACCOUNT_AUTHORITY_UNAVAILABLE:
+    'The original payment account authority is unavailable. This refund needs operational review.',
+  ORIGINAL_STRIPE_CHARGE_OR_FEE_ID_MISSING:
+    'The original charge or application fee reference is missing. This refund needs operational review.',
+  PREVIOUS_REFUND_RECONCILIATION_REQUIRED:
+    'A previous refund is still being reconciled. Wait for its status before requesting another refund.',
+  ORIGINAL_UNIT_ALREADY_RESERVED:
+    'These purchased units already belong to a refund request. Check the original refund status.',
+  CHECKOUT_COMPENSATION_CONFLICT:
+    'This payment has checkout recovery activity. Resolve it before requesting another refund.',
+  EXTERNAL_OR_MISMATCHED_STRIPE_REFUND_REVIEW_REQUIRED:
+    'Stripe has refund activity that needs operational review before another refund can proceed.',
+
+  PREORDER_FEE_REQUOTE_REQUIRED:
+    'Your cart changed. Retry checkout to update its totals.',
+  ACCOUNT_NOT_READY:
+    'A vendor cannot accept online payments yet. The vendor must complete Stripe setup and refresh their payment account status before checkout can continue.',
+  OAUTH_RECONCILIATION_REQUIRED:
+    'Stripe authorization could not be confirmed. Start a fresh connection with Connect existing Stripe account. The previous authorization will not be submitted again.',
+  OAUTH_STATE_ALREADY_USED:
+    'This Stripe authorization has already been checked. Refresh the account status or start a fresh connection.',
+  OAUTH_STATE_EXPIRED:
+    'This Stripe authorization expired. Start a fresh connection with Connect existing Stripe account.',
+  VENDOR_PICKUP_COVERAGE_REQUIRED:
+    'Select pickup for every vendor to calculate your total.',
+  STRIPE_ONBOARDING_NOT_CONFIGURED:
+    'Stripe test onboarding is not configured. Ask an administrator to configure the platform identity, test keys and return origin.',
+  STRIPE_ACCOUNT_CONFIGURATION_BLOCKED:
+    'Stripe did not accept the required account configuration. Ask support to confirm Accounts v2 eligibility. No alternative liability configuration was used.',
+  STRIPE_ONBOARDING_UNAVAILABLE:
+    'Stripe setup could not be completed. Try resuming setup. The original creation identity is preserved.',
+  ONBOARDING_CREATION_REVIEW_REQUIRED:
+    'The original account creation needs reconciliation before another account can be created. Ask support to review the attempt.',
+  ONBOARDING_STATE_EXPIRED_OR_USED:
+    'This setup return has expired or was already checked. Use Continue Stripe setup to obtain a fresh link.',
+  ONBOARDING_ACCOUNT_CHANGED:
+    'The connected account changed. Return to the original workspace and refresh its status.',
+  DISCONNECT_PENDING_OPERATIONS:
+    'Resolve pending payments, refunds or reconciliation work before disconnecting Stripe.',
+  STRIPE_PLATFORM_MISMATCH:
+    'The configured Stripe platform does not match this connection. Ask support to review it.',
   INVALID_REWARD_FIELD:
     'The reward form sent an unsupported field. Your progress is preserved. Return to Reward details and try saving again.',
   INVALID_REWARD_CONFIGURATION:
@@ -76,6 +144,12 @@ const taxMessages: Record<string, string> = {
     'The requested rentals exceed capacity for this market date.',
   PLATFORM_PARTICIPATION_UNAVAILABLE:
     'This vendor needs approved market membership and confirmed participation for this date.',
+  CONFIRMED_CANONICAL_PARTICIPATION_REQUIRED:
+    'This vendor has not confirmed attendance for this market date. Approve them after they confirm.',
+  APPROVED_PLATFORM_MEMBERSHIP_REQUIRED:
+    'This vendor needs an approved market membership before it can be approved for a date.',
+  PLATFORM_PARTICIPATION_CANCELLED:
+    'This vendor cancelled attendance for this market date.',
   PHYSICAL_BOOTH_IDENTITY_AUTOMATIC:
     'Booth identity is managed automatically. Refresh the layout before saving.',
   PHYSICAL_BOOTH_CONFIRMATION_REQUIRED:
@@ -112,6 +186,12 @@ const taxMessages: Record<string, string> = {
   OCCURRENCE_NOT_STARTED:
     'Attendance can be recorded once the market occurrence starts.',
 
+  PREORDER_CONFIGURATION_CHANGED:
+    'These fee settings changed. Reload before saving again.',
+  PREORDER_CUSTOM_AMOUNT_INVALID:
+    'Enter a nonnegative USD amount with at most two decimal places.',
+  PREORDER_CUSTOM_AMOUNT_TOO_LARGE:
+    'The custom amount exceeds the platform configuration limit.',
   VENDOR_TAX_RATE_REQUIRED:
     'A taxable product has no configured rate. The vendor must set a default, market rate, or product override before checkout.',
   VENDOR_TAX_RATE_INVALID:
@@ -134,6 +214,24 @@ export class AppError extends Error {
   }
 }
 const codes: Record<string, ErrorKind> = {
+  PREORDER_FEE_REQUOTE_REQUIRED: 'conflict',
+  ACCOUNT_NOT_READY: 'validation',
+  OAUTH_RECONCILIATION_REQUIRED: 'conflict',
+  OAUTH_STATE_ALREADY_USED: 'conflict',
+  OAUTH_STATE_EXPIRED: 'conflict',
+  VENDOR_PICKUP_COVERAGE_REQUIRED: 'validation',
+  STRIPE_ONBOARDING_NOT_CONFIGURED: 'unavailable',
+  STRIPE_ACCOUNT_CONFIGURATION_BLOCKED: 'unavailable',
+  STRIPE_ONBOARDING_UNAVAILABLE: 'unavailable',
+  ONBOARDING_CREATION_REVIEW_REQUIRED: 'conflict',
+  ONBOARDING_STATE_EXPIRED_OR_USED: 'conflict',
+  ONBOARDING_ACCOUNT_CHANGED: 'conflict',
+  DISCONNECT_PENDING_OPERATIONS: 'conflict',
+  STRIPE_PLATFORM_MISMATCH: 'conflict',
+  PREORDER_CONFIGURATION_CHANGED: 'conflict',
+  PREORDER_CUSTOM_AMOUNT_INVALID: 'validation',
+  PREORDER_CUSTOM_AMOUNT_TOO_LARGE: 'validation',
+  PREORDER_CONFIGURATION_INVALID: 'validation',
   INVALID_REWARD_FIELD: 'validation',
   INVALID_REWARD_CONFIGURATION: 'validation',
   REWARD_PRODUCT_UNAVAILABLE: 'validation',
@@ -234,6 +332,9 @@ const codes: Record<string, ErrorKind> = {
   HISTORICAL_DATE_DECISION_IMMUTABLE: 'validation',
   CONFIRMED_DATE_REQUIRED: 'validation',
   PLATFORM_PARTICIPATION_UNAVAILABLE: 'validation',
+  CONFIRMED_CANONICAL_PARTICIPATION_REQUIRED: 'validation',
+  APPROVED_PLATFORM_MEMBERSHIP_REQUIRED: 'validation',
+  PLATFORM_PARTICIPATION_CANCELLED: 'validation',
   MARKET_OPERATIONS_UNAVAILABLE: 'unavailable',
   MARKET_OPERATIONS_INPUT_INVALID: 'validation',
   PHYSICAL_BOOTH_IDENTITY_AUTOMATIC: 'validation',
@@ -253,6 +354,13 @@ const codes: Record<string, ErrorKind> = {
   APPLICATION_REQUIRED_ANSWER: 'validation',
   APPLICATION_DATE_INVALID: 'validation',
   APPLICATION_RATE_LIMIT: 'unavailable',
+  INVOICE_FINANCIAL_OPERATION_PENDING: 'conflict',
+  REFUND_REQUIRED_BEFORE_REDUCTION: 'validation',
+  INVOICE_IDEMPOTENCY_CONFLICT: 'conflict',
+  REFUND_EXCEEDS_AVAILABLE_PAYMENT: 'validation',
+  REFUND_ATTESTATION_REQUIRED: 'validation',
+  INVOICE_CANCELLATION_PENDING: 'conflict',
+  NON_MONETARY_SETTLEMENT_REQUIRES_REVIEW: 'conflict',
   MANUAL_PAYMENT_INVALID: 'validation',
   PAYMENT_IDEMPOTENCY_CONFLICT: 'conflict',
   ISSUED_INVOICE_REQUIRES_EXPLICIT_KEEP: 'conflict',

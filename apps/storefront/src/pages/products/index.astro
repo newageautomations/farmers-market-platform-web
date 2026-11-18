@@ -1,4 +1,6 @@
 ---
+import HarvestShop from '../../components/home/HarvestShop.astro';
+import WebsitePageRegion from '../../components/WebsitePageRegion.astro';
 import TaxonomyFilters from '../../components/TaxonomyFilters.astro';
 import { vendorTaxonomy } from '../../lib/storefront-taxonomy';
 import {
@@ -10,26 +12,19 @@ import PremiumShop from '../../components/modern-farmhouse/Shop.astro';
 import EditorialShop from '../../components/editorial-market/Shop.astro';
 import { isEditorialMarket, isFarmhouse } from '@market/theme/storefront';
 import SiteLayout from '../../layouts/SiteLayout.astro';
-import ProductCards from '../../components/ProductCards.astro';
-import Button from '../../components/ui/Button.astro';
-import {
-  cardClassName,
-  selectClassName,
-  buttonClassName,
-} from '@market/ui/presentation';
 import { requestShop } from '../../lib/shop';
 import { vendorPreorder } from '../../lib/vendor-preorder';
-import VendorPreorderBanner from '../../components/VendorPreorderBanner.astro';
 import { AppError, safeError, type PublicCatalog } from '@market/api';
-import { ErrorState } from '@market/ui';
 import {
   catalogInputs,
   shopProducts,
   productPreorder,
-  safeAsset,
+  SHOP_PAGE_SIZE,
 } from '@market/storefront-core';
 import '../../styles/vendor-shop.css';
 const { storefront, storefrontError } = Astro.locals;
+if (storefront?.kind === 'MARKET')
+  return Astro.redirect('/shop' + Astro.url.search, 302);
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 let error = storefrontError,
   items: PublicCatalog['items'] = [],
@@ -52,7 +47,6 @@ const category = Astro.url.searchParams.get('category') ?? '',
       ? 'available'
       : 'all';
 try {
-  if (storefront?.kind === 'MARKET') throw new AppError('not-found');
   page = catalogInputs(Astro.url.searchParams).page;
   if (storefront?.source === 'backend') {
     const filters = taxonomyFilters(Astro.url.searchParams);
@@ -150,8 +144,8 @@ const categories = taxonomy
       storefront?.appearance?.categoryPresentation,
     )
   : [];
-const skip = (page - 1) * 12;
-const visible = filtered.slice(skip, skip + 12);
+const skip = (page - 1) * SHOP_PAGE_SIZE;
+const visible = filtered.slice(skip, skip + SHOP_PAGE_SIZE);
 if (
   !error &&
   !(
@@ -164,9 +158,6 @@ if (
     visible.flatMap((p) => p.variants.map((v) => v.id)),
   );
 const selected = preorder.selected;
-const heading =
-  categories.find((c) => c.id === category)?.name ??
-  (category ? 'Products' : 'All Products');
 const link = (next: {
   category?: string;
   page?: number;
@@ -188,13 +179,6 @@ const link = (next: {
 if (error)
   Astro.response.status =
     error.kind === 'not-found' ? 404 : error.kind === 'validation' ? 400 : 503;
-const noneAvailable =
-  visible.length > 0 &&
-  selected &&
-  !preorder.unavailable &&
-  visible.every(
-    (p) => !productPreorder(p.variants, preorder.availability).available,
-  );
 ---
 
 <SiteLayout
@@ -204,6 +188,12 @@ const noneAvailable =
   imageHero={!error && isFarmhouse(storefront?.appearance)}
   noindex={!!error || !items.length}
 >
+  {storefront?.kind === 'VENDOR' &&
+    (error ||
+      (!isFarmhouse(storefront.appearance) &&
+        !isEditorialMarket(storefront.appearance))) && (
+      <WebsitePageRegion context={storefront} page="products" region="before" />
+    )}
   {storefront && isFarmhouse(storefront.appearance) && !error ? (
     <PremiumShop
       context={storefront}
@@ -217,6 +207,12 @@ const noneAvailable =
       link={link}
       preview={!!Astro.locals.editorPreview}
     >
+      <WebsitePageRegion
+        slot="editorial"
+        context={storefront}
+        page="products"
+        region="before"
+      />
       {taxonomy && (
         <TaxonomyFilters
           taxonomy={taxonomy.taxonomy}
@@ -245,6 +241,12 @@ const noneAvailable =
       preview={!!Astro.locals.editorPreview}
       link={link}
     >
+      <WebsitePageRegion
+        slot="editorial"
+        context={storefront}
+        page="products"
+        region="before"
+      />
       {taxonomy && (
         <TaxonomyFilters
           taxonomy={taxonomy.taxonomy}
@@ -254,205 +256,22 @@ const noneAvailable =
       )}
     </EditorialShop>
   ) : (
-    <section
-      class="vendor-shop"
-      data-composition="vendor"
-      aria-label="Shop products for market pickup"
-    >
-      {error ? (
-        <>
-          <h1>Shop unavailable</h1>
-          <ErrorState error={error} />
-        </>
-      ) : (
-        <>
-          {storefront?.appearance?.theme === 'modern-farmhouse' && (
-            <div class="mf-shop-intro">
-              <div>
-                <h1>{heading}</h1>
-                <p>
-                  Find your next market favorite. Choose a pickup market to see
-                  what is available.
-                </p>
-              </div>
-              {safeAsset(visible[0]?.featuredAsset?.preview) && (
-                <img
-                  class="product-media"
-                  src={safeAsset(visible[0]?.featuredAsset?.preview)}
-                  alt=""
-                  width="960"
-                  height="640"
-                  fetchpriority="high"
-                />
-              )}
-            </div>
-          )}
-          {storefront && isEditorialMarket(storefront.appearance) && (
-            <div
-              class="em-shop-intro"
-              data-editor-section="editorial:shop-settings"
-            >
-              <h1>
-                {storefront.appearance.template.settings.pages.shopHeading}
-              </h1>
-              <p>
-                {storefront.appearance.template.settings.pages.shopIntroduction}
-              </p>
-            </div>
-          )}
-          <div class="shop-market-slot">
-            <VendorPreorderBanner
-              preorder={preorder}
-              storefrontId={storefront?.storefrontId ?? ''}
-              preview={!!Astro.locals.editorPreview}
-            />
-          </div>
-          <aside
-            class={cardClassName({
-              className: 'shop-categories',
-              spacing: 'contained',
-              padding: 'default',
-              surface:
-                storefront?.appearance?.theme === 'modern-farmhouse'
-                  ? 'embedded'
-                  : 'card',
-            })}
-          >
-            <h2 class="ui-section-title-consumer">Product Categories</h2>
-            <nav aria-label="Product categories">
-              <a
-                href={link({ category: '' })}
-                aria-current={!category ? 'page' : undefined}
-              >
-                All Products
-              </a>
-              {categories.map((c) => (
-                <a
-                  href={link({ category: c.id })}
-                  aria-current={category === c.id ? 'page' : undefined}
-                >
-                  {c.name}
-                </a>
-              ))}
-            </nav>
-          </aside>
-          <div class="shop-catalog">
-            {taxonomy && (
-              <TaxonomyFilters
-                taxonomy={taxonomy.taxonomy}
-                settings={storefront?.appearance?.categoryPresentation}
-                query={Astro.url.searchParams}
-              />
-            )}
-            <form method="get" class="shop-catalog-controls">
-              {selected && (
-                <input type="hidden" name="occurrence" value={selected.id} />
-              )}
-              <div class="shop-catalog-heading">
-                {storefront?.appearance?.theme !== 'modern-farmhouse' &&
-                  !isEditorialMarket(storefront?.appearance) && (
-                    <h1>{heading}</h1>
-                  )}
-                <span>
-                  {filtered.length}{' '}
-                  {filtered.length === 1 ? 'product' : 'products'}
-                </span>
-              </div>
-              {Astro.url.searchParams.getAll('category').map((value) => (
-                <input type="hidden" name="category" value={value} />
-              ))}
-              {search && <input type="hidden" name="search" value={search} />}
-              {Astro.url.searchParams.getAll('tag').map((value) => (
-                <input type="hidden" name="tag" value={value} />
-              ))}
-              <div class="field shop-sort">
-                <label for="shop-sort">Sort by</label>
-                <select id="shop-sort" name="sort" class={selectClassName()}>
-                  <option value="default" selected={sort === 'default'}>
-                    Catalog order
-                  </option>
-                  <option value="name" selected={sort === 'name'}>
-                    Name A to Z
-                  </option>
-                </select>
-              </div>
-              <Button type="submit" variant="secondary">
-                Apply
-              </Button>
-            </form>
-            {preorder.unavailable && selected && (
-              <p class="ui-alert ui-alert-info" role="status">
-                Availability could not be confirmed. Purchasing is paused until
-                you refresh the page.
-              </p>
-            )}
-            {noneAvailable && (
-              <p class="ui-alert ui-alert-info" role="status">
-                These products cannot currently be preordered for this market.
-                Preordering may be closed or products may be sold out. Choose
-                another market or check back later.
-              </p>
-            )}
-            {visible.length ? (
-              <ProductCards
-                theme={storefront?.appearance?.theme}
-                items={visible}
-                shop
-                storefrontId={storefront?.storefrontId}
-                occurrenceId={selected?.id}
-                availability={preorder.availability}
-                preview={!!Astro.locals.editorPreview}
-              />
-            ) : (
-              <div class="empty-state">
-                <h2 class="ui-section-title-consumer">
-                  {!items.length
-                    ? 'No products yet'
-                    : 'No products in this view'}
-                </h2>
-                <p>
-                  {!items.length
-                    ? 'This vendor has not published any products yet. Please check back soon.'
-                    : 'Choose All Products or return to the first page.'}
-                </p>
-                {!!items.length && (
-                  <Button
-                    href={link({ category: '', page: 1 })}
-                    variant="secondary"
-                  >
-                    All Products
-                  </Button>
-                )}
-              </div>
-            )}
-            {filtered.length > 12 && (
-              <nav class="ui-pagination pagination" aria-label="Shop pages">
-                {page > 1 && (
-                  <a
-                    class={buttonClassName({ variant: 'secondary' })}
-                    href={link({ page: page - 1 })}
-                  >
-                    Previous page
-                  </a>
-                )}
-                <span>
-                  Page {page} · {visible.length ? skip + 1 : 0} to{' '}
-                  {visible.length ? skip + visible.length : 0} of{' '}
-                  {filtered.length} products
-                </span>
-                {skip + 12 < filtered.length && (
-                  <a
-                    class={buttonClassName({ variant: 'secondary' })}
-                    href={link({ page: page + 1 })}
-                  >
-                    Next page
-                  </a>
-                )}
-              </nav>
-            )}
-          </div>
-        </>
-      )}
-    </section>
+    <HarvestShop
+      context={storefront}
+      error={error}
+      items={items}
+      visible={visible}
+      total={filtered.length}
+      page={page}
+      sort={sort}
+      category={category}
+      search={search}
+      categories={categories}
+      taxonomy={taxonomy?.taxonomy}
+      query={Astro.url.searchParams}
+      preorder={preorder}
+      link={link}
+      preview={!!Astro.locals.editorPreview}
+    />
   )}
 </SiteLayout>

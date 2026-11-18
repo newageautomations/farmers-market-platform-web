@@ -4,6 +4,36 @@ import { PlatformOverview, TenantDirectory, TenantDetail } from './platform';
 import { Catalog } from './catalog';
 import { Billing } from './billing';
 import { AccountOnboardingReview } from './AccountOnboardingReview';
+import type { ReactNode } from 'react';
+import type { FarmstandIconName } from '@market/ui/farmstand';
+import { WorkspaceFrame } from '../WorkspaceFrame';
+
+/** Platform pages share the Markets workspace heading and Farmstand controls. */
+function PlatformFrame({
+  icon,
+  title,
+  description,
+  children,
+}: {
+  icon: FarmstandIconName;
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <WorkspaceFrame
+      icon={icon}
+      title={title}
+      description={description}
+      tabs={[]}
+      value="platform"
+      onChange={() => {}}
+      className="platform-workspace farmstand-controls"
+    >
+      {children}
+    </WorkspaceFrame>
+  );
+}
 export function ManagementRoutes({
   service,
   path,
@@ -16,25 +46,51 @@ export function ManagementRoutes({
   if (service.context.scope === 'PLATFORM') {
     if (path === '/platform/tenants')
       return (
-        <>
+        <PlatformFrame
+          icon="store"
+          title="Tenants"
+          description="Review onboarding requests and manage Vendor and Market businesses."
+        >
           <AccountOnboardingReview service={service} />
           <TenantDirectory service={service} />
-        </>
+        </PlatformFrame>
       );
     const detail = /^\/platform\/tenants\/(vendor|market)\/([1-9][0-9]*)$/.exec(
       path,
     );
     if (detail)
       return (
-        <TenantDetail
-          service={service}
-          kind={detail[1] === 'vendor' ? 'VENDOR' : 'MARKET'}
-          id={detail[2]!}
-        />
+        <PlatformFrame
+          icon="store"
+          title="Tenant"
+          description="Subscription, entitlements and module readiness for this business."
+        >
+          <TenantDetail
+            service={service}
+            kind={detail[1] === 'vendor' ? 'VENDOR' : 'MARKET'}
+            id={detail[2]!}
+          />
+        </PlatformFrame>
       );
     if (path.startsWith('/platform/billing'))
-      return <Catalog key={path} service={service} path={path} />;
-    return <PlatformOverview service={service} />;
+      return (
+        <PlatformFrame
+          icon="receipt-text"
+          title="Billing catalog"
+          description="Plans, versions and offers available to platform tenants."
+        >
+          <Catalog key={path} service={service} path={path} />
+        </PlatformFrame>
+      );
+    return (
+      <PlatformFrame
+        icon="layers"
+        title="Overview"
+        description="Shared platform administration"
+      >
+        <PlatformOverview service={service} />
+      </PlatformFrame>
+    );
   }
   // Tenant Settings tabs (taxes, payments, POS) live in the Settings workspace.
   return <Billing service={service} />;

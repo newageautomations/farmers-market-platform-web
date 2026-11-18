@@ -43,7 +43,7 @@ import {
 import '@market/theme/storefront.css';
 import './storefront-appearance.css';
 import { VisualStorefrontEditor } from './VisualStorefrontEditor';
-import { WebsiteLibrary } from './WebsiteLibrary';
+import { WebsiteLibrary, WebsiteWorkspace } from './WebsiteLibrary';
 
 export interface StorefrontConnection {
   endpoint: string;
@@ -52,8 +52,11 @@ export interface StorefrontConnection {
 }
 export function ViewStorefront({
   connection,
+  compact = false,
 }: {
   connection: StorefrontConnection;
+  /** Smaller Farmstand button for the Market Manager topbar. */
+  compact?: boolean;
 }) {
   const { endpoint, channelToken } = connection;
   const [links, setLinks] = useState<StorefrontLink[]>([]);
@@ -98,13 +101,18 @@ export function ViewStorefront({
         </SelectField>
       )}
       <a
-        className={buttonClassName({ variant: 'secondary' })}
+        className={buttonClassName({
+          variant: 'secondary',
+          size: compact ? 'compact' : undefined,
+          className: compact ? 'farmstand-button' : '',
+        })}
         href={url}
         target="_blank"
         rel="noopener noreferrer"
       >
         <UtilityIcon name="store" />
-        View Storefront<span className="sr-only"> (opens in a new tab)</span>
+        <span className="storefront-shell-label">View Storefront</span>
+        <span className="sr-only"> (opens in a new tab)</span>
       </a>
     </div>
   );
@@ -133,17 +141,21 @@ export function StorefrontAppearanceSettings(
   );
   return (
     <>
-      <div hidden={!restricted}>
-        <EmptyState title="Desktop or laptop required">
-          <p>
-            Storefront appearance is only accessible from a desktop or laptop.
-            Please open this page on a larger screen to edit your storefront.
-          </p>
-        </EmptyState>
-      </div>
+      {/* Mounted only while restricted, so the editor never inherits the
+          workspace width from a hidden heading. */}
+      {restricted && (
+        <WebsiteWorkspace>
+          <EmptyState title="Desktop or laptop required">
+            <p>
+              Storefront appearance is only accessible from a desktop or laptop.
+              Please open this page on a larger screen to edit your storefront.
+            </p>
+          </EmptyState>
+        </WebsiteWorkspace>
+      )}
       <div hidden={restricted}>
-        {!props.market && props.connection && !props.api ? (
-          <WebsiteLibrary connection={props.connection} />
+        {props.connection && !props.api ? (
+          <WebsiteLibrary connection={props.connection} market={props.market} />
         ) : (
           <DesktopAppearanceSettings {...props} />
         )}
@@ -839,14 +851,10 @@ export function VendorHomepageOptions({
   );
 }
 
-export function VendorTypography({
-  value,
-  onChange,
-}: {
-  value: NonNullable<StorefrontAppearance['vendor']>;
-  onChange: (v: NonNullable<StorefrontAppearance['vendor']>) => void;
-}) {
-  const patch = (p: Partial<typeof value>) => onChange({ ...value, ...p });
+/** Shared by vendor and market Harvest websites; both own a typography choice. */
+export function VendorTypography<
+  T extends { typography: keyof typeof storefrontFonts },
+>({ value, onChange }: { value: T; onChange: (v: T) => void }) {
   return (
     <>
       <SelectField
@@ -854,7 +862,10 @@ export function VendorTypography({
         label="Typography"
         value={value.typography}
         onChange={(event) =>
-          patch({ typography: event.target.value as typeof value.typography })
+          onChange({
+            ...value,
+            typography: event.target.value as T['typography'],
+          })
         }
       >
         {Object.entries(storefrontFonts).map(([key, font]) => (

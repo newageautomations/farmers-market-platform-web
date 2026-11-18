@@ -6,8 +6,10 @@ import {
   storefrontPreviewPath,
   storefrontText,
   storefrontTextFields,
+  marketText,
+  marketTextFields,
+  type MarketTextKey,
   isStorefrontEditorSection,
-  storefrontEditorSectionLabel,
   storefrontThemeVariables,
   vendorHeroIntroduction,
   type StorefrontAppearance,
@@ -38,6 +40,14 @@ function startEditorPreview() {
     if (value.template) return JSON.stringify(value);
     return JSON.stringify({
       theme: value.theme,
+      harvestComposition: value.harvestComposition,
+      // Market pages change navigation and page headings: re-render.
+      marketPages: value.market?.pages,
+      marketPrimaryDestination: value.market?.heroPrimaryDestination,
+      marketSecondaryDestination: value.market?.heroSecondaryDestination,
+      marketDatesTheme: value.market?.marketsCardTheme,
+      marketVendorsTheme: value.market?.vendorsCardTheme,
+      pageSections: value.pageSections,
       findUs: value.findUs,
       contact: value.contact,
       faq: value.faq,
@@ -70,23 +80,12 @@ function startEditorPreview() {
     selected = section;
     document.querySelectorAll('[data-editor-selected]').forEach((node) => {
       node.removeAttribute('data-editor-selected');
-      node.removeAttribute('data-editor-position-static');
     });
-    document
-      .querySelectorAll('.storefront-editor-selection-label')
-      .forEach((label) => label.remove());
     const element = document.querySelector<HTMLElement>(
-      `[data-editor-section="${section}"]`,
+      `[data-editor-section="${/^harvest:(hero|featured|about|closing)$/.test(section) ? section.slice(8) : section}"]`,
     );
     if (element) {
-      element.dataset.editorSelected = storefrontEditorSectionLabel(section);
-      if (window.getComputedStyle(element).position === 'static')
-        element.dataset.editorPositionStatic = 'true';
-      const label = document.createElement('span');
-      label.className = 'storefront-editor-selection-label';
-      label.textContent = storefrontEditorSectionLabel(section);
-      label.setAttribute('aria-hidden', 'true');
-      element.append(label);
+      element.dataset.editorSelected = '';
       if (scroll)
         element.scrollIntoView({
           behavior: window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -101,7 +100,12 @@ function startEditorPreview() {
     if (value.template) return;
     for (const [key, token] of Object.entries(storefrontThemeVariables(value)))
       document.documentElement.style.setProperty(key, token);
-    document.documentElement.dataset.storefrontHover = value.buttonHover;
+    // Bloom renders without a hover setting; it always uses its own hover.
+    if (document.documentElement.dataset.storefrontHover)
+      document.documentElement.dataset.storefrontHover = value.buttonHover;
+    // Meadow and Hearth map the Colors setting to their own palettes.
+    if (document.documentElement.dataset.themePalette)
+      document.documentElement.dataset.themePalette = value.palette;
     const sizes = document.getElementById('storefront-text-sizes');
     if (sizes) sizes.textContent = storefrontTextSizeCss(value);
     const content = (selector: string, text: string) =>
@@ -109,9 +113,29 @@ function startEditorPreview() {
         node.textContent = text;
       });
     content('[data-home-text="title"]', value.homepage.title || embedded.name);
+    document
+      .querySelectorAll<HTMLElement>('[data-home-text="introduction"]')
+      .forEach((node) => {
+        node.textContent =
+          value.homepage.introduction ||
+          node.dataset.fallback ||
+          vendorHeroIntroduction;
+      });
+    // Market Harvest websites: their own copy and hero shape.
+    document
+      .querySelectorAll<HTMLElement>('[data-market-text]')
+      .forEach((node) => {
+        const key = node.dataset.marketText as MarketTextKey;
+        if (Object.hasOwn(marketTextFields, key))
+          node.textContent = marketText(value, key);
+      });
     content(
-      '[data-home-text="introduction"]',
-      value.homepage.introduction || vendorHeroIntroduction,
+      '[data-editor-section="markets"] .ui-section-heading h2',
+      marketText(value, 'marketsHeading'),
+    );
+    content(
+      '[data-editor-section="vendors"] .ui-section-heading h2',
+      marketText(value, 'vendorsHeading'),
     );
     for (const key of Object.keys(storefrontTextFields) as StorefrontTextKey[])
       content(
@@ -128,8 +152,14 @@ function startEditorPreview() {
         ? value.homepage.story
         : (value.vendor?.aboutBlurb ?? value.homepage.story),
     );
-    const hero = document.querySelector<HTMLElement>('.harvest-hero-visual');
-    if (hero) hero.dataset.heroShape = value.vendor?.heroShape ?? 'dome';
+    const hero = document.querySelector<HTMLElement>(
+      '.harvest-hero-visual, [data-theme-hero-frame]',
+    );
+    if (hero)
+      hero.dataset.heroShape =
+        (document.querySelector('[data-composition="market"]')
+          ? value.market?.heroShape
+          : value.vendor?.heroShape) ?? 'dome';
     const aboutImage = document.querySelector<HTMLImageElement>(
       '[data-editor-section="about"] img',
     );
@@ -269,6 +299,8 @@ function startEditorPreview() {
             document.getElementById(url.hash.slice(1))?.scrollIntoView();
           else send({ type: 'navigate', path: url.pathname });
         } else send({ type: 'blocked' });
+      } else if (event.target.closest('[data-gallery-direction]')) {
+        return;
       } else if (event.target.closest('button')) {
         if (
           event.target.closest(

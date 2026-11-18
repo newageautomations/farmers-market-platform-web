@@ -9,10 +9,25 @@ import { requestCheckout } from '../../lib/shop';
 const { storefront } = Astro.locals,
   order = Astro.url.searchParams.get('order');
 let view;
+let images: Record<string, string> = {};
 try {
   if (!Astro.locals.editorPreview && order && /^[1-9]\d*$/.test(order))
     view = await requestCheckout(Astro, Astro.response.headers).status(order);
 } catch {}
+if (view?.committed) {
+  try {
+    const lines = await requestCheckout(Astro, Astro.response.headers).images(
+      view.code,
+    );
+    images = Object.fromEntries(
+      lines
+        .filter((l) => l.featuredAsset?.preview)
+        .map((l) => [l.id, l.featuredAsset!.preview]),
+    );
+  } catch {
+    /* Confirmation remains available if optional images fail to load. */
+  }
+}
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 ---
@@ -35,12 +50,16 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
       <p>Order confirmation preview is not available in the visual editor.</p>
     ) : isFarmhouse(storefront?.appearance) ? (
       <PremiumSuccess
+        images={images}
         view={view ?? undefined}
         storefrontId={storefront?.storefrontId ?? ''}
         client:load
       />
     ) : view?.committed ? (
       <PurchaseSuccess
+        shopHref={storefront?.kind === 'MARKET' ? '/shop' : '/products'}
+        timezone={storefront?.timezone}
+        images={images}
         view={view}
         storefrontId={storefront?.storefrontId ?? ''}
         client:load

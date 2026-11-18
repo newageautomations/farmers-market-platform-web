@@ -16,6 +16,7 @@ import { OrdersDateRange } from '../vendor/OrdersDateRange';
 import { Fact, Panel } from '../vendor/application-detail';
 import { marketDate, marketTime } from '../vendor/markets-data';
 import type { MarketService } from './service';
+import { CompactLabel, DetailSheet } from './mobile';
 import { friendlyLabel, StatusBadge } from './presentation';
 import { calendarDate, go, ReadState, useRead } from './common';
 import {
@@ -35,8 +36,8 @@ import {
   type DatePhase,
 } from './operations-data';
 import '@market/ui/farmstand.css';
-import '../vendor/markets-workspace.css';
-import '../vendor/market-applications.css';
+import '@market/ui/workspace.css';
+import '@market/ui/workspace-records.css';
 import '../vendor/market-dates.css';
 import '../vendor/application-detail.css';
 import './market-occurrences.css';
@@ -151,6 +152,12 @@ function OperationsList({ service }: { service: MarketService }) {
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string>();
+  // Phones and tablets open the selected record's details in a sheet.
+  const [detailOpen, setDetailOpen] = useState(false);
+  const select = (value: string) => {
+    setSelected(value);
+    setDetailOpen(true);
+  };
   const [observedAt] = useState(() => Date.now());
 
   const listRead = useCallback(
@@ -439,14 +446,14 @@ function OperationsList({ service }: { service: MarketService }) {
                               ? 'market-application-selected'
                               : undefined
                           }
-                          onClick={() => setSelected(row.id)}
+                          onClick={() => select(row.id)}
                           onKeyDown={(event) => {
                             if (
                               event.target === event.currentTarget &&
                               (event.key === 'Enter' || event.key === ' ')
                             ) {
                               event.preventDefault();
-                              setSelected(row.id);
+                              select(row.id);
                             }
                           }}
                         >
@@ -496,7 +503,7 @@ function OperationsList({ service }: { service: MarketService }) {
                                 inApp(event, href);
                               }}
                             >
-                              View
+                              <CompactLabel>View</CompactLabel>
                               <FarmstandIcon name="chevron-right" />
                             </FarmstandLink>
                           </td>
@@ -537,128 +544,136 @@ function OperationsList({ service }: { service: MarketService }) {
             )}
           </FarmstandPanel>
         </div>
-        <FarmstandPanel
-          as="section"
-          className="markets-next market-application-details market-date-details occurrence-details operations-details"
-          aria-label="Date readiness"
+        <DetailSheet
+          title="Date readiness"
+          open={detailOpen}
+          onClose={() => setDetailOpen(false)}
         >
-          <h2>
-            <FarmstandIcon name="clipboard-list" />
-            Date readiness
-          </h2>
-          {current && currentReadiness && detailHref ? (
-            <div className="markets-next-content">
-              <div className="occurrence-details-title">
-                <h3>{marketDate(current, true)}</h3>
-                <StatusBadge>
-                  {phaseStatus(current, currentReadiness.phase)}
-                </StatusBadge>
-              </div>
-              <p className="markets-venue">
-                <FarmstandIcon name="map-pin" />
-                {current.venue || 'Venue not provided'}
-              </p>
-              <dl className="market-application-facts">
-                <div>
-                  <dt>When</dt>
-                  <dd>
-                    {whenLabel(current, currentReadiness.phase, observedAt)}
-                  </dd>
+          <FarmstandPanel
+            as="section"
+            className="markets-next market-application-details market-date-details occurrence-details operations-details"
+            aria-label="Date readiness"
+          >
+            <h2>
+              <FarmstandIcon name="clipboard-list" />
+              Date readiness
+            </h2>
+            {current && currentReadiness && detailHref ? (
+              <div className="markets-next-content">
+                <div className="occurrence-details-title">
+                  <h3>{marketDate(current, true)}</h3>
+                  <StatusBadge>
+                    {phaseStatus(current, currentReadiness.phase)}
+                  </StatusBadge>
                 </div>
-                <div>
-                  <dt>Time</dt>
-                  <dd>{marketTime(current)}</dd>
-                </div>
-                {currentBooths && (
+                <p className="markets-venue">
+                  <FarmstandIcon name="map-pin" />
+                  {current.venue || 'Venue not provided'}
+                </p>
+                <dl className="market-application-facts">
                   <div>
-                    <dt>Confirmed vendors</dt>
-                    <dd>{currentBooths.confirmed}</dd>
+                    <dt>When</dt>
+                    <dd>
+                      {whenLabel(current, currentReadiness.phase, observedAt)}
+                    </dd>
                   </div>
+                  <div>
+                    <dt>Time</dt>
+                    <dd>{marketTime(current)}</dd>
+                  </div>
+                  {currentBooths && (
+                    <div>
+                      <dt>Confirmed vendors</dt>
+                      <dd>{currentBooths.confirmed}</dd>
+                    </div>
+                  )}
+                </dl>
+                {currentBooths?.layout && currentBooths.total ? (
+                  <BoothMeter booths={currentBooths} />
+                ) : null}
+                {['cancelled', 'ended'].includes(currentReadiness.phase) ? (
+                  <p className="market-application-guidance">
+                    {currentReadiness.phase === 'cancelled'
+                      ? 'This date is cancelled, so readiness is not tracked.'
+                      : 'This date has ended. Review its records from the operations page.'}
+                  </p>
+                ) : checkingDate(current.id) ? (
+                  <p className="market-application-guidance">
+                    Checking readiness…
+                  </p>
+                ) : currentReadiness.attention.length ? (
+                  <div className="operations-attention">
+                    <h4>
+                      <FarmstandIcon name="triangle-alert" />
+                      Needs attention
+                    </h4>
+                    <ul>
+                      {currentReadiness.attention.map((item) => (
+                        <li key={item.id}>
+                          <FarmstandIcon name={item.icon} />
+                          <a
+                            href={item.href}
+                            onClick={(event) => inApp(event, item.href)}
+                          >
+                            {item.title}
+                          </a>
+                          <span className="operations-attention-count">
+                            {item.count}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : currentReadiness.known ? (
+                  <p className="operations-ready" role="status">
+                    <FarmstandIcon name="circle-check" />
+                    Nothing needs attention for this date.
+                  </p>
+                ) : (
+                  <p className="market-application-guidance">
+                    Readiness could not be checked for this date.
+                  </p>
                 )}
-              </dl>
-              {currentBooths?.layout && currentBooths.total ? (
-                <BoothMeter booths={currentBooths} />
-              ) : null}
-              {['cancelled', 'ended'].includes(currentReadiness.phase) ? (
-                <p className="market-application-guidance">
-                  {currentReadiness.phase === 'cancelled'
-                    ? 'This date is cancelled, so readiness is not tracked.'
-                    : 'This date has ended. Review its records from the operations page.'}
-                </p>
-              ) : checkingDate(current.id) ? (
-                <p className="market-application-guidance">
-                  Checking readiness…
-                </p>
-              ) : currentReadiness.attention.length ? (
-                <div className="operations-attention">
-                  <h4>
-                    <FarmstandIcon name="triangle-alert" />
-                    Needs attention
-                  </h4>
-                  <ul>
-                    {currentReadiness.attention.map((item) => (
-                      <li key={item.id}>
-                        <FarmstandIcon name={item.icon} />
-                        <a
-                          href={item.href}
-                          onClick={(event) => inApp(event, item.href)}
-                        >
-                          {item.title}
-                        </a>
-                        <span className="operations-attention-count">
-                          {item.count}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : currentReadiness.known ? (
-                <p className="operations-ready" role="status">
-                  <FarmstandIcon name="circle-check" />
-                  Nothing needs attention for this date.
-                </p>
-              ) : (
-                <p className="market-application-guidance">
-                  Readiness could not be checked for this date.
-                </p>
-              )}
-              <FarmstandLink
-                href={detailHref}
-                variant="primary"
-                onClick={(event) => inApp(event, detailHref)}
-              >
-                <FarmstandIcon name="clipboard-list" />
-                View operations
-              </FarmstandLink>
-              {allowed.day && currentReadiness.phase !== 'cancelled' && (
                 <FarmstandLink
-                  href={`/market/day/${current.id}`}
-                  variant="secondary"
-                  onClick={(event) => inApp(event, `/market/day/${current.id}`)}
+                  href={detailHref}
+                  variant="primary"
+                  onClick={(event) => inApp(event, detailHref)}
                 >
-                  <FarmstandIcon name="circle-check" />
-                  Open market day
+                  <FarmstandIcon name="clipboard-list" />
+                  View operations
                 </FarmstandLink>
-              )}
-              {allowed.booths && (
-                <FarmstandLink
-                  href={`/market/assignments/${current.id}`}
-                  variant="secondary"
-                  onClick={(event) =>
-                    inApp(event, `/market/assignments/${current.id}`)
-                  }
-                >
-                  <FarmstandIcon name="store" />
-                  Manage booths
-                </FarmstandLink>
-              )}
-            </div>
-          ) : (
-            <EmptyState title="No date selected">
-              <p>Select a market date to review its readiness.</p>
-            </EmptyState>
-          )}
-        </FarmstandPanel>
+                {allowed.day && currentReadiness.phase !== 'cancelled' && (
+                  <FarmstandLink
+                    href={`/market/day/${current.id}`}
+                    variant="secondary"
+                    onClick={(event) =>
+                      inApp(event, `/market/day/${current.id}`)
+                    }
+                  >
+                    <FarmstandIcon name="circle-check" />
+                    Open market day
+                  </FarmstandLink>
+                )}
+                {allowed.booths && (
+                  <FarmstandLink
+                    href={`/market/assignments/${current.id}`}
+                    variant="secondary"
+                    onClick={(event) =>
+                      inApp(event, `/market/assignments/${current.id}`)
+                    }
+                  >
+                    <FarmstandIcon name="store" />
+                    Manage booths
+                  </FarmstandLink>
+                )}
+              </div>
+            ) : (
+              <EmptyState title="No date selected">
+                <p>Select a market date to review its readiness.</p>
+              </EmptyState>
+            )}
+          </FarmstandPanel>
+        </DetailSheet>
       </div>
       {calendar && (
         <OrdersDateRange

@@ -1,193 +1,427 @@
-import { IconButton } from '@market/ui';
-import { Badge } from '@market/ui';
-import { managementStatusTone } from './status-presentation';
-import { useCallback, useState } from 'react';
-import { Button, Card } from '@market/ui';
-import type { ManagementService } from './service';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  CommandForm,
-  ReadState,
-  date,
-  useRead,
-  Unavailable,
-} from '../vendor/common';
-import { Choice } from './common';
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Dialog,
+  ErrorState,
+  UtilityIcon,
+} from '@market/ui';
+import { FarmstandButton } from '@market/ui/farmstand';
+import { safeError, type AppError } from '@market/api';
+import type { ManagementService } from './service';
+import { ReadState, date, useRead } from '../vendor/common';
 import { codeLabel } from '../settings/providers';
+
+const remediation: Record<string, string> = {
+  ACCOUNT_DISCONNECTED: 'Connect Stripe to continue account setup.',
+  PLATFORM_IDENTITY_MISMATCH:
+    'Reconnect with the configured platform. Ask support to review historical connections.',
+  OWNERSHIP_UNKNOWN: 'Organization ownership needs review.',
+  LIVE_ACCOUNT_ACTIVATION_DISABLED:
+    'Live account activation is unavailable in this phase.',
+  CONFIGURATION_INCOMPATIBLE:
+    'This account must use the full Stripe Dashboard with Stripe collecting processing fees and payment losses. Ask support to review it.',
+  ACCOUNT_STALE: 'Refresh status to retrieve current verification information.',
+  ACCOUNT_RESTRICTED: 'Open Stripe to resolve the account restriction.',
+  INFORMATION_REQUIRED:
+    'Continue setup in Stripe to supply the required information.',
+  VERIFICATION_PENDING:
+    'Stripe is reviewing your information. Refresh status later.',
+  PAYMENT_CAPABILITY_NOT_READY: 'Stripe has not enabled card payments yet.',
+  PAYOUT_NOT_READY: 'Stripe has not enabled payouts yet.',
+};
+
+/** Shared vendor/market composition. Account authority and financial readiness stay on the server. */
 export function Payments({
   service,
   embedded = false,
 }: {
   service: ManagementService;
-  /** Host panel supplies the Marketplace Stripe Connect heading and surface. */
   embedded?: boolean;
 }) {
-  const [mode, setMode] = useState<'TEST' | 'LIVE'>('TEST'),
-    read = useCallback(() => service.payments(mode), [service, mode]);
-  const result = useRead(`payments:${mode}`, read);
-  const config = result.data?.ownPaymentConfiguration,
-    account = result.data?.ownPaymentAccount;
-  const manage = service.context.permissions.includes(
-      'ManageOwnPaymentAccount',
-    ),
-    localIO = manage && config?.providerIOAllowed;
-  const purpose: Record<string, string> = {
-    ACCEPT_DIRECT_CHARGE: 'Accept direct charges',
-    RECEIVE_TRANSFER: 'Receive transfers',
-    RECEIVE_PAYOUT: 'Receive payouts',
+  const read = useCallback(() => service.payments('TEST'), [service]);
+  const result = useRead(
+    `payments:${service.context.scope}:${JSON.stringify(service.context.subject)}`,
+    read,
+  );
+  const savedAccount = result.data?.ownPaymentAccount;
+  const account =
+    savedAccount?.connectionStatus === 'DEAUTHORIZED' ? null : savedAccount;
+  const config = result.data?.ownPaymentConfiguration;
+  const manage =
+    service.context.permissions.includes('ManageOwnPaymentAccount') &&
+    service.context.membershipRole === 'owner';
+  const allowed = manage && config?.providerIOAllowed;
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<AppError>();
+  const [confirm, setConfirm] = useState(false);
+  const [oauthFinished, setOauthFinished] = useState(false);
+  const oauthAttempts = useRef(new Set<string>());
+  const current = useRef<ManagementService | undefined>(service);
+  current.current = service;
+  const redirect = (url: string, tab?: Window | null) => {
+    const target = new URL(url);
+    if (
+      target.protocol !== 'https:' ||
+      ![
+        'connect.stripe.com',
+        'accounts.stripe.com',
+        'dashboard.stripe.com',
+      ].includes(target.hostname)
+    )
+      throw new Error('Unexpected Stripe destination');
+    if (tab === undefined) window.location.assign(target.href);
+    else if (tab) tab.location.href = target.href;
+    // The placeholder tab was blocked; open the validated destination directly.
+    else window.open(target.href, '_blank', 'noopener,noreferrer');
   };
+  /**
+   * `tab` is a placeholder window opened synchronously in the click handler so
+   * popup blockers allow it; it is closed when no destination is returned.
+   */
+  const run = async (
+    action: () => Promise<string | void>,
+    tab?: Window | null,
+  ) => {
+    if (busy) {
+      tab?.close();
+      return;
+    }
+    const owner = service;
+    setBusy(true);
+    setError(undefined);
+    let opened = false;
+    try {
+      const url = await action();
+      if (current.current !== owner) return;
+      if (url) {
+        redirect(url, tab);
+        opened = true;
+      } else result.refresh();
+    } catch (e) {
+      if (current.current === owner) setError(safeError(e));
+    } finally {
+      if (!opened) tab?.close();
+      if (current.current === owner) setBusy(false);
+    }
+  };
+  useEffect(() => {
+    current.current = service;
+    setBusy(false);
+    setError(undefined);
+    setConfirm(false);
+    setOauthFinished(false);
+    // Invalidate in-flight redirects when the workspace unmounts or its service changes.
+    return () => {
+      if (current.current === service) current.current = undefined;
+    };
+  }, [service]);
+  const params =
+    typeof window === 'undefined'
+      ? null
+      : new URLSearchParams(window.location.search);
+  const nonce = params?.get('stripe_onboarding');
+  const oauthState = params?.get('stripe_oauth_state');
+  const oauthCode = params?.get('stripe_oauth_code');
+  const refresh = result.refresh;
+  useEffect(() => {
+    if (!allowed || busy || !oauthState || !oauthCode || oauthFinished) return;
+    // An authorization code is single use, including during StrictMode effect replay.
+    const attempt = `${oauthState}:${oauthCode}`;
+    if (oauthAttempts.current.has(attempt)) return;
+    oauthAttempts.current.add(attempt);
+    setBusy(true);
+    setError(undefined);
+    void (async () => {
+      try {
+        await service.completeStripeConnect(oauthState, oauthCode);
+      } catch (e) {
+        if (current.current === service) setError(safeError(e));
+      } finally {
+        if (current.current === service) {
+          const clean = new URL(window.location.href);
+          // A workspace change must not clear a different return's credentials.
+          if (
+            clean.searchParams.get('stripe_oauth_state') === oauthState &&
+            clean.searchParams.get('stripe_oauth_code') === oauthCode
+          ) {
+            clean.searchParams.delete('stripe_oauth_state');
+            clean.searchParams.delete('stripe_oauth_code');
+            window.history.replaceState(window.history.state, '', clean.href);
+          }
+          setOauthFinished(true);
+          setBusy(false);
+          refresh();
+        }
+      }
+    })();
+  }, [allowed, busy, oauthState, oauthCode, oauthFinished, service, refresh]);
+  const charge = account?.readiness.find(
+    (r) => r.purpose === 'ACCEPT_DIRECT_CHARGE',
+  );
+  const payout = account?.readiness.find((r) => r.purpose === 'RECEIVE_PAYOUT');
   return (
     <>
-      <Choice
-        name="mode"
-        label="Stripe mode"
-        value={mode}
-        onChange={(v) => setMode(v as 'TEST' | 'LIVE')}
-      >
-        <option value="TEST">Test</option>
-        <option value="LIVE">Live</option>
-      </Choice>
       <ReadState {...result} retry={result.refresh} />
+      {error && <ErrorState error={error} />}
+      <Alert>
+        Stripe test mode. Payment collection, checkout capture and booth invoice
+        collection remain disabled.
+      </Alert>
+      {params?.get('stripe_oauth_error') && (
+        <Alert>
+          Stripe authorization was not completed. Start authorization again when
+          you are ready.
+        </Alert>
+      )}
+      {oauthState && oauthCode && !oauthFinished && (
+        <Alert>
+          {allowed
+            ? 'Checking Stripe authorization…'
+            : 'Stripe authorization will be checked automatically when payment management is available in the workspace where you started it.'}
+        </Alert>
+      )}
+      {nonce && (
+        <Alert>
+          Return to the workspace where you started setup, then check your
+          Stripe status. A return from Stripe does not confirm verification.
+          <Button
+            disabled={!allowed || busy}
+            onClick={() =>
+              void run(async () => {
+                const response = await service.completeStripeOnboarding(
+                  nonce,
+                  params?.get('stripe_refresh') === '1',
+                );
+                if (current.current !== service) return;
+                const link = response.completeOwnStripeOnboarding;
+                if (link) return link.authorizationUrl;
+                const clean = new URL(window.location.href);
+                clean.searchParams.delete('stripe_onboarding');
+                clean.searchParams.delete('stripe_refresh');
+                window.history.replaceState(null, '', clean.href);
+              })
+            }
+          >
+            {params?.get('stripe_refresh') === '1'
+              ? 'Resume Stripe setup'
+              : 'Check returned setup'}
+          </Button>
+        </Alert>
+      )}
       {config && (
-        <>
-          <Card surface={embedded ? 'embedded' : 'card'}>
-            {!embedded && (
-              <h2 className="ui-section-title-dashboard">
-                Marketplace Stripe Connect
-              </h2>
-            )}
-            <dl className="provider-facts">
-              <div>
-                <dt>Configuration</dt>
-                <dd>
-                  <Badge tone={managementStatusTone('readiness', config.state)}>
-                    {codeLabel(config.state)}
-                  </Badge>
-                </dd>
-              </div>
-              <div>
-                <dt>External qualification</dt>
-                <dd>{codeLabel(config.qualification)}</dd>
-              </div>
-              <div>
-                <dt>Funds flow policy</dt>
-                <dd>{codeLabel(config.fundsFlowPolicy)}</dd>
-              </div>
-            </dl>
-            <p>
-              Shopper payment confirmation remains unavailable. CHECKOUT-B1 is
-              open.
-            </p>
-          </Card>
-          {account ? (
-            <>
-              <dl className="provider-facts">
+        <Card surface={embedded ? 'embedded' : 'card'}>
+          <dl className="provider-facts">
+            <div>
+              <dt>Connection</dt>
+              <dd>
+                <Badge
+                  tone={
+                    account?.connectionStatus === 'CONNECTED'
+                      ? 'success'
+                      : 'neutral'
+                  }
+                >
+                  {account
+                    ? codeLabel(account.connectionStatus)
+                    : 'Not connected'}
+                </Badge>
+              </dd>
+            </div>
+            {account && (
+              <>
                 <div>
-                  <dt>Connection</dt>
-                  <dd>
-                    <Badge
-                      tone={managementStatusTone(
-                        'connection',
-                        account.connectionStatus,
-                      )}
-                    >
-                      {codeLabel(account.connectionStatus)}
-                    </Badge>
-                  </dd>
+                  <dt>Account</dt>
+                  <dd>{account.accountReference}</dd>
                 </div>
                 <div>
-                  <dt>Account reference</dt>
-                  <dd>{account.accountReference}</dd>
+                  <dt>Verification</dt>
+                  <dd>{codeLabel(charge?.state ?? 'UNKNOWN')}</dd>
                 </div>
                 <div>
                   <dt>Details submitted</dt>
                   <dd>{account.detailsSubmitted ? 'Yes' : 'No'}</dd>
                 </div>
                 <div>
+                  <dt>Card payments</dt>
+                  <dd>
+                    {account.chargesEnabled
+                      ? 'Enabled by Stripe'
+                      : 'Not enabled by Stripe'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Direct charge readiness</dt>
+                  <dd>
+                    {charge?.ready ? 'Provider requirements met' : 'Not ready'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Payout readiness</dt>
+                  <dd>{payout?.ready ? 'Ready' : 'Not ready'}</dd>
+                </div>
+                <div>
                   <dt>Requirements</dt>
                   <dd>
-                    {account.currentlyDueCount} currently due ·{' '}
+                    {account.currentlyDueCount} currently due,{' '}
                     {account.pastDueCount} past due
                   </dd>
                 </div>
-              </dl>
-              <p>Last synchronized: {date(account.lastSyncAt)}</p>
-              <div className="management-grid">
-                {account.readiness.map((r) => (
-                  <Card key={r.purpose}>
-                    <h2 className="ui-section-title-dashboard">
-                      {purpose[r.purpose] ?? r.purpose}
-                    </h2>
-                    <p>
-                      {r.ready
-                        ? 'Ready according to persisted account state'
-                        : 'Not ready'}
-                    </p>
-                    <ul>
-                      {r.reasons.map((reason) => (
-                        <li key={reason}>{reason}</li>
-                      ))}
-                    </ul>
-                  </Card>
-                ))}
-              </div>
-            </>
-          ) : (
-            <p>No connected payment account is recorded.</p>
-          )}
-          <Unavailable>
-            Connect, reconnect, refresh and disconnect require a configured
-            provider. Real OAuth and provider I/O remain reserved for the final
-            Stripe phase. A connected account does not qualify platform
-            checkout.
-          </Unavailable>
-          {localIO ? (
+              </>
+            )}
+          </dl>
+          {account && (
             <>
-              <CommandForm
-                title="Begin local Connect authorization"
-                submitLabel="Begin authorization"
-                run={() => service.connectStripe(mode)}
-                onDone={result.refresh}
-              >
-                <p>
-                  Controlled local transport only. External redirects are not
-                  executed in Phase 13G.
-                </p>
-              </CommandForm>
+              <p>Last checked: {date(account.lastSyncAt)}</p>
+              {account.disabledReason && (
+                <Alert>
+                  Stripe restriction: {codeLabel(account.disabledReason)}
+                </Alert>
+              )}
+              <ul>
+                {[
+                  ...new Set([
+                    ...(charge?.reasons ?? []),
+                    ...(payout?.reasons ?? []),
+                  ]),
+                ].map((reason) => (
+                  <li key={reason}>
+                    {remediation[reason] ?? codeLabel(reason)}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {!config.providerIOAllowed && (
+            <p>
+              Stripe test setup is not configured on this server. An
+              administrator must configure the platform identity, test keys and
+              return URLs.
+            </p>
+          )}
+          {manage && (
+            <div className="ui-actions">
+              {(!account || account.connectionMethod === 'HOSTED') && (
+                <Button
+                  disabled={!allowed || busy}
+                  onClick={() =>
+                    void run(
+                      async () =>
+                        (await service.startStripeOnboarding())
+                          .beginOwnStripeOnboarding.authorizationUrl,
+                    )
+                  }
+                >
+                  {account ? 'Continue Stripe setup' : 'Set up Stripe'}
+                </Button>
+              )}
+              {(!account ||
+                (account.connectionMethod === 'OAUTH' &&
+                  charge?.state === 'UNKNOWN')) && (
+                <Button
+                  variant="secondary"
+                  disabled={!allowed || busy}
+                  onClick={() =>
+                    void run(
+                      async () =>
+                        (await service.connectStripe('TEST'))
+                          .beginOwnStripeConnect.authorizationUrl,
+                    )
+                  }
+                >
+                  Connect existing Stripe account
+                </Button>
+              )}
               {account && (
                 <>
-                  <CommandForm
-                    title="Refresh account"
-                    run={() => service.refreshStripe(mode)}
-                    onDone={result.refresh}
+                  <FarmstandButton
+                    variant="secondary"
+                    disabled={!allowed || busy}
+                    onClick={() =>
+                      void run(async () => {
+                        await service.refreshStripe('TEST');
+                      })
+                    }
                   >
-                    <p>
-                      Read current provider observations through the controlled
-                      local transport.
-                    </p>
-                  </CommandForm>
-                  <CommandForm
-                    title="Disconnect account"
-                    submitLabel="Disconnect"
-                    confirm="Disconnect this Vendor payment account? Backend deauthorization and reconciliation preserve its history."
-                    run={() => service.disconnectStripe(mode)}
-                    onDone={result.refresh}
+                    <UtilityIcon name="refresh" />
+                    Refresh
+                  </FarmstandButton>
+                  <FarmstandButton
+                    variant="secondary"
+                    disabled={!allowed || busy}
+                    onClick={() => {
+                      const tab = window.open('', '_blank');
+                      if (tab) tab.opener = null;
+                      void run(
+                        async () =>
+                          (await service.stripeDashboard()).ownStripeDashboard,
+                        tab,
+                      );
+                    }}
                   >
-                    <p>
-                      Retained history remains available for reconciliation.
-                    </p>
-                  </CommandForm>
+                    Open Stripe Dashboard
+                    <UtilityIcon name="external" />
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </FarmstandButton>
+                  <Button
+                    variant="destructive"
+                    disabled={!allowed || busy}
+                    onClick={() => setConfirm(true)}
+                  >
+                    Disconnect
+                  </Button>
                 </>
               )}
-            </>
-          ) : (
-            <div className="actions">
-              <Button disabled>Connect account</Button>
-              <IconButton icon="refresh" label="Refresh account" disabled />
-              <Button disabled>Disconnect account</Button>
             </div>
           )}
-        </>
+        </Card>
       )}
+      <Dialog
+        open={confirm}
+        onClose={() => setConfirm(false)}
+        title="Disconnect Stripe?"
+        busy={busy}
+        actions={
+          <Button
+            variant="destructive"
+            disabled={busy}
+            onClick={() =>
+              void run(async () => {
+                await service.disconnectStripe('TEST');
+                if (current.current !== service) return;
+                const clean = new URL(window.location.href);
+                for (const key of [
+                  'stripe_oauth_state',
+                  'stripe_oauth_code',
+                  'stripe_oauth_error',
+                  'stripe_onboarding',
+                  'stripe_refresh',
+                ]) {
+                  clean.searchParams.delete(key);
+                }
+                window.history.replaceState(null, '', clean.href);
+                setOauthFinished(true);
+                setConfirm(false);
+              })
+            }
+          >
+            Disconnect Stripe
+          </Button>
+        }
+      >
+        <p>
+          This stops new payment eligibility for this organization. Historical
+          records and financial responsibilities remain. Resolve pending
+          operations before disconnecting.
+        </p>
+        <p>
+          This disconnects Stripe from this workspace. Other workspaces using
+          the same Stripe account stay connected. Your Stripe account remains
+          open.
+        </p>
+      </Dialog>
     </>
   );
 }

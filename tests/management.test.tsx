@@ -210,18 +210,19 @@ describe('Phase 13G safe contracts', () => {
         connectStripe: connect,
       } as unknown as ManagementService;
     render(<Payments service={service} />);
-    // Configuration and funds flow policy are both NOT_CONFIGURED.
-    expect(await screen.findAllByText('Not configured')).toHaveLength(2);
-    expect(screen.getByText('Reconciliation required')).toBeVisible();
+    expect(await screen.findByText('Reconciliation required')).toBeVisible();
     expect(
-      screen.getByRole('button', { name: 'Connect account' }),
-    ).toBeDisabled();
-    expect(
-      screen.getByRole('heading', { name: 'Receive transfers' }),
+      screen.getByText(/Stripe test setup is not configured/),
     ).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Refresh' }),
+    ).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Disconnect' })).toBeDisabled();
     expect(screen.getAllByText('Not ready')).toHaveLength(2);
     expect(
-      screen.getByText('Ready according to persisted account state'),
+      screen.getByText(
+        /Payment collection, checkout capture and booth invoice collection remain disabled/,
+      ),
     ).toBeVisible();
     expect(connect).not.toHaveBeenCalled();
   });

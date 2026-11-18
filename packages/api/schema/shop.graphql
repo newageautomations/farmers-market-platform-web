@@ -80,6 +80,7 @@ type Query {
   applicantApplications(input: JSON): JSON!
   marketApplicationApplicant: JSON!
   publicMarketApplication(slug: String): JSON!
+  publicMarketApplications: JSON!
   publicMarketOccurrenceMap(occurrenceId: Int!): JSON!
   vendorStorefrontTaxonomy(categoryIds: [ID!], tagIds: [ID!]): JSON!
   vendorMarketAppearances: [VendorMarketAppearance!]!
@@ -88,6 +89,7 @@ type Query {
   marketOccurrenceCatalog(occurrenceId: ID!, options: OccurrenceCatalogOptions): OccurrenceCatalog!
   marketStorefrontOccurrences(options: MarketPublicOccurrenceOptions): MarketPublicOccurrencePage!
   marketStorefrontOccurrence(id: ID!): MarketPublicOccurrence
+  marketOccurrenceVendors(occurrenceId: ID!): [MarketOccurrenceVendor!]!
   marketActiveCart: MarketActiveCart
   customerOrderTopology(orderId: ID!): CommerceTopology!
   availableOwnedPickup: [OwnedPickupOption!]!
@@ -98,6 +100,7 @@ type Query {
   myCommunicationPreferences: [CommunicationPreference!]!
   customerDashboard(section: String, skip: Int, eventSkip: Int): CustomerDashboard!
   customerFollowSubjects(kind: String!, search: String, skip: Int): CustomerSubjectPage!
+  customerDashboardLayout: JSON
   currentCheckoutStatus(orderId: ID): CustomerCheckoutView
   customerAccountProfile: CheckoutContactView
   platformAccountContexts: JSON!
@@ -279,9 +282,17 @@ type Mutation {
   releaseLocalCheckout(attemptId: ID!): LocalCheckoutResult!
   requestOriginalUnitRefund(input: OriginalUnitRefundInput!): OriginalUnitRefund!
   retryOriginalUnitRefund(id: ID!): OriginalUnitRefund!
+  stripeCheckoutEnabled: Boolean!
+  prepareStripeCheckout: StripeCheckoutStatus!
+  startStripeCheckout(consent: String!): StripeCheckoutStatus!
+  advanceStripeCheckout(groupId: ID!): StripeCheckoutStatus!
+  cancelStripeCheckout(groupId: ID!): StripeCheckoutStatus!
+  stripeCheckoutStatus(orderId: ID!): StripeCheckoutStatus
   beginProviderCheckout: ProviderCheckoutResult!
   finalizeProviderCheckout(attemptId: ID!): ProviderCheckoutResult!
   releaseProviderCheckout(attemptId: ID!): ProviderCheckoutResult!
+  clearTestPreorderFeeQuote: Boolean!
+  freezeTestPreorderFeeQuote: CheckoutPreorderFee!
   setMyStorefrontCommunicationPreference(medium: CommunicationMedium!, purpose: CommunicationPurpose!, subscribed: Boolean!, noticeVersion: String!): StorefrontCommunicationPreferences!
   subscribeVendorCommunications(vendorId: ID!, medium: CommunicationMedium!, purpose: CommunicationPurpose!, noticeVersion: String!): CommunicationPreference!
   unsubscribeVendorCommunications(vendorId: ID!, medium: CommunicationMedium!, purpose: CommunicationPurpose!, noticeVersion: String!): CommunicationPreference!
@@ -290,6 +301,7 @@ type Mutation {
   applicationCompliance(input: JSON!): JSON!
   uploadApplicationCompliance(input: JSON!, file: Upload!): JSON!
   setCustomerFollow(kind: String!, id: ID!, following: Boolean!): CustomerFollowResult!
+  saveCustomerDashboardLayout(layout: JSON!): Boolean!
   customerSignOut(everywhere: Boolean = false): CustomerHandoffResult!
   setCheckoutContact(input: CheckoutContactInput!): CheckoutContactView!
   requestPurchaseAccountLink(orderId: ID!, origin: String!): PurchaseAccountLinkReceipt!
@@ -4146,6 +4158,14 @@ type OccurrenceCatalogVendor {
   count: Int!
 }
 
+type MarketOccurrenceVendor {
+  vendorId: ID!
+  name: String!
+  image: String
+  storefrontUrl: String
+  offeringCount: Int!
+}
+
 type MarketPublicOccurrence {
   id: ID!
   scheduleDate: String!
@@ -4450,10 +4470,44 @@ type CustomerPurchasePage {
   items: [CustomerPurchaseProjection!]!
 }
 
+type StripeCheckoutCharge {
+  vendorId: ID!
+  amount: Int!
+  currency: String!
+}
+
+type StripeCheckoutStatus {
+  groupId: ID!
+  orderId: ID!
+  state: String!
+  publishableKey: String!
+  consentPolicy: String!
+  setupSecret: String
+  actionSecret: String
+  actionAccount: String
+  charges: [StripeCheckoutCharge!]!
+}
+
 type ProviderCheckoutResult {
   attemptId: ID!
   orderId: ID!
   state: String!
+}
+
+type PreorderVendorFee {
+  vendorId: ID!
+  platform: Int!
+  recovery: Int!
+  feeTax: Int!
+  preorderFee: Int!
+  total: Int!
+}
+
+type CheckoutPreorderFee {
+  quoteId: ID!
+  total: Int!
+  preorderFee: Int!
+  vendors: [PreorderVendorFee!]!
 }
 
 enum CommunicationMedium {
@@ -4502,12 +4556,25 @@ type VariantCatalogDetails {
   assets: [Asset!]!
 }
 
+type CustomerSubjectDate {
+  startsAt: DateTime!
+  endsAt: DateTime!
+  timezone: String!
+  venue: String
+  marketName: String!
+}
+
 type CustomerFollowSubject {
   id: ID!
   name: String!
   status: String
   url: String
   following: Boolean!
+  image: String
+  city: String
+  region: String
+  venue: String
+  nextDate: CustomerSubjectDate
 }
 
 type CustomerSubjectPage {
@@ -4600,7 +4667,28 @@ type CheckoutVendorGroup {
   pickup: [CheckoutPickupView!]!
 }
 
+type CheckoutVendorPaymentObligation {
+  id: ID!
+  vendorId: ID!
+  amount: Int!
+  currency: CurrencyCode!
+  state: String!
+}
+
+type CheckoutPaymentCoverage {
+  id: ID!
+  state: String!
+  placement: String!
+  currency: CurrencyCode!
+  total: Int!
+  verifiedAmount: Int!
+  obligations: [CheckoutVendorPaymentObligation!]!
+}
+
 type CustomerCheckoutView {
+  preorderFee: CheckoutPreorderFee
+  preorderFeeTestAvailable: Boolean!
+  paymentGroup: CheckoutPaymentCoverage
   orderId: ID!
   code: String!
   kind: String!

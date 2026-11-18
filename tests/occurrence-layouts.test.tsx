@@ -85,30 +85,38 @@ it('requires confirmation before erasing map data and lets the manager cancel', 
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 });
 
-it('selects a layout directly when this occurrence has no map data', async () => {
-  const data = layouts();
-  data.plans = [];
-  const run = vi.fn().mockResolvedValue({ id: 2 });
-  render(
-    <OccurrenceLayoutActions
-      data={data}
-      occurrenceId={102}
-      run={run}
-      canChange
-      canEdit
-    />,
-  );
-  expect(screen.queryByRole('button', { name: 'Edit layout' })).toBeNull();
-  await selectLayout();
-  await waitFor(() =>
-    expect(run).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: { occurrenceId: 102, layoutVersionId: 2, clearLayoutData: false },
-      }),
-    ),
-  );
-  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-});
+it.each(['PUBLISHED', 'DRAFT'] as const)(
+  'selects a %s layout directly when this occurrence has no map data',
+  async (status) => {
+    const data = layouts();
+    data.layoutVersions!.find((v) => v.id === 2)!.status = status;
+    data.plans = [];
+    const run = vi.fn().mockResolvedValue({ id: 2 });
+    render(
+      <OccurrenceLayoutActions
+        data={data}
+        occurrenceId={102}
+        run={run}
+        canChange
+        canEdit
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Edit layout' })).toBeNull();
+    await selectLayout();
+    await waitFor(() =>
+      expect(run).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            occurrenceId: 102,
+            layoutVersionId: 2,
+            clearLayoutData: false,
+          },
+        }),
+      ),
+    );
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  },
+);
 
 it('keeps the confirmation open on a failed switch', async () => {
   const run = vi.fn().mockResolvedValue(undefined);

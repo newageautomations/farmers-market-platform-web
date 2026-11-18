@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "apps/admin/src/market/MarketDayStorefrontSetting.tsx",
+    "apps/storefront/src/components/market/MarketDayLive.tsx",
+    "apps/storefront/src/pages/api/market-day.ts",
+    "packages/api/src/market-day-storefront.ts",
+    "tests/market-day-storefront*.ts*",
+    "tests/setup.ts",
+    "apps/storefront/src/env.d.ts",
+    "apps/admin/src/env.d.ts",
+    "apps/admin/src/account-env.d.ts"
+  ]
+}

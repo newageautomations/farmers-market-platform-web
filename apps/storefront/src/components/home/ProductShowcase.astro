@@ -1,0 +1,108 @@
+---
+import type { WebsiteProductShowcaseSection } from '@market/theme/storefront';
+import type { StorefrontContext } from '@market/storefront-core';
+import ProductCards from '../ProductCards.astro';
+import FarmhouseProductCards from '../modern-farmhouse/ProductCards.astro';
+import Button from '../ui/Button.astro';
+import CarouselControls from './CarouselControls.astro';
+import { harvestShowcaseProducts } from '../../lib/harvest-showcase';
+import { vendorPreorder } from '../../lib/vendor-preorder';
+import '../../styles/harvest-sections.css';
+import '../../styles/theme-section-library.css';
+const {
+  section,
+  context,
+  editorId,
+  shopLinkLabel = 'See all',
+} = Astro.props as {
+  section: WebsiteProductShowcaseSection;
+  context: StorefrontContext;
+  editorId?: string;
+  shopLinkLabel?: string;
+};
+const { content: c, presentation: p } = section;
+const theme = context?.appearance?.theme ?? 'harvest';
+const prefix =
+  theme === 'modern-farmhouse'
+    ? 'farmhouse'
+    : theme === 'editorial-market'
+      ? 'editorial'
+      : 'harvest';
+const Cards =
+  theme === 'modern-farmhouse' ? FarmhouseProductCards : ProductCards;
+const items = await harvestShowcaseProducts(Astro, c.productIds);
+const preorder = items.length
+  ? await vendorPreorder(
+      Astro,
+      items.flatMap((i) => i.variants.map((v) => v.id)),
+    )
+  : undefined;
+---
+
+<section
+  class:list={['harvest-section harvest-library harvest-showcase']}
+  data-library-theme={theme}
+  data-editor-section={editorId ?? `${prefix}:${section.id}`}
+  data-layout={p.layout}
+  data-harvest-carousel={p.layout === 'carousel' ? true : undefined}
+  data-visible-images={p.visibleImages ?? 3}
+  data-columns={p.columns}
+  data-background-type={p.backgroundType ?? 'contained'}
+  data-background={p.background}
+  data-spacing={p.spacing}
+  data-alignment={p.alignment}
+>
+  <header
+    class:list={[
+      'harvest-library-heading',
+      theme === 'editorial-market' && 'em-section-heading',
+    ]}
+  >
+    <div class="showcase-heading-copy">
+      {c.heading && <h2>{c.heading}</h2>}
+      {c.body && <p>{c.body}</p>}
+    </div>
+    {theme === 'editorial-market' && c.showShopLink && (
+      <a href="/products">
+        {shopLinkLabel} <span aria-hidden="true">→</span>
+      </a>
+    )}
+  </header>
+  {items.length > 0 ? (
+    <div class="harvest-gallery-frame">
+      {p.layout === 'carousel' && (
+        <CarouselControls trackId={`${section.id}-products`} noun="products" />
+      )}
+      <div
+        id={`${section.id}-products`}
+        tabindex={p.layout === 'carousel' ? 0 : undefined}
+        role={p.layout === 'carousel' ? 'region' : undefined}
+        aria-label={p.layout === 'carousel' ? 'Product carousel' : undefined}
+      >
+        <Cards
+          items={items}
+          shop
+          theme={theme}
+          editorialFeatured={theme === 'editorial-market'}
+          carousel={p.layout === 'carousel'}
+          storefrontId={context.storefrontId}
+          occurrenceId={preorder?.selected?.id}
+          availability={preorder?.availability}
+          preview={!!Astro.locals.editorPreview}
+        />
+      </div>
+    </div>
+  ) : (
+    Astro.locals.editorPreview && (
+      <p>Select available products from your catalog to fill this showcase.</p>
+    )
+  )}
+  {c.showShopLink && theme !== 'editorial-market' && (
+    <Button
+      href="/products"
+      variant={p.background === 'ink' ? 'secondary' : 'primary'}
+    >
+      Explore the shop <span aria-hidden="true">↗</span>
+    </Button>
+  )}
+</section>

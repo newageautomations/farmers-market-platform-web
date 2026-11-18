@@ -134,10 +134,12 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
+  align-items: center;
   gap: 0.5rem 1rem;
 }
 .vendor-cart-summary dd {
-  margin: 0 0 0 auto;
+  margin: 0;
+  align-self: center;
   text-align: end;
 }
 .vendor-cart-summary .vendor-cart-total {
@@ -184,4 +186,9 @@
   .vendor-cart-quantity {
     flex-basis: 100%;
   }
+}
+
+.vendor-cart-group > h2 {
+  margin-block: 1.5rem 0.75rem;
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
 }

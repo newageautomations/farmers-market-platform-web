@@ -1,0 +1,694 @@
+/* Market Day arrangements only. Heading, summary, panels, controls, table,
+   side panel and paging reuse the Assignments/Operations presentation. */
+.market-day-workspace .ui-actions {
+  flex-wrap: wrap;
+}
+
+/* Heading: the market date picker sits top right, as in Assignments. */
+.market-day-workspace > .markets-heading {
+  flex-wrap: wrap;
+}
+.market-day-workspace > .markets-heading > div:not(.workspace-heading-actions) {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.market-day-workspace .workspace-heading-actions {
+  display: flex;
+  flex: 0 1 340px;
+  min-width: 0;
+}
+.market-day-workspace .workspace-heading-actions > .field {
+  width: 100%;
+  margin: 0;
+}
+.market-day-workspace .workspace-heading-actions .farmstand-select-wrap {
+  width: 100%;
+}
+.market-day-description {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.market-day-description > span:not(.ui-status):not(:last-child)::after {
+  content: '·';
+  margin-left: 10px;
+  color: var(--brand-muted);
+}
+
+/* Map beside the phase checklist. */
+.market-day-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+  min-width: 0;
+}
+/* Outranks the app-wide `.admin-content .ops-map` card spacing so the map
+   card sits directly under the panel heading. */
+.market-day-workspace .market-day-map .ops-map {
+  margin: 0;
+  padding: 12px 14px 14px;
+}
+
+/* Attendance list heading with the finalize action. */
+.market-day-list-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-bottom: 16px;
+}
+.market-day-list-heading h2 {
+  margin: 0;
+  flex: 1 1 auto;
+}
+.market-day-list-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.market-day-list-actions .farmstand-button > svg {
+  width: 16px;
+  height: 16px;
+}
+.markets-filters.market-day-filters {
+  grid-template-columns: minmax(160px, 1fr) repeat(2, minmax(140px, 170px));
+}
+.market-day-attendance
+  .market-applications-main
+  .markets-list
+  .farmstand-data-table {
+  min-width: 620px;
+}
+.market-day-row-action {
+  white-space: nowrap;
+}
+
+/* Side panel attendance form and change history. */
+.market-day-attendance-form fieldset {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.market-day-attendance-form .field {
+  margin: 0;
+}
+.market-day-attendance-form .farmstand-select-wrap,
+.market-day-attendance-form .farmstand-select.ui-select,
+.market-day-attendance-form textarea {
+  width: 100%;
+}
+.market-day-vendor .markets-next-content > .farmstand-button {
+  width: 100%;
+}
+.market-day-audit {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+.market-day-audit li {
+  display: grid;
+  gap: 2px;
+  padding-left: 10px;
+  border-left: 2px solid var(--markets-border, var(--brand-border));
+}
+.market-day-audit small {
+  color: var(--brand-muted);
+}
+
+/* Setup/Closing checklist. */
+.day-checklist-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--markets-soft);
+  overflow: hidden;
+}
+.day-checklist-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand-primary);
+  transition: width 240ms ease;
+}
+.day-checklist .day-checklist-fieldset {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.day-checklist-tasks {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--markets-border, var(--brand-border));
+  border-radius: 11px;
+  overflow: hidden;
+}
+.day-checklist-tasks li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 8px;
+  padding: 8px 8px 8px 12px;
+  transition: background-color 150ms ease;
+}
+.day-checklist-tasks li + li {
+  border-top: 1px solid var(--markets-border, var(--brand-border));
+}
+.day-checklist-tasks li:is(:hover, :focus-within, .is-editing) {
+  background: var(--markets-soft);
+}
+.day-checklist-task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+.day-checklist-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.day-checklist-tasks li.is-complete .day-checklist-title {
+  color: var(--brand-muted);
+  text-decoration: line-through;
+}
+.day-checklist-done {
+  grid-column: 1;
+  padding-left: 30px;
+  color: var(--brand-muted);
+  font-size: 11px;
+}
+.day-checklist-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.55;
+  transition: opacity 150ms ease;
+}
+.day-checklist-tasks li:is(:hover, :focus-within) .day-checklist-actions {
+  opacity: 1;
+}
+.day-checklist-actions .button {
+  --ui-control-height: 30px;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+}
+.day-checklist-actions .button svg {
+  width: 16px;
+  height: 16px;
+}
+.day-checklist-delete:is(:hover, :focus-visible):not(:disabled) {
+  color: var(--status-danger-fg);
+}
+.day-checklist .day-checklist-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.day-checklist-add .field {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+.day-checklist-add .farmstand-button {
+  flex: none;
+}
+.day-checklist-add .farmstand-button > svg {
+  width: 16px;
+  height: 16px;
+}
+@media (hover: none) {
+  .day-checklist-actions {
+    opacity: 1;
+  }
+}
+
+/* Vendor Setup: booth allocation beside attendance and the checklist. */
+.market-day-vendor-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+  min-width: 0;
+}
+.market-day-vendor-main,
+.market-day-vendor-aside {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  min-width: 0;
+}
+.day-booth-panel .settings-panel-actions .farmstand-button > svg,
+.day-check-in .farmstand-button > svg {
+  width: 16px;
+  height: 16px;
+}
+.day-booth-panel .settings-panel-heading {
+  flex-wrap: wrap;
+}
+.day-booth-panel .settings-panel-heading > div {
+  flex: 1 1 200px;
+}
+.day-booth {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  min-width: 0;
+}
+.day-booth-tile {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  width: 112px;
+  height: 112px;
+  border-radius: 16px;
+  border: 1px solid var(--markets-border, var(--brand-border));
+  background:
+    radial-gradient(
+      circle at 30% 20%,
+      color-mix(in srgb, var(--brand-primary) 12%, transparent),
+      transparent 65%
+    ),
+    linear-gradient(135deg, var(--markets-soft), var(--brand-surface));
+  color: var(--brand-primary);
+}
+.day-booth-facts {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.day-booth-name {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.4px;
+}
+.day-booth-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  color: var(--brand-muted);
+  font-size: 13px;
+}
+.day-booth-payment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.day-booth-instructions {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.day-booth-instructions .farmstand-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--brand-primary);
+}
+/* Several booths: a selectable card grid, the chosen card outlined. */
+.day-booth-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.day-booth-compact {
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--markets-border, var(--brand-border));
+  border-radius: 13px;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+.day-booth-compact .day-booth-tile {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+}
+.day-booth-compact .day-booth-name {
+  font-size: 16px;
+}
+.day-check-in-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+.day-check-in .settings-panel-body > .farmstand-button {
+  justify-self: stretch;
+  width: 100%;
+}
+.day-check-in .settings-panel-body > p {
+  margin: 0;
+}
+.settings-panel-body > a.day-check-in-history {
+  justify-self: start;
+}
+
+@container (max-width: 1080px) {
+  .market-day-board,
+  .market-day-vendor-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container (max-width: 600px) {
+  .markets-filters.market-day-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .markets-filters.market-day-filters > :first-child {
+    grid-column: 1 / -1;
+  }
+  .day-booth-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .day-booth-compact .day-booth-summary {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .market-day-list-heading {
+    align-items: flex-start;
+  }
+}
+
+.market-day-pickups {
+  min-width: 0;
+}
+.market-day-actions {
+  display: grid;
+  gap: inherit;
+  min-width: 0;
+}
+.market-day-recap-enter {
+  animation: market-day-recap-enter 360ms ease-out;
+}
+@keyframes market-day-recap-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-day-recap-enter {
+    animation: none;
+  }
+  .day-checklist-progress > span,
+  .day-checklist-tasks li,
+  .day-checklist-actions,
+  .day-booth-compact {
+    transition: none;
+  }
+}
+
+/* Market and Closing: side column beside the map (checklist, assistance). */
+.market-day-board-aside {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  min-width: 0;
+}
+
+/* Assistance requests as a compact list that fits the side column. */
+.day-assistance .settings-panel-heading {
+  flex-wrap: wrap;
+}
+.day-assistance .settings-panel-heading > div {
+  flex: 1 1 180px;
+}
+.day-assistance .settings-panel-actions .farmstand-button > svg,
+.day-finish .settings-panel-actions .farmstand-button > svg,
+.day-request-detail .farmstand-button > svg {
+  width: 16px;
+  height: 16px;
+}
+.day-assistance-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(110px, 140px);
+  gap: 8px;
+}
+.day-assistance-filters > .field {
+  min-width: 0;
+  margin: 0;
+}
+.day-assistance-filters :is(.farmstand-select-wrap, .farmstand-search),
+.day-assistance-filters .farmstand-select.ui-select {
+  width: 100%;
+}
+.day-requests {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--markets-border, var(--brand-border));
+  border-radius: 11px;
+  overflow: hidden;
+}
+.day-requests li + li {
+  border-top: 1px solid var(--markets-border, var(--brand-border));
+}
+.day-request {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+.day-request:is(:hover, :focus-visible) {
+  background: var(--markets-soft);
+}
+.day-request:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: -2px;
+}
+.day-request-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--status-success-bg);
+  color: var(--status-success-fg);
+}
+.day-request-icon.is-open {
+  background: var(--status-warning-bg);
+  color: var(--status-warning-fg);
+}
+.day-request-icon .farmstand-icon {
+  width: 16px;
+  height: 16px;
+}
+.day-request-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.day-request-text strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.day-request-text small {
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+.day-request-detail,
+.day-request-form,
+.day-confirm {
+  display: grid;
+  gap: 14px;
+}
+.day-request-detail p,
+.day-confirm p {
+  margin: 0;
+}
+.day-request-form .field {
+  margin: 0;
+}
+.day-request-form :is(.farmstand-select-wrap, textarea),
+.day-request-form .farmstand-select.ui-select {
+  width: 100%;
+}
+.day-confirm-warnings {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.day-confirm-warnings li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--status-warning-bg);
+  color: var(--status-warning-fg);
+  font-size: 13px;
+}
+.day-confirm-warnings .farmstand-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+/* Finish panel and recap cards. */
+.day-finish .settings-panel-heading {
+  flex-wrap: wrap;
+}
+.day-finish .settings-panel-heading > div {
+  flex: 1 1 260px;
+}
+.day-finish .settings-panel-body > p {
+  margin: 0;
+}
+.market-day-recap {
+  display: grid;
+  gap: 12px;
+}
+.day-recap-summary.markets-summary {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+.day-recap-summary .markets-stat dd {
+  font-size: 24px;
+}
+.day-recap-note {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Vendor market tools and pickups. */
+.day-tools .application-detail-quick-actions {
+  padding: 0;
+}
+.day-tools .application-detail-quick-actions .farmstand-icon {
+  width: 16px;
+  height: 16px;
+}
+.markets-filters.market-day-pickup-filters {
+  grid-template-columns: minmax(0, 1fr);
+}
+.market-day-pickups .farmstand-data-table {
+  min-width: 620px;
+}
+.market-day-pickup-items {
+  min-width: 140px;
+  max-width: 220px;
+  font-size: 12px;
+}
+@container (max-width: 600px) {
+  .day-assistance-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .day-request {
+    transition: none;
+  }
+}
+.market-day-pickups .farmstand-data-table td > .ui-status,
+.market-day-pickups .farmstand-data-table td > .badge {
+  white-space: nowrap;
+}
+
+/* Equipment: a one-line summary; the list opens in a dialog. */
+.day-equipment-summary {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+.day-equipment-summary.is-compact {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+.day-equipment-summary .farmstand-button > .farmstand-icon {
+  width: 16px;
+  height: 16px;
+}
+.day-equipment-dialog {
+  display: grid;
+  gap: 12px;
+}
+.day-equipment-dialog p {
+  margin: 0;
+  font-size: 12px;
+}
+.day-equipment-dialog .farmstand-data-table :is(td, th):last-child {
+  text-align: right;
+  font-weight: 600;
+}
+.day-equipment-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.day-equipment-name .farmstand-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--brand-primary);
+}
+
+/* Booth summary: icon tile beside the booth facts (informational, no hover). */
+.day-booth-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+.day-booth-compact .day-booth-summary {
+  gap: 12px;
+}
+.day-booth-tile svg {
+  width: 52px;
+  height: 52px;
+}
+.day-booth-compact .day-booth-tile svg {
+  width: 30px;
+  height: 30px;
+}
+.day-booth > .day-equipment-summary {
+  justify-self: start;
+}
+.market-day-map .settings-panel-heading {
+  flex-wrap: wrap;
+}
+.market-day-map .settings-panel-actions .field {
+  margin: 0;
+  min-width: 160px;
+}

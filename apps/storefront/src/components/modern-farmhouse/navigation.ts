@@ -31,10 +31,4 @@ export function farmhouseLinks(context: StorefrontContext) {
     },
   ].filter((link) => link.enabled);
 }
-export function farmhouseDestination(context: StorefrontContext, href: string) {
-  return (
-    href === '/' ||
-    href.startsWith('/products') ||
-    farmhouseLinks(context).some((link) => link.href === href)
-  );
-}
+export { websiteSectionDestination as farmhouseDestination } from '../website-section-navigation';

@@ -1,0 +1,97 @@
+/* Vendor booth invoice modal. Builds on the manager invoice modal's shared
+ * presentation (booth-invoices.css: meta row, balance cards, line table,
+ * money rows and history); only the vendor arrangement is local. */
+.vendor-invoice-balance.booth-invoice-balance {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.vendor-invoice-balance .vendor-invoice-due {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  letter-spacing: -0.2px;
+}
+.vendor-invoice-due > .farmstand-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--brand-primary);
+}
+.booth-invoice-balance
+  > [data-tone='owed']
+  .vendor-invoice-due
+  > .farmstand-icon {
+  color: currentColor;
+}
+
+/* Payments and credits are invoice lines that lower the total due. */
+.vendor-invoice-lines tbody tr[data-tone='credit'] td:last-child {
+  color: var(--status-success-fg);
+  font-weight: 600;
+}
+.vendor-invoice-line-detail {
+  display: block;
+  margin-top: 2px;
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+.vendor-invoice-lines .invoice-lines tfoot :is(th, td) {
+  padding: 12px;
+  border-bottom: 0;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+}
+.vendor-invoice-lines .invoice-lines tfoot td {
+  white-space: nowrap;
+  color: var(--brand-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.vendor-invoice-checkout {
+  padding-top: 18px;
+  border-top: 1px solid var(--booth-invoice-border);
+}
+.vendor-invoice-card {
+  padding: 12px 14px;
+  border: 1px solid var(--booth-invoice-border);
+  border-radius: 8px;
+  background: var(--brand-surface);
+}
+.vendor-invoice-card[hidden] {
+  display: none;
+}
+.vendor-invoice-actions.ui-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 4px 0 0;
+  padding-top: 4px;
+}
+
+/* After Pay the modal eases (useWizardDialogHeight) into a compact result:
+ * the shared working ring, then the shared check or failure mark. */
+dialog.ui-dialog.vendor-invoice-dialog.is-payment-result {
+  width: min(440px, calc(100vw - 2rem));
+}
+.vendor-invoice-outcome.booth-invoice-outcome {
+  padding: 8px 0 4px;
+  animation: booth-invoice-stage-enter 220ms ease both;
+}
+.vendor-invoice-outcome .generate-creating-ring {
+  width: 72px;
+  height: 72px;
+}
+.vendor-invoice-outcome .booth-invoice-outcome-mark {
+  width: 72px;
+  height: 72px;
+}
+
+@media (max-width: 600px) {
+  .vendor-invoice-balance.booth-invoice-balance {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .vendor-invoice-actions > .button {
+    flex: 1 1 auto;
+  }
+}

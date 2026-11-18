@@ -7,6 +7,7 @@ import {
 } from '@market/api';
 import type { AdminContext } from '@market/admin-core';
 import './account-modes.css';
+import { browserUrl } from './remote-demo';
 export function AccountModes({
   endpoint,
   channelToken,
@@ -14,7 +15,10 @@ export function AccountModes({
   customerOrigin,
   accountOrigin,
   principalId,
+  personalLink = true,
 }: {
+  /** False hides the separate "Your account" link (Customer mode still reaches it). */
+  personalLink?: boolean;
   endpoint: string;
   channelToken: string;
   context: AdminContext;
@@ -40,7 +44,7 @@ export function AccountModes({
   const personalOrigin = accountOrigin ?? customerOrigin;
   const expectedPrincipal = account?.principalId ?? principalId;
   if (!account)
-    return personalOrigin ? (
+    return personalOrigin && personalLink ? (
       <a
         className={buttonClassName({
           variant: 'secondary',
@@ -83,7 +87,7 @@ export function AccountModes({
   }
   return (
     <div className="account-mode-controls">
-      {personalOrigin && (
+      {personalOrigin && personalLink && (
         <a
           className={buttonClassName({
             variant: 'secondary',
@@ -125,13 +129,15 @@ export function AccountModes({
             )
               return;
             window.location.assign(
-              new URL(
-                '/account/login?returnTo=/account' +
-                  (expectedPrincipal
-                    ? '&principal=' + encodeURIComponent(expectedPrincipal!)
-                    : ''),
-                personalOrigin,
-              ).toString(),
+              browserUrl(
+                new URL(
+                  '/account/login?returnTo=/account' +
+                    (expectedPrincipal
+                      ? '&principal=' + encodeURIComponent(expectedPrincipal!)
+                      : ''),
+                  personalOrigin,
+                ).toString(),
+              ),
             );
             return;
           }

@@ -1,0 +1,49 @@
+---
+import { buttonClassName } from '@market/ui/presentation';
+/**
+ * Astro adapter of `FarmstandPagination`: the same footer with real
+ * Previous/Next links, so server-rendered paging keeps native navigation.
+ */
+const {
+  summary,
+  label = 'Pagination',
+  previous,
+  next,
+} = Astro.props as {
+  summary: string;
+  label?: string;
+  previous?: string;
+  next?: string;
+};
+const link = buttonClassName({
+  variant: 'secondary',
+  size: 'compact',
+  className: 'farmstand-button',
+});
+---
+
+<div class="markets-pagination-footer">
+  <span>{summary}</span>
+  {(previous || next) && (
+    <nav aria-label={label}>
+      {previous ? (
+        <a class={link} href={previous}>
+          Previous
+        </a>
+      ) : (
+        <span class={link} aria-disabled="true">
+          Previous
+        </span>
+      )}
+      {next ? (
+        <a class={link} href={next}>
+          Next
+        </a>
+      ) : (
+        <span class={link} aria-disabled="true">
+          Next
+        </span>
+      )}
+    </nav>
+  )}
+</div>

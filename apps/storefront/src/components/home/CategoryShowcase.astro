@@ -1,0 +1,122 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import type { WebsiteCategoryShowcaseSection } from '@market/theme/storefront';
+import { safeAsset } from '@market/storefront-core';
+import { harvestShowcaseCategories } from '../../lib/harvest-showcase';
+import { categoryArt } from '../editorial-market/category-art';
+import HarvestArtwork from './HarvestArtwork.astro';
+import Button from '../ui/Button.astro';
+import '../../styles/harvest-sections.css';
+import '../../styles/theme-section-library.css';
+const {
+  section,
+  context,
+  editorId,
+  shopLinkLabel = 'See all',
+} = Astro.props as {
+  section: WebsiteCategoryShowcaseSection;
+  context?: StorefrontContext;
+  editorId?: string;
+  shopLinkLabel?: string;
+};
+const { content: c, presentation: p } = section;
+const theme = context?.appearance?.theme ?? 'harvest';
+const prefix =
+  theme === 'modern-farmhouse'
+    ? 'farmhouse'
+    : theme === 'editorial-market'
+      ? 'editorial'
+      : 'harvest';
+const categories = await harvestShowcaseCategories(Astro, c.categoryIds);
+---
+
+<section
+  class="harvest-section harvest-library harvest-category-showcase"
+  data-library-theme={theme}
+  data-editor-section={editorId ?? `${prefix}:${section.id}`}
+  data-layout={p.layout}
+  data-aspect-ratio={p.aspectRatio}
+  data-background-type={p.backgroundType ?? 'contained'}
+  data-background={p.background}
+  data-spacing={p.spacing}
+  data-alignment={p.alignment}
+>
+  <header
+    class:list={[
+      'harvest-library-heading',
+      theme === 'editorial-market' && 'em-section-heading',
+    ]}
+  >
+    <div class="showcase-heading-copy">
+      {c.heading && <h2>{c.heading}</h2>}
+      {c.body && <p>{c.body}</p>}
+    </div>
+    {theme === 'editorial-market' && c.showShopLink && (
+      <a href="/products">
+        {shopLinkLabel} <span aria-hidden="true">→</span>
+      </a>
+    )}
+  </header>
+  <nav
+    class:list={[
+      'harvest-category-links',
+      theme === 'editorial-market' && p.layout !== 'compact' && 'em-categories',
+    ]}
+    aria-label={c.heading || 'Shop categories'}
+  >
+    {categories.map((category) => (
+      <a href={`/products?category=${encodeURIComponent(category.id)}`}>
+        {p.layout !== 'compact' && (
+          <span
+            class:list={[
+              'harvest-category-photo',
+              theme === 'editorial-market' && 'em-category-image',
+            ]}
+          >
+            {(
+              theme === 'editorial-market'
+                ? categoryArt(category.code, safeAsset(category.image))
+                : safeAsset(category.image)
+            ) ? (
+              <img
+                src={
+                  theme === 'editorial-market'
+                    ? categoryArt(category.code, safeAsset(category.image))
+                    : safeAsset(category.image)
+                }
+                alt=""
+                width="800"
+                height="800"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : theme === 'editorial-market' ? (
+              <span class="em-category-placeholder" aria-hidden="true">
+                ✦
+              </span>
+            ) : (
+              <HarvestArtwork />
+            )}
+          </span>
+        )}
+        <span class="harvest-category-title">
+          {category.name}
+          {theme !== 'editorial-market' && <span aria-hidden="true"> ↗</span>}
+        </span>
+      </a>
+    ))}
+  </nav>
+  {!categories.length && Astro.locals.editorPreview && (
+    <p>
+      Select categories with products in your catalog to fill this showcase.
+    </p>
+  )}
+  {c.showShopLink && theme !== 'editorial-market' && (
+    <Button
+      href="/products"
+      variant={p.background === 'ink' ? 'secondary' : 'primary'}
+    >
+      Browse the shop <span aria-hidden="true">↗</span>
+    </Button>
+  )}
+</section>

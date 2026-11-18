@@ -1,0 +1,288 @@
+---
+import {
+  AppError,
+  safeError,
+  type MarketItem,
+  type MarketOccurrenceVendor,
+  type PublicProduct,
+  readProductInformation,
+} from '@market/api';
+import {
+  plainDescription,
+  priceLabel,
+  safeAsset,
+  seo,
+  shopCategories,
+} from '@market/storefront-core';
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import ProductLayout from '../../../components/legacy-modern-farmhouse/ProductLayout.astro';
+import ProductGallery from '../../../components/ProductGallery.astro';
+import ProductInformation from '../../../components/ProductInformation.astro';
+import ProductCards from '../../../components/ProductCards.astro';
+import VendorPreorderBanner from '../../../components/VendorPreorderBanner.astro';
+import { ProductPurchase } from '../../../components/ProductPurchase';
+import Button from '../../../components/ui/Button.astro';
+import { ErrorState } from '@market/ui';
+import { requestMarketShop } from '../../../lib/shop';
+import { marketPreorder } from '../../../lib/market-preorder';
+import {
+  marketProduct,
+  marketCatalogAvailability,
+  marketProductLink,
+} from '../../../lib/market-catalog';
+import { vendorInitial } from '../../../lib/market-website';
+import type { VendorPreorderState } from '../../../lib/vendor-preorder';
+import { marketOnlyTheme, storefrontText } from '@market/theme/storefront';
+import '../../../styles/vendor-shop.css';
+import '../../../styles/product-details.css';
+import '../../../styles/market-website.css';
+
+const { storefront, storefrontError } = Astro.locals;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+const variantId = Astro.params.variantId ?? '';
+let error = storefrontError;
+let preorder: VendorPreorderState = {
+  occurrences: [],
+  selected: undefined,
+  availability: [],
+  unavailable: false,
+  orderOccurrence: undefined,
+};
+let item: MarketItem | undefined;
+let details: PublicProduct | undefined;
+let vendor: MarketOccurrenceVendor | undefined;
+let related: readonly MarketItem[] = [];
+try {
+  if (storefront?.kind !== 'MARKET' || !/^[1-9][0-9]{0,9}$/.test(variantId))
+    throw new AppError('not-found');
+  preorder = await marketPreorder(Astro);
+  if (!preorder.selected) throw new AppError('not-found');
+  const api = requestMarketShop(Astro);
+  const match = await api.item(preorder.selected.id, variantId);
+  if (!match) throw new AppError('not-found');
+  // Grouped browsing returns every eligible option for this product.
+  for (let skip = 0; ; skip += 100) {
+    const catalog = await api.catalog(preorder.selected.id, {
+      vendorIds: [match.vendorId],
+      distinctProducts: true,
+      skip,
+      take: 100,
+      sort: 'ID_ASC',
+    });
+    item = catalog.items.find((entry) => entry.productId === match.productId);
+    if (item) break;
+    if (
+      skip + catalog.items.length >= catalog.totalItems ||
+      !catalog.items.length ||
+      skip >= 9900
+    )
+      break;
+  }
+  item ??= match;
+  try {
+    const native = await api.product(item.productId);
+    if (native?.id === item.productId) {
+      const eligible = marketProduct(item).variants;
+      details = {
+        ...native,
+        variants: eligible.map((variant) => ({
+          ...variant,
+          ...native.variants.find((entry) => entry.id === variant.id),
+          priceWithTax: variant.priceWithTax,
+          currencyCode: variant.currencyCode,
+        })),
+      };
+    }
+  } catch {
+    /* A channel without a native product uses its public offering facts. */
+  }
+  preorder.availability = marketCatalogAvailability([item]);
+  // Recommendations and portraits cannot erase a valid product page.
+  try {
+    vendor = (await api.vendors(preorder.selected.id)).find(
+      (entry) => entry.vendorId === item!.vendorId,
+    );
+  } catch {
+    /* Public vendor name remains available on the item. */
+  }
+  if (storefront.appearance?.vendor?.relatedEnabled !== false) {
+    try {
+      const catalog = await api.catalog(preorder.selected.id, {
+        distinctProducts: true,
+        take: 5,
+        skip: 0,
+        sort: 'ID_ASC',
+      });
+      related = catalog.items
+        .filter((entry) => entry.productId !== item!.productId)
+        .slice(0, 4);
+    } catch {
+      /* Optional recommendations. */
+    }
+  }
+} catch (value) {
+  error = safeError(value);
+}
+if (error)
+  Astro.response.status = ['not-found', 'forbidden'].includes(error.kind)
+    ? 404
+    : 503;
+const product = details ?? (item ? marketProduct(item) : undefined);
+const info = readProductInformation(product?.productInformation);
+const selectedVariants =
+  product?.variants.filter(
+    (variant) =>
+      variant.id === (Astro.url.searchParams.get('variant') ?? variantId),
+  ) ?? [];
+const path = `/shop/products/${encodeURIComponent(variantId)}`;
+const shopHref = `/shop${preorder.selected ? `?occurrence=${encodeURIComponent(preorder.selected.id)}` : ''}`;
+const structured =
+  product && storefront && !error
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: product.name,
+        description: plainDescription(product.description),
+        url: seo(storefront, path).canonical,
+        ...(safeAsset(product.featuredAsset?.preview)
+          ? { image: safeAsset(product.featuredAsset?.preview) }
+          : {}),
+      }
+    : undefined;
+---
+
+<SiteLayout
+  context={storefront}
+  path={path}
+  title={product?.name ?? 'Product unavailable'}
+  description={
+    product ? plainDescription(product.description).slice(0, 200) : undefined
+  }
+  noindex={!!error}
+>
+  {structured && (
+    <script
+      slot="structured-data"
+      type="application/ld+json"
+      set:html={JSON.stringify(structured).replace(/</g, '\\u003c')}
+    />
+  )}
+  <section class="vendor-product">
+    {error || !product || !item ? (
+      <>
+        <h1>Product unavailable</h1>
+        <p>This product is not available for the selected market date.</p>
+        <ErrorState error={error} />
+        <VendorPreorderBanner
+          preorder={preorder}
+          storefrontId={storefront?.storefrontId ?? ''}
+          preview={!!Astro.locals.editorPreview}
+        />
+        <Button href={shopHref} variant="secondary">
+          Browse products
+        </Button>
+      </>
+    ) : (
+      <>
+        <ProductLayout theme="harvest" market>
+          <VendorPreorderBanner
+            slot="market"
+            preorder={preorder}
+            storefrontId={storefront?.storefrontId ?? ''}
+            preview={!!Astro.locals.editorPreview}
+          />
+          <ProductGallery slot="gallery" product={product} />
+          <Fragment slot="summary">
+            {shopCategories([product]).length > 0 && (
+              <p>
+                {shopCategories([product])
+                  .map((category) => category.name)
+                  .join(' � ')}
+              </p>
+            )}
+            <h1>{product.name}</h1>
+            <a
+              class="market-product-vendor"
+              href={`${shopHref}&vendor=${encodeURIComponent(item.vendorId)}`}
+            >
+              {safeAsset(vendor?.image ?? undefined) ? (
+                <img
+                  class="market-vendor-image"
+                  src={safeAsset(vendor?.image ?? undefined)}
+                  alt=""
+                  width="60"
+                  height="60"
+                />
+              ) : (
+                <span class="harvest-vendor-symbol" aria-hidden="true">
+                  {vendorInitial(item.vendorName)}
+                </span>
+              )}
+              <span class="farmstand-text-link">{item.vendorName}</span>
+            </a>
+            <p
+              id="product-current-price"
+              class="product-price"
+              aria-live="polite"
+            >
+              {priceLabel(
+                selectedVariants.length ? selectedVariants : product.variants,
+              )}
+            </p>
+            <p class="product-description">
+              {plainDescription(product.description)}
+            </p>
+          </Fragment>
+          <ProductPurchase
+            slot="purchase"
+            storefrontId={storefront?.storefrontId ?? ''}
+            variants={product.variants}
+            signedIn={false}
+            fixture={false}
+            market
+            occurrenceId={preorder.selected?.id}
+            availability={preorder.availability}
+            initialVariantId={
+              Astro.url.searchParams.get('variant') ?? variantId
+            }
+            priceTarget="product-current-price"
+            priceFallback={priceLabel(product.variants)}
+            preview={!!Astro.locals.editorPreview}
+            client:load
+          />
+          <ProductInformation
+            slot="information"
+            info={info}
+            preorder={preorder}
+          />
+        </ProductLayout>
+        {related.length > 0 && (
+          <section class="product-related" data-editor-section="related">
+            <h2 data-storefront-text="relatedHeading">
+              {storefrontText(storefront?.appearance, 'relatedHeading')}
+            </h2>
+            <ProductCards
+              theme={marketOnlyTheme(storefront?.appearance)}
+              items={related.map(marketProduct)}
+              shop
+              market
+              storefrontId={storefront?.storefrontId}
+              occurrenceId={preorder.selected?.id}
+              availability={marketCatalogAvailability(related)}
+              preview={!!Astro.locals.editorPreview}
+              sellerNames={Object.fromEntries(
+                related.map((entry) => [entry.productId, entry.vendorName]),
+              )}
+              productLinks={Object.fromEntries(
+                related.map((entry) => [
+                  entry.productId,
+                  marketProductLink(entry.variantId, preorder.selected?.id),
+                ]),
+              )}
+            />
+          </section>
+        )}
+      </>
+    )}
+  </section>
+</SiteLayout>

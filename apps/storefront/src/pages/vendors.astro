@@ -1,0 +1,162 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import WebsitePageRegion from '../components/WebsitePageRegion.astro';
+import MarketVendorCards from '../components/market/MarketVendorCards.astro';
+import WorkspaceSelect from '../components/ui/WorkspaceSelect.astro';
+import EmptyState from '../components/ui/EmptyState.astro';
+import Button from '../components/ui/Button.astro';
+import { ErrorState } from '@market/ui';
+import { isEditorialMarket, marketPage } from '@market/theme/storefront';
+import {
+  safeError,
+  type AppError,
+  type MarketOccurrenceVendor,
+  type PublicMarketOccurrence,
+} from '@market/api';
+import { requestMarketShop } from '../lib/shop';
+import { marketDateParts, marketPageAvailable } from '../lib/market-website';
+import '../styles/market-website.css';
+
+const { storefront, editorPreview } = Astro.locals;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+const preview = !!editorPreview;
+// Editorial Market pages share its content-page hero and spacing.
+const editorial = isEditorialMarket(storefront?.appearance);
+const market = storefront?.kind === 'MARKET' && storefront.source === 'backend';
+const enabled =
+  market && marketPageAvailable(storefront.appearance, 'vendors', preview);
+const page = marketPage(storefront?.appearance, 'vendors');
+const requested = Astro.url.searchParams.get('date') ?? '';
+let occurrences: readonly PublicMarketOccurrence[] = [],
+  selected: PublicMarketOccurrence | undefined,
+  vendors: readonly MarketOccurrenceVendor[] = [],
+  error: AppError | undefined;
+if (enabled) {
+  try {
+    const shop = requestMarketShop(Astro);
+    occurrences = (await shop.occurrences({ options: { skip: 0, take: 50 } }))
+      .marketStorefrontOccurrences.items;
+    selected =
+      occurrences.find((occurrence) => occurrence.id === requested) ??
+      occurrences[0];
+    if (selected) vendors = await shop.vendors(selected.id);
+  } catch (value) {
+    error = safeError(value);
+    Astro.response.status = 503;
+  }
+} else Astro.response.status = storefront ? 404 : 503;
+const optionLabel = (occurrence: PublicMarketOccurrence) => {
+  const parts = marketDateParts(occurrence);
+  return `${parts.date} \u00b7 ${occurrence.venue || parts.hours}`;
+};
+---
+
+<SiteLayout
+  context={storefront}
+  path="/vendors"
+  title={enabled ? page.title : 'Page unavailable'}
+  noindex={!enabled}
+>
+  {enabled ? (
+    <>
+      <WebsitePageRegion context={storefront} page="vendors" region="before" />
+      <article
+        class:list={[
+          editorial ? 'em-content-page em-market-page' : 'market-page',
+        ]}
+        data-template={editorial ? 'editorial-market-vendors' : undefined}
+        aria-labelledby="vendors-title"
+      >
+        <header
+          class={editorial ? 'em-content-hero' : 'market-page-intro'}
+          data-editor-section="vendors-settings"
+        >
+          <h1 id="vendors-title">{page.title}</h1>
+          {page.description && <p>{page.description}</p>}
+        </header>
+        {error ? (
+          <ErrorState error={error} />
+        ) : !selected ? (
+          <EmptyState title="Your next visit is in the making" level={2}>
+            <p>Vendors appear here once a market date is announced.</p>
+          </EmptyState>
+        ) : (
+          <>
+            <form
+              class="market-date-selector farmstand-controls"
+              method="get"
+              action="/vendors"
+              data-market-date-selector
+            >
+              <WorkspaceSelect
+                id="vendors-date"
+                name="date"
+                label="Market date"
+                icon="calendar-days"
+              >
+                {occurrences.map((occurrence) => (
+                  <option
+                    value={occurrence.id}
+                    selected={occurrence.id === selected!.id}
+                  >
+                    {optionLabel(occurrence)}
+                  </option>
+                ))}
+              </WorkspaceSelect>
+              <Button type="submit" variant="secondary">
+                Show vendors
+              </Button>
+            </form>
+            <div class="market-vendors-summary" aria-live="polite">
+              <h2>
+                {vendors.length} {vendors.length === 1 ? 'vendor' : 'vendors'}{' '}
+                on {marketDateParts(selected).date}
+              </h2>
+              <a
+                class="harvest-text-link"
+                href={`/shop?occurrence=${selected.id}`}
+              >
+                Shop every offering for this date{' '}
+                <span aria-hidden="true">&#8599;</span>
+              </a>
+            </div>
+            {vendors.length ? (
+              <MarketVendorCards
+                cardTheme={storefront?.appearance?.market?.vendorsCardTheme}
+                vendors={vendors}
+                occurrenceId={selected.id}
+                detailed
+              />
+            ) : (
+              <EmptyState title="Vendors are still signing up" level={3}>
+                <p>
+                  Confirmed vendors for this market date will appear here. Check
+                  back soon or choose another date.
+                </p>
+              </EmptyState>
+            )}
+          </>
+        )}
+      </article>
+      <WebsitePageRegion context={storefront} page="vendors" region="after" />
+    </>
+  ) : (
+    <section class="market-page">
+      <h1>Page unavailable</h1>
+      <p>This page is not available on this website.</p>
+    </section>
+  )}
+</SiteLayout>
+<script>
+  // Progressive enhancement: choosing a date applies it immediately.
+  for (const form of document.querySelectorAll<HTMLFormElement>(
+    '[data-market-date-selector]',
+  )) {
+    const submit = form.querySelector<HTMLButtonElement>('[type="submit"]');
+    if (submit && !document.documentElement.dataset.editorPreview)
+      submit.hidden = true;
+    form
+      .querySelector('select')
+      ?.addEventListener('change', () => form.requestSubmit());
+  }
+</script>

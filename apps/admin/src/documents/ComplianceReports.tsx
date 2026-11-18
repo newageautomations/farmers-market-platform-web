@@ -1,8 +1,15 @@
-import { useCallback, useId, useState, type FormEvent } from 'react';
+import {
+  useCallback,
+  useId,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
 import type {
   ComplianceData,
   ComplianceExceptions,
   ComplianceReport,
+  ComplianceRequest,
   DocumentsApi,
   UpcomingCompliance,
 } from '@market/api';
@@ -11,21 +18,26 @@ import {
   Card,
   DataTable as OverviewTable,
   Dialog,
-  Dropdown,
   EmptyState,
   Field,
+  IconButton,
   Input,
   SelectField,
+  Tooltip,
 } from '@market/ui';
 import {
   FarmstandButton as Button,
   FarmstandIcon,
   FarmstandPagination as Pagination,
+  FarmstandPanel,
+  FarmstandLink,
   FarmstandTable as DataTable,
 } from '@market/ui/farmstand';
 import { DocumentFeedback, DocumentStatus } from '@market/ui/documents';
 import { ReadState, RouteLink, useRead } from '../vendor/common';
 import { SettingsPanel } from '../settings/SettingsPanel';
+import { DetailSheet } from '../market/mobile';
+import { DocumentFacts, documentDate } from './DocumentCard';
 import { MarketsSummary } from '../vendor/MarketsSummary';
 
 const labels: Record<string, string> = {
@@ -55,23 +67,64 @@ const labels: Record<string, string> = {
   assigned: 'Assigned',
   outstanding: 'Outstanding',
 };
+
+const reportTypes = [
+  'vendors',
+  'upcoming',
+  'expiration',
+  'agreements',
+  'requirements',
+];
+/** Only report inputs are forwarded. Workspace routing parameters stay local. */
+function linkedFilters(): Record<string, unknown> {
+  const search = new URLSearchParams(window.location.search);
+  const report = search.get('report');
+  const filters: Record<string, unknown> = {
+    report:
+      report && reportTypes.includes(report)
+        ? report
+        : search.has('occurrence')
+          ? 'upcoming'
+          : 'vendors',
+    occurrenceId: search.get('occurrenceId') ?? search.get('occurrence') ?? '',
+  };
+  for (const key of [
+    'startsOn',
+    'endsOn',
+    'vendorId',
+    'status',
+    'requirementId',
+    'category',
+    'expiresFrom',
+    'expiresTo',
+  ]) {
+    const value = search.get(key);
+    if (value) filters[key] = value;
+  }
+  return filters;
+}
+
 export function ComplianceReports({
   api,
   data,
   canWrite,
+  revision = 0,
+  requestCard,
+  onPreview,
 }: {
   api: DocumentsApi;
   data: ComplianceData;
   canWrite: boolean;
+  /** Workspace data revision; a review decision re-reads the report. */
+  revision?: number;
+  /** The Vendor compliance request card, whose dialog records decisions. */
+  requestCard: (request: ComplianceRequest) => ReactNode;
+  onPreview?: (fileId: string, title: string) => void;
 }) {
   const id = useId(),
-    [filters, setFilters] = useState<Record<string, unknown>>(() => ({
-      report: new URLSearchParams(window.location.search).has('occurrence')
-        ? 'upcoming'
-        : 'vendors',
-      occurrenceId:
-        new URLSearchParams(window.location.search).get('occurrence') ?? '',
-    })),
+    [filtersOpen, setFiltersOpen] = useState(false),
+    [selected, setSelected] = useState<string>(),
+    [filters, setFilters] = useState<Record<string, unknown>>(linkedFilters),
     [skip, setSkip] = useState(0),
     [busy, setBusy] = useState(false),
     [error, setError] = useState<unknown>(),
@@ -83,14 +136,76 @@ export function ComplianceReports({
   );
   const events = useRead('report-events', eventsRead);
   const summary = filters.report === 'vendors' || filters.report === 'upcoming';
+  const expiration = filters.report === 'expiration';
+  const selectable = summary || expiration;
+  const rowKey = (row: ComplianceReport['items'][number], index: number) =>
+    summary
+      ? String(row.vendor_id)
+      : JSON.stringify([row.vendor_id, row.requirement_id, row.title, index]);
   const read = useCallback(
     () => api.advanced<ComplianceReport>({ view: 'report', ...filters, skip }),
     [api, filters, skip],
   );
-  const state = useRead(`report:${JSON.stringify(filters)}:${skip}`, read);
+  const state = useRead(
+    `report:${JSON.stringify(filters)}:${skip}:${revision}`,
+    read,
+    true,
+    { retainPreviousData: true },
+  );
+  const activeFilters = Object.entries(filters).filter(
+    ([key, value]) => key !== 'report' && !!value,
+  ).length;
+  const current = selectable
+    ? state.data?.items.find((row, index) => rowKey(row, index) === selected)
+    : undefined;
+  const pending = current
+    ? data.requests.filter(
+        (r) =>
+          r.vendor_id === Number(current.vendor_id) &&
+          !r.waived &&
+          r.status === 'Pending review',
+      )
+    : [];
+  const currentRequest =
+    expiration && current
+      ? data.requests.find(
+          (r) =>
+            r.vendor_id === Number(current.vendor_id) &&
+            r.requirement_id === current.requirement_id,
+        )
+      : undefined;
+  const [notificationResult, setNotificationResult] = useState<{
+    key: string | undefined;
+    message: string;
+  }>();
+  async function notifyExpiration() {
+    if (!currentRequest?.submission) return;
+    setBusy(true);
+    setError(undefined);
+    setNotificationResult(undefined);
+    try {
+      const result = (await api.command(
+        'SEND_EXPIRATION_NOTIFICATION',
+        { submissionId: currentRequest.submission.id },
+        currentRequest.id,
+        currentRequest.revision,
+      )) as { queued: boolean };
+      setNotificationResult({
+        key: selected,
+        message: result.queued
+          ? 'Expiration notification queued for the vendor.'
+          : 'An expiration notification was already requested for this version today.',
+      });
+    } catch (error) {
+      setError(error);
+    } finally {
+      setBusy(false);
+    }
+  }
   function apply(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSkip(0);
+    setSelected(undefined);
     setFilters(Object.fromEntries(new FormData(e.currentTarget)));
   }
   async function download() {
@@ -119,135 +234,159 @@ export function ComplianceReports({
   }
   return (
     <div className="documents-view">
-      <SettingsPanel
-        icon="sliders-horizontal"
-        title="Report filters"
-        description="Readiness is advisory. Application acceptance, participation and attendance are separate decisions. Event reports use current approvals and sharing authorization to forecast validity."
-      >
-        <form onSubmit={apply} className="documents-filters">
-          <SelectField
-            id={`${id}-report`}
-            name="report"
-            label="Report"
-            defaultValue={String(filters.report)}
+      {filtersOpen && (
+        <div id={`${id}-filters`}>
+          <SettingsPanel
+            icon="sliders-horizontal"
+            title="Report filters"
+            description="Readiness is advisory. Application acceptance, participation and attendance are separate decisions. Event reports use current approvals and sharing authorization to forecast validity."
           >
-            {[
-              ['vendors', 'Vendor compliance summary'],
-              ['upcoming', 'Upcoming Market readiness'],
-              ['expiration', 'Expiration report'],
-              ['agreements', 'Agreement acknowledgments'],
-              ['requirements', 'Document requirement summary'],
-            ].map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </SelectField>
-          <SelectField
-            id={`${id}-event`}
-            name="occurrenceId"
-            label="Market event"
-            defaultValue={String(filters.occurrenceId ?? '')}
-          >
-            <option value="">Date preview or current date</option>
-            {events.data?.items.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.starts_on} through {e.ends_on}
-              </option>
-            ))}
-          </SelectField>
-          <Field id={`${id}-from`} label="Preview start date">
-            <Input id={`${id}-from`} name="startsOn" type="date" />
-          </Field>
-          <Field id={`${id}-to`} label="Preview end date">
-            <Input id={`${id}-to`} name="endsOn" type="date" />
-          </Field>
-          <SelectField
-            id={`${id}-vendor`}
-            name="vendorId"
-            label="Vendor"
-            defaultValue=""
-          >
-            <option value="">All eligible vendors</option>
-            {data.vendors.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name}
-              </option>
-            ))}
-          </SelectField>
-          <SelectField
-            id={`${id}-status`}
-            name="status"
-            label="Compliance status"
-            defaultValue=""
-          >
-            <option value="">All statuses</option>
-            {[
-              'Ready',
-              'Incomplete',
-              'Pending review',
-              'No requirements',
-              'Unknown',
-              'Approved',
-              'Missing',
-              'Expired',
-              'Rejected',
-              'Access revoked',
-              'Waived',
-              'Manager exception',
-              'Outstanding',
-              'Acknowledged',
-            ].map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </SelectField>
-          <SelectField
-            id={`${id}-requirement`}
-            name="requirementId"
-            label="Document requirement"
-            defaultValue=""
-          >
-            <option value="">All requirements</option>
-            {data.requirements.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.title}
-              </option>
-            ))}
-            {data.agreement_requirements?.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.title} (agreement)
-              </option>
-            ))}
-          </SelectField>
-          <SelectField
-            id={`${id}-category`}
-            name="category"
-            label="Document category"
-            defaultValue=""
-          >
-            <option value="">All categories</option>
-            {data.categories.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </SelectField>
-          <Field id={`${id}-expiry-from`} label="Expiration from">
-            <Input id={`${id}-expiry-from`} name="expiresFrom" type="date" />
-          </Field>
-          <Field id={`${id}-expiry-to`} label="Expiration through">
-            <Input id={`${id}-expiry-to`} name="expiresTo" type="date" />
-          </Field>
-          <div className="documents-filters-actions">
-            <Button type="submit">Apply</Button>
-          </div>
-        </form>
-        <ReadState {...events} retry={events.refresh} />
-        {events.data?.hasMore && (
-          <Alert severity="info">
-            Showing the first 20 upcoming events. Use a date preview for later
-            dates.
-          </Alert>
-        )}
-      </SettingsPanel>
+            <form onSubmit={apply} className="documents-filters">
+              <SelectField
+                id={`${id}-report`}
+                name="report"
+                label="Report"
+                defaultValue={String(filters.report)}
+              >
+                {[
+                  ['vendors', 'Vendor compliance summary'],
+                  ['upcoming', 'Upcoming Market readiness'],
+                  ['expiration', 'Expiration report'],
+                  ['agreements', 'Agreement acknowledgments'],
+                  ['requirements', 'Document requirement summary'],
+                ].map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </SelectField>
+              <SelectField
+                id={`${id}-event`}
+                name="occurrenceId"
+                label="Market event"
+                defaultValue={String(filters.occurrenceId ?? '')}
+              >
+                <option value="">Date preview or current date</option>
+                {events.data?.items.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.starts_on} through {e.ends_on}
+                  </option>
+                ))}
+              </SelectField>
+              <Field id={`${id}-from`} label="Preview start date">
+                <Input
+                  id={`${id}-from`}
+                  name="startsOn"
+                  type="date"
+                  defaultValue={String(filters.startsOn ?? '')}
+                />
+              </Field>
+              <Field id={`${id}-to`} label="Preview end date">
+                <Input
+                  id={`${id}-to`}
+                  name="endsOn"
+                  type="date"
+                  defaultValue={String(filters.endsOn ?? '')}
+                />
+              </Field>
+              <SelectField
+                id={`${id}-vendor`}
+                name="vendorId"
+                defaultValue={String(filters.vendorId ?? '')}
+                label="Vendor"
+              >
+                <option value="">All eligible vendors</option>
+                {data.vendors.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </SelectField>
+              <SelectField
+                id={`${id}-status`}
+                name="status"
+                defaultValue={String(filters.status ?? '')}
+                label="Compliance status"
+              >
+                <option value="">All statuses</option>
+                {[
+                  'Ready',
+                  'Incomplete',
+                  'Pending review',
+                  'No requirements',
+                  'Unknown',
+                  'Approved',
+                  'Missing',
+                  'Expired',
+                  'Rejected',
+                  'Access revoked',
+                  'Waived',
+                  'Manager exception',
+                  'Outstanding',
+                  'Acknowledged',
+                ].map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </SelectField>
+              <SelectField
+                id={`${id}-requirement`}
+                name="requirementId"
+                defaultValue={String(filters.requirementId ?? '')}
+                label="Document requirement"
+              >
+                <option value="">All requirements</option>
+                {data.requirements.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.title}
+                  </option>
+                ))}
+                {data.agreement_requirements?.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.title} (agreement)
+                  </option>
+                ))}
+              </SelectField>
+              <SelectField
+                id={`${id}-category`}
+                name="category"
+                defaultValue={String(filters.category ?? '')}
+                label="Document category"
+              >
+                <option value="">All categories</option>
+                {data.categories.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </SelectField>
+              <Field id={`${id}-expiry-from`} label="Expiration from">
+                <Input
+                  id={`${id}-expiry-from`}
+                  name="expiresFrom"
+                  type="date"
+                  defaultValue={String(filters.expiresFrom ?? '')}
+                />
+              </Field>
+              <Field id={`${id}-expiry-to`} label="Expiration through">
+                <Input
+                  id={`${id}-expiry-to`}
+                  name="expiresTo"
+                  type="date"
+                  defaultValue={String(filters.expiresTo ?? '')}
+                />
+              </Field>
+              <div className="documents-filters-actions">
+                <Button type="submit">Apply</Button>
+              </div>
+            </form>
+            <ReadState {...events} retry={events.refresh} />
+            {events.data?.hasMore && (
+              <Alert severity="info">
+                Showing the first 20 upcoming events. Use a date preview for
+                later dates.
+              </Alert>
+            )}
+          </SettingsPanel>
+        </div>
+      )}
       <ReadState {...state} retry={state.refresh} />
       {!!error && <DocumentFeedback error={error} />}
       {state.data?.counts && (
@@ -285,194 +424,357 @@ export function ComplianceReports({
         />
       )}
       {state.data && (
-        <SettingsPanel
-          className="documents-table-panel"
-          icon="chart-column"
-          title="Report results"
-          description={`${state.data.context} · Generated ${new Date(state.data.generatedAt).toLocaleString()}`}
-          actions={
-            <>
-              <Button
-                variant="secondary"
-                onClick={() => setManageExceptions(true)}
-              >
-                Review manager exceptions
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={busy}
-                onClick={() => void download()}
-              >
-                <FarmstandIcon name="download" />
-                Download
-              </Button>
-            </>
-          }
+        <div
+          className={`markets-columns market-applications-columns documents-report-columns${current ? ' documents-report-open' : ''}`}
         >
-          {state.data.dates.historical && (
-            <Alert severity="neutral">
-              Historical approval state cannot be reconstructed. These results
-              do not certify past readiness.
-            </Alert>
-          )}
-          {state.data.acknowledgments && (
+          <SettingsPanel
+            className={`documents-table-panel${selectable ? ' market-applications-list documents-compliance-list' : ''}`}
+            icon="chart-column"
+            title="Report results"
+            description={`${state.data.context} · Generated ${new Date(state.data.generatedAt).toLocaleString()}`}
+            actions={
+              <>
+                <Button
+                  variant="secondary"
+                  aria-expanded={filtersOpen}
+                  aria-controls={filtersOpen ? `${id}-filters` : undefined}
+                  onClick={() => setFiltersOpen((open) => !open)}
+                >
+                  <FarmstandIcon name="sliders-horizontal" />
+                  {`Filters${activeFilters ? ` (${activeFilters})` : ''}`}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setManageExceptions(true)}
+                >
+                  Review manager exceptions
+                </Button>
+                <Tooltip label="Download">
+                  <Button
+                    variant="secondary"
+                    disabled={busy}
+                    onClick={() => void download()}
+                    iconOnly
+                    aria-label="Download"
+                  >
+                    <FarmstandIcon name="download" />
+                  </Button>
+                </Tooltip>
+              </>
+            }
+          >
+            {state.data.dates.historical && (
+              <Alert severity="neutral">
+                Historical approval state cannot be reconstructed. These results
+                do not certify past readiness.
+              </Alert>
+            )}
+            {state.data.acknowledgments && (
+              <p className="documents-note">
+                {state.data.acknowledgments.assigned} assigned ·{' '}
+                {state.data.acknowledgments.acknowledged} acknowledged ·{' '}
+                {state.data.acknowledgments.outstanding} outstanding, across all
+                matching acknowledgment requests.
+              </p>
+            )}
             <p className="documents-note">
-              {state.data.acknowledgments.assigned} assigned ·{' '}
-              {state.data.acknowledgments.acknowledged} acknowledged ·{' '}
-              {state.data.acknowledgments.outstanding} outstanding, across all
-              matching acknowledgment requests.
+              Exports include all matching authorized rows, up to{' '}
+              {state.data.exportLimit.toLocaleString()}. Larger results require
+              narrower filters.
             </p>
-          )}
-          <p className="documents-note">
-            Exports include all matching authorized rows, up to{' '}
-            {state.data.exportLimit.toLocaleString()}. Larger results require
-            narrower filters.
-          </p>
-          {!state.data.items.length ? (
-            <EmptyState title="No matching compliance records">
-              Change the filters or assign requirements through the existing
-              workspace.
-            </EmptyState>
-          ) : summary ? (
-            <DataTable
-              label="Compliance report"
-              recordDetails={{
-                status: 1,
-                labels: state.data.items.map((row) => String(row.vendor)),
-                statuses: state.data.items.map((row) => (
-                  <DocumentStatus value={String(row.status ?? 'Unknown')} />
-                )),
-              }}
-              headings={['Vendor', 'Documentation', 'Reason']}
-            >
-              {state.data.items.map((row, index) => (
-                <tr key={`${row.vendor_id}:${index}`}>
-                  <td>
-                    {row.vendor}
-                    <p>{row.participation}</p>
-                    <div className="documents-actions">
-                      <RouteLink
-                        to={`/market/documents?view=requests&vendor=${row.vendor_id}`}
-                      >
-                        Open Vendor compliance
-                      </RouteLink>
-                      {canWrite && (
-                        <Button
-                          variant="secondary"
-                          size="compact"
-                          onClick={() => setException(Number(row.vendor_id))}
-                        >
-                          Record date exception
-                        </Button>
+            {!state.data.items.length ? (
+              <EmptyState title="No matching compliance records">
+                Change the filters or assign requirements through the existing
+                workspace.
+              </EmptyState>
+            ) : selectable ? (
+              <DataTable
+                label="Compliance report"
+                headings={
+                  expiration
+                    ? [
+                        'Vendor',
+                        'Requirement',
+                        'Documentation',
+                        'Expiration date',
+                      ]
+                    : ['Vendor', 'Documentation']
+                }
+              >
+                {state.data.items.map((row, index) => {
+                  const key = rowKey(row, index),
+                    isSelected = key === selected;
+                  return (
+                    <tr
+                      key={key}
+                      tabIndex={0}
+                      aria-selected={isSelected}
+                      className={
+                        isSelected ? 'market-application-selected' : undefined
+                      }
+                      onClick={() => setSelected(key)}
+                      onKeyDown={(event) => {
+                        if (
+                          event.target === event.currentTarget &&
+                          (event.key === 'Enter' || event.key === ' ')
+                        ) {
+                          event.preventDefault();
+                          setSelected(key);
+                        }
+                      }}
+                    >
+                      <th scope="row">{String(row.vendor)}</th>
+                      {expiration && (
+                        <td>{String(row.title ?? 'Requirement')}</td>
                       )}
-                    </div>
-                  </td>
-                  <td>
-                    <DocumentStatus value={String(row.status ?? 'Unknown')} />
-                    {Number(row.exceptions) > 0 && (
-                      <p>
-                        <DocumentStatus value="Manager exception" />{' '}
-                        {row.status === 'Ready'
-                          ? 'Cleared by a manager exception for this period.'
-                          : 'Includes a manager exception.'}
-                      </p>
-                    )}
-                    {Number(row.waivers) > 0 && (
-                      <p>
-                        <DocumentStatus value="Waived" /> Includes a manager
-                        waiver.
-                      </p>
-                    )}
-                    <Dropdown label="Document counts">
-                      <p>
-                        {row.required} required · {row.approved} approved
-                        documents · {row.missing} missing
-                      </p>
-                      <p>
-                        {row.pending} pending review · {row.rejected} rejected ·{' '}
-                        {row.expired} expired · {row.expiring_soon} expiring
-                        soon
-                      </p>
-                      <p>
-                        {row.outstanding_acknowledgments} outstanding required
-                        acknowledgments · {row.exceptions} manager exceptions ·{' '}
-                        {row.waivers} waivers
-                      </p>
-                    </Dropdown>
-                  </td>
-                  <td>
-                    {String(row.reasons ?? 'Unable to determine')}
-                    {String(row.reasons ?? '').length > 240 && (
-                      <p>
-                        Additional issues are listed in Vendor compliance and
-                        the CSV export.
-                      </p>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </DataTable>
-          ) : (
-            <DataTable
-              label="Compliance report"
-              recordDetails={{
-                status: state.data.columns.includes('status')
-                  ? state.data.columns.indexOf('status')
-                  : undefined,
-                labels: state.data.items.map((row) =>
-                  String(
-                    row.vendor
-                      ? row.vendor + (row.title ? ' · ' + row.title : '')
-                      : (row.title ?? 'Requirement'),
-                  ),
-                ),
-              }}
-              wide
-              headings={[
-                ...state.data.columns.map((c) => labels[c] ?? c),
-                'Details',
-              ]}
-            >
-              {state.data.items.map((row, index) => (
-                <tr key={`${row.vendor_id ?? row.requirement_id}:${index}`}>
-                  {state.data!.columns.map((column) => (
-                    <td key={column}>
-                      {column === 'status' ? (
+                      <td>
                         <DocumentStatus
-                          value={String(row[column] ?? 'Unknown')}
+                          value={String(row.status ?? 'Unknown')}
                         />
-                      ) : typeof row[column] === 'boolean' ? (
-                        row[column] ? (
-                          'Yes'
+                      </td>
+                      {expiration && (
+                        <td>
+                          {documentDate(String(row.expires_on ?? '')) ||
+                            'Not available'}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </DataTable>
+            ) : (
+              <DataTable
+                label="Compliance report"
+                recordDetails={{
+                  status: state.data.columns.includes('status')
+                    ? state.data.columns.indexOf('status')
+                    : undefined,
+                  labels: state.data.items.map((row) =>
+                    String(
+                      row.vendor
+                        ? row.vendor + (row.title ? ' · ' + row.title : '')
+                        : (row.title ?? 'Requirement'),
+                    ),
+                  ),
+                }}
+                wide
+                headings={[
+                  ...state.data.columns.map((c) => labels[c] ?? c),
+                  'Details',
+                ]}
+              >
+                {state.data.items.map((row, index) => (
+                  <tr key={`${row.vendor_id ?? row.requirement_id}:${index}`}>
+                    {state.data!.columns.map((column) => (
+                      <td key={column}>
+                        {column === 'status' ? (
+                          <DocumentStatus
+                            value={String(row[column] ?? 'Unknown')}
+                          />
+                        ) : typeof row[column] === 'boolean' ? (
+                          row[column] ? (
+                            'Yes'
+                          ) : (
+                            'No'
+                          )
                         ) : (
-                          'No'
-                        )
-                      ) : (
-                        String(row[column] ?? 'Not available')
+                          String(row[column] ?? 'Not available')
+                        )}
+                      </td>
+                    ))}
+                    <td>
+                      {row.vendor_id && (
+                        <FarmstandLink
+                          href={`/market/documents?view=requests&vendor=${row.vendor_id}`}
+                        >
+                          Open Vendor compliance
+                        </FarmstandLink>
                       )}
                     </td>
-                  ))}
-                  <td>
-                    {row.vendor_id && (
-                      <RouteLink
-                        to={`/market/documents?view=requests&vendor=${row.vendor_id}`}
+                  </tr>
+                ))}
+              </DataTable>
+            )}
+            <Pagination
+              summary={`${state.data.total} matching rows; showing ${skip + 1} to ${skip + state.data.items.length}`}
+              hasPrevious={skip > 0}
+              hasNext={skip + 20 < state.data.total}
+              onPrevious={() => {
+                setSelected(undefined);
+                setSkip((n) => Math.max(0, n - 20));
+              }}
+              onNext={() => {
+                setSelected(undefined);
+                setSkip((n) => n + 20);
+              }}
+            />
+          </SettingsPanel>
+          <DetailSheet
+            title={expiration ? 'Document details' : 'Vendor details'}
+            open={!!current}
+            onClose={() => setSelected(undefined)}
+          >
+            {current && (
+              <FarmstandPanel
+                as="section"
+                className="markets-next market-application-details documents-vendor-details documents-report-details"
+                aria-label={
+                  expiration
+                    ? 'Document expiration details'
+                    : 'Vendor readiness details'
+                }
+              >
+                <h2>
+                  <FarmstandIcon name="shield-check" />
+                  {expiration ? 'Document details' : 'Vendor details'}
+                </h2>
+                <div className="markets-next-content" key={selected}>
+                  <div className="documents-vendor-title">
+                    <h3>{String(current.vendor)}</h3>
+                    <DocumentStatus
+                      value={String(current.status ?? 'Unknown')}
+                    />
+                    <IconButton
+                      icon="close"
+                      label={
+                        expiration
+                          ? 'Close document details'
+                          : 'Close vendor details'
+                      }
+                      variant="secondary"
+                      onClick={() => setSelected(undefined)}
+                    />
+                  </div>
+                  {expiration ? (
+                    <DocumentFacts
+                      items={state.data.columns
+                        .filter((key) => !['vendor', 'status'].includes(key))
+                        .map((key) => [
+                          labels[key] ?? key,
+                          typeof current[key] === 'boolean'
+                            ? current[key]
+                              ? 'Yes'
+                              : 'No'
+                            : String(current[key] ?? 'Not available'),
+                        ])}
+                    />
+                  ) : (
+                    <>
+                      {!!current.participation && (
+                        <p className="documents-note">
+                          {String(current.participation)}
+                        </p>
+                      )}
+                      <p className="documents-report-reason">
+                        {String(current.reasons ?? 'Unable to determine')}
+                      </p>
+                      {Number(current.exceptions) > 0 && (
+                        <p className="documents-note">
+                          <DocumentStatus value="Manager exception" />{' '}
+                          {current.status === 'Ready'
+                            ? 'Cleared by a manager exception for this period.'
+                            : 'Includes a manager exception.'}
+                        </p>
+                      )}
+                      {Number(current.waivers) > 0 && (
+                        <p className="documents-note">
+                          <DocumentStatus value="Waived" /> Includes a manager
+                          waiver.
+                        </p>
+                      )}
+                      <dl className="market-application-facts">
+                        {(
+                          [
+                            'required',
+                            'approved',
+                            'missing',
+                            'pending',
+                            'rejected',
+                            'expired',
+                            'expiring_soon',
+                            'outstanding_acknowledgments',
+                            'exceptions',
+                            'waivers',
+                          ] as const
+                        ).map((key) => (
+                          <div key={key}>
+                            <dt>{labels[key]}</dt>
+                            <dd>{String(current[key] ?? 'Unavailable')}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                      <section
+                        className="documents-vendor-section"
+                        aria-label="Documents pending review"
                       >
-                        Open Vendor compliance
-                      </RouteLink>
+                        <h4>Documents pending review</h4>
+                        {pending.length ? (
+                          <div className="documents-grid">
+                            {pending.map((request) => requestCard(request))}
+                          </div>
+                        ) : (
+                          <p className="documents-note">
+                            No documents from this vendor are waiting for
+                            review.
+                          </p>
+                        )}
+                      </section>
+                    </>
+                  )}
+                  <div className="documents-actions">
+                    {currentRequest?.submission && onPreview && (
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          onPreview(
+                            currentRequest.submission!.file_id,
+                            currentRequest.title,
+                          )
+                        }
+                      >
+                        Preview document
+                      </Button>
                     )}
-                  </td>
-                </tr>
-              ))}
-            </DataTable>
-          )}
-          <Pagination
-            summary={`${state.data.total} matching rows; showing ${skip + 1} to ${skip + state.data.items.length}`}
-            hasPrevious={skip > 0}
-            hasNext={skip + 20 < state.data.total}
-            onPrevious={() => setSkip((n) => Math.max(0, n - 20))}
-            onNext={() => setSkip((n) => n + 20)}
-          />
-        </SettingsPanel>
+                    {expiration && canWrite && (
+                      <Button
+                        variant="secondary"
+                        disabled={
+                          busy ||
+                          !currentRequest?.submission ||
+                          currentRequest.expiration !== 'Expiring Soon'
+                        }
+                        onClick={() => void notifyExpiration()}
+                      >
+                        Send expiration notification
+                      </Button>
+                    )}
+                    <FarmstandLink
+                      href={`/market/documents?view=requests&vendor=${current.vendor_id}`}
+                    >
+                      Open Vendor compliance
+                    </FarmstandLink>
+                    {canWrite && summary && (
+                      <Button
+                        variant="secondary"
+                        size="compact"
+                        onClick={() => setException(Number(current.vendor_id))}
+                      >
+                        Record date exception
+                      </Button>
+                    )}
+                  </div>
+                  {expiration &&
+                    notificationResult?.key === selected &&
+                    notificationResult && (
+                      <Alert severity="success" role="status">
+                        {notificationResult.message}
+                      </Alert>
+                    )}
+                </div>
+              </FarmstandPanel>
+            )}
+          </DetailSheet>
+        </div>
       )}
       {exception && (
         <ExceptionDialog

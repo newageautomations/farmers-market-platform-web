@@ -1,0 +1,36 @@
+---
+import {
+  websiteSectionStyle,
+  websiteSectionAttributes,
+  websiteObjectStyle,
+  type WebsiteTextSection,
+} from '@market/theme/storefront';
+import '../../styles/website-sections.css';
+import '../../styles/harvest-sections.css';
+const { section, editorId } = Astro.props as {
+  section: WebsiteTextSection;
+  editorId?: string;
+};
+---
+
+<section
+  {...websiteSectionAttributes(section)}
+  style={websiteSectionStyle(section)}
+  class="harvest-section harvest-authored harvest-text website-section"
+  data-editor-section={editorId ?? `harvest:${section.id}`}
+  data-variant={section.presentation.variant ?? 'standard'}
+  data-alignment={section.presentation.alignment}
+>
+  <div class="harvest-authored-copy website-copy">
+    {section.content.heading && (
+      <h2 style={websiteObjectStyle(section, 'heading')}>
+        {section.content.heading}
+      </h2>
+    )}
+    {section.content.body && (
+      <p style={websiteObjectStyle(section, 'paragraph')}>
+        {section.content.body}
+      </p>
+    )}
+  </div>
+</section>

@@ -36,6 +36,7 @@ import { ReadState, useRead } from './common';
 import { ApplicationStatusBadge, navigate } from './MarketApplications';
 import { applicationLocation } from './market-applications-data';
 import './application-detail.css';
+import { usePhoneRecords } from '../market/mobile';
 
 /**
  * Vendor application detail. Composes Farmstand panels, tables, badges and the
@@ -462,12 +463,14 @@ function RequestedDates({ detail }: { detail: Detail }) {
 }
 
 function RequestedRentals({ detail }: { detail: Detail }) {
+  const records = usePhoneRecords();
   const rentals = detail.rentalRequests.filter((r) => r.quantity > 0);
   return (
     <Panel icon={{ farmstand: 'package' }} title="Requested rental items">
       {rentals.length ? (
         <FarmstandTable
           label="Requested rental items"
+          recordDetails={records({ status: 3 })}
           headings={['Rental item', 'Quantity', 'Price per date', 'Status']}
         >
           {rentals.map((r) => (

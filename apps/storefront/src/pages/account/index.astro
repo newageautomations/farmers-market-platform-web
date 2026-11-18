@@ -1,121 +1,56 @@
 ---
-import EmptyState from '../../components/ui/EmptyState.astro';
-import { buttonClassName } from '@market/ui/presentation';
 import CustomerLayout from '../../layouts/CustomerLayout.astro';
-import CustomerEvents from '../../components/CustomerEvents.astro';
-import CustomerFollows from '../../components/CustomerFollows.astro';
-import CustomerOrders from '../../components/CustomerOrders.astro';
+import CustomerOverview from '../../components/CustomerOverview';
 import {
   customerApi,
   customerAuthenticationError,
 } from '../../lib/customer-dashboard';
+import { customerLoyalty } from '../../lib/loyalty';
 import { temporaryUnavailableResponse } from '@market/config';
+import '@market/ui/dashboard-layout.css';
 const api = customerApi(Astro);
 let profile, dashboard, purchases;
 try {
   profile = await api.profile();
   if (!profile) return Astro.redirect(api.login);
-  [dashboard, purchases] = await Promise.all([api.read(), api.purchases(0, 3)]);
+  [dashboard, purchases] = await Promise.all([
+    api.read(),
+    api.purchases(0, 10),
+  ]);
 } catch (error) {
   return customerAuthenticationError(error)
     ? Astro.redirect(api.login)
     : temporaryUnavailableResponse();
 }
+// Optional sections: a failed read affects only its own section.
+const [wallets, layout] = await Promise.all([
+  customerLoyalty(Astro).catch(() => null),
+  api.layout().catch(() => null),
+]);
+const timeZone =
+  (profile as { timezone?: string | null }).timezone || 'America/Chicago';
 ---
 
-<CustomerLayout title="Overview" name={`${profile.firstName}'s account`}>
-  <p class="customer-muted">
-    Your purchases and the people and places you keep coming back to.
-  </p>
-  <div class="customer-stats ui-kpi-grid">
-    <a href="/account/orders">
-      <strong>{dashboard.orderCount}</strong>Orders
-    </a>
-    <a href="/account/markets">
-      <strong>{dashboard.marketCount}</strong>Followed markets
-    </a>
-    <a href="/account/vendors">
-      <strong>{dashboard.vendorCount}</strong>Favorite vendors
-    </a>
-  </div>
-  <section class="customer-section">
-    <header class="ui-section-heading ui-section-heading-consumer">
-      <h2 class="ui-section-title-consumer">Recent orders</h2>
-      <a
-        class={buttonClassName({ variant: 'secondary' })}
-        href="/account/orders"
-      >
-        View order history
-      </a>
-    </header>
-    <CustomerOrders level={3} purchases={purchases.items} />
-  </section>
-  <section class="customer-section">
-    <header class="ui-section-heading ui-section-heading-consumer">
-      <h2 class="ui-section-title-consumer">Upcoming events</h2>
-      <div class="actions">
-        <a
-          class={buttonClassName({ variant: 'secondary' })}
-          href="/account/markets"
-        >
-          Events at followed markets
-        </a>
-        <a
-          class={buttonClassName({ variant: 'secondary' })}
-          href="/account/vendors"
-        >
-          Favorite vendor appearances
-        </a>
-      </div>
-    </header>
-    <CustomerEvents level={3} events={dashboard.events} />
-  </section>
-  <section class="customer-section">
-    <header class="ui-section-heading ui-section-heading-consumer">
-      <h2 class="ui-section-title-consumer">Followed markets</h2>
-      <a
-        class={buttonClassName({ variant: 'secondary' })}
-        href="/account/markets"
-      >
-        Manage markets
-      </a>
-    </header>
-    {dashboard.markets.length ? (
-      <CustomerFollows
-        level={3}
-        items={dashboard.markets}
-        kind="MARKET"
-        returnTo="/account"
-        controls={false}
-      />
-    ) : (
-      <EmptyState title="No followed markets" level={3}>
-        <p>Follow your favorite markets to see their upcoming events here.</p>
-      </EmptyState>
-    )}
-  </section>
-  <section class="customer-section">
-    <header class="ui-section-heading ui-section-heading-consumer">
-      <h2 class="ui-section-title-consumer">Favorite vendors</h2>
-      <a
-        class={buttonClassName({ variant: 'secondary' })}
-        href="/account/vendors"
-      >
-        Manage vendors
-      </a>
-    </header>
-    {dashboard.vendors.length ? (
-      <CustomerFollows
-        level={3}
-        items={dashboard.vendors}
-        kind="VENDOR"
-        returnTo="/account"
-        controls={false}
-      />
-    ) : (
-      <EmptyState title="No favorite vendors" level={3}>
-        <p>Follow vendors to keep up with where they'll be selling next.</p>
-      </EmptyState>
-    )}
-  </section>
+<CustomerLayout
+  title="Overview"
+  name={`${profile.firstName}'s account`}
+  heading={false}
+>
+  <CustomerOverview
+    client:load
+    firstName={profile.firstName}
+    counts={{
+      orders: dashboard.orderCount,
+      markets: dashboard.marketCount,
+      vendors: dashboard.vendorCount,
+    }}
+    events={dashboard.events}
+    purchases={purchases.items}
+    markets={dashboard.markets}
+    vendors={dashboard.vendors}
+    wallets={wallets}
+    layout={layout}
+    now={Date.now()}
+    timeZone={timeZone}
+  />
 </CustomerLayout>

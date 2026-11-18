@@ -59,6 +59,33 @@
     stroke-dashoffset: 0;
   }
 }
+/* Working state: a spinning ring that gives way to the published check
+ * (generating market dates, processing a booth invoice payment). */
+.generate-creating-ring {
+  display: block;
+  width: 80px;
+  height: 80px;
+  margin-inline: auto;
+  box-sizing: border-box;
+  border: 5px solid
+    var(
+      --reward-border,
+      color-mix(in srgb, var(--brand-primary) 20%, var(--brand-surface))
+    );
+  border-top-color: var(--brand-primary);
+  border-radius: 50%;
+  animation: generate-creating-spin 850ms linear infinite;
+}
+@keyframes generate-creating-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .generate-creating-ring {
+    animation: none;
+  }
+}
 .reward-wizard :is(strong, h3, h4) {
   font-family: 'Segoe UI', system-ui, sans-serif;
   font-weight: 650;

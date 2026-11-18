@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
 import { localAccountEnvironment } from './local-account-environment';
+import { startDemoLanProxy } from './demo-lan-proxy';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const backend = path.resolve(root, '../farmers-market-platform');
@@ -11,6 +12,11 @@ const action = process.argv[2] ?? '';
 const npm = process.env.npm_execpath;
 if (!npm) throw new Error('Run this helper through its npm script.');
 const env = { ...process.env };
+const configured = loadEnv('development', root, '');
+for (const name of ['DEMO_LAN_IP', 'DEMO_LAN_PORT']) {
+  if (env[name] === undefined && configured[name] !== undefined)
+    env[name] = configured[name];
+}
 // All three servers must receive the same ignored development configuration.
 // Forward only account settings to the backend, never frontend DB/provider values.
 if (
@@ -44,6 +50,15 @@ if (
     'market-discovery-fixtures',
     'finance-history-fixtures',
     'vendor-analytics-fixtures',
+    'preorder-fee-fixtures',
+    'market-day-storefront-ended-fixtures',
+    'market-day-storefront-refresh-fixtures',
+    'market-day-storefront-fixtures',
+    'market-day-fixtures',
+    'invoice-fixtures',
+    'invoice-refund-fixtures',
+    'stripe-connect-fixtures',
+    'vendor-managed',
   ].includes(action)
 )
   Object.assign(
@@ -59,6 +74,7 @@ if (['admin', 'storefront'].includes(action)) {
     SHOP_API_URL: 'http://localhost:3000/shop-api',
     PUBLIC_ADMIN_API_URL: 'http://localhost:3000/admin-api',
     ASTRO_TELEMETRY_DISABLED: '1',
+    DEMO_LOCAL_HOST_ALIASES: 'true',
   });
   args = ['run', `dev:${action}`];
   console.log(
@@ -99,6 +115,15 @@ if (['admin', 'storefront'].includes(action)) {
       'market-discovery-fixtures',
       'finance-history-fixtures',
       'vendor-analytics-fixtures',
+      'preorder-fee-fixtures',
+      'market-day-storefront-ended-fixtures',
+      'market-day-storefront-refresh-fixtures',
+      'market-day-storefront-fixtures',
+      'market-day-fixtures',
+      'invoice-fixtures',
+      'invoice-refund-fixtures',
+      'stripe-connect-fixtures',
+      'vendor-managed',
       'test',
     ].includes(action)
   )
@@ -134,6 +159,38 @@ if (action === 'serve') {
   });
 }
 const childArgs = ['serve', 'worker'].includes(action) ? args : [npm, ...args];
+// Preserve all existing loopback origins and database guards. A local-only
+// ingress adapts them for phones without changing saved storefront domains.
+const lanProxy =
+  action === 'storefront' ? await startDemoLanProxy(root, env) : undefined;
+// Separate Vite base prevents Astro/admin dev module paths from colliding.
+const lanAdmin =
+  action === 'admin'
+    ? spawn(
+        process.execPath,
+        [
+          path.join(root, 'node_modules/vite/bin/vite.js'),
+          '--host',
+          '127.0.0.1',
+          '--port',
+          '4342',
+          '--strictPort',
+          '--base',
+          '/__admin/',
+        ],
+        {
+          cwd: path.join(root, 'apps/admin'),
+          env: { ...env, REMOTE_DEMO_ADMIN: 'true' },
+          stdio: 'inherit',
+          windowsHide: true,
+        },
+      )
+    : undefined;
+function stopLan() {
+  lanAdmin?.kill();
+  lanProxy?.close();
+  lanProxy?.closeAllConnections();
+}
 const child = spawn(process.execPath, childArgs, {
   cwd: root,
   env,
@@ -141,11 +198,28 @@ const child = spawn(process.execPath, childArgs, {
   windowsHide: true,
 });
 child.on('error', (error) => {
+  stopLan();
   console.error(error.message);
   process.exitCode = 1;
 });
 child.on('exit', (code) => {
+  stopLan();
   process.exitCode = code ?? 1;
+});
+lanAdmin?.on('error', (error) => {
+  console.error(error.message);
+  child.kill();
+  stopLan();
+  process.exitCode = 1;
+});
+lanAdmin?.on('exit', (code) => {
+  if (code && !child.killed) {
+    console.error(
+      'The local Wi-Fi admin companion stopped. Restart the admin command.',
+    );
+    child.kill();
+    process.exitCode = code;
+  }
 });
 process.on('SIGINT', () => child.kill('SIGINT'));
 process.on('SIGTERM', () => child.kill('SIGTERM'));

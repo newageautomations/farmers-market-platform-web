@@ -1,16 +1,13 @@
-import { useState } from 'react';
 import type { CheckoutView } from '@market/api';
 import { Summary, Pickup } from './Checkout';
-import { shopCall } from '../shop-client';
 export function Success({
   view,
-  storefrontId,
+  images = {},
 }: {
   view?: CheckoutView;
   storefrontId: string;
+  images?: Record<string, string>;
 }) {
-  const [state, setState] = useState(view?.profile ? 'AUTHENTICATED' : '');
-  const [pending, setPending] = useState(false);
   if (!view?.committed || !view.code)
     return (
       <div className="farmhouse-space">
@@ -47,52 +44,34 @@ export function Success({
         <Pickup view={view} />
         <aside className="farmhouse-order-panel">
           <h2>Your order</h2>
-          <Summary view={view} />
+          <Summary view={view} images={images} />
         </aside>
       </div>
       <div className="farmhouse-invitation">
         <a className="farmhouse-button" href="/products">
           Continue exploring ↗
         </a>
-        {state === 'AUTHENTICATED' ? (
+        {view.profile ? (
           <p>
             <a href="/account/orders">View your orders</a>
           </p>
         ) : (
-          <>
-            <p role="status">
-              {state === 'ACCEPTED'
-                ? 'Check your email to access your orders.'
-                : state === 'UNAVAILABLE'
-                  ? 'An account access email could not currently be sent. Your order is confirmed.'
-                  : 'Access your orders with a one-time email link.'}
-            </p>
-            <button
-              className="farmhouse-button"
-              type="button"
-              disabled={pending || state === 'ACCEPTED'}
-              onClick={async () => {
-                setPending(true);
-                try {
-                  const result = await shopCall<{ state: string }>(
-                    storefrontId,
-                    'purchase-account-link',
-                    { orderId: view.orderId },
-                  );
-                  setState(result.state);
-                } catch {
-                  setState('UNAVAILABLE');
-                } finally {
-                  setPending(false);
-                }
-              }}
-            >
-              Email me an account link
-            </button>
+          <section
+            className="farmhouse-checkout-section checkout-account-invitation"
+            aria-label="Track your orders"
+          >
+            <p>Want to keep track of your orders?</p>
             <p>
-              <a href="/account/login">Sign in to your account</a>
+              Create a free account to keep your order details together. We will
+              prefill your details from checkout.
             </p>
-          </>
+            <a
+              className="farmhouse-button"
+              href={`/account/signup?order=${encodeURIComponent(view.orderId)}`}
+            >
+              Create a free account
+            </a>
+          </section>
         )}
       </div>
     </article>

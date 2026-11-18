@@ -1,0 +1,53 @@
+---
+import {
+  websiteSectionStyle,
+  websiteSectionAttributes,
+  websiteObjectStyle,
+  type WebsiteCtaBannerSection,
+} from '@market/theme/storefront';
+import '../../styles/website-sections.css';
+import type { StorefrontContext } from '@market/storefront-core';
+import { farmhouseDestination } from './navigation';
+const { section, context, editorId } = Astro.props as {
+  section: WebsiteCtaBannerSection;
+  context: StorefrontContext;
+  editorId?: string;
+};
+const { content, presentation } = section;
+---
+
+<section
+  {...websiteSectionAttributes(section)}
+  style={websiteSectionStyle(section)}
+  class="farmhouse-editorial website-section"
+  data-variant={section.presentation.variant ?? 'standard'}
+  data-editor-section={editorId ?? `farmhouse:${section.id}`}
+  data-background={presentation.background}
+  data-alignment={presentation.alignment}
+>
+  <div class="farmhouse-space farmhouse-cta-banner website-layout">
+    <div class="farmhouse-editorial-copy website-copy">
+      {content.heading && (
+        <h2 style={websiteObjectStyle(section, 'heading')}>
+          {content.heading}
+        </h2>
+      )}
+      {content.body && (
+        <p style={websiteObjectStyle(section, 'paragraph')}>{content.body}</p>
+      )}
+      {farmhouseDestination(context, content.destination) && (
+        <a
+          class="farmhouse-button"
+          data-website-button={
+            presentation.background === 'ink' ? 'secondary' : 'primary'
+          }
+          style={websiteObjectStyle(section, 'button')}
+          href={content.destination}
+        >
+          {content.label}
+          <span aria-hidden="true">↗</span>
+        </a>
+      )}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,50 @@
+---
+import type { FarmstandIconName } from '@market/ui/farmstand';
+import { cardClassName } from '@market/ui/presentation';
+import FarmstandIcon from './FarmstandIcon.astro';
+/**
+ * Astro adapter of `SettingsPanel` (`@market/ui/workspace`): a Farmstand
+ * panel with the stat icon tile, an h2, an optional description and
+ * heading actions (slot `actions`). The body opts into `farmstand-controls`.
+ */
+const {
+  icon,
+  title,
+  description,
+  id = `panel-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+  class: className = '',
+} = Astro.props as {
+  icon: FarmstandIconName;
+  title: string;
+  description?: string;
+  id?: string;
+  class?: string;
+};
+---
+
+<section
+  class={cardClassName({
+    spacing: 'contained',
+    padding: 'none',
+    className: `farmstand-panel settings-panel ${className}`.trim(),
+  })}
+  aria-labelledby={id}
+>
+  <header class="settings-panel-heading">
+    <span class="markets-stat-icon">
+      <FarmstandIcon name={icon} />
+    </span>
+    <div>
+      <h2 id={id}>{title}</h2>
+      {description && <p>{description}</p>}
+    </div>
+    {Astro.slots.has('actions') && (
+      <div class="settings-panel-actions">
+        <slot name="actions" />
+      </div>
+    )}
+  </header>
+  <div class="settings-panel-body farmstand-controls customer-workspace">
+    <slot />
+  </div>
+</section>

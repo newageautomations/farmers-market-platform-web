@@ -1,0 +1,77 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import type { WebsiteImageGallerySection } from '@market/theme/storefront';
+import { safeAsset } from '@market/storefront-core';
+import CarouselControls from './CarouselControls.astro';
+import '../../styles/harvest-sections.css';
+import '../../styles/theme-section-library.css';
+const { section, context, editorId } = Astro.props as {
+  section: WebsiteImageGallerySection;
+  context?: StorefrontContext;
+  editorId?: string;
+};
+const { content: c, presentation: p } = section;
+const theme = context?.appearance?.theme ?? 'harvest';
+const prefix =
+  theme === 'modern-farmhouse'
+    ? 'farmhouse'
+    : theme === 'editorial-market'
+      ? 'editorial'
+      : 'harvest';
+---
+
+<section
+  class="harvest-section harvest-library harvest-gallery"
+  data-library-theme={theme}
+  data-editor-section={editorId ?? `${prefix}:${section.id}`}
+  data-layout={p.layout}
+  data-harvest-carousel={p.layout === 'carousel' ? true : undefined}
+  data-aspect-ratio={p.aspectRatio}
+  data-background-type={p.backgroundType ?? 'contained'}
+  data-background={p.background}
+  data-spacing={p.spacing}
+  data-alignment={p.alignment}
+  data-visible-images={p.visibleImages ?? 3}
+>
+  {(c.heading || c.body) && (
+    <header class="harvest-library-heading">
+      {c.heading && <h2>{c.heading}</h2>}
+      {c.body && <p>{c.body}</p>}
+    </header>
+  )}
+  <div class="harvest-gallery-frame">
+    {p.layout === 'carousel' && (
+      <CarouselControls trackId={`${section.id}-images`} />
+    )}
+    <div
+      class="harvest-gallery-images"
+      data-carousel-track
+      id={`${section.id}-images`}
+      tabindex={p.layout === 'carousel' ? 0 : undefined}
+      role={p.layout === 'carousel' ? 'region' : undefined}
+      aria-label={p.layout === 'carousel' ? 'Photo carousel' : undefined}
+    >
+      {c.images
+        .filter((i) => safeAsset(i.image.url))
+        .map((item) => (
+          <figure>
+            <img
+              src={safeAsset(item.image.url)}
+              alt={item.image.alt}
+              width="960"
+              height="960"
+              loading="lazy"
+              decoding="async"
+            />
+            {p.captions && item.caption && (
+              <figcaption>{item.caption}</figcaption>
+            )}
+          </figure>
+        ))}
+    </div>
+  </div>
+  {!c.images.some((i) => safeAsset(i.image.url)) &&
+    Astro.locals.editorPreview && (
+      <p>Select photographs from your image library to fill this gallery.</p>
+    )}
+</section>

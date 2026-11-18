@@ -28,6 +28,7 @@ import './order-detail.css';
 import './orders.css';
 import './customers.css';
 import './contact-submissions.css';
+import { DetailSheet, usePhoneRecords } from '../market/mobile';
 
 const pageSize = 10;
 /** The backend returns fixed 20-row pages; each holds two 10-row display pages. */
@@ -76,7 +77,10 @@ export function ContactSubmissions({ api }: { api?: VendorContactApi }) {
     // An explicit selection (row click or ?submission= link) marks the message read;
     // the default first-row preview does not.
     [selected, setSelected] = useState<string | undefined>(submissionFromUrl),
-    [opened, setOpened] = useState<string | undefined>(submissionFromUrl);
+    [opened, setOpened] = useState<string | undefined>(submissionFromUrl),
+    // Phones open a tapped message in a bottom sheet.
+    [sheet, setSheet] = useState(false);
+  const records = usePhoneRecords();
   useEffect(() => {
     const selectFromUrl = () => {
       const id = submissionFromUrl();
@@ -182,6 +186,16 @@ export function ContactSubmissions({ api }: { api?: VendorContactApi }) {
                 </div>
                 <FarmstandTable
                   label="Contact submissions, newest first"
+                  recordDetails={records({
+                    status: 3,
+                    onOpen: (index) => {
+                      const row = items[index];
+                      if (!row) return;
+                      choose(row.id);
+                      setSheet(true);
+                    },
+                    labels: items.map((row) => row.full_name),
+                  })}
                   headings={['Sender', 'Subject', 'Received', 'Status']}
                 >
                   {items.map((row) => {
@@ -293,13 +307,20 @@ export function ContactSubmissions({ api }: { api?: VendorContactApi }) {
                 )}
               </FarmstandPanel>
               {current ? (
-                <ContactPreview
-                  key={current}
-                  api={api}
-                  id={current}
-                  markRead={opened === current}
-                  onChange={query.refresh}
-                />
+                <DetailSheet
+                  phoneOnly
+                  title="Message"
+                  open={sheet}
+                  onClose={() => setSheet(false)}
+                >
+                  <ContactPreview
+                    key={current}
+                    api={api}
+                    id={current}
+                    markRead={opened === current}
+                    onChange={query.refresh}
+                  />
+                </DetailSheet>
               ) : (
                 <FarmstandPanel className="customers-preview">
                   <EmptyState title="No message selected">

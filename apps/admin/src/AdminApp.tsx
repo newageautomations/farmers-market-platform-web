@@ -239,7 +239,7 @@ export function AdminApp({
   }
   if (session.status === 'loading' || endpoint !== sessionEndpoint)
     return (
-      <main className="login">
+      <main className="login farmstand-controls">
         <h1>
           <MarketPlatformLogo />
         </h1>
@@ -248,7 +248,7 @@ export function AdminApp({
     );
   if (session.status === 'error')
     return (
-      <main className="login">
+      <main className="login farmstand-controls">
         <h1>
           <MarketPlatformLogo />
         </h1>
@@ -274,7 +274,7 @@ export function AdminApp({
     );
   if (session.status === 'anonymous')
     return (
-      <main className="login">
+      <main className="login farmstand-controls">
         <h1>You are signed out</h1>
         <p>
           {signedOutEverywhere
@@ -298,7 +298,7 @@ export function AdminApp({
     )
   )
     return (
-      <main className="login">
+      <main className="login farmstand-controls">
         <h1>Your account</h1>
         {accountOrigin ? (
           <p>
@@ -316,7 +316,7 @@ export function AdminApp({
     );
   if (contextError)
     return (
-      <main className="login">
+      <main className="login farmstand-controls">
         <h1>Workspace unavailable</h1>
         {accountOrigin && (
           <p>
@@ -353,7 +353,7 @@ export function AdminApp({
     );
   if (!context)
     return (
-      <main className="login">
+      <main className="login farmstand-controls">
         <h1>
           <MarketPlatformLogo />
         </h1>
@@ -376,12 +376,9 @@ export function AdminApp({
       onLogout={() => void logout()}
       controls={
         <>
-          <IconButton
-            icon="refresh"
-            label="Refresh workspace"
-            onClick={() => refreshSession(session.channel.id)}
-          />
+          {/* Every role's compact shell keeps account controls in its account menu, without Refresh or "Your account"; Customer mode still reaches the personal account. */}
           <AccountModes
+            personalLink={false}
             endpoint={endpoint}
             channelToken={session.channel.token}
             context={context}

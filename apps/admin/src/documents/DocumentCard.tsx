@@ -14,6 +14,7 @@ export function DocumentCard({
   statuses,
   meta,
   onOpen,
+  initialOpen,
   children,
 }: {
   title: string;
@@ -23,6 +24,7 @@ export function DocumentCard({
   /** Short date or deadline line shown at the footer's end. */
   meta?: ReactNode;
   onOpen?: () => void;
+  initialOpen?: boolean;
   children?: ReactNode;
 }) {
   return (
@@ -30,6 +32,7 @@ export function DocumentCard({
       className="document-card"
       title={title}
       onOpen={onOpen}
+      initialOpen={initialOpen}
       header={
         <span className="markets-stat-icon document-card-icon" aria-hidden>
           <FarmstandIcon name={icon} />

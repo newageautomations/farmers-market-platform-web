@@ -1,7 +1,15 @@
 import { EmptyState } from '@market/ui';
 import { AnimatedDisclosure, StatusBadge, MarketDialog } from '../presentation';
 import { go, RouteLink } from '../../vendor/common';
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useReducer,
+  useRef,
+  useState,
+} from 'react';
+import { PriceInput, amountToMinor } from '../../PriceInput';
 import type {
   LayoutVersion,
   MapElement,
@@ -43,7 +51,7 @@ import {
   MAP_LEGEND_TEMPLATE,
   type Viewport,
 } from '@market/ui';
-import { Control } from './common';
+import { Check, Control } from './common';
 import {
   LayoutCanvasSettings,
   LayoutInspector,
@@ -67,6 +75,8 @@ import {
 } from './LayoutImagePicker';
 import { LayoutSmartTools } from './LayoutSmartTools';
 import { boothStatus } from './booth-status';
+import { WorkspaceFrame } from '../../WorkspaceFrame';
+import { FarmstandButton, FarmstandIcon } from '@market/ui/farmstand';
 import './designer.css';
 export { drawingHistory } from '@market/ui';
 // Feature composition shared by the library and editor copy actions.
@@ -174,6 +184,7 @@ interface EditorSession {
   snapObjects: boolean;
   spacing: number;
   tool: MapTool;
+  defaultBoothPrice?: number;
   view?: Viewport;
 }
 const editorSessions = new Map<string, EditorSession>();
@@ -238,26 +249,35 @@ export function Layouts({
     data.archivedLayouts ??
     (data.layouts ?? []).filter((layout) => !!layout.deletedAt);
   return (
-    <div className="layout-library">
+    <WorkspaceFrame
+      icon="map-pin"
+      title="Layouts"
+      description="Design reusable booth maps and choose which one each market date uses."
+      tabs={[]}
+      value="layouts"
+      onChange={() => {}}
+      className="layout-library farmstand-controls"
+      actions={
+        canManage && (
+          <FarmstandButton
+            onClick={async () => {
+              const v = (await run({
+                action: 'CREATE_LAYOUT',
+                data: { name: 'Untitled layout' },
+              })) as LayoutVersion;
+              if (v) go(`/market/layouts/${v.layoutId}/edit`);
+            }}
+          >
+            <FarmstandIcon name="plus" />
+            Create layout
+          </FarmstandButton>
+        )
+      }
+    >
       <AnimatedDisclosure
         title="Saved layouts"
         defaultOpen
         className="saved-layouts-card"
-        action={
-          canManage && (
-            <Button
-              onClick={async () => {
-                const v = (await run({
-                  action: 'CREATE_LAYOUT',
-                  data: { name: 'Untitled layout' },
-                })) as LayoutVersion;
-                if (v) go(`/market/layouts/${v.layoutId}/edit`);
-              }}
-            >
-              Create layout
-            </Button>
-          )
-        }
       >
         <div className="layout-card-grid">
           {!savedLayouts.length && (
@@ -404,7 +424,7 @@ export function Layouts({
           })}
         </div>
       </AnimatedDisclosure>
-    </div>
+    </WorkspaceFrame>
   );
 }
 export function LayoutScreen({
@@ -541,7 +561,14 @@ export function LayoutEditor({
     [smartTool, setSmartTool] = useState(restored?.smartTool ?? 'row'),
     [saving, setSaving] = useState<'save' | 'publish' | null>(null),
     [initialView] = useState(restored?.view),
-    [copyOpen, setCopyOpen] = useState(false);
+    [copyOpen, setCopyOpen] = useState(false),
+    [defaultBoothPrice, setDefaultBoothPrice] = useState<number | undefined>(
+      restored?.defaultBoothPrice,
+    ),
+    [priceBoothId, setPriceBoothId] = useState<string | null>(null),
+    [boothPrice, setBoothPrice] = useState(''),
+    [reuseBoothPrice, setReuseBoothPrice] = useState(false);
+  const boothPriceFormId = useId();
   const canvas = useRef<MapCanvasHandle>(null),
     typing = useRef(''),
     pasteOffset = useRef(20);
@@ -719,12 +746,26 @@ export function LayoutEditor({
       definition: { ...definition, elements: [...definition.elements, e] },
       spaces:
         type === 'SPACE'
-          ? { ...drawing.spaces, [id]: { ...baseSpace(label), ...space } }
+          ? {
+              ...drawing.spaces,
+              [id]: {
+                ...baseSpace(label),
+                ...(defaultBoothPrice !== undefined
+                  ? { feeMinor: defaultBoothPrice }
+                  : {}),
+                ...space,
+              },
+            }
           : drawing.spaces,
     });
     setSelected([id]);
     if (!path) setTool('select');
     setSidebarOpen(true);
+    if (type === 'SPACE' && defaultBoothPrice === undefined) {
+      setBoothPrice('');
+      setReuseBoothPrice(false);
+      setPriceBoothId(id);
+    }
   }
   function addBooth(variant: BoothVariant) {
     add('SPACE', undefined, {}, variant === 'double' ? { widthFeet: 20 } : {});
@@ -929,6 +970,7 @@ export function LayoutEditor({
       snap,
       snapObjects,
       spacing,
+      defaultBoothPrice,
       tool: tool === 'draw' || tool === 'points' ? 'select' : tool,
       view: viewport?.view,
     });
@@ -1049,7 +1091,9 @@ export function LayoutEditor({
           )}
           <div className="designer-title">
             <h1>
-              {occurrenceId ? 'Occurrence Layout Editor' : 'Market Layout Editor'}
+              {occurrenceId
+                ? 'Occurrence Layout Editor'
+                : 'Market Layout Editor'}
             </h1>
             <p>
               {!onSave && editable && !preview ? (
@@ -1426,7 +1470,13 @@ export function LayoutEditor({
             spaces={
               preview
                 ? publicSpaces.map(
-                    ({ elementId, label, widthFeet, depthFeet, amenities }) => ({
+                    ({
+                      elementId,
+                      label,
+                      widthFeet,
+                      depthFeet,
+                      amenities,
+                    }) => ({
                       elementId,
                       label,
                       widthFeet,
@@ -1646,6 +1696,71 @@ export function LayoutEditor({
           </aside>
         )}
       </div>
+      {priceBoothId && (
+        <MarketDialog
+          open
+          size="standard"
+          className="farmstand-controls"
+          title="Set default price for this booth"
+          onClose={() => setPriceBoothId(null)}
+          actions={
+            <Button type="submit" form={boothPriceFormId}>
+              Save price
+            </Button>
+          }
+        >
+          <form
+            id={boothPriceFormId}
+            onSubmit={(event) => {
+              event.preventDefault();
+              const feeMinor = amountToMinor(boothPrice);
+              if (
+                !boothPrice ||
+                !Number.isSafeInteger(feeMinor) ||
+                feeMinor > 100000000
+              )
+                return;
+              const space = drawing.spaces[priceBoothId];
+              if (!space) return;
+              update(
+                {
+                  ...drawing,
+                  spaces: {
+                    ...drawing.spaces,
+                    [priceBoothId]: { ...space, feeMinor },
+                  },
+                },
+                true,
+              );
+              if (reuseBoothPrice) setDefaultBoothPrice(feeMinor);
+              setPriceBoothId(null);
+            }}
+          >
+            <Control label="Default price">
+              {(id) => (
+                <PriceInput
+                  id={id}
+                  required
+                  value={boothPrice}
+                  onValueChange={setBoothPrice}
+                  onInput={(event) => {
+                    event.currentTarget.setCustomValidity(
+                      amountToMinor(event.currentTarget.value) > 100000000
+                        ? 'Enter a price up to $1,000,000.00.'
+                        : '',
+                    );
+                  }}
+                />
+              )}
+            </Control>
+            <Check
+              label="Use this price for all future booths"
+              checked={reuseBoothPrice}
+              onChange={setReuseBoothPrice}
+            />
+          </form>
+        </MarketDialog>
+      )}
       {copyOpen && (
         <CopyLayoutDialog
           version={version}

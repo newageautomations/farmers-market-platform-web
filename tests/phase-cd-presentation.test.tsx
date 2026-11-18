@@ -91,7 +91,10 @@ describe('approved dashboard presentation', () => {
         'd',
         'M4 6h16M4 12h16M4 18h16',
       );
-      expect(container.querySelectorAll('summary')).toHaveLength(1);
+      // One hamburger menu; the compact shell's header menus are separate.
+      expect(
+        container.querySelectorAll(`.${dashboardClasses.menu} > summary`),
+      ).toHaveLength(1);
       act(() => resize(768));
       expect(toggle).toHaveAttribute('aria-expanded', 'false');
       act(() => toggle.focus());
@@ -266,7 +269,10 @@ describe('approved dashboard presentation', () => {
     expect(layout).toContain('<DashboardMenu>');
     expect(layout).toContain('method="post" action="/api/account"');
     expect(layout).toContain('name="action" value="logout"');
-    expect(layout).toContain('type="submit" variant="secondary"');
+    expect(layout).toContain('type="submit" class="shell-menu-item"');
+    expect(layout).toContain(
+      'installDashboardSidebarToggle(button, { rail: true })',
+    );
     expect(layout).not.toMatch(/AdminShell|AdminApp|admin-core/);
     expect(layout).toContain("navigationIconPaths['panel-left']");
     expect(layout).toContain('installDashboardSidebarToggle');

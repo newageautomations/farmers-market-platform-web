@@ -47,7 +47,7 @@ import '../market/phase14/attendance.css';
 import '@market/ui/farmstand.css';
 import './order-detail.css';
 import './orders.css';
-import '../workspace-menu.css';
+import '@market/ui/workspace-menu.css';
 import './packing.css';
 import { QuantityStepper } from './QuantityStepper';
 

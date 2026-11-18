@@ -1,0 +1,70 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { marketText, storefrontText } from '@market/theme/storefront';
+import { marketNavigation } from '../../lib/market-website';
+import Art from './Art.astro';
+
+/** Hearth's site footer: the market footer links on a bakehouse shelf. */
+interface Props {
+  context: StorefrontContext;
+}
+const { context } = Astro.props;
+const appearance = context.appearance;
+const visit = marketNavigation(appearance, !!Astro.locals.editorPreview);
+---
+
+<footer class="hw-footer" data-editor-section="footer">
+  <div class="hw-footer-shelf" aria-hidden="true">
+    <Art name="wheat" />
+    <Art name="loaf" />
+    <Art name="jam" />
+    <Art name="coffee" />
+    <Art name="croissant" />
+  </div>
+  <div class="hw-footer-band">
+    <div class="hw-footer-inner">
+      <div class="hw-footer-brand">
+        <a href="/" class="hw-footer-name">
+          {context.name}
+        </a>
+        <p data-market-text="footerTagline">
+          {marketText(appearance, 'footerTagline')}
+        </p>
+      </div>
+      <nav aria-label="Footer navigation" class="hw-footer-nav">
+        <div>
+          <h2>Visit</h2>
+          {visit.map((link) => (
+            <a href={link.href}>{link.label}</a>
+          ))}
+        </div>
+        <div>
+          <h2>About</h2>
+          {appearance?.about.enabled && (
+            <a href="/about">
+              <span data-storefront-text="footerAboutLabel">
+                {storefrontText(appearance, 'footerAboutLabel')}
+              </span>
+            </a>
+          )}
+          {appearance?.faq?.enabled && (
+            <a href="/faq">{appearance.faq.title}</a>
+          )}
+          {appearance?.policies?.enabled && (
+            <a href="/policies">{appearance.policies.title}</a>
+          )}
+          {appearance?.contact?.enabled && (
+            <a href="/contact">{appearance.contact.title}</a>
+          )}
+          <a href="/account">Your account</a>
+        </div>
+      </nav>
+      <div class="hw-footer-bottom">
+        <span>
+          © {new Date().getFullYear()} {context.name}
+        </span>
+        <span>Powered by Market platform</span>
+      </div>
+    </div>
+  </div>
+</footer>

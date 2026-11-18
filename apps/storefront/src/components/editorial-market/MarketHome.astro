@@ -1,0 +1,274 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { taxonomyNavigation, safeAsset } from '@market/storefront-core';
+import {
+  editorialMarketHomepageComposition,
+  isEditorialMarket,
+  marketText,
+  permitsMarketWebsiteSection,
+  websiteSectionRegistry,
+} from '@market/theme/storefront';
+import type {
+  AppError,
+  MarketCatalog,
+  MarketOccurrenceVendor,
+  PublicMarketOccurrence,
+} from '@market/api';
+import { ErrorState } from '@market/ui';
+import EmptyState from '../ui/EmptyState.astro';
+import MarketDateList from '../market/MarketDateList.astro';
+import MarketVendorCards from '../market/MarketVendorCards.astro';
+import {
+  marketCategorySources,
+  marketPageAvailable,
+} from '../../lib/market-website';
+import { websiteSectionRenderers } from './section-renderers';
+import { categoryArt } from './category-art';
+import Hero from './Hero.astro';
+import Impact from './Impact.astro';
+import '../../styles/market-website.css';
+import '../../styles/website-sections.css';
+
+/**
+ * A market's Editorial Market homepage. It keeps the market Harvest homepage
+ * order and data (MarketPublicHome) in the Editorial Market presentation.
+ */
+interface Props {
+  context: StorefrontContext;
+  occurrences: readonly PublicMarketOccurrence[];
+  catalog?: MarketCatalog;
+  vendors?: readonly MarketOccurrenceVendor[];
+  /** Categories of the chosen market date, or of every upcoming date. */
+  categorySources?: ReturnType<typeof marketCategorySources>;
+  chosenOccurrenceId?: string;
+  error?: AppError;
+}
+const {
+  context,
+  occurrences,
+  catalog,
+  vendors,
+  categorySources,
+  chosenOccurrenceId,
+  error,
+} = Astro.props;
+if (!isEditorialMarket(context.appearance))
+  throw new Error(
+    'Editorial Market homepage requires its theme configuration.',
+  );
+const appearance = context.appearance;
+const settings = appearance.template.settings;
+const preview = !!Astro.locals.editorPreview;
+const composition = editorialMarketHomepageComposition(appearance);
+const next = occurrences[0];
+const datesPage = marketPageAvailable(appearance, 'market-dates', preview);
+const vendorsPage = marketPageAvailable(appearance, 'vendors', preview);
+const datesHref = datesPage
+  ? '/market-dates'
+  : next
+    ? `/shop?occurrence=${next.id}`
+    : '#markets';
+const shownVendors = (
+  vendors ??
+  catalog?.vendors.map((vendor) => ({
+    vendorId: vendor.vendorId,
+    name: vendor.vendorName,
+    image: null,
+    storefrontUrl: null,
+    offeringCount: vendor.count,
+  })) ??
+  []
+).slice(0, 8);
+const categoryTaxonomy = categorySources?.taxonomy ?? catalog?.taxonomy;
+const categories = categoryTaxonomy
+  ? taxonomyNavigation(categoryTaxonomy, appearance.categoryPresentation)
+  : [];
+// Each category opens the chosen date, or the earliest upcoming date offering it.
+const categoryOccurrence = (id: string) =>
+  chosenOccurrenceId ?? categorySources?.occurrenceIds[id] ?? next?.id;
+const shopOccurrence = chosenOccurrenceId ?? next?.id;
+---
+
+<div
+  class="em-home em-market-home"
+  data-template="editorial-market"
+  data-composition="market"
+  data-spacing={settings.homepageDesign?.spacing}
+  data-typography-scale={settings.homepageDesign?.typographyScale}
+  data-leading-section={composition[0]?.id}
+>
+  {composition.map((section) => {
+    if ('type' in section) {
+      if (!section.visible || !permitsMarketWebsiteSection(section.type))
+        return null;
+      const Renderer =
+        websiteSectionRenderers[
+          websiteSectionRegistry[section.type].renderers['editorial-market']
+        ];
+      return <Renderer section={section} context={context} />;
+    }
+    return section.id === 'hero' ? (
+      <Hero
+        settings={settings}
+        action={{
+          href: appearance.market?.heroPrimaryDestination ?? datesHref,
+          label: settings.hero.buttonLabel,
+        }}
+      />
+    ) : section.id === 'markets' ? (
+      <section
+        id="markets"
+        class="em-section em-market-section"
+        data-editor-section="editorial:markets"
+        aria-labelledby="markets-title"
+      >
+        <header class="em-section-heading">
+          <div>
+            <h2 id="markets-title" data-market-text="marketsHeading">
+              {marketText(appearance, 'marketsHeading')}
+            </h2>
+          </div>
+          {datesPage && (
+            <a href="/market-dates">
+              <span data-market-text="marketsLinkLabel">
+                {marketText(appearance, 'marketsLinkLabel')}
+              </span>{' '}
+              <span aria-hidden="true">→</span>
+            </a>
+          )}
+        </header>
+        {error ? (
+          <ErrorState error={error} />
+        ) : !occurrences.length ? (
+          <EmptyState title="Your next visit is in the making" level={3}>
+            <p>
+              Upcoming market dates will appear here when they are announced.
+            </p>
+          </EmptyState>
+        ) : (
+          <MarketDateList
+            occurrences={occurrences}
+            cardTheme={appearance.market?.marketsCardTheme}
+          />
+        )}
+      </section>
+    ) : section.id === 'vendors' ? (
+      <section
+        id="vendors"
+        class="em-section em-market-section"
+        data-editor-section="editorial:vendors"
+        aria-labelledby="vendors-title"
+      >
+        <header class="em-section-heading">
+          <div>
+            <h2 id="vendors-title" data-market-text="vendorsHeading">
+              {marketText(appearance, 'vendorsHeading')}
+            </h2>
+          </div>
+          {vendorsPage && (
+            <a href="/vendors">
+              <span data-market-text="vendorsLinkLabel">
+                {marketText(appearance, 'vendorsLinkLabel')}
+              </span>{' '}
+              <span aria-hidden="true">→</span>
+            </a>
+          )}
+        </header>
+        {next && shownVendors.length ? (
+          <MarketVendorCards
+            vendors={shownVendors}
+            occurrenceId={next.id}
+            cardTheme={appearance.market?.vendorsCardTheme}
+          />
+        ) : (
+          <EmptyState title="Meet us at the next market" level={3}>
+            <p>
+              Participating vendors will appear here as the next market date
+              takes shape.
+            </p>
+          </EmptyState>
+        )}
+      </section>
+    ) : section.id === 'categories' ? (
+      (categories.length > 0 || preview) && (
+        <section
+          class="em-section em-market-section"
+          data-editor-section="editorial:categories"
+          aria-labelledby="categories-title"
+        >
+          <header class="em-section-heading">
+            <div>
+              <h2 id="categories-title" data-market-text="categoriesHeading">
+                {marketText(appearance, 'categoriesHeading')}
+              </h2>
+              <p
+                class="em-market-section-intro"
+                data-market-text="categoriesText"
+              >
+                {marketText(appearance, 'categoriesText')}
+              </p>
+            </div>
+            {shopOccurrence && (
+              <a href={`/shop?occurrence=${shopOccurrence}`}>
+                {settings.categories.linkLabel}{' '}
+                <span aria-hidden="true">→</span>
+              </a>
+            )}
+          </header>
+          {next && categories.length ? (
+            <nav
+              class="em-categories"
+              aria-label={
+                chosenOccurrenceId
+                  ? 'Categories for your chosen market date'
+                  : 'Categories for upcoming market dates'
+              }
+            >
+              {categories
+                .slice(0, settings.categories.limit)
+                .map((category) => {
+                  const art = categoryArt(
+                    category.code,
+                    safeAsset(category.image),
+                  );
+                  return (
+                    <a
+                      href={`/shop?occurrence=${categoryOccurrence(category.id)}&category=${encodeURIComponent(category.id)}`}
+                    >
+                      <span class="em-category-image">
+                        {art ? (
+                          <img
+                            src={art}
+                            alt=""
+                            width="240"
+                            height="240"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : (
+                          <span
+                            class="em-category-placeholder"
+                            aria-hidden="true"
+                          >
+                            ❦
+                          </span>
+                        )}
+                      </span>
+                      <span>{category.pathNames.at(-1) ?? category.name}</span>
+                    </a>
+                  );
+                })}
+            </nav>
+          ) : (
+            <p>
+              Categories appear when vendors list offerings for upcoming market
+              dates.
+            </p>
+          )}
+        </section>
+      )
+    ) : section.id === 'impact' ? (
+      <Impact settings={settings} />
+    ) : null;
+  })}
+</div>

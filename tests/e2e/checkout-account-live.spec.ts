@@ -188,9 +188,9 @@ test('purchase first, claim same identity later, real direct and multi-Vendor ch
   ).toBeVisible();
   await accessibility(page);
   await control('/assert', { purchases: 2, verified: true });
-  await page.getByRole('link', { name: 'View order history' }).click();
+  await page.getByRole('link', { name: 'Order history', exact: true }).click();
   await accessibility(page);
-  expect(await page.locator('.customer-order-list > li').count()).toBe(2);
+  expect(await page.locator('.customer-orders-table tbody tr').count()).toBe(2);
   await page.goto(market + `/account/orders/${direct}`);
   await expect(
     page.getByText('Direct Vendor purchase', { exact: true }),
@@ -264,7 +264,7 @@ test('purchase first, claim same identity later, real direct and multi-Vendor ch
   await checkout(page, true);
   await control('/assert', { purchases: 3, verified: true });
   await page.goto(vendor + '/account/orders');
-  expect(await page.locator('.customer-order-list > li').count()).toBe(3);
+  expect(await page.locator('.customer-orders-table tbody tr').count()).toBe(3);
   // The password established by the original verified claim must restore the
   // same identity and purchase history through all three storefronts.
   await page.goto(`http://auth.platform.localhost:${port}/auth/logout`);
@@ -287,7 +287,9 @@ test('purchase first, claim same identity later, real direct and multi-Vendor ch
     ).toBeVisible();
     expect(new URL(page.url()).origin).toBe(storefront);
     await page.goto(storefront + '/account/orders');
-    expect(await page.locator('.customer-order-list > li').count()).toBe(3);
+    expect(await page.locator('.customer-orders-table tbody tr').count()).toBe(
+      3,
+    );
   }
   await control('/assert', { purchases: 3, verified: true });
 });

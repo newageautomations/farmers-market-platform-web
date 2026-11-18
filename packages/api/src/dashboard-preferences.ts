@@ -68,3 +68,42 @@ export function createVendorDashboardLayoutApi(options: TransportOptions) {
 export type VendorDashboardLayoutApi = ReturnType<
   typeof createVendorDashboardLayoutApi
 >;
+
+/**
+ * Saved Market manager dashboard arrangement (`managerDashboard.layout`).
+ * Presentation only; each widget's data stays separately authorized.
+ */
+export interface MarketDashboardLayout {
+  order: string[];
+  hidden: string[];
+  /** Grid cells in grid units: column, row, width and height. */
+  grid?: Array<{ id: string; x: number; y: number; w: number; h: number }>;
+}
+const marketLayoutRead = parse(
+  'query OwnMarketDashboardLayout { getSettingsStoreValue(key: "managerDashboard.layout") }',
+) as TypedDocumentNode<
+  { getSettingsStoreValue: unknown },
+  Record<string, never>
+>;
+const marketLayoutSave = parse(
+  'mutation SaveOwnMarketDashboardLayout($input: SettingsStoreInput!) { setSettingsStoreValue(input: $input) { key result error } }',
+) as typeof vendorLayoutSave;
+export function createMarketDashboardLayoutApi(options: TransportOptions) {
+  const run = transport('admin', options);
+  return {
+    read: async () =>
+      (await run({ api: 'admin', document: marketLayoutRead }, {}))
+        .getSettingsStoreValue as Partial<MarketDashboardLayout> | null,
+    save: async (value: MarketDashboardLayout) => {
+      const result = await run(
+        { api: 'admin', document: marketLayoutSave },
+        { input: { key: 'managerDashboard.layout', value } },
+      );
+      if (!result.setSettingsStoreValue.result)
+        throw new AppError('validation');
+    },
+  };
+}
+export type MarketDashboardLayoutApi = ReturnType<
+  typeof createMarketDashboardLayoutApi
+>;

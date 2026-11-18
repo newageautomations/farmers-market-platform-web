@@ -1,0 +1,80 @@
+---
+import {
+  supportsWebsitePageHero,
+  effectiveWebsitePageSections,
+  websitePageRules,
+  type WebsiteEditorialPage,
+  type WebsitePageRegion,
+  usesHarvestContract,
+} from '@market/theme/storefront';
+import type { StorefrontContext } from '@market/storefront-core';
+import WebsitePageClosing from './WebsitePageClosing.astro';
+import WebsiteSections from './WebsiteSections.astro';
+const { context, page, region } = Astro.props as {
+  context?: StorefrontContext;
+  page: WebsiteEditorialPage;
+  region: WebsitePageRegion;
+};
+const appearance = context?.appearance;
+// Vendor websites and market Harvest or Meadow websites author page sections.
+const authored =
+  context?.kind === 'VENDOR' ||
+  (context?.kind === 'MARKET' &&
+    usesHarvestContract(context.appearance?.theme));
+const sections =
+  authored &&
+  (websitePageRules[page].regions as readonly string[]).includes(region)
+    ? appearance
+      ? effectiveWebsitePageSections(appearance, page, region)
+      : []
+    : [];
+const beforeCount = appearance
+  ? effectiveWebsitePageSections(appearance, page, 'before').length
+  : 0;
+const closing =
+  authored && appearance && supportsWebsitePageHero(appearance, page)
+    ? (appearance.pageSections?.[page]?.closingPosition ?? beforeCount + 1)
+    : -1;
+const localClosing =
+  region === 'before'
+    ? closing <= beforeCount
+      ? closing
+      : -1
+    : closing >= beforeCount + 1
+      ? closing - beforeCount - 1
+      : -1;
+---
+
+{context && (sections.length > 0 || localClosing >= 0) && (
+  <div
+    class:list={[
+      'website-page-region',
+      appearance?.theme === 'modern-farmhouse' && 'farmhouse-page-sections',
+      appearance?.theme === 'editorial-market' && 'em-page-sections',
+    ]}
+  >
+    {Array.from({ length: sections.length + 1 }, (_, index) => (
+      <>
+        {localClosing === index && (
+          <WebsitePageClosing context={context} page={page} />
+        )}
+        {sections[index] &&
+          (() => {
+            const section = sections[index]!;
+            return (
+              <WebsiteSections
+                context={context}
+                sections={[section]}
+                target={{
+                  theme: appearance!.theme,
+                  themeVersion: appearance!.template?.version ?? 1,
+                  page,
+                }}
+                prefix={`page:${page}:${region}`}
+              />
+            );
+          })()}
+      </>
+    ))}
+  </div>
+)}

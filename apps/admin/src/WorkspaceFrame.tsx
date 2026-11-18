@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { FarmstandIcon, type FarmstandIconName } from '@market/ui/farmstand';
 import '@market/ui/farmstand.css';
 import { WorkspaceMenu } from './WorkspaceMenu';
-import './vendor/markets-workspace.css';
+import '@market/ui/workspace.css';
 
 export interface WorkspaceTab<T extends string> {
   value: T;

@@ -2,6 +2,9 @@ import type { APIRoute } from 'astro';
 import { AppError, safeError } from '@market/api';
 import { boundedBody } from '@market/config';
 import { preorderCookie, vendorPreorder } from '../../lib/vendor-preorder';
+import { restartCheckout } from '../../lib/restart-checkout';
+import { recoverEditableCart } from '../../lib/recover-editable-cart';
+import { marketCatalogAvailability } from '../../lib/market-catalog';
 import {
   requestShop,
   requestMarketShop,
@@ -67,15 +70,56 @@ export const POST: APIRoute = async (context) => {
     let result: unknown;
     const checkout = requestCheckout(context, headers);
     stage = 'shop-operation';
+    if (
+      (input.action === 'cart' && input.recoverCheckout === true) ||
+      input.action === 'add'
+    )
+      await recoverEditableCart(context, headers);
     switch (input.action) {
+      case 'checkout-restart':
+        result = await restartCheckout(context, headers, id(input.orderId));
+        break;
+      case 'stripe-checkout-enabled':
+        result = await checkout.stripeEnabled();
+        break;
+      case 'stripe-checkout-prepare':
+        result = await checkout.stripePrepare();
+        break;
+      case 'stripe-checkout-start':
+        if (input.consent !== 'checkout-vendors-once-v1')
+          throw new AppError('validation');
+        result = await checkout.stripeStart(input.consent);
+        break;
+      case 'stripe-checkout-advance':
+        result = await checkout.stripeAdvance(id(input.groupId));
+        break;
+      case 'stripe-checkout-cancel':
+        result = await checkout.stripeCancel(id(input.groupId));
+        break;
+      case 'stripe-checkout-status':
+        result = await checkout.stripeStatus(id(input.orderId));
+        break;
       case 'product-availability': {
-        if (
-          storefront.kind !== 'VENDOR' ||
-          !Array.isArray(input.variantIds) ||
-          input.variantIds.length > 1000
-        )
+        if (!Array.isArray(input.variantIds) || input.variantIds.length > 1000)
           throw new AppError('validation');
         const ids = [...new Set(input.variantIds.map(id))];
+        if (storefront.kind === 'MARKET') {
+          const occurrenceId = id(input.occurrenceId);
+          const market = requestMarketShop(context, headers);
+          if (!(await market.occurrence(occurrenceId)))
+            throw new AppError('not-found');
+          const items = [];
+          for (let skip = 0; skip < ids.length; skip += 20) {
+            const catalog = await market.catalog(occurrenceId, {
+              variantIds: ids.slice(skip, skip + 20),
+              take: 20,
+              skip: 0,
+            });
+            items.push(...catalog.items);
+          }
+          result = marketCatalogAvailability(items, ids);
+          break;
+        }
         const facts = [];
         for (let skip = 0; skip < ids.length; skip += 20)
           facts.push(
@@ -125,6 +169,12 @@ export const POST: APIRoute = async (context) => {
         }
         break;
       }
+      case 'checkout-clear-test-preorder-fee':
+        result = await checkout.clearTestPreorderFee();
+        break;
+      case 'checkout-test-preorder-fee':
+        result = await checkout.freezeTestPreorderFee();
+        break;
       case 'checkout-status':
         result = await checkout.status(
           input.orderId ? id(input.orderId) : undefined,
@@ -240,7 +290,7 @@ export const POST: APIRoute = async (context) => {
                   id(input.occurrenceId),
                 ),
         };
-        if (storefront.kind === 'VENDOR') rememberOccurrence();
+        rememberOccurrence();
         break;
       case 'select-occurrence':
         if (storefront.kind === 'VENDOR') {
@@ -264,6 +314,7 @@ export const POST: APIRoute = async (context) => {
             id(input.occurrenceId),
           ),
         };
+        rememberOccurrence();
         break;
       case 'apply-coupon':
       case 'remove-coupon': {

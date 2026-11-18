@@ -314,7 +314,7 @@ export function documentUrgencies(
         detail: expires
           ? `Expired ${longDate(expires)}. Upload a current version.`
           : 'Upload a current version.',
-        href: '/vendor/documents',
+        href: `/vendor/documents?document=${encodeURIComponent(doc.id)}`,
         due: expires ?? undefined,
       });
     else if (doc.expiration === 'Expiring Soon' && expires)
@@ -324,13 +324,13 @@ export function documentUrgencies(
         icon: 'receipt-text',
         title: `${doc.metadata.title} expiring soon`,
         detail: `Expires ${inDays(daysUntil(expires, now))} (${longDate(expires)}).`,
-        href: '/vendor/documents',
+        href: `/vendor/documents?document=${encodeURIComponent(doc.id)}`,
         due: expires,
       });
   }
   for (const request of data.requests) {
     if (!request.required || request.waived) continue;
-    const href = `/vendor/documents?view=requests&market=${request.market_id}`;
+    const href = `/vendor/documents?view=requests&market=${request.market_id}&requestId=${encodeURIComponent(request.id)}`;
     const due = request.due_on ? ` Due ${longDate(request.due_on)}.` : '';
     if (request.status === 'Rejected')
       items.push({
@@ -385,19 +385,24 @@ export function attendanceUrgencies(
     }));
 }
 
-/** Open booth invoices with a balance, matched to their market date when known. */
+/** Open booth invoices for dates that have not been cancelled. */
 export function boothFeeUrgencies(
   assignments: ReadonlyMap<string, VendorBoothAssignment> | undefined,
   dates: readonly UpcomingMarketDate[],
 ): UrgentItem[] {
   if (!assignments) return [];
   const items: UrgentItem[] = [];
-  for (const [occurrenceId, assignment] of assignments)
+  for (const [occurrenceId, assignment] of assignments) {
+    const date = dates.find((d) => String(d.occurrence.id) === occurrenceId);
+    if (
+      assignment.occurrenceStatus === 'cancelled' ||
+      date?.occurrence.status === 'cancelled'
+    )
+      continue;
     for (const invoice of assignment.invoices) {
       const balance = invoice.totalMinor - invoice.paidMinor;
       if (!['OPEN', 'PAST_DUE'].includes(invoice.status) || balance <= 0)
         continue;
-      const date = dates.find((d) => String(d.occurrence.id) === occurrenceId);
       items.push({
         id: `invoice:${invoice.id}`,
         tone: invoice.status === 'PAST_DUE' ? 'danger' : 'warning',
@@ -411,10 +416,11 @@ export function boothFeeUrgencies(
             ? ` for ${date.membership.market.name} (${marketDate(date.occurrence)})`
             : ` for booth ${assignment.space.label}`
         }.`,
-        href: date ? datePath(date) : '/vendor/markets#upcoming-dates',
+        href: `/vendor/booths?occurrence=${encodeURIComponent(occurrenceId)}&invoice=${invoice.id}`,
         due: assignment.startsAt,
       });
     }
+  }
   return items;
 }
 
@@ -443,7 +449,7 @@ export function linkUrgencies(
     icon: 'store' as const,
     title: 'Market link request',
     detail: `${request.marketName} asked to link your business.`,
-    href: '/vendor/markets',
+    href: `/vendor/markets?linkRequest=${request.id}#applications`,
   }));
 }
 

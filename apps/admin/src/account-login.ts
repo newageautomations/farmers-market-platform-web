@@ -3,6 +3,7 @@ import { isLegacyNotificationsPath } from '@market/admin-core';
 import { AppError } from '@market/api';
 import { createPlatformAccountApi } from '@market/api';
 import { createAdminSession, type SessionState } from '@market/auth';
+import { adminIdentityOrigin, browserUrl } from './remote-demo';
 function returnCookie(name: string, value: string, maxAge = 1800) {
   document.cookie = `${name}=${encodeURIComponent(value)}; Path=/auth/account; SameSite=Lax; Max-Age=${maxAge}${window.location.protocol === 'https:' ? '; Secure' : ''}`;
 }
@@ -85,9 +86,10 @@ export function platformAccountLogin(
     expectedPrincipal ??
     new URL(window.location.href).searchParams.get('principal');
   if (principal) url.searchParams.set('principal', principal);
-  url.searchParams.set('origin', window.location.origin);
+  // The backend validates this against its configured admin origin.
+  url.searchParams.set('origin', adminIdentityOrigin());
   url.searchParams.set('correlation', correlation);
-  window.location.assign(url.toString());
+  window.location.assign(browserUrl(url.toString()));
 }
 export async function completePlatformAccountLogin(endpoint: string) {
   const current = new URL(window.location.href);

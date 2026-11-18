@@ -1,0 +1,119 @@
+.preparation-page {
+  display: grid;
+  gap: 1.5rem;
+}
+.preparation-selector {
+  max-width: 34rem;
+}
+.preparation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1.5rem;
+  max-width: 80rem;
+}
+.preparation-card {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+.preparation-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 0;
+  font: 600 1.125rem/1.4 var(--font-body);
+  letter-spacing: normal;
+  text-transform: none;
+}
+.preparation-card :is(p, dl, ul) {
+  margin: 0;
+}
+.preparation-card .ui-actions {
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+.preparation-card > .ui-status {
+  justify-self: start;
+}
+.preparation-vendors {
+  grid-column: 1 / -1;
+  order: 3;
+}
+.preparation-checklist {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+}
+.preparation-facts {
+  display: grid;
+  gap: 0.25rem;
+}
+.preparation-page .preparation-facts > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 0.625rem;
+}
+.preparation-page .preparation-facts dd {
+  margin: 0;
+  align-self: center;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.preparation-tasks {
+  list-style: none;
+  padding: 0;
+  display: grid;
+}
+.preparation-tasks li {
+  display: grid;
+  gap: 0.75rem;
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--brand-border, #d5dfd8);
+}
+.preparation-tasks label {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+.preparation-templates {
+  display: grid;
+  gap: 1rem;
+  border-top: 1px solid var(--brand-border, #d5dfd8);
+  padding-top: 1rem;
+}
+.preparation-template {
+  display: grid;
+  gap: 0.75rem;
+}
+.preparation-templates > button {
+  justify-self: start;
+}
+.preparation-page fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: grid;
+  gap: 1rem;
+}
+.preparation-page form {
+  display: grid;
+  gap: 0.75rem;
+}
+@media (max-width: 1000px) {
+  .preparation-grid {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 46rem;
+  }
+  .preparation-checklist {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+@media (max-width: 600px) {
+  .preparation-page .preparation-facts > div {
+    flex-wrap: wrap;
+  }
+}

@@ -1,15 +1,26 @@
 ---
-import EmptyState from '../../components/ui/EmptyState.astro';
-import { buttonClassName, inputClassName } from '@market/ui/presentation';
-import Button from '../../components/ui/Button.astro';
+import { buttonClassName, statusBadgeClassName } from '@market/ui/presentation';
+import type { CustomerFollow } from '@market/api';
 import CustomerLayout from '../../layouts/CustomerLayout.astro';
-import CustomerFollows from '../../components/CustomerFollows.astro';
-import CustomerEvents from '../../components/CustomerEvents.astro';
+import EmptyState from '../../components/ui/EmptyState.astro';
+import FarmstandIcon from '../../components/ui/FarmstandIcon.astro';
+import WorkspacePagination from '../../components/ui/WorkspacePagination.astro';
+import WorkspaceSearch from '../../components/ui/WorkspaceSearch.astro';
+import WorkspaceSummary from '../../components/ui/WorkspaceSummary.astro';
+import WorkspaceTable from '../../components/ui/WorkspaceTable.astro';
 import {
   customerApi,
   customerSkip,
   customerAuthenticationError,
+  eventDate,
 } from '../../lib/customer-dashboard';
+import {
+  eventTimeRange,
+  plural,
+  relativeDays,
+  longEventDate,
+  shortEventDate,
+} from '../../lib/customer-presentation';
 import { temporaryUnavailableResponse } from '@market/config';
 const section = Astro.params.section;
 if (section !== 'markets' && section !== 'vendors')
@@ -17,6 +28,7 @@ if (section !== 'markets' && section !== 'vendors')
 const market = section === 'markets',
   kind = market ? 'MARKET' : 'VENDOR',
   path = `/account/${section}`;
+const PAGE = 12;
 const skip = customerSkip(Astro.url.searchParams.get('skip')),
   eventSkip = customerSkip(Astro.url.searchParams.get('eventSkip'));
 const search = (Astro.url.searchParams.get('search') ?? '').slice(0, 100),
@@ -34,173 +46,725 @@ try {
     ? Astro.redirect(api.login)
     : temporaryUnavailableResponse();
 }
-const pageUrl = (key: string, value: number) => {
+const pageUrl = (
+  key: string,
+  value: number,
+  extra: Record<string, string> = {},
+) => {
   const p = new URLSearchParams(Astro.url.search);
-  p.delete('followSaved');
-  p.delete('followError');
-  p.set(key, String(value));
-  return '?' + p.toString();
+  for (const name of ['followSaved', 'followError', 'date', 'discover'])
+    p.delete(name);
+  if (value > 0) p.set(key, String(value));
+  else p.delete(key);
+  for (const [name, v] of Object.entries(extra)) p.set(name, v);
+  const query = p.toString();
+  return query ? '?' + query : path;
 };
 const items = market ? dashboard.markets : dashboard.vendors;
+const total = market ? dashboard.marketCount : dashboard.vendorCount;
+const events = dashboard.events;
+const eventKey = (event: { id: string | number }) => String(event.id);
+const requested = Astro.url.searchParams.get('date');
+const selected =
+  events.map(eventKey).find((id) => id === requested) ??
+  (events[0] ? eventKey(events[0]) : undefined);
+const returnTo = path + Astro.url.search;
+type Discovery = (typeof subjects.items)[number];
+const subjectKey = (item: { id: string | number }) => String(item.id);
+const requestedSubject = Astro.url.searchParams.get('discover');
+const discoverSelected =
+  subjects.items.map(subjectKey).find((id) => id === requestedSubject) ??
+  (subjects.items[0] ? subjectKey(subjects.items[0]) : undefined);
+/** This page with one discovery row selected (also the follow return path). */
+const discoverUrl = (item: Discovery) => {
+  const p = new URLSearchParams(Astro.url.search);
+  for (const name of ['followSaved', 'followError']) p.delete(name);
+  p.set('discover', subjectKey(item));
+  return `${path}?${p.toString()}`;
+};
+/** City and region: the market's own, or a vendor's next market's. */
+const place = (item: Discovery) =>
+  [item.city, item.region].filter(Boolean).join(', ');
+const withVendors = events.filter((event) => event.vendors.length > 0).length;
+const marketsVisited = new Set(events.map((event) => event.marketId)).size;
+const noun = market ? 'market' : 'vendor';
 ---
 
 <CustomerLayout
   title={market ? 'Followed Markets' : 'Favorite Vendors'}
   path={path}
->
-  <p class="customer-muted">
-    {market
+  icon={market ? 'store' : 'heart'}
+  description={
+    market
       ? 'Keep up with the markets you love and their next scheduled dates.'
-      : 'Keep up with your favorite vendors and where they are confirmed to sell next.'}
-  </p>
-  {items.length ? (
-    <CustomerFollows
-      items={items}
-      kind={kind}
-      returnTo={path + Astro.url.search}
-    />
-  ) : (
-    <div class="empty-state">
-      <h2 class="ui-section-title-consumer">
-        {market ? 'No followed markets' : 'No favorite vendors'}
-      </h2>
-      <p>
-        {market
-          ? 'Follow your favorite markets to see their upcoming events here.'
-          : "Follow vendors to keep up with where they'll be selling next."}
-      </p>
+      : 'Keep up with your favorite vendors and where they are confirmed to sell next.'
+  }
+>
+  <a
+    slot="actions"
+    class={buttonClassName({
+      variant: 'secondary',
+      className: 'farmstand-button',
+    })}
+    href="#discover"
+  >
+    <FarmstandIcon name="search" />
+    {market ? 'Find markets' : 'Find vendors'}
+  </a>
+  <WorkspaceSummary
+    items={[
+      {
+        label: market ? 'Followed markets' : 'Favorite vendors',
+        value: total,
+        hint: total
+          ? `You follow ${plural(total, noun)}`
+          : `Follow a ${noun} to start`,
+        icon: market ? 'store' : 'heart',
+      },
+      {
+        label: market ? 'Upcoming dates' : 'Confirmed appearances',
+        value: events.length,
+        hint: market
+          ? `Scheduled dates on this page`
+          : `Confirmed dates on this page`,
+        icon: 'calendar-days',
+        tone: events.length ? 'success' : undefined,
+      },
+      market
+        ? {
+            label: 'Favorites attending',
+            value: withVendors,
+            hint: `${plural(withVendors, 'date')} with a favorite vendor`,
+            icon: 'heart',
+          }
+        : {
+            label: 'Markets to visit',
+            value: marketsVisited,
+            hint: `Markets where your vendors will sell`,
+            icon: 'map-pin',
+          },
+    ]}
+  />
+  <div
+    class="markets-columns market-applications-columns"
+    data-select-root
+    data-select-param="date"
+  >
+    <p class="sr-only" aria-live="polite" data-select-live></p>
+    <div class="market-applications-main">
+      <section
+        class="card ui-card ui-card-contained ui-card-flush farmstand-panel markets-list market-applications-list"
+        aria-labelledby="events-title"
+      >
+        <h2 id="events-title">
+          {market ? 'Upcoming market dates' : 'Upcoming vendor appearances'}
+        </h2>
+        {events.length ? (
+          <>
+            <WorkspaceTable
+              label={
+                market ? 'Upcoming market dates' : 'Upcoming vendor appearances'
+              }
+              wide
+              class="customer-events-table"
+              headings={[
+                'Market',
+                'Date & time',
+                'Location',
+                market ? 'Favorite vendors' : 'Your vendors',
+              ]}
+            >
+              {events.map((event) => (
+                <tr
+                  tabindex="0"
+                  data-select-row={eventKey(event)}
+                  data-event-id={eventKey(event)}
+                  aria-selected={
+                    eventKey(event) === selected ? 'true' : 'false'
+                  }
+                  class={
+                    eventKey(event) === selected
+                      ? 'market-application-selected'
+                      : undefined
+                  }
+                >
+                  <th scope="row">
+                    <div class="markets-identity">
+                      <span class="markets-identity-icon">
+                        <FarmstandIcon name="store" />
+                      </span>
+                      <span>
+                        <a
+                          class="market-application-name"
+                          href={pageUrl('eventSkip', eventSkip, {
+                            date: eventKey(event),
+                          })}
+                          data-select-link
+                        >
+                          {event.marketName}
+                        </a>
+                        <small>
+                          {relativeDays(
+                            event.startsAt,
+                            Date.now(),
+                            event.timezone,
+                          )}
+                        </small>
+                      </span>
+                    </div>
+                  </th>
+                  <td>
+                    <div class="markets-date">
+                      <span>
+                        <FarmstandIcon name="calendar-days" />
+                        {shortEventDate(event)}
+                      </span>
+                      <small>{eventTimeRange(event, false)}</small>
+                    </div>
+                  </td>
+                  <td class="customer-wrap-cell">
+                    <span class="market-dates-location">
+                      <FarmstandIcon name="map-pin" />
+                      {event.venue || 'Location to be announced'}
+                    </span>
+                  </td>
+                  <td class="market-application-status-cell customer-wrap-cell">
+                    <div class="market-application-status-content">
+                      {event.vendors.length ? (
+                        <span>
+                          {event.vendors
+                            .map((vendor) => vendor.name)
+                            .join(', ')}
+                        </span>
+                      ) : (
+                        <span class="markets-muted">None confirmed</span>
+                      )}
+                      <FarmstandIcon name="chevron-right" />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </WorkspaceTable>
+            {(eventSkip > 0 || dashboard.hasMoreEvents) && (
+              <WorkspacePagination
+                label="Event pages"
+                summary={`Showing ${eventSkip + 1} to ${eventSkip + events.length}.`}
+                previous={
+                  eventSkip > 0
+                    ? pageUrl('eventSkip', Math.max(0, eventSkip - PAGE))
+                    : undefined
+                }
+                next={
+                  dashboard.hasMoreEvents
+                    ? pageUrl('eventSkip', eventSkip + PAGE)
+                    : undefined
+                }
+              />
+            )}
+          </>
+        ) : (
+          <EmptyState title="No upcoming dates">
+            <p>
+              {market
+                ? 'Your followed markets have no upcoming public dates. New scheduled dates will appear here.'
+                : 'No confirmed upcoming appearances yet. Vendors will appear when their attendance is confirmed.'}
+            </p>
+          </EmptyState>
+        )}
+        <p class="markets-list-note">
+          {market
+            ? 'Dates are shown for markets you follow and markets your favorite vendors attend.'
+            : 'Appearances are shown once a vendor confirms attendance.'}
+        </p>
+      </section>
     </div>
-  )}
-  <nav class="customer-pagination ui-pagination" aria-label="Follow pages">
-    <p>
-      {market ? dashboard.marketCount : dashboard.vendorCount} follows. Showing{' '}
-      {items.length ? skip + 1 : 0} to {items.length ? skip + items.length : 0}.
-    </p>
-    {skip > 0 && (
-      <a
-        class={buttonClassName({
-          variant: 'secondary',
-          className: 'button secondary',
-        })}
-        href={pageUrl('skip', Math.max(0, skip - 12))}
-      >
-        Previous follows
-      </a>
-    )}
-    {dashboard.hasMore && (
-      <a
-        class={buttonClassName({
-          variant: 'secondary',
-          className: 'button secondary',
-        })}
-        href={pageUrl('skip', skip + 12)}
-      >
-        Next follows
-      </a>
-    )}
-  </nav>
-  <section class="customer-section">
-    <h2 class="ui-section-title-consumer">
-      {market ? 'Upcoming market events' : 'Upcoming vendor appearances'}
-    </h2>
-    <CustomerEvents
-      level={3}
-      events={dashboard.events}
-      empty={
-        market
-          ? 'Your followed markets have no upcoming public dates. New scheduled dates will appear here.'
-          : 'No confirmed upcoming appearances yet. Vendors will appear when their attendance is confirmed.'
-      }
-    />
-    <nav class="customer-pagination ui-pagination" aria-label="Event pages">
-      <p>{dashboard.events.length} events on this page.</p>
-      {eventSkip > 0 && (
-        <a
-          class={buttonClassName({
-            variant: 'secondary',
-            className: 'button secondary',
-          })}
-          href={pageUrl('eventSkip', Math.max(0, eventSkip - 12))}
-        >
-          Previous events
-        </a>
-      )}
-      {dashboard.hasMoreEvents && (
-        <a
-          class={buttonClassName({
-            variant: 'secondary',
-            className: 'button secondary',
-          })}
-          href={pageUrl('eventSkip', eventSkip + 12)}
-        >
-          Next events
-        </a>
-      )}
-    </nav>
-  </section>
-  <section class="customer-section">
-    <h2 class="ui-section-title-consumer">
-      {market ? 'Find markets to follow' : 'Find vendors to follow'}
-    </h2>
-    <form
-      method="get"
-      class="customer-search ui-control-row ui-control-row-lookup"
+    <section
+      class="card ui-card ui-card-contained ui-card-flush farmstand-panel markets-next market-application-details"
+      aria-label="Date details"
     >
-      <div class="field">
-        <label for="customer-discovery-search">
-          {market ? 'Search markets' : 'Search vendors'}
-        </label>
-        <input
-          id="customer-discovery-search"
-          class={inputClassName('search')}
-          type="search"
-          name="search"
-          value={search}
-          maxlength="100"
-        />
-      </div>
-      <div class="ui-field-action">
-        <Button type="submit" variant="primary">
-          Search
-        </Button>
-      </div>
-    </form>
-    {subjects.items.length ? (
-      <CustomerFollows
-        level={3}
-        items={subjects.items}
-        kind={kind}
-        returnTo={path + Astro.url.search}
-      />
+      <h2>
+        <FarmstandIcon name="calendar-days" />
+        Date details
+      </h2>
+      {events.length ? (
+        events.map((event) => (
+          <div
+            data-select-panel={eventKey(event)}
+            data-select-label={`${event.marketName} on ${shortEventDate(event)}`}
+            hidden={eventKey(event) !== selected}
+          >
+            <div class="markets-next-art" aria-hidden="true">
+              <FarmstandIcon name="store" />
+            </div>
+            <div class="markets-next-content">
+              <h3>{event.marketName}</h3>
+              <p class="markets-venue">
+                <FarmstandIcon name="map-pin" />
+                {event.venue || 'Location to be announced'}
+              </p>
+              <dl class="market-application-facts">
+                <div>
+                  <dt>Date</dt>
+                  <dd>{eventDate(event.startsAt, event.timezone)}</dd>
+                </div>
+                <div>
+                  <dt>Time</dt>
+                  <dd>{eventTimeRange(event)}</dd>
+                </div>
+                <div>
+                  <dt>When</dt>
+                  <dd>
+                    {relativeDays(event.startsAt, Date.now(), event.timezone)}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Market</dt>
+                  <dd>
+                    {event.followedMarket ? (
+                      <span class={statusBadgeClassName('success')}>
+                        Following
+                      </span>
+                    ) : (
+                      'Not followed'
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Vendors</dt>
+                  <dd>
+                    {event.vendors.length ? (
+                      <ul class="customer-vendor-chips">
+                        {event.vendors.map((vendor) => (
+                          <li>
+                            {vendor.url ? (
+                              <a
+                                class={statusBadgeClassName('neutral')}
+                                href={vendor.url}
+                              >
+                                {vendor.name}
+                              </a>
+                            ) : (
+                              <span class={statusBadgeClassName('neutral')}>
+                                {vendor.name}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      'No favorites confirmed'
+                    )}
+                  </dd>
+                </div>
+              </dl>
+              {event.url && (
+                <a
+                  class={buttonClassName({ className: 'farmstand-button' })}
+                  href={event.url}
+                >
+                  <FarmstandIcon name="shopping-cart" />
+                  Shop this date
+                </a>
+              )}
+              {event.marketUrl && (
+                <a
+                  class={buttonClassName({
+                    variant: 'secondary',
+                    className: 'farmstand-button',
+                  })}
+                  href={event.marketUrl}
+                >
+                  View market
+                  <FarmstandIcon name="chevron-right" />
+                </a>
+              )}
+            </div>
+          </div>
+        ))
+      ) : (
+        <EmptyState title="No date selected">
+          <p>Upcoming dates will appear here once they are scheduled.</p>
+        </EmptyState>
+      )}
+    </section>
+  </div>
+  <section
+    class="card ui-card ui-card-contained ui-card-flush farmstand-panel markets-list market-applications-list"
+    aria-labelledby="follows-title"
+  >
+    <h2 id="follows-title">
+      {market ? 'Markets you follow' : 'Vendors you follow'}
+    </h2>
+    {items.length ? (
+      <>
+        <WorkspaceTable
+          label={market ? 'Markets you follow' : 'Vendors you follow'}
+          class="customer-follow-table"
+          headings={[market ? 'Market' : 'Vendor', 'Storefront', 'Actions']}
+        >
+          {items.map((item: CustomerFollow) => (
+            <tr>
+              <th scope="row">
+                <div class="markets-identity">
+                  <span class="markets-identity-icon">
+                    <FarmstandIcon name={market ? 'store' : 'heart'} />
+                  </span>
+                  <span class="market-application-name">{item.name}</span>
+                </div>
+              </th>
+              <td>
+                {item.url ? (
+                  <span class={statusBadgeClassName('success')}>Open</span>
+                ) : (
+                  <span class={statusBadgeClassName('neutral')}>
+                    Unavailable
+                  </span>
+                )}
+              </td>
+              <td>
+                <div class="customer-follow-actions">
+                  {item.url && (
+                    <a
+                      class={buttonClassName({
+                        variant: 'secondary',
+                        size: 'compact',
+                        className: 'farmstand-button',
+                      })}
+                      href={item.url}
+                    >
+                      Visit
+                    </a>
+                  )}
+                  <form
+                    method="post"
+                    action="/api/customer-follow"
+                    data-follow-form
+                  >
+                    <input type="hidden" name="kind" value={kind} />
+                    <input type="hidden" name="id" value={item.id} />
+                    <input type="hidden" name="following" value="false" />
+                    <input type="hidden" name="returnTo" value={returnTo} />
+                    <button
+                      type="submit"
+                      class={buttonClassName({
+                        variant: 'destructive-outline',
+                        size: 'compact',
+                        className: 'farmstand-button',
+                      })}
+                      aria-label={`Unfollow ${item.name}`}
+                    >
+                      Unfollow
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </WorkspaceTable>
+        {(skip > 0 || dashboard.hasMore) && (
+          <WorkspacePagination
+            label="Follow pages"
+            summary={`${plural(total, 'follow')}. Showing ${skip + 1} to ${skip + items.length}.`}
+            previous={
+              skip > 0 ? pageUrl('skip', Math.max(0, skip - PAGE)) : undefined
+            }
+            next={dashboard.hasMore ? pageUrl('skip', skip + PAGE) : undefined}
+          />
+        )}
+      </>
     ) : (
-      <EmptyState title="No matching storefronts" level={3}>
-        <p>No public storefronts match your search.</p>
+      <EmptyState
+        title={market ? 'No followed markets' : 'No favorite vendors'}
+      >
+        <p>
+          {market
+            ? 'Follow your favorite markets to see their upcoming events here.'
+            : "Follow vendors to keep up with where they'll be selling next."}
+        </p>
       </EmptyState>
     )}
-    <nav class="customer-pagination ui-pagination" aria-label="Discover pages">
-      <p>{subjects.items.length} results on this page.</p>
-      {browseSkip > 0 && (
-        <a
-          class={buttonClassName({
-            variant: 'secondary',
-            className: 'button secondary',
-          })}
-          href={pageUrl('browseSkip', Math.max(0, browseSkip - 12))}
-        >
-          Previous results
-        </a>
-      )}
-      {subjects.hasMore && (
-        <a
-          class={buttonClassName({
-            variant: 'secondary',
-            className: 'button secondary',
-          })}
-          href={pageUrl('browseSkip', browseSkip + 12)}
-        >
-          Next results
-        </a>
-      )}
-    </nav>
   </section>
+  <div
+    id="discover"
+    class="markets-columns market-applications-columns customer-discovery"
+    data-select-root
+    data-select-param="discover"
+  >
+    <p class="sr-only" aria-live="polite" data-select-live></p>
+    <div class="market-applications-main">
+      <section
+        class="card ui-card ui-card-contained ui-card-flush farmstand-panel markets-list market-applications-list market-discovery"
+        aria-labelledby="discover-title"
+      >
+        <div class="market-applications-title">
+          <h2 id="discover-title">
+            <FarmstandIcon name="search" />
+            {market ? 'Find markets to follow' : 'Find vendors to follow'}
+          </h2>
+          <p>Search public storefronts on the platform.</p>
+        </div>
+        <form
+          method="get"
+          action={`${path}#discover`}
+          class="customer-search-form"
+        >
+          <WorkspaceSearch
+            id="customer-discovery-search"
+            name="search"
+            value={search}
+            label={market ? 'Search markets' : 'Search vendors'}
+            placeholder={market ? 'Search markets...' : 'Search vendors...'}
+          />
+          <button
+            type="submit"
+            class={buttonClassName({ className: 'farmstand-button' })}
+          >
+            Search
+          </button>
+        </form>
+        {subjects.items.length ? (
+          <>
+            <WorkspaceTable
+              label={market ? 'Markets to follow' : 'Vendors to follow'}
+              wide
+              class="customer-discovery-table"
+              headings={[
+                market ? 'Market' : 'Vendor',
+                market ? 'Location' : 'Next market',
+                'Next date',
+                'Following',
+              ]}
+            >
+              {subjects.items.map((item) => (
+                <tr
+                  tabindex="0"
+                  data-select-row={subjectKey(item)}
+                  aria-selected={
+                    subjectKey(item) === discoverSelected ? 'true' : 'false'
+                  }
+                  class={
+                    subjectKey(item) === discoverSelected
+                      ? 'market-application-selected'
+                      : undefined
+                  }
+                >
+                  <th scope="row">
+                    <div class="markets-identity">
+                      <span class="markets-identity-icon">
+                        <FarmstandIcon name={market ? 'store' : 'user-round'} />
+                      </span>
+                      <a
+                        class="market-application-name"
+                        href={discoverUrl(item) + '#discover'}
+                        data-select-link
+                      >
+                        {item.name}
+                      </a>
+                    </div>
+                  </th>
+                  <td class="customer-wrap-cell">
+                    <span class="market-dates-location">
+                      <FarmstandIcon name="map-pin" />
+                      {market
+                        ? place(item) || 'Location not listed'
+                        : (item.nextDate?.marketName ?? 'No upcoming market')}
+                    </span>
+                  </td>
+                  <td>
+                    {item.nextDate ? (
+                      <div class="markets-date">
+                        <span>
+                          <FarmstandIcon name="calendar-days" />
+                          {shortEventDate(item.nextDate)}
+                        </span>
+                        <small>{eventTimeRange(item.nextDate, false)}</small>
+                      </div>
+                    ) : (
+                      <span class="markets-muted">None scheduled</span>
+                    )}
+                  </td>
+                  <td class="market-application-status-cell">
+                    <div class="market-application-status-content">
+                      {item.following ? (
+                        <span class={statusBadgeClassName('success')}>
+                          Following
+                        </span>
+                      ) : (
+                        <span class="markets-muted">Not following</span>
+                      )}
+                      <FarmstandIcon name="chevron-right" />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </WorkspaceTable>
+            {(browseSkip > 0 || subjects.hasMore) && (
+              <WorkspacePagination
+                label="Discover pages"
+                summary={`${plural(subjects.items.length, 'result')} on this page.`}
+                previous={
+                  browseSkip > 0
+                    ? pageUrl('browseSkip', Math.max(0, browseSkip - PAGE)) +
+                      '#discover'
+                    : undefined
+                }
+                next={
+                  subjects.hasMore
+                    ? pageUrl('browseSkip', browseSkip + PAGE) + '#discover'
+                    : undefined
+                }
+              />
+            )}
+          </>
+        ) : (
+          <EmptyState title="No matching storefronts">
+            <p>No public storefronts match your search.</p>
+          </EmptyState>
+        )}
+      </section>
+    </div>
+    <section
+      class="card ui-card ui-card-contained ui-card-flush farmstand-panel markets-next market-application-details"
+      aria-label={market ? 'Market details' : 'Vendor details'}
+    >
+      <h2>
+        <FarmstandIcon name={market ? 'store' : 'user-round'} />
+        {market ? 'Market details' : 'Vendor details'}
+      </h2>
+      {subjects.items.length ? (
+        subjects.items.map((item) => (
+          <div
+            data-select-panel={subjectKey(item)}
+            data-select-label={item.name}
+            hidden={subjectKey(item) !== discoverSelected}
+          >
+            <div class="markets-next-art customer-subject-art">
+              <FarmstandIcon name={market ? 'store' : 'user-round'} />
+              {item.image && (
+                <img
+                  src={item.image}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  referrerpolicy="no-referrer"
+                />
+              )}
+            </div>
+            <div class="markets-next-content">
+              <h3>{item.name}</h3>
+              <p class="markets-venue">
+                <FarmstandIcon name="map-pin" />
+                {place(item) ||
+                  (market ? 'Location not listed' : 'No upcoming market')}
+              </p>
+              <dl class="market-application-facts">
+                {!market && (
+                  <div>
+                    <dt>Next market</dt>
+                    <dd>{item.nextDate?.marketName ?? 'None scheduled'}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>Next date</dt>
+                  <dd>
+                    {item.nextDate
+                      ? longEventDate(item.nextDate)
+                      : 'None scheduled'}
+                  </dd>
+                </div>
+                {item.nextDate && (
+                  <div>
+                    <dt>Time</dt>
+                    <dd>{eventTimeRange(item.nextDate)}</dd>
+                  </div>
+                )}
+                {(item.nextDate?.venue || item.venue) && (
+                  <div>
+                    <dt>Venue</dt>
+                    <dd>{item.nextDate?.venue || item.venue}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>Following</dt>
+                  <dd>
+                    {item.following ? (
+                      <span class={statusBadgeClassName('success')}>
+                        Following
+                      </span>
+                    ) : (
+                      'Not yet'
+                    )}
+                  </dd>
+                </div>
+              </dl>
+              <form
+                method="post"
+                action="/api/customer-follow"
+                data-follow-form
+              >
+                <input type="hidden" name="kind" value={kind} />
+                <input type="hidden" name="id" value={item.id} />
+                <input
+                  type="hidden"
+                  name="following"
+                  value={String(!item.following)}
+                />
+                <input
+                  type="hidden"
+                  name="returnTo"
+                  value={discoverUrl(item)}
+                />
+                <button
+                  type="submit"
+                  class={buttonClassName({
+                    variant: item.following ? 'destructive-outline' : 'primary',
+                    className: 'farmstand-button',
+                  })}
+                  aria-label={`${item.following ? 'Unfollow' : 'Follow'} ${item.name}`}
+                >
+                  <FarmstandIcon name="heart" />
+                  {item.following ? 'Unfollow' : 'Follow'}
+                </button>
+              </form>
+              {item.url ? (
+                <a
+                  class={buttonClassName({
+                    variant: 'secondary',
+                    className: 'farmstand-button',
+                  })}
+                  href={item.url}
+                >
+                  Visit storefront
+                  <FarmstandIcon name="arrow-up-right" />
+                </a>
+              ) : (
+                <span
+                  class={buttonClassName({
+                    variant: 'secondary',
+                    className: 'farmstand-button',
+                  })}
+                  aria-disabled="true"
+                >
+                  Storefront unavailable
+                </span>
+              )}
+            </div>
+          </div>
+        ))
+      ) : (
+        <EmptyState
+          title={market ? 'No market selected' : 'No vendor selected'}
+        >
+          <p>Search for a storefront to see its details here.</p>
+        </EmptyState>
+      )}
+    </section>
+  </div>
+  <script>
+    import { installRowSelection } from '../../lib/row-selection';
+    for (const root of document.querySelectorAll<HTMLElement>(
+      '[data-select-root]',
+    ))
+      installRowSelection(root);
+  </script>
 </CustomerLayout>

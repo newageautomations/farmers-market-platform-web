@@ -1,7 +1,10 @@
 import { useId, useRef, useState } from 'react';
 import { Button, Dialog, SelectField } from '@market/ui';
 import { cartMessage } from '@market/api';
+import type { MarketCart } from '@market/api';
 import { shopCall } from './shop-client';
+import { AnimatedCartButton } from './AnimatedCartButton';
+import { useCartFeedback } from '../lib/use-cart-feedback';
 export function FeaturedAdd({
   storefrontId,
   variantId,
@@ -9,6 +12,7 @@ export function FeaturedAdd({
   className,
   variantOptions = [],
   productName = 'this product',
+  market = false,
 }: {
   storefrontId: string;
   variantId?: string;
@@ -16,8 +20,10 @@ export function FeaturedAdd({
   className?: string;
   variantOptions?: Array<{ id: string; name: string }>;
   productName?: string;
+  market?: boolean;
 }) {
   const lock = useRef(false);
+  const { feedback: cartFeedback, showAdded } = useCartFeedback();
   const optionId = useId();
   const [choosing, setChoosing] = useState(false);
   const [option, setOption] = useState('');
@@ -33,17 +39,28 @@ export function FeaturedAdd({
     setPending(true);
     setMessage('');
     try {
-      await shopCall(storefrontId, 'add', {
-        variantId: selectedId,
-        quantity: 1,
-        occurrenceId,
-      });
+      const result = await shopCall<{ cart: MarketCart | null }>(
+        storefrontId,
+        'add',
+        {
+          variantId: selectedId,
+          quantity: 1,
+          occurrenceId,
+        },
+      );
       setMessage('Added to your cart.');
+      if (market) showAdded();
       setChoosing(false);
       window.dispatchEvent(
-        new CustomEvent('vendor-cart-updated', {
-          detail: { storefrontId },
-        }),
+        new CustomEvent(
+          market ? 'market-cart-updated' : 'vendor-cart-updated',
+          {
+            detail: {
+              storefrontId,
+              ...(market ? { quantity: result.cart?.totalQuantity ?? 0 } : {}),
+            },
+          },
+        ),
       );
     } catch (error) {
       setMessage(cartMessage(error as { code?: string; kind?: string }));
@@ -53,7 +70,7 @@ export function FeaturedAdd({
     }
   }
   const feedback = (
-    <p role="status">
+    <p role="status" hidden={market && message === 'Added to your cart.'}>
       {message}
       {message === 'Added to your cart.' && (
         <>
@@ -65,7 +82,9 @@ export function FeaturedAdd({
   );
   return (
     <div className="featured-purchase">
-      <Button
+      <AnimatedCartButton
+        enabled={market && !!occurrenceId}
+        feedback={cartFeedback}
         className={className}
         loading={pending}
         onClick={() => {
@@ -79,7 +98,7 @@ export function FeaturedAdd({
         }}
       >
         {occurrenceId ? 'Add to cart' : 'Choose market'}
-      </Button>
+      </AnimatedCartButton>
       {!choosing && feedback}
       {variantOptions.length > 0 && !variantId && (
         <Dialog

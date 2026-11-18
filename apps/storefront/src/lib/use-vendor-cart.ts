@@ -30,9 +30,7 @@ export function useVendorCart({
   const shopHref = preorder.selected
     ? `/products?occurrence=${encodeURIComponent(preorder.selected.id)}`
     : '/products';
-  const issue = uncertain
-    ? 'The latest cart could not be confirmed. Refresh the cart before continuing.'
-    : cartCheckoutIssue(cart, preorder);
+  const issue = cartCheckoutIssue(cart, preorder);
   function releaseRequest() {
     lock.current = false;
     setPending(false);
@@ -44,6 +42,7 @@ export function useVendorCart({
   async function read() {
     const result = await shopCall<Snapshot>(storefrontId, 'cart', {
       includePreorder: true,
+      recoverCheckout: true,
     });
     setSnapshot(result);
     setUncertain(false);
@@ -62,6 +61,7 @@ export function useVendorCart({
     }
   }
   useEffect(() => {
+    void refresh();
     const onFocus = () => {
       void refresh();
     };
@@ -84,6 +84,13 @@ export function useVendorCart({
     };
     // Refresh uses only this mounted storefront's session.
   }, [storefrontId]);
+  useEffect(() => {
+    if (!uncertain && (!cart || cart.state === 'AddingItems')) return;
+    const timer = window.setInterval(() => {
+      void refresh();
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [uncertain, cart?.state, storefrontId]);
   async function change(
     action: 'adjust' | 'remove',
     lineId: string,

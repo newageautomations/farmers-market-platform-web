@@ -10,6 +10,7 @@ import { AnimatedDisclosure, MarketDialog } from '../presentation';
 import { go, RouteLink } from '../../vendor/common';
 import { LayoutEditor, LayoutPreview } from './Layouts';
 import type { LayoutMedia } from './LayoutImagePicker';
+import { CompactLabel } from '../mobile';
 
 type Run = (command: OperationsCommand) => Promise<unknown>;
 export function OccurrenceLayoutActions({
@@ -49,7 +50,7 @@ export function OccurrenceLayoutActions({
         ?.filter(
           (v) =>
             v.layoutId === layout.id &&
-            v.status === 'PUBLISHED' &&
+            (v.status === 'PUBLISHED' || v.status === 'DRAFT') &&
             !v.occurrenceId,
         )
         .sort((a, b) => b.versionNumber - a.versionNumber)[0];
@@ -112,7 +113,7 @@ export function OccurrenceLayoutActions({
             }
           >
             <UtilityIcon name="edit" />
-            Edit layout
+            <CompactLabel>Edit layout</CompactLabel>
           </Button>
         )}
         {canEdit && version && !compact && (
@@ -175,8 +176,8 @@ export function OccurrenceLayoutActions({
             <div className="occurrence-layout-options">
               {!layouts.length && (
                 <p>
-                  No published layouts are available. Publish a layout to use it
-                  for this occurrence.
+                  No saved layouts are available. Save a layout to use it for
+                  this occurrence.
                 </p>
               )}
               {layouts.map(({ layout, version: preview }) => (

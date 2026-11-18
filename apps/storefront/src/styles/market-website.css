@@ -1,0 +1,309 @@
+/* Market Harvest website: extends the Harvest homepage presentation
+   (harvest-dates, harvest-vendors, harvest-category-*) with the market pages.
+   Theme tokens only; no new primitives. */
+
+.market-section-intro {
+  max-width: 60ch;
+  margin: -0.5rem 0 1.75rem;
+  color: var(--brand-muted);
+  line-height: 1.7;
+}
+
+/* Pages */
+.market-text-links > .harvest-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--brand-background);
+}
+
+.market-page {
+  padding-block: clamp(2rem, 5vw, 4rem);
+  min-width: 0;
+}
+.market-page-intro {
+  max-width: 48rem;
+  margin-bottom: clamp(1.5rem, 4vw, 2.75rem);
+}
+.market-page-intro h1 {
+  font: 400 clamp(2.4rem, 5vw, 4.2rem) / 1.05 var(--font-heading);
+  letter-spacing: -0.04em;
+  color: var(--brand-primary);
+  margin: 0 0 1rem;
+}
+.market-page-intro p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--brand-muted);
+  white-space: pre-line;
+  margin: 0;
+}
+
+/* Dates */
+/* The links row stays at the bottom of every card in a row of dates. */
+.harvest-dates > .harvest-date {
+  align-items: stretch;
+}
+.harvest-date > .harvest-date-stamp {
+  align-self: start;
+}
+.market-date-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.market-date-list .harvest-date p {
+  margin: 0 0 0.25rem;
+}
+.market-date-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+/* Vendors */
+.market-vendor-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.market-vendor-card h3 {
+  margin: 0;
+}
+.market-vendor-image {
+  width: 3.8rem;
+  height: 3.8rem;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 1rem;
+  background: var(--brand-surface);
+}
+.market-vendor-meta {
+  font-size: 0.85rem;
+  color: var(--brand-muted);
+  margin: 0;
+}
+.market-vendor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+.market-date-selector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.market-date-selector .field {
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+.market-date-selector .farmstand-select-wrap,
+.market-date-selector .farmstand-select.ui-select.ui-select {
+  max-width: 100%;
+}
+.market-date-selector .farmstand-select.ui-select.ui-select {
+  min-height: 2.75rem;
+  height: 2.75rem;
+  font-size: 1rem;
+  padding-block: 0;
+  line-height: 1.25;
+}
+.market-vendors-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--brand-primary) 16%, transparent);
+}
+.market-vendors-summary h2 {
+  font: 400 1.5rem / 1.3 var(--font-heading);
+  margin: 0;
+}
+
+/* Categories and banner on the homepage */
+.market-categories {
+  margin-block: clamp(2rem, 5vw, 4rem);
+}
+.market-cta-banner p {
+  margin: 1rem 0 0;
+  max-width: 50ch;
+  color: var(--brand-muted);
+  line-height: 1.7;
+}
+
+/* Applications */
+.market-application-list {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.market-application {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  min-width: 0;
+}
+.market-application > div {
+  min-width: 0;
+  flex: 1 1 20rem;
+}
+.market-application h2 {
+  font: 400 clamp(1.5rem, 3vw, 2rem) / 1.2 var(--font-heading);
+  margin: 0.25rem 0 0.5rem;
+  overflow-wrap: anywhere;
+}
+.market-application-status {
+  display: inline-block;
+  margin: 0;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--brand-primary);
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--brand-surface)
+  );
+}
+.market-application[data-state='closed'] .market-application-status {
+  color: var(--brand-muted);
+  background: color-mix(in srgb, var(--brand-muted) 10%, var(--brand-surface));
+}
+.market-application-meta {
+  margin: 0;
+  color: var(--brand-muted);
+}
+
+@media (max-width: 700px) {
+  .market-date-selector {
+    display: grid;
+  }
+  .market-date-selector .farmstand-select-wrap {
+    display: flex;
+  }
+  .market-date-selector .farmstand-select.ui-select.ui-select {
+    width: 100%;
+  }
+  .market-application > .button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Vendor attribution extends the shared Harvest product summary. */
+.market-product-vendor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+  color: var(--brand-primary);
+  text-decoration: none;
+}
+.market-product-vendor .market-vendor-image,
+.market-product-vendor .harvest-vendor-symbol {
+  width: 3rem;
+  height: 3rem;
+  margin: 0;
+  flex: 0 0 3rem;
+}
+.market-product-vendor:hover span:last-child {
+  text-decoration: underline;
+}
+
+/* Market card themes share the current palette and preserve card geometry. */
+.harvest-dates[data-card-theme='inverse'] > .harvest-date,
+.market-vendor-cards[data-card-theme='inverse'] > .market-vendor-card {
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+  border-color: var(--brand-primary);
+}
+.harvest-dates[data-card-theme='inverse']
+  :is(.harvest-date-stamp, .harvest-text-link, h3 a, p),
+.market-vendor-cards[data-card-theme='inverse']
+  :is(h3 a, .market-vendor-meta, .harvest-text-link) {
+  color: var(--brand-on-primary);
+}
+.market-vendor-cards[data-card-theme='inverse'] .harvest-vendor-symbol {
+  background: var(--brand-on-primary);
+  color: var(--brand-primary);
+}
+.harvest-dates[data-card-theme='soft'] > .harvest-date,
+.market-vendor-cards[data-card-theme='soft'] > .market-vendor-card {
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--brand-surface)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--brand-primary) 25%,
+    var(--brand-surface)
+  );
+}
+.market-vendor-card {
+  position: relative;
+}
+.market-vendor-card .market-vendor-storefront {
+  font: inherit;
+  color: inherit;
+  text-decoration: none;
+}
+.market-vendor-storefront::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--storefront-card-radius);
+}
+.market-vendor-storefront:focus-visible {
+  outline: none;
+}
+.market-vendor-storefront:focus-visible::after {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.market-vendor-actions {
+  position: relative;
+  z-index: 1;
+}
+
+/* Keep shared animated text links free of competing native underlines. */
+.market-text-links.harvest-home a:not(.button):is(:hover, :focus-visible),
+.market-text-links .market-product-vendor:hover span:last-child {
+  text-decoration: none;
+}
+.market-text-links
+  a:not(.button):not(:has(img, svg)):not(.product-card-link):not(
+    .market-vendor-storefront
+  ):not(:is(.em-shop-announcement, .em-shop-brand)) {
+  width: fit-content;
+  max-width: 100%;
+}
+.market-text-links .farmstand-text-link {
+  display: inline-block;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .market-vendor-cards > .market-vendor-card {
+    transition: transform 180ms ease;
+  }
+  .market-vendor-cards > .market-vendor-card:hover {
+    transform: translateY(-4px);
+  }
+}

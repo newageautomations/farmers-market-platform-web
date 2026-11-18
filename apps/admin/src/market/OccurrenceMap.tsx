@@ -7,6 +7,7 @@ import type { MarketService } from './service';
 import { go, ReadState, useRead } from './common';
 import { OccurrenceLayoutActions } from './phase14/OccurrenceLayoutActions';
 import { BoothAssignmentDialog, boothStatus } from './phase14/Assignments';
+import { CompactLabel } from './mobile';
 
 export function OccurrenceMap({
   service,
@@ -103,7 +104,7 @@ export function OccurrenceMap({
               }}
             >
               <FarmstandIcon name="store" />
-              Manage booths
+              <CompactLabel>Manage booths</CompactLabel>
             </FarmstandLink>
           </div>
         )

@@ -1,0 +1,133 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { safeAsset } from '@market/storefront-core';
+import {
+  defaultStorefrontAppearance,
+  marketText,
+} from '@market/theme/storefront';
+import Button from '../ui/Button.astro';
+import FarmstandIcon from '../ui/FarmstandIcon.astro';
+import Art from './Art.astro';
+import Scene from './Scene.astro';
+
+/**
+ * Hearth's homepage hero. It shows the same editable title, introduction and
+ * two actions as the Harvest market hero. `override` supplies the fixed
+ * Market Day copy, as it does for HarvestHero.
+ */
+interface Props {
+  context: StorefrontContext;
+  href: string;
+  secondaryHref?: string;
+  override?: {
+    title: string;
+    introduction: string;
+    primaryLabel: string;
+    secondaryLabel: string;
+  };
+}
+const { context, href, secondaryHref, override } = Astro.props;
+const appearance = context.appearance ?? defaultStorefrontAppearance;
+const home = appearance.homepage;
+const media = safeAsset(home.image);
+const introduction =
+  'Warm loaves, small-batch preserves and fresh-roasted coffee from the people who make them.';
+---
+
+<section
+  class:list={['hw-hero', 'hw-bleed', override && 'hw-hero-day']}
+  data-editor-section="hero"
+  aria-labelledby="home-title"
+>
+  <div class="hw-hero-inner">
+    <div class="hw-hero-copy">
+      {override ? (
+        <p class="hw-live-tag">
+          <span class="hw-live-dot" aria-hidden="true" />
+          Market day
+        </p>
+      ) : (
+        <Art name="wheat" class="hw-hero-ornament" />
+      )}
+      {override ? (
+        <>
+          <h1 id="home-title">{override.title}</h1>
+          <p class="hw-hero-intro">{override.introduction}</p>
+        </>
+      ) : (
+        <>
+          <h1 id="home-title" data-home-text="title">
+            {home.title || context.name}
+          </h1>
+          <p
+            class="hw-hero-intro"
+            data-home-text="introduction"
+            data-fallback={introduction}
+          >
+            {home.introduction || introduction}
+          </p>
+        </>
+      )}
+      <div class="actions hw-hero-actions">
+        <Button href={href} class="hw-button-arrow">
+          {override ? (
+            <>
+              <FarmstandIcon name="map-pin" />
+              {override.primaryLabel}
+            </>
+          ) : (
+            <>
+              <span data-market-text="heroPrimaryLabel">
+                {marketText(appearance, 'heroPrimaryLabel')}
+              </span>
+              <FarmstandIcon name="arrow-right" />
+            </>
+          )}
+        </Button>
+        {secondaryHref && (
+          <Button href={secondaryHref} variant="secondary">
+            {override ? (
+              <>
+                <FarmstandIcon name="store" />
+                {override.secondaryLabel}
+              </>
+            ) : (
+              <span data-market-text="heroSecondaryLabel">
+                {marketText(appearance, 'heroSecondaryLabel')}
+              </span>
+            )}
+          </Button>
+        )}
+      </div>
+      <slot name="details" />
+    </div>
+    <div class:list={['hw-hero-visual', media && 'hw-hero-photo']}>
+      <div
+        class="hw-hero-frame"
+        data-theme-hero-frame={media ? '' : undefined}
+        data-hero-shape={media ? appearance.market?.heroShape : undefined}
+      >
+        {media ? (
+          <img
+            class="product-media hw-hero-image"
+            src={media}
+            alt=""
+            width="960"
+            height="960"
+            fetchpriority="high"
+          />
+        ) : (
+          <Scene bunting={!!override} />
+        )}
+      </div>
+      <Art name="stamp" class="hw-hero-stamp" />
+      {media && (
+        <>
+          <Art name="croissant" class="hw-sticker hw-sticker-croissant" />
+          <Art name="coffee" class="hw-sticker hw-sticker-coffee" />
+        </>
+      )}
+    </div>
+  </div>
+  <div class="hw-gingham" aria-hidden="true"></div>
+</section>

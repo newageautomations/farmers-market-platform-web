@@ -68,7 +68,7 @@ export function createMarketFixtureData(marketId: string, now = Date.now()) {
     closesTime: '18:00',
   };
   // The legacy single rule appears as the first schedule, as the backend reports it.
-  const configuration: MarketConfiguration = {
+  const configuration: MarketConfiguration = { ownerVendorId: null,
     id: marketId,
     name,
     slug: `synthetic-market-${prefix}`,
@@ -153,7 +153,7 @@ export function createMarketFixtureData(marketId: string, now = Date.now()) {
     version: 1,
     preorderDefault: null,
     autoEnroll: false,
-    market: { id: marketId, name, slug: configuration.slug },
+    market: { ownerVendorId: null, id: marketId, name, slug: configuration.slug },
   }));
   const states: Record<string, MarketRelationshipState> = {};
   for (const [index, member] of memberships.entries()) {
@@ -751,7 +751,7 @@ export function createFixtureMarketService(
           version: 1,
           preorderDefault: null,
           autoEnroll: false,
-          market: {
+          market: { ownerVendorId: null,
             id: marketId,
             name: data.configuration.name,
             slug: data.configuration.slug,

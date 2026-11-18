@@ -1,0 +1,99 @@
+---
+import type { CustomerPurchase } from '@market/api';
+import { formatMoney } from '@market/config';
+import { buttonClassName, statusBadgeClassName } from '@market/ui/presentation';
+import FarmstandIcon from './ui/FarmstandIcon.astro';
+import {
+  financialStatus,
+  itemCount,
+  pickupStatus,
+  purchaseDate,
+  purchaseKind,
+  purchasePickup,
+} from '../lib/customer-presentation';
+/** Order side-panel content (vendor Applications detail-panel classes). */
+const { purchase } = Astro.props as { purchase: CustomerPurchase };
+const money = (value: number) =>
+  formatMoney(value, purchase.financial.currency);
+const payment = financialStatus(purchase),
+  pickup = purchasePickup(purchase);
+---
+
+<div class="markets-next-content customer-order-panel">
+  <h3>Order {purchase.orderId}</h3>
+  <p class="markets-venue">
+    <FarmstandIcon name="store" />
+    {purchase.storefront.displayName}
+  </p>
+  <dl class="market-application-facts">
+    <div>
+      <dt>Placed</dt>
+      <dd>{purchaseDate(purchase.purchasedAt, 'long')}</dd>
+    </div>
+    <div>
+      <dt>Type</dt>
+      <dd>{purchaseKind(purchase)}</dd>
+    </div>
+    <div>
+      <dt>Items</dt>
+      <dd>{itemCount(purchase)}</dd>
+    </div>
+    <div>
+      <dt>Total paid</dt>
+      <dd>
+        <strong>{money(purchase.financial.originalPaid)}</strong>
+      </dd>
+    </div>
+    {purchase.financial.refunded > 0 && (
+      <div>
+        <dt>Refunded</dt>
+        <dd>{money(purchase.financial.refunded)}</dd>
+      </div>
+    )}
+    <div>
+      <dt>Payment</dt>
+      <dd>
+        <span class={statusBadgeClassName(payment.tone)}>{payment.label}</span>
+      </dd>
+    </div>
+    <div>
+      <dt>Pickup</dt>
+      <dd>
+        <span class={statusBadgeClassName(pickup.tone)}>{pickup.label}</span>
+      </dd>
+    </div>
+  </dl>
+  <ul class="customer-portion-list" aria-label="Vendors in this order">
+    {purchase.portions.map((portion) => {
+      const status = pickupStatus(portion.pickupStatus);
+      return (
+        <li>
+          <span class="markets-identity-icon">
+            <FarmstandIcon name="store" />
+          </span>
+          <span>
+            <strong>{portion.vendorName}</strong>
+            <small>
+              {portion.lines
+                .map((line) => `${line.variantName} × ${line.quantity}`)
+                .join(', ')}
+            </small>
+            <span class={statusBadgeClassName(status.tone)}>
+              {status.label}
+            </span>
+          </span>
+        </li>
+      );
+    })}
+  </ul>
+  <a
+    class={buttonClassName({
+      variant: 'secondary',
+      className: 'farmstand-button',
+    })}
+    href={`/account/orders/${purchase.orderId}`}
+  >
+    View full order
+    <FarmstandIcon name="chevron-right" />
+  </a>
+</div>

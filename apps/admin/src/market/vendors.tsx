@@ -45,6 +45,7 @@ import { ListingReview } from './ListingReview';
 import { periodRange, periods } from './occurrences';
 import { addDays, readableDate } from './occurrences-data';
 import { OrdersDateRange } from '../vendor/OrdersDateRange';
+import { CompactLabel } from './mobile';
 import '../vendor/orders.css';
 import {
   AccountBadge,
@@ -52,7 +53,7 @@ import {
   useVendorCompliance,
 } from './vendor-compliance';
 import '@market/ui/farmstand.css';
-import '../vendor/markets-workspace.css';
+import '@market/ui/workspace.css';
 import './market-occurrences.css';
 // Listing thumbnails reuse the Catalog's product photo cell.
 import '../vendor/catalog-workspace.css';
@@ -122,7 +123,11 @@ function FilterSelect({
   );
 }
 type Tab = 'memberships' | 'participation' | 'listings' | 'offerings';
-const tabs: Array<{ value: Tab; label: string; icon: 'info' | 'calendar-days' | 'circle-check' | 'shopping-cart' }> = [
+const tabs: Array<{
+  value: Tab;
+  label: string;
+  icon: 'info' | 'calendar-days' | 'circle-check' | 'shopping-cart';
+}> = [
   { value: 'memberships', label: 'Overview', icon: 'info' },
   { value: 'participation', label: 'Market dates', icon: 'calendar-days' },
   { value: 'listings', label: 'Listing approvals', icon: 'circle-check' },
@@ -230,10 +235,7 @@ function VendorDetail({
     () => service.relationshipDetail(id),
     [service, id],
   );
-  const detail = useRead(
-    `${service.readKey}:relationship:${id}`,
-    detailRead,
-  );
+  const detail = useRead(`${service.readKey}:relationship:${id}`, detailRead);
   return (
     <div className="application-detail vendor-detail farmstand-controls">
       <FarmstandLink
@@ -423,7 +425,8 @@ function Relationship({
       )
     : undefined;
   const canNotes =
-    notesAllowed && mayMarketCommand(service.context, 'ManageOwnMarketApplications');
+    notesAllowed &&
+    mayMarketCommand(service.context, 'ManageOwnMarketApplications');
   const compliance = useVendorCompliance(
     `${service.readKey}:vendor:${vendorId}`,
     [vendorId],
@@ -445,7 +448,7 @@ function Relationship({
               variant="secondary"
               onClick={() => setEditing('notes')}
             >
-              Edit private notes
+              <CompactLabel icon="edit">Edit private notes</CompactLabel>
             </FarmstandButton>
           </div>
         )}
@@ -468,536 +471,574 @@ function Relationship({
         className="vendor-detail-menu"
       />
       <div className="vendor-detail-view" key={tab}>
-      {tab === 'memberships' && (
-        <div className="application-detail-columns">
-          <div className="application-detail-main">
-            <Panel icon={{ farmstand: 'shield-check' }} title="Document compliance">
-              <div className="vendor-panel-body">
-                <ComplianceSummary
-                  vendor={vendorId}
-                  compliance={compliance}
-                  untracked=""
-                />
-                <FarmstandLink
-                  href={documentsHref}
-                  variant="secondary"
-                  className="application-detail-arrow vendor-detail-link"
-                  onClick={(event) => inApp(event, documentsHref)}
-                >
-                  Open in Documents
-                  <FarmstandIcon name="arrow-right" />
-                </FarmstandLink>
-              </div>
-            </Panel>
-            <Panel icon={{ farmstand: 'user-round' }} title="Membership">
-              <div className="vendor-panel-body">
-              {canMembership ? (
-                <CommandForm
- submitClassName="farmstand-button"
-                  embedded
-                  hideTitle
-                  title="Business membership"
-                  onDone={refresh}
-                  submitLabel="Update membership"
-                  run={(data) =>
-                    service.membershipStatus(
-                      service.marketId,
-                      member.vendorId,
-                      status<MarketMembershipStatus>(data, membershipStatuses),
-                      member.version,
-                    )
-                  }
-                  confirm={(data) =>
-                    ['suspended', 'withdrawn'].includes(text(data, 'status'))
-                      ? 'Change this business relationship? This does not delete the Vendor, Products, orders or customer relationships.'
-                      : undefined
-                  }
-                >
-                  <p className="vendor-panel-help">
-                    Approved members can attend market dates and sell approved
-                    products. Suspending or withdrawing keeps their history.
-                  </p>
-                  <StatusSelect
-                    label="Business membership status"
-                    choices={membershipStatuses}
-                    value={member.status}
+        {tab === 'memberships' && (
+          <div className="application-detail-columns">
+            <div className="application-detail-main">
+              <Panel
+                icon={{ farmstand: 'shield-check' }}
+                title="Document compliance"
+              >
+                <div className="vendor-panel-body">
+                  <ComplianceSummary
+                    vendor={vendorId}
+                    compliance={compliance}
+                    untracked=""
                   />
-                </CommandForm>
-              ) : (
-                <p className="vendor-panel-help">
-                  Membership is <Badge>{member.status}</Badge>. You do not have
-                  permission to change it.
-                </p>
-              )}
-              </div>
-            </Panel>
-          </div>
-          <aside
-            className="application-detail-sidebar"
-            aria-label="Vendor details"
-          >
-            <Panel icon={{ farmstand: 'store' }} title="Vendor">
-              <dl className="application-detail-summary">
-                <Fact icon={{ farmstand: 'store' }} label="Business">
-                  {member.vendor.name}
-                </Fact>
-                <Fact icon={{ farmstand: 'circle-check' }} label="Account">
-                  Platform Vendor · {member.vendor.status}
-                </Fact>
-                <Fact icon={{ farmstand: 'user-round' }} label="Membership">
-                  <Badge>{member.status}</Badge>
-                </Fact>
-                <Fact icon={{ farmstand: 'shopping-cart' }} label="Preorders">
-                  {member.preorderDefault ? (
-                    <RuleSummary rule={member.preorderDefault} />
-                  ) : (
-                    'Uses the market default'
-                  )}
-                </Fact>
-              </dl>
-              <p className="application-detail-note">
-                Business name, contact and profile are managed by the Vendor
-                and cannot be edited here.
-              </p>
-            </Panel>
-            <Panel
-              icon={{ farmstand: 'file-text' }}
-              title="Private notes"
-              aside={
-                canNotes && (
-                  <FarmstandButton
-                    variant="tertiary"
-                    onClick={() => setEditing('notes')}
+                  <FarmstandLink
+                    href={documentsHref}
+                    variant="secondary"
+                    className="application-detail-arrow vendor-detail-link"
+                    onClick={(event) => inApp(event, documentsHref)}
                   >
-                    Edit
-                  </FarmstandButton>
-                )
-              }
+                    Open in Documents
+                    <FarmstandIcon name="arrow-right" />
+                  </FarmstandLink>
+                </div>
+              </Panel>
+              <Panel icon={{ farmstand: 'user-round' }} title="Membership">
+                <div className="vendor-panel-body">
+                  {canMembership ? (
+                    <CommandForm
+                      submitClassName="farmstand-button"
+                      embedded
+                      hideTitle
+                      title="Business membership"
+                      onDone={refresh}
+                      submitLabel="Update membership"
+                      run={(data) =>
+                        service.membershipStatus(
+                          service.marketId,
+                          member.vendorId,
+                          status<MarketMembershipStatus>(
+                            data,
+                            membershipStatuses,
+                          ),
+                          member.version,
+                        )
+                      }
+                      confirm={(data) =>
+                        ['suspended', 'withdrawn'].includes(
+                          text(data, 'status'),
+                        )
+                          ? 'Change this business relationship? This does not delete the Vendor, Products, orders or customer relationships.'
+                          : undefined
+                      }
+                    >
+                      <p className="vendor-panel-help">
+                        Approved members can attend market dates and sell
+                        approved products. Suspending or withdrawing keeps their
+                        history.
+                      </p>
+                      <StatusSelect
+                        label="Business membership status"
+                        choices={membershipStatuses}
+                        value={member.status}
+                      />
+                    </CommandForm>
+                  ) : (
+                    <p className="vendor-panel-help">
+                      Membership is <Badge>{member.status}</Badge>. You do not
+                      have permission to change it.
+                    </p>
+                  )}
+                </div>
+              </Panel>
+            </div>
+            <aside
+              className="application-detail-sidebar"
+              aria-label="Vendor details"
             >
-              <div className="vendor-panel-body">
-              {!notesAllowed ? (
-                <p className="vendor-panel-help">
-                  Private notes are unavailable with your permissions.
+              <Panel icon={{ farmstand: 'store' }} title="Vendor">
+                <dl className="application-detail-summary">
+                  <Fact icon={{ farmstand: 'store' }} label="Business">
+                    {member.vendor.name}
+                  </Fact>
+                  <Fact icon={{ farmstand: 'circle-check' }} label="Account">
+                    Platform Vendor · {member.vendor.status}
+                  </Fact>
+                  <Fact icon={{ farmstand: 'user-round' }} label="Membership">
+                    <Badge>{member.status}</Badge>
+                  </Fact>
+                  <Fact icon={{ farmstand: 'shopping-cart' }} label="Preorders">
+                    {member.preorderDefault ? (
+                      <RuleSummary rule={member.preorderDefault} />
+                    ) : (
+                      'Uses the market default'
+                    )}
+                  </Fact>
+                </dl>
+                <p className="application-detail-note">
+                  Business name, contact and profile are managed by the Vendor
+                  and cannot be edited here.
                 </p>
-              ) : operations.loading && !row ? (
-                <ReadState loading error={undefined} retry={() => {}} />
-              ) : operations.error ? (
-                <ReadState
-                  loading={false}
-                  error={operations.error}
-                  retry={operations.refresh}
-                />
-              ) : (
-                <p className="market-application-guidance vendor-notes-text">
-                  {row?.notes || 'No notes yet. Notes are visible only to your market team.'}
-                </p>
-              )}
-              </div>
-            </Panel>
-          </aside>
-        </div>
-      )}
-      {tab === 'listings' && (
-        <Panel icon={{ farmstand: 'circle-check' }} title="Listing approvals">
-          <div className="vendor-panel-body">
-          <p className="vendor-panel-help">
-            Products the Vendor wants to sell at your market. Review each one
-            and approve or deny it.
-          </p>
-          <div className="markets-filters vendor-detail-filters">
-            <FilterSelect
-              label="Approval"
-              value={approvalFilter}
-              onChange={(value) => {
-                setApprovalFilter(value);
-                setListingPage(0);
-              }}
-              options={[
-                ['all', 'All approvals'],
-                ['pending', 'Pending review'],
-                ['approved', 'Approved'],
-                ['withdrawn', 'Denied'],
-              ]}
-            />
-          </div>
-          <ReadState
-            loading={allListings.loading && !allListings.data}
-            error={allListings.error}
-            retry={allListings.refresh}
-          />
-          {(() => {
-            const visible = listings.filter(
-              (l) => approvalFilter === 'all' || l.status === approvalFilter,
-            );
-            const current = Math.min(
-              listingPage,
-              Math.max(0, Math.ceil(visible.length / PAGE) - 1),
-            );
-            return visible.length ? (
-              <div className="markets-list vendor-detail-table">
-                <FarmstandTable
-                  label="Listing approvals"
-                  headings={['Product', 'Category', 'Approval', 'Publication', '']}
-                >
-                  {visible
-                    .slice(current * PAGE, (current + 1) * PAGE)
-                    .map((listing) => (
-                      <tr key={listing.id}>
-                        <th scope="row">
-                          <div className="catalog-product-identity">
-                            <div className="catalog-product-photo">
-                              {listing.variant.image ? (
-                                <img
-                                  src={listing.variant.image}
-                                  alt=""
-                                  width="42"
-                                  height="42"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <UtilityIcon name="store" />
-                              )}
-                            </div>
-                            <div className="vendor-contact-cell">
-                              <span>{listing.variant.product.name}</span>
-                              <small>
-                                {listing.variant.name} · {listing.variant.sku}
-                              </small>
-                            </div>
-                          </div>
-                        </th>
-                        <td>
-                          {listing.variant.product.category ?? (
-                            <span className="markets-muted">Uncategorized</span>
-                          )}
-                        </td>
-                        <td>
-                          <Badge>
-                            {listing.status === 'withdrawn'
-                              ? 'denied'
-                              : listing.status}
-                          </Badge>
-                        </td>
-                        <td>
-                          <Badge>{listing.publication.state}</Badge>
-                        </td>
-                        <td>
-                          <FarmstandButton
-                            variant="secondary"
-                            aria-label={`${canListing ? 'Review' : 'View'} ${listing.variant.product.name}`}
-                            onClick={() => setEditing(`listing:${listing.id}`)}
-                          >
-                            {canListing && listing.status === 'pending'
-                              ? 'Review'
-                              : 'View'}
-                            <FarmstandIcon name="chevron-right" />
-                          </FarmstandButton>
-                        </td>
-                      </tr>
-                    ))}
-                </FarmstandTable>
-                <MarketsPagination
-                  label="Listing pages"
-                  summary={pageSummary(visible.length, current)}
-                  hasPrevious={current > 0}
-                  hasNext={(current + 1) * PAGE < visible.length}
-                  onPrevious={() => setListingPage(current - 1)}
-                  onNext={() => setListingPage(current + 1)}
-                />
-              </div>
-            ) : (
-              <EmptyState
-                title={
-                  listings.length ? 'No matching listings' : 'No listings yet'
+              </Panel>
+              <Panel
+                icon={{ farmstand: 'file-text' }}
+                title="Private notes"
+                aside={
+                  canNotes && (
+                    <FarmstandButton
+                      variant="tertiary"
+                      onClick={() => setEditing('notes')}
+                    >
+                      <CompactLabel icon="edit">Edit</CompactLabel>
+                    </FarmstandButton>
+                  )
                 }
               >
-                <p>
-                  {listings.length
-                    ? 'Try another approval filter.'
-                    : 'Products this Vendor submits to your market appear here.'}
-                </p>
-              </EmptyState>
-            );
-          })()}
-          {listings
-            .filter((listing) => editing === `listing:${listing.id}`)
-            .map((listing) => (
-              <ListingReview
-                key={listing.id}
-                service={service}
-                listing={listing}
-                canReview={canListing}
-                membershipApproved={member.status === 'approved'}
-                onClose={close}
-                onSaved={() => {
-                  allListings.refresh();
-                  saved();
-                }}
-              />
-            ))}
-          </div>
-        </Panel>
-      )}
-      {tab === 'participation' && (
-        <Panel icon={{ farmstand: 'calendar-days' }} title="Market dates">
-          <div className="vendor-panel-body">
-            <p className="vendor-panel-help">
-              Market dates this Vendor plans to attend, with any pickup
-              instructions for customers.
-            </p>
-            <ParticipationPanel
-              service={service}
-              state={state}
-              refresh={refresh}
-              editable={canParticipation}
-            />
-          </div>
-        </Panel>
-      )}
-      {tab === 'offerings' && (
-        <Panel icon={{ farmstand: 'shopping-cart' }} title="Products by date">
-          <div className="vendor-panel-body">
-          <p className="vendor-panel-help">
-            The products this Vendor offers at each market date. The Vendor
-            chooses what to sell, preorders and limits; you can disable a
-            product for a date and re-enable it later.
-          </p>
-          {(() => {
-            const offerings = allOfferings.data ?? state.offerings;
-            const dateOf = (participationId: string) => {
-              const participation = participationList.find(
-                (p) => p.id === participationId,
-              );
-              return participation
-                ? occurrenceList.find(
-                    (o) => o.id === participation.occurrenceId,
-                  )
-                : undefined;
-            };
-            const dates = [
-              ...new Map(
-                offerings.flatMap((row) => {
-                  const occurrence = dateOf(row.participationId);
-                  return occurrence ? [[occurrence.id, occurrence]] : [];
-                }),
-              ).values(),
-            ].sort((x, y) => Date.parse(x.startsAt) - Date.parse(y.startsAt));
-            const visible = offerings
-              .filter(
-                (row) =>
-                  (offeringDate === 'all' ||
-                    dateOf(row.participationId)?.id === offeringDate) &&
-                  (offeringStatus === 'all' ||
-                    row.enabled === (offeringStatus === 'enabled')),
-              )
-              .sort(
-                (x, y) =>
-                  (Date.parse(dateOf(x.participationId)?.startsAt ?? '') ||
-                    0) -
-                    (Date.parse(dateOf(y.participationId)?.startsAt ?? '') ||
-                      0) || productName(x.variantId).localeCompare(productName(y.variantId)),
-              );
-            const current = Math.min(
-              offeringPage,
-              Math.max(0, Math.ceil(visible.length / PAGE) - 1),
-            );
-            return (
-              <>
-                <div className="markets-filters vendor-detail-filters">
-                  <FilterSelect
-                    label="Market date"
-                    icon="calendar-days"
-                    value={offeringDate}
-                    onChange={(value) => {
-                      setOfferingDate(value);
-                      setOfferingPage(0);
-                    }}
-                    options={[
-                      ['all', 'All market dates'],
-                      ...dates.map(
-                        (o) => [o.id, date(o.startsAt, o.timezone)] as const,
-                      ),
-                    ]}
-                  />
-                  <FilterSelect
-                    label="Status"
-                    value={offeringStatus}
-                    onChange={(value) => {
-                      setOfferingStatus(value);
-                      setOfferingPage(0);
-                    }}
-                    options={[
-                      ['all', 'All statuses'],
-                      ['enabled', 'Enabled'],
-                      ['disabled', 'Disabled'],
-                    ]}
-                  />
+                <div className="vendor-panel-body">
+                  {!notesAllowed ? (
+                    <p className="vendor-panel-help">
+                      Private notes are unavailable with your permissions.
+                    </p>
+                  ) : operations.loading && !row ? (
+                    <ReadState loading error={undefined} retry={() => {}} />
+                  ) : operations.error ? (
+                    <ReadState
+                      loading={false}
+                      error={operations.error}
+                      retry={operations.refresh}
+                    />
+                  ) : (
+                    <p className="market-application-guidance vendor-notes-text">
+                      {row?.notes ||
+                        'No notes yet. Notes are visible only to your market team.'}
+                    </p>
+                  )}
                 </div>
-                <ReadState
-                  loading={allOfferings.loading && !allOfferings.data}
-                  error={
-                    allOfferings.error ??
-                    allParticipations.error ??
-                    allOccurrences.error
-                  }
-                  retry={() => {
-                    allOfferings.refresh();
-                    allParticipations.refresh();
-                    allOccurrences.refresh();
+              </Panel>
+            </aside>
+          </div>
+        )}
+        {tab === 'listings' && (
+          <Panel icon={{ farmstand: 'circle-check' }} title="Listing approvals">
+            <div className="vendor-panel-body">
+              <p className="vendor-panel-help">
+                Products the Vendor wants to sell at your market. Review each
+                one and approve or deny it.
+              </p>
+              <div className="markets-filters vendor-detail-filters">
+                <FilterSelect
+                  label="Approval"
+                  value={approvalFilter}
+                  onChange={(value) => {
+                    setApprovalFilter(value);
+                    setListingPage(0);
                   }}
+                  options={[
+                    ['all', 'All approvals'],
+                    ['pending', 'Pending review'],
+                    ['approved', 'Approved'],
+                    ['withdrawn', 'Denied'],
+                  ]}
                 />
-                {visible.length ? (
+              </div>
+              <ReadState
+                loading={allListings.loading && !allListings.data}
+                error={allListings.error}
+                retry={allListings.refresh}
+              />
+              {(() => {
+                const visible = listings.filter(
+                  (l) =>
+                    approvalFilter === 'all' || l.status === approvalFilter,
+                );
+                const current = Math.min(
+                  listingPage,
+                  Math.max(0, Math.ceil(visible.length / PAGE) - 1),
+                );
+                return visible.length ? (
                   <div className="markets-list vendor-detail-table">
                     <FarmstandTable
-                      label="Products by date"
+                      label="Listing approvals"
                       headings={[
                         'Product',
-                        'Market date',
-                        'Status',
-                        'Preorders',
-                        'Sales cap',
+                        'Category',
+                        'Approval',
+                        'Publication',
                         '',
                       ]}
                     >
                       {visible
                         .slice(current * PAGE, (current + 1) * PAGE)
-                        .map((row) => {
-                          const occurrence = dateOf(row.participationId);
-                          return (
-                            <tr key={row.id}>
-                              <th scope="row">{productName(row.variantId)}</th>
-                              <td>
-                                {occurrence
-                                  ? date(occurrence.startsAt, occurrence.timezone)
-                                  : 'Market date'}
-                              </td>
-                              <td>
-                                <Badge>
-                                  {row.enabled ? 'enabled' : 'disabled'}
-                                </Badge>
-                              </td>
-                              <td>
-                                {row.preorderEnabled ? (
-                                  <span className="vendor-contact-cell">
-                                    <span>Open</span>
-                                    <small>
-                                      {date(
-                                        row.effectivePreorderOpensAt,
-                                        row.windowProvenance.timezone,
-                                      )}{' '}
-                                      to{' '}
-                                      {date(
-                                        row.effectivePreorderClosesAt,
-                                        row.windowProvenance.timezone,
-                                      )}
-                                    </small>
-                                  </span>
-                                ) : (
-                                  <span className="markets-muted">Off</span>
-                                )}
-                              </td>
-                              <td>{row.salesCap ?? 'No limit'}</td>
-                              <td>
-                                {canOffering &&
-                                  (row.enabled ? (
-                                    <FarmstandButton
-                                      variant="destructive-outline"
-                                      aria-label={`Disable ${productName(row.variantId)}`}
-                                      onClick={() =>
-                                        setEditing(`disable:${row.id}`)
-                                      }
-                                    >
-                                      Disable
-                                    </FarmstandButton>
+                        .map((listing) => (
+                          <tr key={listing.id}>
+                            <th scope="row">
+                              <div className="catalog-product-identity">
+                                <div className="catalog-product-photo">
+                                  {listing.variant.image ? (
+                                    <img
+                                      src={listing.variant.image}
+                                      alt=""
+                                      width="42"
+                                      height="42"
+                                      loading="lazy"
+                                    />
                                   ) : (
-                                    <FarmstandButton
-                                      variant="secondary"
-                                      loading={toggling === row.id}
-                                      disabled={!!toggling}
-                                      aria-label={`Re-enable ${productName(row.variantId)}`}
-                                      onClick={() => toggleOffering(row, true)}
-                                    >
-                                      Re-enable
-                                    </FarmstandButton>
-                                  ))}
-                              </td>
-                            </tr>
-                          );
-                        })}
+                                    <UtilityIcon name="store" />
+                                  )}
+                                </div>
+                                <div className="vendor-contact-cell">
+                                  <span>{listing.variant.product.name}</span>
+                                  <small>
+                                    {listing.variant.name} ·{' '}
+                                    {listing.variant.sku}
+                                  </small>
+                                </div>
+                              </div>
+                            </th>
+                            <td>
+                              {listing.variant.product.category ?? (
+                                <span className="markets-muted">
+                                  Uncategorized
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <Badge>
+                                {listing.status === 'withdrawn'
+                                  ? 'denied'
+                                  : listing.status}
+                              </Badge>
+                            </td>
+                            <td>
+                              <Badge>{listing.publication.state}</Badge>
+                            </td>
+                            <td>
+                              <FarmstandButton
+                                variant="secondary"
+                                aria-label={`${canListing ? 'Review' : 'View'} ${listing.variant.product.name}`}
+                                onClick={() =>
+                                  setEditing(`listing:${listing.id}`)
+                                }
+                              >
+                                {canListing && listing.status === 'pending'
+                                  ? 'Review'
+                                  : 'View'}
+                                <FarmstandIcon name="chevron-right" />
+                              </FarmstandButton>
+                            </td>
+                          </tr>
+                        ))}
                     </FarmstandTable>
                     <MarketsPagination
-                      label="Products by date pages"
+                      label="Listing pages"
                       summary={pageSummary(visible.length, current)}
                       hasPrevious={current > 0}
                       hasNext={(current + 1) * PAGE < visible.length}
-                      onPrevious={() => setOfferingPage(current - 1)}
-                      onNext={() => setOfferingPage(current + 1)}
+                      onPrevious={() => setListingPage(current - 1)}
+                      onNext={() => setListingPage(current + 1)}
                     />
                   </div>
                 ) : (
                   <EmptyState
                     title={
-                      offerings.length
-                        ? 'No matching products'
-                        : 'No products scheduled yet'
+                      listings.length
+                        ? 'No matching listings'
+                        : 'No listings yet'
                     }
                   >
                     <p>
-                      {offerings.length
-                        ? 'Try another market date or status.'
-                        : 'Products appear here once the Vendor offers an approved product at a market date it is attending.'}
+                      {listings.length
+                        ? 'Try another approval filter.'
+                        : 'Products this Vendor submits to your market appear here.'}
                     </p>
                   </EmptyState>
-                )}
-              </>
-            );
-          })()}
-          {toggleError && <ErrorState error={toggleError} />}
-          </div>
-          {(allOfferings.data ?? state.offerings)
-            .filter((row) => editing === `disable:${row.id}`)
-            .map((row) => (
-              <UiDialog
-                key={row.id}
-                open
-                size="standard"
-                title={`Disable ${productName(row.variantId)}?`}
-                busy={toggling === row.id}
-                onClose={close}
-                actions={
+                );
+              })()}
+              {listings
+                .filter((listing) => editing === `listing:${listing.id}`)
+                .map((listing) => (
+                  <ListingReview
+                    key={listing.id}
+                    service={service}
+                    listing={listing}
+                    canReview={canListing}
+                    membershipApproved={member.status === 'approved'}
+                    onClose={close}
+                    onSaved={() => {
+                      allListings.refresh();
+                      saved();
+                    }}
+                  />
+                ))}
+            </div>
+          </Panel>
+        )}
+        {tab === 'participation' && (
+          <Panel icon={{ farmstand: 'calendar-days' }} title="Market dates">
+            <div className="vendor-panel-body">
+              <p className="vendor-panel-help">
+                Market dates this Vendor plans to attend, with any pickup
+                instructions for customers.
+              </p>
+              <ParticipationPanel
+                service={service}
+                state={state}
+                refresh={refresh}
+                editable={canParticipation}
+              />
+            </div>
+          </Panel>
+        )}
+        {tab === 'offerings' && (
+          <Panel icon={{ farmstand: 'shopping-cart' }} title="Products by date">
+            <div className="vendor-panel-body">
+              <p className="vendor-panel-help">
+                The products this Vendor offers at each market date. The Vendor
+                chooses what to sell, preorders and limits; you can disable a
+                product for a date and re-enable it later.
+              </p>
+              {(() => {
+                const offerings = allOfferings.data ?? state.offerings;
+                const dateOf = (participationId: string) => {
+                  const participation = participationList.find(
+                    (p) => p.id === participationId,
+                  );
+                  return participation
+                    ? occurrenceList.find(
+                        (o) => o.id === participation.occurrenceId,
+                      )
+                    : undefined;
+                };
+                const dates = [
+                  ...new Map(
+                    offerings.flatMap((row) => {
+                      const occurrence = dateOf(row.participationId);
+                      return occurrence ? [[occurrence.id, occurrence]] : [];
+                    }),
+                  ).values(),
+                ].sort(
+                  (x, y) => Date.parse(x.startsAt) - Date.parse(y.startsAt),
+                );
+                const visible = offerings
+                  .filter(
+                    (row) =>
+                      (offeringDate === 'all' ||
+                        dateOf(row.participationId)?.id === offeringDate) &&
+                      (offeringStatus === 'all' ||
+                        row.enabled === (offeringStatus === 'enabled')),
+                  )
+                  .sort(
+                    (x, y) =>
+                      (Date.parse(dateOf(x.participationId)?.startsAt ?? '') ||
+                        0) -
+                        (Date.parse(
+                          dateOf(y.participationId)?.startsAt ?? '',
+                        ) || 0) ||
+                      productName(x.variantId).localeCompare(
+                        productName(y.variantId),
+                      ),
+                  );
+                const current = Math.min(
+                  offeringPage,
+                  Math.max(0, Math.ceil(visible.length / PAGE) - 1),
+                );
+                return (
                   <>
-                    <FarmstandButton
-                      variant="secondary"
-                      disabled={toggling === row.id}
-                      onClick={close}
-                    >
-                      Cancel
-                    </FarmstandButton>
-                    <FarmstandButton
-                      variant="destructive"
-                      loading={toggling === row.id}
-                      onClick={() => toggleOffering(row, false)}
-                    >
-                      Disable product
-                    </FarmstandButton>
+                    <div className="markets-filters vendor-detail-filters">
+                      <FilterSelect
+                        label="Market date"
+                        icon="calendar-days"
+                        value={offeringDate}
+                        onChange={(value) => {
+                          setOfferingDate(value);
+                          setOfferingPage(0);
+                        }}
+                        options={[
+                          ['all', 'All market dates'],
+                          ...dates.map(
+                            (o) =>
+                              [o.id, date(o.startsAt, o.timezone)] as const,
+                          ),
+                        ]}
+                      />
+                      <FilterSelect
+                        label="Status"
+                        value={offeringStatus}
+                        onChange={(value) => {
+                          setOfferingStatus(value);
+                          setOfferingPage(0);
+                        }}
+                        options={[
+                          ['all', 'All statuses'],
+                          ['enabled', 'Enabled'],
+                          ['disabled', 'Disabled'],
+                        ]}
+                      />
+                    </div>
+                    <ReadState
+                      loading={allOfferings.loading && !allOfferings.data}
+                      error={
+                        allOfferings.error ??
+                        allParticipations.error ??
+                        allOccurrences.error
+                      }
+                      retry={() => {
+                        allOfferings.refresh();
+                        allParticipations.refresh();
+                        allOccurrences.refresh();
+                      }}
+                    />
+                    {visible.length ? (
+                      <div className="markets-list vendor-detail-table">
+                        <FarmstandTable
+                          label="Products by date"
+                          headings={[
+                            'Product',
+                            'Market date',
+                            'Status',
+                            'Preorders',
+                            'Sales cap',
+                            '',
+                          ]}
+                        >
+                          {visible
+                            .slice(current * PAGE, (current + 1) * PAGE)
+                            .map((row) => {
+                              const occurrence = dateOf(row.participationId);
+                              return (
+                                <tr key={row.id}>
+                                  <th scope="row">
+                                    {productName(row.variantId)}
+                                  </th>
+                                  <td>
+                                    {occurrence
+                                      ? date(
+                                          occurrence.startsAt,
+                                          occurrence.timezone,
+                                        )
+                                      : 'Market date'}
+                                  </td>
+                                  <td>
+                                    <Badge>
+                                      {row.enabled ? 'enabled' : 'disabled'}
+                                    </Badge>
+                                  </td>
+                                  <td>
+                                    {row.preorderEnabled ? (
+                                      <span className="vendor-contact-cell">
+                                        <span>Open</span>
+                                        <small>
+                                          {date(
+                                            row.effectivePreorderOpensAt,
+                                            row.windowProvenance.timezone,
+                                          )}{' '}
+                                          to{' '}
+                                          {date(
+                                            row.effectivePreorderClosesAt,
+                                            row.windowProvenance.timezone,
+                                          )}
+                                        </small>
+                                      </span>
+                                    ) : (
+                                      <span className="markets-muted">Off</span>
+                                    )}
+                                  </td>
+                                  <td>{row.salesCap ?? 'No limit'}</td>
+                                  <td>
+                                    {canOffering &&
+                                      (row.enabled ? (
+                                        <FarmstandButton
+                                          variant="destructive-outline"
+                                          aria-label={`Disable ${productName(row.variantId)}`}
+                                          onClick={() =>
+                                            setEditing(`disable:${row.id}`)
+                                          }
+                                        >
+                                          Disable
+                                        </FarmstandButton>
+                                      ) : (
+                                        <FarmstandButton
+                                          variant="secondary"
+                                          loading={toggling === row.id}
+                                          disabled={!!toggling}
+                                          aria-label={`Re-enable ${productName(row.variantId)}`}
+                                          onClick={() =>
+                                            toggleOffering(row, true)
+                                          }
+                                        >
+                                          Re-enable
+                                        </FarmstandButton>
+                                      ))}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </FarmstandTable>
+                        <MarketsPagination
+                          label="Products by date pages"
+                          summary={pageSummary(visible.length, current)}
+                          hasPrevious={current > 0}
+                          hasNext={(current + 1) * PAGE < visible.length}
+                          onPrevious={() => setOfferingPage(current - 1)}
+                          onNext={() => setOfferingPage(current + 1)}
+                        />
+                      </div>
+                    ) : (
+                      <EmptyState
+                        title={
+                          offerings.length
+                            ? 'No matching products'
+                            : 'No products scheduled yet'
+                        }
+                      >
+                        <p>
+                          {offerings.length
+                            ? 'Try another market date or status.'
+                            : 'Products appear here once the Vendor offers an approved product at a market date it is attending.'}
+                        </p>
+                      </EmptyState>
+                    )}
                   </>
-                }
-              >
-                <p>
-                  Customers can no longer order this product for{' '}
-                  {(() => {
-                    const p = participationList.find(
-                      (item) => item.id === row.participationId,
-                    );
-                    return p ? occurrenceName(p.occurrenceId) : 'this date';
-                  })()}
-                  . Existing orders are not cancelled. You can re-enable it
-                  later.
-                </p>
-              </UiDialog>
-            ))}
-        </Panel>
-      )}
+                );
+              })()}
+              {toggleError && <ErrorState error={toggleError} />}
+            </div>
+            {(allOfferings.data ?? state.offerings)
+              .filter((row) => editing === `disable:${row.id}`)
+              .map((row) => (
+                <UiDialog
+                  key={row.id}
+                  open
+                  size="standard"
+                  title={`Disable ${productName(row.variantId)}?`}
+                  busy={toggling === row.id}
+                  onClose={close}
+                  actions={
+                    <>
+                      <FarmstandButton
+                        variant="secondary"
+                        disabled={toggling === row.id}
+                        onClick={close}
+                      >
+                        Cancel
+                      </FarmstandButton>
+                      <FarmstandButton
+                        variant="destructive"
+                        loading={toggling === row.id}
+                        onClick={() => toggleOffering(row, false)}
+                      >
+                        Disable product
+                      </FarmstandButton>
+                    </>
+                  }
+                >
+                  <p>
+                    Customers can no longer order this product for{' '}
+                    {(() => {
+                      const p = participationList.find(
+                        (item) => item.id === row.participationId,
+                      );
+                      return p ? occurrenceName(p.occurrenceId) : 'this date';
+                    })()}
+                    . Existing orders are not cancelled. You can re-enable it
+                    later.
+                  </p>
+                </UiDialog>
+              ))}
+          </Panel>
+        )}
       </div>
       {editing === 'notes' && canNotes && service.phase14 && (
         <VendorNotesDialog
@@ -1076,8 +1117,8 @@ function ParticipationPanel({
   const config = useRead(`${service.readKey}:participation-config`, configRead);
   const occurrence = occurrences.data?.find((o) => o.id === selected);
   const statusOf = (occurrenceId: string) =>
-    participations.data?.find((p) => p.occurrenceId === occurrenceId)
-      ?.status ?? 'not participating';
+    participations.data?.find((p) => p.occurrenceId === occurrenceId)?.status ??
+    'not participating';
   const visible = (occurrences.data ?? []).filter(
     (o) => statusFilter === 'all' || statusOf(o.id) === statusFilter,
   );
@@ -1105,10 +1146,7 @@ function ParticipationPanel({
           }}
           options={[
             ...periods.map((p) => [p.value, p.label] as const),
-            [
-              'custom',
-              period === 'custom' ? rangeLabel : 'Custom date range',
-            ],
+            ['custom', period === 'custom' ? rangeLabel : 'Custom date range'],
           ]}
         />
         <FilterSelect
@@ -1129,45 +1167,49 @@ function ParticipationPanel({
       </div>
       <ReadState {...occurrences} retry={occurrences.refresh} />
       <ReadState {...participations} retry={participations.refresh} />
-      {occurrences.data && participations.data && (
-        visible.length ? (
+      {occurrences.data &&
+        participations.data &&
+        (visible.length ? (
           <div className="markets-list vendor-detail-table">
             <FarmstandTable
               label="Occurrence participation"
-              headings={['Market date', 'Participation', 'Pickup instructions', '']}
+              headings={[
+                'Market date',
+                'Participation',
+                'Pickup instructions',
+                '',
+              ]}
             >
-              {visible
-                .slice(current * PAGE, (current + 1) * PAGE)
-                .map((o) => {
-                  const participation = participations.data!.find(
-                    (p) => p.occurrenceId === o.id,
-                  );
-                  return (
-                    <tr key={o.id}>
-                      <th scope="row">{date(o.startsAt, o.timezone)}</th>
-                      <td>
-                        <Badge>
-                          {participation?.status ?? 'not participating'}
-                        </Badge>
-                      </td>
-                      <td>
-                        {participation?.pickupInstructions || (
-                          <span className="markets-muted">Not provided</span>
-                        )}
-                      </td>
-                      <td>
-                        <FarmstandButton
-                          variant="secondary"
-                          aria-label={`Open ${date(o.startsAt, o.timezone)}`}
-                          onClick={() => setSelected(o.id)}
-                        >
-                          {editable ? 'Edit' : 'View'}
-                          <FarmstandIcon name="chevron-right" />
-                        </FarmstandButton>
-                      </td>
-                    </tr>
-                  );
-                })}
+              {visible.slice(current * PAGE, (current + 1) * PAGE).map((o) => {
+                const participation = participations.data!.find(
+                  (p) => p.occurrenceId === o.id,
+                );
+                return (
+                  <tr key={o.id}>
+                    <th scope="row">{date(o.startsAt, o.timezone)}</th>
+                    <td>
+                      <Badge>
+                        {participation?.status ?? 'not participating'}
+                      </Badge>
+                    </td>
+                    <td>
+                      {participation?.pickupInstructions || (
+                        <span className="markets-muted">Not provided</span>
+                      )}
+                    </td>
+                    <td>
+                      <FarmstandButton
+                        variant="secondary"
+                        aria-label={`Open ${date(o.startsAt, o.timezone)}`}
+                        onClick={() => setSelected(o.id)}
+                      >
+                        {editable ? 'Edit' : 'View'}
+                        <FarmstandIcon name="chevron-right" />
+                      </FarmstandButton>
+                    </td>
+                  </tr>
+                );
+              })}
             </FarmstandTable>
             <MarketsPagination
               label="Participation occurrence pages"
@@ -1188,8 +1230,7 @@ function ParticipationPanel({
           >
             <p>Try another date range or participation filter.</p>
           </EmptyState>
-        )
-      )}
+        ))}
       {calendar && (
         <OrdersDateRange
           value={{ from: range.from, to: addDays(range.through, -1) }}
@@ -1222,7 +1263,7 @@ function ParticipationPanel({
               <ReadState {...config} retry={config.refresh} />
               {editable && config.data ? (
                 <CommandForm
- submitClassName="farmstand-button"
+                  submitClassName="farmstand-button"
                   embedded
                   title="Occurrence Participation"
                   onPendingChange={setBusy}

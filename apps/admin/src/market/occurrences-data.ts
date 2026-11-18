@@ -31,7 +31,7 @@ export function today() {
 
 /** Every occurrence in a bounded range, read in backend-sized pages. */
 export async function readOccurrencesInRange(
-  service: MarketService,
+  service: Pick<MarketService, 'occurrencePage'>,
   range: OccurrenceRange,
 ) {
   const bounds = dateBounds(range.from, range.through);

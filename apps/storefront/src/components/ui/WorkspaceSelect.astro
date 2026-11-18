@@ -1,0 +1,36 @@
+---
+import type { FarmstandIconName } from '@market/ui/farmstand';
+import { selectClassName } from '@market/ui/presentation';
+import FarmstandIcon from './FarmstandIcon.astro';
+import '@market/ui/farmstand.css';
+// Astro adapter of FarmstandSelect: icon-led native select (the admin
+// market-date selector), so server-rendered pages share its presentation.
+const {
+  id,
+  name,
+  label,
+  icon = 'chevron-down',
+  hideLabel = false,
+} = Astro.props as {
+  id: string;
+  name: string;
+  label: string;
+  icon?: FarmstandIconName;
+  hideLabel?: boolean;
+};
+---
+
+<div class="field">
+  <label class:list={[hideLabel && 'sr-only']} for={id}>
+    {label}
+  </label>
+  <span class="farmstand-select-wrap farmstand-select-with-icon">
+    <FarmstandIcon name={icon} />
+    <select id={id} name={name} class={selectClassName('farmstand-select')}>
+      <button type="button">
+        <selectedcontent />
+      </button>
+      <slot />
+    </select>
+  </span>
+</div>

@@ -6,12 +6,12 @@ export function cartLineIssue(
   preorder: VendorPreorderState,
 ) {
   if (preorder.unavailable || !preorder.selected)
-    return 'Availability cannot be confirmed for this cart’s market. You can remove this item or refresh to try again.';
+    return 'Availability is temporarily unavailable for this market.';
   const fact = preorder.availability.find(
     (entry) => entry.variantId === line.productVariant.id,
   );
   if (!fact)
-    return 'Availability could not be confirmed. Refresh before checking out.';
+    return 'Availability is temporarily unavailable.';
   if (!fact.available)
     return fact.reason || 'This item is currently unavailable at this market.';
   if (fact.quantity !== null && line.quantity > fact.quantity)
@@ -24,10 +24,9 @@ export function cartCheckoutIssue(
   preorder: VendorPreorderState,
 ) {
   if (!cart?.lines.length) return 'Your cart is empty.';
-  if (cart.state !== 'AddingItems')
-    return 'This order cannot continue from the cart in its current state. Refresh to check its status.';
+  if (cart.state !== 'AddingItems') return '';
   if (preorder.unavailable || !preorder.selected)
-    return 'Your cart’s pickup market cannot be confirmed. Refresh or remove the items before choosing another market.';
+    return 'Your cart’s pickup market is temporarily unavailable.';
   if (cart.lines.some((line) => cartLineIssue(line, preorder)))
     return 'Review the availability messages beside your items before continuing.';
   return '';

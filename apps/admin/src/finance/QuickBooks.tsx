@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Badge,
-  Button,
   Card,
   Checkbox,
   DataTable,
@@ -14,6 +13,7 @@ import {
   Dropdown,
 } from '@market/ui';
 import { disclosureClassName } from '@market/ui/presentation';
+import { FarmstandButton as Button } from '@market/ui/farmstand';
 import type {
   QuickBooksApi,
   QuickBooksStatus,
@@ -26,6 +26,7 @@ import type {
 } from '@market/api';
 import { AppError } from '@market/api';
 import { ReadState, useRead } from '../vendor/common';
+import { usePhoneRecords } from '../market/mobile';
 
 export function QuickBooks({
   api,
@@ -36,6 +37,7 @@ export function QuickBooks({
   manager?: boolean;
   categories: string[];
 }) {
+  const records = usePhoneRecords();
   const read = useCallback(() => api.status(), [api]);
   const status = useRead('quickbooks', read);
   const [draftSettings, setSettings] = useState<QuickBooksSettings | null>(
@@ -203,7 +205,7 @@ export function QuickBooks({
     spending: 'Expense payment account',
   };
   return (
-    <div className="quickbooks-workspace">
+    <div className="quickbooks-workspace farmstand-controls">
       <ReadState {...status} retry={status.refresh} />
       {error && <Alert severity="error">{error}</Alert>}
       {notice && <Alert severity="success">{notice}</Alert>}
@@ -284,7 +286,7 @@ export function QuickBooks({
       <Card spacing="contained">
         <p>
           Send supported activity automatically.{' '}
-          <Button variant="disclosure" onClick={() => setSyncHelp(true)}>
+          <Button variant="tertiary" onClick={() => setSyncHelp(true)}>
             Learn how automatic sync works
           </Button>
         </p>
@@ -759,6 +761,13 @@ export function QuickBooks({
         >
           <DataTable
             label="QuickBooks records"
+            recordDetails={records({
+              status: 1,
+              onOpen: (index) => {
+                const record = history[index];
+                if (record) setDetails(record);
+              },
+            })}
             headings={['Activity', 'Status', 'Date', 'Amount']}
           >
             {history.map((record) => (

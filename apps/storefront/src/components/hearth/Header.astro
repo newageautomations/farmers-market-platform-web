@@ -1,0 +1,108 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { storefrontText } from '@market/theme/storefront';
+import { buttonClassName } from '@market/ui/presentation';
+import { MarketCartLink } from '../MarketCartLink';
+import FarmstandIcon from '../ui/FarmstandIcon.astro';
+import HeaderAccountMenu from '../home/HeaderAccountMenu.astro';
+import { marketSiteNavigation } from '../../lib/market-website';
+import Art from './Art.astro';
+
+/**
+ * Hearth's site header. It carries the same navigation, cart link and account
+ * menu as the other market headers: the shared MarketCartLink,
+ * HeaderAccountMenu, navigation list and header behaviour are reused.
+ */
+interface Props {
+  context: StorefrontContext;
+}
+const { context } = Astro.props;
+const appearance = context.appearance;
+const path = Astro.url.pathname;
+const current = (href: string) =>
+  path === href || (href === '/shop' && path.startsWith('/shop/'))
+    ? ('page' as const)
+    : undefined;
+const links = marketSiteNavigation(appearance, !!Astro.locals.editorPreview);
+const aboutLabel = storefrontText(appearance, 'headerAboutLabel');
+---
+
+<header class="hw-header" data-editor-section="header" data-theme-header>
+  <div class="hw-header-inner">
+    <a class="hw-brand" href="/" aria-label={`${context.name} home`}>
+      {context.theme.logo ? (
+        <img src={context.theme.logo} alt="" width="46" height="46" />
+      ) : (
+        <span class="hw-brand-mark">
+          <Art name="stamp" />
+        </span>
+      )}
+      <span class="hw-brand-name">{context.name}</span>
+    </a>
+    <nav class="hw-nav" aria-label="Main navigation">
+      {links.map((link) => (
+        <a href={link.href} aria-current={current(link.href)}>
+          {link.label}
+        </a>
+      ))}
+      {appearance?.about.enabled && (
+        <a href="/about" aria-current={current('/about')}>
+          <span data-storefront-text="headerAboutLabel">{aboutLabel}</span>
+        </a>
+      )}
+    </nav>
+    <div class="hw-header-actions" data-theme-cart>
+      {context.source === 'backend' && !Astro.locals.editorPreview ? (
+        <MarketCartLink
+          storefrontId={context.storefrontId ?? ''}
+          icon
+          client:load
+        />
+      ) : (
+        <a
+          href="/cart"
+          class={buttonClassName({
+            variant: 'tertiary',
+            iconOnly: true,
+            className: 'harvest-cart-link harvest-header-icon',
+          })}
+          aria-label="Cart, 0 items"
+        >
+          <FarmstandIcon name="shopping-bag" />
+          <span class="harvest-cart-count" aria-hidden="true">
+            0
+          </span>
+        </a>
+      )}
+      <HeaderAccountMenu />
+      <details class="hw-menu" data-theme-menu>
+        <summary aria-label="Open navigation menu">
+          <span class="hw-menu-bars" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </summary>
+        <nav aria-label="Mobile navigation">
+          <a href="/" aria-current={current('/')}>
+            Home
+          </a>
+          {links.map((link) => (
+            <a href={link.href} aria-current={current(link.href)}>
+              {link.label}
+            </a>
+          ))}
+          {appearance?.about.enabled && (
+            <a href="/about" aria-current={current('/about')}>
+              <span data-storefront-text="headerAboutLabel">{aboutLabel}</span>
+            </a>
+          )}
+        </nav>
+      </details>
+    </div>
+  </div>
+</header>
+<script>
+  import { mountMarketThemeHeader } from '../../lib/market-theme-header';
+  mountMarketThemeHeader();
+</script>

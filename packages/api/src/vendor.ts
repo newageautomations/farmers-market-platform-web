@@ -82,6 +82,8 @@ export function createVendorApi(
   if (!options.channelToken.trim()) throw new AppError('forbidden');
   const run = transport('admin', options);
   return {
+    preorderFeeSettings: () => run({ api: 'admin', document: g.VendorPreorderFeeSettingsDocument }, {}).then(r => r.ownPreorderFeeSettings),
+    savePreorderFeeSettings: (input: g.SaveVendorPreorderFeeSettingsMutationVariables['input']) => run({ api: 'admin', document: g.SaveVendorPreorderFeeSettingsDocument }, { input }).then(r => r.saveOwnPreorderFeeSettings),
     taxSettings: () =>
       run({ api: 'admin', document: g.VendorTaxSettingsDocument }, {}).then(
         (r) => r.ownVendorTaxSettings,

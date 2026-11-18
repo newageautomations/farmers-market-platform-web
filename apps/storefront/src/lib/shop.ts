@@ -9,6 +9,7 @@ import {
   createApplicationDocumentsApi,
   createInboxApi,
   createPublicContactApi,
+  createMarketDayStorefrontApi,
 } from '@market/api';
 import type { APIContext } from 'astro';
 
@@ -130,6 +131,15 @@ export function requestApplicationDocuments(
 }
 
 export const loyaltyTransport = requestOptions;
+
+export function requestMarketDay(
+  context: Pick<APIContext, 'locals' | 'request'>,
+  headers?: Headers,
+) {
+  if (context.locals.storefront?.kind !== 'MARKET')
+    throw new AppError('forbidden');
+  return createMarketDayStorefrontApi(requestOptions(context, headers));
+}
 
 export function requestContact(context: APIContext, headers: Headers) {
   const options = requestOptions(context, headers);

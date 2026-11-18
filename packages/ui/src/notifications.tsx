@@ -8,6 +8,7 @@ import {
   type ChangeEvent,
   type KeyboardEvent,
   type MouseEvent,
+  type ReactNode,
 } from 'react';
 import {
   createCustomerInboxApi,
@@ -46,6 +47,7 @@ import {
   FarmstandSelect,
 } from './farmstand';
 import { buttonClassName, navigationIconPaths } from './presentation';
+import { HeaderMenu } from './dashboard';
 
 /** Replays the check animation on each user change, never on first render. */
 export function replayCheck(event: ChangeEvent<HTMLInputElement>) {
@@ -464,8 +466,15 @@ export function NotificationCenter({
   tabs = true,
   basePath = '/notifications',
   navigate,
+  compactBell = false,
+  detailSheet = false,
 }: {
   view?: 'bell' | 'inbox' | 'trash' | 'settings' | 'unsubscribed';
+  /** Open a notification's (or rule's) details in a bottom sheet instead of
+   * the panel beside the list (the admin's phone presentation). */
+  detailSheet?: boolean;
+  /** Opt-in compact topbar menu for the bell (Market Manager shell). */
+  compactBell?: boolean;
   connection?: { endpoint: string; channelToken?: string };
   customer?: boolean;
   api?: InboxApi;
@@ -508,7 +517,43 @@ export function NotificationCenter({
       tabs={tabs}
       basePath={basePath}
       navigate={navigate}
+      compactBell={compactBell}
+      detailSheet={detailSheet}
     />
+  );
+}
+/**
+ * The selected notification's (or rule's) panel: beside the list by default,
+ * or in a bottom-sheet `Dialog` when the host asks for `detailSheet` (the
+ * admin's phone presentation). The panel's own close button gives way to the
+ * sheet's.
+ */
+function DetailSlot({
+  sheet,
+  closing,
+  onClose,
+  children,
+}: {
+  sheet: boolean;
+  closing: boolean;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  return sheet ? (
+    <Dialog
+      open
+      drawer
+      dismissOnBackdrop
+      title="Notification details"
+      onClose={onClose}
+      className="ui-record-sheet notification-sheet"
+    >
+      {children}
+    </Dialog>
+  ) : (
+    <div className={`notification-detail-slot${closing ? ' is-closing' : ''}`}>
+      {children}
+    </div>
   );
 }
 const emptyFilter: InboxFilter = { take: pageSize, skip: 0 };
@@ -530,7 +575,11 @@ function NotificationWorkspace({
   tabs,
   basePath,
   navigate,
+  compactBell = false,
+  detailSheet = false,
 }: {
+  compactBell?: boolean;
+  detailSheet?: boolean;
   api: InboxApi;
   view: string;
   destination?: (n: InboxNotification) => string | null;
@@ -809,6 +858,138 @@ function NotificationWorkspace({
         The destination is currently unavailable.
       </p>
     );
+  const bellDetail = (
+    <>
+      <Dialog
+        open={!!detail}
+        onClose={closeDetail}
+        title={detail?.title ?? 'Notification'}
+        size="standard"
+        busy={busy}
+      >
+        {detail && (
+          <>
+            <NotificationContext notification={detail} />
+            <p>
+              {distinctSender(detail) && `${distinctSender(detail)} · `}
+              <time dateTime={detail.created_at}>
+                {stamp(detail.created_at)}
+              </time>
+            </p>
+            <p className="notification-body">{detail.body}</p>
+            {actions(detail)}
+            {detail.mandatory && (
+              <p>This required notification cannot be disabled.</p>
+            )}
+            {destinationAction(detail)}
+          </>
+        )}
+      </Dialog>
+      {unsubscribeDialog}
+    </>
+  );
+  if (view === 'bell' && compactBell) {
+    const unread = snapshot.page?.unread;
+    return (
+      <div className="notification-bell notification-bell-compact">
+        <HeaderMenu
+          className="notification-menu"
+          label={
+            unread === undefined
+              ? 'Notifications'
+              : `Notifications, ${unread} unread`
+          }
+          icon={<Glyph icon="bell" />}
+          badge={
+            !!unread && (
+              <span className="notification-menu-count" aria-hidden="true">
+                {unread > 99 ? '99+' : unread}
+              </span>
+            )
+          }
+        >
+          {(close) => (
+            <>
+              <div className="notification-menu-header">
+                <strong>Notifications</strong>
+                {!!unread && (
+                  <span className="notification-menu-unread">
+                    {unread} unread
+                  </span>
+                )}
+              </div>
+              <div className="notification-menu-body">
+                {feedback}
+                {!snapshot.page && !snapshot.error && (
+                  <Spinner label="Loading notifications" />
+                )}
+                {snapshot.page?.items.length === 0 && (
+                  <p className="notification-menu-empty">
+                    You're all caught up.
+                  </p>
+                )}
+                {!!snapshot.page?.items.length && (
+                  <ul className="notification-menu-list">
+                    {snapshot.page.items.map((n) => (
+                      <li
+                        key={n.id}
+                        className={n.read_at ? '' : 'notification-menu-new'}
+                      >
+                        <button
+                          type="button"
+                          className="notification-open"
+                          onClick={() => {
+                            close();
+                            void open(n);
+                          }}
+                        >
+                          <span
+                            className="notification-menu-dot"
+                            aria-label={n.read_at ? undefined : 'Unread'}
+                          />
+                          <span className="notification-menu-text">
+                            <strong>{n.title}</strong>
+                            {n.preview && <span>{n.preview}</span>}
+                            <span className="notification-menu-meta">
+                              {n.workspace_id && n.business_name
+                                ? `${n.business_name} · `
+                                : ''}
+                              <time dateTime={n.created_at}>
+                                {stamp(n.created_at)}
+                              </time>
+                            </span>
+                          </span>
+                        </button>
+                        <IconAction
+                          label={n.read_at ? 'Mark unread' : 'Mark read'}
+                          icon="read"
+                          disabled={busy}
+                          onClick={() =>
+                            act([n.id], n.read_at ? 'unread' : 'read')
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <a
+                href={basePath}
+                className="notification-menu-footer"
+                onClick={(event) => {
+                  close();
+                  follow(event, navigate);
+                }}
+              >
+                View all notifications
+              </a>
+            </>
+          )}
+        </HeaderMenu>
+        {bellDetail}
+      </div>
+    );
+  }
   if (view === 'bell')
     return (
       <div className="notification-bell">
@@ -929,6 +1110,7 @@ function NotificationWorkspace({
       {view === 'settings' || view === 'unsubscribed' ? (
         settings ? (
           <NotificationSettings
+            detailSheet={detailSheet}
             api={api}
             settings={settings}
             view={view}
@@ -1296,8 +1478,10 @@ function NotificationWorkspace({
             )}
           </FarmstandPanel>
           {detail && (
-            <div
-              className={`notification-detail-slot${panel.closing ? ' is-closing' : ''}`}
+            <DetailSlot
+              sheet={detailSheet}
+              closing={panel.closing}
+              onClose={closeDetail}
             >
               <FarmstandPanel
                 as="section"
@@ -1348,7 +1532,7 @@ function NotificationWorkspace({
                   {destinationAction(detail, true)}
                 </div>
               </FarmstandPanel>
-            </div>
+            </DetailSlot>
           )}
         </div>
       )}
@@ -1363,7 +1547,10 @@ export function NotificationSettings({
   view,
   busy,
   save,
+  detailSheet = false,
 }: {
+  /** Open a rule's details in a bottom sheet instead of beside the list. */
+  detailSheet?: boolean;
   api: InboxApi;
   settings: InboxSettings;
   view: string;
@@ -1608,8 +1795,10 @@ export function NotificationSettings({
           )}
         </FarmstandPanel>
         {shown && (
-          <div
-            className={`notification-detail-slot${panel.closing ? ' is-closing' : ''}`}
+          <DetailSlot
+            sheet={detailSheet}
+            closing={panel.closing}
+            onClose={() => panel.close(() => setRule(null))}
           >
             <FarmstandPanel
               as="section"
@@ -1645,7 +1834,7 @@ export function NotificationSettings({
                 notices continue.
               </p>
             </FarmstandPanel>
-          </div>
+          </DetailSlot>
         )}
       </div>
     </div>

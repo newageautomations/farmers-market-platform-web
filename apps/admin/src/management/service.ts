@@ -16,7 +16,11 @@ export function createManagementService(
   const api = createManagementApi({ endpoint, channelToken });
   const payment = [
     'payments',
+    'startStripeOnboarding',
+    'completeStripeOnboarding',
+    'stripeDashboard',
     'connectStripe',
+    'completeStripeConnect',
     'refreshStripe',
     'disconnectStripe',
   ];
@@ -66,7 +70,7 @@ export function createManagementService(
             ((payment.includes(key) || pos.includes(key)) &&
               !reads.includes(key) &&
               !['mapPos', 'posPolicies'].includes(key) &&
-              (context.scope !== 'VENDOR' ||
+              (!['VENDOR', 'MARKET'].includes(context.scope) ||
                 context.membershipRole !== 'owner')) ||
             (!tenantModule && context.scope !== 'PLATFORM')
           )

@@ -1,0 +1,47 @@
+---
+import type { FarmstandIconName } from '@market/ui/farmstand';
+import { cardClassName } from '@market/ui/presentation';
+import FarmstandIcon from './FarmstandIcon.astro';
+/**
+ * Astro adapter of `MarketsSummary` (`@market/ui/workspace`): the same
+ * `markets-summary` cards for server-rendered customer pages. Values and
+ * their meaning remain caller-owned.
+ */
+export interface SummaryItem {
+  label: string;
+  value: number | string;
+  hint: string;
+  icon: FarmstandIconName;
+  tone?: 'warning' | 'success' | 'danger';
+  href?: string;
+}
+const { items, class: className = '' } = Astro.props as {
+  items: SummaryItem[];
+  class?: string;
+};
+---
+
+<div class={`markets-summary ui-kpi-grid ${className}`.trim()}>
+  {items.map((stat) => {
+    const Tag = stat.href ? 'a' : 'div';
+    return (
+      <Tag
+        href={stat.href}
+        class={cardClassName({
+          spacing: 'contained',
+          padding: 'none',
+          className: `farmstand-panel markets-stat${stat.tone ? ` markets-stat-${stat.tone}` : ''}${stat.href ? ' customer-stat-link' : ''}`,
+        })}
+      >
+        <span class="markets-stat-icon">
+          <FarmstandIcon name={stat.icon} />
+        </span>
+        <dl>
+          <dt>{stat.label}</dt>
+          <dd>{stat.value}</dd>
+        </dl>
+        <p>{stat.hint}</p>
+      </Tag>
+    );
+  })}
+</div>

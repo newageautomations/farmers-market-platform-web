@@ -1,3 +1,4 @@
+import { WebsiteInspectorContent } from './WebsiteEditorContext';
 import { useEffect, useRef, useState } from 'react';
 import { Button, Checkbox, Dialog, Field, Input, Textarea } from '@market/ui';
 import { disclosureClassName } from '@market/ui/presentation';
@@ -13,6 +14,9 @@ import { StorefrontReorderControls } from './StorefrontReorderControls';
 
 /** Feature composition: shared disclosures and fields inside the shared Dialog. */
 export function PoliciesEditor({
+  onlyClosing = false,
+  hideClosing = false,
+  sectionHero = false,
   value,
   selected,
   collapsed,
@@ -29,6 +33,9 @@ export function PoliciesEditor({
   collapse: () => void;
   choose: (id: StorefrontEditorSection) => void;
   onChange: (value: PoliciesConfig) => void;
+  sectionHero?: boolean;
+  onlyClosing?: boolean;
+  hideClosing?: boolean;
   busy: boolean;
   validationError?: string;
   selectionRequest?: number;
@@ -99,20 +106,28 @@ export function PoliciesEditor({
       disabled={busy}
       className="policies-editor story-editor-list"
     >
-      <label className="story-page-toggle">
-        <Checkbox
-          id="policies-enabled"
-          role="switch"
-          className="sr-only"
-          aria-label="Enable Policies page"
-          checked={value.enabled}
-          onChange={(e) => patch({ enabled: e.target.checked })}
-        />
-        <span className="story-switch-track" aria-hidden="true" />
-        <span>{value.enabled ? 'Enabled' : 'Disabled'}</span>
-      </label>
-      {(['policies-settings', 'policies-list', 'policies-cta'] as const).map(
-        (id) => {
+      {!sectionHero && (
+        <label className="story-page-toggle">
+          <Checkbox
+            id="policies-enabled"
+            role="switch"
+            className="sr-only"
+            aria-label="Enable Policies page"
+            checked={value.enabled}
+            onChange={(e) => patch({ enabled: e.target.checked })}
+          />
+          <span className="story-switch-track" aria-hidden="true" />
+          <span>{value.enabled ? 'Enabled' : 'Disabled'}</span>
+        </label>
+      )}
+      {(['policies-settings', 'policies-list', 'policies-cta'] as const)
+        .filter((id) =>
+          onlyClosing
+            ? id === 'policies-cta'
+            : !hideClosing || id !== 'policies-cta',
+        )
+        .filter((id) => !sectionHero || id !== 'policies-settings')
+        .map((id) => {
           const open =
             !collapsed &&
             (selected === id ||
@@ -141,11 +156,12 @@ export function PoliciesEditor({
                 }
               </summary>
               {open && (
-                <div className="ui-disclosure-content visual-editor-section-content">
+                <WebsiteInspectorContent>
                   {id === 'policies-settings' && (
                     <>
-                      {(['title', 'heading', 'description'] as const).map(
-                        (key) => (
+                      {(['title', 'heading', 'description'] as const)
+                        .filter((key) => !sectionHero || key === 'title')
+                        .map((key) => (
                           <Field
                             key={key}
                             id={`policies-${key}`}
@@ -177,8 +193,7 @@ export function PoliciesEditor({
                               />
                             )}
                           </Field>
-                        ),
-                      )}
+                        ))}
                     </>
                   )}
                   {id === 'policies-list' && (
@@ -227,12 +242,11 @@ export function PoliciesEditor({
                       </p>
                     </>
                   )}
-                </div>
+                </WebsiteInspectorContent>
               )}
             </details>
           );
-        },
-      )}
+        })}
       <Dialog
         open={managing}
         onClose={() => setManaging(false)}
@@ -294,7 +308,7 @@ export function PoliciesEditor({
                     </span>
                   </summary>
                   {open && (
-                    <div className="ui-disclosure-content visual-editor-section-content">
+                    <WebsiteInspectorContent>
                       <Field
                         id={`policy-title-${policy.id}`}
                         label="Policy Title"
@@ -347,7 +361,7 @@ export function PoliciesEditor({
                           Delete Policy
                         </Button>
                       </div>
-                    </div>
+                    </WebsiteInspectorContent>
                   )}
                 </details>
               </div>

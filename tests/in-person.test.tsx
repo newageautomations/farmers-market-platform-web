@@ -324,6 +324,30 @@ describe('POS cart serialization', () => {
   });
 });
 describe('POS interface', () => {
+  it('retains the Market Day occurrence when reading catalog and starting a sale', async () => {
+    const api = fixture();
+    vi.mocked(api.contexts).mockResolvedValue([
+      {
+        kind: 'MARKET_OCCURRENCE',
+        label: 'Boerne Market',
+        marketId: '4',
+        occurrenceId: '69',
+      },
+    ]);
+    render(
+      <PosRegister api={api} vendorName="Honey Farm" initialOccurrence="69" />,
+    );
+    await waitFor(() =>
+      expect(api.catalog).toHaveBeenCalledWith(
+        expect.objectContaining({ occurrenceId: '69' }),
+      ),
+    );
+    expect(await screen.findByLabelText('Selling context')).toHaveValue('69');
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Honey' }));
+    await waitFor(() =>
+      expect(api.start).toHaveBeenCalledWith(expect.any(String), '69', '11'),
+    );
+  });
   it('starts from a product and keeps subsequent additions in the same checkout', async () => {
     const api = fixture();
     render(<PosRegister api={api} vendorName="Honey Farm" />);

@@ -1,0 +1,95 @@
+{
+  "database": "vendure_demo_market_ops",
+  "occurrenceId": 68,
+  "date": "2026-11-13",
+  "hours": "09:00-14:00 America/Chicago",
+  "layout": "Bulverde Market Day",
+  "vendors": [
+    {
+      "vendor": "Manna Roots",
+      "booth": "A01",
+      "products": 22,
+      "invoiceId": 43,
+      "amount": 45
+    },
+    {
+      "vendor": "Showbread Catering",
+      "booth": "A02",
+      "products": 18,
+      "invoiceId": 44,
+      "amount": 45
+    },
+    {
+      "vendor": "Norma Jean’s Greens",
+      "booth": "A03",
+      "products": 18,
+      "invoiceId": 45,
+      "amount": 45
+    },
+    {
+      "vendor": "Tamales De Reina",
+      "booth": "A04",
+      "products": 18,
+      "invoiceId": 46,
+      "amount": 45
+    },
+    {
+      "vendor": "Mummy’s Macarons",
+      "booth": "A05",
+      "products": 18,
+      "invoiceId": 47,
+      "amount": 45
+    },
+    {
+      "vendor": "Smith Pastures",
+      "booth": "A06",
+      "products": 18,
+      "invoiceId": 48,
+      "amount": 45
+    },
+    {
+      "vendor": "Grammies Crackers",
+      "booth": "A07",
+      "products": 18,
+      "invoiceId": 49,
+      "amount": 45
+    },
+    {
+      "vendor": "Last Watch Coffee",
+      "booth": "A08",
+      "products": 18,
+      "invoiceId": 50,
+      "amount": 45
+    },
+    {
+      "vendor": "Priceless Honey",
+      "booth": "A09",
+      "products": 18,
+      "invoiceId": 51,
+      "amount": 45
+    },
+    {
+      "vendor": "Twice Baked Cafe",
+      "booth": "A10",
+      "products": 18,
+      "invoiceId": 52,
+      "amount": 45
+    },
+    {
+      "vendor": "9-1 Produce Farm",
+      "booth": "A11",
+      "products": 18,
+      "invoiceId": 53,
+      "amount": 45
+    }
+  ],
+  "preordersClose": "2026-11-12T23:00:00-06:00",
+  "invoiceDelivery": "11 local vendor inbox notifications; external email disabled",
+  "excludedMemberships": [
+    {
+      "vendor": "Pucker Up!",
+      "reason": "Pending membership with unverified consent"
+    }
+  ],
+  "venue": "Main Plaza, 100 N Main St, Boerne, TX (fictional local test venue)"
+}

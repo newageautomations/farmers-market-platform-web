@@ -1,18 +1,23 @@
-import { type ReactNode } from 'react';
-import {
-  Button,
-  Checkbox,
-  Field,
-  Input,
-  SelectField,
-  Textarea,
-} from '@market/ui';
+import { createPortal } from 'react-dom';
+import { WebsiteInspectorContent } from './WebsiteEditorContext';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Field, Input, Textarea } from '@market/ui';
 import { disclosureClassName } from '@market/ui/presentation';
 import type { StorefrontAppearanceApi } from '@market/api';
 import type {
   EditorialMarketSettings,
+  MarketAppearance,
+  StorefrontAppearance,
   StorefrontEditorSection,
 } from '@market/theme/storefront';
+import {
+  editorialHomepageComposition,
+  editorialMarketHomepageComposition,
+  editorialHomepageTarget,
+  type EditorialOriginalSectionId,
+} from '@market/theme/storefront';
+import { WebsiteSectionManagement } from './WebsiteSectionManagement';
+import { HomepageDesignEditor } from './HomepageDesignEditor';
 import { CategoryImageField } from './vendor/categories';
 
 type Page =
@@ -23,9 +28,18 @@ type Page =
   | 'faq'
   | 'policies'
   | 'products'
-  | 'product';
+  | 'product'
+  | 'market-dates'
+  | 'vendors'
+  | 'applications';
+/** Market homepage natives whose market settings the visual editor renders.
+ * The original call-to-action banner is edited as a CTA banner section. */
+export type EditorialMarketNativeId = 'markets' | 'vendors' | 'categories';
 
 export function EditorialMarketEditor({
+  globalContainer,
+  categoryPresentation,
+  onCategoryPresentationChange,
   value,
   onChange,
   api,
@@ -37,7 +51,24 @@ export function EditorialMarketEditor({
   choose,
   collapse,
   busy,
+  market = false,
+  marketAppearance,
+  allowSection,
+  marketHeroFields,
+  renderMarketNative,
 }: {
+  /** Market website: market homepage natives replace vendor catalog sections. */
+  market?: boolean;
+  /** Market copy that seeds the original call-to-action banner. */
+  marketAppearance?: MarketAppearance;
+  allowSection?: (type: string) => boolean;
+  marketHeroFields?: ReactNode;
+  renderMarketNative?: (id: EditorialMarketNativeId) => ReactNode;
+  globalContainer?: HTMLElement | null;
+  categoryPresentation?: StorefrontAppearance['categoryPresentation'];
+  onCategoryPresentationChange?: (
+    value: NonNullable<StorefrontAppearance['categoryPresentation']>,
+  ) => void;
   value: EditorialMarketSettings;
   onChange: (value: EditorialMarketSettings) => void;
   api: StorefrontAppearanceApi;
@@ -50,6 +81,66 @@ export function EditorialMarketEditor({
   collapse: () => void;
   busy: boolean;
 }) {
+  const [categories, setCategories] = useState<
+    Array<{ id: string; pathIds?: string[] }>
+  >([]);
+  const [defaultProducts, setDefaultProducts] = useState<Array<{ id: string }>>(
+    [],
+  );
+  useEffect(() => {
+    let active = true;
+    if (market)
+      return () => {
+        active = false;
+      };
+    if (
+      !value.composition ||
+      value.composition.some((s) => !('type' in s) && s.id === 'products')
+    ) {
+      void api
+        .products?.('', [])
+        .then((rows) => {
+          if (active) setDefaultProducts(rows);
+        })
+        .catch(() => {});
+    }
+    if (
+      !value.composition ||
+      value.composition.some((s) => !('type' in s) && s.id === 'categories')
+    ) {
+      void api
+        .showcaseCategories?.()
+        .then((rows) => {
+          if (active) setCategories(rows);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      active = false;
+    };
+  }, [api, value.composition, market]);
+  const homepageSections = market
+    ? editorialMarketHomepageComposition({
+        market: marketAppearance,
+        template: { settings: value },
+      })
+    : editorialHomepageComposition(
+        value,
+        {
+          productIds: (products.length ? products : defaultProducts).map(
+            (p) => p.id,
+          ),
+          categoryIds: categories
+            .filter(
+              (c) =>
+                !(c.pathIds ?? [c.id]).some(
+                  (id) => categoryPresentation?.[id]?.visible === false,
+                ),
+            )
+            .map((c) => c.id),
+        },
+        market,
+      );
   const patch = (next: Partial<EditorialMarketSettings>) =>
     onChange({ ...value, ...next });
   const text = (
@@ -85,7 +176,7 @@ export function EditorialMarketEditor({
     content: ReactNode,
   ) => {
     const open = !collapsed && selected === id;
-    return (
+    const rendered = (
       <details key={id} className={disclosureClassName('dropdown')} open={open}>
         <summary
           role="button"
@@ -99,12 +190,16 @@ export function EditorialMarketEditor({
           {label}
         </summary>
         {open && (
-          <div className="ui-disclosure-content visual-editor-section-content">
+          <WebsiteInspectorContent>
             <fieldset disabled={busy}>{content}</fieldset>
-          </div>
+          </WebsiteInspectorContent>
         )}
       </details>
     );
+    return globalContainer &&
+      ['editorial:header', 'editorial:footer', 'editorial:theme'].includes(id)
+      ? createPortal(rendered, globalContainer, id)
+      : rendered;
   };
   const image = (
     key: keyof EditorialMarketSettings['assets'],
@@ -161,203 +256,153 @@ export function EditorialMarketEditor({
               ['findUsLabel', 'Find Us navigation label'],
               ['contactLabel', 'Contact navigation label'],
             ] as const
-          ).map(([key, label]) =>
-            text(`editorial-${key}`, label, value.header[key], 60, (next) =>
-              patch({ header: { ...value.header, [key]: next } }),
-            ),
-          )}
+          )
+            .filter(([key]) => !market || key !== 'findUsLabel')
+            .map(([key, label]) =>
+              text(`editorial-${key}`, label, value.header[key], 60, (next) =>
+                patch({ header: { ...value.header, [key]: next } }),
+              ),
+            )}
         </>,
       )}
-      {page === 'home' &&
-        disclosure(
-          'editorial:hero',
-          'Hero',
-          <>
-            {text(
-              'editorial-hero-heading',
-              'Heading',
-              value.hero.heading,
-              160,
-              (heading) => patch({ hero: { ...value.hero, heading } }),
-            )}
-            {text(
-              'editorial-hero-introduction',
-              'Introduction',
-              value.hero.introduction,
-              600,
-              (introduction) =>
-                patch({ hero: { ...value.hero, introduction } }),
-              true,
-            )}
-            {text(
-              'editorial-hero-button',
-              'Button label',
-              value.hero.buttonLabel,
-              80,
-              (buttonLabel) => patch({ hero: { ...value.hero, buttonLabel } }),
-            )}
-            {image('desktopHero', 'Desktop hero artwork')}
-            {image('mobileHero', 'Mobile hero artwork')}
-          </>,
-        )}
-      {page === 'home' &&
-        disclosure(
-          'editorial:categories',
-          `Product categories${value.categories.visible ? '' : ' (hidden)'}`,
-          <>
-            <Field id="editorial-categories-visible" label="Show categories">
-              <Checkbox
-                id="editorial-categories-visible"
-                checked={value.categories.visible}
-                onChange={(event) =>
-                  patch({
-                    categories: {
-                      ...value.categories,
-                      visible: event.target.checked,
-                    },
-                  })
-                }
-              />
-            </Field>
-            {text(
-              'editorial-categories-heading',
-              'Heading',
-              value.categories.heading,
-              160,
-              (heading) =>
-                patch({ categories: { ...value.categories, heading } }),
-            )}
-            {text(
-              'editorial-categories-link',
-              'Shop link label',
-              value.categories.linkLabel,
-              80,
-              (linkLabel) =>
-                patch({ categories: { ...value.categories, linkLabel } }),
-            )}
-            <SelectField
-              id="editorial-category-limit"
-              label="Categories shown"
-              value={String(value.categories.limit)}
-              onChange={(event) =>
-                patch({
-                  categories: {
-                    ...value.categories,
-                    limit: Number(event.target.value),
+
+      {page === 'home' && (
+        <>
+          {disclosure(
+            'editorial:theme',
+            'Homepage design',
+            <HomepageDesignEditor
+              id="editorial-homepage"
+              value={value.homepageDesign}
+              onChange={(homepageDesign) => patch({ homepageDesign })}
+            />,
+          )}
+          <WebsiteSectionManagement<{
+            id: EditorialOriginalSectionId;
+            visible: boolean;
+          }>
+            allowSection={allowSection}
+            sections={homepageSections.map((section) =>
+              'type' in section
+                ? section
+                : {
+                    ...section,
+                    visible:
+                      section.id === 'impact'
+                        ? value.impact.visible
+                        : section.id === 'categories' ||
+                            section.id === 'products'
+                          ? market || value[section.id].visible
+                          : true,
                   },
-                })
-              }
-            >
-              {[4, 6, 8, 10, 12].map((count) => (
-                <option key={count} value={count}>
-                  {count}
-                </option>
-              ))}
-            </SelectField>
-            <p>
-              Choose category images, order and visibility in Category
-              presentation.
-            </p>
-          </>,
-        )}
-      {page === 'home' &&
-        disclosure(
-          'editorial:products',
-          `Featured products${value.products.visible ? '' : ' (hidden)'}`,
-          <>
-            <Field id="editorial-products-visible" label="Show products">
-              <Checkbox
-                id="editorial-products-visible"
-                checked={value.products.visible}
-                onChange={(event) =>
-                  patch({
-                    products: {
-                      ...value.products,
-                      visible: event.target.checked,
-                    },
-                  })
-                }
-              />
-            </Field>
-            {text(
-              'editorial-products-heading',
-              'Heading',
-              value.products.heading,
-              160,
-              (heading) => patch({ products: { ...value.products, heading } }),
             )}
-            {text(
-              'editorial-products-link',
-              'Shop link label',
-              value.products.linkLabel,
-              80,
-              (linkLabel) =>
-                patch({ products: { ...value.products, linkLabel } }),
-            )}
-            <Button variant="secondary" onClick={loadProducts}>
-              Load products
-            </Button>
-            <div className="storefront-product-picker">
-              {products.map((product) => (
-                <label
-                  key={product.id}
-                  className="storefront-product-choice"
-                  htmlFor={`editorial-product-${product.id}`}
-                >
-                  <Checkbox
-                    id={`editorial-product-${product.id}`}
-                    checked={value.products.productIds.includes(product.id)}
-                    disabled={
-                      value.products.productIds.length >= 8 &&
-                      !value.products.productIds.includes(product.id)
-                    }
-                    onChange={(event) =>
-                      patch({
-                        products: {
-                          ...value.products,
-                          productIds: event.target.checked
-                            ? [...value.products.productIds, product.id]
-                            : value.products.productIds.filter(
-                                (id) => id !== product.id,
-                              ),
-                        },
-                      })
-                    }
-                  />
-                  <span>{product.name}</span>
-                </label>
-              ))}
-            </div>
-          </>,
-        )}
-      {page === 'home' &&
-        disclosure(
-          'editorial:impact',
-          `Community impact artwork${value.impact.visible ? '' : ' (hidden)'}`,
-          <>
-            <Field id="editorial-impact-visible" label="Show artwork">
-              <Checkbox
-                id="editorial-impact-visible"
-                checked={value.impact.visible}
-                onChange={(event) =>
-                  patch({
-                    impact: { ...value.impact, visible: event.target.checked },
-                  })
-                }
-              />
-            </Field>
-            {image('desktopFooter', 'Desktop impact artwork')}
-            {image('mobileFooter', 'Mobile impact artwork')}
-            {text(
-              'editorial-impact-alt',
-              'Artwork alternative text',
-              value.impact.imageAlt,
-              200,
-              (imageAlt) => patch({ impact: { ...value.impact, imageAlt } }),
-              true,
-            )}
-          </>,
-        )}
+            onChange={(sections) => {
+              const visibility = (id: 'categories' | 'products' | 'impact') =>
+                sections.find((section) => section.id === id)?.visible ??
+                value[id].visible;
+              onChange({
+                ...value,
+                composition: sections.map((section) =>
+                  'type' in section ? section : { id: section.id },
+                ),
+                categories: {
+                  ...value.categories,
+                  visible: visibility('categories'),
+                },
+                products: {
+                  ...value.products,
+                  visible: visibility('products'),
+                },
+                impact: { ...value.impact, visible: visibility('impact') },
+              });
+            }}
+            target={editorialHomepageTarget}
+            prefix="editorial"
+            api={api}
+            products={products}
+            loadProducts={loadProducts}
+            selected={selected}
+            choose={choose}
+            collapsed={collapsed}
+            collapse={collapse}
+            busy={busy}
+            categoryPresentation={categoryPresentation}
+            onCategoryPresentationChange={onCategoryPresentationChange}
+            hiddenCategoryIds={Object.entries(categoryPresentation ?? {})
+              .filter(([, category]) => !category.visible)
+              .map(([id]) => id)}
+            canHide={(section) => 'type' in section}
+            nativeLabel={(section) =>
+              ({
+                hero: 'Hero',
+                categories: 'Product categories',
+                products: 'Featured products',
+                impact: 'Community impact artwork',
+                markets: 'Upcoming markets',
+                vendors: 'Vendors',
+                closing: 'Call-to-action banner',
+              })[section.id]
+            }
+            renderNative={(section) => {
+              if (section.id === 'hero')
+                return (
+                  <>
+                    {text(
+                      'editorial-hero-heading',
+                      'Heading',
+                      value.hero.heading,
+                      160,
+                      (heading) => patch({ hero: { ...value.hero, heading } }),
+                    )}
+                    {text(
+                      'editorial-hero-introduction',
+                      'Introduction',
+                      value.hero.introduction,
+                      600,
+                      (introduction) =>
+                        patch({ hero: { ...value.hero, introduction } }),
+                      true,
+                    )}
+                    {text(
+                      'editorial-hero-button',
+                      'Button label',
+                      value.hero.buttonLabel,
+                      80,
+                      (buttonLabel) =>
+                        patch({ hero: { ...value.hero, buttonLabel } }),
+                    )}
+                    {marketHeroFields}
+                    {image('desktopHero', 'Desktop hero artwork')}
+                    {image('mobileHero', 'Mobile hero artwork')}
+                  </>
+                );
+              if (
+                section.id === 'markets' ||
+                section.id === 'vendors' ||
+                (market && section.id === 'categories')
+              )
+                return renderMarketNative?.(section.id) ?? null;
+              if (section.id === 'impact')
+                return (
+                  <>
+                    {image('desktopFooter', 'Desktop impact artwork')}
+                    {image('mobileFooter', 'Mobile impact artwork')}
+                    {text(
+                      'editorial-impact-alt',
+                      'Artwork alternative text',
+                      value.impact.imageAlt,
+                      200,
+                      (imageAlt) =>
+                        patch({ impact: { ...value.impact, imageAlt } }),
+                      true,
+                    )}
+                  </>
+                );
+              return null;
+            }}
+          />
+        </>
+      )}
       {disclosure(
         'editorial:footer',
         'Footer',
@@ -386,6 +431,7 @@ export function EditorialMarketEditor({
         </>,
       )}
       {page === 'products' &&
+        !market &&
         disclosure(
           'editorial:shop-settings',
           'Shop settings',

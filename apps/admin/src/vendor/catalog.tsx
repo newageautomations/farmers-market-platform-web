@@ -38,6 +38,7 @@ import {
 import '@market/ui/farmstand.css';
 import './product-editor.css';
 import { VendorSwitch } from './VendorSwitch';
+import { PriceInput } from '../PriceInput';
 import { ProductSetupPreview } from './ProductSetupPreview';
 import {
   type VendorService,
@@ -53,6 +54,7 @@ import {
   text,
   useRead,
 } from './common';
+import { usePhoneRecords } from '../market/mobile';
 
 function ProductHeading({
   title,
@@ -500,6 +502,7 @@ function ProductDetail({
   id: string;
   setup: boolean;
 }) {
+  const records = usePhoneRecords();
   const read = useCallback(() => service.product(id), [service, id]);
   const query = useRead(`product:${id}`, read);
   const readStock = useCallback(() => readCatalogInventory(service), [service]);
@@ -540,6 +543,7 @@ function ProductDetail({
       >
         <DataTable
           label="Owned variants"
+          recordDetails={records({ status: 2, action: can ? 4 : undefined })}
           headings={[
             'Variant',
             'SKU',
@@ -706,7 +710,7 @@ function ProductDetail({
     </div>
   );
 }
-/** Currency entry composes shared Field/Input; no existing amount control supplied dollar affixes or decimal editing. */
+/** Currency entry: shared Field around the shared PriceInput. */
 function ProductPriceField({
   name,
   label,
@@ -722,28 +726,13 @@ function ProductPriceField({
   const [amount, setAmount] = useState(value);
   return (
     <Field id={id} label={label}>
-      <div className="product-price-input">
-        <span aria-hidden="true">$</span>
-        <Input
-          id={id}
-          name={name}
-          value={amount}
-          required={required}
-          inputMode="decimal"
-          pattern="[0-9]+([.][0-9]{0,2})?"
-          maxLength={11}
-          onChange={(event) => {
-            const next = event.currentTarget.value;
-            if (next.length <= 11 && /^\d*(\.\d{0,2})?$/.test(next))
-              setAmount(next.startsWith('.') ? `0${next}` : next);
-          }}
-          onBlur={() => {
-            if (!amount) return;
-            const [whole, fraction = ''] = amount.split('.');
-            setAmount(`${whole || '0'}.${fraction.padEnd(2, '0')}`);
-          }}
-        />
-      </div>
+      <PriceInput
+        id={id}
+        name={name}
+        value={amount}
+        required={required}
+        onValueChange={setAmount}
+      />
     </Field>
   );
 }

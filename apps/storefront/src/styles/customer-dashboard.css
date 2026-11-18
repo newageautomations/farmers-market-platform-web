@@ -1,54 +1,630 @@
-.customer-dashboard .admin-content {
-  max-width: 1150px;
+/* Customer dashboard. Pages compose the shared workspace presentation
+   (@market/ui/workspace.css, workspace-records.css, settings-panel.css and
+   farmstand.css) through the Astro adapters in components/ui; these rules
+   only arrange customer-specific content. */
+.customer-dashboard .admin-content:has(.markets-workspace) {
+  width: min(100% - 4rem, 1320px);
+  max-width: none;
 }
-.customer-dashboard .customer-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0;
+@media (max-width: 800px) {
+  .customer-dashboard .admin-content:has(.markets-workspace) {
+    width: calc(100% - 2rem);
+  }
 }
-.customer-dashboard .customer-grid .card {
+.customer-workspace > :is(p, div, section)[role='status'],
+.customer-workspace > :is(p, div, section)[role='alert'] {
   margin: 0;
+}
+
+/* Heading actions, as in the vendor workspace headings. */
+.customer-heading {
+  flex-wrap: wrap;
+}
+.customer-heading > div:not(.customer-heading-actions) {
+  flex: 1 1 260px;
   min-width: 0;
 }
-.customer-dashboard .customer-section {
-  margin: 2.5rem 0;
+.customer-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
 }
-.customer-dashboard .customer-order-list {
+.customer-heading-actions :is(.farmstand-icon, svg) {
+  width: 16px;
+  height: 16px;
+  color: currentColor;
+}
+.customer-workspace .button.ui-button > .farmstand-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+/* Summary cards: four-card variant and linked cards. */
+.markets-summary.customer-summary-four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+a.markets-stat.customer-stat-link {
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+a.markets-stat.customer-stat-link:is(:hover, :focus-visible) {
+  border-color: color-mix(in srgb, var(--brand-primary) 40%, transparent);
+  box-shadow: 0 6px 18px
+    color-mix(in srgb, var(--brand-primary) 12%, transparent);
+}
+@container (max-width: 1080px) {
+  .markets-summary.customer-summary-four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (max-width: 600px) {
+  .markets-summary.customer-summary-four {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Lists with a details side panel (vendor Applications classes). */
+.customer-workspace .market-applications-list tr[data-select-row] {
+  outline-offset: -2px;
+}
+.customer-workspace .market-application-details > h2 + [data-select-panel],
+.customer-workspace .market-application-details > [data-select-panel] {
+  min-width: 0;
+}
+.customer-panel-enter {
+  animation: markets-view-enter 260ms ease-out both;
+}
+/* The markets-next panel has no padding of its own (its content supplies
+   it), so empty states inside it take the content padding. */
+.customer-workspace .markets-next > .empty-state,
+.customer-workspace .markets-next > [data-select-panel] > .empty-state {
+  margin: 0;
+  padding: 18px 17px 17px;
+}
+.customer-workspace .markets-identity > span:last-child {
   display: grid;
-  gap: 1rem;
+  min-width: 0;
+}
+.customer-workspace .markets-identity small .farmstand-icon {
+  width: 13px;
+  height: 13px;
+}
+.customer-workspace .market-applications-list .farmstand-data-table td {
+  white-space: nowrap;
+}
+.customer-workspace
+  .market-applications-list
+  .farmstand-data-table
+  td.customer-wrap-cell {
+  white-space: normal;
+  min-width: 140px;
+}
+.customer-workspace .market-applications-main .customer-orders-table {
+  min-width: 660px;
+}
+.customer-workspace
+  .market-applications-main
+  .customer-orders-table
+  th:first-child {
+  width: auto;
+}
+.customer-workspace .customer-orders-table :is(th, td) {
+  padding-inline: 8px;
+}
+.customer-workspace .customer-orders-table thead th {
+  white-space: nowrap;
+}
+.customer-workspace .markets-pagination-footer [aria-disabled='true'] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.customer-workspace .markets-next-content > :is(a, .button) {
+  width: 100%;
+  gap: 8px;
+}
+.customer-workspace .market-application-facts dd {
+  align-self: center;
+}
+.customer-portion-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
-.customer-dashboard .customer-order-list .card {
+.customer-portion-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--markets-border);
+  border-radius: 10px;
+  font-size: 12.5px;
+}
+.customer-portion-list .markets-identity-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+.customer-portion-list .markets-identity-icon .farmstand-icon {
+  width: 16px;
+  height: 16px;
+}
+.customer-portion-list li > span:nth-child(2) {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  min-width: 0;
+}
+.customer-portion-list small {
+  color: var(--brand-muted);
+  font-size: 11.5px;
+  overflow-wrap: anywhere;
+}
+
+/* Follow management rows. */
+.customer-follow-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+.customer-follow-actions form {
   margin: 0;
 }
-.customer-dashboard .customer-order-list header {
+.customer-workspace .market-applications-main .customer-follow-table {
+  min-width: 560px;
+}
+.customer-workspace .market-applications-main .customer-events-table {
+  min-width: 640px;
+}
+.customer-workspace
+  .market-applications-main
+  .customer-events-table
+  th:first-child {
+  width: 30%;
+}
+.customer-search-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+.customer-search-form .field {
+  margin: 0;
+}
+.customer-vendor-chips {
   display: flex;
-  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
-.customer-dashboard .customer-order-list h2 {
-  margin-bottom: 0.5rem;
+.customer-vendor-chips a {
+  color: inherit;
 }
-.customer-dashboard .customer-muted {
+
+/* Order detail page: the vendor detail layout. */
+.customer-detail-back {
+  justify-self: start;
+}
+.customer-detail-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+}
+.customer-detail-main {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.customer-detail-columns > aside {
+  display: grid;
+  gap: 18px;
+  position: sticky;
+  top: 18px;
+  min-width: 0;
+}
+.customer-line-table.farmstand-data-table td:not(:first-child),
+.customer-line-table.farmstand-data-table th:not(:first-child) {
+  text-align: right;
+}
+.customer-pickup-facts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+}
+.customer-pickup-facts > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.customer-pickup-facts > div > dd {
+  margin: 0;
+  align-self: center;
+}
+.customer-pickup-facts dt {
+  display: flex;
+  color: var(--brand-primary);
+}
+@container (max-width: 1080px) {
+  .customer-detail-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .customer-detail-columns > aside {
+    position: static;
+  }
+}
+@container (max-width: 600px) {
+  .customer-search-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Settings sections. */
+.customer-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+.customer-settings-grid > .settings-panel-wide {
+  grid-column: 1 / -1;
+}
+@container (max-width: 900px) {
+  .customer-settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.customer-settings-facts {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  font-size: 13px;
+}
+.customer-settings-facts > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+.customer-settings-facts dt {
   color: var(--brand-muted);
 }
-.customer-dashboard .card p:last-child {
-  margin-bottom: 0;
+.customer-settings-facts dd {
+  margin: 0;
+  align-self: center;
+  overflow-wrap: anywhere;
 }
-.customer-dashboard .card form {
-  margin-top: 1rem;
+.customer-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
-.customer-dashboard .account-panel {
-  max-width: 720px;
-}
-.customer-dashboard .account-panel .account-modes {
-  display: grid;
-  gap: 1rem;
-  margin: 2rem 0;
+
+.customer-muted {
+  color: var(--brand-muted);
 }
 .customer-dashboard [aria-busy='true'] {
   cursor: progress;
+}
+@media (prefers-reduced-motion: reduce) {
+  .customer-panel-enter,
+  a.markets-stat.customer-stat-link {
+    animation: none;
+    transition: none;
+  }
+}
+.customer-line-table.farmstand-data-table thead th:first-child {
+  width: 46%;
+}
+/* Row actions share one right-aligned cell; its heading stays for screen
+   readers only, as on vendor Market discovery. */
+.customer-follow-table.farmstand-data-table thead th:last-child {
+  font-size: 0;
+}
+.customer-follow-table.farmstand-data-table td:last-child {
+  padding-right: 20px;
+}
+
+/* Loyalty: summary, workspace-menu tabs and panels. */
+.customer-loyalty {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.customer-loyalty > div:has(> .customer-loyalty-tabs) {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.customer-loyalty [role='tabpanel'] {
+  min-width: 0;
+  animation: markets-view-enter 300ms ease-out both;
+}
+.customer-loyalty .loyalty-wallet-grid {
+  gap: 14px;
+}
+.customer-loyalty .loyalty-wallet.card.ui-card {
+  margin: 0;
+  border: 1px solid var(--markets-border);
+  border-radius: 13px;
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .customer-loyalty [role='tabpanel'] {
+    animation: none;
+  }
+}
+.customer-settings-form {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+.customer-settings-form .field {
+  margin: 0;
+}
+.customer-settings-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@container (max-width: 600px) {
+  .customer-settings-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.customer-settings-form p,
+.settings-panel-body > p.customer-muted {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.customer-settings-roles {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.customer-settings-roles li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--markets-border);
+  border-radius: 11px;
+}
+.customer-settings-roles li > span:nth-child(2) {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+}
+.customer-settings-roles small {
+  color: var(--brand-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+@container (max-width: 600px) {
+  .customer-settings-roles li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .customer-settings-roles li > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+.customer-preference-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--markets-soft);
+  font-size: 13px;
+}
+.customer-preference-row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Overview: the shared dashboard grid with customer sections. */
+.customer-overview {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.customer-overview-panel.farmstand-panel.card.ui-card {
+  padding: 18px;
+  min-width: 0;
+}
+.customer-overview .vendor-dashboard-panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.customer-overview .vendor-dashboard-panel-header h2 > .farmstand-icon {
+  width: 19px;
+  height: 19px;
+  color: var(--brand-primary);
+}
+.markets-summary.customer-overview-glance {
+  margin: 0;
+}
+.customer-overview .vendor-dashboard-widget .empty-state {
+  margin: auto 0;
+}
+.customer-overview-scroll,
+.customer-overview-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.customer-overview-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.customer-overview-list a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: var(--markets-soft);
+  color: var(--brand-foreground);
+  text-decoration: none;
+  font-size: 13px;
+  transition: background-color 160ms ease;
+}
+.customer-overview-list a:is(:hover, :focus-visible) {
+  background: color-mix(
+    in srgb,
+    var(--brand-primary) 12%,
+    var(--brand-surface)
+  );
+}
+.customer-overview-list .markets-identity-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--brand-surface);
+}
+.customer-overview-list .markets-identity-icon .farmstand-icon {
+  width: 17px;
+  height: 17px;
+}
+.customer-overview-list a > span:nth-child(2) {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.customer-overview-list strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.customer-overview-list small {
+  color: var(--brand-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.customer-overview-list :is(.badge, [class*='ui-status']) {
+  white-space: nowrap;
+}
+.customer-overview-meter {
+  display: block;
+  height: 6px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--brand-primary), var(--brand-primary)) 0 0 /
+      var(--meter, 0%) 100% no-repeat,
+    color-mix(in srgb, var(--brand-primary) 14%, var(--brand-surface));
+}
+.customer-overview-orders {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+}
+.customer-overview-orders :is(th, td) {
+  padding: 9px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--markets-border);
+}
+.customer-overview-orders thead th {
+  color: var(--brand-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.customer-overview-orders tbody th {
+  font-weight: 600;
+}
+.customer-overview-orders tbody th :is(a, small) {
+  display: block;
+}
+.customer-overview-orders tbody th a {
+  color: inherit;
+  text-decoration: none;
+}
+.customer-overview-orders tbody th a:is(:hover, :focus-visible) {
+  text-decoration: underline;
+}
+.customer-overview-orders tbody th small {
+  color: var(--brand-muted);
+  font-size: 11.5px;
+  font-weight: 400;
+}
+.customer-overview-orders :is(th, td):last-child {
+  text-align: right;
+}
+.customer-line-table.farmstand-data-table {
+  min-width: 460px;
+}
+.customer-line-table.farmstand-data-table thead th {
+  white-space: nowrap;
+}
+
+/* Discovery: rows select a storefront; its details, Follow and Visit sit in
+   the side panel. The storefront image covers the icon tile, which shows
+   through when there is no image or it cannot load. */
+.customer-workspace .market-applications-main .customer-discovery-table {
+  min-width: 640px;
+}
+.customer-workspace
+  .market-applications-main
+  .customer-discovery-table
+  th:first-child {
+  width: 32%;
+}
+.customer-subject-art.markets-next-art {
+  position: relative;
+  overflow: hidden;
+}
+.customer-subject-art > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.customer-workspace .markets-next-content > form {
+  margin: 0;
+}
+.customer-workspace .markets-next-content > form > .button {
+  width: 100%;
+  gap: 8px;
+}
+.customer-workspace .markets-next-content > span[aria-disabled='true'] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+/* Unlike vendor discovery, the last column here is a status, not actions. */
+.market-discovery .customer-discovery-table.farmstand-data-table thead th:last-child {
+  font-size: 13px;
 }

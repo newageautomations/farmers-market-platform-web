@@ -1,4 +1,11 @@
 import { z } from 'zod';
+import {
+  websiteSectionSchema,
+  permitsWebsiteSectionPresentation,
+  homepageDesignSchema,
+  websiteSectionManifest,
+  websiteSectionLimit,
+} from './website-sections';
 
 const copy = (max: number) =>
   z
@@ -54,9 +61,43 @@ export const farmhouseSectionKinds = [
   'collection',
   'invitation',
 ] as const;
+export const farmhouseHomepageTarget = {
+  theme: 'modern-farmhouse',
+  themeVersion: 2,
+  page: 'home',
+} as const;
+const farmhouseOriginalSectionSchema = z
+  .object({
+    id: z.enum(farmhouseSectionKinds),
+    visible: z.boolean(),
+    heading: copy(160),
+    body: copy(1200),
+    label: copy(80),
+    destination,
+    photo,
+    tiles: z
+      .array(
+        z
+          .object({
+            title: copy(100),
+            body: copy(300),
+            destination,
+            photo,
+          })
+          .strict(),
+      )
+      .max(3),
+    productIds: z
+      .array(z.string().regex(/^[1-9][0-9]*$/))
+      .max(12)
+      .refine((v) => new Set(v).size === v.length),
+  })
+  .strict();
+export type FarmhouseSection = z.infer<typeof farmhouseOriginalSectionSchema>;
 export const farmhouseSettingsSchema = z
   .object({
     version: z.literal(2),
+    homepageDesign: homepageDesignSchema.optional(),
     scrollFade: z.boolean().optional(),
     palette: z.enum([
       'evergreen',
@@ -95,41 +136,36 @@ export const farmhouseSettingsSchema = z
       })
       .strict(),
     sections: z
-      .array(
-        z
-          .object({
-            id: z.enum(farmhouseSectionKinds),
-            visible: z.boolean(),
-            heading: copy(160),
-            body: copy(1200),
-            label: copy(80),
-            destination,
-            photo,
-            tiles: z
-              .array(
-                z
-                  .object({
-                    title: copy(100),
-                    body: copy(300),
-                    destination,
-                    photo,
-                  })
-                  .strict(),
-              )
-              .max(3),
-            productIds: z
-              .array(z.string().regex(/^[1-9][0-9]*$/))
-              .max(12)
-              .refine((v) => new Set(v).size === v.length),
-          })
-          .strict(),
-      )
-      .length(6)
-      .refine((v) => new Set(v.map((s) => s.id)).size === 6),
+      .array(z.union([farmhouseOriginalSectionSchema, websiteSectionSchema]))
+      .min(6)
+      .max(6 + websiteSectionLimit)
+      .refine(
+        (sections) =>
+          new Set(sections.map((section) => section.id)).size ===
+            sections.length &&
+          farmhouseSectionKinds.every((id) =>
+            sections.some((section) => section.id === id),
+          ) &&
+          sections.every(
+            (section) =>
+              !('type' in section) ||
+              permitsWebsiteSectionPresentation(
+                section,
+                farmhouseHomepageTarget,
+              ),
+          ) &&
+          Object.values(websiteSectionManifest).every(
+            (definition) =>
+              sections.filter(
+                (section) =>
+                  'type' in section && section.type === definition.type,
+              ).length <= definition.maxInstances,
+          ),
+      ),
   })
   .strict();
 export type FarmhouseSettings = z.infer<typeof farmhouseSettingsSchema>;
-export type FarmhouseSection = FarmhouseSettings['sections'][number];
+export type FarmhouseHomepageSection = FarmhouseSettings['sections'][number];
 export const farmhousePhoto = {
   assetId: null,
   url: '',
@@ -137,7 +173,9 @@ export const farmhousePhoto = {
   desktop: 'center',
   mobile: 'center',
 } as const;
-export function farmhouseDefaults(): FarmhouseSettings {
+export function farmhouseDefaults(): Omit<FarmhouseSettings, 'sections'> & {
+  sections: FarmhouseSection[];
+} {
   const content = [
     [
       'cinematic',
@@ -214,7 +252,7 @@ export function farmhouseDefaults(): FarmhouseSettings {
       tiles: [],
       productIds: [],
     })),
-  });
+  }) as Omit<FarmhouseSettings, 'sections'> & { sections: FarmhouseSection[] };
 }
 export const farmhouseTemplateSchema = z
   .object({

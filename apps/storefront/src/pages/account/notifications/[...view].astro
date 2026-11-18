@@ -1,6 +1,7 @@
 ---
 import CustomerLayout from '../../../layouts/CustomerLayout.astro';
 import CustomerNotifications from '../../../components/CustomerNotifications';
+import WorkspaceMenu from '../../../components/ui/WorkspaceMenu.astro';
 import {
   customerApi,
   customerAuthenticationError,
@@ -17,27 +18,51 @@ try {
     ? Astro.redirect(api.login)
     : temporaryUnavailableResponse();
 }
-const title =
-  view === 'trash'
-    ? 'Notification trash'
-    : view === 'settings'
-      ? 'Notification settings'
-      : view === 'unsubscribed'
-        ? 'Unsubscribed notifications'
-        : 'Notifications';
+const current = (view || 'inbox') as
+  'inbox' | 'trash' | 'settings' | 'unsubscribed';
+const titles = {
+  inbox: 'Notifications',
+  trash: 'Notification trash',
+  settings: 'Notification settings',
+  unsubscribed: 'Unsubscribed notifications',
+};
 ---
 
-<CustomerLayout title={title} path="/account/notifications">
-  <CustomerNotifications
-    view={
-      view === 'trash'
-        ? 'trash'
-        : view === 'settings'
-          ? 'settings'
-          : view === 'unsubscribed'
-            ? 'unsubscribed'
-            : 'inbox'
-    }
-    client:load
+<CustomerLayout
+  title={titles[current]}
+  path="/account/notifications"
+  icon="bell"
+  description="Order, pickup and market updates for your account, in one inbox."
+>
+  <WorkspaceMenu
+    label="Notification views"
+    current={current}
+    items={[
+      {
+        value: 'inbox',
+        label: 'Inbox',
+        href: '/account/notifications',
+        icon: 'inbox',
+      },
+      {
+        value: 'trash',
+        label: 'Trash',
+        href: '/account/notifications/trash',
+        icon: 'trash',
+      },
+      {
+        value: 'settings',
+        label: 'Settings',
+        href: '/account/notifications/settings',
+        icon: 'settings',
+      },
+      {
+        value: 'unsubscribed',
+        label: 'Unsubscribed',
+        href: '/account/notifications/unsubscribed',
+        icon: 'bell-off',
+      },
+    ]}
   />
+  <CustomerNotifications view={current} tabs={false} client:load />
 </CustomerLayout>

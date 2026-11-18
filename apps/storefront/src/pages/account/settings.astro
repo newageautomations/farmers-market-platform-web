@@ -6,6 +6,8 @@ import { requestCheckout } from '../../lib/shop';
 import { formatMoney, temporaryUnavailableResponse } from '@market/config';
 import { safeError } from '@market/api';
 import CentralAccount from '../../components/CentralAccount.astro';
+import FarmstandIcon from '../../components/ui/FarmstandIcon.astro';
+import WorkspacePanel from '../../components/ui/WorkspacePanel.astro';
 import {
   accountBridge,
   accountOrigin,
@@ -47,88 +49,124 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 ---
 
-<CustomerLayout path="/account/settings" title="Account Settings">
+<CustomerLayout
+  path="/account/settings"
+  title="Account Settings"
+  icon="settings"
+  description="Your profile, security, workspaces and communication preferences."
+>
   {centralAccount ? (
     <CentralAccount account={centralAccount} embedded />
   ) : (
     profile && (
-      <section class="py-12 account-panel">
-        <h2 class="ui-section-title-consumer">Your account</h2>
-        <p>
-          {profile.firstName} {profile.lastName}
-        </p>
-        <p>{profile.emailAddress}</p>
-        {profile.phoneNumber && <p>{profile.phoneNumber}</p>}
-        <p>
-          Your verified personal phone identifies your shared platform account.
-        </p>
-        <p>
-          Current mode: Customer.{' '}
-          <a
-            class={buttonClassName({
-              variant: 'secondary',
-              className: 'button secondary',
-            })}
-            href={new URL(
-              '/account/login?returnTo=/account&principal=' +
-                encodeURIComponent(principalId ?? ''),
-              accountOrigin(),
-            ).toString()}
-          >
-            Your platform account and onboarding
-          </a>
-        </p>
-        <p>
-          <a
-            class={buttonClassName({
-              variant: 'secondary',
-              className: 'button secondary',
-            })}
-            href="/account/communications"
-          >
-            Manage communication preferences
-          </a>
-        </p>
-        <h2 class="ui-section-title-consumer">Recent purchases</h2>
-        {purchases?.items.length ? (
-          <ul>
-            {purchases.items.map((p) => (
-              <li>
-                <a
-                  class={buttonClassName({
-                    variant: 'secondary',
-                    className: 'button secondary',
-                  })}
-                  href={`/account/orders/${p.orderId}`}
-                >
-                  {p.storefront.displayName} ·{' '}
-                  {new Date(p.purchasedAt).toLocaleDateString()}
-                </a>{' '}
-                · {formatMoney(p.financial.originalPaid, p.financial.currency)}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No purchases are available yet.</p>
-        )}
-        <p>
-          <a
-            class={buttonClassName({
-              variant: 'secondary',
-              className: 'button secondary',
-            })}
-            href="/account/orders"
-          >
-            View all orders
-          </a>
-        </p>
-        <form method="post" action="/api/account">
-          <input type="hidden" name="action" value="logout" />
-          <Button type="submit" variant="primary">
-            Sign out
-          </Button>
-        </form>
-      </section>
+      <div class="customer-settings-grid">
+        <WorkspacePanel
+          icon="user-round"
+          title="Your account"
+          description="Your verified personal phone identifies your shared platform account."
+        >
+          <dl class="customer-settings-facts">
+            <div>
+              <dt>Name</dt>
+              <dd>
+                {profile.firstName} {profile.lastName}
+              </dd>
+            </div>
+            <div>
+              <dt>Email</dt>
+              <dd>{profile.emailAddress}</dd>
+            </div>
+            {profile.phoneNumber && (
+              <div>
+                <dt>Phone</dt>
+                <dd>{profile.phoneNumber}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Current mode</dt>
+              <dd>Customer</dd>
+            </div>
+          </dl>
+          <div class="customer-settings-actions">
+            <a
+              class={buttonClassName({
+                variant: 'secondary',
+                className: 'farmstand-button',
+              })}
+              href={new URL(
+                '/account/login?returnTo=/account&principal=' +
+                  encodeURIComponent(principalId ?? ''),
+                accountOrigin(),
+              ).toString()}
+            >
+              Your platform account and onboarding
+            </a>
+            <a
+              class={buttonClassName({
+                variant: 'secondary',
+                className: 'farmstand-button',
+              })}
+              href="/account/communications"
+            >
+              Manage communication preferences
+            </a>
+          </div>
+        </WorkspacePanel>
+        <WorkspacePanel icon="receipt-text" title="Recent purchases">
+          {purchases?.items.length ? (
+            <ul class="customer-settings-roles">
+              {purchases.items.map((p) => (
+                <li>
+                  <span class="markets-identity-icon">
+                    <FarmstandIcon name="receipt-text" />
+                  </span>
+                  <span>
+                    <strong>{p.storefront.displayName}</strong>
+                    <small>
+                      {new Date(p.purchasedAt).toLocaleDateString()}
+                    </small>
+                    <small>
+                      {formatMoney(
+                        p.financial.originalPaid,
+                        p.financial.currency,
+                      )}
+                    </small>
+                  </span>
+                  <a
+                    class={buttonClassName({
+                      variant: 'secondary',
+                      size: 'compact',
+                      className: 'farmstand-button',
+                    })}
+                    href={`/account/orders/${p.orderId}`}
+                  >
+                    View
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p class="customer-muted">No purchases are available yet.</p>
+          )}
+          <div class="customer-settings-actions">
+            <a
+              class={buttonClassName({
+                variant: 'secondary',
+                className: 'farmstand-button',
+              })}
+              href="/account/orders"
+            >
+              View all orders
+            </a>
+            <form method="post" action="/api/account">
+              <input type="hidden" name="action" value="logout" />
+              <Button type="submit" variant="destructive-outline">
+                Sign out
+              </Button>
+            </form>
+          </div>
+        </WorkspacePanel>
+      </div>
     )
   )}
 </CustomerLayout>

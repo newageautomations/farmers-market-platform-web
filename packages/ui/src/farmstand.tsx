@@ -65,11 +65,14 @@ export function FarmstandPanel({
 }
 
 /** Catalog table presentation with the existing accessible DataTable semantics. */
-export function FarmstandTable(props: ComponentProps<typeof DataTable>) {
+export function FarmstandTable({
+  selectionColumn = false,
+  ...props
+}: ComponentProps<typeof DataTable> & { selectionColumn?: boolean }) {
   return (
     <DataTable
       {...props}
-      className={`farmstand-data-table ${props.className ?? ''}`}
+      className={`farmstand-data-table ${selectionColumn ? 'farmstand-data-table-selectable' : ''} ${props.className ?? ''}`}
     />
   );
 }
@@ -149,6 +152,7 @@ export function FarmstandPagination({
 
 export type FarmstandIconName =
   | 'shopping-cart'
+  | 'shopping-bag'
   | 'layers'
   | 'package'
   | 'store'
@@ -194,7 +198,10 @@ export type FarmstandIconName =
   | 'chart-column'
   | 'book-open'
   | 'upload'
-  | 'download';
+  | 'download'
+  | 'heart'
+  | 'gift'
+  | 'clock';
 export function FarmstandIcon({ name }: { name: FarmstandIconName }) {
   return (
     <span

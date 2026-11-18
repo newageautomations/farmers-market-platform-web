@@ -6,11 +6,16 @@ import type {
 } from '@market/api';
 import type { StorefrontContext } from '@market/storefront-core';
 import { isEditorialMarket } from '@market/theme/storefront';
-import { productPreorder, safeAsset } from '@market/storefront-core';
+import {
+  productPreorder,
+  safeAsset,
+  SHOP_PAGE_SIZE,
+} from '@market/storefront-core';
 import { selectClassName, buttonClassName } from '@market/ui/presentation';
 import ProductCards from '../ProductCards.astro';
 import ShopHeader from './ShopHeader.astro';
-import { categoryArt } from './category-art';
+import ShopHero from './ShopHero.astro';
+import ShopCategories from './ShopCategories.astro';
 
 interface Props {
   context: StorefrontContext;
@@ -83,26 +88,9 @@ const noneAvailable =
 />
 
 <div class="em-shop" data-template="editorial-market-shop">
-  <section class="em-shop-hero" data-editor-section="editorial:shop-settings">
-    <picture aria-hidden="true">
-      <source
-        media="(max-width: 700px)"
-        srcset="/assets/editorial-market/mobile-shop-hero.png"
-      />
-      <img
-        src="/assets/editorial-market/desktop-shop-hero.png"
-        alt=""
-        width="2007"
-        height="784"
-        fetchpriority="high"
-      />
-    </picture>
-    <div class="em-shop-hero-copy">
-      <h1>{settings.pages.shopHeading}</h1>
-      <p>{settings.pages.shopIntroduction}</p>
-    </div>
-  </section>
+  <ShopHero settings={settings} />
 
+  <slot name="editorial" />
   <form
     class="em-shop-mobile-search"
     action="/products"
@@ -127,43 +115,12 @@ const noneAvailable =
     />
   </form>
 
-  <section class="em-shop-categories" aria-label="Product categories">
-    <a
-      class="em-shop-category"
-      href={link({ category: '', page: 1 })}
-      aria-current={!category ? 'page' : undefined}
-    >
-      <span
-        class="em-shop-category-art em-shop-category-all"
-        aria-hidden="true"
-      >
-        ❦
-      </span>
-      <span>All Products</span>
-    </a>
-    {categories.map((item) => {
-      const image = categoryArt(
-        item.code,
-        safeAsset(item.image || settings.categories.images[item.id]?.url),
-      );
-      return (
-        <a
-          class="em-shop-category"
-          href={link({ category: item.id, page: 1 })}
-          aria-current={category === item.id ? 'page' : undefined}
-        >
-          <span class="em-shop-category-art">
-            {image ? (
-              <img src={image} alt="" width="120" height="120" loading="lazy" />
-            ) : (
-              <span aria-hidden="true">✦</span>
-            )}
-          </span>
-          <span>{item.name}</span>
-        </a>
-      );
-    })}
-  </section>
+  <ShopCategories
+    settings={settings}
+    categories={categories}
+    category={category}
+    link={link}
+  />
 
   <section class="em-shop-content" aria-label="Shop products for market pickup">
     <slot />
@@ -314,7 +271,7 @@ const noneAvailable =
       </div>
     )}
 
-    {total > 12 && (
+    {total > SHOP_PAGE_SIZE && (
       <nav class="em-shop-pagination" aria-label="Shop pages">
         {page > 1 ? (
           <a
@@ -330,7 +287,7 @@ const noneAvailable =
           Page {page} · {visible.length ? skip + 1 : 0} to{' '}
           {visible.length ? skip + visible.length : 0} of {total}
         </p>
-        {skip + 12 < total ? (
+        {skip + SHOP_PAGE_SIZE < total ? (
           <a
             class={buttonClassName({ variant: 'secondary' })}
             href={link({ page: page + 1 })}

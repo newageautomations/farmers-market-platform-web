@@ -356,3 +356,104 @@
     font-size: 1.5rem;
   }
 }
+
+/* Farmstand workspace (`.vendor-pos.farmstand-controls`): buttons take the
+   8px Farmstand geometry, while the register keeps its 44px touch height,
+   product tiles stay full cards and category filters stay chips. */
+.vendor-pos
+  :is(.pos-register, .pos-cart-content, .pos-variants)
+  .button.ui-button:not(.button-compact):not(.button-icon):not(
+    .button-tertiary
+  ),
+.pos-payment-dialog
+  .button.ui-button:not(.button-compact):not(.button-icon):not(
+    .button-tertiary
+  ) {
+  --ui-control-height: 44px;
+}
+.vendor-pos .pos-register .button.ui-button.pos-product-trigger {
+  height: auto;
+  min-height: 215px;
+  padding: 0.7rem;
+  border: 0;
+  border-radius: 0;
+  white-space: normal;
+  font-size: inherit;
+}
+.vendor-pos .pos-register .button.ui-button.button-icon.pos-favorite {
+  --ui-control-height: 35.2px;
+  border: 0;
+}
+.vendor-pos .pos-register .pos-category-bar .button.ui-button.button-icon {
+  --ui-control-height: 40px;
+}
+.vendor-pos .pos-register .pos-category-list > .button.ui-button {
+  --ui-control-height: 40px;
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+.vendor-pos
+  .pos-register
+  .pos-category-list
+  > .button.ui-button.button-tertiary:not([aria-pressed='true']) {
+  --button-fill: transparent;
+  --button-edge: var(--farmstand-border);
+  --button-ink: var(--brand-foreground);
+}
+.vendor-pos
+  .pos-register
+  .pos-category-list
+  > .button.ui-button[aria-pressed='true'] {
+  --button-fill: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--brand-surface)
+  );
+  --button-edge: var(--brand-primary);
+  --button-ink: var(--brand-primary);
+  /* The bordered chip already marks the selection. */
+  text-decoration: none;
+}
+.vendor-pos .pos-register .pos-pages .button.ui-button.button-tertiary {
+  min-height: 44px;
+}
+.vendor-pos .pos-desktop-cart.card.ui-card,
+.vendor-pos .pos-product.card.ui-card,
+.vendor-pos .pos-register > .card.ui-card {
+  border: 1px solid var(--farmstand-border);
+  border-radius: 16px;
+  box-shadow: none;
+}
+.vendor-pos .pos-product.card.ui-card {
+  margin: 0;
+  padding: 0;
+}
+.vendor-pos .pos-toolbar > p {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 13px;
+}
+.pos-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@media (max-width: 760px) {
+  .vendor-pos .pos-toolbar {
+    flex-wrap: wrap;
+  }
+  .vendor-pos .pos-toolbar-actions {
+    flex: 1 1 100%;
+    justify-content: stretch;
+  }
+  .vendor-pos .pos-toolbar-actions > .button {
+    flex: 1 1 0;
+  }
+}
+/* Long draft and variant labels wrap instead of overflowing. */
+.vendor-pos :is(.pos-saved, .pos-variants) .button.ui-button {
+  height: auto;
+  white-space: normal;
+}

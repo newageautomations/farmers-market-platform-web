@@ -1,0 +1,2131 @@
+/*
+ * Bloom: a lively, curvy vendor storefront theme.
+ *
+ * Bloom keeps the shared Harvest vendor pages, commerce islands and section
+ * library, and presents them with wavy section edges and hand-drawn photo
+ * shapes. Photo shapes are SVG masks traced from uneven bezier paths (never
+ * border-radius circles), rotated across siblings so no two neighbours match.
+ * Everything here is scoped to the Bloom theme root or `.bloom-site`, so no
+ * other theme is affected. This file is linked only for Bloom websites.
+ *
+ * Photo and card masks sit on photographs, their frames or decorative layers.
+ * Full-width tinted bands mask their own wavy edges; their content is padded
+ * clear of the wave, and dialogs render in the top layer, outside the mask.
+ */
+
+/* ------------------------------------------------------------------ tokens */
+html[data-storefront-theme='bloom'] {
+  /* Fern & sunshine, the default palette (Sage). */
+  --bl-paper: #fdf8ec;
+  --bl-cream: #fffdf6;
+  --bl-ink: #22261f;
+  --bl-muted: #5e6356;
+  --bl-primary: #2f6b4a;
+  --bl-primary-deep: #1c4a32;
+  --bl-primary-soft: #ddefe1;
+  --bl-coral: #ff8a5c;
+  --bl-sun: #ffcd4f;
+  --bl-lilac: #c3b5f2;
+  --bl-mint: #a5dcb8;
+  --bl-sky: #a9dcd9;
+  --bl-tint: color-mix(in srgb, var(--bl-primary) 11%, var(--bl-paper));
+  --bl-sunwash: color-mix(in srgb, var(--bl-sun) 30%, var(--bl-paper));
+  /* The "surface" section background: a sky wash that reads against paper. */
+  --bl-surface: color-mix(in srgb, var(--bl-sky) 26%, var(--bl-paper));
+  --bl-line: color-mix(in srgb, var(--bl-ink) 14%, transparent);
+  --bl-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --bl-ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --bl-gutter: clamp(1rem, 4.5vw, 3rem);
+  --bl-max: 1240px;
+  --bl-wrap: min(100% - 2 * var(--bl-gutter), var(--bl-max));
+  --bl-bleed-pad: max(var(--bl-gutter), calc((100vw - var(--bl-max)) / 2));
+  --bl-wave: clamp(26px, 4vw, 56px);
+  --bl-radius: 26px;
+  /* Wide panels (banners, tinted sections, feature cards) keep soft, uneven
+     corners at any size; a stretched drawing would sharpen them. */
+  --bl-panel: 46px 62px 40px 66px / 52px 40px 58px 44px;
+  --bl-panel-2: 64px 42px 68px 38px / 42px 60px 38px 54px;
+  /* Hand-drawn photo shapes (generated from bezier paths; see docs/BLOOM_THEME.md). */
+  --bl-blob-pebble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' preserveAspectRatio='none'%3E%3Cpath d='M104 6C146 3 186 28 194 76C201 121 182 169 136 189C97 205 45 197 19 161C-3 129 3 77 25 46C45 18 72 7 104 6Z'/%3E%3C/svg%3E");
+  --bl-blob-dent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' preserveAspectRatio='none'%3E%3Cpath d='M60 13C97 -1 126 23 151 18C180 12 199 45 196 88C193 134 170 178 118 192C70 204 17 181 6 133C-4 90 21 30 60 13Z'/%3E%3C/svg%3E");
+  --bl-blob-egg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' preserveAspectRatio='none'%3E%3Cpath d='M97 4C151 0 193 41 196 97C199 151 158 197 103 198C55 199 13 171 8 121C3 72 11 50 28 32C46 13 70 6 97 4Z'/%3E%3C/svg%3E");
+  --bl-blob-lumpy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' preserveAspectRatio='none'%3E%3Cpath d='M88 9C119 -4 153 9 167 34C181 59 202 83 194 119C186 156 157 169 140 183C116 202 77 198 51 184C21 168 2 139 6 103C10 70 23 55 41 38C56 23 69 17 88 9Z'/%3E%3C/svg%3E");
+  --bl-blob-dome: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' preserveAspectRatio='none'%3E%3Cpath d='M101 3C160 1 197 52 198 110C199 140 197 160 192 174C186 190 172 196 150 197C110 199 80 199 46 196C24 194 10 188 6 172C2 156 1 136 2 112C4 51 42 4 101 3Z'/%3E%3C/svg%3E");
+  --bl-blob-round: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' preserveAspectRatio='none'%3E%3Cpath d='M102 4C141 2 177 23 191 61C204 99 195 143 165 173C139 198 95 202 61 190C25 177 4 141 4 101C4 66 22 36 50 18C66 8 82 5 102 4Z'/%3E%3C/svg%3E");
+  --bl-blob-leaf: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' preserveAspectRatio='none'%3E%3Cpath d='M40 5C88 -2 150 6 180 26C200 40 198 76 196 118C194 156 199 186 196 197C160 200 98 199 52 192C16 186 3 160 2 120C1 82 0 46 10 26C17 12 27 7 40 5Z'/%3E%3C/svg%3E");
+  --bl-blob-flower: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' preserveAspectRatio='none'%3E%3Cpath d='M100 6C122 4 134 28 150 30C172 32 196 48 190 76C186 96 200 112 192 134C183 158 160 160 148 178C134 198 108 196 92 190C72 184 52 196 32 180C12 164 22 140 12 122C2 102 6 78 20 62C34 46 40 24 62 16C76 10 86 7 100 6Z'/%3E%3C/svg%3E");
+  --bl-card-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' preserveAspectRatio='none'%3E%3Cpath d='M34 6C80 2 128 8 166 5C186 4 196 18 197 38C199 80 194 124 198 162C200 184 186 196 164 197C120 199 76 194 36 198C14 200 3 186 3 164C2 120 6 78 2 38C1 18 14 7 34 6Z'/%3E%3C/svg%3E");
+  --bl-card-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' preserveAspectRatio='none'%3E%3Cpath d='M40 4C84 8 124 2 162 6C184 8 197 20 196 42C194 84 199 126 196 160C194 184 180 197 158 196C116 193 80 199 42 197C18 196 4 184 4 160C5 120 1 80 4 40C6 18 20 5 40 4Z'/%3E%3C/svg%3E");
+  --bl-card-3: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' preserveAspectRatio='none'%3E%3Cpath d='M30 10C70 3 126 7 168 3C188 2 198 16 197 36C196 78 200 120 197 164C196 186 182 198 160 197C118 195 74 199 38 196C16 194 3 182 3 160C4 118 1 76 5 40C7 22 14 12 30 10Z'/%3E%3C/svg%3E");
+  --bl-wave-top-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80' preserveAspectRatio='none'%3E%3Cpath d='M0 46C120 18 250 12 380 34C520 58 640 70 790 44C930 20 1050 8 1190 30C1300 47 1380 52 1440 40V80H0Z'/%3E%3C/svg%3E");
+  --bl-wave-top-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80' preserveAspectRatio='none'%3E%3Cpath d='M0 30C140 60 300 64 460 40C600 20 720 14 880 38C1040 62 1180 60 1300 36C1360 24 1410 22 1440 26V80H0Z'/%3E%3C/svg%3E");
+  --bl-wave-bottom-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80' preserveAspectRatio='none'%3E%3Cpath d='M0 0H1440V34C1350 58 1230 66 1090 46C950 26 830 18 690 40C540 64 400 70 260 50C150 34 60 30 0 40Z'/%3E%3C/svg%3E");
+  --bl-wave-bottom-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80' preserveAspectRatio='none'%3E%3Cpath d='M0 0H1440V48C1320 24 1200 18 1060 36C900 58 760 66 600 44C460 24 320 16 190 36C110 48 50 52 0 46Z'/%3E%3C/svg%3E");
+  /* Doodles: stroked marks recoloured through mask + background-color. */
+  --bl-doodle-squiggle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 40'%3E%3Cpath d='M5 26C14 9 23 8 30 21S45 36 54 21 69 5 78 18 93 33 102 20 112 10 116 14' fill='none' stroke='%23000' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --bl-doodle-underline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 24'%3E%3Cpath d='M4 15C40 7 80 6 122 11S198 19 238 12 284 8 296 12' fill='none' stroke='%23000' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --bl-doodle-spark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cpath d='M31 5V15M29 45V56M5 31H15M45 29H55M12 11L19 18M41 42L48 49M49 12L42 19M19 41L12 48' fill='none' stroke='%23000' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --bl-doodle-loop: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M52 9C79 8 93 31 91 53C89 79 64 93 44 91C20 89 8 68 10 46C12 26 30 12 54 14C71 16 85 27 87 40' fill='none' stroke='%23000' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --bl-doodle-sprout: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 80'%3E%3Cpath d='M30 78C31 58 28 42 32 24' fill='none' stroke='%23000' stroke-width='4.5' stroke-linecap='round'/%3E%3Cpath d='M31 46C17 46 7 35 5 20C20 20 30 31 31 46Z'/%3E%3Cpath d='M32 31C43 27 51 17 53 4C39 6 30 16 32 31Z'/%3E%3C/svg%3E");
+  --bl-doodle-dots: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 60'%3E%3Ccircle cx='9' cy='12' r='6'/%3E%3Ccircle cx='33' cy='7' r='4'/%3E%3Ccircle cx='56' cy='18' r='7'/%3E%3Ccircle cx='20' cy='38' r='5'/%3E%3Ccircle cx='46' cy='44' r='4'/%3E%3Ccircle cx='70' cy='50' r='5'/%3E%3C/svg%3E");
+  --bl-icon-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M4 6.5c5-1 11 .8 16-.4M4.5 12.2c4.6.7 10.2-.6 15.2.2M4 17.8c5.4-.9 10.6.9 15.6-.2'/%3E%3C/svg%3E");
+  --bl-icon-close: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M6 6.5c4 3.4 8 7.4 12 11.2M18 6c-3.8 3.9-8 7.6-12 11.6'/%3E%3C/svg%3E");
+  --bl-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.5c2 1.6 3.4 3.2 4.6 5.1C11.6 12.4 15 8.6 19.5 6'/%3E%3C/svg%3E");
+  /* The theme's own palette replaces the generic storefront presets. */
+  --brand-primary: var(--bl-primary) !important;
+  --brand-secondary: var(--bl-primary-deep) !important;
+  --brand-accent: var(--bl-coral) !important;
+  --brand-background: var(--bl-paper) !important;
+  --brand-surface: var(--bl-cream) !important;
+  --brand-foreground: var(--bl-ink) !important;
+  --brand-muted: var(--bl-muted) !important;
+  --brand-on-primary: var(--bl-cream) !important;
+  --brand-on-secondary: var(--bl-cream) !important;
+  --storefront-card-radius: var(--bl-radius) !important;
+  --ui-input-focus-background: var(--bl-cream);
+  color: var(--bl-ink);
+  background: var(--bl-paper);
+  font-family: var(--font-body);
+  /* Anchors land below the sticky header. */
+  scroll-padding-top: 6rem;
+}
+html[data-storefront-theme='bloom'] body {
+  background: var(--bl-paper);
+}
+/* The Colors setting swaps the whole matched set: page, surfaces, text, the
+   leading colour and every accent. Values mirror `bloomPalettes` in
+   packages/theme/src/storefront.ts. Every leading colour carries cream text. */
+/* Paprika & apricot */
+html[data-storefront-theme='bloom'][data-theme-palette='terracotta'] {
+  --bl-paper: #fff6ee;
+  --bl-cream: #fffcf8;
+  --bl-ink: #2c1f1a;
+  --bl-muted: #6e5a50;
+  --bl-primary: #b4432b;
+  --bl-primary-deep: #7d2b1a;
+  --bl-primary-soft: #fbe2d8;
+  --bl-coral: #f2a65a;
+  --bl-sun: #f4cf62;
+  --bl-lilac: #f2b5b0;
+  --bl-mint: #b9d3a3;
+  --bl-sky: #f5cfb6;
+}
+/* Lagoon & lemon */
+html[data-storefront-theme='bloom'][data-theme-palette='blue'] {
+  --bl-paper: #f7f9fd;
+  --bl-cream: #fdfeff;
+  --bl-ink: #1c2331;
+  --bl-muted: #566074;
+  --bl-primary: #2457a0;
+  --bl-primary-deep: #163a6e;
+  --bl-primary-soft: #dde7f7;
+  --bl-coral: #ff8f6e;
+  --bl-sun: #ffd75e;
+  --bl-lilac: #b9b4f4;
+  --bl-mint: #9fded0;
+  --bl-sky: #a6d4f4;
+}
+/* Plum & blush */
+html[data-storefront-theme='bloom'][data-theme-palette='charcoal'] {
+  --bl-paper: #fcf6f7;
+  --bl-cream: #fffcfd;
+  --bl-ink: #2a2030;
+  --bl-muted: #66596d;
+  --bl-primary: #5b3a70;
+  --bl-primary-deep: #3d2650;
+  --bl-primary-soft: #eee3f4;
+  --bl-coral: #ff9eb5;
+  --bl-sun: #f2c15a;
+  --bl-lilac: #cdb7f0;
+  --bl-mint: #b7dcc8;
+  --bl-sky: #f7c6d4;
+}
+
+/* ------------------------------------------------------------------- shell */
+.bloom-site {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: clip;
+}
+.bloom-site > main {
+  flex: 1;
+  min-width: 0;
+}
+.bloom-site > main > *,
+.bloom-site > main > astro-island > * {
+  width: var(--bl-wrap);
+  margin-inline: auto;
+}
+.bloom-site > main > astro-island {
+  display: contents;
+}
+.bloom-site :is(h1, h2, h3) {
+  font-family: var(--font-heading);
+  text-wrap: balance;
+}
+.bloom-site ::selection {
+  background: var(--bl-sun);
+  color: var(--bl-ink);
+}
+.bloom-site :focus-visible {
+  outline: 3px solid var(--bl-coral);
+  outline-offset: 3px;
+}
+
+/* Full-bleed bands: the section itself spans the viewport so its own mask can
+   draw the wavy edges. Content keeps the normal reading width through padding. */
+.bloom-site
+  [data-composition='vendor']
+  > :is(.harvest-hero, .vendor-about, .vendor-closing),
+.bloom-site section[data-background-type='full'] {
+  width: auto;
+  margin-inline: calc(50% - 50vw);
+  padding-inline: var(--bl-bleed-pad);
+  border-radius: 0 !important;
+}
+.bloom-site section[data-background-type='full']::before {
+  content: none;
+}
+/* Wavy top and bottom edges, independent of the neighbouring colour: the band
+   is cut away and the page paper shows through. */
+.bloom-site :is(.bl-wavy, .vendor-about, .vendor-closing, .harvest-hero),
+.bloom-site
+  section[data-background-type='full']:is(
+    [data-background='surface'],
+    [data-background='ink']
+  ) {
+  -webkit-mask:
+    var(--bl-wave-top-1) top / 100% var(--bl-wave) no-repeat,
+    linear-gradient(#000 0 0) center / 100%
+      calc(100% - 2 * var(--bl-wave) + 2px) no-repeat,
+    var(--bl-wave-bottom-1) bottom / 100% var(--bl-wave) no-repeat;
+  mask:
+    var(--bl-wave-top-1) top / 100% var(--bl-wave) no-repeat,
+    linear-gradient(#000 0 0) center / 100%
+      calc(100% - 2 * var(--bl-wave) + 2px) no-repeat,
+    var(--bl-wave-bottom-1) bottom / 100% var(--bl-wave) no-repeat;
+}
+.bloom-site
+  :is(
+    .vendor-closing,
+    section[data-background-type='full'][data-background='ink']
+  ) {
+  -webkit-mask:
+    var(--bl-wave-top-2) top / 100% var(--bl-wave) no-repeat,
+    linear-gradient(#000 0 0) center / 100%
+      calc(100% - 2 * var(--bl-wave) + 2px) no-repeat,
+    var(--bl-wave-bottom-2) bottom / 100% var(--bl-wave) no-repeat;
+  mask:
+    var(--bl-wave-top-2) top / 100% var(--bl-wave) no-repeat,
+    linear-gradient(#000 0 0) center / 100%
+      calc(100% - 2 * var(--bl-wave) + 2px) no-repeat,
+    var(--bl-wave-bottom-2) bottom / 100% var(--bl-wave) no-repeat;
+}
+/* Contained tinted panels become hand-cut cards instead of rounded boxes. The
+   shape is drawn on a background layer so content and focus rings stay whole. */
+.bloom-site
+  section.harvest-section:is(
+    [data-background='surface'],
+    [data-background='ink']
+  ):not([data-background-type='full']) {
+  position: relative;
+  isolation: isolate;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+.bloom-site
+  section.harvest-section:is(
+    [data-background='surface'],
+    [data-background='ink']
+  ):not([data-background-type='full'], [data-layout='photo-overlay'])::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--bl-surface);
+  border-radius: var(--bl-panel);
+  pointer-events: none;
+}
+.bloom-site
+  section.harvest-section[data-background='ink']:not(
+    [data-background-type='full']
+  )::after {
+  background: var(--bl-primary);
+  border-radius: var(--bl-panel-2);
+}
+
+/* ------------------------------------------------------------------ doodles */
+.bloom-site .bl-doodle,
+.bloom-site :is(.harvest-hero, .vendor-closing, .vendor-about)::before,
+.bloom-site :is(.harvest-hero, .vendor-closing, .vendor-about)::after {
+  pointer-events: none;
+}
+
+/* ----------------------------------------------------------------- buttons
+   Every text button is a sticker like the hero's "Shop the collection": a
+   solid fill with a matching edge and a hard shadow underneath. Primary uses
+   the leading colour; secondary and tertiary text buttons use sunshine.
+   Hover and press follow Hearth's model, whatever hover style is chosen: the
+   button lifts with a deeper shadow, then presses flat into the page. Icon
+   buttons, disclosures, calendar days, steppers, thumbnails, menu actions and
+   destructive actions keep their own presentation. */
+.bloom-site .button.ui-button {
+  --bl-button-shadow: var(--bl-primary-deep);
+  border-width: 2px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.bloom-site
+  .button.ui-button:not(
+    .button-icon,
+    .button-disclosure,
+    .button-destructive,
+    .button-destructive-outline,
+    .market-calendar-day,
+    .vendor-cart-stepper,
+    .harvest-account-content *,
+    .product-thumbnails *
+  ) {
+  --button-fill: var(--bl-primary);
+  --button-ink: var(--bl-cream);
+  --button-edge: var(--bl-primary);
+  --button-hover-fill: color-mix(
+    in srgb,
+    var(--bl-primary) 82%,
+    var(--bl-primary-deep)
+  );
+  --button-hover-edge: var(--button-hover-fill);
+  --button-hover-ink: var(--bl-cream);
+  --button-hover-transform: translateY(-3px);
+  box-shadow: 0 4px 0 var(--bl-button-shadow);
+}
+.bloom-site
+  .button.ui-button:is(.secondary, .button-tertiary):not(
+    .button-icon,
+    .button-disclosure,
+    .button-destructive,
+    .button-destructive-outline,
+    .market-calendar-day,
+    .vendor-cart-stepper,
+    .harvest-account-content *,
+    .product-thumbnails *
+  ) {
+  --bl-button-shadow: color-mix(in srgb, var(--bl-sun), var(--bl-ink) 42%);
+  --button-fill: var(--bl-sun);
+  --button-ink: var(--bl-ink);
+  --button-edge: var(--bl-sun);
+  --button-hover-fill: color-mix(in srgb, var(--bl-sun) 72%, var(--bl-cream));
+  --button-hover-edge: var(--button-hover-fill);
+  --button-hover-ink: var(--bl-ink);
+}
+.bloom-site
+  .button.ui-button:is(:hover, :focus-visible):not(
+    :disabled,
+    [aria-disabled='true']
+  ):not(
+    .button-icon,
+    .button-disclosure,
+    .button-destructive,
+    .button-destructive-outline,
+    .market-calendar-day,
+    .vendor-cart-stepper,
+    .harvest-account-content *,
+    .product-thumbnails *
+  ) {
+  transform: translateY(-3px);
+  box-shadow: 0 7px 0 var(--bl-button-shadow);
+}
+.bloom-site
+  .button.ui-button:active:not(:disabled, [aria-disabled='true']):not(
+    .button-icon,
+    .button-disclosure,
+    .button-destructive,
+    .button-destructive-outline,
+    .market-calendar-day,
+    .vendor-cart-stepper,
+    .harvest-account-content *,
+    .product-thumbnails *
+  ) {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--bl-button-shadow);
+  transition-duration: 60ms;
+}
+/* The hero sits on a sunshine wash, so its secondary button takes the
+   palette's pop colour, the same colour as the blob behind the hero photo. */
+.bloom-site
+  .harvest-hero
+  .button.ui-button:is(.secondary, .button-tertiary):not(.button-icon) {
+  --bl-button-shadow: color-mix(in srgb, var(--bl-coral), var(--bl-ink) 42%);
+  --button-fill: var(--bl-coral);
+  --button-ink: var(--bl-ink);
+  --button-edge: var(--bl-coral);
+  --button-hover-fill: color-mix(in srgb, var(--bl-coral) 72%, var(--bl-cream));
+  --button-hover-edge: var(--button-hover-fill);
+  --button-hover-ink: var(--bl-ink);
+}
+.bloom-site .button.ui-button:is(:disabled, [aria-disabled='true']) {
+  box-shadow: none;
+  transform: none;
+}
+/* Disabled text buttons stay solid rather than see-through: a soft fill in
+   the palette with deep lettering, no shadow and no lift. */
+html[data-storefront-theme='bloom']
+  .bloom-site
+  .button.ui-button:is(:disabled, [aria-disabled='true']):not(
+    .button-icon,
+    .button-disclosure,
+    .button-destructive,
+    .button-destructive-outline,
+    .market-calendar-day,
+    .vendor-cart-stepper,
+    .harvest-account-content *,
+    .product-thumbnails *
+  ) {
+  --button-fill: var(--bl-primary-soft);
+  --button-edge: var(--bl-primary-soft);
+  --button-ink: color-mix(
+    in srgb,
+    var(--bl-primary-deep) 70%,
+    var(--bl-primary-soft)
+  );
+  --button-hover-fill: var(--button-fill);
+  --button-hover-edge: var(--button-edge);
+  --button-hover-ink: var(--button-ink);
+  opacity: 1;
+  cursor: not-allowed;
+}
+.bloom-site .button.ui-button.button-icon {
+  box-shadow: none;
+}
+.bloom-site .button .farmstand-icon {
+  flex: none;
+  transition: transform 220ms var(--bl-ease);
+}
+
+/* ------------------------------------------------------------------ header */
+.bloom-site .harvest-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  width: auto;
+  margin-inline: 0;
+  padding: 1rem var(--bl-bleed-pad) 0.9rem;
+  border-bottom: 0;
+  background: var(--bl-cream);
+  transition: box-shadow 0.25s ease;
+}
+/* The header's lower edge is a soft wave hanging over the page. */
+.bloom-site .harvest-header::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: clamp(14px, 2vw, 24px);
+  background: var(--bl-cream);
+  -webkit-mask: var(--bl-wave-bottom-2) 0 0 / 100% 100% no-repeat;
+  mask: var(--bl-wave-bottom-2) 0 0 / 100% 100% no-repeat;
+  pointer-events: none;
+}
+.bloom-site .harvest-brand {
+  gap: 0.7rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--bl-primary-deep);
+}
+.bloom-site .harvest-brand img {
+  border-radius: 0;
+  -webkit-mask: var(--bl-blob-round) 0 0 / 100% 100% no-repeat;
+  mask: var(--bl-blob-round) 0 0 / 100% 100% no-repeat;
+  object-fit: cover;
+}
+.bloom-site .harvest-brand::before {
+  content: '';
+  flex: none;
+  width: 1.35rem;
+  height: 1.7rem;
+  background: var(--bl-coral);
+  -webkit-mask: var(--bl-doodle-sprout) center / contain no-repeat;
+  mask: var(--bl-doodle-sprout) center / contain no-repeat;
+  transform: rotate(-8deg);
+  transition: transform 0.5s var(--bl-ease);
+}
+.bloom-site .harvest-brand:has(img)::before {
+  content: none;
+}
+.bloom-site .harvest-brand:is(:hover, :focus-visible)::before {
+  transform: rotate(10deg) scale(1.12);
+}
+.bloom-site .harvest-desktop-nav {
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border-radius: 999px;
+  background: var(--bl-tint);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.bloom-site .harvest-desktop-nav a {
+  position: relative;
+  isolation: isolate;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  color: var(--bl-primary-deep);
+  text-decoration: none !important;
+  transition: color 0.2s ease;
+}
+.bloom-site .harvest-desktop-nav a::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--bl-cream);
+  -webkit-mask: var(--bl-blob-dent) center / 100% 100% no-repeat;
+  mask: var(--bl-blob-dent) center / 100% 100% no-repeat;
+  transform: scale(0.4) rotate(-12deg);
+  opacity: 0;
+  transition:
+    transform 0.4s var(--bl-ease),
+    opacity 0.2s ease;
+}
+.bloom-site .harvest-desktop-nav a:is(:hover, :focus-visible)::before {
+  transform: none;
+  opacity: 1;
+}
+.bloom-site .harvest-desktop-nav a[aria-current='page'] {
+  color: var(--bl-cream);
+}
+.bloom-site .harvest-desktop-nav a[aria-current='page']::before {
+  background: var(--bl-primary);
+  transform: none;
+  opacity: 1;
+}
+.bloom-site .harvest-header .harvest-header-icon {
+  border-radius: 999px;
+  color: var(--bl-primary-deep);
+}
+.bloom-site
+  .harvest-header
+  .harvest-header-actions
+  .harvest-header-icon.button.ui-button:is(:hover, :focus-visible) {
+  background: var(--bl-tint);
+  transform: rotate(-8deg) scale(1.06);
+}
+.bloom-site .harvest-cart-count {
+  background: var(--bl-coral);
+  color: var(--bl-ink);
+  font-weight: 800;
+}
+/* The navigation menu and the account menu open as matching cream panels that
+   drop from the corner they belong to. */
+.bloom-site .harvest-account-menu > .harvest-account-content,
+.bloom-site .harvest-mobile-menu > nav {
+  gap: 0.2rem;
+  padding: 0.6rem;
+  border: 2px solid var(--bl-primary-soft);
+  border-radius: 28px 34px 26px 36px / 30px 26px 34px 28px;
+  background: var(--bl-cream);
+  color: var(--bl-primary-deep);
+  box-shadow: 0 20px 44px -20px
+    color-mix(in srgb, var(--bl-primary-deep) 60%, transparent);
+  transform-origin: top right;
+}
+.bloom-site .harvest-account-menu[open] > .harvest-account-content,
+.bloom-site .harvest-mobile-menu[open] > nav {
+  animation: bl-drop 0.32s var(--bl-ease) both;
+}
+.bloom-site .harvest-account-content > p {
+  padding: 0.5rem 0.9rem 0.25rem;
+  font-weight: 800;
+  color: var(--bl-primary-deep);
+}
+.bloom-site .harvest-mobile-menu > nav a,
+.bloom-site .harvest-account-content a,
+.bloom-site .harvest-account-content .harvest-account-logout.button.ui-button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  color: var(--bl-primary-deep);
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.bloom-site .harvest-mobile-menu > nav a:is(:hover, :focus-visible),
+.bloom-site .harvest-account-content a:is(:hover, :focus-visible),
+.bloom-site
+  .harvest-account-content
+  .harvest-account-logout.button.ui-button:is(:hover, :focus-visible) {
+  background: var(--bl-tint);
+}
+.bloom-site .harvest-mobile-menu > nav a[aria-current='page'] {
+  background: var(--bl-primary);
+  color: var(--bl-cream);
+}
+.bloom-site .harvest-account-content .farmstand-text-link::after {
+  content: none;
+}
+/* Phones and tablets: a lone hamburger in the top-right corner, in the
+   header's own colour, that turns into a close mark while open. */
+.bloom-site .harvest-mobile-menu {
+  order: 3;
+  position: static;
+}
+.bloom-site .harvest-mobile-menu > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 0;
+  color: var(--bl-primary-deep);
+  cursor: pointer;
+  list-style: none;
+  transition:
+    background-color 0.2s ease,
+    transform 0.3s var(--bl-ease);
+}
+.bloom-site .harvest-mobile-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.bloom-site .harvest-mobile-menu > summary > * {
+  display: none;
+}
+.bloom-site .harvest-mobile-menu > summary::before {
+  content: '';
+  width: 24px;
+  height: 24px;
+  background: currentColor;
+  -webkit-mask: var(--bl-icon-menu) center / contain no-repeat;
+  mask: var(--bl-icon-menu) center / contain no-repeat;
+}
+.bloom-site .harvest-mobile-menu[open] > summary::before {
+  -webkit-mask-image: var(--bl-icon-close);
+  mask-image: var(--bl-icon-close);
+}
+.bloom-site .harvest-mobile-menu > summary:is(:hover, :focus-visible) {
+  background: var(--bl-tint);
+}
+.bloom-site .harvest-mobile-menu[open] > summary {
+  background: var(--bl-tint);
+  transform: rotate(-8deg);
+}
+.bloom-site .harvest-mobile-menu > nav {
+  top: calc(100% + 0.35rem);
+  right: var(--bl-bleed-pad);
+  width: min(20rem, calc(100vw - 2 * var(--bl-gutter)));
+}
+
+/* -------------------------------------------------------------------- hero */
+.bloom-site [data-composition='vendor'] > .harvest-hero {
+  position: relative;
+  isolation: isolate;
+  padding-block: calc(var(--bl-wave) + clamp(2.5rem, 6vw, 5.5rem));
+  background: var(--bl-sunwash);
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+}
+/* Leading the page, the hero tucks under the header's own wave. */
+.bloom-site [data-composition='vendor'] > .harvest-hero:first-child {
+  margin-top: calc(-1 * var(--bl-wave) + 0.5rem);
+  -webkit-mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--bl-wave) + 1px)
+      no-repeat,
+    var(--bl-wave-bottom-1) bottom / 100% var(--bl-wave) no-repeat;
+  mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--bl-wave) + 1px)
+      no-repeat,
+    var(--bl-wave-bottom-1) bottom / 100% var(--bl-wave) no-repeat;
+}
+/* A loose painted blob behind the photograph, drawn by the photo's own frame
+   so the two stay together at every width, and a squiggle by the heading. */
+.bloom-site .harvest-hero-visual::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -5% -8% -7% -3%;
+  background: var(--bl-coral);
+  opacity: 0.85;
+  -webkit-mask: var(--bl-blob-lumpy) center / 100% 100% no-repeat;
+  mask: var(--bl-blob-lumpy) center / 100% 100% no-repeat;
+  rotate: 14deg;
+  pointer-events: none;
+}
+.bloom-site [data-composition='vendor'] > .harvest-hero::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: calc(var(--bl-bleed-pad) - 0.5rem);
+  bottom: calc(var(--bl-wave) + 1.5rem);
+  width: clamp(80px, 10vw, 140px);
+  aspect-ratio: 3;
+  background: var(--bl-primary);
+  -webkit-mask: var(--bl-doodle-squiggle) center / contain no-repeat;
+  mask: var(--bl-doodle-squiggle) center / contain no-repeat;
+}
+.bloom-site .harvest-hero h1 {
+  --storefront-heading-base: clamp(2.9rem, 6.4vw, 6.2rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  color: var(--bl-primary-deep);
+}
+.bloom-site .harvest-hero-copy > p {
+  color: color-mix(in srgb, var(--bl-ink) 78%, transparent);
+  font-size: var(--storefront-paragraph-base);
+}
+.bloom-site .harvest-hero-copy {
+  position: relative;
+}
+.bloom-site .harvest-hero-copy::before {
+  content: '';
+  position: absolute;
+  left: -2.2rem;
+  top: -1.6rem;
+  width: 2.6rem;
+  aspect-ratio: 1;
+  background: var(--bl-coral);
+  -webkit-mask: var(--bl-doodle-spark) center / contain no-repeat;
+  mask: var(--bl-doodle-spark) center / contain no-repeat;
+  pointer-events: none;
+}
+.bloom-site .harvest-hero-visual {
+  position: relative;
+  overflow: visible;
+  border-radius: 0 !important;
+  clip-path: none !important;
+  background: transparent;
+  aspect-ratio: 1 !important;
+}
+.bloom-site .harvest-hero-visual > .product-media,
+.bloom-site .harvest-hero-visual > .harvest-artwork,
+.bloom-site .harvest-hero-visual > svg {
+  border-radius: 0 !important;
+  background: var(--bl-primary-soft);
+  -webkit-mask: var(--bl-hero-mask, var(--bl-blob-dome)) center / 100% 100%
+    no-repeat;
+  mask: var(--bl-hero-mask, var(--bl-blob-dome)) center / 100% 100% no-repeat;
+}
+/* The saved image shape picks the drawn outline closest to its name. It
+   replaces the shared radius and star polygon for every image that carries a
+   shape: the hero, homepage About, Our Story and Find Us. */
+.bloom-site img[data-hero-shape] {
+  border-radius: 0 !important;
+  clip-path: none !important;
+  -webkit-mask: var(--bl-hero-mask, var(--bl-card-2)) center / 100% 100%
+    no-repeat;
+  mask: var(--bl-hero-mask, var(--bl-card-2)) center / 100% 100% no-repeat;
+}
+.bloom-site .story-image-frame {
+  overflow: visible;
+  border-radius: 0;
+}
+.bloom-site [data-hero-shape='square'] {
+  --bl-hero-mask: var(--bl-card-1);
+}
+.bloom-site [data-hero-shape='rounded'] {
+  --bl-hero-mask: var(--bl-card-3);
+}
+.bloom-site [data-hero-shape='circle'] {
+  --bl-hero-mask: var(--bl-blob-round);
+}
+.bloom-site [data-hero-shape='dome'] {
+  --bl-hero-mask: var(--bl-blob-dome);
+}
+.bloom-site [data-hero-shape='corner'] {
+  --bl-hero-mask: var(--bl-blob-leaf);
+}
+.bloom-site [data-hero-shape='star'] {
+  --bl-hero-mask: var(--bl-blob-flower);
+}
+.bloom-site [data-hero-shape='natural'],
+.bloom-site [data-hero-shape='natural-rounded'] {
+  --bl-hero-mask: var(--bl-card-2);
+}
+
+/* --------------------------------------------------------- section heading */
+.bloom-site
+  :is(.harvest-section > .ui-section-heading, .harvest-library-heading)
+  h2,
+.bloom-site .harvest-library-heading h2,
+.bloom-site .harvest-banner-copy > h2,
+.bloom-site .harvest-authored h2 {
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+.bloom-site .harvest-section > .ui-section-heading h2,
+.bloom-site .harvest-library-heading h2,
+.bloom-site .harvest-text h2 {
+  position: relative;
+  padding-bottom: 0.55em;
+}
+.bloom-site .harvest-section > .ui-section-heading h2::after,
+.bloom-site .harvest-library-heading h2::after,
+.bloom-site .harvest-text h2::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: min(9rem, 70%);
+  height: 0.42em;
+  max-height: 18px;
+  background: var(--bl-coral);
+  -webkit-mask: var(--bl-doodle-underline) left center / 100% 100% no-repeat;
+  mask: var(--bl-doodle-underline) left center / 100% 100% no-repeat;
+}
+.bloom-site
+  :is([data-alignment='center'])
+  :is(.harvest-library-heading h2, h2)::after,
+.bloom-site
+  .harvest-library[data-alignment='center']
+  .harvest-library-heading
+  h2::after {
+  left: 50%;
+  translate: -50% 0;
+}
+.bloom-site
+  [data-alignment='right']
+  :is(.harvest-library-heading h2, h2)::after {
+  left: auto;
+  right: 0;
+}
+.bloom-site [data-background='ink'] h2::after {
+  background: var(--bl-sun);
+}
+.bloom-site .harvest-section > .ui-section-heading a {
+  font-weight: 700;
+  color: var(--bl-primary);
+}
+
+/* ------------------------------------------------------- product cards */
+.bloom-site .harvest-products .product-card.ui-card {
+  --ui-card-border: transparent;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+.bloom-site .harvest-products .product-image-contents {
+  display: block;
+  position: relative;
+  isolation: isolate;
+  margin-bottom: 1.1rem;
+}
+/* A coloured offset blob peeks out from behind each photo. */
+.bloom-site .harvest-products .product-image-contents::before {
+  content: '';
+  position: absolute;
+  inset: 4% -3% -4% 5%;
+  z-index: -1;
+  background: var(--bl-sun);
+  -webkit-mask: var(--bl-card-3) center / 100% 100% no-repeat;
+  mask: var(--bl-card-3) center / 100% 100% no-repeat;
+  transition: transform 0.45s var(--bl-ease);
+}
+.bloom-site
+  .harvest-products
+  .product-card:nth-child(3n + 2)
+  .product-image-contents::before {
+  background: var(--bl-lilac);
+  inset: 5% 4% -4% -3%;
+}
+.bloom-site
+  .harvest-products
+  .product-card:nth-child(3n + 3)
+  .product-image-contents::before {
+  background: var(--bl-mint);
+  inset: -3% -3% 5% 4%;
+}
+.bloom-site .harvest-products .product-media {
+  display: block;
+  margin: 0;
+  border-radius: 0 !important;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  -webkit-mask: var(--bl-card-1) center / 100% 100% no-repeat;
+  mask: var(--bl-card-1) center / 100% 100% no-repeat;
+  transition: transform 0.45s var(--bl-ease);
+}
+.bloom-site .harvest-products .product-card:nth-child(3n + 2) .product-media {
+  -webkit-mask-image: var(--bl-card-2);
+  mask-image: var(--bl-card-2);
+}
+.bloom-site .harvest-products .product-card:nth-child(3n + 3) .product-media {
+  -webkit-mask-image: var(--bl-card-3);
+  mask-image: var(--bl-card-3);
+}
+.bloom-site .harvest-products .product-placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--bl-primary-soft);
+  color: var(--bl-primary);
+}
+.bloom-site .harvest-products .product-card:hover .product-media {
+  transform: rotate(-1.5deg) scale(1.02);
+}
+.bloom-site
+  .harvest-products
+  .product-card:hover
+  .product-image-contents::before {
+  transform: rotate(3deg) translate(4px, 4px);
+}
+.bloom-site
+  .harvest-products
+  .product-card:nth-child(even):hover
+  .product-media {
+  transform: rotate(1.5deg) scale(1.02);
+}
+.bloom-site .harvest-products :is(h2, h3) {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--bl-primary-deep);
+}
+.bloom-site .harvest-products .product-card > p:first-of-type {
+  display: inline-block;
+  align-self: flex-start;
+  width: fit-content;
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  background: var(--bl-primary-soft);
+  color: var(--bl-primary-deep);
+  font-weight: 800;
+}
+.bloom-site .harvest-products .product-card-link:focus-visible {
+  border-radius: 18px;
+}
+/* Shop and every other product grid copy the homepage featured cards exactly:
+   three columns, the same gap, title size, spacing and natural-width button.
+   A product unavailable at the chosen market keeps its full-colour photo;
+   its availability line and Unavailable button say so instead. */
+.bloom-site .shop-products .shop-product-unavailable .product-media {
+  filter: none;
+  opacity: 1;
+}
+.bloom-site .harvest-products.shop-products.catalog-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.2rem, 2.5vw, 2.4rem);
+}
+.bloom-site .harvest-products.shop-products .product-card {
+  gap: 0;
+  align-items: start;
+}
+.bloom-site .harvest-products.shop-products .product-image-contents {
+  margin-bottom: 1.1rem;
+}
+.bloom-site .harvest-products.shop-products :is(h2, h3) {
+  font-family: var(--font-heading);
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
+  line-height: 1.15;
+  margin: 0 0 0.6rem;
+}
+.bloom-site .harvest-products.shop-products .product-card > p {
+  margin: 0 0 0.7rem;
+}
+.bloom-site
+  .harvest-products.shop-products
+  .product-card
+  > p:not(:first-of-type) {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--brand-muted);
+}
+.bloom-site .harvest-products.shop-products .product-card > .button,
+.bloom-site .harvest-products.shop-products .featured-purchase {
+  width: auto;
+  align-self: flex-start;
+  margin-top: auto;
+}
+.bloom-site .harvest-products.shop-products .product-card > .ui-button,
+.bloom-site .harvest-products.shop-products .featured-purchase > .ui-button {
+  width: auto;
+  align-self: flex-start;
+}
+@media (max-width: 850px) {
+  .bloom-site .harvest-products.shop-products.catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* Phones: the shop stays two columns; every other row of products (featured,
+   showcases, You might also like) becomes a swipeable carousel that peeks at
+   the next card. */
+@media (max-width: 700px) {
+  .bloom-site .vendor-shop .harvest-products.shop-products.catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem 0.9rem;
+  }
+  .bloom-site .vendor-shop .harvest-products.shop-products :is(h2, h3) {
+    font-size: 1.15rem;
+  }
+  .bloom-site
+    .harvest-products.catalog-grid:not([data-carousel-track]):not(
+      .vendor-shop .harvest-products
+    ) {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: 76%;
+    gap: 1.1rem;
+    margin-inline: calc(-1 * var(--bl-gutter));
+    padding: 0.9rem var(--bl-gutter) 1.25rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--bl-gutter);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .bloom-site
+    .harvest-products.catalog-grid:not([data-carousel-track]):not(
+      .vendor-shop .harvest-products
+    )::-webkit-scrollbar {
+    display: none;
+  }
+  .bloom-site
+    .harvest-products.catalog-grid:not([data-carousel-track]):not(
+      .vendor-shop .harvest-products
+    )
+    > .product-card {
+    scroll-snap-align: start;
+  }
+}
+
+/* ------------------------------------------------------- homepage about */
+.bloom-site [data-composition='vendor'] > .vendor-about {
+  position: relative;
+  isolation: isolate;
+  margin-block: clamp(1.5rem, 4vw, 3rem);
+  padding-block: calc(var(--bl-wave) + clamp(2.5rem, 6vw, 5rem));
+  background: var(--bl-primary);
+  color: var(--bl-cream);
+}
+.bloom-site .vendor-about h2 {
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: inherit;
+}
+.bloom-site .vendor-about p {
+  color: color-mix(in srgb, var(--bl-cream) 88%, transparent);
+}
+.bloom-site .vendor-about .product-media {
+  object-fit: cover;
+  rotate: -3deg;
+}
+.bloom-site
+  .vendor-about
+  .product-media:is(
+    [data-hero-shape='square'],
+    [data-hero-shape='rounded'],
+    [data-hero-shape^='natural']
+  ) {
+  rotate: 0deg;
+}
+.bloom-site [data-composition='vendor'] > .vendor-about::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  right: calc(var(--bl-bleed-pad) - 2rem);
+  top: calc(var(--bl-wave) + 0.5rem);
+  width: clamp(70px, 9vw, 120px);
+  aspect-ratio: 4 / 3;
+  background: var(--bl-sun);
+  -webkit-mask: var(--bl-doodle-dots) center / contain no-repeat;
+  mask: var(--bl-doodle-dots) center / contain no-repeat;
+}
+
+/* ----------------------------------------------------- homepage closing */
+.bloom-site [data-composition='vendor'] > .vendor-closing {
+  position: relative;
+  isolation: isolate;
+  margin-block: clamp(1.5rem, 4vw, 3rem) 0;
+  padding-block: calc(var(--bl-wave) + clamp(2.5rem, 6vw, 5rem));
+  background: color-mix(in srgb, var(--bl-mint) 38%, var(--bl-paper));
+  align-items: center;
+}
+.bloom-site .vendor-closing h2 {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--bl-primary-deep);
+}
+.bloom-site [data-composition='vendor'] > .vendor-closing::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  right: calc(var(--bl-bleed-pad) - clamp(4rem, 9vw, 9rem));
+  bottom: calc(var(--bl-wave) - 2.5rem);
+  width: clamp(120px, 16vw, 230px);
+  aspect-ratio: 1;
+  background: var(--bl-lilac);
+  -webkit-mask: var(--bl-blob-flower) center / 100% 100% no-repeat;
+  mask: var(--bl-blob-flower) center / 100% 100% no-repeat;
+  opacity: 0.75;
+  rotate: -18deg;
+}
+.bloom-site [data-composition='vendor'] > .vendor-closing::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: calc(var(--bl-bleed-pad) - 1.5rem);
+  top: calc(var(--bl-wave) + 0.25rem);
+  width: clamp(54px, 6vw, 84px);
+  aspect-ratio: 1;
+  background: var(--bl-coral);
+  -webkit-mask: var(--bl-doodle-loop) center / contain no-repeat;
+  mask: var(--bl-doodle-loop) center / contain no-repeat;
+}
+
+/* ------------------------------------------------------------------ footer */
+.bloom-site .harvest-footer {
+  position: relative;
+  width: auto;
+  margin: clamp(2rem, 5vw, 4rem) 0 0;
+  padding: calc(var(--bl-wave) + clamp(2rem, 4vw, 3.5rem)) var(--bl-bleed-pad)
+    2rem;
+  border-top: 0;
+  background: var(--bl-primary-deep);
+  color: var(--bl-cream);
+  -webkit-mask:
+    var(--bl-wave-top-2) top / 100% var(--bl-wave) no-repeat,
+    linear-gradient(#000 0 0) bottom / 100% calc(100% - var(--bl-wave) + 1px)
+      no-repeat;
+  mask:
+    var(--bl-wave-top-2) top / 100% var(--bl-wave) no-repeat,
+    linear-gradient(#000 0 0) bottom / 100% calc(100% - var(--bl-wave) + 1px)
+      no-repeat;
+}
+.bloom-site
+  [data-composition='vendor']:has(> .vendor-closing:last-child)
+  ~ .harvest-footer,
+.bloom-site
+  > main:has([data-composition='vendor'] > .vendor-closing:last-child)
+  + .harvest-footer {
+  margin-top: 0;
+}
+.bloom-site .harvest-footer .harvest-brand {
+  color: var(--bl-cream);
+}
+.bloom-site .harvest-footer p,
+.bloom-site .harvest-footer-bottom {
+  color: color-mix(in srgb, var(--bl-cream) 78%, transparent);
+}
+.bloom-site .harvest-footer nav a {
+  color: var(--bl-cream);
+  font-weight: 700;
+}
+.bloom-site .harvest-footer nav a:is(:hover, :focus-visible) {
+  color: var(--bl-sun);
+}
+.bloom-site .harvest-footer :focus-visible {
+  outline-color: var(--bl-sun);
+}
+.bloom-site .harvest-footer-bottom {
+  border-top-color: color-mix(in srgb, var(--bl-cream) 22%, transparent);
+}
+
+/* ======================================================= section library */
+.bloom-site .harvest-library {
+  color: var(--bl-ink);
+  background: transparent;
+}
+.bloom-site .harvest-library[data-background='surface'],
+.bloom-site section.harvest-section[data-background='surface'] {
+  background: var(--bl-surface);
+}
+.bloom-site .harvest-library[data-background='ink'],
+.bloom-site .harvest-authored[data-background='ink'] {
+  background: var(--bl-primary);
+  color: var(--bl-cream);
+}
+.bloom-site
+  section.harvest-section[data-background='surface']:not(
+    [data-background-type='full']
+  ),
+.bloom-site
+  section.harvest-section[data-background='ink']:not(
+    [data-background-type='full']
+  ) {
+  padding-inline: clamp(1.25rem, 5vw, 4rem);
+}
+.bloom-site section[data-background='ink']:not([data-background-type='full']) {
+  color: var(--bl-cream);
+}
+.bloom-site
+  section[data-background-type='full']:is(
+    [data-background='surface'],
+    [data-background='ink']
+  ) {
+  padding-block: calc(
+    var(--bl-wave) + var(--harvest-library-space, clamp(2rem, 5vw, 4rem))
+  );
+}
+.bloom-site section[data-background='ink'] :is(h2, h3, p, figcaption) {
+  color: inherit;
+}
+.bloom-site .harvest-section[data-background='ink'] :focus-visible {
+  outline-color: var(--bl-sun);
+}
+
+html[data-storefront-theme='bloom']
+  .bloom-site
+  section.website-section[data-custom-padding][data-background-type='full'] {
+  padding-inline: max(var(--website-padding), var(--bl-bleed-pad));
+}
+html[data-storefront-theme='bloom']
+  .bloom-site
+  section.website-section[data-custom-padding][data-background-type='full']:is(
+    [data-background='surface'],
+    [data-background='ink']
+  ) {
+  padding-block: calc(var(--website-padding) + var(--bl-wave));
+}
+
+/* Image banner ----------------------------------------------------------- */
+.bloom-site .harvest-banner[data-layout='photo-overlay'] .harvest-banner-photo {
+  border-radius: var(--bl-panel);
+  overflow: hidden;
+}
+.bloom-site
+  .harvest-banner[data-layout='photo-overlay'][data-width='full']
+  .harvest-banner-photo {
+  -webkit-mask:
+    var(--bl-wave-top-1) top / 100% var(--bl-wave) no-repeat,
+    linear-gradient(#000 0 0) center / 100%
+      calc(100% - 2 * var(--bl-wave) + 2px) no-repeat,
+    var(--bl-wave-bottom-2) bottom / 100% var(--bl-wave) no-repeat;
+  mask:
+    var(--bl-wave-top-1) top / 100% var(--bl-wave) no-repeat,
+    linear-gradient(#000 0 0) center / 100%
+      calc(100% - 2 * var(--bl-wave) + 2px) no-repeat,
+    var(--bl-wave-bottom-2) bottom / 100% var(--bl-wave) no-repeat;
+}
+.bloom-site
+  .harvest-banner:is(
+    [data-layout='split-editorial'],
+    [data-layout='minimal-centered']
+  )
+  .harvest-banner-photo {
+  border-radius: 0;
+  background: transparent;
+}
+/* The photo wrapper holds only the picture and the shared overlay tint, so it
+   carries the shape and the tint follows it. */
+.bloom-site
+  .harvest-banner:is(
+    [data-layout='split-editorial'],
+    [data-layout='minimal-centered']
+  )
+  .harvest-banner-photo {
+  -webkit-mask: var(--bl-card-1) center / 100% 100% no-repeat;
+  mask: var(--bl-card-1) center / 100% 100% no-repeat;
+}
+.bloom-site
+  .harvest-banner:is(
+    [data-layout='split-editorial'],
+    [data-layout='minimal-centered']
+  )
+  .harvest-banner-photo
+  > :is(img, .harvest-library-placeholder) {
+  border-radius: 0;
+}
+.bloom-site
+  .harvest-banner[data-layout='minimal-centered']
+  .harvest-banner-photo {
+  -webkit-mask-image: var(--bl-card-3);
+  mask-image: var(--bl-card-3);
+}
+.bloom-site .harvest-banner-copy > h2 {
+  font-weight: 800;
+}
+.bloom-site .harvest-library-placeholder,
+.bloom-site .harvest-photo-placeholder {
+  background: var(--bl-primary-soft);
+  color: var(--bl-primary);
+  border-radius: 0;
+}
+
+html[data-storefront-theme='bloom']
+  .bloom-site
+  section.harvest-banner[data-width='full'] {
+  padding-inline: var(--bl-bleed-pad);
+}
+.bloom-site .harvest-banner[data-layout='photo-overlay'] .harvest-banner-copy {
+  isolation: isolate;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none;
+}
+.bloom-site
+  .harvest-banner[data-layout='photo-overlay']
+  .harvest-banner-copy::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--bl-cream);
+  border-radius: var(--bl-panel-2);
+  pointer-events: none;
+}
+/* Same order as the shared overlay colours, so text and card always contrast. */
+.bloom-site
+  .harvest-banner[data-layout='photo-overlay'][data-background='ink']
+  .harvest-banner-copy::before {
+  background: var(--bl-primary);
+}
+.bloom-site
+  .harvest-banner[data-layout='photo-overlay'][data-background='surface']
+  .harvest-banner-copy::before {
+  background: var(--bl-sunwash);
+}
+.bloom-site
+  .harvest-banner[data-layout='photo-overlay'][data-overlay='subtle']
+  .harvest-banner-copy::before {
+  background: var(--bl-cream);
+}
+.bloom-site
+  .harvest-banner[data-layout='photo-overlay'][data-overlay='strong']
+  .harvest-banner-copy::before {
+  background: var(--bl-primary);
+}
+
+/* Image gallery ---------------------------------------------------------- */
+.bloom-site .harvest-gallery figure {
+  position: relative;
+}
+.bloom-site .harvest-gallery img {
+  border-radius: 0 !important;
+  -webkit-mask: var(--bl-blob-pebble) center / 100% 100% no-repeat;
+  mask: var(--bl-blob-pebble) center / 100% 100% no-repeat;
+  transition: transform 0.5s var(--bl-ease);
+}
+.bloom-site .harvest-gallery figure:nth-child(4n + 2) img {
+  -webkit-mask-image: var(--bl-blob-egg);
+  mask-image: var(--bl-blob-egg);
+}
+.bloom-site .harvest-gallery figure:nth-child(4n + 3) img {
+  -webkit-mask-image: var(--bl-blob-lumpy);
+  mask-image: var(--bl-blob-lumpy);
+}
+.bloom-site .harvest-gallery figure:nth-child(4n + 4) img {
+  -webkit-mask-image: var(--bl-blob-dent);
+  mask-image: var(--bl-blob-dent);
+}
+.bloom-site .harvest-gallery figure:nth-child(odd) img {
+  rotate: -2deg;
+}
+.bloom-site .harvest-gallery figure:nth-child(even) img {
+  rotate: 2.5deg;
+}
+.bloom-site .harvest-gallery figure:hover img {
+  transform: scale(1.03);
+}
+/* Landscape and portrait galleries read better as hand-cut cards. */
+.bloom-site
+  .harvest-gallery:is(
+    [data-aspect-ratio='landscape'],
+    [data-aspect-ratio='portrait'],
+    [data-layout='carousel']
+  )
+  figure
+  img {
+  -webkit-mask-image: var(--bl-card-1);
+  mask-image: var(--bl-card-1);
+}
+.bloom-site
+  .harvest-gallery:is(
+    [data-aspect-ratio='landscape'],
+    [data-aspect-ratio='portrait'],
+    [data-layout='carousel']
+  )
+  figure:nth-child(3n + 2)
+  img {
+  -webkit-mask-image: var(--bl-card-2);
+  mask-image: var(--bl-card-2);
+}
+.bloom-site
+  .harvest-gallery:is(
+    [data-aspect-ratio='landscape'],
+    [data-aspect-ratio='portrait'],
+    [data-layout='carousel']
+  )
+  figure:nth-child(3n + 3)
+  img {
+  -webkit-mask-image: var(--bl-card-3);
+  mask-image: var(--bl-card-3);
+}
+.bloom-site .harvest-gallery[data-layout='mosaic'] figure:first-child img {
+  -webkit-mask-image: var(--bl-blob-lumpy);
+  mask-image: var(--bl-blob-lumpy);
+  rotate: -3deg;
+}
+.bloom-site .harvest-gallery figcaption {
+  font-weight: 700;
+  color: var(--bl-primary-deep);
+}
+.bloom-site .harvest-gallery[data-background='ink'] figcaption {
+  color: var(--bl-cream);
+}
+.bloom-site [data-gallery-controls] .button.ui-button {
+  border-radius: 999px;
+}
+
+/* Feature grid -----------------------------------------------------------
+   The icon glyph is itself a mask, so its blob is drawn behind it by the
+   article. The glyph sits centred inside that blob through its margin. */
+.bloom-site .harvest-feature-items article {
+  --bl-icon: var(--harvest-feature-icon-size, 40px);
+  --bl-icon-pad: calc(var(--bl-icon) * 0.4);
+  --bl-card-pad: 0px;
+  position: relative;
+  isolation: isolate;
+}
+.bloom-site .harvest-features .harvest-feature-items .farmstand-icon {
+  margin: var(--bl-icon-pad);
+  color: var(--bl-primary-deep);
+}
+.bloom-site .harvest-feature-items article::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: calc(var(--bl-card-pad, 0px) + 1rem);
+  left: var(--bl-card-pad, 0px);
+  width: calc(var(--bl-icon) + 2 * var(--bl-icon-pad));
+  aspect-ratio: 1;
+  background: var(--bl-sun);
+  -webkit-mask: var(--bl-blob-flower) center / 100% 100% no-repeat;
+  mask: var(--bl-blob-flower) center / 100% 100% no-repeat;
+  rotate: -10deg;
+  pointer-events: none;
+}
+.bloom-site
+  .harvest-features[data-alignment='center']
+  .harvest-feature-items
+  article::after {
+  left: 50%;
+  translate: -50% 0;
+}
+.bloom-site
+  .harvest-features[data-icon-position='beside']
+  .harvest-feature-items
+  article::after {
+  top: calc(var(--bl-card-pad, 0px) + 1rem);
+}
+.bloom-site
+  .harvest-features[data-icon-position='beside']
+  .harvest-feature-items
+  .farmstand-icon {
+  flex: 0 0 auto;
+  margin-block-start: var(--bl-icon-pad);
+}
+.bloom-site .harvest-feature-items article:nth-child(3n + 2)::after {
+  background: var(--bl-lilac);
+  -webkit-mask-image: var(--bl-blob-dent);
+  mask-image: var(--bl-blob-dent);
+  rotate: 18deg;
+}
+.bloom-site .harvest-feature-items article:nth-child(3n + 3)::after {
+  background: var(--bl-mint);
+  -webkit-mask-image: var(--bl-blob-lumpy);
+  mask-image: var(--bl-blob-lumpy);
+  rotate: -24deg;
+}
+.bloom-site
+  .harvest-features:is(
+    [data-card-style='highlighted'],
+    [data-card-style='bordered']
+  )
+  .harvest-feature-items
+  article {
+  --bl-card-pad: 2rem;
+  padding: 2rem;
+}
+.bloom-site .harvest-feature-items h3 {
+  font-weight: 800;
+  color: var(--bl-primary-deep);
+}
+.bloom-site [data-background='ink'] .harvest-feature-items h3 {
+  color: var(--bl-cream);
+}
+.bloom-site
+  .harvest-features:is(
+    [data-card-style='highlighted'],
+    [data-card-style='bordered']
+  )
+  article {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.bloom-site .harvest-features[data-card-style='highlighted'] article::before,
+.bloom-site .harvest-features[data-card-style='bordered'] article::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--bl-cream);
+  border-radius: var(--bl-panel);
+  pointer-events: none;
+}
+.bloom-site
+  .harvest-features[data-card-style='highlighted']
+  article:nth-child(even)::before {
+  border-radius: var(--bl-panel-2);
+}
+.bloom-site .harvest-features[data-card-style='bordered'] article::before {
+  background: transparent;
+  border: 2.5px solid var(--bl-primary);
+}
+.bloom-site
+  .harvest-features[data-card-style='bordered']
+  article:nth-child(even)::before {
+  border-radius: var(--bl-panel-2);
+}
+.bloom-site
+  .harvest-features[data-background='ink'][data-card-style='highlighted']
+  article::before {
+  background: color-mix(in srgb, var(--bl-cream) 14%, transparent);
+}
+.bloom-site
+  .harvest-features[data-background='ink'][data-card-style='bordered']
+  article::before {
+  border-color: var(--bl-cream);
+}
+
+/* Product showcase: uses the product card styles above. ------------------ */
+.bloom-site .harvest-showcase[data-layout='compact-row'] .product-media {
+  aspect-ratio: 1;
+}
+.bloom-site
+  .harvest-showcase[data-layout='featured-product']
+  .product-card:first-child
+  .product-media {
+  -webkit-mask-image: var(--bl-blob-pebble);
+  mask-image: var(--bl-blob-pebble);
+  aspect-ratio: 1;
+}
+
+/* Category showcase ------------------------------------------------------ */
+.bloom-site .harvest-category-links > a {
+  text-decoration: none;
+  color: inherit;
+}
+.bloom-site .harvest-category-photo {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 0 !important;
+  background: transparent !important;
+  overflow: visible;
+}
+.bloom-site .harvest-category-photo > :is(img, svg) {
+  border-radius: 0 !important;
+  background: var(--bl-primary-soft);
+  -webkit-mask: var(--bl-blob-round) center / 100% 100% no-repeat;
+  mask: var(--bl-blob-round) center / 100% 100% no-repeat;
+  transition: transform 0.5s var(--bl-ease);
+}
+.bloom-site
+  .harvest-category-links
+  > a:nth-child(5n + 2)
+  .harvest-category-photo
+  > :is(img, svg) {
+  -webkit-mask-image: var(--bl-blob-egg);
+  mask-image: var(--bl-blob-egg);
+}
+.bloom-site
+  .harvest-category-links
+  > a:nth-child(5n + 3)
+  .harvest-category-photo
+  > :is(img, svg) {
+  -webkit-mask-image: var(--bl-blob-flower);
+  mask-image: var(--bl-blob-flower);
+}
+.bloom-site
+  .harvest-category-links
+  > a:nth-child(5n + 4)
+  .harvest-category-photo
+  > :is(img, svg) {
+  -webkit-mask-image: var(--bl-blob-dent);
+  mask-image: var(--bl-blob-dent);
+}
+.bloom-site
+  .harvest-category-links
+  > a:nth-child(5n + 5)
+  .harvest-category-photo
+  > :is(img, svg) {
+  -webkit-mask-image: var(--bl-blob-lumpy);
+  mask-image: var(--bl-blob-lumpy);
+}
+.bloom-site
+  .harvest-category-links
+  > a:is(:hover, :focus-visible)
+  .harvest-category-photo
+  > :is(img, svg) {
+  transform: rotate(-6deg) scale(1.04);
+}
+.bloom-site
+  .harvest-category-showcase[data-layout='photo-tiles']
+  .harvest-category-photo {
+  aspect-ratio: var(--harvest-library-ratio);
+}
+.bloom-site
+  .harvest-category-showcase[data-layout='photo-tiles']
+  .harvest-category-photo
+  > :is(img, svg) {
+  -webkit-mask-image: var(--bl-card-1);
+  mask-image: var(--bl-card-1);
+}
+.bloom-site
+  .harvest-category-showcase[data-layout='photo-tiles']
+  .harvest-category-links
+  > a:nth-child(even)
+  .harvest-category-photo
+  > :is(img, svg) {
+  -webkit-mask-image: var(--bl-card-3);
+  mask-image: var(--bl-card-3);
+}
+.bloom-site .harvest-category-title {
+  font-weight: 800;
+  color: var(--bl-primary-deep);
+}
+.bloom-site [data-background='ink'] .harvest-category-title {
+  color: var(--bl-cream);
+}
+.bloom-site .harvest-category-links > a:focus-visible {
+  border-radius: 18px;
+}
+.bloom-site
+  .harvest-category-showcase[data-layout='compact']
+  .harvest-category-links
+  > a {
+  padding: 0.6rem 1.15rem;
+  border-radius: 999px;
+  background: var(--bl-primary-soft);
+  transition:
+    transform 0.35s var(--bl-ease),
+    background-color 0.2s ease;
+}
+.bloom-site
+  .harvest-category-showcase[data-layout='compact']
+  .harvest-category-links
+  > a:nth-child(3n + 2) {
+  background: color-mix(in srgb, var(--bl-lilac) 40%, var(--bl-cream));
+}
+.bloom-site
+  .harvest-category-showcase[data-layout='compact']
+  .harvest-category-links
+  > a:nth-child(3n + 3) {
+  background: color-mix(in srgb, var(--bl-sun) 45%, var(--bl-cream));
+}
+.bloom-site
+  .harvest-category-showcase[data-layout='compact']
+  .harvest-category-links
+  > a:is(:hover, :focus-visible) {
+  transform: rotate(-3deg) translateY(-2px);
+}
+
+/* Text -------------------------------------------------------------------- */
+.bloom-site .harvest-authored[data-variant='framed'] {
+  position: relative;
+  isolation: isolate;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.bloom-site
+  .harvest-authored[data-variant='framed']:not(
+    [data-background='surface'],
+    [data-background='ink']
+  ) {
+  background: transparent !important;
+}
+.bloom-site .harvest-authored[data-variant='framed']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 2.5px solid var(--bl-primary);
+  border-radius: var(--bl-panel);
+  pointer-events: none;
+}
+.bloom-site
+  .harvest-authored[data-variant='framed'][data-background='ink']::before {
+  border-color: var(--bl-sun);
+}
+
+/* Image with text --------------------------------------------------------- */
+.bloom-site .harvest-image-story .harvest-authored-image {
+  position: relative;
+  isolation: isolate;
+  border-radius: 0 !important;
+  overflow: visible;
+}
+.bloom-site
+  .harvest-image-story
+  .harvest-authored-image
+  > :is(img, .harvest-photo-placeholder) {
+  border-radius: 0 !important;
+  -webkit-mask: var(--bl-blob-egg) center / 100% 100% no-repeat;
+  mask: var(--bl-blob-egg) center / 100% 100% no-repeat;
+}
+.bloom-site
+  .harvest-image-story[data-image-size='large']
+  .harvest-authored-image
+  > :is(img, .harvest-photo-placeholder) {
+  -webkit-mask-image: var(--bl-card-1);
+  mask-image: var(--bl-card-1);
+}
+.bloom-site .harvest-image-story .harvest-authored-image::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 6% -5% -6% 7%;
+  background: var(--bl-coral);
+  -webkit-mask: var(--bl-blob-lumpy) center / 100% 100% no-repeat;
+  mask: var(--bl-blob-lumpy) center / 100% 100% no-repeat;
+  opacity: 0.8;
+  pointer-events: none;
+}
+.bloom-site
+  .harvest-image-story:nth-of-type(even)
+  .harvest-authored-image
+  > :is(img, .harvest-photo-placeholder) {
+  -webkit-mask-image: var(--bl-blob-dent);
+  mask-image: var(--bl-blob-dent);
+}
+.bloom-site
+  .harvest-image-story:nth-of-type(even)
+  .harvest-authored-image::before {
+  background: var(--bl-lilac);
+  inset: -5% 6% 7% -6%;
+  -webkit-mask-image: var(--bl-blob-flower);
+  mask-image: var(--bl-blob-flower);
+}
+.bloom-site
+  .harvest-image-story[data-image-side='right']
+  .harvest-authored-image::before {
+  inset: 6% 7% -6% -5%;
+}
+.bloom-site
+  .harvest-image-story[data-image-layout='overlay']
+  .harvest-authored-image::before {
+  content: none;
+}
+.bloom-site
+  .harvest-image-story[data-image-layout='overlay']
+  .harvest-authored-image
+  > :is(img, .harvest-photo-placeholder) {
+  -webkit-mask: none;
+  mask: none;
+  border-radius: var(--bl-panel) !important;
+}
+.bloom-site .harvest-image-story .website-eyebrow {
+  display: inline-block;
+  padding: 0.2rem 0.8rem;
+  border-radius: 999px;
+  background: var(--bl-sun);
+  color: var(--bl-ink);
+  font-weight: 800;
+}
+
+/* Call-to-action banner --------------------------------------------------- */
+.bloom-site .harvest-callout {
+  position: relative;
+  isolation: isolate;
+}
+.bloom-site .harvest-callout:not([data-background-type='full'])::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  right: clamp(0.5rem, 3vw, 2rem);
+  top: 0.8rem;
+  width: clamp(48px, 6vw, 80px);
+  aspect-ratio: 1;
+  background: var(--bl-coral);
+  -webkit-mask: var(--bl-doodle-spark) center / contain no-repeat;
+  mask: var(--bl-doodle-spark) center / contain no-repeat;
+  pointer-events: none;
+}
+.bloom-site .harvest-callout[data-background='ink']::before {
+  background: var(--bl-sun);
+}
+
+/* ===================================================== storefront pages */
+.bloom-site .website-page-region,
+.bloom-site .vendor-shop,
+.bloom-site .vendor-cart-page,
+.bloom-site .vendor-checkout-page,
+.bloom-site .vendor-product {
+  padding-top: clamp(1.75rem, 4vw, 3rem);
+}
+.bloom-site main :is(h1) {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--bl-primary-deep);
+}
+
+/* Cards and form controls are soft and round, on light surfaces. */
+.bloom-site .ui-card:not(.product-card) {
+  border-radius: var(--bl-radius);
+  border-color: var(--bl-primary-soft);
+}
+.bloom-site :is(.ui-input, .ui-select, textarea, select) {
+  border-radius: 16px;
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--bl-primary) 22%, transparent);
+  background-color: var(--bl-cream);
+}
+.bloom-site :is(.ui-input, .ui-select, textarea, select):hover {
+  border-color: color-mix(in srgb, var(--bl-primary) 45%, transparent);
+}
+.bloom-site .field label {
+  font-weight: 700;
+}
+.bloom-site .ui-dialog {
+  border-radius: 28px;
+}
+.bloom-site .ui-disclosure {
+  border-radius: 20px;
+}
+.bloom-site .ui-alert {
+  border-radius: 20px;
+}
+/* Pickup market banner (shop, cart): a hand-cut ribbon in the leading colour. */
+.bloom-site .shop-market-banner {
+  position: relative;
+  isolation: isolate;
+  padding: clamp(1.25rem, 3vw, 1.75rem) clamp(1.5rem, 4vw, 2.75rem);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.bloom-site .shop-market-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--bl-primary);
+  border-radius: var(--bl-panel);
+  pointer-events: none;
+}
+.bloom-site .shop-market-banner :focus-visible {
+  outline-color: var(--bl-sun);
+}
+
+/* Shop ------------------------------------------------------------------- */
+.bloom-site .shop-categories.ui-card {
+  border: 0;
+  background: var(--bl-tint);
+}
+.bloom-site .shop-categories .shop-category-option {
+  gap: 0.6rem;
+  margin-block: 0.1rem;
+  padding: 0.4rem 0.9rem 0.4rem 0.7rem;
+  border-radius: 999px;
+  font-weight: 700;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.3s var(--bl-ease);
+}
+.bloom-site .shop-categories .shop-category-option:hover {
+  background: var(--bl-cream);
+  transform: translateX(3px);
+}
+.bloom-site .shop-categories .shop-category-option:has(input:checked) {
+  background: var(--bl-primary);
+  color: var(--bl-cream);
+}
+.bloom-site .shop-categories .shop-category-option:has(input:focus-visible) {
+  outline: 3px solid var(--bl-coral);
+  outline-offset: 2px;
+}
+/* A soft rounded box that fills with cream and a drawn check when chosen. */
+.bloom-site .shop-categories .shop-category-option input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  border: 2px solid color-mix(in srgb, var(--bl-primary) 55%, transparent);
+  border-radius: 7px;
+  background: var(--bl-cream);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+.bloom-site
+  .shop-categories
+  .shop-category-option
+  input[type='checkbox']::after {
+  content: '';
+  width: 0.8rem;
+  height: 0.8rem;
+  background: var(--bl-primary);
+  -webkit-mask: var(--bl-icon-check) center / contain no-repeat;
+  mask: var(--bl-icon-check) center / contain no-repeat;
+  transform: scale(0);
+  transition: transform 0.3s var(--bl-ease);
+}
+.bloom-site
+  .shop-categories
+  .shop-category-option
+  input[type='checkbox']:checked {
+  border-color: var(--bl-cream);
+}
+.bloom-site
+  .shop-categories
+  .shop-category-option
+  input[type='checkbox']:checked::after {
+  transform: scale(1);
+}
+.bloom-site
+  .shop-categories
+  .shop-category-option
+  input[type='checkbox']:focus-visible {
+  outline: none;
+}
+.bloom-site .ui-pagination :is(a, button) {
+  border-radius: 999px;
+}
+
+/* Product detail ---------------------------------------------------------- */
+.bloom-site .vendor-product .product-gallery > .product-media,
+.bloom-site .product-gallery > .product-media {
+  border-radius: 0 !important;
+  -webkit-mask: var(--bl-card-1) center / 100% 100% no-repeat;
+  mask: var(--bl-card-1) center / 100% 100% no-repeat;
+}
+.bloom-site .product-thumbnails .ui-button {
+  border-radius: 18px;
+  overflow: hidden;
+}
+.bloom-site .product-thumbnails .ui-button img {
+  border-radius: 0;
+  -webkit-mask: var(--bl-blob-pebble) center / 100% 100% no-repeat;
+  mask: var(--bl-blob-pebble) center / 100% 100% no-repeat;
+}
+.bloom-site .product-thumbnails [aria-pressed='true'] {
+  border-color: var(--bl-coral);
+  background: color-mix(in srgb, var(--bl-coral) 18%, var(--bl-cream));
+}
+.bloom-site .vendor-product .product-price,
+.bloom-site .product-summary .product-price {
+  display: inline-block;
+  padding: 0.25rem 0.9rem;
+  border-radius: 999px;
+  background: var(--bl-primary-soft);
+  color: var(--bl-primary-deep);
+  font-weight: 800;
+}
+.bloom-site .product-information .ui-disclosure > summary {
+  font-weight: 800;
+}
+.bloom-site .product-related > h2 {
+  font-weight: 800;
+}
+
+/* Cart ------------------------------------------------------------------- */
+.bloom-site .vendor-cart-image,
+.bloom-site .vendor-cart-line img {
+  border-radius: 0 !important;
+  -webkit-mask: var(--bl-blob-pebble) center / 100% 100% no-repeat;
+  mask: var(--bl-blob-pebble) center / 100% 100% no-repeat;
+}
+.bloom-site .vendor-cart-line:nth-child(even) :is(.vendor-cart-image, img) {
+  -webkit-mask-image: var(--bl-blob-egg);
+  mask-image: var(--bl-blob-egg);
+}
+.bloom-site .vendor-cart-summary.ui-card {
+  border: 0;
+  background: var(--bl-tint);
+}
+.bloom-site .vendor-cart-total {
+  font-weight: 800;
+  color: var(--bl-primary-deep);
+}
+.bloom-site .vendor-cart-stepper.button.ui-button {
+  border-radius: 999px;
+}
+
+/* Checkout: light surfaces throughout, so the card field stays legible. -- */
+.bloom-site .checkout-progress li {
+  font-weight: 700;
+}
+.bloom-site .checkout-progress li[aria-current='step'] {
+  color: var(--bl-primary-deep);
+}
+.bloom-site .checkout-section {
+  border-radius: var(--bl-radius);
+}
+.bloom-site .checkout-order-summary,
+.bloom-site .vendor-checkout .checkout-order-summary {
+  border-radius: var(--bl-radius);
+  background: var(--bl-tint);
+}
+
+/* Our Story, Find Us, Contact, FAQ and Policies --------------------------- */
+.bloom-site .story-page h1,
+.bloom-site .market-page-intro h1 {
+  position: relative;
+  padding-bottom: 0.5em;
+}
+.bloom-site .story-page h1::after,
+.bloom-site .market-page-intro h1::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: min(10rem, 60%);
+  height: 0.35em;
+  max-height: 18px;
+  background: var(--bl-coral);
+  -webkit-mask: var(--bl-doodle-underline) left center / 100% 100% no-repeat;
+  mask: var(--bl-doodle-underline) left center / 100% 100% no-repeat;
+}
+.bloom-site .story-cta .button.ui-button {
+  margin-top: 0.5rem;
+}
+.bloom-site [data-about-section] img,
+.bloom-site .about-story img,
+.bloom-site .find-us img {
+  border-radius: 0 !important;
+  -webkit-mask: var(--bl-card-1) center / 100% 100% no-repeat;
+  mask: var(--bl-card-1) center / 100% 100% no-repeat;
+}
+.bloom-site .faq-list .ui-disclosure > summary,
+.bloom-site .policies-list h2 {
+  font-weight: 800;
+}
+
+/* ---------------------------------------------------------------- motion */
+@keyframes bl-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -10px;
+  }
+}
+@keyframes bl-wobble {
+  0%,
+  100% {
+    rotate: 14deg;
+    scale: 1;
+  }
+  50% {
+    rotate: 6deg;
+    scale: 1.04;
+  }
+}
+@keyframes bl-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.9) rotate(2deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes bl-pop {
+  from {
+    transform: scale(0.9) rotate(-4deg);
+  }
+  to {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bloom-site .harvest-hero-visual::before {
+    animation: bl-wobble 11s ease-in-out infinite;
+  }
+  .bloom-site [data-composition='vendor'] > .harvest-hero::after,
+  .bloom-site [data-composition='vendor'] > .vendor-closing::after,
+  .bloom-site [data-composition='vendor'] > .vendor-about::before {
+    animation: bl-float 6s ease-in-out infinite;
+  }
+  .bloom-site [data-composition='vendor'] > .vendor-closing::before {
+    animation: bl-float 9s ease-in-out infinite reverse;
+  }
+  .bloom-site
+    .harvest-hero-visual
+    > :is(.product-media, .harvest-artwork, svg) {
+    animation: bl-pop 0.8s var(--bl-ease) both;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bloom-site *,
+  .bloom-site *::before,
+  .bloom-site *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+/* In the editor, a selected wavy band draws its outline inside the solid part
+   of the band, so the wave cut never hides the selection. */
+html[data-editor-inspect='true']
+  .bloom-site
+  [data-editor-selected]:is(
+    .harvest-hero,
+    .vendor-about,
+    .vendor-closing,
+    .harvest-footer,
+    section[data-background-type='full']:is(
+        [data-background='surface'],
+        [data-background='ink']
+      )
+  ) {
+  outline-offset: calc(-1 * var(--bl-wave) - 2px);
+}
+/* The editor preview never animates, so screenshots and selection stay calm. */
+html[data-editor-preview='true'] .bloom-site *,
+html[data-editor-preview='true'] .bloom-site *::before,
+html[data-editor-preview='true'] .bloom-site *::after {
+  animation: none !important;
+}
+
+/* ------------------------------------------------------------ responsive */
+@media (max-width: 1050px) {
+  .bloom-site .harvest-desktop-nav {
+    background: transparent;
+  }
+}
+@media (max-width: 700px) {
+  html[data-storefront-theme='bloom'] {
+    --bl-wave: 22px;
+  }
+  .bloom-site [data-composition='vendor'] > .harvest-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bloom-site .harvest-hero-visual::before {
+    inset: -4% -5% -6% -3%;
+  }
+  .bloom-site .harvest-hero-copy::before {
+    left: auto;
+    right: 0;
+    top: -1.2rem;
+  }
+  .bloom-site [data-composition='vendor'] > .vendor-closing::before {
+    width: 130px;
+    right: -20px;
+  }
+  .bloom-site .harvest-header {
+    padding-block: 0.75rem;
+  }
+}

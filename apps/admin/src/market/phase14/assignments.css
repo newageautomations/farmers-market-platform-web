@@ -1,0 +1,364 @@
+/* Only Assignments arrangements. Heading, summary, panels, controls, table
+   and paging are the shared Rentals/Vendors/Operations presentation. */
+.market-assignments > .markets-heading {
+  flex-wrap: wrap;
+}
+.market-assignments > .markets-heading > div:not(.workspace-heading-actions) {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.market-assignments .workspace-heading-actions {
+  display: flex;
+  flex: 0 1 360px;
+  min-width: 0;
+}
+.market-assignments .workspace-heading-actions > .field {
+  width: 100%;
+  margin: 0;
+}
+.market-assignments .workspace-heading-actions .farmstand-select-wrap {
+  width: 100%;
+}
+
+/* Market layout panel: the map status sits beside the description. */
+.assignments-map-panel .settings-panel-heading {
+  flex-wrap: wrap;
+}
+.assignments-map-panel .settings-panel-heading p {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.assignments-map-panel .settings-panel-body > p,
+.assignments-map-panel > p {
+  margin: 0;
+}
+/* The shared map sits in the panel body: its toolbar and hint use the map's
+   own side padding above and below, and the Area select matches the toolbar
+   buttons' height with its text centered. */
+.assignments-map-panel .ops-map {
+  margin: 0;
+}
+.assignments-map-panel .map-navigation {
+  min-height: 0;
+  padding: 0 0 12px;
+}
+.assignments-map-panel .map-hint {
+  padding: 8px 0 0;
+}
+.assignments-map-panel .map-navigation .ui-select.ui-select {
+  --ui-control-height: 32px;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  min-height: 32px;
+  padding-block: 0;
+  font-weight: 600;
+}
+
+.assignments-columns.markets-columns {
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+.assignments-sidebar {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.assignments-sidebar .settings-panel-body > .button {
+  justify-self: stretch;
+}
+.assignments-sidebar .farmstand-select-wrap,
+.assignments-sidebar .farmstand-select.ui-select {
+  width: 100%;
+}
+.assignments-sidebar .settings-panel-body > p {
+  margin: 0;
+}
+.assignments-filters.markets-filters {
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 190px);
+}
+.assignments-vendors .farmstand-data-table {
+  min-width: 640px;
+}
+.assignments-vendors .farmstand-data-table td {
+  white-space: nowrap;
+}
+.assignments-vendors .farmstand-data-table td:nth-child(3) {
+  white-space: normal;
+}
+/* Business names are shown as entered, as in Rentals. */
+.assignments-vendors .markets-identity {
+  max-width: 280px;
+  text-transform: none;
+}
+.assignments-vendors .markets-identity small {
+  display: block;
+}
+
+/* Copy suggestions under the copy form. */
+.assignments-copy-review {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--farmstand-border);
+}
+.assignments-copy-review h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.assignments-copy-review p {
+  margin: 0;
+}
+.assignments-copy-review ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.assignments-copy-conflicts li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--status-warning-fg);
+}
+.assignments-copy-conflicts .farmstand-icon {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+.assignments-copy-proposals li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+.assignments-copy-proposals small {
+  display: block;
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+
+@container (max-width: 1080px) {
+  .assignments-columns.markets-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container (max-width: 600px) {
+  .assignments-filters.markets-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .market-assignments .workspace-heading-actions {
+    flex-basis: 100%;
+  }
+}
+
+/* The shared booth and vendor dialogs reuse AssignmentCard, whose spacing
+   otherwise comes from Market Day styles that this route does not load. */
+.market-assignments dialog :is(.ops-day-card, .ops-assignment) {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.market-assignments
+  dialog
+  :is(.ops-day-card, .ops-assignment)
+  > :is(p, .ops-field, .ops-check, .ui-disclosure) {
+  margin: 0;
+}
+.market-assignments dialog .attendance-assignment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 0;
+}
+/* In the booth panel and the Manage vendor dialog, the Additional rentals and
+   invoice disclosures keep DDN-03 behavior but take the closed geometry of
+   the page's Farmstand-adapted selects (40px, regular weight). */
+.market-assignments
+  .ops-day-card
+  :is(.assignment-rentals-more, .assignment-invoice)
+  > summary {
+  min-height: 38px;
+  padding: 0 0.75rem 0 0.7rem;
+  font-weight: 400;
+  line-height: 1.2;
+}
+/* Saved rentals as a short list under a "Rentals:" label. */
+.assignment-rentals-summary {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.assignment-rentals-summary > span:first-child {
+  color: var(--brand-muted);
+  font-weight: 600;
+}
+.assignment-rentals-summary ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.assignment-rentals-summary strong {
+  font-weight: 600;
+}
+.assignment-rentals-summary-none {
+  color: var(--brand-muted);
+}
+/* The vendor dialog title already names the business. */
+.market-assignments dialog .ui-card-embedded.ops-day-card > h2 {
+  display: none;
+}
+
+/* Booth table beside the booth side panel; the panel takes most of the width. */
+.assignment-booths {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 18px;
+  align-items: start;
+  min-width: 0;
+}
+.assignment-booth-list.markets-list.farmstand-panel.card.ui-card {
+  padding: 14px;
+}
+.assignment-booth-filters.markets-filters {
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 150px);
+  margin-bottom: 12px;
+}
+.assignment-booth-list .markets-identity {
+  min-width: 0;
+  text-transform: none;
+}
+.assignment-booth-list .markets-identity small {
+  display: block;
+  white-space: nowrap;
+}
+.assignment-booth-list .farmstand-data-table tbody tr {
+  cursor: pointer;
+}
+.assignment-booth-list .farmstand-data-table td {
+  white-space: nowrap;
+}
+.assignment-booth-panel-wrap {
+  min-width: 0;
+  scroll-margin-top: 16px;
+}
+.assignment-booth-panel.farmstand-panel.card.ui-card {
+  padding: 18px;
+}
+.booth-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.booth-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -8px -8px 0;
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: var(--markets-soft);
+}
+.booth-panel-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--brand-primary);
+  font-size: 16px;
+}
+.booth-panel-header .farmstand-icon {
+  width: 19px;
+  height: 19px;
+}
+.booth-panel-header .button {
+  gap: 6px;
+}
+.booth-panel-header svg {
+  width: 15px;
+  height: 15px;
+}
+.booth-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 4px 0 0;
+}
+/* The shared assignment card sits flat inside the panel. */
+.booth-panel :is(.ops-day-card, .ops-assignment) {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.booth-panel
+  :is(.ops-day-card, .ops-assignment)
+  > :is(p, .ops-field, .ops-check, .ui-disclosure) {
+  margin: 0;
+}
+.booth-panel .attendance-assignment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.booth-panel .ui-card-embedded.ops-day-card > h2 {
+  font-size: 15px;
+  margin: 0;
+}
+@container (max-width: 900px) {
+  .assignment-booths {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Three short columns fit the narrow table without the shared wide minimum. */
+.assignment-booth-list .farmstand-data-table {
+  min-width: 0;
+}
+
+.assignment-vendor-panel > p {
+  margin: 0;
+}
+
+/* The nested switch has two views, independent of the route menu count. */
+.market-assignments .workspace-menu {
+  --workspace-menu-columns: 2;
+}
+.assignment-vendor-workspace {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+.assignment-vendor-list .farmstand-data-table {
+  min-width: 420px;
+}
+.assignments-map-panel .settings-panel-actions {
+  max-width: 100%;
+  flex-shrink: 1;
+}
+@container (max-width: 900px) {
+  .assignment-vendor-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container (max-width: 600px) {
+  .assignments-map-panel .settings-panel-actions {
+    flex-basis: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+}
+
+/* Status is data, so it retains the left alignment of the other columns. */
+.assignment-vendor-list .farmstand-data-table :is(th, td):last-child {
+  text-align: left;
+}
+/* Requested orange presentation is scoped to pending date approvals. */
+.market-assignments .assignment-needs-approval {
+  color: #9a3412;
+  background: #ffedd5;
+}

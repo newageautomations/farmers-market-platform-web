@@ -1,0 +1,2434 @@
+/*
+ * Hearth: a rustic bakehouse market storefront theme.
+ *
+ * Hearth keeps the shared Harvest market pages, commerce islands and section
+ * library, and presents them as printed kraft paper: ink outlines, stacked
+ * card shadows, postmarks and chalkboards. Everything here is scoped to the
+ * Hearth theme root or `.hearth-site`, so no other theme is affected. This
+ * file is linked only for Hearth websites.
+ */
+
+/* ------------------------------------------------------------------ tokens */
+html[data-storefront-theme='hearth'] {
+  --hw-paper: #f4ead8;
+  --hw-flour: #fcf7ec;
+  --hw-kraft: #e6d5b4;
+  --hw-butter: #f3deaa;
+  --hw-ink: #2b1d12;
+  --hw-muted: #6b5847;
+  --hw-crust: #8f5416;
+  --hw-caramel: #d9a253;
+  --hw-jam: #9b2f3a;
+  --hw-sage: #5f6d3c;
+  --hw-wood: #8a5a2b;
+  --hw-primary: #5c3a21;
+  --hw-primary-deep: #3d2616;
+  --hw-primary-soft: #ecdcc3;
+  --hw-shade: color-mix(in srgb, var(--hw-primary) 34%, var(--hw-kraft));
+  --hw-line: color-mix(in srgb, var(--hw-ink) 26%, transparent);
+  --hw-radius: 6px;
+  --hw-edge: 1.5px solid var(--hw-ink);
+  --hw-stack: 4px 4px 0 var(--hw-shade);
+  --hw-stack-lift: 7px 7px 0 var(--hw-shade);
+  --hw-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --hw-gutter: clamp(1.1rem, 4vw, 2.75rem);
+  --hw-max: 1220px;
+  --hw-wrap: min(100% - 2 * var(--hw-gutter), var(--hw-max));
+  --hw-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .36 0 0 0 0 .23 0 0 0 0 .11 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  --hw-gingham:
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--hw-primary) 50%, transparent) 0 9px,
+      transparent 9px 18px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--hw-primary) 50%, transparent) 0 9px,
+      transparent 9px 18px
+    ),
+    var(--hw-flour);
+  --hw-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
+  --hw-icon-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 10c0 5-8 12-8 12s-8-7-8-12a8 8 0 0 1 16 0z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E");
+  --hw-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 4.5 4.5L19 7'/%3E%3C/svg%3E");
+  --hw-icon-bag: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z'/%3E%3Cpath d='M3 6h18M16 10a4 4 0 0 1-8 0'/%3E%3C/svg%3E");
+  --hw-icon-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M8 3v4M16 3v4M3 10h18'/%3E%3C/svg%3E");
+  --hw-icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3'/%3E%3C/svg%3E");
+  --hw-icon-store: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 10v10h16V10M3 10l2-6h14l2 6a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0zM10 20v-5h4v5'/%3E%3C/svg%3E");
+  /* The theme's own palette replaces the generic storefront presets. */
+  --brand-primary: var(--hw-primary) !important;
+  --brand-secondary: var(--hw-primary-deep) !important;
+  --brand-accent: var(--hw-caramel) !important;
+  --brand-background: var(--hw-paper) !important;
+  --brand-surface: var(--hw-flour) !important;
+  --brand-foreground: var(--hw-ink) !important;
+  --brand-muted: var(--hw-muted) !important;
+  --brand-on-primary: #fcf7ec !important;
+  --brand-on-secondary: #fcf7ec !important;
+  --storefront-card-radius: var(--hw-radius) !important;
+  --ui-input-focus-background: var(--hw-flour);
+  color: var(--hw-ink);
+  background: var(--hw-paper);
+  font-family: var(--font-body);
+  scroll-padding-top: 6rem;
+}
+html[data-storefront-theme='hearth'] body {
+  background: var(--hw-paper) var(--hw-grain);
+}
+/* The Colors setting chooses the leading color. Every choice is dark enough
+   for cream text. Sage, the platform default, is Hearth's roast brown. */
+html[data-storefront-theme='hearth'][data-theme-palette='terracotta'] {
+  --hw-primary: #8a3324;
+  --hw-primary-deep: #5e2116;
+  --hw-primary-soft: #f2dccf;
+}
+html[data-storefront-theme='hearth'][data-theme-palette='blue'] {
+  --hw-primary: #37476b;
+  --hw-primary-deep: #232f4a;
+  --hw-primary-soft: #dfe3ee;
+}
+html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
+  --hw-primary: #4a5330;
+  --hw-primary-deep: #30371e;
+  --hw-primary-soft: #e3e5d2;
+}
+
+/* ------------------------------------------------------------------- shell */
+.hearth-site {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: clip;
+}
+.hearth-site > main {
+  flex: 1;
+  min-width: 0;
+}
+.hearth-site > main > :where(:not(.hw-home, astro-island)),
+.hearth-site > main > astro-island > *,
+.hw-home > :where(:not(.hw-bleed, astro-island)),
+.hw-home > astro-island > * {
+  width: var(--hw-wrap);
+  margin-inline: auto;
+}
+.hearth-site :is(h1, h2, h3) {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.hearth-site ::selection {
+  background: var(--hw-caramel);
+  color: var(--hw-ink);
+}
+.hearth-site :focus-visible {
+  outline: 3px solid var(--hw-jam);
+  outline-offset: 3px;
+}
+.hw-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+/* Card-like links carry their own hover, not the text underline. */
+.hearth-site
+  :is(.hw-brand, .hw-menu a, .hw-next, .hw-category, .hw-footer-name)::after {
+  content: none;
+}
+
+/* ----------------------------------------------------------------- buttons */
+.hearth-site .button.ui-button {
+  border-width: 1.5px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.hearth-site
+  .button.ui-button:not(.secondary, .button-tertiary, .button-icon):not(
+    .button-disclosure,
+    .button-destructive-outline,
+    .button-destructive
+  ) {
+  --button-edge: var(--hw-ink);
+  --button-hover-fill: var(--hw-primary-deep);
+  --button-hover-edge: var(--hw-ink);
+  box-shadow: 3px 3px 0 var(--hw-ink);
+}
+.hearth-site .button.ui-button.secondary {
+  --button-fill: var(--hw-flour);
+  --button-ink: var(--hw-ink);
+  --button-edge: var(--hw-ink);
+  --button-hover-fill: var(--hw-butter);
+  --button-hover-edge: var(--hw-ink);
+  --button-hover-ink: var(--hw-ink);
+  box-shadow: 3px 3px 0 var(--hw-shade);
+}
+/* Every button lifts on hover and presses into the page on click, whatever
+   hover style is chosen. */
+.hearth-site
+  .button.ui-button:is(:hover, :focus-visible):not(:disabled):not(
+    [aria-disabled='true']
+  ):not(.button-tertiary, .button-icon, .button-disclosure) {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--hw-ink);
+}
+.hearth-site
+  .button.ui-button.secondary:is(:hover, :focus-visible):not(:disabled):not(
+    [aria-disabled='true']
+  ) {
+  box-shadow: 5px 5px 0 var(--hw-shade);
+}
+.hearth-site
+  .button.ui-button:active:not(:disabled):not([aria-disabled='true']):not(
+    .button-tertiary,
+    .button-icon,
+    .button-disclosure
+  ) {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--hw-ink);
+  transition-duration: 60ms;
+}
+.hearth-site .button.ui-button:is(.button-tertiary, .button-icon) {
+  box-shadow: none;
+}
+.hearth-site
+  .button.ui-button:is(.button-tertiary, .button-icon):is(
+    :hover,
+    :focus-visible
+  ):not(:disabled) {
+  background: var(--hw-butter);
+  box-shadow: none;
+}
+.hearth-site .button.ui-button:is(.button-tertiary, .button-icon):active {
+  transform: scale(0.92);
+}
+.hearth-site .button.ui-button:disabled,
+.hearth-site .button.ui-button[aria-disabled='true'] {
+  box-shadow: none;
+}
+.hearth-site .button .farmstand-icon {
+  flex: none;
+  transition: transform 220ms var(--hw-ease);
+}
+.hearth-site .hw-button-arrow:is(:hover, :focus-visible) .farmstand-icon {
+  transform: translateX(5px);
+}
+
+/* ------------------------------------------------------------------ header */
+.hw-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--hw-flour);
+  border-bottom: 4px double var(--hw-ink);
+  transition: box-shadow 260ms ease;
+}
+.hw-header[data-scrolled] {
+  box-shadow: 0 10px 22px -14px rgb(43 29 18 / 0.55);
+}
+.hw-header-inner {
+  width: var(--hw-wrap);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  min-height: 74px;
+}
+.hw-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  color: var(--hw-ink);
+  font: 700 clamp(1.1rem, 1.5vw, 1.4rem) / 1.15 var(--font-heading);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+.hw-brand-name {
+  overflow-wrap: anywhere;
+}
+.hw-brand-mark,
+.hw-brand img {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  transition: transform 420ms var(--hw-ease);
+}
+.hw-brand img {
+  border: var(--hw-edge);
+  object-fit: cover;
+}
+.hw-brand-mark {
+  color: var(--hw-jam);
+  rotate: -10deg;
+}
+.hw-brand:is(:hover, :focus-visible) :is(.hw-brand-mark, img) {
+  transform: rotate(22deg) scale(1.08);
+}
+.hw-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.2rem 1.5rem;
+}
+.hw-nav a {
+  padding-block: 0.45rem;
+  color: var(--hw-ink);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color 200ms ease,
+    transform 200ms ease;
+}
+.hearth-site .hw-nav a::after {
+  bottom: 0;
+  height: 3px;
+  background: var(--hw-caramel);
+}
+.hw-nav a:is(:hover, :focus-visible) {
+  color: var(--hw-primary);
+  transform: translateY(-2px);
+}
+.hw-nav a:active {
+  transform: translateY(1px);
+}
+.hearth-site .hw-nav a[aria-current='page']::after {
+  background: var(--hw-jam);
+  transform: scaleX(1);
+}
+.hw-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-self: end;
+}
+.hw-header-actions .harvest-header-icon.button.ui-button,
+.hw-menu > summary {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--hw-ink);
+  box-shadow: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.hearth-site
+  .hw-header-actions
+  .harvest-header-icon.button.ui-button:is(:hover, :focus-visible):not(
+    :disabled
+  ),
+.hw-menu > summary:is(:hover, :focus-visible),
+.hearth-site
+  .hw-header-actions
+  details[open]
+  > summary.harvest-header-icon.button.ui-button,
+.hw-menu[open] > summary {
+  border-color: var(--hw-ink);
+  background: var(--hw-butter);
+  box-shadow: 3px 3px 0 var(--hw-ink);
+  transform: translate(-2px, -2px);
+}
+.hearth-site
+  .hw-header-actions
+  .harvest-header-icon.button.ui-button:active:not(:disabled),
+.hw-menu > summary:active {
+  box-shadow: 0 0 0 var(--hw-ink);
+  transform: translate(1px, 1px);
+}
+.hw-header-actions .harvest-header-icon::after {
+  content: none;
+}
+/* The shared account summary spreads its grid (space-between), which pinned
+   the icon to the left edge of its 44px button. */
+.hw-header-actions .harvest-header-icon.button.ui-button {
+  justify-content: center;
+}
+/* Keep the cart count inside the cart button's own box so it doesn't spill
+   into the gap before the account button. */
+.hw-header-actions .harvest-cart-count {
+  top: -3px;
+  right: -3px;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  border: 1.5px solid var(--hw-ink);
+  border-radius: 6px;
+  background: var(--hw-jam);
+  color: #fcf7ec;
+  font-weight: 800;
+}
+.hw-header-actions .harvest-account-content {
+  top: calc(100% + 0.7rem);
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: 5px 5px 0 var(--hw-ink);
+  animation: hw-drop 220ms var(--hw-ease);
+}
+.hw-header-actions .harvest-account-content a {
+  font-weight: 700;
+}
+.hw-menu {
+  display: none;
+}
+.hw-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.hw-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.hw-menu-bars {
+  display: grid;
+  gap: 5px;
+  width: 20px;
+}
+.hw-menu-bars span {
+  height: 2.5px;
+  background: currentColor;
+  transition:
+    transform 260ms var(--hw-ease),
+    opacity 180ms ease;
+}
+.hw-menu[open] .hw-menu-bars span:nth-child(1) {
+  transform: translateY(7.5px) rotate(45deg);
+}
+.hw-menu[open] .hw-menu-bars span:nth-child(2) {
+  opacity: 0;
+}
+.hw-menu[open] .hw-menu-bars span:nth-child(3) {
+  transform: translateY(-7.5px) rotate(-45deg);
+}
+.hw-menu > nav {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  left: var(--hw-gutter);
+  right: var(--hw-gutter);
+  display: grid;
+  padding: 0.4rem;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: 6px 6px 0 var(--hw-ink);
+  animation: hw-drop 220ms var(--hw-ease);
+}
+.hearth-site .hw-menu > nav a {
+  /* Full-width rows; the shared text-link rule would shrink them to the label. */
+  width: auto !important;
+  padding: 0.95rem 1rem;
+  border-bottom: 1.5px dashed var(--hw-line);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    padding-left 220ms var(--hw-ease);
+}
+.hearth-site .hw-menu > nav a:last-child {
+  border-bottom: 0;
+}
+.hearth-site .hw-menu > nav a:is(:hover, :focus-visible) {
+  background: var(--hw-butter);
+  padding-left: 1.5rem;
+}
+.hearth-site .hw-menu > nav a[aria-current='page'] {
+  background: var(--hw-primary);
+  color: #fcf7ec;
+}
+[data-theme-cart][data-bump] .harvest-cart-link {
+  animation: hw-stamp 480ms var(--hw-ease);
+}
+@media (max-width: 1100px) {
+  .hw-header-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 66px;
+  }
+  .hw-nav {
+    display: none;
+  }
+  .hw-menu {
+    display: block;
+  }
+}
+@media (max-width: 420px) {
+  .hw-brand-mark,
+  .hw-brand img {
+    width: 38px;
+    height: 38px;
+  }
+  .hw-brand {
+    font-size: 1.02rem;
+    gap: 0.5rem;
+  }
+  .hw-header-actions {
+    gap: 0.15rem;
+  }
+}
+
+/* -------------------------------------------------------------------- hero */
+.hw-hero {
+  position: relative;
+  background: var(--hw-kraft) var(--hw-grain);
+}
+.hw-hero-inner {
+  width: var(--hw-wrap);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+  padding-block: clamp(2.5rem, 6vw, 4.75rem);
+}
+.hw-hero-copy {
+  min-width: 0;
+}
+.hw-hero-ornament {
+  width: 46px;
+  margin: 0 0 0.6rem 0.2rem;
+  rotate: 24deg;
+  transform-origin: 50% 100%;
+}
+.hearth-site .hw-hero h1 {
+  --storefront-heading-base: clamp(2.6rem, 5.4vw, 4.7rem);
+  margin: 0 0 1.1rem;
+  font-size: var(--storefront-heading-base);
+  line-height: 1.03;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.hw-hero h1::after,
+.hearth-site .market-page-intro h1::after {
+  content: '';
+  display: block;
+  width: 5.5rem;
+  height: 5px;
+  margin-top: 1.1rem;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--hw-crust) 0 12px,
+    transparent 12px 18px
+  );
+}
+.hw-hero-intro {
+  --storefront-paragraph-base: clamp(1.05rem, 1.4vw, 1.22rem);
+  max-width: 44ch;
+  margin: 0;
+  color: var(--hw-muted);
+  font-size: var(--storefront-paragraph-base);
+  line-height: 1.65;
+}
+.hw-hero-actions {
+  margin-top: 2rem;
+  gap: 1rem;
+}
+.hw-hero-actions .button.ui-button {
+  min-height: 52px;
+  padding-inline: 1.5rem;
+  font-size: 0.9rem;
+}
+.hw-gingham {
+  height: 18px;
+  border-block: 1.5px solid var(--hw-ink);
+  background: var(--hw-gingham);
+}
+.hw-hero-visual {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 520px);
+}
+.hw-hero-frame {
+  position: relative;
+  /* The ratio is the scene's own 560x500 viewBox, so it must size the box
+     inside the 10px border; on the border box the scene letterboxed and left
+     a strip of background between it and the frame. */
+  box-sizing: content-box;
+  aspect-ratio: 560 / 500;
+  overflow: hidden;
+  border: 10px solid var(--hw-wood);
+  border-radius: 10px;
+  background: var(--hw-flour);
+  box-shadow:
+    inset 0 0 0 2px rgb(43 29 18 / 0.35),
+    0 0 0 1.5px var(--hw-ink),
+    9px 9px 0 var(--hw-shade);
+  /* No tilt: a rotated frame makes Chrome resample the illustration or
+     photo inside it, which blurs it. */
+}
+.hw-hero-photo .hw-hero-frame {
+  aspect-ratio: 1;
+}
+.hw-scene {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.hearth-site .hw-hero-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  aspect-ratio: auto;
+  border-radius: 0;
+  object-fit: cover;
+}
+.hw-hero-stamp {
+  position: absolute;
+  top: -1.6rem;
+  right: -1.1rem;
+  width: clamp(70px, 9vw, 104px);
+  padding: 5px;
+  border-radius: 50%;
+  background: var(--hw-flour);
+  color: var(--hw-jam);
+  box-shadow: 3px 3px 0 var(--hw-ink);
+  rotate: 14deg;
+}
+.hw-sticker {
+  position: absolute;
+  width: clamp(60px, 8vw, 96px);
+  filter: drop-shadow(3px 3px 0 rgb(43 29 18 / 0.35));
+}
+.hw-sticker-croissant {
+  bottom: -5%;
+  left: -7%;
+  rotate: -12deg;
+}
+.hw-sticker-coffee {
+  right: -5%;
+  bottom: -4%;
+}
+
+/* Next market date, as a ticket linked to its shop. */
+.hw-next {
+  display: inline-flex;
+  align-items: stretch;
+  max-width: 100%;
+  margin-top: 2rem;
+  overflow: hidden;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+  color: var(--hw-ink);
+  text-decoration: none;
+  transition:
+    transform 240ms var(--hw-ease),
+    box-shadow 240ms var(--hw-ease);
+}
+.hw-next:is(:hover, :focus-visible) {
+  transform: translate(-2px, -3px);
+  box-shadow: var(--hw-stack-lift);
+}
+.hw-next:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--hw-shade);
+}
+.hw-next-stamp {
+  flex: none;
+  display: grid;
+  place-content: center;
+  padding: 0.55rem 1rem;
+  border-right: 2px dashed var(--hw-flour);
+  background: var(--hw-primary);
+  color: #fcf7ec;
+  text-align: center;
+}
+.hw-next-stamp span {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.hw-next-stamp strong {
+  font: 700 1.7rem / 1 var(--font-heading);
+}
+.hw-next-copy {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding: 0.6rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.hw-next-copy > span {
+  color: var(--hw-muted);
+  overflow-wrap: anywhere;
+}
+.hw-next-copy .hw-next-label {
+  color: var(--hw-jam);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.hw-next-go {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding-inline: 0.9rem;
+  border-left: 1.5px dashed var(--hw-line);
+  color: var(--hw-primary);
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+.hw-next-go .farmstand-icon {
+  transition: transform 220ms var(--hw-ease);
+}
+.hw-next:is(:hover, :focus-visible) .hw-next-go {
+  background: var(--hw-butter);
+}
+.hw-next:is(:hover, :focus-visible) .hw-next-go .farmstand-icon {
+  transform: translateX(4px);
+}
+
+/* ---------------------------------------------------------------- sections */
+.hw-section {
+  padding-block: clamp(2.5rem, 5.5vw, 4.25rem);
+  scroll-margin-top: 6rem;
+}
+.hw-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  margin-bottom: clamp(1.4rem, 3vw, 2.1rem);
+}
+.hearth-site .hw-section-head h2 {
+  --storefront-heading-base: clamp(1.65rem, 3vw, 2.4rem);
+  flex: 0 1 auto;
+  margin: 0;
+  font-size: var(--storefront-heading-base);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+}
+.hw-section-art {
+  flex: none;
+  width: clamp(40px, 4.6vw, 54px);
+  transition: transform 360ms var(--hw-ease);
+}
+.hw-section-head:hover .hw-section-art {
+  transform: rotate(-12deg) scale(1.1);
+}
+.hw-rule {
+  flex: 1 1 2.5rem;
+  min-width: 2rem;
+  border-top: 2px dashed var(--hw-line);
+}
+.hw-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding-block: 0.4rem;
+  color: var(--hw-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.hw-more .farmstand-icon,
+.hearth-site .harvest-text-link > span[aria-hidden] {
+  display: inline-block;
+  transition: transform 220ms var(--hw-ease);
+}
+.hw-more:is(:hover, :focus-visible) .farmstand-icon {
+  transform: translateX(5px);
+}
+.hearth-site .harvest-text-link:is(:hover, :focus-visible) > span[aria-hidden] {
+  transform: translate(3px, -3px);
+}
+.hearth-site .harvest-text-link {
+  color: var(--hw-primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.hearth-site .empty-state {
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 2px dashed var(--hw-line);
+  border-radius: var(--hw-radius);
+  background: color-mix(in srgb, var(--hw-flour) 70%, transparent);
+  text-align: center;
+}
+.hearth-site .empty-state :is(h2, h3, h4) {
+  margin-bottom: 0.5rem;
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+.hearth-site .empty-state p {
+  max-width: 46ch;
+  margin: 0 auto;
+  color: var(--hw-muted);
+}
+
+/* Market date tickets (shared MarketDateList). */
+.hearth-site .harvest-dates {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+  gap: 1.25rem;
+  margin: 0;
+}
+.hearth-site .harvest-date.ui-card {
+  position: relative;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.1rem;
+  margin: 0;
+  padding: 1.1rem 1.15rem;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.hearth-site .harvest-date.ui-card:hover {
+  transform: translate(-2px, -3px);
+  box-shadow: var(--hw-stack-lift);
+}
+/* A postmark, not a calendar tile. */
+.hearth-site .harvest-date-stamp {
+  display: grid;
+  place-content: center;
+  gap: 0;
+  width: 4.7rem;
+  height: 4.7rem;
+  border: 2px solid var(--hw-jam);
+  border-radius: 50%;
+  outline: 1.5px dashed var(--hw-jam);
+  outline-offset: -7px;
+  color: var(--hw-jam);
+  text-align: center;
+  rotate: -9deg;
+  transition: rotate 320ms var(--hw-ease);
+}
+.hearth-site .harvest-date:hover .harvest-date-stamp {
+  rotate: 6deg;
+}
+.hearth-site .harvest-date-stamp span {
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.hearth-site .harvest-date-stamp strong {
+  color: inherit;
+  font: 700 1.65rem / 1 var(--font-heading);
+}
+.hearth-site .harvest-dates[data-card-theme='inverse'] .harvest-date-stamp {
+  border-color: var(--hw-butter);
+  outline-color: var(--hw-butter);
+  color: var(--hw-butter);
+}
+.hearth-site .harvest-date h3 {
+  margin: 0 0 0.35rem;
+  font: 700 1.2rem / 1.3 var(--font-heading);
+}
+/* The whole ticket opens the date's shop; the action links stay on top. */
+.hearth-site .harvest-date h3 a::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.hearth-site .harvest-date h3 a::after {
+  content: none;
+}
+.hearth-site .harvest-date p {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0 0 0.2rem;
+  color: var(--hw-muted);
+  font-size: 0.93rem;
+}
+.hearth-site .harvest-date .market-date-copy > p::before {
+  content: '';
+  flex: none;
+  align-self: center;
+  width: 1rem;
+  height: 1rem;
+  background: var(--hw-crust);
+  -webkit-mask: var(--hw-icon-clock) center / contain no-repeat;
+  mask: var(--hw-icon-clock) center / contain no-repeat;
+}
+.hearth-site .harvest-date .market-date-copy > p + p::before {
+  -webkit-mask-image: var(--hw-icon-pin);
+  mask-image: var(--hw-icon-pin);
+}
+.hearth-site
+  .harvest-dates[data-card-theme='inverse']
+  .market-date-copy
+  > p::before {
+  background: var(--hw-butter);
+}
+.hearth-site .market-date-links {
+  position: relative;
+  z-index: 1;
+  margin-top: 0.7rem;
+  padding-top: 0.65rem;
+  border-top: 1.5px dashed var(--hw-line);
+}
+
+/* Vendor cards (shared MarketVendorCards), laid out like shelf labels. */
+.hearth-site .market-vendor-cards {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: 1.25rem;
+  margin: 0;
+}
+.hearth-site .market-vendor-card.ui-card {
+  display: grid;
+  grid-template-columns: 4.2rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.15rem 1rem;
+  margin: 0;
+  padding: 1rem;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+  text-align: left;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.hearth-site .market-vendor-card.ui-card:hover {
+  transform: translate(-2px, -3px);
+  box-shadow: var(--hw-stack-lift);
+}
+.hearth-site
+  .market-vendor-cards
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  grid-row: 1 / span 2;
+  width: 4.2rem;
+  height: 4.2rem;
+  margin: 0;
+  border: var(--hw-edge);
+  border-radius: 8px;
+  background: var(--hw-butter);
+  object-fit: cover;
+  transition: rotate 320ms var(--hw-ease);
+}
+.hearth-site .market-vendor-cards .harvest-vendor-symbol {
+  background: var(--hw-primary);
+  color: #fcf7ec;
+  font: 700 1.7rem var(--font-heading);
+}
+.hearth-site
+  .market-vendor-card:hover
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  rotate: -5deg;
+}
+.hearth-site
+  .market-vendor-card
+  :is(h3, .market-vendor-meta, [data-market-day-follow]) {
+  grid-column: 2;
+}
+.hearth-site .market-vendor-card h3 {
+  align-self: end;
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+.hearth-site .market-vendor-meta {
+  align-self: start;
+  color: var(--hw-muted);
+  font-size: 0.86rem;
+}
+.hearth-site .market-vendor-actions {
+  grid-column: 1 / -1;
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 1.5px dashed var(--hw-line);
+}
+
+/* Categories, as stitched labels. */
+.hw-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 1.15rem;
+}
+.hw-category {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.75rem;
+  padding: 1.25rem 0.75rem 1.05rem;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  outline: 1.5px dashed var(--hw-line);
+  outline-offset: -7px;
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+  color: var(--hw-ink);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.hearth-site .hw-category {
+  width: auto !important;
+}
+.hw-category:is(:hover, :focus-visible) {
+  transform: translate(-2px, -3px);
+  box-shadow: var(--hw-stack-lift);
+}
+.hw-category:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--hw-shade);
+}
+.hearth-site .hw-category:focus-visible {
+  outline: 3px solid var(--hw-jam);
+  outline-offset: 3px;
+}
+.hw-category-art {
+  display: grid;
+  place-items: center;
+  width: 5.2rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: var(--hw-edge);
+  border-radius: 50%;
+  background: var(--hw-butter);
+  transition: rotate 320ms var(--hw-ease);
+}
+.hw-category-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hw-category-art .hw-art {
+  width: 70%;
+}
+.hw-category:is(:hover, :focus-visible) .hw-category-art {
+  rotate: -8deg;
+}
+.hw-category-name {
+  overflow-wrap: anywhere;
+}
+
+/* Closing invitation, on a chalkboard. */
+.hw-closing {
+  padding-block: clamp(1.5rem, 4vw, 3rem);
+}
+.hw-closing-inner {
+  position: relative;
+  width: var(--hw-wrap);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 2rem;
+  padding: clamp(2rem, 5vw, 3.75rem);
+  border: 10px solid var(--hw-wood);
+  border-radius: 10px;
+  outline: 2px dashed rgb(252 247 236 / 0.3);
+  outline-offset: -22px;
+  background: #2b1d12 var(--hw-grain);
+  box-shadow:
+    0 0 0 1.5px var(--hw-ink),
+    9px 9px 0 var(--hw-shade);
+}
+.hearth-site .hw-closing h2 {
+  --storefront-heading-base: clamp(2rem, 4vw, 3.2rem);
+  margin: 0 0 1.6rem;
+  color: #fcf7ec;
+  font-size: var(--storefront-heading-base);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+}
+/* The :not() chain matches the general Hearth button rule's specificity so
+   these light-on-dark colours win over its dark hover fill. */
+.hearth-site
+  .hw-closing
+  .button.ui-button:not(.secondary, .button-tertiary, .button-icon):not(
+    .button-disclosure,
+    .button-destructive-outline,
+    .button-destructive
+  ),
+.hearth-site .hw-hero-day .hw-hero-actions .button.ui-button:not(.secondary) {
+  --button-fill: var(--hw-caramel);
+  --button-ink: var(--hw-ink);
+  --button-edge: #fcf7ec;
+  --button-hover-fill: var(--hw-butter);
+  --button-hover-ink: var(--hw-ink);
+  --button-hover-edge: #fcf7ec;
+  min-height: 52px;
+  padding-inline: 1.5rem;
+  box-shadow: 3px 3px 0 #fcf7ec;
+}
+.hearth-site
+  .hw-closing
+  .button.ui-button:not(.secondary):is(:hover, :focus-visible):not(
+    :disabled
+  ):not([aria-disabled='true']),
+.hearth-site
+  .hw-hero-day
+  .hw-hero-actions
+  .button.ui-button:not(.secondary):is(:hover, :focus-visible) {
+  box-shadow: 5px 5px 0 #fcf7ec;
+}
+.hearth-site .hw-closing .button.ui-button:active,
+.hearth-site .hw-hero-day .hw-hero-actions .button.ui-button:active {
+  box-shadow: 0 0 0 #fcf7ec;
+}
+.hearth-site .hw-closing :focus-visible,
+.hearth-site .hw-hero-day :focus-visible,
+.hearth-site .hw-footer :focus-visible {
+  outline-color: var(--hw-caramel);
+}
+.hw-closing-art {
+  position: relative;
+  min-height: 12rem;
+}
+.hw-closing-art .hw-art {
+  position: absolute;
+}
+.hw-closing-art .hw-art-coffee {
+  left: 50%;
+  bottom: 0;
+  width: min(58%, 10rem);
+  translate: -50% 0;
+}
+.hw-closing-art .hw-art-coffee .hw-art-steam path {
+  stroke: #fcf7ec;
+}
+.hw-closing-art .hw-art-croissant {
+  left: 0;
+  bottom: -6%;
+  width: 5rem;
+  rotate: -14deg;
+}
+.hw-closing-art .hw-art-pie {
+  right: 0;
+  bottom: 4%;
+  width: 5.2rem;
+}
+
+/* ------------------------------------------------------------------ footer */
+.hw-footer {
+  margin-top: clamp(3rem, 7vw, 5rem);
+}
+.hw-footer-shelf {
+  width: var(--hw-wrap);
+  margin-inline: auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  padding-inline: 1rem;
+  border-bottom: 12px solid var(--hw-wood);
+  box-shadow: 0 1.5px 0 var(--hw-ink);
+  pointer-events: none;
+}
+.hw-footer-shelf .hw-art {
+  flex: none;
+}
+.hw-footer-shelf .hw-art-wheat {
+  width: 3.4rem;
+  margin-bottom: -0.14rem;
+}
+.hw-footer-shelf .hw-art-loaf {
+  width: 5rem;
+  margin-bottom: -0.62rem;
+}
+.hw-footer-shelf .hw-art-jam {
+  width: 3.6rem;
+  margin-bottom: -0.45rem;
+}
+.hw-footer-shelf .hw-art-coffee {
+  width: 4rem;
+  margin: 0 0 -0.28rem auto;
+}
+.hw-footer-shelf .hw-art-croissant {
+  width: 4.4rem;
+  margin-bottom: -1.45rem;
+}
+.hw-footer-band {
+  margin-top: 1.25rem;
+  background: var(--hw-primary-deep) var(--hw-grain);
+  color: #fcf7ec;
+}
+.hw-footer-band::before {
+  content: '';
+  display: block;
+  height: 16px;
+  border-block: 1.5px solid var(--hw-ink);
+  background: var(--hw-gingham);
+}
+.hw-footer-inner {
+  width: var(--hw-wrap);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 2.5rem;
+  padding-block: 2.5rem 1.4rem;
+}
+.hw-footer-name {
+  display: inline-block;
+  color: #fcf7ec;
+  font: 700 clamp(1.6rem, 2.6vw, 2.1rem) / 1.15 var(--font-heading);
+  text-decoration: none;
+  transition: transform 220ms var(--hw-ease);
+}
+.hw-footer-name:is(:hover, :focus-visible) {
+  transform: translate(3px, -2px) rotate(-1deg);
+}
+.hw-footer-brand p {
+  --storefront-paragraph-base: 1rem;
+  max-width: 34ch;
+  margin: 0.7rem 0 0;
+  color: rgb(252 247 236 / 0.8);
+  font-size: var(--storefront-paragraph-base);
+}
+.hw-footer-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+}
+.hw-footer-nav > div {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 0.6rem;
+}
+.hearth-site .hw-footer-nav h2 {
+  margin: 0 0 0.3rem;
+  color: var(--hw-caramel);
+  font: 800 0.72rem / 1 var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.hw-footer-nav a {
+  color: rgb(252 247 236 / 0.92);
+  text-decoration: none;
+  transition:
+    color 180ms ease,
+    transform 220ms var(--hw-ease);
+}
+.hw-footer-nav a:is(:hover, :focus-visible) {
+  color: var(--hw-caramel);
+  transform: translateX(4px);
+}
+.hw-footer-bottom {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.4rem 1.5rem;
+  padding-top: 1.2rem;
+  border-top: 1.5px dashed rgb(252 247 236 / 0.3);
+  color: rgb(252 247 236 / 0.7);
+  font-size: 0.82rem;
+}
+
+/* ------------------------------------------------------------------ motion */
+@keyframes hw-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+@keyframes hw-stamp {
+  30% {
+    transform: scale(1.35) rotate(-10deg);
+  }
+  55% {
+    transform: scale(0.88) rotate(4deg);
+  }
+}
+@keyframes hw-steam {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+@keyframes hw-sway {
+  50% {
+    transform: rotate(5deg);
+  }
+}
+@keyframes hw-swing {
+  50% {
+    transform: rotate(1.6deg);
+  }
+}
+@keyframes hw-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes hw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+@keyframes hw-added {
+  35% {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 var(--hw-ink);
+  }
+  70% {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--hw-ink);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hw-art-steam {
+    animation: hw-steam 3.2s ease-in-out infinite;
+  }
+  .hw-hero-ornament {
+    animation: hw-sway 5s ease-in-out infinite;
+  }
+  .hw-scene-lamp {
+    animation: hw-swing 6s ease-in-out infinite;
+    transform-box: view-box;
+    transform-origin: 280px 0;
+  }
+  /* Only the stamp's outer group turns, about the centre of its 96x96
+     viewBox; the nested leaf group turns with it rather than on its own. */
+  .hw-hero-stamp > g {
+    animation: hw-turn 48s linear infinite;
+    transform-box: view-box;
+    transform-origin: 48px 48px;
+  }
+  /* `backwards`, not `both`: a held animation would keep overriding
+     transform, so hover lifts (e.g. the Next market ticket) would snap
+     instead of transitioning. */
+  .hw-hero-copy > * {
+    animation: hw-rise 620ms var(--hw-ease) backwards;
+  }
+  .hw-hero-copy > :nth-child(2) {
+    animation-delay: 70ms;
+  }
+  .hw-hero-copy > :nth-child(3) {
+    animation-delay: 140ms;
+  }
+  .hw-hero-copy > :nth-child(n + 4) {
+    animation-delay: 210ms;
+  }
+  .hw-hero-visual {
+    animation: hw-rise 720ms 100ms var(--hw-ease) backwards;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hearth-site *,
+  .hearth-site *::before,
+  .hearth-site *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* -------------------------------------------------------------- responsive */
+@media (max-width: 860px) {
+  .hw-hero-inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.75rem;
+    padding-block: 2rem 3rem;
+  }
+  .hw-hero-visual {
+    width: min(92%, 420px);
+  }
+  .hw-closing-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hw-closing-art {
+    min-height: 9rem;
+  }
+  .hw-footer-inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+}
+@media (max-width: 700px) {
+  .hw-hero-actions .button.ui-button {
+    flex: 1 1 100%;
+  }
+  .hw-next {
+    display: flex;
+  }
+  .hw-next-copy {
+    flex: 1;
+  }
+  .hw-rule {
+    display: none;
+  }
+  .hw-section-head h2 {
+    flex-basis: calc(100% - 4.5rem);
+  }
+  /* Categories become a swipeable row. */
+  .hw-categories {
+    display: flex;
+    gap: 0.9rem;
+    margin-inline: calc(-1 * var(--hw-gutter));
+    padding: 0.5rem var(--hw-gutter) 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .hw-categories::-webkit-scrollbar {
+    display: none;
+  }
+  .hw-category {
+    flex: 0 0 8.6rem;
+    scroll-snap-align: start;
+  }
+  .hw-footer-shelf {
+    gap: 0.6rem;
+    padding-inline: 0.5rem;
+  }
+  .hw-footer-shelf .hw-art-croissant {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------ shared pages */
+.hearth-site .market-page,
+.hearth-site .vendor-shop,
+.hearth-site .vendor-product,
+.hearth-site .vendor-cart-page,
+.hearth-site .vendor-checkout-page {
+  padding-block: clamp(1.5rem, 3.5vw, 3rem) 0;
+}
+.hearth-site .market-page-intro {
+  margin-bottom: clamp(1.25rem, 3vw, 2.25rem);
+}
+.hearth-site
+  :is(.market-page-intro, .checkout-heading, .vendor-cart-heading)
+  h1,
+.hearth-site .empty-state > h1 {
+  margin: 0 0 0.6rem;
+  color: var(--hw-ink);
+  font: 700 clamp(2.1rem, 4.6vw, 3.3rem) / 1.05 var(--font-heading);
+  letter-spacing: -0.02em;
+}
+.hearth-site .market-page-intro p {
+  max-width: 56ch;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+.hearth-site .ui-card {
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+}
+.hearth-site .ui-pagination {
+  justify-content: center;
+  gap: 0.75rem 1rem;
+  margin-top: 2rem;
+}
+
+/* Form controls. */
+.hearth-site
+  :is(
+    .ui-input,
+    .ui-select,
+    textarea,
+    select,
+    input:not([type='checkbox'], [type='radio'], [type='hidden'])
+  ) {
+  border: 1.5px solid var(--hw-ink);
+  background-color: var(--hw-flour);
+  transition:
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+.hearth-site :is(.ui-input, .ui-select, textarea, select):hover {
+  background-color: #fff;
+}
+.hearth-site :is(.ui-input, .ui-select, textarea, select):focus-visible {
+  outline: none;
+  background-color: #fff;
+  box-shadow: 3px 3px 0 var(--hw-caramel);
+}
+.hearth-site .field label {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Dialogs. */
+.hearth-site .ui-dialog {
+  border: var(--hw-edge);
+  border-radius: 10px;
+  background: var(--hw-flour);
+  box-shadow: 8px 8px 0 rgb(43 29 18 / 0.55);
+}
+.hearth-site .ui-dialog::backdrop {
+  background: rgb(43 29 18 / 0.55);
+}
+.hearth-site .ui-dialog[open] {
+  animation: hw-drop 240ms var(--hw-ease);
+}
+
+/* Chosen market date (shared VendorPreorderBanner), as a paper tag. */
+.hearth-site .shop-market-banner {
+  position: relative;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1.4rem;
+  padding: 0.9rem 1.1rem 0.9rem 4.6rem;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  outline: 1.5px dashed var(--hw-line);
+  outline-offset: -6px;
+  background: var(--hw-butter);
+  color: var(--hw-ink);
+  box-shadow: var(--hw-stack);
+}
+.hearth-site .shop-market-banner::before,
+.hearth-site .shop-market-banner::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 1.1rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  translate: 0 -50%;
+  border-radius: 50%;
+  background: var(--hw-primary);
+}
+.hearth-site .shop-market-banner::after {
+  background: #fcf7ec;
+  -webkit-mask: var(--hw-icon-calendar) center / 1.25rem no-repeat;
+  mask: var(--hw-icon-calendar) center / 1.25rem no-repeat;
+}
+.hearth-site .shop-market-banner h2 {
+  margin: 0 0 0.1rem;
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+}
+.hearth-site .shop-market-banner p {
+  color: var(--hw-muted);
+  font-size: 0.93rem;
+}
+.hearth-site .shop-market-banner .shop-market-picker > .button.ui-button {
+  --button-fill: var(--hw-flour);
+  --button-ink: var(--hw-ink);
+  --button-edge: var(--hw-ink);
+  --button-hover-fill: #fff;
+  --button-hover-ink: var(--hw-ink);
+  --button-hover-edge: var(--hw-ink);
+  position: relative;
+  box-shadow: 3px 3px 0 var(--hw-ink);
+}
+/* The plain "choose a date" prompt folds into the invitation below it.
+   Unavailable, conflict and no-dates messages always stay visible. */
+.hearth-site
+  .vendor-shop
+  .shop-market-slot:has(.shop-market-banner[data-banner-state='choose']):has(
+    + .shop-date-empty
+  ) {
+  display: none;
+}
+.hearth-site .vendor-shop .shop-date-empty {
+  margin-block: clamp(1rem, 4vw, 3rem);
+  padding: clamp(2rem, 5vw, 3.5rem) 1.5rem;
+  border: var(--hw-edge);
+  outline: 1.5px dashed var(--hw-line);
+  outline-offset: -8px;
+  background: var(--hw-butter);
+  box-shadow: var(--hw-stack);
+}
+.hearth-site .vendor-shop .shop-date-empty > h1 {
+  font: 700 clamp(1.5rem, 3vw, 2.1rem) / 1.15 var(--font-heading);
+}
+.hearth-site .shop-date-empty .shop-market-picker > .button.ui-button {
+  --button-fill: var(--hw-primary);
+  --button-ink: #fcf7ec;
+  --button-edge: var(--hw-ink);
+  --button-hover-fill: var(--hw-primary-deep);
+  --button-hover-ink: #fcf7ec;
+  --button-hover-edge: var(--hw-ink);
+  min-height: 52px;
+  padding-inline: 1.75rem;
+  box-shadow: 3px 3px 0 var(--hw-ink);
+}
+.hearth-site .shop-date-empty .shop-market-picker > .button.ui-button::before,
+.hearth-site
+  .shop-market-banner
+  .shop-market-picker
+  > .button.ui-button::before {
+  content: '';
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  background: currentColor;
+  -webkit-mask: var(--hw-icon-calendar) center / contain no-repeat;
+  mask: var(--hw-icon-calendar) center / contain no-repeat;
+}
+
+/* -------------------------------------------------------------------- shop */
+.hearth-site .vendor-shop {
+  grid-template-columns: minmax(190px, 230px) minmax(0, 1fr);
+}
+.hearth-site .shop-categories.ui-card {
+  position: sticky;
+  top: 6.25rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.hearth-site .shop-categories h2 {
+  margin: 0 0 0.8rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px dashed var(--hw-line);
+  color: var(--hw-jam);
+  font: 800 0.72rem / 1 var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.hearth-site .shop-category-filters {
+  gap: 0.5rem;
+}
+.hearth-site .shop-categories .shop-category-option {
+  position: relative;
+  padding: 0.6rem 0.85rem;
+  border: var(--hw-edge);
+  border-radius: 4px;
+  background: var(--hw-flour);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.hearth-site .shop-category-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.hearth-site .shop-category-option:hover {
+  background: var(--hw-butter);
+  box-shadow: 3px 3px 0 var(--hw-shade);
+  transform: translate(-2px, -2px);
+}
+.hearth-site .shop-category-option:active {
+  box-shadow: 0 0 0 var(--hw-shade);
+  transform: translate(1px, 1px);
+}
+.hearth-site .shop-category-option:has(input:checked) {
+  background: var(--hw-primary);
+  color: #fcf7ec;
+}
+.hearth-site .shop-category-option:has(input:checked)::before {
+  content: '';
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  background: currentColor;
+  -webkit-mask: var(--hw-icon-check) center / contain no-repeat;
+  mask: var(--hw-icon-check) center / contain no-repeat;
+}
+.hearth-site .shop-category-option:has(input:focus-visible) {
+  outline: 3px solid var(--hw-jam);
+  outline-offset: 3px;
+}
+.hearth-site .shop-catalog-controls {
+  align-items: center;
+  margin-bottom: 1.4rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px dashed var(--hw-line);
+}
+.hearth-site .shop-catalog-heading {
+  align-items: center;
+}
+.hearth-site .shop-catalog-heading h1 {
+  font-size: clamp(1.8rem, 3.4vw, 2.5rem);
+  letter-spacing: -0.02em;
+}
+.hearth-site .shop-catalog-heading span,
+.hearth-site .vendor-cart-heading p {
+  padding: 0.2rem 0.6rem;
+  border: 1.5px solid var(--hw-jam);
+  border-radius: 4px;
+  color: var(--hw-jam);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  rotate: -2deg;
+}
+.hearth-site .shop-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: auto;
+}
+.hearth-site .shop-sort label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Product cards (shared ProductCards). */
+.hearth-site .shop-products.catalog-grid {
+  gap: 1.25rem;
+}
+.hearth-site .harvest-products .product-card.ui-card {
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.7rem 0.7rem 0.95rem;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.hearth-site .harvest-products .product-card.ui-card:hover {
+  transform: translate(-2px, -3px);
+  box-shadow: var(--hw-stack-lift);
+}
+.hearth-site .harvest-products .product-image-contents {
+  display: block;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  border: var(--hw-edge);
+  border-radius: 4px;
+  background: var(--hw-butter);
+}
+.hearth-site .harvest-products .product-media {
+  display: block;
+  width: 100%;
+  margin: 0;
+  aspect-ratio: 1;
+  border-radius: 0;
+  object-fit: cover;
+  transition: transform 500ms var(--hw-ease);
+}
+.hearth-site .harvest-products .product-card:hover .product-media {
+  transform: scale(1.06);
+}
+.hearth-site .harvest-products .product-placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--hw-butter);
+}
+.hearth-site
+  .harvest-products
+  .product-card:nth-child(even)
+  .product-placeholder {
+  background: var(--hw-primary-soft);
+}
+.hearth-site .harvest-products .product-placeholder .hw-art {
+  width: 58%;
+}
+.hearth-site .harvest-products :is(h2, h3) {
+  margin: 0;
+  padding-inline: 0.25rem;
+  font: 700 1.1rem / 1.25 var(--font-heading);
+}
+.hearth-site .harvest-products .product-card > p {
+  margin: 0;
+  padding-inline: 0.25rem;
+}
+.hearth-site .harvest-products .product-card > .product-seller {
+  color: var(--hw-crust);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.hearth-site .harvest-products .product-card > p:not([class]) {
+  margin-top: 0.25rem;
+  color: var(--hw-ink);
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+.hearth-site .harvest-products .shop-availability {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+  color: var(--hw-muted);
+  font-size: 0.8rem;
+}
+.hearth-site .harvest-products .shop-availability::before {
+  content: '';
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--hw-sage);
+}
+.hearth-site
+  .harvest-products
+  .shop-product-unavailable
+  .shop-availability::before {
+  background: #b5a894;
+}
+.hearth-site .market-cart-button .market-cart-button__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.hearth-site .market-cart-button .market-cart-button__label::before {
+  content: '';
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  background: currentColor;
+  -webkit-mask: var(--hw-icon-bag) center / contain no-repeat;
+  mask: var(--hw-icon-bag) center / contain no-repeat;
+}
+/* The confirmation colour holds while the pointer is still on the button. */
+.hearth-site .button.ui-button.market-cart-button.is-added,
+.hearth-site
+  .button.ui-button.market-cart-button.is-added:is(:hover, :focus-visible) {
+  --button-fill: var(--hw-sage);
+  --button-ink: #fcf7ec;
+  --button-edge: var(--hw-ink);
+  --button-hover-fill: var(--hw-sage);
+  --button-hover-ink: #fcf7ec;
+  --button-hover-edge: var(--hw-ink);
+  animation: hw-added 520ms var(--hw-ease);
+}
+
+/* ----------------------------------------------------------------- product */
+.hearth-site .vendor-product .product-gallery > .product-media {
+  border: 9px solid var(--hw-flour);
+  border-radius: var(--hw-radius);
+  outline: var(--hw-edge);
+  background: var(--hw-butter);
+  box-shadow: 7px 7px 0 var(--hw-shade);
+}
+.hearth-site .product-thumbnails .ui-button {
+  padding: 3px;
+  border-radius: var(--hw-radius);
+}
+.hearth-site .product-thumbnails .ui-button img {
+  border-radius: 3px;
+}
+.hearth-site .product-thumbnails [aria-pressed='true'] {
+  outline: 3px solid var(--hw-jam);
+  outline-offset: 2px;
+}
+.hearth-site .product-summary > p:first-child {
+  display: inline-block;
+  margin: 0;
+  padding: 0.2rem 0.65rem;
+  border: 1.5px solid var(--hw-jam);
+  border-radius: 4px;
+  color: var(--hw-jam);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  rotate: -2deg;
+}
+.hearth-site .vendor-product h1 {
+  margin: 0.9rem 0 1rem;
+  font-size: clamp(2.1rem, 4vw, 3.2rem);
+  letter-spacing: -0.02em;
+}
+.hearth-site .market-product-vendor {
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  padding: 0.3rem 0.9rem 0.3rem 0.3rem;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: 3px 3px 0 var(--hw-shade);
+  font-weight: 700;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.hearth-site .market-product-vendor:is(:hover, :focus-visible) {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--hw-shade);
+}
+.hearth-site
+  .market-product-vendor
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  width: 2.4rem;
+  height: 2.4rem;
+  flex-basis: 2.4rem;
+  border-radius: 4px;
+  background: var(--hw-primary);
+  color: #fcf7ec;
+  font-size: 1.1rem;
+}
+.hearth-site .vendor-product .product-price {
+  color: var(--hw-primary-deep);
+  font: 800 1.9rem / 1.2 var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+.hearth-site .vendor-product .purchase-form {
+  padding: 1.25rem;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+}
+.hearth-site .vendor-product .purchase-form > .button.ui-button {
+  width: 100%;
+  min-height: 54px;
+  font-size: 0.95rem;
+}
+.hearth-site .vendor-product .purchase-form > p[role='status'] {
+  margin: 0;
+  color: var(--hw-muted);
+  font-size: 0.9rem;
+}
+.hearth-site .vendor-product .purchase-form > p:empty {
+  display: none;
+}
+.hearth-site .product-information .ui-disclosure {
+  --ui-disclosure-border-width: 0;
+  overflow: hidden;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+}
+.hearth-site .product-information .ui-disclosure > summary {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition:
+    background-color 160ms ease,
+    padding-left 220ms var(--hw-ease);
+}
+.hearth-site .product-information .ui-disclosure > summary:hover {
+  background: var(--hw-butter);
+  padding-left: 1.35rem;
+}
+
+/* -------------------------------------------------------------------- cart */
+.hearth-site .vendor-cart-group {
+  margin-bottom: 1.25rem;
+  padding: 1.1rem 1.25rem 0.25rem;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+}
+.hearth-site .vendor-cart-group > h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.25rem;
+  padding: 0 0 0.7rem;
+  border: 0;
+  border-bottom: 2px dashed var(--hw-line);
+  font-size: 1.2rem;
+}
+.hearth-site .vendor-cart-group > h2::before {
+  content: '';
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: var(--hw-crust);
+  -webkit-mask: var(--hw-icon-store) center / contain no-repeat;
+  mask: var(--hw-icon-store) center / contain no-repeat;
+}
+.hearth-site .vendor-cart-lines {
+  margin-bottom: 0;
+}
+.hearth-site .vendor-cart-line {
+  border-top: 1.5px dashed var(--hw-line);
+  padding-block: 1.1rem;
+}
+.hearth-site .vendor-cart-line:first-child {
+  border-top: 0;
+}
+.hearth-site .vendor-cart-image {
+  border: var(--hw-edge);
+  border-radius: 4px;
+  background: var(--hw-butter);
+  transition: rotate 260ms var(--hw-ease);
+}
+.hearth-site .vendor-cart-image:hover {
+  rotate: -3deg;
+}
+.hearth-site .vendor-cart-line-total {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+.hearth-site .vendor-cart-stepper.button.ui-button {
+  box-shadow: 2px 2px 0 var(--hw-ink);
+}
+/* Remove becomes an icon button; its accessible name is kept. */
+.hearth-site .vendor-cart-controls > .button-destructive-outline {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+  font-size: 0;
+}
+.hearth-site .vendor-cart-controls > .button-destructive-outline::before {
+  content: '';
+  width: 1.1rem;
+  height: 1.1rem;
+  background: currentColor;
+  -webkit-mask: var(--hw-icon-trash) center / contain no-repeat;
+  mask: var(--hw-icon-trash) center / contain no-repeat;
+}
+.hearth-site .vendor-cart-summary.ui-card {
+  position: sticky;
+  top: 6.25rem;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  outline: 1.5px dashed var(--hw-line);
+  outline-offset: -7px;
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+}
+.hearth-site .vendor-cart-summary > h2 {
+  font-size: 1.4rem;
+}
+.hearth-site .vendor-cart-summary dd,
+.hearth-site .checkout-totals dd {
+  margin: 0;
+  align-self: center;
+}
+.hearth-site .vendor-cart-total {
+  font-size: 1.15rem;
+}
+.hearth-site .vendor-cart-summary .button.ui-button:not(.secondary) {
+  min-height: 54px;
+}
+.hearth-site :is(.vendor-cart-total-note, .cart-boundary) {
+  color: var(--hw-muted);
+  font-size: 0.82rem;
+}
+.hearth-site .vendor-cart > .empty-state {
+  margin-block: clamp(1rem, 4vw, 3rem);
+  border: var(--hw-edge);
+  outline: 1.5px dashed var(--hw-line);
+  outline-offset: -8px;
+  background: var(--hw-butter);
+  box-shadow: var(--hw-stack);
+}
+
+/* ---------------------------------------------------------------- checkout */
+.hearth-site nav[aria-label='Checkout progress'] {
+  margin-bottom: 1.4rem;
+}
+.hearth-site .checkout-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  border: 0;
+  counter-reset: hw-step;
+  list-style: none;
+}
+.hearth-site .checkout-progress li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.8rem 0.35rem 0.35rem;
+  border: var(--hw-edge);
+  border-radius: 4px;
+  background: var(--hw-flour);
+  color: var(--hw-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  counter-increment: hw-step;
+}
+.hearth-site .checkout-progress li::before {
+  content: counter(hw-step);
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 3px;
+  background: var(--hw-primary-soft);
+  color: var(--hw-primary-deep);
+  font-size: 0.8rem;
+  letter-spacing: 0;
+}
+.hearth-site .checkout-progress li[aria-current='step'] {
+  background: var(--hw-primary);
+  color: #fcf7ec;
+  box-shadow: 3px 3px 0 var(--hw-ink);
+}
+.hearth-site .checkout-progress li[aria-current='step']::before {
+  background: var(--hw-caramel);
+  color: var(--hw-ink);
+}
+.hearth-site .checkout-section {
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+}
+.hearth-site .checkout-section > h2 {
+  margin-top: 0;
+  font-size: 1.4rem;
+}
+.hearth-site .vendor-checkout .checkout-order-summary {
+  overflow: hidden;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+}
+.hearth-site .checkout-order-summary > .ui-disclosure {
+  --ui-disclosure-border-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.hearth-site .checkout-summary :is(h2, h3) {
+  font-size: 1.15rem;
+}
+.hearth-site .checkout-stage-actions .button.ui-button:not(.secondary),
+.hearth-site .checkout-section > .button.ui-button:not(.secondary) {
+  min-height: 52px;
+  padding-inline: 1.6rem;
+}
+
+/* ------------------------------------------------------- vendors, applying */
+.hearth-site .market-date-selector {
+  padding: 0.9rem 1.1rem;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-butter);
+  box-shadow: var(--hw-stack);
+}
+.hearth-site .market-vendors-summary {
+  border-bottom: 2px dashed var(--hw-line);
+}
+.hearth-site .market-vendors-summary h2,
+.hearth-site .market-application h2 {
+  font-weight: 700;
+}
+.hearth-site .market-application.ui-card {
+  padding: 1.25rem 1.4rem;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.hearth-site .market-application.ui-card:hover {
+  transform: translate(-2px, -3px);
+  box-shadow: var(--hw-stack-lift);
+}
+.hearth-site .market-application-status {
+  border: 1.5px solid var(--hw-sage);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--hw-sage);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  rotate: -2deg;
+}
+.hearth-site
+  .market-application[data-state='closed']
+  .market-application-status {
+  border-color: var(--hw-muted);
+  background: transparent;
+  color: var(--hw-muted);
+}
+
+/* -------------------------------------------------------- section library */
+.hearth-site
+  :is(.harvest-authored-copy, .story-copy, .story-cta, .harvest-library-heading)
+  :is(h1, h2),
+.hearth-site .harvest-library h2,
+.hearth-site .harvest-section .ui-section-heading-consumer > h2,
+.hearth-site .product-related > h2 {
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.hearth-site .harvest-photo-placeholder {
+  background: var(--hw-butter);
+  color: var(--hw-crust);
+}
+.hearth-site .website-page-region {
+  margin-block: clamp(1rem, 3vw, 2rem);
+}
+
+/* -------------------------------------------------------------- market day */
+/* The hero becomes the chalkboard sign propped outside on market day. */
+.hw-hero-day {
+  background: #2b1d12 var(--hw-grain);
+  color: #fcf7ec;
+}
+.hearth-site .hw-hero-day h1 {
+  color: #fcf7ec;
+}
+.hw-hero-day h1::after {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--hw-caramel) 0 12px,
+    transparent 12px 18px
+  );
+}
+.hw-hero-day .hw-hero-intro {
+  color: rgb(252 247 236 / 0.82);
+}
+.hw-live-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 1.1rem;
+  padding: 0.4rem 0.85rem;
+  border: 1.5px solid #fcf7ec;
+  border-radius: 4px;
+  background: var(--hw-jam);
+  color: #fcf7ec;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  box-shadow: 3px 3px 0 #fcf7ec;
+  rotate: -2deg;
+}
+.hw-live-dot {
+  position: relative;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: #fcf7ec;
+}
+.hw-live-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: hw-ping 1.8s ease-out infinite;
+}
+@keyframes hw-ping {
+  to {
+    opacity: 0;
+    transform: scale(3.2);
+  }
+}
+.hearth-site .hw-hero-day .hw-hero-actions .button.ui-button.secondary {
+  --button-fill: transparent;
+  --button-ink: #fcf7ec;
+  --button-edge: #fcf7ec;
+  --button-hover-fill: #fcf7ec;
+  --button-hover-ink: var(--hw-ink);
+  --button-hover-edge: #fcf7ec;
+  box-shadow: 3px 3px 0 rgb(252 247 236 / 0.35);
+}
+.hw-day .hw-hero-inner {
+  align-items: start;
+}
+.hw-hero-day .hw-hero-frame {
+  box-shadow:
+    inset 0 0 0 2px rgb(43 29 18 / 0.35),
+    0 0 0 1.5px #fcf7ec,
+    9px 9px 0 rgb(252 247 236 / 0.22);
+}
+.hearth-site .hw-day .market-day-hero-details {
+  gap: 1rem;
+  margin-top: 1.9rem;
+  max-width: 34rem;
+}
+.hearth-site .hw-day .market-day-countdown {
+  border: 1.5px solid #fcf7ec;
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  color: var(--hw-ink);
+  box-shadow: 5px 5px 0 rgb(252 247 236 / 0.3);
+}
+.hearth-site .hw-day .market-day-live {
+  background: var(--hw-jam);
+}
+.hearth-site .hw-day .market-day-venue {
+  gap: 0.5rem;
+  color: #fcf7ec;
+  font-weight: 600;
+}
+.hearth-site .hw-day .market-day-venue .farmstand-icon {
+  color: var(--hw-caramel);
+}
+.hearth-site .hw-day .market-day-regular {
+  justify-self: start;
+  color: var(--hw-caramel);
+}
+.hearth-site .hw-day .harvest-section {
+  padding-block: clamp(2rem, 4.5vw, 3.5rem);
+}
+.hearth-site .hw-day .market-day-pickups-section {
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-butter);
+  box-shadow: var(--hw-stack);
+}
+.hearth-site .hw-day .market-day-choices {
+  display: grid;
+  gap: 0.9rem;
+  padding: 0;
+  list-style: none;
+}
+.hearth-site .hw-day .market-day-choices a {
+  display: block;
+  width: auto !important;
+  padding: 1rem 1.25rem;
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+  font-weight: 700;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.hearth-site .hw-day .market-day-choices a::after {
+  content: none;
+}
+.hearth-site .hw-day .market-day-choices a:is(:hover, :focus-visible) {
+  transform: translate(-2px, -3px);
+  box-shadow: var(--hw-stack-lift);
+}
+
+/* ------------------------------------------------------- small screens, 2 */
+@media (max-width: 760px) {
+  .hearth-site .vendor-shop {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+  .hearth-site .shop-categories.ui-card {
+    position: static;
+    min-width: 0;
+  }
+  .hearth-site .shop-categories h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  /* Categories become a swipeable row of tags. */
+  .hearth-site .shop-category-filters {
+    display: flex;
+    margin-inline: calc(-1 * var(--hw-gutter));
+    padding: 0.25rem var(--hw-gutter) 0.6rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .hearth-site .shop-category-filters::-webkit-scrollbar {
+    display: none;
+  }
+  .hearth-site .shop-categories .shop-category-option {
+    flex: none;
+    white-space: nowrap;
+  }
+  .hearth-site .shop-category-option:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .hearth-site .shop-market-banner {
+    padding: 0.9rem;
+  }
+  .hearth-site .shop-market-banner > div:first-child {
+    flex-basis: 100%;
+    min-height: 2.3rem;
+    padding-left: 3.05rem;
+  }
+  .hearth-site .shop-market-banner::before,
+  .hearth-site .shop-market-banner::after {
+    top: 0.9rem;
+    left: 0.9rem;
+    width: 2.3rem;
+    height: 2.3rem;
+    translate: none;
+  }
+  .hearth-site .shop-market-banner > .shop-market-picker,
+  .hearth-site .shop-market-banner .shop-market-picker > .button.ui-button {
+    width: 100%;
+  }
+  .hearth-site .shop-products.catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+  }
+  .hearth-site .harvest-products .product-card.ui-card {
+    padding: 0.5rem 0.5rem 0.75rem;
+  }
+  .hearth-site .harvest-products :is(h2, h3) {
+    font-size: 0.98rem;
+  }
+  .hearth-site .shop-products .ui-button {
+    padding-inline: 0.4rem;
+    font-size: 0.74rem;
+    letter-spacing: 0.05em;
+  }
+  .hearth-site .vendor-cart-summary.ui-card {
+    position: static;
+  }
+  .hearth-site .vendor-cart-group {
+    padding-inline: 0.9rem;
+  }
+  .hearth-site .market-vendor-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The calendar's usage hint stays available to assistive technology only. */
+.hearth-site .market-pickup-calendar .market-calendar-help {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* Calendar days and menu actions keep their plain lettering. */
+.hearth-site .market-calendar-day.button.ui-button,
+.hearth-site .harvest-account-content .button.ui-button {
+  letter-spacing: 0;
+  text-transform: none;
+}
+.hearth-site .market-calendar-day.button.ui-button {
+  font-size: 0.95rem;
+}

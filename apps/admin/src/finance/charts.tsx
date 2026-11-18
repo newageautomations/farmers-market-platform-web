@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -606,7 +607,25 @@ export function FinanceDonut({
 }) {
   const [active, setActive] = useState<string>(),
     [plot, visible] = useInView<HTMLDivElement>(),
+    tooltip = useRef<HTMLDivElement>(null),
     title = useId();
+  // The card sits beside the ring; on a narrow screen that can be past the
+  // viewport edge, so it slides back in by the overflow (and only then).
+  useLayoutEffect(() => {
+    const card = tooltip.current;
+    if (!card) return;
+    card.style.translate = '';
+    const rect = card.getBoundingClientRect(),
+      edge = 8,
+      width = document.documentElement.clientWidth;
+    const shift =
+      rect.left < edge
+        ? edge - rect.left
+        : rect.right > width - edge
+          ? width - edge - rect.right
+          : 0;
+    if (shift) card.style.translate = `${Math.round(shift)}px 0`;
+  }, [active]);
   const slices = items.filter((i) => i.value !== 0),
     total = slices.reduce((sum, i) => sum + Math.abs(i.value), 0),
     signed = slices.some((i) => i.value < 0);
@@ -748,6 +767,7 @@ export function FinanceDonut({
         )}
         {focused && leader && (
           <div
+            ref={tooltip}
             role="tooltip"
             className={
               'ui-tooltip-surface finance-chart-tooltip finance-donut-tooltip ' +

@@ -36,6 +36,9 @@ const view: CheckoutView = {
   frozen: false,
   committed: false,
   paymentStatus: 'NONE',
+  paymentGroup: null,
+  preorderFee: null,
+  preorderFeeTestAvailable: false,
   pickupPromise: {
     mode: 'VENDOR_BOOTH_PICKUP',
     venue: 'Garden',
@@ -222,9 +225,10 @@ describe('vendor checkout UI', () => {
     vi.mocked(shopCall).mockRejectedValueOnce(new Error('Unavailable'));
     mount();
     fill();
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Refresh order summary' }),
-    );
+    expect(
+      screen.queryByRole('button', { name: 'Refresh order summary' }),
+    ).toBeNull();
+    fireEvent(window, new Event('focus'));
     await screen.findByText(/The latest order could not be confirmed/);
     expect(screen.getByLabelText('Last name')).toHaveValue('O’Connor-Smith');
     expect(screen.getByRole('button', { name: 'Place order' })).toBeDisabled();
@@ -245,7 +249,7 @@ describe('vendor checkout UI', () => {
       />,
     );
     expect(container.querySelector('section')?.textContent).toBe(
-      'Pickup Details',
+      'Pickup details',
     );
     expect(screen.queryByRole('link')).toBeNull();
   });
@@ -258,25 +262,23 @@ describe('vendor checkout UI', () => {
         (element) => element.textContent,
       ),
     ).toEqual([
-      'Pickup Details',
+      'Pickup details',
       'Garden Market',
       'Date: October 30, 2026',
       'Time: 9:00 AM to 2:00 PM',
       'Garden',
       'Collect at the booth.',
-      'Garden',
+      'Get directions',
     ]);
     expect(
       screen.queryByText(/Market schedule:|Market hours:|pickup window/),
     ).toBeNull();
-    expect(screen.getByRole('link', { name: 'Garden' })).toHaveAttribute(
-      'target',
-      '_blank',
-    );
-    expect(screen.getByRole('link', { name: 'Garden' })).toHaveAttribute(
-      'href',
-      expect.stringContaining('query=Garden'),
-    );
+    expect(
+      screen.getByRole('link', { name: 'Get directions' }),
+    ).toHaveAttribute('target', '_blank');
+    expect(
+      screen.getByRole('link', { name: 'Get directions' }),
+    ).toHaveAttribute('href', expect.stringContaining('query=Garden'));
   });
   it('preserves the existing explicitly configured test payment flow', () => {
     mount({
@@ -315,6 +317,9 @@ describe('order confirmation security and presentation', () => {
           ...view,
           committed: true,
           paymentStatus: 'SUCCEEDED',
+          paymentGroup: null,
+          preorderFee: null,
+          preorderFeeTestAvailable: false,
           profile: {
             firstName: 'Zoë',
             lastName: 'Smith',
@@ -332,6 +337,31 @@ describe('order confirmation security and presentation', () => {
     expect(
       screen.getByRole('link', { name: 'View your orders' }),
     ).toHaveAttribute('href', '/account/orders');
+  });
+  it('offers password signup with checkout prefill and renders product images for guests', () => {
+    const { container } = render(
+      <PurchaseSuccess
+        storefrontId="5"
+        view={{
+          ...view,
+          committed: true,
+          paymentStatus: 'SUCCEEDED',
+          profile: null,
+        }}
+        images={{
+          [view.groups[0]!.lines[0]!.id]:
+            'https://images.example.test/product.jpg',
+        }}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: 'Create a free account' }),
+    ).toHaveAttribute('href', '/account/signup?order=1');
+    expect(screen.queryByRole('button', { name: /email|request/i })).toBeNull();
+    expect(
+      container.querySelector('.checkout-summary-product img'),
+    ).toHaveAttribute('src', 'https://images.example.test/product.jpg');
+    expect(shopCall).not.toHaveBeenCalled();
   });
   it('keeps SSR routes private and skips all order reads for editor previews', () => {
     for (const file of ['index', 'success']) {

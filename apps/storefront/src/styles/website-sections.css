@@ -1,0 +1,250 @@
+@import './section-backgrounds.css';
+/* Shared authored-section geometry. Theme adapters retain their own surfaces and typography. */
+section.website-section[data-website-section] {
+  --website-heading-base: clamp(2rem, 4vw, 3.6rem);
+}
+section.website-section[data-variant='featured'] {
+  --website-heading-base: clamp(2.75rem, 5vw, 4.5rem);
+}
+section.website-section.em-repeatable {
+  --website-heading-base: clamp(2.2rem, 4.2vw, 4rem);
+  --website-paragraph-base: 1.05rem;
+  --website-button-inline-padding: 1.75rem;
+  --website-button-height: 3rem;
+}
+section.website-section.farmhouse-text-section,
+section.website-section.farmhouse-editorial {
+  --website-heading-base: clamp(2rem, 3.6vw, 3.7rem);
+  --website-button-base: 0.9rem;
+  --website-button-block-padding: 0.85rem;
+  --website-button-height: 48px;
+}
+section.website-section.farmhouse-text-section[data-variant='featured'],
+section.website-section.farmhouse-editorial[data-variant='featured'] {
+  --website-heading-base: clamp(2.75rem, 5vw, 4.5rem);
+}
+section.website-section.em-repeatable[data-variant='featured'] {
+  --website-heading-base: clamp(2.75rem, 6vw, 6rem);
+}
+.farmhouse-home[data-typography-scale='expressive'] section.website-section {
+  --website-heading-base: clamp(2.75rem, 5vw, 4.75rem);
+}
+.em-home[data-typography-scale='expressive'] section.website-section {
+  --website-heading-base: clamp(2.6rem, 5.5vw, 5rem);
+}
+.em-home[data-typography-scale='expressive']
+  section.website-section[data-variant='featured'] {
+  --website-heading-base: clamp(3rem, 7vw, 7rem);
+}
+section.website-section[data-website-section] .website-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+section.website-section[data-website-section] .em-text-columns {
+  display: grid;
+}
+section.website-section[data-website-section] .website-eyebrow {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+section.website-section[data-website-section='image-with-text'] .website-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--website-content-gap, 28px);
+}
+section.website-section[data-website-section='image-with-text']
+  .website-copy
+  > :is(h2, p, a) {
+  margin: 0;
+}
+section.website-section[data-alignment='center'] .website-copy {
+  align-items: center;
+}
+section.website-section[data-alignment='right'] .website-copy {
+  align-items: flex-end;
+}
+section.website-section[data-website-section][data-custom-gap]
+  :is(.website-layout, .website-copy) {
+  gap: var(--website-gap);
+}
+section.website-section[data-website-section][data-custom-gap]
+  .website-copy
+  > :is(h2, p, a) {
+  margin-block: 0;
+}
+section.website-section[data-website-section][data-custom-width] .website-copy {
+  width: var(--website-width);
+  margin-inline: auto;
+  max-width: 100%;
+}
+section.website-section[data-website-section][data-custom-height]
+  > .website-layout,
+section.website-section[data-website-section='text'][data-custom-height]
+  > .website-copy,
+section.website-section[data-website-section='cta-banner'][data-custom-height]
+  > .website-copy {
+  min-height: var(--website-height);
+}
+section.website-section[data-website-section][data-custom-padding] {
+  padding: var(--website-padding);
+}
+section.website-section[data-website-section][data-custom-padding]
+  > .website-layout {
+  padding: 0;
+}
+section.website-section[data-website-section][data-custom-imagewidth]
+  .website-layout,
+section.website-section.harvest-image-story[data-custom-imagewidth] {
+  grid-template-columns: var(--website-columns);
+}
+section.website-section[data-website-section][data-custom-imageheight]
+  .website-image {
+  height: var(--website-imageHeight);
+  min-height: 0;
+}
+section.website-section[data-website-section][data-custom-imageheight]
+  .website-image
+  :is(
+    img,
+    .em-story-placeholder,
+    .farmhouse-photo-empty,
+    .harvest-photo-placeholder
+  ) {
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: auto;
+  object-fit: cover;
+}
+section.website-section.harvest-image-story[data-custom-height] {
+  min-height: var(--website-height);
+}
+section.website-section[data-website-section='image-with-text'] .em-story-copy {
+  padding: var(--website-copy-padding, clamp(1.5rem, 4vw, 4rem));
+}
+/* Overlay copy stretches to the image frame, so vertical alignment moves its contents. */
+section.website-section[data-website-section][data-image-layout='overlay']
+  .website-copy {
+  align-self: stretch;
+  justify-content: var(--website-vertical, center);
+  min-height: var(
+    --website-height,
+    var(--website-imageHeight, clamp(26rem, 65vh, 48rem))
+  );
+  padding: var(
+    --website-padding,
+    var(--website-copy-padding, clamp(2rem, 6vw, 6rem))
+  );
+}
+section.website-section[data-website-section][data-image-layout='overlay'] {
+  padding: 0;
+}
+section.website-section[data-website-section][data-image-layout='overlay']
+  .website-layout {
+  padding: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+section.website-section[data-website-section][data-image-layout='overlay']
+  .website-image {
+  height: 100%;
+}
+/* Distinguish every variant even when the full-bleed image hides the outer frame. */
+section.website-section[data-website-section][data-image-layout='overlay'][data-custom-width]
+  > .website-layout {
+  width: 100%;
+}
+section.website-section[data-website-section][data-image-layout='overlay'][data-custom-width]
+  .website-copy {
+  width: var(--website-width);
+}
+section.website-section[data-variant='framed'][data-image-layout='overlay']
+  .website-copy::before {
+  content: '';
+  position: absolute;
+  inset: 1rem;
+  border: 1px solid currentColor;
+  pointer-events: none;
+}
+section.website-section[data-variant='featured'][data-image-layout='overlay']
+  h2 {
+  font-style: italic;
+}
+/* Farmhouse secondary buttons inherit contrast from the section's selected surface. */
+section.website-section .farmhouse-button[data-website-button='secondary'] {
+  color: inherit !important;
+  border-color: currentColor;
+  background: transparent;
+}
+section.website-section
+  .farmhouse-button[data-website-button='secondary']:hover {
+  background: var(--farmhouse-surface);
+  color: var(--farmhouse-ink) !important;
+}
+section.website-section[data-website-section]:is(
+    [data-background='ink'],
+    [data-image-layout='overlay']
+  )
+  .farmhouse-button[data-website-button='primary'] {
+  background: var(--farmhouse-surface);
+  color: var(--farmhouse-ink) !important;
+  border-color: var(--farmhouse-surface);
+}
+section.website-section.harvest-authored:is(
+    [data-background='ink'],
+    [data-image-layout='overlay']
+  )
+  .ui-button:not(.secondary) {
+  --button-fill: var(--brand-background);
+  --button-ink: var(--brand-primary);
+  --button-edge: var(--brand-background);
+}
+section.website-section.harvest-authored:is(
+    [data-background='ink'],
+    [data-image-layout='overlay']
+  )
+  .ui-button.secondary {
+  --button-ink: var(--brand-background);
+  --button-edge: var(--brand-background);
+}
+/* The shared Astro adapter emits .secondary, the same semantic variant as React. */
+section.website-section.em-repeatable[data-website-section]
+  .ui-button.secondary {
+  border-color: var(--em-green);
+  background: var(--em-green);
+  color: var(--em-cream);
+}
+@media (max-width: 720px) {
+  section.website-section.em-repeatable:not([data-variant='featured']) {
+    --website-heading-base: clamp(2rem, 10vw, 3rem);
+  }
+  section.website-section[data-website-section][data-custom-imagewidth]
+    .website-layout,
+  section.website-section.harvest-image-story[data-custom-imagewidth] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  section.website-section[data-website-section] .website-copy {
+    max-width: 100%;
+  }
+  section.website-section[data-website-section][data-custom-padding] {
+    padding: min(var(--website-padding), 8vw);
+  }
+  section.website-section[data-website-section][data-image-layout='overlay'] {
+    padding: 0;
+  }
+  section.website-section[data-website-section][data-image-layout='overlay']
+    .website-copy {
+    padding: min(
+      var(--website-padding, var(--website-copy-padding, 32px)),
+      8vw
+    );
+  }
+  section.website-section[data-website-section]
+    :is(.ui-button, .farmhouse-button) {
+    max-width: 100%;
+    white-space: normal;
+  }
+}

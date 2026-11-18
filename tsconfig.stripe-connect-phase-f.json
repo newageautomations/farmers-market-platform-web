@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.stripe-connect-phase-e.json",
+  "include": [
+    "apps/storefront/src/env.d.ts",
+    "apps/storefront/src/components/StripeCheckout.tsx",
+    "apps/storefront/src/components/Checkout.tsx",
+    "apps/storefront/src/components/VendorCheckout.tsx",
+    "apps/storefront/src/components/modern-farmhouse/Checkout.tsx",
+    "apps/admin/src/vendor/OrderRefunds.tsx",
+    "apps/admin/src/vendor/order-detail.tsx",
+    "apps/admin/src/finance/FinanceTransactions.tsx",
+    "tests/setup.ts",
+    "tests/stripe-connect-phase-e.test.tsx",
+    "tests/stripe-connect-phase-f.test.tsx"
+  ]
+}

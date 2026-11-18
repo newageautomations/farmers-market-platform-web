@@ -1,0 +1,2364 @@
+/*
+ * Meadow: a sunny, illustrated market storefront theme.
+ *
+ * Meadow keeps the shared Harvest market pages, commerce islands and section
+ * library, and presents them in its own header, footer, homepage and palette.
+ * Everything here is scoped to the Meadow theme root or `.meadow-site`, so no
+ * other theme is affected. This file is linked only for Meadow websites.
+ */
+
+/* ------------------------------------------------------------------ tokens */
+html[data-storefront-theme='meadow'] {
+  --mw-cream: #fff8ea;
+  --mw-paper: #ffffff;
+  --mw-ink: #22301f;
+  --mw-muted: #5c6955;
+  --mw-leaf: #2f6b3a;
+  --mw-honey: #f5b82e;
+  --mw-honey-soft: #ffedb8;
+  --mw-honey-deep: #9a6200;
+  --mw-tomato: #e4492f;
+  --mw-mint: #e3f1da;
+  --mw-blush: #ffe0d6;
+  --mw-sky: #d8eef6;
+  --mw-primary: var(--mw-leaf);
+  --mw-primary-deep: #1e4a29;
+  --mw-primary-soft: var(--mw-mint);
+  --mw-line: color-mix(in srgb, var(--mw-ink) 12%, transparent);
+  --mw-radius: 22px;
+  --mw-radius-sm: 14px;
+  --mw-shadow:
+    0 1px 2px rgb(34 48 31 / 0.06), 0 12px 32px -14px rgb(34 48 31 / 0.22);
+  --mw-shadow-lift:
+    0 2px 4px rgb(34 48 31 / 0.08), 0 24px 46px -18px rgb(34 48 31 / 0.34);
+  --mw-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --mw-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --mw-gutter: clamp(1.1rem, 4vw, 2.75rem);
+  --mw-max: 1240px;
+  --mw-wrap: min(100% - 2 * var(--mw-gutter), var(--mw-max));
+  /* The theme's own palette replaces the generic storefront presets. */
+  --brand-primary: var(--mw-primary) !important;
+  --brand-secondary: var(--mw-primary-deep) !important;
+  --brand-accent: var(--mw-honey) !important;
+  --brand-background: var(--mw-cream) !important;
+  --brand-surface: var(--mw-paper) !important;
+  --brand-foreground: var(--mw-ink) !important;
+  --brand-muted: var(--mw-muted) !important;
+  --brand-on-primary: #fff !important;
+  --brand-on-secondary: #fff !important;
+  --storefront-card-radius: var(--mw-radius) !important;
+  --ui-input-focus-background: var(--mw-honey-soft);
+  color: var(--mw-ink);
+  background: var(--mw-cream);
+  font-family: var(--font-body);
+  scroll-padding-top: 6rem;
+}
+/* The Colors setting chooses Meadow's leading color. Honey stays the accent. */
+html[data-storefront-theme='meadow'][data-theme-palette='terracotta'] {
+  --mw-primary: #b4412a;
+  --mw-primary-deep: #7f2a1a;
+  --mw-primary-soft: #fbe3da;
+}
+html[data-storefront-theme='meadow'][data-theme-palette='blue'] {
+  --mw-primary: #2f5597;
+  --mw-primary-deep: #1f3a6b;
+  --mw-primary-soft: #dee8f8;
+}
+html[data-storefront-theme='meadow'][data-theme-palette='charcoal'] {
+  --mw-primary: #3a3340;
+  --mw-primary-deep: #25202a;
+  --mw-primary-soft: #ece7ef;
+}
+
+/* ------------------------------------------------------------------- shell */
+.meadow-site {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: clip;
+}
+.meadow-site > main {
+  flex: 1;
+  min-width: 0;
+}
+.meadow-site > main > :where(:not(.mw-home, astro-island)),
+.meadow-site > main > astro-island > *,
+.mw-home > :where(:not(.mw-bleed, astro-island)),
+.mw-home > astro-island > * {
+  width: var(--mw-wrap);
+  margin-inline: auto;
+}
+.meadow-site :is(h1, h2, h3) {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.meadow-site ::selection {
+  background: var(--mw-honey);
+  color: var(--mw-ink);
+}
+.meadow-site :focus-visible {
+  outline: 3px solid var(--mw-honey-deep);
+  outline-offset: 3px;
+}
+.mw-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Card-like and pill links carry their own hover, not the text underline. */
+.meadow-site
+  :is(
+    .mw-brand,
+    .mw-nav a,
+    .mw-menu a,
+    .mw-next,
+    .mw-category,
+    .mw-footer-name
+  )::after {
+  content: none;
+}
+
+/* ----------------------------------------------------------------- buttons */
+.meadow-site .button.ui-button {
+  font-weight: 700;
+  letter-spacing: 0.005em;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    border-color 200ms ease,
+    box-shadow 260ms var(--mw-ease),
+    transform 260ms var(--mw-spring);
+}
+.meadow-site
+  .button.ui-button:not(.secondary, .button-tertiary, .button-icon):not(
+    .button-disclosure,
+    .button-destructive-outline,
+    .button-destructive
+  ) {
+  --button-hover-fill: var(--mw-primary-deep);
+  --button-hover-edge: var(--mw-primary-deep);
+  box-shadow: 0 6px 16px -8px
+    color-mix(in srgb, var(--mw-primary) 70%, transparent);
+}
+.meadow-site .button.ui-button.secondary {
+  --button-fill: var(--mw-paper);
+  --button-ink: var(--mw-primary-deep);
+  --button-edge: color-mix(in srgb, var(--mw-primary) 35%, transparent);
+  --button-hover-fill: var(--mw-primary-soft);
+  --button-hover-edge: var(--mw-primary);
+  --button-hover-ink: var(--mw-primary-deep);
+}
+/* Every button answers a hover and a press, whatever hover style is chosen. */
+.meadow-site
+  .button.ui-button:is(:hover, :focus-visible):not(:disabled):not(
+    [aria-disabled='true']
+  ):not(.button-destructive-outline) {
+  transform: translateY(-2px);
+}
+.meadow-site
+  .button.ui-button:active:not(:disabled):not([aria-disabled='true']) {
+  transform: translateY(0) scale(0.96);
+  transition-duration: 80ms;
+}
+.meadow-site .button .farmstand-icon {
+  flex: none;
+  transition: transform 300ms var(--mw-spring);
+}
+.meadow-site .mw-button-arrow:is(:hover, :focus-visible) .farmstand-icon {
+  transform: translateX(5px);
+}
+
+/* ------------------------------------------------------------------ header */
+.mw-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--mw-cream) 86%, transparent);
+  -webkit-backdrop-filter: saturate(1.5) blur(14px);
+  backdrop-filter: saturate(1.5) blur(14px);
+  border-bottom: 1px solid transparent;
+  transition:
+    box-shadow 300ms ease,
+    border-color 300ms ease;
+}
+.mw-header[data-scrolled] {
+  border-color: var(--mw-line);
+  box-shadow: 0 12px 30px -20px rgb(34 48 31 / 0.4);
+}
+.mw-header-inner {
+  width: var(--mw-wrap);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  min-height: 76px;
+}
+.mw-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  color: var(--mw-ink);
+  font: 700 clamp(1.1rem, 1.5vw, 1.4rem) / 1.15 var(--font-heading);
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+.mw-brand-name {
+  overflow-wrap: anywhere;
+}
+.mw-brand-mark,
+.mw-brand img {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  transition: transform 450ms var(--mw-spring);
+}
+.mw-brand img {
+  object-fit: cover;
+}
+.mw-brand-mark {
+  display: grid;
+  place-items: center;
+  background: var(--mw-honey-soft);
+}
+.mw-brand-mark .mw-art {
+  width: 31px;
+}
+.mw-brand:is(:hover, :focus-visible) :is(.mw-brand-mark, img) {
+  transform: rotate(-12deg) scale(1.1);
+}
+.mw-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.15rem;
+}
+.mw-nav a {
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  color: var(--mw-ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease,
+    transform 260ms var(--mw-spring);
+}
+.mw-nav a:is(:hover, :focus-visible) {
+  background: var(--mw-honey-soft);
+  transform: translateY(-2px);
+}
+.mw-nav a:active {
+  transform: scale(0.95);
+}
+.mw-nav a[aria-current='page'] {
+  background: var(--mw-primary);
+  color: #fff;
+}
+.mw-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-self: end;
+}
+.mw-header-actions .harvest-header-icon.button.ui-button,
+.mw-menu > summary {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--mw-ink);
+  box-shadow: none;
+  transition:
+    background-color 220ms ease,
+    transform 300ms var(--mw-spring);
+}
+.meadow-site
+  .mw-header-actions
+  .harvest-header-icon.button.ui-button:is(:hover, :focus-visible):not(
+    :disabled
+  ),
+.mw-menu > summary:is(:hover, :focus-visible),
+.meadow-site
+  .mw-header-actions
+  details[open]
+  > summary.harvest-header-icon.button.ui-button {
+  background: var(--mw-honey-soft);
+  box-shadow: none;
+  transform: translateY(-2px) rotate(-6deg);
+}
+.meadow-site
+  .mw-header-actions
+  .harvest-header-icon.button.ui-button:active:not(:disabled),
+.mw-menu > summary:active {
+  transform: scale(0.9);
+}
+.mw-header-actions .harvest-cart-count {
+  top: 1px;
+  right: -1px;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  background: var(--mw-tomato);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 0 0 2px var(--mw-cream);
+}
+.mw-header-actions .harvest-account-content {
+  top: calc(100% + 0.6rem);
+  border: 0;
+  border-radius: var(--mw-radius-sm);
+  box-shadow: var(--mw-shadow-lift);
+  animation: mw-pop 260ms var(--mw-ease);
+}
+.mw-header-actions .harvest-account-content a {
+  font-weight: 600;
+}
+.mw-menu {
+  display: none;
+}
+.mw-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.mw-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.mw-menu-bars {
+  display: grid;
+  gap: 5px;
+  width: 20px;
+}
+.mw-menu-bars span {
+  height: 2.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transition:
+    transform 300ms var(--mw-ease),
+    opacity 200ms ease;
+}
+.mw-menu[open] .mw-menu-bars span:nth-child(1) {
+  transform: translateY(7.5px) rotate(45deg);
+}
+.mw-menu[open] .mw-menu-bars span:nth-child(2) {
+  opacity: 0;
+}
+.mw-menu[open] .mw-menu-bars span:nth-child(3) {
+  transform: translateY(-7.5px) rotate(-45deg);
+}
+.mw-menu > nav {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: var(--mw-gutter);
+  right: var(--mw-gutter);
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem;
+  border-radius: var(--mw-radius);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow-lift);
+  animation: mw-pop 260ms var(--mw-ease);
+}
+.meadow-site .mw-menu > nav a {
+  /* Full-width rows; the shared text-link rule would shrink them to the label. */
+  width: auto !important;
+  padding: 0.9rem 1rem;
+  border-radius: var(--mw-radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 200ms ease,
+    padding-left 260ms var(--mw-ease);
+}
+.meadow-site .mw-menu > nav a:is(:hover, :focus-visible) {
+  background: var(--mw-honey-soft);
+  padding-left: 1.4rem;
+}
+.meadow-site .mw-menu > nav a[aria-current='page'] {
+  background: var(--mw-primary-soft);
+  color: var(--mw-primary-deep);
+}
+[data-theme-cart][data-bump] .harvest-cart-link {
+  animation: mw-bump 520ms var(--mw-spring);
+}
+@media (max-width: 1100px) {
+  .mw-header-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 66px;
+  }
+  .mw-nav {
+    display: none;
+  }
+  .mw-menu {
+    display: block;
+  }
+}
+@media (max-width: 420px) {
+  .mw-brand-mark,
+  .mw-brand img {
+    width: 38px;
+    height: 38px;
+  }
+  .mw-brand {
+    font-size: 1.02rem;
+    gap: 0.5rem;
+  }
+  .mw-header-actions {
+    gap: 0.1rem;
+  }
+}
+
+/* -------------------------------------------------------------------- hero */
+.mw-hero {
+  position: relative;
+  background:
+    radial-gradient(
+      60% 70% at 88% 8%,
+      color-mix(in srgb, var(--mw-honey) 38%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      45% 55% at 0% 100%,
+      color-mix(in srgb, var(--mw-primary-soft) 90%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(180deg, #fff3cf, var(--mw-cream));
+  overflow: hidden;
+}
+.mw-hero-inner {
+  width: var(--mw-wrap);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+  padding-block: clamp(2.5rem, 6vw, 5rem) clamp(4.5rem, 9vw, 7.5rem);
+}
+.mw-hero-copy {
+  min-width: 0;
+}
+.meadow-site .mw-hero h1 {
+  --storefront-heading-base: clamp(2.6rem, 5.6vw, 4.9rem);
+  margin: 0 0 1.25rem;
+  font-size: var(--storefront-heading-base);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+.mw-hero-intro {
+  --storefront-paragraph-base: clamp(1.05rem, 1.4vw, 1.25rem);
+  max-width: 44ch;
+  margin: 0;
+  color: var(--mw-muted);
+  font-size: var(--storefront-paragraph-base);
+  line-height: 1.65;
+}
+.mw-hero-actions {
+  margin-top: 2rem;
+  gap: 0.85rem;
+}
+.mw-hero-actions .button.ui-button {
+  min-height: 52px;
+  padding-inline: 1.5rem;
+  font-size: 1.05rem;
+}
+.mw-hero-edge,
+.mw-footer-edge {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  display: block;
+  width: 100%;
+  height: clamp(28px, 4vw, 52px);
+  fill: var(--mw-cream);
+}
+.mw-hero-visual {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 540px);
+}
+.mw-hero-visual:not(.mw-hero-photo) {
+  aspect-ratio: 560 / 500;
+  overflow: hidden;
+  border: 8px solid #fff;
+  border-radius: 46% 46% 32px 32px / 40% 40% 32px 32px;
+  background: linear-gradient(180deg, #c8e8f4, #e9f6ea 72%);
+  box-shadow: var(--mw-shadow-lift);
+}
+.mw-hero-day .mw-hero-visual:not(.mw-hero-photo) {
+  border-radius: 36px;
+}
+.mw-scene {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.mw-hero-photo {
+  aspect-ratio: 1;
+}
+.mw-hero-blob {
+  position: absolute;
+  inset: -5% -6% -3% 3%;
+  border-radius: 58% 42% 55% 45% / 48% 56% 44% 52%;
+  background: var(--mw-honey);
+  transform: rotate(-6deg);
+}
+.mw-hero-frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 8px solid #fff;
+  border-radius: 46% 46% 32px 32px / 40% 40% 32px 32px;
+  background: #fff;
+  box-shadow: var(--mw-shadow-lift);
+}
+.meadow-site .mw-hero-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  aspect-ratio: auto;
+  border-radius: 0;
+  object-fit: cover;
+}
+.mw-sticker {
+  position: absolute;
+  width: clamp(54px, 8vw, 92px);
+  filter: drop-shadow(0 8px 10px rgb(34 48 31 / 0.2));
+}
+.mw-sticker-bee {
+  top: 4%;
+  left: -7%;
+}
+.mw-sticker-sunflower {
+  top: -6%;
+  right: -3%;
+  width: clamp(64px, 10vw, 112px);
+}
+.mw-sticker-tomato {
+  bottom: 6%;
+  left: -5%;
+}
+.mw-sticker-honey {
+  right: -4%;
+  bottom: -3%;
+}
+
+/* Next market date, linked to its shop. */
+.mw-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  max-width: 100%;
+  margin-top: 2rem;
+  padding: 0.65rem 0.9rem 0.65rem 0.65rem;
+  border-radius: 20px;
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+  color: var(--mw-ink);
+  text-decoration: none;
+  transition:
+    transform 320ms var(--mw-spring),
+    box-shadow 320ms var(--mw-ease);
+}
+.mw-next:is(:hover, :focus-visible) {
+  transform: translateY(-4px);
+  box-shadow: var(--mw-shadow-lift);
+}
+.mw-next:active {
+  transform: scale(0.98);
+}
+.mw-next-stamp,
+.meadow-site .harvest-date-stamp {
+  flex: none;
+  display: block;
+  width: 60px;
+  overflow: hidden;
+  border-radius: var(--mw-radius-sm);
+  background: var(--mw-honey-soft);
+  text-align: center;
+}
+.mw-next-stamp span,
+.meadow-site .harvest-date-stamp span {
+  display: block;
+  padding: 0.28rem 0;
+  background: var(--mw-tomato);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.mw-next-stamp strong,
+.meadow-site .harvest-date-stamp strong {
+  display: block;
+  padding: 0.3rem 0 0.4rem;
+  color: var(--mw-ink);
+  font: 700 1.6rem / 1 var(--font-heading);
+}
+.mw-next-copy {
+  display: grid;
+  min-width: 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.mw-next-copy > span {
+  color: var(--mw-muted);
+  overflow-wrap: anywhere;
+}
+.mw-next-copy .mw-next-label {
+  color: var(--mw-honey-deep);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.mw-next-go {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--mw-primary-soft);
+  color: var(--mw-primary-deep);
+  transition:
+    background-color 220ms ease,
+    color 220ms ease,
+    transform 320ms var(--mw-spring);
+}
+.mw-next:is(:hover, :focus-visible) .mw-next-go {
+  background: var(--mw-primary);
+  color: #fff;
+  transform: translateX(4px);
+}
+
+/* ---------------------------------------------------------------- sections */
+.mw-section {
+  padding-block: clamp(2.5rem, 5.5vw, 4.5rem);
+  scroll-margin-top: 6rem;
+}
+.mw-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  margin-bottom: clamp(1.4rem, 3vw, 2.2rem);
+}
+.meadow-site .mw-section-head h2 {
+  --storefront-heading-base: clamp(1.7rem, 3.2vw, 2.6rem);
+  flex: 1 1 14rem;
+  margin: 0;
+  font-size: var(--storefront-heading-base);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+.mw-section-art {
+  flex: none;
+  width: clamp(42px, 5vw, 58px);
+  transition: transform 500ms var(--mw-spring);
+}
+.mw-section-head:hover .mw-section-art {
+  transform: rotate(-10deg) scale(1.12);
+}
+.mw-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding-block: 0.4rem;
+  color: var(--mw-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+.mw-more .farmstand-icon,
+.meadow-site .harvest-text-link > span[aria-hidden] {
+  display: inline-block;
+  transition: transform 300ms var(--mw-spring);
+}
+.mw-more:is(:hover, :focus-visible) .farmstand-icon {
+  transform: translateX(5px);
+}
+.meadow-site .harvest-text-link:is(:hover, :focus-visible) > span[aria-hidden] {
+  transform: translate(3px, -3px);
+}
+.meadow-site .harvest-text-link {
+  color: var(--mw-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.meadow-site .empty-state {
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 2px dashed color-mix(in srgb, var(--mw-primary) 28%, transparent);
+  border-radius: var(--mw-radius);
+  background: color-mix(in srgb, var(--mw-paper) 70%, transparent);
+  text-align: center;
+}
+.meadow-site .empty-state :is(h2, h3, h4) {
+  margin-bottom: 0.5rem;
+}
+.meadow-site .empty-state p {
+  margin: 0 auto;
+  max-width: 46ch;
+  color: var(--mw-muted);
+}
+
+/* Market date cards (shared MarketDateList). */
+.meadow-site .harvest-dates {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+  gap: 1.1rem;
+  margin: 0;
+}
+.meadow-site .harvest-date.ui-card {
+  position: relative;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.1rem;
+  margin: 0;
+  padding: 1.15rem;
+  border: 0;
+  border-radius: var(--mw-radius);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+  transition:
+    transform 340ms var(--mw-spring),
+    box-shadow 340ms var(--mw-ease);
+}
+.meadow-site .harvest-date.ui-card:hover {
+  transform: translateY(-5px) rotate(-0.4deg);
+  box-shadow: var(--mw-shadow-lift);
+}
+.meadow-site .harvest-date-stamp {
+  width: 68px;
+  transition: transform 400ms var(--mw-spring);
+}
+.meadow-site .harvest-date:hover .harvest-date-stamp {
+  transform: rotate(-6deg) scale(1.06);
+}
+.meadow-site .harvest-date-stamp strong {
+  font-size: 1.9rem;
+}
+.meadow-site .harvest-date h3 {
+  margin: 0 0 0.35rem;
+  font: 700 1.2rem / 1.3 var(--font-heading);
+}
+/* The whole card opens the date's shop; the action links stay on top. */
+.meadow-site .harvest-date h3 a::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--mw-radius);
+}
+.meadow-site .harvest-date h3 a::after {
+  content: none;
+}
+.meadow-site .harvest-date p {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0 0 0.2rem;
+  color: var(--mw-muted);
+  font-size: 0.93rem;
+}
+.meadow-site .harvest-date .market-date-copy > p::before {
+  content: '';
+  flex: none;
+  align-self: center;
+  width: 1rem;
+  height: 1rem;
+  background: var(--mw-honey-deep);
+  -webkit-mask: var(--mw-icon-clock) center / contain no-repeat;
+  mask: var(--mw-icon-clock) center / contain no-repeat;
+}
+.meadow-site .harvest-date .market-date-copy > p + p::before {
+  -webkit-mask-image: var(--mw-icon-pin);
+  mask-image: var(--mw-icon-pin);
+}
+.meadow-site .market-date-links {
+  position: relative;
+  z-index: 1;
+  padding-top: 0.7rem;
+}
+html[data-storefront-theme='meadow'] {
+  --mw-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
+  --mw-icon-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 10c0 5-8 12-8 12s-8-7-8-12a8 8 0 0 1 16 0z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E");
+  --mw-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 4.5 4.5L19 7'/%3E%3C/svg%3E");
+  --mw-icon-bag: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z'/%3E%3Cpath d='M3 6h18M16 10a4 4 0 0 1-8 0'/%3E%3C/svg%3E");
+  --mw-comb: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97' viewBox='0 0 56 97'%3E%3Cpath d='M28 1 55 16.5v32L28 64 1 48.5v-32zM28 65v32M1 48.5-26 64M55 48.5 82 64' fill='none' stroke='%23fff' stroke-opacity='.35' stroke-width='2'/%3E%3C/svg%3E");
+}
+
+/* Vendor cards (shared MarketVendorCards). */
+.meadow-site .market-vendor-cards {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14.5rem), 1fr));
+  gap: 1.1rem;
+  margin: 0;
+}
+.meadow-site .market-vendor-card.ui-card {
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 1.6rem 1.1rem 1.15rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--mw-radius);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+  text-align: center;
+  transition:
+    transform 340ms var(--mw-spring),
+    box-shadow 340ms var(--mw-ease);
+}
+.meadow-site .market-vendor-card.ui-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--mw-shadow-lift);
+}
+.meadow-site .market-vendor-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4.4rem;
+  background: var(--mw-honey-soft) var(--mw-comb) center / 42px;
+}
+.meadow-site .market-vendor-card:nth-child(4n + 2)::before {
+  background-color: var(--mw-mint);
+}
+.meadow-site .market-vendor-card:nth-child(4n + 3)::before {
+  background-color: var(--mw-blush);
+}
+.meadow-site .market-vendor-card:nth-child(4n + 4)::before {
+  background-color: var(--mw-sky);
+}
+.meadow-site
+  .market-vendor-cards
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  position: relative;
+  width: 5.4rem;
+  height: 5.4rem;
+  margin: 0 0 0.6rem;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 6px 14px -6px rgb(34 48 31 / 0.4);
+  transition: transform 420ms var(--mw-spring);
+}
+.meadow-site .market-vendor-cards .harvest-vendor-symbol {
+  background: var(--mw-primary);
+  color: #fff;
+  font: 700 2rem var(--font-heading);
+}
+.meadow-site
+  .market-vendor-card:hover
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  transform: scale(1.08) rotate(-5deg);
+}
+.meadow-site .market-vendor-card h3 {
+  font-size: 1.2rem;
+  line-height: 1.25;
+}
+.meadow-site .market-vendor-meta {
+  color: var(--mw-muted);
+  font-size: 0.88rem;
+}
+.meadow-site .market-vendor-actions {
+  justify-content: center;
+  padding-top: 0.6rem;
+}
+.meadow-site
+  .market-vendor-cards[data-card-theme='inverse']
+  .market-vendor-card::before {
+  background-color: color-mix(in srgb, #fff 16%, transparent);
+}
+
+/* Categories. */
+.mw-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 1rem;
+}
+.mw-category {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.7rem;
+  padding: 1.2rem 0.75rem 1rem;
+  border-radius: var(--mw-radius);
+  background: var(--mw-honey-soft);
+  color: var(--mw-ink);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    transform 340ms var(--mw-spring),
+    box-shadow 340ms var(--mw-ease);
+}
+.meadow-site .mw-category {
+  width: auto !important;
+}
+.mw-category[data-tint='mint'] {
+  background: var(--mw-mint);
+}
+.mw-category[data-tint='blush'] {
+  background: var(--mw-blush);
+}
+.mw-category[data-tint='sky'] {
+  background: var(--mw-sky);
+}
+.mw-category:is(:hover, :focus-visible) {
+  transform: translateY(-6px);
+  box-shadow: var(--mw-shadow);
+}
+.mw-category:active {
+  transform: scale(0.96);
+}
+.mw-category-art {
+  display: grid;
+  place-items: center;
+  width: 5.6rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 450ms var(--mw-spring);
+}
+.mw-category-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mw-category-art .mw-art {
+  width: 68%;
+}
+.mw-category:is(:hover, :focus-visible) .mw-category-art {
+  transform: scale(1.1) rotate(-6deg);
+}
+.mw-category-name {
+  overflow-wrap: anywhere;
+}
+
+/* Closing invitation. */
+.mw-closing {
+  padding-block: clamp(1.5rem, 4vw, 3rem);
+}
+.mw-closing-inner {
+  position: relative;
+  width: var(--mw-wrap);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 2rem;
+  padding: clamp(2rem, 5vw, 4rem);
+  overflow: hidden;
+  border-radius: calc(var(--mw-radius) * 1.6);
+  background: var(--mw-honey) var(--mw-comb) center / 56px;
+}
+.meadow-site .mw-closing h2 {
+  --storefront-heading-base: clamp(2rem, 4vw, 3.3rem);
+  margin: 0 0 1.6rem;
+  font-size: var(--storefront-heading-base);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+.meadow-site .mw-closing .button.ui-button {
+  --button-fill: var(--mw-ink);
+  --button-edge: var(--mw-ink);
+  --button-ink: #fff;
+  --button-hover-fill: #101a0e;
+  --button-hover-edge: #101a0e;
+  min-height: 52px;
+  padding-inline: 1.5rem;
+  box-shadow: 0 8px 18px -8px rgb(34 48 31 / 0.6);
+}
+.mw-closing-art {
+  position: relative;
+  min-height: 13rem;
+}
+.mw-closing-art .mw-art {
+  position: absolute;
+  filter: drop-shadow(0 10px 12px rgb(34 48 31 / 0.22));
+}
+.mw-closing-art .mw-art-basket {
+  left: 50%;
+  bottom: 0;
+  width: min(72%, 13rem);
+  translate: -50% 0;
+}
+.mw-closing-art .mw-art-bee {
+  top: 0;
+  right: 6%;
+  width: 3.6rem;
+}
+.mw-closing-art .mw-art-strawberry {
+  left: 2%;
+  bottom: 4%;
+  width: 3.8rem;
+  rotate: -14deg;
+}
+.mw-closing-art .mw-art-cheese {
+  right: 0;
+  bottom: 2%;
+  width: 4.2rem;
+  rotate: 8deg;
+}
+
+/* ------------------------------------------------------------------ footer */
+.mw-footer {
+  position: relative;
+  margin-top: clamp(3rem, 7vw, 6rem);
+}
+.mw-footer-art {
+  position: relative;
+  z-index: 1;
+  width: var(--mw-wrap);
+  margin: 0 auto calc(-1 * clamp(10px, 1.6vw, 22px));
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  pointer-events: none;
+}
+.mw-footer-art .mw-art {
+  width: 5.2rem;
+}
+.mw-footer-art .mw-art-hen {
+  width: 4.2rem;
+  margin-bottom: -1.1rem;
+  rotate: 10deg;
+  /*
+   * Full 10deg tilt at 1920px and wider, easing continuously to upright by
+   * 1600px. atan2 turns a width difference into an angle: tan(10deg) is
+   * about 0.176, so (1920 - 1600) / 1815 lands on 10deg at 1920px.
+   */
+  rotate: clamp(0deg, atan2(100vw - 1600px, 1815px), 10deg);
+}
+.mw-footer-art .mw-art:nth-child(3) {
+  width: 3.6rem;
+  margin-bottom: -1.1rem;
+}
+.mw-footer-art .mw-art-bee {
+  width: 2.6rem;
+  margin: 0 0 3.2rem auto;
+}
+.mw-footer-edge {
+  position: static;
+  margin-bottom: -1px;
+  fill: var(--mw-primary-deep);
+}
+.mw-footer-band {
+  background: var(--mw-primary-deep);
+  color: #fff;
+}
+.mw-footer-inner {
+  width: var(--mw-wrap);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 2.5rem;
+  padding-block: 2.25rem 1.4rem;
+}
+.mw-footer-name {
+  color: #fff;
+  font: 700 clamp(1.6rem, 2.6vw, 2.1rem) / 1.15 var(--font-heading);
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  display: inline-block;
+  transition: transform 320ms var(--mw-spring);
+}
+.mw-footer-name:is(:hover, :focus-visible) {
+  transform: translateX(4px) rotate(-1.5deg);
+}
+.mw-footer-brand p {
+  --storefront-paragraph-base: 1rem;
+  max-width: 34ch;
+  margin: 0.7rem 0 0;
+  color: rgb(255 255 255 / 0.8);
+  font-size: var(--storefront-paragraph-base);
+}
+.mw-footer-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+}
+.mw-footer-nav > div {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 0.6rem;
+}
+.meadow-site .mw-footer-nav h2 {
+  margin: 0 0 0.3rem;
+  color: var(--mw-honey);
+  font: 800 0.74rem / 1 var(--font-body);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.mw-footer-nav a {
+  color: rgb(255 255 255 / 0.92);
+  text-decoration: none;
+  transition:
+    color 200ms ease,
+    transform 280ms var(--mw-spring);
+}
+.mw-footer-nav a:is(:hover, :focus-visible) {
+  color: var(--mw-honey);
+  transform: translateX(4px);
+}
+.mw-footer-bottom {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.4rem 1.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid rgb(255 255 255 / 0.16);
+  color: rgb(255 255 255 / 0.7);
+  font-size: 0.82rem;
+}
+.mw-footer :focus-visible {
+  outline-color: var(--mw-honey);
+}
+
+/* ------------------------------------------------------------------ motion */
+@keyframes mw-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+}
+@keyframes mw-bump {
+  30% {
+    transform: scale(1.3) rotate(-12deg);
+  }
+  60% {
+    transform: scale(0.92) rotate(6deg);
+  }
+}
+@keyframes mw-float {
+  50% {
+    transform: translate(8px, -12px) rotate(6deg);
+  }
+}
+@keyframes mw-sway {
+  50% {
+    transform: rotate(3.5deg);
+  }
+}
+@keyframes mw-glow {
+  50% {
+    transform: scale(1.08);
+  }
+}
+/* Two quick, short hops, then a rest before the loop repeats. */
+@keyframes mw-hop {
+  0%,
+  22%,
+  44%,
+  100% {
+    translate: 0 0;
+    animation-timing-function: ease-out;
+  }
+  11%,
+  33% {
+    translate: 0 -5px;
+    animation-timing-function: ease-in;
+  }
+}
+/*
+ * The same two hops over a 4.4s loop. On the first pass the first hop turns the
+ * hen 3deg counter-clockwise and the second turns it back to upright. On the
+ * second pass the first hop turns it 3deg clockwise and the second straightens
+ * it again.
+ */
+@keyframes mw-hop-tilt {
+  0%,
+  22%,
+  50%,
+  72%,
+  100% {
+    translate: 0 0;
+    transform: rotate(0deg);
+    animation-timing-function: ease-out;
+  }
+  11% {
+    translate: 0 0;
+    transform: rotate(-3deg);
+    animation-timing-function: ease-out;
+  }
+  61% {
+    translate: 0 0;
+    transform: rotate(3deg);
+    animation-timing-function: ease-out;
+  }
+  5.5%,
+  16.5%,
+  55.5%,
+  66.5% {
+    translate: 0 -5px;
+    animation-timing-function: ease-in;
+  }
+}
+@keyframes mw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mw-scene-bee,
+  .mw-sticker-bee,
+  .mw-closing-art .mw-art-bee,
+  .mw-footer-art .mw-art-bee {
+    animation: mw-float 5s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .mw-scene-bee-late {
+    animation-duration: 6.5s;
+    animation-delay: -2s;
+  }
+  .mw-scene-sway,
+  .mw-sticker-sunflower,
+  .mw-footer-art .mw-art-sunflower {
+    animation: mw-sway 6s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+  }
+  .mw-scene-sway-late,
+  .mw-footer-art .mw-art:nth-child(3) {
+    animation-delay: -3s;
+  }
+  /* The tilt rides on `transform`, so it adds to the footer hen's width-based `rotate`. */
+  .mw-footer-art .mw-art-hen {
+    animation: mw-hop-tilt 4.4s infinite;
+  }
+  .mw-scene-hen {
+    animation: mw-hop-tilt 4.4s infinite;
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+  }
+  .mw-scene-sun {
+    animation: mw-glow 7s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  /*
+   * `backwards`, not `both`: holding the finished animation keeps `transform`
+   * under the animation's control, which stops hover transitions (such as the
+   * Next market card's lift) from ever running.
+   */
+  .mw-hero-copy > * {
+    animation: mw-rise 700ms var(--mw-ease) backwards;
+  }
+  .mw-hero-copy > :nth-child(2) {
+    animation-delay: 80ms;
+  }
+  .mw-hero-copy > :nth-child(3) {
+    animation-delay: 160ms;
+  }
+  .mw-hero-copy > :nth-child(n + 4) {
+    animation-delay: 240ms;
+  }
+  .mw-hero-visual {
+    animation: mw-rise 800ms 120ms var(--mw-ease) both;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .meadow-site *,
+  .meadow-site *::before,
+  .meadow-site *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* -------------------------------------------------------------- responsive */
+@media (max-width: 860px) {
+  .mw-hero-inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.25rem;
+    padding-block: 2rem 4.5rem;
+  }
+  .mw-hero-visual {
+    width: min(100%, 440px);
+  }
+  .mw-closing-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mw-closing-art {
+    min-height: 10rem;
+  }
+  .mw-footer-inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+}
+@media (max-width: 700px) {
+  .mw-hero-actions .button.ui-button {
+    flex: 1 1 100%;
+  }
+  .mw-next {
+    display: flex;
+  }
+  /* Categories become a swipeable row. */
+  .mw-categories {
+    display: flex;
+    gap: 0.75rem;
+    margin-inline: calc(-1 * var(--mw-gutter));
+    padding: 0.5rem var(--mw-gutter) 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .mw-categories::-webkit-scrollbar {
+    display: none;
+  }
+  .mw-category {
+    flex: 0 0 8.4rem;
+    scroll-snap-align: start;
+  }
+  .meadow-site .market-vendor-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  .meadow-site .market-vendor-card.ui-card {
+    padding: 1.3rem 0.7rem 0.9rem;
+  }
+  .meadow-site
+    .market-vendor-cards
+    :is(.market-vendor-image, .harvest-vendor-symbol) {
+    width: 4.4rem;
+    height: 4.4rem;
+  }
+  .meadow-site .market-vendor-card h3 {
+    font-size: 1.05rem;
+  }
+  .mw-footer-art .mw-art {
+    width: 4rem;
+  }
+  .mw-footer-art .mw-art-hen {
+    width: 3.3rem;
+  }
+}
+.mw-header-actions .harvest-header-icon::after {
+  content: none;
+}
+
+/* ------------------------------------------------------------ shared pages */
+html[data-storefront-theme='meadow'] {
+  --mw-icon-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M8 3v4M16 3v4M3 10h18'/%3E%3C/svg%3E");
+  --mw-icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3'/%3E%3C/svg%3E");
+  --mw-icon-store: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 10v10h16V10M3 10l2-6h14l2 6a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0zM10 20v-5h4v5'/%3E%3C/svg%3E");
+}
+.meadow-site .market-page,
+.meadow-site .vendor-shop,
+.meadow-site .vendor-product,
+.meadow-site .vendor-cart-page,
+.meadow-site .vendor-checkout-page {
+  padding-block: clamp(1.5rem, 3.5vw, 3rem) 0;
+}
+.meadow-site .market-page-intro {
+  margin-bottom: clamp(1.25rem, 3vw, 2.25rem);
+}
+.meadow-site
+  :is(.market-page-intro, .checkout-heading, .vendor-cart-heading)
+  h1,
+.meadow-site .empty-state > h1 {
+  margin: 0 0 0.6rem;
+  color: var(--mw-ink);
+  font: 700 clamp(2.1rem, 4.6vw, 3.4rem) / 1.05 var(--font-heading);
+  letter-spacing: -0.03em;
+}
+.meadow-site .market-page-intro h1::after {
+  content: '';
+  display: block;
+  width: 4.5rem;
+  height: 0.5rem;
+  margin-top: 0.9rem;
+  border-radius: 999px;
+  background: var(--mw-honey);
+}
+.meadow-site .market-page-intro p {
+  max-width: 56ch;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+.meadow-site .ui-card {
+  border-color: transparent;
+  border-radius: var(--mw-radius);
+  box-shadow: var(--mw-shadow);
+}
+.meadow-site .ui-pagination {
+  justify-content: center;
+  gap: 0.75rem 1rem;
+  margin-top: 2rem;
+}
+
+/* Form controls. */
+.meadow-site
+  :is(
+    .ui-input,
+    .ui-select,
+    textarea,
+    select,
+    input:not([type='checkbox'], [type='radio'], [type='hidden'])
+  ) {
+  border-color: color-mix(in srgb, var(--mw-ink) 22%, transparent);
+  background-color: var(--mw-paper);
+  transition:
+    border-color 180ms ease,
+    box-shadow 220ms ease,
+    background-color 180ms ease;
+}
+.meadow-site :is(.ui-input, .ui-select, textarea, select):hover {
+  border-color: var(--mw-primary);
+}
+.meadow-site :is(.ui-input, .ui-select, textarea, select):focus-visible {
+  outline: none;
+  border-color: var(--mw-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--mw-honey) 55%, transparent);
+}
+.meadow-site .field > label,
+.meadow-site .field label {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Dialogs. */
+.meadow-site .ui-dialog {
+  border: 0;
+  border-radius: calc(var(--mw-radius) * 1.2);
+  box-shadow: var(--mw-shadow-lift);
+}
+.meadow-site .ui-dialog::backdrop {
+  background: rgb(34 48 31 / 0.45);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+.meadow-site .ui-dialog[open] {
+  animation: mw-pop 300ms var(--mw-ease);
+}
+
+/* Chosen market date (shared VendorPreorderBanner). */
+.meadow-site .shop-market-banner {
+  position: relative;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1.1rem 0.9rem 4.5rem;
+  border-radius: var(--mw-radius);
+  background: var(--mw-honey-soft);
+  color: var(--mw-ink);
+  box-shadow: inset 0 0 0 1.5px
+    color-mix(in srgb, var(--mw-honey) 70%, transparent);
+}
+.meadow-site .shop-market-banner::before,
+.meadow-site .shop-market-banner::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  translate: 0 -50%;
+  border-radius: 50%;
+  background: var(--mw-honey);
+}
+.meadow-site .shop-market-banner::after {
+  background: var(--mw-ink);
+  -webkit-mask: var(--mw-icon-calendar) center / 1.3rem no-repeat;
+  mask: var(--mw-icon-calendar) center / 1.3rem no-repeat;
+}
+.meadow-site .shop-market-banner h2 {
+  margin: 0 0 0.1rem;
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+}
+.meadow-site .shop-market-banner p {
+  color: var(--mw-muted);
+  font-size: 0.93rem;
+}
+.meadow-site .shop-market-banner .shop-market-picker > .button.ui-button {
+  --button-fill: var(--mw-paper);
+  --button-ink: var(--mw-ink);
+  --button-edge: transparent;
+  --button-hover-fill: var(--mw-ink);
+  --button-hover-ink: #fff;
+  --button-hover-edge: var(--mw-ink);
+  box-shadow: 0 4px 12px -6px rgb(34 48 31 / 0.4);
+}
+/* The plain "choose a date" prompt folds into the invitation below it.
+   Unavailable, conflict and no-dates messages always stay visible. */
+.meadow-site
+  .vendor-shop
+  .shop-market-slot:has(.shop-market-banner[data-banner-state='choose']):has(
+    + .shop-date-empty
+  ) {
+  display: none;
+}
+.meadow-site .vendor-shop .shop-date-empty {
+  margin-block: clamp(1rem, 4vw, 3rem);
+  padding: clamp(2rem, 5vw, 3.5rem) 1.5rem;
+  border: 0;
+  background: var(--mw-honey-soft) var(--mw-comb) center / 56px;
+  box-shadow: var(--mw-shadow);
+}
+.meadow-site .vendor-shop .shop-date-empty > h1 {
+  font: 700 clamp(1.5rem, 3vw, 2.1rem) / 1.15 var(--font-heading);
+  letter-spacing: -0.02em;
+}
+.meadow-site .shop-date-empty .shop-market-picker > .button.ui-button {
+  --button-fill: var(--mw-ink);
+  --button-ink: #fff;
+  --button-edge: var(--mw-ink);
+  --button-hover-fill: var(--mw-primary-deep);
+  --button-hover-ink: #fff;
+  --button-hover-edge: var(--mw-primary-deep);
+  min-height: 52px;
+  padding-inline: 1.75rem;
+  font-size: 1.05rem;
+}
+.meadow-site .shop-date-empty .shop-market-picker > .button.ui-button::before,
+.meadow-site
+  .shop-market-banner
+  .shop-market-picker
+  > .button.ui-button::before {
+  content: '';
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  background: currentColor;
+  -webkit-mask: var(--mw-icon-calendar) center / contain no-repeat;
+  mask: var(--mw-icon-calendar) center / contain no-repeat;
+}
+
+/* -------------------------------------------------------------------- shop */
+.meadow-site .vendor-shop {
+  grid-template-columns: minmax(190px, 230px) minmax(0, 1fr);
+}
+.meadow-site .shop-categories.ui-card {
+  position: sticky;
+  top: 6.25rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.meadow-site .shop-categories h2 {
+  margin: 0 0 0.8rem;
+  color: var(--mw-honey-deep);
+  font: 800 0.74rem / 1 var(--font-body);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.meadow-site .shop-category-filters {
+  gap: 0.45rem;
+}
+.meadow-site .shop-categories .shop-category-option {
+  position: relative;
+  padding: 0.6rem 0.95rem;
+  border-radius: 999px;
+  background: var(--mw-paper);
+  box-shadow: inset 0 0 0 1.5px var(--mw-line);
+  font-size: 0.92rem;
+  font-weight: 600;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease,
+    transform 280ms var(--mw-spring);
+}
+.meadow-site .shop-category-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.meadow-site .shop-category-option:hover {
+  background: var(--mw-honey-soft);
+  transform: translateX(4px);
+}
+.meadow-site .shop-category-option:active {
+  transform: scale(0.97);
+}
+.meadow-site .shop-category-option:has(input:checked) {
+  background: var(--mw-primary);
+  box-shadow: none;
+  color: #fff;
+}
+.meadow-site .shop-category-option:has(input:checked)::before {
+  content: '';
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  background: currentColor;
+  -webkit-mask: var(--mw-icon-check) center / contain no-repeat;
+  mask: var(--mw-icon-check) center / contain no-repeat;
+}
+.meadow-site .shop-category-option:has(input:focus-visible) {
+  outline: 3px solid var(--mw-honey-deep);
+  outline-offset: 3px;
+}
+.meadow-site .shop-catalog-controls {
+  align-items: center;
+  margin-bottom: 1.4rem;
+}
+.meadow-site .shop-catalog-heading {
+  align-items: center;
+}
+.meadow-site .shop-catalog-heading h1 {
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  letter-spacing: -0.03em;
+}
+.meadow-site .shop-catalog-heading span {
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: var(--mw-primary-soft);
+  color: var(--mw-primary-deep);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.meadow-site .shop-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: auto;
+}
+.meadow-site .shop-sort label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Product cards (shared ProductCards). */
+.meadow-site .shop-products.catalog-grid {
+  gap: 1.1rem;
+}
+.meadow-site .harvest-products .product-card.ui-card {
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.7rem 0.7rem 0.95rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--mw-radius);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+  transition:
+    transform 340ms var(--mw-spring),
+    box-shadow 340ms var(--mw-ease);
+}
+.meadow-site .harvest-products .product-card.ui-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--mw-shadow-lift);
+}
+.meadow-site .harvest-products .product-image-contents {
+  display: block;
+  margin-bottom: 0.7rem;
+  overflow: hidden;
+  border-radius: calc(var(--mw-radius) - 7px);
+  background: var(--mw-honey-soft);
+}
+.meadow-site .harvest-products .product-media {
+  display: block;
+  width: 100%;
+  margin: 0;
+  aspect-ratio: 1;
+  border-radius: 0;
+  object-fit: cover;
+  transition: transform 600ms var(--mw-ease);
+}
+.meadow-site .harvest-products .product-card:hover .product-media {
+  transform: scale(1.07);
+}
+.meadow-site .harvest-products .product-placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--mw-honey-soft);
+}
+.meadow-site
+  .harvest-products
+  .product-card:nth-child(4n + 2)
+  .product-placeholder {
+  background: var(--mw-mint);
+}
+.meadow-site
+  .harvest-products
+  .product-card:nth-child(4n + 3)
+  .product-placeholder {
+  background: var(--mw-blush);
+}
+.meadow-site
+  .harvest-products
+  .product-card:nth-child(4n + 4)
+  .product-placeholder {
+  background: var(--mw-sky);
+}
+.meadow-site .harvest-products .product-placeholder .mw-art {
+  width: 58%;
+}
+.meadow-site .harvest-products :is(h2, h3) {
+  margin: 0;
+  padding-inline: 0.3rem;
+  font: 700 1.08rem / 1.25 var(--font-heading);
+  letter-spacing: -0.01em;
+}
+.meadow-site .harvest-products .product-card > p {
+  margin: 0;
+  padding-inline: 0.3rem;
+}
+.meadow-site .harvest-products .product-card > .product-seller {
+  color: var(--mw-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.meadow-site .harvest-products .product-card > p:not([class]) {
+  margin-top: 0.25rem;
+  color: var(--mw-ink);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+.meadow-site .harvest-products .shop-availability {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+  color: var(--mw-muted);
+  font-size: 0.8rem;
+}
+.meadow-site .harvest-products .shop-availability::before {
+  content: '';
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #3e8e4b;
+}
+.meadow-site
+  .harvest-products
+  .shop-product-unavailable
+  .shop-availability::before {
+  background: #b9b3a6;
+}
+.meadow-site .market-cart-button .market-cart-button__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.meadow-site .market-cart-button .market-cart-button__label::before {
+  content: '';
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  background: currentColor;
+  -webkit-mask: var(--mw-icon-bag) center / contain no-repeat;
+  mask: var(--mw-icon-bag) center / contain no-repeat;
+}
+/* The confirmation colour holds while the pointer is still on the button. */
+.meadow-site .button.ui-button.market-cart-button.is-added,
+.meadow-site
+  .button.ui-button.market-cart-button.is-added:is(:hover, :focus-visible) {
+  --button-fill: var(--status-success-fg);
+  --button-ink: var(--status-success-bg);
+  --button-edge: var(--status-success-fg);
+  --button-hover-fill: var(--status-success-fg);
+  --button-hover-ink: var(--status-success-bg);
+  --button-hover-edge: var(--status-success-fg);
+  animation: mw-added 620ms var(--mw-spring);
+}
+@keyframes mw-added {
+  35% {
+    transform: scale(1.07);
+  }
+  65% {
+    transform: scale(0.97);
+  }
+}
+
+/* ----------------------------------------------------------------- product */
+.meadow-site .vendor-product .product-gallery > .product-media {
+  border: 6px solid #fff;
+  border-radius: calc(var(--mw-radius) * 1.4);
+  background: var(--mw-honey-soft);
+  box-shadow: var(--mw-shadow-lift);
+}
+.meadow-site .product-thumbnails .ui-button {
+  border-radius: var(--mw-radius-sm);
+  padding: 3px;
+}
+.meadow-site .product-thumbnails .ui-button img {
+  border-radius: calc(var(--mw-radius-sm) - 3px);
+}
+.meadow-site .product-thumbnails [aria-pressed='true'] {
+  outline: 3px solid var(--mw-primary);
+  outline-offset: 2px;
+}
+.meadow-site .product-summary > p:first-child {
+  display: inline-block;
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: var(--mw-honey-soft);
+  color: var(--mw-honey-deep);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.meadow-site .vendor-product h1 {
+  margin: 0.8rem 0 1rem;
+  font-size: clamp(2.1rem, 4vw, 3.3rem);
+  letter-spacing: -0.03em;
+}
+.meadow-site .market-product-vendor {
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  padding: 0.3rem 1rem 0.3rem 0.3rem;
+  border-radius: 999px;
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+  font-weight: 700;
+  transition:
+    transform 300ms var(--mw-spring),
+    box-shadow 300ms var(--mw-ease);
+}
+.meadow-site .market-product-vendor:is(:hover, :focus-visible) {
+  transform: translateY(-3px);
+  box-shadow: var(--mw-shadow-lift);
+}
+.meadow-site
+  .market-product-vendor
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  width: 2.4rem;
+  height: 2.4rem;
+  flex-basis: 2.4rem;
+  background: var(--mw-primary);
+  color: #fff;
+  font-size: 1.1rem;
+}
+.meadow-site .vendor-product .product-price {
+  color: var(--mw-primary-deep);
+  font: 800 1.9rem / 1.2 var(--font-heading);
+}
+.meadow-site .vendor-product .purchase-form {
+  padding: 1.25rem;
+  border-radius: var(--mw-radius);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+}
+.meadow-site .vendor-product .purchase-form > .button.ui-button {
+  width: 100%;
+  min-height: 54px;
+  font-size: 1.08rem;
+}
+.meadow-site .vendor-product .purchase-form > p[role='status'] {
+  margin: 0;
+  color: var(--mw-muted);
+  font-size: 0.9rem;
+}
+.meadow-site .vendor-product .purchase-form > p:empty {
+  display: none;
+}
+.meadow-site .product-information .ui-disclosure {
+  --ui-disclosure-border-width: 0;
+  overflow: hidden;
+  border-radius: var(--mw-radius-sm);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+}
+.meadow-site .product-information .ui-disclosure > summary {
+  font-weight: 700;
+  transition:
+    background-color 200ms ease,
+    padding-left 260ms var(--mw-ease);
+}
+.meadow-site .product-information .ui-disclosure > summary:hover {
+  background: var(--mw-honey-soft);
+  padding-left: 1.35rem;
+}
+.meadow-site .product-related > h2 {
+  letter-spacing: -0.025em;
+}
+
+/* -------------------------------------------------------------------- cart */
+.meadow-site .vendor-cart-heading p {
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: var(--mw-primary-soft);
+  color: var(--mw-primary-deep);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.meadow-site .vendor-cart-group {
+  margin-bottom: 1.1rem;
+  padding: 1.1rem 1.25rem 0.25rem;
+  border: 0;
+  border-radius: var(--mw-radius);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+}
+.meadow-site .vendor-cart-group > h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.25rem;
+  padding: 0;
+  border: 0;
+  font-size: 1.2rem;
+}
+.meadow-site .vendor-cart-group > h2::before {
+  content: '';
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: var(--mw-primary);
+  -webkit-mask: var(--mw-icon-store) center / contain no-repeat;
+  mask: var(--mw-icon-store) center / contain no-repeat;
+}
+.meadow-site .vendor-cart-lines {
+  margin-bottom: 0;
+}
+.meadow-site .vendor-cart-line {
+  border-top: 1px dashed var(--mw-line);
+  padding-block: 1.1rem;
+}
+.meadow-site .vendor-cart-line:first-child {
+  border-top: 0;
+}
+.meadow-site .vendor-cart-image {
+  border-radius: var(--mw-radius-sm);
+  background: var(--mw-honey-soft);
+  transition: transform 320ms var(--mw-spring);
+}
+.meadow-site .vendor-cart-image:hover {
+  transform: scale(1.05) rotate(-2deg);
+}
+.meadow-site .vendor-cart-line-total {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+.meadow-site .vendor-cart-stepper.button.ui-button {
+  box-shadow: none;
+}
+/* Remove becomes an icon button; its accessible name is kept. */
+.meadow-site .vendor-cart-controls > .button-destructive-outline {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 0;
+}
+.meadow-site .vendor-cart-controls > .button-destructive-outline::before {
+  content: '';
+  width: 1.1rem;
+  height: 1.1rem;
+  background: currentColor;
+  -webkit-mask: var(--mw-icon-trash) center / contain no-repeat;
+  mask: var(--mw-icon-trash) center / contain no-repeat;
+}
+.meadow-site .vendor-cart-controls > .button-destructive-outline:hover {
+  transform: rotate(-8deg) scale(1.08);
+}
+.meadow-site .vendor-cart-summary {
+  position: sticky;
+  top: 6.25rem;
+  border: 0;
+  border-radius: var(--mw-radius);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+}
+.meadow-site .vendor-cart-summary > h2 {
+  font-size: 1.4rem;
+}
+.meadow-site .vendor-cart-summary dd,
+.meadow-site .checkout-totals dd {
+  margin: 0;
+  align-self: center;
+}
+.meadow-site .vendor-cart-total {
+  font-size: 1.15rem;
+}
+.meadow-site .vendor-cart-summary .button.ui-button:not(.secondary) {
+  min-height: 54px;
+  font-size: 1.05rem;
+}
+.meadow-site :is(.vendor-cart-total-note, .cart-boundary) {
+  color: var(--mw-muted);
+  font-size: 0.82rem;
+}
+.meadow-site .vendor-cart > .empty-state {
+  margin-block: clamp(1rem, 4vw, 3rem);
+  border: 0;
+  background: var(--mw-honey-soft) var(--mw-comb) center / 56px;
+  box-shadow: var(--mw-shadow);
+}
+
+/* ---------------------------------------------------------------- checkout */
+.meadow-site .checkout-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0;
+  border: 0;
+  counter-reset: mw-step;
+  list-style: none;
+}
+.meadow-site .checkout-progress li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.9rem 0.4rem 0.4rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--mw-paper);
+  box-shadow: inset 0 0 0 1.5px var(--mw-line);
+  color: var(--mw-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  counter-increment: mw-step;
+}
+.meadow-site .checkout-progress li::before {
+  content: counter(mw-step);
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--mw-primary-soft);
+  color: var(--mw-primary-deep);
+  font-size: 0.8rem;
+}
+.meadow-site .checkout-progress li[aria-current='step'] {
+  background: var(--mw-primary);
+  box-shadow: none;
+  color: #fff;
+}
+.meadow-site .checkout-progress li[aria-current='step']::before {
+  background: var(--mw-honey);
+  color: var(--mw-ink);
+}
+.meadow-site .checkout-section {
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  border: 0;
+  border-radius: var(--mw-radius);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+}
+.meadow-site .checkout-section > h2 {
+  margin-top: 0;
+  font-size: 1.4rem;
+}
+.meadow-site .vendor-checkout-layout > aside,
+.meadow-site .checkout-order-summary {
+  border: 0;
+  border-radius: var(--mw-radius);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+}
+.meadow-site .checkout-summary :is(h2, h3) {
+  font-size: 1.15rem;
+}
+.meadow-site .checkout-stage-actions .button.ui-button:not(.secondary),
+.meadow-site .checkout-section > .button.ui-button:not(.secondary) {
+  min-height: 52px;
+  padding-inline: 1.6rem;
+  font-size: 1.05rem;
+}
+
+/* ------------------------------------------------------- vendors, applying */
+.meadow-site .market-date-selector {
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--mw-radius);
+  background: var(--mw-honey-soft);
+}
+.meadow-site .market-vendors-summary {
+  border-bottom: 2px dashed var(--mw-line);
+}
+.meadow-site .market-vendors-summary h2 {
+  font-weight: 700;
+}
+.meadow-site .market-application.ui-card {
+  border: 0;
+  padding: 1.25rem 1.4rem;
+  transition:
+    transform 340ms var(--mw-spring),
+    box-shadow 340ms var(--mw-ease);
+}
+.meadow-site .market-application.ui-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--mw-shadow-lift);
+}
+.meadow-site .market-application h2 {
+  font-weight: 700;
+}
+.meadow-site .market-application-status {
+  background: var(--mw-primary-soft);
+  color: var(--mw-primary-deep);
+  font-weight: 800;
+}
+.meadow-site
+  .market-application[data-state='closed']
+  .market-application-status {
+  background: #ece9e1;
+  color: var(--mw-muted);
+}
+
+/* -------------------------------------------------------- section library */
+.meadow-site .harvest-library h2,
+.meadow-site .harvest-section .ui-section-heading-consumer > h2 {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.meadow-site .harvest-library :is(img, .harvest-library-media) {
+  border-radius: var(--mw-radius);
+}
+.meadow-site .website-page-region {
+  margin-block: clamp(1rem, 3vw, 2rem);
+}
+
+/* -------------------------------------------------------------- market day */
+.mw-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 1.1rem;
+  padding: 0.4rem 0.95rem 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: var(--mw-tomato);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 18px -8px var(--mw-tomato);
+}
+.mw-live-dot {
+  position: relative;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: #fff;
+}
+.mw-live-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: mw-ping 1.8s ease-out infinite;
+}
+@keyframes mw-ping {
+  to {
+    opacity: 0;
+    transform: scale(3.2);
+  }
+}
+.mw-hero-day {
+  background:
+    radial-gradient(
+      60% 70% at 88% 8%,
+      color-mix(in srgb, var(--mw-honey) 55%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      45% 55% at 0% 100%,
+      color-mix(in srgb, var(--mw-blush) 90%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(180deg, #ffeab0, var(--mw-cream));
+}
+.mw-day .mw-hero-inner {
+  align-items: start;
+}
+.meadow-site .mw-day .market-day-hero-details {
+  gap: 1rem;
+  margin-top: 1.75rem;
+  max-width: 34rem;
+}
+.meadow-site .mw-day .market-day-countdown {
+  border: 0;
+  border-radius: var(--mw-radius);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow-lift);
+}
+.meadow-site .mw-day .market-day-live {
+  background: var(--mw-tomato);
+}
+.meadow-site .mw-day .market-day-venue {
+  gap: 0.5rem;
+  font-weight: 600;
+}
+.meadow-site .mw-day .market-day-venue .farmstand-icon {
+  color: var(--mw-tomato);
+}
+.meadow-site .mw-day .market-day-regular {
+  justify-self: start;
+  font-size: 0.95rem;
+}
+.meadow-site .mw-day .harvest-section {
+  padding-block: clamp(2rem, 4.5vw, 3.5rem);
+}
+.meadow-site .mw-day .market-day-pickups-section {
+  border: 0;
+  border-radius: var(--mw-radius);
+  background: var(--mw-honey-soft);
+}
+.meadow-site .mw-day .market-day-choices {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+.meadow-site .mw-day .market-day-choices a {
+  display: block;
+  width: auto !important;
+  padding: 1rem 1.25rem;
+  border-radius: var(--mw-radius);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+  font-weight: 700;
+  transition:
+    transform 320ms var(--mw-spring),
+    box-shadow 320ms var(--mw-ease);
+}
+.meadow-site .mw-day .market-day-choices a::after {
+  content: none;
+}
+.meadow-site .mw-day .market-day-choices a:is(:hover, :focus-visible) {
+  transform: translateX(6px);
+  box-shadow: var(--mw-shadow-lift);
+}
+
+/* ------------------------------------------------------- small screens, 2 */
+@media (max-width: 760px) {
+  .meadow-site .vendor-shop {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+  .meadow-site .shop-categories.ui-card {
+    position: static;
+    min-width: 0;
+  }
+  .meadow-site .shop-categories h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  /* Categories become a swipeable row of chips. */
+  .meadow-site .shop-category-filters {
+    display: flex;
+    margin-inline: calc(-1 * var(--mw-gutter));
+    padding: 0.25rem var(--mw-gutter) 0.6rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .meadow-site .shop-category-filters::-webkit-scrollbar {
+    display: none;
+  }
+  .meadow-site .shop-categories .shop-category-option {
+    flex: none;
+    white-space: nowrap;
+  }
+  .meadow-site .shop-category-option:hover {
+    transform: none;
+  }
+  .meadow-site .shop-market-banner {
+    padding: 0.85rem;
+  }
+  .meadow-site .shop-market-banner > div:first-child {
+    flex-basis: 100%;
+    min-height: 2.3rem;
+    padding-left: 3.05rem;
+  }
+  .meadow-site .shop-market-banner::before,
+  .meadow-site .shop-market-banner::after {
+    top: 0.85rem;
+    left: 0.85rem;
+    width: 2.3rem;
+    height: 2.3rem;
+    translate: none;
+  }
+  .meadow-site .shop-market-banner > .shop-market-picker,
+  .meadow-site .shop-market-banner .shop-market-picker > .button.ui-button {
+    width: 100%;
+  }
+  .meadow-site .shop-products.catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+  }
+  .meadow-site .harvest-products .product-card.ui-card {
+    padding: 0.5rem 0.5rem 0.75rem;
+  }
+  .meadow-site .harvest-products :is(h2, h3) {
+    font-size: 0.98rem;
+  }
+  .meadow-site .shop-products .ui-button {
+    padding-inline: 0.5rem;
+    font-size: 0.92rem;
+  }
+  .meadow-site .vendor-cart-summary {
+    position: static;
+  }
+  .meadow-site .vendor-cart-group {
+    padding-inline: 0.9rem;
+  }
+}
+
+/* --------------------------------------------------------------- refinements */
+.meadow-site .checkout-order-summary {
+  overflow: hidden;
+}
+.meadow-site .checkout-order-summary > .ui-disclosure {
+  --ui-disclosure-border-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.meadow-site nav[aria-label='Checkout progress'] {
+  margin-bottom: 1.25rem;
+}
+.meadow-site .vendor-product .product-price,
+.meadow-site .harvest-products .product-card > p:not([class]),
+.meadow-site .vendor-cart-line-total {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+.meadow-site .empty-state :is(h2, h3, h4) {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+.mw-footer {
+  margin-top: clamp(2.5rem, 6vw, 4.5rem);
+}
+.meadow-site
+  :is(.harvest-authored-copy, .story-copy, .story-cta, .harvest-library-heading)
+  :is(h1, h2) {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.meadow-site .harvest-photo-placeholder {
+  background: var(--mw-honey-soft);
+  color: var(--mw-honey-deep);
+}
+
+/* The calendar's usage hint stays available to assistive technology only. */
+.meadow-site .market-pickup-calendar .market-calendar-help {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

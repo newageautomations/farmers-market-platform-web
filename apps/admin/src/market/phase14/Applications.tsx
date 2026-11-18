@@ -21,6 +21,7 @@ import { go } from '../../vendor/common';
 import { ApplicationSubmissionDetail } from './ApplicationSubmissionDetail';
 import { ApplicationSubmissions } from './ApplicationSubmissions';
 import { ApplicationBuilder } from './ApplicationBuilder';
+import { CompactLabel, DetailSheet } from '../mobile';
 import {
   applicationRows,
   plural,
@@ -30,8 +31,8 @@ import {
 } from './applications-data';
 import { ApplicationStateBadge, sharingLabel } from './application-status';
 import '@market/ui/farmstand.css';
-import '../../vendor/markets-workspace.css';
-import '../../vendor/market-applications.css';
+import '@market/ui/workspace.css';
+import '@market/ui/workspace-records.css';
 import './applications.css';
 
 const PAGE_SIZE = 10;
@@ -235,6 +236,13 @@ function ApplicationList({
     );
     return value > 0 ? value : undefined;
   });
+  // Phones and tablets open the selected record's details in a sheet; a
+  // link that names an application opens it straight away.
+  const [detailOpen, setDetailOpen] = useState(selected !== undefined);
+  const select = (value: number) => {
+    setSelected(value);
+    setDetailOpen(true);
+  };
   const [confirm, setConfirm] = useState<ApplicationRow>();
   const [busy, setBusy] = useState(false);
 
@@ -379,14 +387,14 @@ function ApplicationList({
                             ? 'market-application-selected'
                             : undefined
                         }
-                        onClick={() => setSelected(row.template.id)}
+                        onClick={() => select(row.template.id)}
                         onKeyDown={(event) => {
                           if (
                             event.target === event.currentTarget &&
                             (event.key === 'Enter' || event.key === ' ')
                           ) {
                             event.preventDefault();
-                            setSelected(row.template.id);
+                            select(row.template.id);
                           }
                         }}
                       >
@@ -439,10 +447,12 @@ function ApplicationList({
                               inApp(event, href);
                             }}
                           >
-                            {canManage &&
-                            !['ARCHIVED', 'CLOSED'].includes(row.state)
-                              ? 'Edit'
-                              : 'View'}
+                            <CompactLabel>
+                              {canManage &&
+                              !['ARCHIVED', 'CLOSED'].includes(row.state)
+                                ? 'Edit'
+                                : 'View'}
+                            </CompactLabel>
                             <FarmstandIcon name="chevron-right" />
                           </FarmstandLink>
                         </td>
@@ -479,14 +489,20 @@ function ApplicationList({
             )}
           </FarmstandPanel>
         </div>
-        <ApplicationDetails
-          row={current}
-          timeZone={data.timeZone}
-          canManage={canManage}
-          busy={busy}
-          onArchive={setConfirm}
-          onRestore={(row) => archive(row, true)}
-        />
+        <DetailSheet
+          title="Application details"
+          open={detailOpen}
+          onClose={() => setDetailOpen(false)}
+        >
+          <ApplicationDetails
+            row={current}
+            timeZone={data.timeZone}
+            canManage={canManage}
+            busy={busy}
+            onArchive={setConfirm}
+            onRestore={(row) => archive(row, true)}
+          />
+        </DetailSheet>
       </div>
       <Dialog
         open={!!confirm}

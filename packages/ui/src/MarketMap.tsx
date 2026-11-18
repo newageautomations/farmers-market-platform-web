@@ -1,4 +1,5 @@
-import { selectClassName, buttonClassName } from './presentation';
+import { buttonClassName } from './presentation';
+import { Select } from './index';
 import { Input } from './form-controls';
 import {
   useCallback,
@@ -48,6 +49,7 @@ export function MarketMap({
   grid = false,
   snap = false,
   overlays = {},
+  highlightedIds = [],
   activeArea,
   onAreaChange,
   statuses = {},
@@ -65,6 +67,7 @@ export function MarketMap({
   grid?: boolean;
   snap?: boolean;
   overlays?: Record<string, string>;
+  highlightedIds?: readonly string[];
   activeArea?: string;
   onAreaChange?: (id: string) => void;
   statuses?: Record<string, BoothStatus>;
@@ -148,8 +151,7 @@ export function MarketMap({
           navigationEnd={
             <div style={{ marginLeft: 'auto' }}>
               <label>
-                <select
-                  className={selectClassName()}
+                <Select
                   aria-label="Area"
                   value={shownArea}
                   onChange={(e) => {
@@ -162,7 +164,7 @@ export function MarketMap({
                       {a.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
             </div>
           }
@@ -183,6 +185,7 @@ export function MarketMap({
           onHover={onHover}
           statuses={statuses}
           overlays={overlays}
+          highlightedIds={highlightedIds}
         />
         {hoveredSpace && (
           <div

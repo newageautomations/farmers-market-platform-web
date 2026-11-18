@@ -10,6 +10,45 @@ afterEach(() => window.history.replaceState(null, '', '/'));
 
 const day = 86400000;
 
+it('keeps cancelled dates visible with a clear explanation and no attendance or payment actions', async () => {
+  const { service } = await setup();
+  const dates = await service.occurrences('1', '', '');
+  service.occurrences = vi.fn(async () => [
+    { ...dates[0]!, status: 'cancelled' },
+  ]);
+  service.boothAssignments = vi.fn(async () => [
+    {
+      occurrenceId: 101,
+      occurrenceStatus: 'cancelled',
+      space: { label: 'A12' },
+      invoices: [
+        {
+          id: 25,
+          status: 'CANCEL_PENDING',
+          paidMinor: 4000,
+          totalMinor: 10000,
+          currency: 'USD',
+        },
+      ],
+    },
+  ]) as unknown as typeof service.boothAssignments;
+  service.boothInvoices = { detail: vi.fn(), prepare: vi.fn(), act: vi.fn() };
+  render(<UpcomingMarketDates service={service} />);
+  expect(
+    await screen.findByText(/The market cancelled this date/),
+  ).toBeInTheDocument();
+  expect(screen.getAllByText('Cancelled').length).toBeGreaterThan(0);
+  expect(
+    screen.queryByRole('button', {
+      name: /Mark attending|Not attending|Pay invoice/,
+    }),
+  ).not.toBeInTheDocument();
+  expect(service.attendance).not.toHaveBeenCalled();
+  expect(
+    screen.getByRole('button', { name: 'View invoice 25' }),
+  ).toBeInTheDocument();
+});
+
 async function setup({
   manage = true,
   packed = 'Packed',
@@ -104,6 +143,43 @@ async function setup({
 }
 
 describe('vendor upcoming market dates', () => {
+  it.each([0, 4500])(
+    'shows the booth and invoice payment status for paid amount %s',
+    async (paidMinor) => {
+      const { service } = await setup();
+      service.boothAssignments = vi.fn(async () => [
+        {
+          occurrenceId: 101,
+          space: { label: 'A01' },
+          invoices: [
+            {
+              id: 25,
+              status: paidMinor ? 'PAID' : 'OPEN',
+              paidMinor,
+              totalMinor: 4500,
+              currency: 'USD',
+            },
+          ],
+        },
+      ]) as unknown as typeof service.boothAssignments;
+      service.boothInvoices = {
+        detail: vi.fn(),
+        prepare: vi.fn(),
+        act: vi.fn(),
+      };
+      render(<UpcomingMarketDates service={service} />);
+      const panel = await screen.findByRole('region', { name: 'Date details' });
+      expect(await within(panel).findByText('A01')).toBeVisible();
+      expect(
+        within(panel).getByText(paidMinor ? 'Paid' : 'Not paid'),
+      ).toBeVisible();
+      expect(
+        within(panel).getByRole('button', {
+          name: `${paidMinor ? 'View' : 'Pay'} invoice 25`,
+        }),
+      ).toBeVisible();
+    },
+  );
   it('lists dates for approved memberships only, without packing in the table', async () => {
     const { service, state } = await setup();
     render(<UpcomingMarketDates service={service} />);
@@ -157,29 +233,20 @@ describe('vendor upcoming market dates', () => {
   });
 
   it('marks attendance with the current version and preserves participation settings', async () => {
-    const { service, approved } = await setup();
+    const { service } = await setup();
     render(<UpcomingMarketDates service={service} />);
     const panel = await screen.findByRole('region', { name: 'Date details' });
     expect(
-      within(panel).getByRole('button', { name: 'Attending' }),
-    ).toBeDisabled();
+      within(panel).queryByRole('button', { name: /attending/i }),
+    ).toBeNull();
     fireEvent.click(
-      within(panel).getByRole('button', { name: 'Not attending' }),
-    );
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Mark not attending' }),
+      within(screen.getByRole('table'))
+        .getByText('Not attending')
+        .closest('tr')!,
     );
     expect(
-      await within(panel).findByText(/not attending this date/),
-    ).toBeVisible();
-    expect(service.attendance).toHaveBeenCalledWith({
-      membershipId: approved.id,
-      occurrenceId: '101',
-      expectedVersion: 3,
-      status: 'cancelled',
-      pickupInstructions: 'North tent',
-      preorderOverride: null,
-    });
+      within(panel).queryByRole('button', { name: /attending/i }),
+    ).toBeNull();
     fireEvent.click(
       within(screen.getByRole('table')).getByText('Needs RSVP').closest('tr')!,
     );

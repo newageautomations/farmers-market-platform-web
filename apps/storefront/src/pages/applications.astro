@@ -1,0 +1,146 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import WebsitePageRegion from '../components/WebsitePageRegion.astro';
+import EmptyState from '../components/ui/EmptyState.astro';
+import Button from '../components/ui/Button.astro';
+import { ErrorState } from '@market/ui';
+import { cardClassName } from '@market/ui/presentation';
+import { isEditorialMarket, marketPage } from '@market/theme/storefront';
+import {
+  safeError,
+  type AppError,
+  type PublicApplicationSummary,
+} from '@market/api';
+import { requestPublicMarketOperations } from '../lib/shop';
+import { marketPageAvailable } from '../lib/market-website';
+import '../styles/market-website.css';
+
+const { storefront, editorPreview } = Astro.locals;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+const preview = !!editorPreview;
+// Editorial Market pages share its content-page hero and spacing.
+const editorial = isEditorialMarket(storefront?.appearance);
+const market = storefront?.kind === 'MARKET' && storefront.source === 'backend';
+const enabled =
+  market && marketPageAvailable(storefront.appearance, 'applications', preview);
+const page = marketPage(storefront?.appearance, 'applications');
+let applications: readonly PublicApplicationSummary[] = [],
+  error: AppError | undefined;
+if (enabled) {
+  try {
+    applications = await requestPublicMarketOperations(Astro).applications();
+  } catch (value) {
+    error = safeError(value);
+    Astro.response.status = 503;
+  }
+} else Astro.response.status = storefront ? 404 : 503;
+// Open applications first, then upcoming, then closed.
+const order = { OPEN: 0, NOT_YET_OPEN: 1, CLOSED: 2 } as const;
+const sorted = [...applications].sort(
+  (a, b) =>
+    order[a.availability.state] - order[b.availability.state] ||
+    Number(b.advertised) - Number(a.advertised) ||
+    a.name.localeCompare(b.name),
+);
+const day = (value: string, timeZone?: string) =>
+  new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    ...(timeZone ? { timeZone } : {}),
+  }).format(new Date(value));
+const status = (application: PublicApplicationSummary) => {
+  const a = application.availability;
+  if (a.state === 'OPEN')
+    return a.closesAt
+      ? `Open until ${day(a.closesAt, a.timeZone)}`
+      : 'Open now';
+  if (a.state === 'NOT_YET_OPEN')
+    return a.opensAt ? `Opens ${day(a.opensAt, a.timeZone)}` : 'Opening soon';
+  return 'Closed';
+};
+---
+
+<SiteLayout
+  context={storefront}
+  path="/applications"
+  title={enabled ? page.title : 'Page unavailable'}
+  noindex={!enabled}
+>
+  {enabled ? (
+    <>
+      <WebsitePageRegion
+        context={storefront}
+        page="applications"
+        region="before"
+      />
+      <article
+        class:list={[
+          editorial ? 'em-content-page em-market-page' : 'market-page',
+        ]}
+        data-template={editorial ? 'editorial-market-applications' : undefined}
+        aria-labelledby="applications-title"
+      >
+        <header
+          class={editorial ? 'em-content-hero' : 'market-page-intro'}
+          data-editor-section="applications-settings"
+        >
+          <h1 id="applications-title">{page.title}</h1>
+          {page.description && <p>{page.description}</p>}
+        </header>
+        {error ? (
+          <ErrorState error={error} />
+        ) : !sorted.length ? (
+          <EmptyState title="No applications are open right now" level={2}>
+            <p>New vendor applications will be posted here. Check back soon.</p>
+          </EmptyState>
+        ) : (
+          <ul class="market-application-list">
+            {sorted.map((application) => (
+              <li
+                class={cardClassName({
+                  spacing: 'contained',
+                  className: 'market-application',
+                })}
+                data-state={application.availability.state.toLowerCase()}
+              >
+                <div>
+                  <p class="market-application-status">{status(application)}</p>
+                  <h2>{application.name}</h2>
+                  <p class="market-application-meta">
+                    {application.occurrenceCount > 0 &&
+                    application.firstOccurrence
+                      ? `${application.occurrenceCount} market ${application.occurrenceCount === 1 ? 'date' : 'dates'}, starting ${day(application.firstOccurrence.startsAt)}`
+                      : 'Market dates are shared during review.'}
+                  </p>
+                </div>
+                {application.availability.state === 'OPEN' ? (
+                  <Button
+                    href={`/apply/${encodeURIComponent(application.slug)}`}
+                  >
+                    Apply now <span aria-hidden="true">↗</span>
+                  </Button>
+                ) : (
+                  <Button
+                    href={`/apply/${encodeURIComponent(application.slug)}`}
+                    variant="secondary"
+                  >
+                    View details
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </article>
+      <WebsitePageRegion
+        context={storefront}
+        page="applications"
+        region="after"
+      />
+    </>
+  ) : (
+    <section class="market-page">
+      <h1>Page unavailable</h1>
+      <p>This page is not available on this website.</p>
+    </section>
+  )}
+</SiteLayout>

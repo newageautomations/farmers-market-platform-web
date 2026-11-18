@@ -28,3 +28,6 @@ playwright-report/
 .pos-stage-e-demo/
 .pos-stage-g-demo/
 docs/financial-reporting/local-fixture.json
+
+# Remote-demo Quick Tunnel origin handoff (temporary, per run)
+.remote-demo/

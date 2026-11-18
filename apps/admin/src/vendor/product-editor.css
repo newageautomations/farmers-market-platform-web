@@ -403,19 +403,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 24px;
 }
-.product-price-input {
-  position: relative;
-}
-.product-price-input > span {
-  position: absolute;
-  inset-inline-start: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-.product-price-input > .ui-input.ui-input {
-  padding-inline-start: 28px;
-}
 .ui-dialog-header-actions {
   margin-inline-start: auto;
   align-self: center;

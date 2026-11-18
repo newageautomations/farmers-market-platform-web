@@ -47,14 +47,19 @@ describe.each(['lead', 'staff'] as const)('%s workspace overview', (role) => {
         permissions: ['ReadOwnMarket'],
       },
       overview: vi.fn().mockResolvedValue({ nextOccurrence: null }),
-      relationshipPage: vi.fn().mockResolvedValue({ items: [] }),
+      occurrencePage: vi.fn().mockResolvedValue({ items: [], totalItems: 0 }),
+      relationshipPage: vi.fn().mockResolvedValue({ items: [], totalItems: 0 }),
       notifications: {
         summary: vi.fn().mockRejectedValue(new AppError('forbidden')),
       },
     };
     render(<MarketOverview service={service as unknown as MarketService} />);
-    await screen.findByText('No occurrences have been scheduled.');
-    await screen.findByText('No vendor relationships yet');
+    await screen.findByText('No upcoming market');
+    await screen.findByText('No vendors are waiting to join.');
+    // Sections behind grants this role lacks are left out entirely.
+    expect(screen.queryByText('Invoices awaiting payment')).toBeNull();
+    expect(screen.queryByText('New applications')).toBeNull();
+    expect(screen.queryByText('Vendor documents')).toBeNull();
     expect(service.notifications.summary).not.toHaveBeenCalled();
   });
 });

@@ -8,14 +8,25 @@ import {
 import {
   MarketPlatformLogo,
   AccountModeSelect,
+  AccountIcon,
+  UtilityIcon,
   type AccountModeChoice,
 } from '@market/ui';
 import { customerApi } from '../lib/customer-dashboard';
 import Button from '../components/ui/Button.astro';
 import DashboardFrame from '../components/ui/DashboardFrame.astro';
 import DashboardMenu from '../components/ui/DashboardMenu.astro';
+import HeaderMenu from '../components/ui/HeaderMenu.astro';
 import '@market/ui/styles.css';
+import '@market/ui/shell.css';
+import '@market/ui/farmstand.css';
+import '@market/ui/workspace.css';
+import '@market/ui/workspace-records.css';
+import '@market/ui/settings-panel.css';
+import '@market/ui/workspace-menu.css';
 import '../styles/customer-dashboard.css';
+import FarmstandIcon from '../components/ui/FarmstandIcon.astro';
+import type { FarmstandIconName } from '@market/ui/farmstand';
 import { platformTheme, themeStyle } from '@market/theme';
 import CustomerNavigation from '../components/CustomerNavigation.astro';
 import CustomerNotifications from '../components/CustomerNotifications';
@@ -24,7 +35,19 @@ const {
   title,
   path = '/account',
   name = 'Your account',
-} = Astro.props as { title: string; path?: string; name?: string };
+  icon = 'layers',
+  description,
+  heading = true,
+} = Astro.props as {
+  title: string;
+  path?: string;
+  name?: string;
+  /** Workspace heading glyph, as on the vendor and market workspaces. */
+  icon?: FarmstandIconName;
+  description?: string;
+  /** False when the page supplies its own heading (for example a detail page). */
+  heading?: boolean;
+};
 const merchant = Astro.locals.storefront?.source === 'backend';
 let switchingUnavailable = false;
 const choices: AccountModeChoice[] = [
@@ -68,90 +91,135 @@ try {
     <meta name="robots" content="noindex,nofollow" />
     <title>{title} | Market platform</title>
   </head>
-  <body class="customer-dashboard">
+  <body class="customer-dashboard ui-shell">
     <a class="skip-link" href="#main">
       Skip to content
     </a>
     <DashboardFrame>
       <aside slot="sidebar" id="customer-sidebar" class="admin-sidebar">
-        <a class="brand" href="/account">
-          <MarketPlatformLogo />
-        </a>
+        <div class="ui-sidebar-brand">
+          <a class="brand" href="/account">
+            <MarketPlatformLogo />
+          </a>
+          <Button
+            iconOnly
+            variant="secondary"
+            class={dashboardClasses.sidebarToggle}
+            aria-label="Collapse sidebar"
+            aria-expanded="true"
+            aria-controls="customer-sidebar"
+            hidden
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d={navigationIconPaths['panel-left']} />
+            </svg>
+          </Button>
+        </div>
         <CustomerNavigation path={path} />
       </aside>
-      <header slot="header" class="admin-topbar">
-        <Button
-          iconOnly
-          variant="secondary"
-          class={dashboardClasses.sidebarToggle}
-          aria-label="Collapse sidebar"
-          aria-expanded="true"
-          aria-controls="customer-sidebar"
-          hidden
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d={navigationIconPaths['panel-left']} />
-          </svg>
-        </Button>
+      <header slot="header" class="admin-topbar shell-topbar">
         <span class="brand">{name}</span>
-        <CustomerNotifications view="bell" client:load />
         <DashboardMenu>
           <CustomerNavigation slot="navigation" path={path} />
-          <div class="account-mode-controls customer-account-mode">
-            <AccountModeSelect
-              id="customer-account-mode"
-              value="CUSTOMER"
-              choices={choices}
-              client:load
-            />
-            {switchingUnavailable && (
-              <span role="status">Account switching unavailable</span>
-            )}
-            <noscript>
-              {choices
-                .filter((choice) => choice.value !== 'CUSTOMER')
-                .map((choice) => (
-                  <a href={choice.href}>{choice.label}</a>
-                ))}
-            </noscript>
-          </div>
-          <a
-            class={buttonClassName({ variant: 'secondary' })}
-            href={merchant ? '/' : '/account/markets'}
-          >
-            {merchant ? 'Visit storefront' : 'Explore markets'}
-          </a>
-          <form method="post" action="/api/account">
-            <input type="hidden" name="action" value="logout" />
-            <Button type="submit" variant="secondary">
-              Sign out
-            </Button>
-          </form>
+          {merchant && (
+            <div class="storefront-shell-link">
+              <a
+                class={buttonClassName({
+                  variant: 'secondary',
+                  size: 'compact',
+                  className: 'farmstand-button',
+                })}
+                href="/"
+              >
+                <UtilityIcon name="store" />
+                <span class="storefront-shell-label">View Storefront</span>
+              </a>
+            </div>
+          )}
         </DashboardMenu>
+        <CustomerNotifications view="bell" compactBell client:load />
+        <HeaderMenu class="shell-account-menu" label="Account">
+          <AccountIcon slot="icon" />
+          <div class="shell-account-header">
+            <span class="shell-account-avatar" aria-hidden="true">
+              <AccountIcon />
+            </span>
+            <span>
+              <strong>{name}</strong>
+              <span>Customer</span>
+            </span>
+          </div>
+          <div class="shell-account-controls">
+            <div class="account-mode-controls customer-account-mode">
+              <AccountModeSelect
+                id="customer-account-mode"
+                value="CUSTOMER"
+                choices={choices}
+                client:load
+              />
+              {switchingUnavailable && (
+                <span role="status">Account switching unavailable</span>
+              )}
+              <noscript>
+                {choices
+                  .filter((choice) => choice.value !== 'CUSTOMER')
+                  .map((choice) => (
+                    <a href={choice.href}>{choice.label}</a>
+                  ))}
+              </noscript>
+            </div>
+          </div>
+          <div class="shell-account-actions">
+            <form method="post" action="/api/account">
+              <input type="hidden" name="action" value="logout" />
+              <button type="submit" class="shell-menu-item">
+                <UtilityIcon name="exit" />
+                Sign out
+              </button>
+            </form>
+          </div>
+        </HeaderMenu>
       </header>
       <main id="main" tabindex="-1" class="admin-content">
-        <h1>{title}</h1>
-        {Astro.url.searchParams.has('followSaved') && (
-          <p role="status" class={alertClassName('success')}>
-            Your follow preferences were updated.
-          </p>
-        )}
-        {Astro.url.searchParams.has('followError') && (
-          <p role="alert" class={alertClassName('error')}>
-            We couldn't update that preference. Please try again.
-          </p>
-        )}
-        <slot />
+        <div class="markets-workspace farmstand-controls customer-workspace">
+          {heading ? (
+            <header class="markets-heading customer-heading">
+              <FarmstandIcon name={icon} />
+              <div>
+                <h1>{title}</h1>
+                {description && <p>{description}</p>}
+              </div>
+              {Astro.slots.has('actions') && (
+                <div class="workspace-heading-actions customer-heading-actions">
+                  <slot name="actions" />
+                </div>
+              )}
+            </header>
+          ) : (
+            <slot name="heading" />
+          )}
+          {Astro.url.searchParams.has('followSaved') && (
+            <p role="status" class={alertClassName('success')}>
+              Your follow preferences were updated.
+            </p>
+          )}
+          {Astro.url.searchParams.has('followError') && (
+            <p role="alert" class={alertClassName('error')}>
+              We couldn't update that preference. Please try again.
+            </p>
+          )}
+          <slot />
+        </div>
       </main>
     </DashboardFrame>
     <script>
@@ -159,7 +227,7 @@ try {
       for (const button of document.querySelectorAll<HTMLButtonElement>(
         '.ui-dashboard-sidebar-toggle',
       ))
-        installDashboardSidebarToggle(button);
+        installDashboardSidebarToggle(button, { rail: true });
       for (const form of document.querySelectorAll<HTMLFormElement>(
         '[data-follow-form]',
       )) {

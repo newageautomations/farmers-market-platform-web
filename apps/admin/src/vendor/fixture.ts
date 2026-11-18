@@ -214,7 +214,7 @@ export function createFixtureVendorService(
           membership: {
             id,
             marketId,
-            market: {
+            market: { ownerVendorId: null,
               id: marketId,
               name: `${tag} Market ${i + 1}`,
               slug: `synthetic-market-${i + 1}`,
@@ -400,7 +400,13 @@ export function createFixtureVendorService(
     return clone(receipt);
   }
   const publicationState = new Set<string>();
+  let feeSettings = { mode: 'AUTOMATIC', customAmount: 0, customPercentageBps: 0, currency: 'USD', version: 0, editable: true, maxCustomAmount: 10000, platformPercent: 5, example: { platform: 500, recovery: 345, preorderFee: 845, total: 10845 } };
   const api: VendorApi = {
+    preorderFeeSettings: async () => clone(feeSettings),
+    savePreorderFeeSettings: async input => {
+      feeSettings = { ...feeSettings, mode: input.mode, customAmount: Math.round(Number(input.customAmount) * 100), customPercentageBps: Math.round(Number(input.customPercentage ?? 0) * 100), version: feeSettings.version + 1 };
+      return clone(feeSettings);
+    },
     taxSettings: async () => ({
       version: 0,
       defaultRate: null,

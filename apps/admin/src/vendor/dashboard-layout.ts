@@ -3,26 +3,14 @@ import type { VendorDashboardLayout } from '@market/api';
 import type { VendorService } from './service';
 import type { DashboardPeriod } from './dashboard-data';
 import {
-  GRID_COLUMNS,
-  bottom,
-  clampItem,
-  compact,
-  freeCell,
-  order,
-  overlaps,
-  type GridItem,
-  type GridLimits,
-} from './dashboard-grid';
+  normalizeGridLayout,
+  settleGrid,
+  type DashboardWidgetInfo,
+} from '@market/ui/dashboard-layout';
+import type { GridItem, GridLimits } from './dashboard-grid';
 
-interface DashboardWidget extends GridLimits {
-  id: string;
-  label: string;
+interface DashboardWidget extends DashboardWidgetInfo {
   description: string;
-  /** Default cell on the 8-column grid, in grid units. */
-  x: number;
-  y: number;
-  w: number;
-  h: number;
 }
 
 /**
@@ -162,7 +150,6 @@ export const dashboardWidgets = [
   },
 ] as const satisfies readonly DashboardWidget[];
 export type DashboardWidgetId = (typeof dashboardWidgets)[number]['id'];
-const known = new Set<string>(dashboardWidgets.map((w) => w.id));
 const periods: DashboardPeriod[] = ['7', '30', '90'];
 
 /**
@@ -190,73 +177,18 @@ export const defaultLayout: VendorDashboardLayout = {
   grid: defaultGrid,
 };
 
-/** Visible cells settled under gravity; hidden cells keep only their size. */
-export function settleGrid(
-  grid: readonly GridItem[],
-  hidden: readonly string[],
-) {
-  const visible = compact(grid.filter((item) => !hidden.includes(item.id)));
-  const end = bottom(visible);
-  return [
-    ...visible,
-    ...grid
-      .filter((item) => hidden.includes(item.id))
-      .map((item) => ({ ...item, x: 0, y: end })),
-  ];
-}
+export { settleGrid };
 
 /**
- * Accept only known widgets and valid cells from a saved value. Sizes are
- * clamped to each widget's limits; overlaps settle under gravity; widgets
- * missing from the saved grid take their default cell when it is free, or
- * the first free cell below. Layouts saved before the grid existed start
- * from the default grid.
+ * Accept only known widgets and valid cells from a saved value (the shared
+ * `normalizeGridLayout`), plus the reporting period.
  */
 export function normalizeLayout(
   value: Partial<VendorDashboardLayout> | null | undefined,
 ): VendorDashboardLayout {
   const source = value && typeof value === 'object' ? value : {};
-  const hidden = Array.isArray(source.hidden)
-    ? source.hidden.filter(
-        (id, i, all): id is string =>
-          typeof id === 'string' && known.has(id) && all.indexOf(id) === i,
-      )
-    : [];
-  const saved = Array.isArray(source.grid) ? source.grid : [];
-  const cells: GridItem[] = [];
-  for (const cell of saved) {
-    if (
-      !cell ||
-      typeof cell !== 'object' ||
-      !known.has(cell.id) ||
-      cells.some((c) => c.id === cell.id) ||
-      ![cell.x, cell.y, cell.w, cell.h].every(Number.isFinite)
-    )
-      continue;
-    cells.push(clampItem(cell, widgetLimits(cell.id)));
-  }
-  const fresh = !cells.length;
-  for (const widget of dashboardWidgets) {
-    if (cells.some((c) => c.id === widget.id)) continue;
-    const cell = {
-      id: widget.id,
-      x: widget.x,
-      y: widget.y,
-      w: widget.w,
-      h: widget.h,
-    };
-    const visible = cells.filter((c) => !hidden.includes(c.id));
-    cells.push(
-      fresh || !visible.some((c) => overlaps(c, cell))
-        ? cell
-        : { ...cell, ...freeCell(visible, cell.w, cell.h, GRID_COLUMNS) },
-    );
-  }
-  const grid = settleGrid(cells, hidden);
   return {
-    order: order(grid).map((item) => item.id),
-    hidden,
-    grid,
+    ...normalizeGridLayout(source, dashboardWidgets),
     period: periods.includes(source.period as DashboardPeriod)
       ? (source.period as DashboardPeriod)
       : defaultLayout.period,

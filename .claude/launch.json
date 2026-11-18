@@ -53,6 +53,70 @@
         "C:/Users/jake_/AppData/Local/Temp/claude/d4a8e8585543b24f/5a9b8ca5-18f1-489a-b498-1a462091e987/scratchpad/serve-directory.mjs"
       ],
       "port": 4337
+    },
+    {
+      "name": "assignments-fixture",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/jake_/AppData/Local/Temp/claude/4261451d5d99c863/5aa592ce-cd74-4f07-98dc-5c1108707e3d/scratchpad/serve-assignments.mjs"
+      ],
+      "port": 4339
+    },
+    {
+      "name": "manager-overview-fixture",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/jake_/AppData/Local/Temp/claude/ba11facdd21eb653/fc9c0177-4375-496b-a1d1-8e91ca8f8023/scratchpad/serve-manager-overview.mjs"
+      ],
+      "port": 4342
+    },
+    {
+      "name": "documents-fixture",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/jake_/AppData/Local/Temp/claude/8359b2b9563a0f78/d9c7c843-47bf-4f79-954d-3b6109379e8d/scratchpad/serve-documents.mjs"
+      ],
+      "port": 4344
+    },
+    {
+      "name": "assignment-rentals-fixture",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/jake_/AppData/Local/Temp/claude/5e317c4bea9ecfee/38775557-d3bb-4a88-b2a7-9643d9d60186/scratchpad/serve-assignment-rentals.mjs"
+      ],
+      "port": 4346
+    },
+    {
+      "name": "booth-invoices-fixture",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/jake_/AppData/Local/Temp/claude/124fcddfdaca2a31/f40f236a-b2f5-4e1e-aa38-af452119efae/scratchpad/serve-booth-invoices.mjs"
+      ],
+      "port": 4345
+    },
+    {
+      "name": "vendor-invoice-payment-fixture",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/jake_/AppData/Local/Temp/claude/9df97dbf09a5d41d/eea6f88f-125e-44f1-85a3-54da79ee1be6/scratchpad/serve-vendor-invoice.mjs"
+      ],
+      "port": 4347
+    },
+    {
+      "name": "market-day-fixture",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/jake_/AppData/Local/Temp/claude/5e317c4bea9ecfee/638adb4c-f0b1-48e6-b016-347fa6f46154/scratchpad/serve-market-day.mjs"
+      ],
+      "port": 4348
+    },
+    {
+      "name": "manager-overview-fixture-4352",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/jake_/AppData/Local/Temp/claude/d7916a3de069d445/cd4a0dd1-6ac1-41a9-b253-974ee513c8d1/scratchpad/serve-manager-overview.mjs"
+      ],
+      "port": 4352
     }
   ]
 }

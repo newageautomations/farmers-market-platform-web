@@ -1,9 +1,10 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { WebsiteInspectorContent } from './WebsiteEditorContext';
+import { useState, type ReactNode } from 'react';
 import { disclosureClassName } from '@market/ui/presentation';
 import {
   Button,
   Dialog,
-  IconButton,
   Checkbox,
   Field,
   Input,
@@ -21,11 +22,21 @@ import {
   farmhousePalettes,
   farmhouseFonts,
 } from '@market/theme/farmhouse-presentation';
-import { farmhousePhoto } from '@market/theme/storefront';
+import {
+  farmhousePhoto,
+  farmhouseHomepageTarget,
+} from '@market/theme/storefront';
+import {
+  WebsiteSectionManagement,
+  WebsiteSectionDestination as Destination,
+  useWebsiteSectionCategories,
+} from './WebsiteSectionManagement';
+import { HomepageDesignEditor } from './HomepageDesignEditor';
 import { CategoryImageField } from './vendor/categories';
 
 /** Theme-specific composition using approved editor controls and authorized media. */
 export function FarmhouseEditor({
+  globalContainer,
   value,
   onChange,
   api,
@@ -40,6 +51,7 @@ export function FarmhouseEditor({
   appearance,
   onAppearanceChange,
 }: {
+  globalContainer?: HTMLElement | null;
   value: FarmhouseSettings;
   onChange: (v: FarmhouseSettings) => void;
   api: StorefrontAppearanceApi;
@@ -51,9 +63,17 @@ export function FarmhouseEditor({
   collapsed?: boolean;
   collapse?: () => void;
   page?: string;
-  appearance?: Pick<StorefrontAppearance, 'buttonShape' | 'buttonHover'>;
+  appearance?: Pick<
+    StorefrontAppearance,
+    'buttonShape' | 'buttonHover' | 'categoryPresentation'
+  >;
   onAppearanceChange?: (
-    patch: Partial<Pick<StorefrontAppearance, 'buttonShape' | 'buttonHover'>>,
+    patch: Partial<
+      Pick<
+        StorefrontAppearance,
+        'buttonShape' | 'buttonHover' | 'categoryPresentation'
+      >
+    >,
   ) => void;
 }) {
   const [productPicker, setProductPicker] = useState<{
@@ -61,37 +81,13 @@ export function FarmhouseEditor({
     ids: string[];
   }>();
   const [productSearch, setProductSearch] = useState('');
-  const [categories, setCategories] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
-  useEffect(() => {
-    let active = true;
-    void api
-      .hierarchy?.()
-      .then((rows) => {
-        if (active) {
-          const flatten = (
-            nodes: typeof rows,
-            prefix: string[] = [],
-          ): Array<{ id: string; name: string }> =>
-            nodes
-              .filter((n) => n.active)
-              .flatMap((n) => [
-                { id: n.id, name: [...prefix, n.name].join(' / ') },
-                ...flatten(n.children, [...prefix, n.name]),
-              ]);
-          setCategories(flatten(rows));
-        }
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [api]);
+  const categories = useWebsiteSectionCategories(api);
   const patch = (v: Partial<FarmhouseSettings>) => onChange({ ...value, ...v });
   const section = (id: FarmhouseSection['id'], v: Partial<FarmhouseSection>) =>
     patch({
-      sections: value.sections.map((s) => (s.id === id ? { ...s, ...v } : s)),
+      sections: value.sections.map((s) =>
+        s.id === id && !('type' in s) ? { ...s, ...v } : s,
+      ),
     });
   const text = (
     id: string,
@@ -169,11 +165,12 @@ export function FarmhouseEditor({
     children: ReactNode,
   ) => {
     const open = !collapsed && selected === id;
-    return (
+    const disclosure = (
       <details
         key={id}
         className={disclosureClassName('dropdown')}
         open={open}
+        data-selected={open || undefined}
         data-farmhouse-editor={
           id.startsWith('farmhouse:') ? id.slice(10) : undefined
         }
@@ -190,12 +187,15 @@ export function FarmhouseEditor({
           {label}
         </summary>
         {open && (
-          <div className="ui-disclosure-content visual-editor-section-content">
+          <WebsiteInspectorContent>
             <fieldset disabled={busy}>{children}</fieldset>
-          </div>
+          </WebsiteInspectorContent>
         )}
       </details>
     );
+    return globalContainer && ['header', 'footer', 'theme'].includes(id)
+      ? createPortal(disclosure, globalContainer, id)
+      : disclosure;
   };
   return (
     <>
@@ -227,9 +227,13 @@ export function FarmhouseEditor({
       )}
       {dropdown(
         'theme',
-        'Theme settings',
+        'Appearance',
         <>
-          {' '}
+          <HomepageDesignEditor
+            value={value.homepageDesign}
+            onChange={(homepageDesign) => patch({ homepageDesign })}
+            id="farmhouse-homepage"
+          />
           <label className="story-page-toggle" htmlFor="farmhouse-scroll-fade">
             <Checkbox
               id="farmhouse-scroll-fade"
@@ -353,7 +357,10 @@ export function FarmhouseEditor({
             <p>The hero photograph is shared with the homepage opening.</p>
             {photo(
               'farmhouse-shop-photo',
-              value.sections.find((s) => s.id === 'cinematic')!.photo,
+              value.sections.find(
+                (s): s is FarmhouseSection =>
+                  !('type' in s) && s.id === 'cinematic',
+              )!.photo,
               (v) => section('cinematic', { photo: v }),
             )}
           </>,
@@ -410,25 +417,47 @@ export function FarmhouseEditor({
             </SelectField>
           </>,
         )}
-      {page === 'home' &&
-        value.sections.map((s, index) =>
-          dropdown(
-            `farmhouse:${s.id}`,
-            `${{ cinematic: 'Cinematic opening', discovery: 'Editorial discovery', products: 'Featured products', story: 'Image and story', collection: 'Product story', invitation: 'Closing invitation' }[s.id]}${s.visible ? '' : ' (hidden)'}`,
+      {page === 'home' && (
+        <WebsiteSectionManagement<FarmhouseSection>
+          sections={value.sections}
+          onChange={(sections) => patch({ sections })}
+          target={farmhouseHomepageTarget}
+          prefix="farmhouse"
+          api={api}
+          products={products}
+          loadProducts={loadProducts}
+          selected={selected}
+          choose={choose}
+          collapsed={collapsed}
+          collapse={collapse}
+          busy={busy}
+          categoryPresentation={appearance?.categoryPresentation}
+          onCategoryPresentationChange={
+            onAppearanceChange
+              ? (categoryPresentation) =>
+                  onAppearanceChange({ categoryPresentation })
+              : undefined
+          }
+          hiddenCategoryIds={Object.entries(
+            appearance?.categoryPresentation ?? {},
+          )
+            .filter(([, category]) => !category.visible)
+            .map(([id]) => id)}
+          canHide={(section) => 'type' in section}
+          nativeLabel={(s) =>
+            ({
+              cinematic: 'Cinematic opening',
+              discovery: 'Editorial discovery',
+              products: 'Featured products',
+              story: 'Image and story',
+              collection: 'Product story',
+              invitation: 'Closing invitation',
+            })[s.id]
+          }
+          nativeActionLabel={(s) => s.heading || s.id}
+          renderNative={(s) => (
             <>
               {' '}
-              <label className="story-page-toggle" htmlFor={s.id + '-visible'}>
-                <Checkbox
-                  id={s.id + '-visible'}
-                  role="switch"
-                  className="sr-only"
-                  aria-label={`Enable ${s.heading || s.id}`}
-                  checked={s.visible}
-                  onChange={(e) => section(s.id, { visible: e.target.checked })}
-                />
-                <span className="story-switch-track" aria-hidden="true" />
-                <span>{s.visible ? 'Enabled' : 'Disabled'}</span>
-              </label>
               {text(s.id + '-heading', 'Heading', s.heading, 160, (heading) =>
                 section(s.id, { heading }),
               )}
@@ -561,39 +590,10 @@ export function FarmhouseEditor({
                   </p>
                 </>
               )}
-              <div className="ui-actions">
-                <IconButton
-                  icon="arrow-up"
-                  label={`Move up: ${s.heading || s.id}`}
-                  size="compact"
-                  disabled={index === 0}
-                  onClick={() => {
-                    const sections = [...value.sections];
-                    [sections[index - 1], sections[index]] = [
-                      sections[index]!,
-                      sections[index - 1]!,
-                    ];
-                    patch({ sections });
-                  }}
-                ></IconButton>
-                <IconButton
-                  icon="arrow-down"
-                  label={`Move down: ${s.heading || s.id}`}
-                  size="compact"
-                  disabled={index === value.sections.length - 1}
-                  onClick={() => {
-                    const sections = [...value.sections];
-                    [sections[index + 1], sections[index]] = [
-                      sections[index]!,
-                      sections[index + 1]!,
-                    ];
-                    patch({ sections });
-                  }}
-                ></IconButton>
-              </div>
-            </>,
-          ),
-        )}
+            </>
+          )}
+        />
+      )}
       <Dialog
         open={!!productPicker}
         onClose={() => setProductPicker(undefined)}
@@ -681,64 +681,5 @@ export function FarmhouseEditor({
         </div>
       </Dialog>
     </>
-  );
-}
-
-function Destination({
-  categories,
-  id,
-  value,
-  onChange,
-  products,
-  loadProducts,
-}: {
-  categories: Array<{ id: string; name: string }>;
-  id: string;
-  value: string;
-  onChange: (v: string) => void;
-  products: Array<{ id: string; name: string; slug?: string }>;
-  loadProducts: () => void;
-}) {
-  return (
-    <SelectField
-      id={id}
-      label="Link destination"
-      value={value}
-      onFocus={loadProducts}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      {[
-        ['/', 'Homepage'],
-        ['/products', 'Shop'],
-        ['/about', 'Our story'],
-        ['/find-us', 'Find us'],
-        ['/contact', 'Contact'],
-        ['/faq', 'FAQ'],
-        ['/policies', 'Policies'],
-      ].map(([path, label]) => (
-        <option key={path} value={path}>
-          {label}
-        </option>
-      ))}
-      {products
-        .filter((p) => p.slug)
-        .map((p) => (
-          <option key={p.id} value={'/products/' + encodeURIComponent(p.slug!)}>
-            {p.name}
-          </option>
-        ))}
-      {categories.map((category) => (
-        <option
-          key={'category-' + category.id}
-          value={'/products?category=' + encodeURIComponent(category.id)}
-        >
-          {category.name} collection
-        </option>
-      ))}
-      {value.includes('?category=') &&
-        !categories.some(
-          (c) => value === '/products?category=' + encodeURIComponent(c.id),
-        ) && <option value={value}>Selected catalog category</option>}
-    </SelectField>
   );
 }

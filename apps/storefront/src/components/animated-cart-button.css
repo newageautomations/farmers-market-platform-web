@@ -1,0 +1,85 @@
+/* BTN-01 retains theme typography, geometry, hover and focus presentation. */
+.button.ui-button.market-cart-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.button.ui-button.market-cart-button.is-added,
+.button.ui-button.market-cart-button.is-added:is(:hover, :focus-visible) {
+  --button-fill: var(--status-success-fg);
+  --button-ink: var(--status-success-bg);
+  --button-edge: var(--status-success-fg);
+  --button-hover-fill: var(--button-fill);
+  --button-hover-ink: var(--button-ink);
+  --button-hover-edge: var(--button-edge);
+  --button-shadow-color: var(--status-success-fg);
+  background: var(--button-fill);
+  color: var(--button-ink);
+  border-color: var(--button-edge);
+}
+
+.market-cart-button__label {
+  transition:
+    opacity 180ms ease,
+    transform 220ms ease;
+}
+
+.market-cart-button__check {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.25) rotate(-12deg);
+  pointer-events: none;
+}
+
+.market-cart-button__check svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.market-cart-button.is-added .market-cart-button__label {
+  opacity: 0;
+  transform: translateY(8px) scale(0.9);
+}
+
+.market-cart-button.is-added .market-cart-button__check {
+  animation: market-cart-check-pop 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes market-cart-check-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.25) rotate(-12deg);
+  }
+  58% {
+    opacity: 1;
+    transform: scale(1.18) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button.ui-button.market-cart-button,
+  .market-cart-button__label {
+    transition: none;
+  }
+  .market-cart-button.is-added .market-cart-button__label {
+    transform: none;
+  }
+  .market-cart-button.is-added .market-cart-button__check {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

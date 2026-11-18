@@ -19,9 +19,10 @@ interface Props {
   context: StorefrontContext;
   page: 'about' | 'faq' | 'policies';
   preview?: boolean;
+  hideHero?: boolean;
 }
 
-const { context, page, preview = false } = Astro.props;
+const { context, page, preview = false, hideHero = false } = Astro.props;
 if (!isEditorialMarket(context.appearance))
   throw new Error('Editorial Market content requires its theme configuration.');
 
@@ -60,34 +61,45 @@ const published =
   class:list={['em-content-page', `em-content-${page}`]}
   data-template={`editorial-market-${page}`}
 >
+  {hideHero && (
+    <h1 class="sr-only">
+      {page === 'about'
+        ? about.title
+        : page === 'faq'
+          ? faq?.title
+          : policies?.title}
+    </h1>
+  )}
   {page === 'about' ? (
     <>
-      <header
-        class="em-content-hero em-story-hero"
-        data-editor-section="story-settings"
-      >
-        <picture class="em-story-hero-art">
-          <source
-            media="(max-width: 699px)"
-            srcset="/assets/editorial-market/mobile-about-hero.png"
-            width="1536"
-            height="1024"
-          />
-          <img
-            src="/assets/editorial-market/desktop-about-hero.png"
-            alt=""
-            width="2172"
-            height="724"
-            fetchpriority="high"
-          />
-        </picture>
-        <div class="em-story-hero-copy">
-          <h1>{about.title}</h1>
-          {about.sectionsVersion === 1 && about.content && (
-            <p>{about.content}</p>
-          )}
-        </div>
-      </header>
+      {!hideHero && (
+        <header
+          class="em-content-hero em-story-hero"
+          data-editor-section="story-settings"
+        >
+          <picture class="em-story-hero-art">
+            <source
+              media="(max-width: 699px)"
+              srcset="/assets/editorial-market/mobile-about-hero.png"
+              width="1536"
+              height="1024"
+            />
+            <img
+              src="/assets/editorial-market/desktop-about-hero.png"
+              alt=""
+              width="2172"
+              height="724"
+              fetchpriority="high"
+            />
+          </picture>
+          <div class="em-story-hero-copy">
+            <h1>{about.title}</h1>
+            {about.sectionsVersion === 1 && about.content && (
+              <p>{about.content}</p>
+            )}
+          </div>
+        </header>
+      )}
       <div class="em-story-sections">
         {storySections.map((section, index) => {
           const image = safeAsset(section.image);
@@ -95,7 +107,7 @@ const published =
             section.layout !== 'image' &&
             !!(section.heading.trim() || section.body.trim());
           const hasImage = section.layout !== 'text' && !!image;
-          if (!hasCopy && !hasImage && !preview) return null;
+          if (!hasCopy && !hasImage && (!preview || hideHero)) return null;
           return (
             <section
               class:list={[
@@ -149,10 +161,12 @@ const published =
     </>
   ) : page === 'faq' && faq ? (
     <>
-      <header class="em-content-hero" data-editor-section="faq-intro">
-        <h1>{faq.heading}</h1>
-        {faq.description && <p>{faq.description}</p>}
-      </header>
+      {!hideHero && (
+        <header class="em-content-hero" data-editor-section="faq-intro">
+          <h1>{faq.heading}</h1>
+          {faq.description && <p>{faq.description}</p>}
+        </header>
+      )}
       <div class="em-content-columns">
         {!!questions.length && (
           <nav class="em-content-index" aria-label="FAQ questions">
@@ -198,23 +212,25 @@ const published =
     </>
   ) : page === 'policies' && policies ? (
     <>
-      <header class="em-content-hero" data-editor-section="policies-intro">
-        <h1>{policies.heading}</h1>
-        {policies.description && <p>{policies.description}</p>}
-        {published && (
-          <p class="em-published-date">
-            Last updated{' '}
-            <time datetime={published.toISOString()}>
-              {published.toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-                timeZone: 'UTC',
-              })}
-            </time>
-          </p>
-        )}
-      </header>
+      {!hideHero && (
+        <header class="em-content-hero" data-editor-section="policies-intro">
+          <h1>{policies.heading}</h1>
+          {policies.description && <p>{policies.description}</p>}
+          {published && (
+            <p class="em-published-date">
+              Last updated{' '}
+              <time datetime={published.toISOString()}>
+                {published.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                  timeZone: 'UTC',
+                })}
+              </time>
+            </p>
+          )}
+        </header>
+      )}
       <div class="em-content-columns">
         {!!policyEntries.length && (
           <nav class="em-content-index" aria-label="Policy sections">

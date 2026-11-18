@@ -91,6 +91,7 @@ query PaymentManagement($mode: PlatformPaymentMode!) {
     mode
     provider
     accountReference
+    connectionMethod
     connectionStatus
     detailsSubmitted
     chargesEnabled
@@ -103,6 +104,7 @@ query PaymentManagement($mode: PlatformPaymentMode!) {
     disabledReason
     lastSyncAt
     readiness {
+      state
       purpose
       ready
       reasons
@@ -425,5 +427,28 @@ mutation ManagementGrantOverride($input: SaasOverrideInput!) {
 mutation ManagementRevokeOverride($id: ID!) {
   revokeSaasEntitlementOverride(id: $id) {
     id
+  }
+}
+
+mutation ManagementStartOnboarding {
+  beginOwnStripeOnboarding {
+    authorizationUrl
+    expiresAt
+  }
+}
+mutation ManagementCompleteOnboarding($nonce: String!, $refresh: Boolean!) {
+  completeOwnStripeOnboarding(nonce: $nonce, refresh: $refresh) {
+    authorizationUrl
+    expiresAt
+  }
+}
+mutation ManagementStripeDashboard {
+  ownStripeDashboard
+}
+
+mutation ManagementCompleteStripeConnect($state: String!, $code: String!) {
+  completeOwnStripeConnect(state: $state, code: $code) {
+    id
+    connectionStatus
   }
 }

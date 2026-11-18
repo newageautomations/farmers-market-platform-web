@@ -1,0 +1,248 @@
+---
+import type {
+  MarketDayPublicState,
+  MarketDayOccurrence,
+  PublicOccurrenceMap,
+  MarketOccurrenceVendor,
+} from '@market/api';
+import type { StorefrontContext } from '@market/storefront-core';
+import { SectionHeader } from '@market/ui';
+import { MarketDayLive } from './MarketDayLive';
+import { MarketDayCountdown } from './MarketDayCountdown';
+import MarketVendorCards from './MarketVendorCards.astro';
+import HarvestHero from '../home/HarvestHero.astro';
+import EditorialHero from '../editorial-market/Hero.astro';
+import { isEditorialMarket, marketOnlyTheme } from '@market/theme/storefront';
+import MeadowHero from '../meadow/Hero.astro';
+import HearthHero from '../hearth/Hero.astro';
+import FarmstandIcon from '../ui/FarmstandIcon.astro';
+import EmptyState from '../ui/EmptyState.astro';
+import '../../styles/harvest-sections.css';
+import '../../styles/market-website.css';
+import '../../styles/market-day.css';
+const {
+  context,
+  heroImage,
+  state,
+  occurrence,
+  map,
+  vendors,
+  directoryUnavailable = false,
+} = Astro.props as {
+  context: StorefrontContext;
+  /** Catalog photo fallback, as on the regular market homepage. */
+  heroImage?: string;
+  state: MarketDayPublicState;
+  occurrence?: MarketDayOccurrence;
+  map: PublicOccurrenceMap | null;
+  vendors: readonly MarketOccurrenceVendor[];
+  directoryUnavailable?: boolean;
+};
+const dateLabel = (o: MarketDayOccurrence) =>
+  new Intl.DateTimeFormat('en-US', {
+    timeZone: o.timezone,
+    dateStyle: 'full',
+    timeStyle: 'short',
+  }).format(new Date(o.startsAt));
+const introduction = occurrence
+  ? 'Market day is here! Say hello to the people who grow and make your food, and use the map to find every booth.'
+  : 'More than one market is open today. Choose the one you are visiting to see its map and vendors.';
+const editorial = isEditorialMarket(context.appearance)
+  ? context.appearance.template.settings
+  : undefined;
+const welcome = `Welcome to ${context.name}`;
+// Meadow and Hearth show Market Day in their own hero; the rest is shared.
+const marketTheme = marketOnlyTheme(context.appearance);
+const ThemeHero = marketTheme === 'hearth' ? HearthHero : MeadowHero;
+const themePrefix = marketTheme === 'hearth' ? 'hw' : 'mw';
+---
+
+<div
+  class:list={[
+    'market-day-home',
+    editorial && 'em-home em-market-day-home',
+    marketTheme && `${themePrefix}-home ${themePrefix}-day`,
+  ]}
+  data-composition="market"
+  data-template={editorial ? 'editorial-market' : marketTheme}
+>
+  {editorial ? (
+    <>
+      {/* Editorial Market keeps its hero artwork; the countdown follows it. */}
+      <EditorialHero
+        settings={editorial}
+        heading={welcome}
+        introduction={introduction}
+        marketDay
+        action={{
+          href: occurrence ? '#market-day-map' : '#market-day-dates',
+          label: occurrence ? 'Find a booth on the map' : 'Choose your market',
+          arrow: '↓',
+        }}
+      />
+      <section
+        class="em-section em-market-day-details"
+        aria-label="Market day details"
+      >
+        <div class="market-day-hero-details">
+          {occurrence && (
+            <MarketDayCountdown
+              client:load
+              occurrence={occurrence}
+              serverNow={state.serverNow}
+            />
+          )}
+          {occurrence?.venue && (
+            <p class="market-day-venue">
+              <span aria-hidden="true">&#8599;</span>
+              {occurrence.venue}
+            </p>
+          )}
+          <p class="market-day-regular">
+            Looking to shop ahead?{' '}
+            <a class="farmstand-text-link" href="/?storefront=regular">
+              Visit the regular storefront
+            </a>
+          </p>
+        </div>
+      </section>
+    </>
+  ) : marketTheme ? (
+    <ThemeHero
+      context={context}
+      href={occurrence ? '#market-day-map' : '#market-day-dates'}
+      secondaryHref={occurrence ? '#market-day-vendors' : undefined}
+      override={{
+        title: welcome,
+        introduction: occurrence
+          ? 'Market day is here. Come say hello to the people who grow and make your food.'
+          : 'More than one market is open today.',
+        primaryLabel: occurrence ? 'Find a booth' : 'Choose your market',
+        secondaryLabel: 'Today’s vendors',
+      }}
+    >
+      <div slot="details" class="market-day-hero-details">
+        {occurrence && (
+          <MarketDayCountdown
+            client:load
+            occurrence={occurrence}
+            serverNow={state.serverNow}
+          />
+        )}
+        {occurrence?.venue && (
+          <p class="market-day-venue">
+            <FarmstandIcon name="map-pin" />
+            {occurrence.venue}
+          </p>
+        )}
+        <a
+          class={`${themePrefix}-more market-day-regular`}
+          href="/?storefront=regular"
+        >
+          <span>Shop ahead for another date</span>
+          <FarmstandIcon name="arrow-right" />
+        </a>
+      </div>
+    </ThemeHero>
+  ) : (
+    <HarvestHero
+      context={context}
+      image={heroImage}
+      href={occurrence ? '#market-day-map' : '#market-day-dates'}
+      action="Find a booth on the map"
+      secondaryHref={occurrence ? '#market-day-vendors' : undefined}
+      override={{
+        title: welcome,
+        introduction,
+        primaryLabel: occurrence
+          ? 'Find a booth on the map'
+          : 'Choose your market',
+        secondaryLabel: 'Meet today’s vendors',
+      }}
+    >
+      <div slot="details" class="market-day-hero-details">
+        {occurrence && (
+          <MarketDayCountdown
+            client:load
+            occurrence={occurrence}
+            serverNow={state.serverNow}
+          />
+        )}
+        {occurrence?.venue && (
+          <p class="market-day-venue">
+            <span aria-hidden="true">&#8599;</span>
+            {occurrence.venue}
+          </p>
+        )}
+        <p class="market-day-regular">
+          Looking to shop ahead?{' '}
+          <a class="farmstand-text-link" href="/?storefront=regular">
+            Visit the regular storefront
+          </a>
+        </p>
+      </div>
+    </HarvestHero>
+  )}
+  <div class:list={[editorial && 'em-section em-market-day-body']}>
+    {occurrence ? (
+      <>
+        <MarketDayLive
+          client:load
+          state={state}
+          occurrence={occurrence}
+          map={map}
+        />
+        <section
+          id="market-day-vendors"
+          class="harvest-section"
+          aria-labelledby="market-day-directory"
+        >
+          <SectionHeader
+            title="Vendors today"
+            id="market-day-directory"
+            variant="consumer"
+          />
+          {directoryUnavailable ? (
+            <p>The vendor directory is temporarily unavailable.</p>
+          ) : vendors.length ? (
+            <MarketVendorCards
+              vendors={vendors}
+              occurrenceId={String(occurrence.id)}
+              cardTheme={context.appearance?.market?.vendorsCardTheme}
+              marketDay
+            />
+          ) : (
+            <EmptyState title="Vendors are setting up" level={3}>
+              <p>No vendors are listed for this date yet.</p>
+            </EmptyState>
+          )}
+        </section>
+      </>
+    ) : (
+      <>
+        <section
+          id="market-day-dates"
+          class="harvest-section"
+          aria-labelledby="market-day-dates-title"
+        >
+          <SectionHeader
+            title="Which market are you visiting?"
+            id="market-day-dates-title"
+            variant="consumer"
+          />
+          <ul class="market-day-choices">
+            {state.occurrences.map((o) => (
+              <li>
+                <a class="farmstand-text-link" href={`/?marketDay=${o.id}`}>
+                  {dateLabel(o)}
+                  {o.venue ? ` at ${o.venue}` : ''}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <MarketDayLive client:load state={state} />
+      </>
+    )}
+  </div>
+</div>

@@ -1,0 +1,74 @@
+---
+import type { WebsiteImageBannerSection } from '@market/theme/storefront';
+import { safeAsset, type StorefrontContext } from '@market/storefront-core';
+import { websiteSectionDestination } from '../website-section-navigation';
+import Button from '../ui/Button.astro';
+import '../../styles/harvest-sections.css';
+import '../../styles/theme-section-library.css';
+const { section, context, editorId } = Astro.props as {
+  section: WebsiteImageBannerSection;
+  context: StorefrontContext;
+  editorId?: string;
+};
+const { content: c, presentation: p } = section;
+const theme = context?.appearance?.theme ?? 'harvest';
+const prefix =
+  theme === 'modern-farmhouse'
+    ? 'farmhouse'
+    : theme === 'editorial-market'
+      ? 'editorial'
+      : 'harvest';
+const image = safeAsset(c.image.url);
+---
+
+<section
+  class="harvest-section harvest-library harvest-banner"
+  data-library-theme={theme}
+  data-editor-section={editorId ?? `${prefix}:${section.id}`}
+  data-layout={p.layout}
+  data-width={p.width}
+  data-placement={p.placement}
+  data-focal-point={p.focalPoint}
+  data-overlay={p.overlay}
+  data-height={p.height}
+  data-alignment={p.alignment}
+  data-background-type={p.backgroundType ?? 'contained'}
+  data-background={p.background}
+  data-spacing={p.spacing}
+>
+  <div class="harvest-banner-photo">
+    {image ? (
+      <img
+        src={image}
+        alt={c.image.alt}
+        width="1600"
+        height="1000"
+        loading="lazy"
+        decoding="async"
+      />
+    ) : (
+      <div class="harvest-library-placeholder" aria-hidden="true">
+        ✿
+      </div>
+    )}
+  </div>
+  <div class="harvest-banner-copy">
+    {c.heading && <h2>{c.heading}</h2>}
+    {c.introduction && <p>{c.introduction}</p>}
+    {c.body && <p>{c.body}</p>}
+    {c.label && websiteSectionDestination(context, c.destination) && (
+      <Button
+        href={c.destination}
+        variant={
+          p.background === 'ink' ||
+          (p.layout === 'photo-overlay' && p.overlay === 'strong')
+            ? 'secondary'
+            : 'primary'
+        }
+      >
+        {c.label}
+        <span aria-hidden="true"> ↗</span>
+      </Button>
+    )}
+  </div>
+</section>

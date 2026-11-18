@@ -1,0 +1,37 @@
+/* Rental fields in the shared AssignmentCard (Assignments, Market Day and the
+   occurrence map dialogs): requested rentals first, the rest in a disclosure,
+   both in two columns. Controls keep their shared/Farmstand presentation. */
+.assignment-rentals {
+  display: grid;
+  gap: 10px;
+}
+.assignment-rentals h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.assignment-rental-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+  align-items: start;
+}
+.assignment-rental {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.assignment-rental > :is(.ops-field, .field, p) {
+  margin: 0;
+}
+.assignment-rental-requested,
+.assignment-rentals-none {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+@media (max-width: 560px) {
+  .assignment-rental-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

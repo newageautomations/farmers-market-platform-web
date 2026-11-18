@@ -138,6 +138,7 @@ export async function accountBridge<T>(
   return response.json() as Promise<T>;
 }
 export function safeAccountReturn(value: string | null | undefined) {
+  if (value && /^\/\?marketDay=[1-9]\d{0,9}$/.test(value)) return value;
   if (value === '/account/invitation') return value;
   if (
     value &&
@@ -222,6 +223,7 @@ export async function centralSignIn(
   },
   returnTo = '/account',
   entry: 'login' | 'signup' | 'vendor-applications' = 'login',
+  prefill?: string,
 ) {
   const origin = context.locals.storefront?.canonicalOrigin;
   if (!origin) throw new AppError('forbidden');
@@ -252,5 +254,7 @@ export async function centralSignIn(
     target.searchParams.set('context', requestedRole);
   target.searchParams.set('origin', origin);
   target.searchParams.set('correlation', correlation);
+  if (prefill && entry === 'signup')
+    target.searchParams.set('prefill', prefill);
   return target.toString();
 }

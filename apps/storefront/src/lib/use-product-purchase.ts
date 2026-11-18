@@ -3,9 +3,11 @@ import {
   cartMessage,
   type PublicProduct,
   type VendorPreorderAvailability,
+  type MarketCart,
 } from '@market/api';
 import { formatMoney } from '@market/config';
 import { shopCall } from '../components/shop-client';
+import { useCartFeedback } from './use-cart-feedback';
 export function useProductPurchase({
   storefrontId,
   variants,
@@ -17,6 +19,7 @@ export function useProductPurchase({
   priceTarget,
   priceFallback = '',
   preview = false,
+  market = false,
 }: {
   storefrontId: string;
   variants: PublicProduct['variants'];
@@ -28,6 +31,7 @@ export function useProductPurchase({
   priceTarget?: string;
   priceFallback?: string;
   preview?: boolean;
+  market?: boolean;
 }) {
   const [variantId, setVariantId] = useState(
       variants.some((v) => v.id === initialVariantId)
@@ -41,6 +45,7 @@ export function useProductPurchase({
     [message, setMessage] = useState(''),
     [error, setError] = useState('');
   const [availability, setAvailability] = useState(initialAvailability);
+  const { feedback: cartFeedback, showAdded } = useCartFeedback();
   const lock = useRef(false),
     selected = variants.find((v) => v.id === variantId),
     eligible =
@@ -145,16 +150,27 @@ export function useProductPurchase({
         );
         return;
       }
-      await shopCall(storefrontId, 'add', {
-        variantId,
-        quantity: Number(quantity),
-        occurrenceId,
-      });
+      const result = await shopCall<{ cart: MarketCart | null }>(
+        storefrontId,
+        'add',
+        {
+          variantId,
+          quantity: Number(quantity),
+          occurrenceId,
+        },
+      );
       setMessage('Added to your cart.');
+      if (market) showAdded();
       window.dispatchEvent(
-        new CustomEvent('vendor-cart-updated', {
-          detail: { storefrontId },
-        }),
+        new CustomEvent(
+          market ? 'market-cart-updated' : 'vendor-cart-updated',
+          {
+            detail: {
+              storefrontId,
+              ...(market ? { quantity: result.cart?.totalQuantity ?? 0 } : {}),
+            },
+          },
+        ),
       );
     } catch (e) {
       setError(cartMessage(e as { code?: string; kind?: string }));
@@ -191,5 +207,6 @@ export function useProductPurchase({
     validQuantity,
     submit,
     selectVariant,
+    cartFeedback,
   };
 }

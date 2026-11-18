@@ -251,9 +251,11 @@
   object-fit: cover;
   border-radius: 8px;
 }
-.pickup-total {
+.pickup-detail-body .pickup-total {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
   gap: 12px;
   padding: 12px;
   border-radius: 8px;
@@ -312,4 +314,11 @@
   .pickup-status-filters {
     gap: 6px;
   }
+}
+
+.pickup-detail-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }

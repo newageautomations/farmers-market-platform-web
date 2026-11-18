@@ -1,9 +1,9 @@
+import { OccurrenceCreationActions } from './OccurrenceCreationActions';
 import { useCallback, useId, useMemo, useState, type MouseEvent } from 'react';
 import { type MarketOccurrence } from '@market/api';
 import { mayMarketCommand } from '@market/admin-core';
 import { Alert, Dialog, EmptyState, Field, UtilityIcon } from '@market/ui';
 import {
-  FarmstandButton,
   FarmstandIcon,
   FarmstandLink,
   FarmstandPanel,
@@ -20,6 +20,7 @@ import { FinanceDonut } from '../finance/charts';
 import { GenerateOccurrencesWizard } from './GenerateOccurrencesWizard';
 import { MarketOccurrenceDetail } from './OccurrenceDetail';
 import type { MarketService } from './service';
+import { CompactLabel, DetailSheet } from './mobile';
 import { localParts } from './timezones';
 import { friendlyLabel, StatusBadge } from './presentation';
 import {
@@ -41,8 +42,8 @@ import {
   type OccurrenceRange,
 } from './occurrences-data';
 import '@market/ui/farmstand.css';
-import '../vendor/markets-workspace.css';
-import '../vendor/market-applications.css';
+import '@market/ui/workspace.css';
+import '@market/ui/workspace-records.css';
 import '../vendor/market-dates.css';
 import '../vendor/orders.css';
 import '../finance/finance.css';
@@ -165,6 +166,12 @@ function OccurrenceList({
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string>();
+  // Phones and tablets open the selected date's details in a sheet.
+  const [detailOpen, setDetailOpen] = useState(false);
+  const select = (value: string) => {
+    setSelected(value);
+    setDetailOpen(true);
+  };
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [observedAt, setObservedAt] = useState(() => Date.now());
@@ -315,25 +322,16 @@ function OccurrenceList({
       className="market-occurrences farmstand-controls"
       actions={
         (schedule || command) && (
-          <>
-            {command && (
-              <FarmstandButton
-                variant="secondary"
-                onClick={() => openRoute('/market/occurrences/new')}
-              >
-                <FarmstandIcon name="plus" />
-                Create single date
-              </FarmstandButton>
-            )}
-            {schedule && (
-              <FarmstandButton
-                onClick={() => openRoute('/market/occurrences/generate')}
-              >
-                <FarmstandIcon name="calendar-days" />
-                Generate occurrences
-              </FarmstandButton>
-            )}
-          </>
+          <OccurrenceCreationActions
+            onSingle={
+              command ? () => openRoute('/market/occurrences/new') : undefined
+            }
+            onGenerate={
+              schedule
+                ? () => openRoute('/market/occurrences/generate')
+                : undefined
+            }
+          />
         )
       }
     >
@@ -468,14 +466,14 @@ function OccurrenceList({
                               ? 'market-application-selected'
                               : undefined
                           }
-                          onClick={() => setSelected(row.id)}
+                          onClick={() => select(row.id)}
                           onKeyDown={(event) => {
                             if (
                               event.target === event.currentTarget &&
                               (event.key === 'Enter' || event.key === ' ')
                             ) {
                               event.preventDefault();
-                              setSelected(row.id);
+                              select(row.id);
                             }
                           }}
                         >
@@ -524,7 +522,7 @@ function OccurrenceList({
                                 inApp(event, href);
                               }}
                             >
-                              Manage
+                              <CompactLabel>Manage</CompactLabel>
                               <FarmstandIcon name="chevron-right" />
                             </FarmstandLink>
                           </td>
@@ -565,98 +563,122 @@ function OccurrenceList({
             )}
           </FarmstandPanel>
         </div>
-        <FarmstandPanel
-          as="section"
-          className="markets-next market-application-details market-date-details occurrence-details"
-          aria-label="Occurrence details"
+        <DetailSheet
+          title="Occurrence details"
+          open={detailOpen}
+          onClose={() => setDetailOpen(false)}
         >
-          <h2>
-            <FarmstandIcon name="calendar-days" />
-            Occurrence details
-          </h2>
-          {current && detailHref ? (
-            <div className="markets-next-content">
-              <div className="occurrence-details-title">
-                <h3>{marketDate(current, true)}</h3>
-                <StatusBadge>
-                  {past(current, observedAt) && current.status === 'scheduled'
-                    ? 'past'
-                    : current.status}
-                </StatusBadge>
-              </div>
-              <p className="markets-venue">
-                <FarmstandIcon name="map-pin" />
-                {current.venue || 'Venue not provided'}
-              </p>
-              <dl className="market-application-facts">
-                <div>
-                  <dt>Time</dt>
-                  <dd>{marketTime(current)}</dd>
+          <FarmstandPanel
+            as="section"
+            className="markets-next market-application-details market-date-details occurrence-details"
+            aria-label="Occurrence details"
+          >
+            <h2>
+              <FarmstandIcon name="calendar-days" />
+              Occurrence details
+            </h2>
+            {current && detailHref ? (
+              <div className="markets-next-content">
+                <div className="occurrence-details-title">
+                  <h3>{marketDate(current, true)}</h3>
+                  <StatusBadge>
+                    {past(current, observedAt) && current.status === 'scheduled'
+                      ? 'past'
+                      : current.status}
+                  </StatusBadge>
                 </div>
-                <div>
-                  <dt>Source</dt>
-                  <dd>{friendlyLabel(current.source)}</dd>
-                </div>
-                <div>
-                  <dt>Pickup</dt>
-                  <dd>{current.pickupInstructions || 'Not provided'}</dd>
-                </div>
-                <div>
-                  <dt>Preorders</dt>
-                  <dd>
-                    {current.preorderOverride
-                      ? 'Date-specific window'
-                      : 'Market default window'}
-                  </dd>
-                </div>
-              </dl>
-              {boothsAllowed &&
-                (currentBooths?.layout && currentBooths.total ? (
-                  <BoothMeter booths={currentBooths} />
-                ) : (
-                  booths.data && (
-                    <p className="market-application-guidance">
-                      No layout has been selected for this date yet.
-                    </p>
-                  )
-                ))}
-              <FarmstandLink
-                href={detailHref}
-                variant="primary"
-                onClick={(event) => inApp(event, detailHref)}
-              >
-                <UtilityIcon name="edit" />
-                Manage occurrence
-              </FarmstandLink>
-              {boothsAllowed && (
+                <p className="markets-venue">
+                  <FarmstandIcon name="map-pin" />
+                  {current.venue || 'Venue not provided'}
+                </p>
+                <dl className="market-application-facts">
+                  <div>
+                    <dt>Time</dt>
+                    <dd>{marketTime(current)}</dd>
+                  </div>
+                  <div>
+                    <dt>Source</dt>
+                    <dd>{friendlyLabel(current.source)}</dd>
+                  </div>
+                  <div>
+                    <dt>Pickup</dt>
+                    <dd>{current.pickupInstructions || 'Not provided'}</dd>
+                  </div>
+                  <div>
+                    <dt>Preorders</dt>
+                    <dd>
+                      {current.preorderOverride
+                        ? 'Date-specific window'
+                        : 'Market default window'}
+                    </dd>
+                  </div>
+                </dl>
+                {boothsAllowed &&
+                  (currentBooths?.layout && currentBooths.total ? (
+                    <BoothMeter booths={currentBooths} />
+                  ) : (
+                    booths.data && (
+                      <p className="market-application-guidance">
+                        No layout has been selected for this date yet.
+                      </p>
+                    )
+                  ))}
                 <FarmstandLink
-                  href={`/market/assignments/${current.id}`}
+                  href={detailHref}
+                  variant="primary"
+                  onClick={(event) => inApp(event, detailHref)}
+                >
+                  <UtilityIcon name="edit" />
+                  Manage occurrence
+                </FarmstandLink>
+                {boothsAllowed && (
+                  <FarmstandLink
+                    href={`/market/assignments/${current.id}`}
+                    variant="secondary"
+                    onClick={(event) =>
+                      inApp(event, `/market/assignments/${current.id}`)
+                    }
+                  >
+                    <FarmstandIcon name="store" />
+                    Manage booths
+                  </FarmstandLink>
+                )}
+                <FarmstandLink
+                  href={`/market/operations/${current.id}`}
                   variant="secondary"
                   onClick={(event) =>
-                    inApp(event, `/market/assignments/${current.id}`)
+                    inApp(event, `/market/operations/${current.id}`)
                   }
                 >
-                  <FarmstandIcon name="store" />
-                  Manage booths
+                  <FarmstandIcon name="clipboard-list" />
+                  View operations
                 </FarmstandLink>
-              )}
-              <FarmstandLink
-                href={`/market/operations/${current.id}`}
-                variant="secondary"
-                onClick={(event) =>
-                  inApp(event, `/market/operations/${current.id}`)
-                }
-              >
-                <FarmstandIcon name="clipboard-list" />
-                View operations
-              </FarmstandLink>
-            </div>
-          ) : (
-            <EmptyState title="No occurrence selected">
-              <p>Select an occurrence to review its details.</p>
-            </EmptyState>
-          )}
-        </FarmstandPanel>
+                {service.phase14 &&
+                  service.context.permissions.includes(
+                    'ReadOwnMarketBilling',
+                  ) && (
+                    <FarmstandLink
+                      href={`/market/finances/invoices?occurrence=${current.id}`}
+                      variant="secondary"
+                      onClick={(event) =>
+                        inApp(
+                          event,
+                          `/market/finances/invoices?occurrence=${current.id}`,
+                        )
+                      }
+                    >
+                      <FarmstandIcon name="receipt-text" />
+                      View payments
+                    </FarmstandLink>
+                  )}
+              </div>
+            ) : (
+              <EmptyState title="No occurrence selected">
+                <p>Select an occurrence to review its details.</p>
+              </EmptyState>
+            )}
+          </FarmstandPanel>
+        </DetailSheet>
       </div>
       <div className="occurrence-insights">
         <FarmstandPanel

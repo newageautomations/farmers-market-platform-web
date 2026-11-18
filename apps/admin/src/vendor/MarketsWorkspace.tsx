@@ -1,3 +1,4 @@
+import { VendorManagedMarkets } from './VendorManagedMarkets';
 import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
 import { mayCommand } from '@market/admin-core';
 import { Badge, EmptyState, Field, UtilityIcon } from '@market/ui';
@@ -15,6 +16,8 @@ import { WorkspaceFrame } from '../WorkspaceFrame';
 import { go, ReadState, useRead } from './common';
 import { UpcomingMarketDates } from './UpcomingMarketDates';
 import type { VendorService } from './service';
+import { IdentityIcon } from '@market/ui/workspace';
+import { useProfileImages } from '../profile-images';
 import { vendorStatusTone } from './status-presentation';
 import {
   attendanceLabel,
@@ -23,10 +26,11 @@ import {
   readMarketsOverview,
   type MarketOverviewRow,
 } from './markets-data';
-import './markets-workspace.css';
+import '@market/ui/workspace.css';
 import { MarketApplications } from './MarketApplications';
 import { MarketsPagination } from './MarketsPagination';
 import { MarketsSummary } from './MarketsSummary';
+import { usePhoneRecords } from '../market/mobile';
 
 type View = 'overview' | 'applications' | 'upcoming-dates';
 const hashView = (): View =>
@@ -45,6 +49,7 @@ export function MarketsWorkspace({
   relationshipTools: ReactNode;
   initialView?: View;
 }) {
+  const [revision, setRevision] = useState(0);
   const [view, setView] = useState<View>(() => initialView ?? hashView());
   useEffect(() => {
     if (initialView)
@@ -66,8 +71,17 @@ export function MarketsWorkspace({
   return (
     <WorkspaceFrame
       icon="store"
+      className="vendor-markets farmstand-controls"
       title="Markets"
       description="Your markets, applications and upcoming dates, all in one place."
+      actions={
+        mayCommand(service.context, 'ManageOwnMarketParticipation') && (
+          <VendorManagedMarkets
+            service={service}
+            refresh={() => setRevision((r) => r + 1)}
+          />
+        )
+      }
       value={view}
       onChange={changeView}
       tabs={[
@@ -91,7 +105,7 @@ export function MarketsWorkspace({
         },
       ]}
     >
-      <div className="markets-view" key={view}>
+      <div className="markets-view" key={`${view}:${revision}`}>
         {view === 'overview' && (
           <MarketsOverview
             service={service}
@@ -182,6 +196,7 @@ function MarketsOverview({
   service: VendorService;
   onDates: () => void;
 }) {
+  const records = usePhoneRecords();
   const read = useCallback(() => readMarketsOverview(service), [service]);
   const query = useRead(`markets-overview:${service.vendorId}`, read);
   const [search, setSearch] = useState(''),
@@ -217,6 +232,13 @@ function MarketsOverview({
             (b.next ? Date.parse(b.next.startsAt) : Infinity) ||
           a.membership.market.name.localeCompare(b.membership.market.name),
     );
+  const shown = visible.slice(page * 20, (page + 1) * 20);
+  const profileImages = useProfileImages(service.profileImage, {
+    markets: [
+      ...shown.map((r) => r.membership.marketId),
+      next?.membership.marketId,
+    ],
+  });
   return (
     <>
       <ReadState {...query} retry={query.refresh} />
@@ -297,6 +319,7 @@ function MarketsOverview({
               {visible.length ? (
                 <FarmstandTable
                   label="Your markets"
+                  recordDetails={records({ status: 2, action: 3 })}
                   wide
                   headings={[
                     'Market',
@@ -305,13 +328,16 @@ function MarketsOverview({
                     'Actions',
                   ]}
                 >
-                  {visible.slice(page * 20, (page + 1) * 20).map((row) => (
+                  {shown.map((row) => (
                     <tr key={row.membership.id}>
                       <th scope="row">
                         <div className="markets-identity">
-                          <span className="markets-identity-icon">
-                            <FarmstandIcon name="store" />
-                          </span>
+                          <IdentityIcon
+                            icon="store"
+                            image={profileImages.market(
+                              row.membership.marketId,
+                            )}
+                          />
                           <div>{row.membership.market.name}</div>
                         </div>
                       </th>
@@ -337,37 +363,40 @@ function MarketsOverview({
                             row.membership.status,
                           )}
                         >
-                          {row.membership.status.charAt(0).toUpperCase() +
-                            row.membership.status.slice(1)}
+                          {row.membership.market.ownerVendorId
+                            ? 'Vendor managed'
+                            : row.membership.status.charAt(0).toUpperCase() +
+                              row.membership.status.slice(1)}
                         </Badge>
                       </td>
                       <td>
                         <div className="markets-row-actions">
                           <MarketAction row={row} service={service} configure />
-                          {row.website ? (
-                            <FarmstandLink
-                              href={row.website}
-                              variant="secondary"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Website
-                              <UtilityIcon name="external" />
-                              <span className="sr-only">
-                                {' '}
-                                (opens in a new tab)
-                              </span>
-                            </FarmstandLink>
-                          ) : (
-                            <FarmstandButton
-                              variant="secondary"
-                              disabled
-                              title="Market website unavailable"
-                            >
-                              Website
-                              <UtilityIcon name="external" />
-                            </FarmstandButton>
-                          )}
+                          {!row.membership.market.ownerVendorId &&
+                            (row.website ? (
+                              <FarmstandLink
+                                href={row.website}
+                                variant="secondary"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Website
+                                <UtilityIcon name="external" />
+                                <span className="sr-only">
+                                  {' '}
+                                  (opens in a new tab)
+                                </span>
+                              </FarmstandLink>
+                            ) : (
+                              <FarmstandButton
+                                variant="secondary"
+                                disabled
+                                title="Market website unavailable"
+                              >
+                                Website
+                                <UtilityIcon name="external" />
+                              </FarmstandButton>
+                            ))}
                         </div>
                       </td>
                     </tr>
@@ -410,9 +439,11 @@ function MarketsOverview({
               </h2>
               {next ? (
                 <>
-                  <div className="markets-next-art" aria-hidden="true">
-                    <FarmstandIcon name="store" />
-                  </div>
+                  <IdentityIcon
+                    className="markets-next-art"
+                    icon="store"
+                    image={profileImages.market(next.membership.marketId)}
+                  />
                   <div className="markets-next-content">
                     <h3>{next.membership.market.name}</h3>
                     {next.next!.venue && (

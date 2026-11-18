@@ -128,13 +128,18 @@ type Query {
   ownCommercePortions(options: OwnOperationalOrderOptions): OwnOperationalOrderPage!
   ownOccurrenceOperations(occurrenceId: ID!): [CommercePortion!]!
   ownOccurrenceCustomerOperations(occurrenceId: ID!, options: OwnMarketPageOptions): MarketOperationalPage!
+  ownOrderRefunds(orderId: ID!): JSON
+  previewOwnOriginalUnitRefund(allocationId: ID!, unitIds: [ID!]!): JSON!
   ownPaidPortion(allocationId: ID!): OwnPaidPortion!
   ownVendorCoupon(id: ID!): OwnVendorCoupon!
   ownCustomers(options: RelationshipPageOptions): VendorCustomerPage!
   ownCustomerRelationship(id: ID!): VendorCustomerProjection!
   ownCustomerPurchaseHistory(customerId: ID!, options: RelationshipPageOptions): VendorCustomerPurchasePage!
+  ownBoothInvoice(invoiceId: Int!): JSON!
+  stripePaymentReconciliation(limit: Int): JSON!
   ownPaymentAccount(mode: StripeAccountMode!): OwnPaymentAccount
   ownVendorEarningsPolicy(mode: StripeAccountMode!): OwnVendorEarningsPolicy!
+  ownPreorderFeeSettings: OwnPreorderFeeSettings!
   ownCommunicationCounts(vendorId: ID, marketId: ID, medium: CommunicationMedium!, purpose: CommunicationPurpose!): CommunicationCounts!
   platformRoleOnboardingReviewQueue: JSON!
   ownBusinessTeamPolicy: BusinessTeamPolicy!
@@ -154,7 +159,8 @@ type Query {
   ownStorefrontWebsites(storefrontId: ID!, skip: Int, take: Int): JSON!
   ownStorefrontWebsite(storefrontId: ID!, id: ID!): JSON!
   ownStorefrontImages(skip: Int): JSON!
-  ownStorefrontProducts(search: String): JSON!
+  ownStorefrontProducts(search: String, ids: [ID!]): JSON!
+  ownStorefrontShowcaseCategories: JSON!
   ownStorefrontThemeAssets(themeId: String!): JSON!
   ownStorefrontLinks: JSON!
   ownStorefrontAppearance: JSON!
@@ -186,6 +192,7 @@ type Query {
   ownMarketMembershipOfferings(membershipId: ID!, options: OwnMarketPageOptions): OwnMarketOfferingPage!
   ownMarketOverviewSummary(options: OwnMarketOverviewOptions): OwnMarketOverviewSummary!
   ownMarketOccurrenceGenerationStatus(jobId: ID!): OwnMarketGenerationStatus!
+  ownVendorManagedMarkets: [MarketDomain!]!
   ownMarketIdentity: OwnMarketIdentity!
   ownMarket(id: ID!): MarketDomain!
   marketOccurrences(marketId: ID!, from: DateTime!, through: DateTime!): [MarketSession!]!
@@ -785,10 +792,16 @@ type Mutation {
   editOwnVendorCoupon(id: ID!, value: Int!, minimum: Int!, status: String!): OwnVendorCoupon!
   requestOwnOriginalUnitRefund(input: OriginalUnitRefundInput!): OriginalUnitRefund!
   retryOwnOriginalUnitRefund(id: ID!): OriginalUnitRefund!
+  prepareBoothInvoicePayment(invoiceId: Int!): JSON!
+  boothInvoicePayment(invoiceId: Int!, action: String!, consent: String): JSON
+  beginOwnStripeOnboarding: StripeOAuthStart!
+  completeOwnStripeOnboarding(nonce: String!, refresh: Boolean!): StripeOAuthStart
+  ownStripeDashboard: String!
   beginOwnStripeConnect(mode: StripeAccountMode!): StripeOAuthStart!
   completeOwnStripeConnect(state: String!, code: String!): OwnPaymentAccount!
   refreshOwnPaymentAccount(mode: StripeAccountMode!): OwnPaymentAccount!
   disconnectOwnPaymentAccount(mode: StripeAccountMode!): OwnPaymentAccount!
+  saveOwnPreorderFeeSettings(input: OwnPreorderFeeInput!): OwnPreorderFeeSettings!
   createOwnCommunicationCampaign(input: CommunicationCampaignInput!): CommunicationCampaignResult!
   cancelOwnCommunicationCampaign(id: ID!): CommunicationCampaignResult!
   reviewPlatformRoleOnboarding(id: ID!, revision: Int!, decision: String!, slug: String!, note: String!): JSON!
@@ -846,6 +859,7 @@ type Mutation {
   controlOwnCloverPayment(id: String!, outcome: String!): JSON!
   createOwnPosNativeHandoff(input: JSON!): JSON!
   ownPosNativeAction(input: JSON!): JSON!
+  createVendorManagedMarket(input: VendorManagedMarketInput!): MarketDomain!
   provisionMarket(input: ProvisionMarketInput!): MarketDomain!
   setMarketAdminMembership(marketId: ID!, principalId: ID!, status: VendorMembershipStatus!): MarketAdminMembership!
   configureOwnMarket(input: ConfigureMarketInput!): MarketDomain!
@@ -7104,6 +7118,10 @@ enum MarketOperationsAction {
   PUBLISH_MAP
   ISSUE_INVOICE
   VOID_REISSUE
+  ADJUST_INVOICE
+  CANCEL_INVOICE
+  PREVIEW_INVOICE_REFUND
+  REFUND_PAYMENT
   RECORD_PAYMENT
   DAY_UPDATE
   CLOSE_DAY
@@ -7494,6 +7512,7 @@ enum StripeAccountMode {
 }
 
 type PaymentAccountReadiness {
+  state: String!
   purpose: String!
   ready: Boolean!
   reasons: [String!]!
@@ -7501,6 +7520,7 @@ type PaymentAccountReadiness {
 
 type OwnPaymentAccount {
   id: ID!
+  connectionMethod: String!
   mode: StripeAccountMode!
   provider: String!
   accountReference: String!
@@ -7528,6 +7548,33 @@ type OwnVendorEarningsPolicy {
   transferPolicy: String!
   vendorEarnings: Int
   policyVersion: String
+}
+
+type PreorderFeeExample {
+  platform: Int!
+  recovery: Int!
+  preorderFee: Int!
+  total: Int!
+}
+
+type OwnPreorderFeeSettings {
+  mode: String!
+  customAmount: Int!
+  customPercentageBps: Int!
+  currency: String!
+  version: Int!
+  editable: Boolean!
+  maxCustomAmount: Int!
+  platformPercent: Int!
+  example: PreorderFeeExample!
+}
+
+input OwnPreorderFeeInput {
+  mode: String!
+  customAmount: String!
+  customPercentage: String
+  currency: String!
+  version: Int!
 }
 
 enum CommunicationMedium {
@@ -7741,6 +7788,7 @@ input ConfigureVendorStorefrontInput {
 
 type MarketDomain {
   id: ID!
+  ownerVendorId: ID
   name: String!
   slug: String!
   status: String!
@@ -7842,6 +7890,7 @@ type OwnMarketIdentity {
 }
 
 type MembershipMarketDisplay {
+  ownerVendorId: ID
   id: ID!
   name: String!
   slug: String!
@@ -8122,6 +8171,14 @@ input MarketOverridePolicyInput {
   participationAllowed: Boolean!
   vendorWindowMode: MarketVendorWindowMode!
   closeMinutesBeforeStart: Int!
+}
+
+input VendorManagedMarketInput {
+  key: String!
+  name: String!
+  timezone: String!
+  venue: String!
+  pickupInstructions: String!
 }
 
 input ProvisionMarketInput {
@@ -8669,12 +8726,14 @@ enum PlatformPaymentMode {
 }
 
 type AdminPaymentReadiness {
+  state: String!
   purpose: String!
   ready: Boolean!
   reasons: [String!]!
 }
 
 type AdminPaymentAccount {
+  connectionMethod: String!
   id: ID!
   mode: String!
   provider: String!

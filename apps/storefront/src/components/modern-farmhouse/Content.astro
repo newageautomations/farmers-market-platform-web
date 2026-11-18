@@ -19,10 +19,12 @@ const {
   context,
   page,
   preview = false,
+  hideHero = false,
 } = Astro.props as {
   context: StorefrontContext;
   page: 'about' | 'faq' | 'policies';
   preview?: boolean;
+  hideHero?: boolean;
 };
 const appearance = context.appearance!;
 const farmhouseSettings = appearance.template!.settings as FarmhouseSettings;
@@ -44,13 +46,26 @@ const published =
   data-story-layout={farmhouseSettings.pages.storyLayout}
   data-farmhouse-component={page}
 >
+  {hideHero && (
+    <h1 class="sr-only">
+      {page === 'about'
+        ? about.title
+        : page === 'faq'
+          ? faq?.title
+          : policies?.title}
+    </h1>
+  )}
   {page === 'about' ? (
     <>
-      <header class="farmhouse-page-heading">
-        <h1>{about.title}</h1>
-      </header>
+      {!hideHero && (
+        <header class="farmhouse-page-heading">
+          <h1>{about.title}</h1>
+        </header>
+      )}
       {aboutSections(about)
-        .filter((s) => s.visible)
+        .filter(
+          (s) => s.visible && (!hideHero || !!(s.heading || s.body || s.image)),
+        )
         .map((s, index) => (
           <section
             class:list={[
@@ -83,10 +98,12 @@ const published =
     </>
   ) : page === 'faq' && faq ? (
     <>
-      <header class="farmhouse-page-heading" data-editor-section="faq-intro">
-        <h1>{faq.heading}</h1>
-        <p>{faq.description}</p>
-      </header>
+      {!hideHero && (
+        <header class="farmhouse-page-heading" data-editor-section="faq-intro">
+          <h1>{faq.heading}</h1>
+          <p>{faq.description}</p>
+        </header>
+      )}
       <div class="farmhouse-questions" data-editor-section="faq-questions">
         {faq.questions
           .filter((q) => q.visible && q.question.trim() && q.answer.trim())
@@ -120,26 +137,28 @@ const published =
     </>
   ) : page === 'policies' && policies ? (
     <>
-      <header
-        class="farmhouse-page-heading"
-        data-editor-section="policies-intro"
-      >
-        <h1>{policies.heading}</h1>
-        <p>{policies.description}</p>
-        {published && (
-          <p>
-            Published{' '}
-            <time datetime={published.toISOString()}>
-              {published.toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-                timeZone: 'UTC',
-              })}
-            </time>
-          </p>
-        )}
-      </header>
+      {!hideHero && (
+        <header
+          class="farmhouse-page-heading"
+          data-editor-section="policies-intro"
+        >
+          <h1>{policies.heading}</h1>
+          <p>{policies.description}</p>
+          {published && (
+            <p>
+              Published{' '}
+              <time datetime={published.toISOString()}>
+                {published.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                  timeZone: 'UTC',
+                })}
+              </time>
+            </p>
+          )}
+        </header>
+      )}
       <div class="farmhouse-policy-list" data-editor-section="policies-list">
         {publishedPolicyEntries(policies).map((policy) => (
           <section data-editor-section={`policy:${policy.id}`}>

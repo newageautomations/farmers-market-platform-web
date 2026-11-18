@@ -1,0 +1,78 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { marketText, storefrontText } from '@market/theme/storefront';
+import { marketNavigation } from '../../lib/market-website';
+import Art from './Art.astro';
+
+/** Meadow's site footer: the Harvest market footer links in Meadow's presentation. */
+interface Props {
+  context: StorefrontContext;
+}
+const { context } = Astro.props;
+const appearance = context.appearance;
+const visit = marketNavigation(appearance, !!Astro.locals.editorPreview);
+---
+
+<footer class="mw-footer" data-editor-section="footer">
+  <div class="mw-footer-art" aria-hidden="true">
+    <Art name="sunflower" />
+    <Art name="hen" />
+    <Art name="sunflower" />
+    <Art name="bee" />
+  </div>
+  <svg
+    class="mw-footer-edge"
+    viewBox="0 0 1440 60"
+    preserveAspectRatio="none"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M0 34c120-34 240-34 360 0s240 34 360 0 240-34 360 0 240 34 360 0v26H0z"></path>
+  </svg>
+  <div class="mw-footer-band">
+    <div class="mw-footer-inner">
+      <div class="mw-footer-brand">
+        <a href="/" class="mw-footer-name">
+          {context.name}
+        </a>
+        <p data-market-text="footerTagline">
+          {marketText(appearance, 'footerTagline')}
+        </p>
+      </div>
+      <nav aria-label="Footer navigation" class="mw-footer-nav">
+        <div>
+          <h2>Visit</h2>
+          {visit.map((link) => (
+            <a href={link.href}>{link.label}</a>
+          ))}
+        </div>
+        <div>
+          <h2>About</h2>
+          {appearance?.about.enabled && (
+            <a href="/about">
+              <span data-storefront-text="footerAboutLabel">
+                {storefrontText(appearance, 'footerAboutLabel')}
+              </span>
+            </a>
+          )}
+          {appearance?.faq?.enabled && (
+            <a href="/faq">{appearance.faq.title}</a>
+          )}
+          {appearance?.policies?.enabled && (
+            <a href="/policies">{appearance.policies.title}</a>
+          )}
+          {appearance?.contact?.enabled && (
+            <a href="/contact">{appearance.contact.title}</a>
+          )}
+          <a href="/account">Your account</a>
+        </div>
+      </nav>
+      <div class="mw-footer-bottom">
+        <span>
+          © {new Date().getFullYear()} {context.name}
+        </span>
+        <span>Powered by Market platform</span>
+      </div>
+    </div>
+  </div>
+</footer>

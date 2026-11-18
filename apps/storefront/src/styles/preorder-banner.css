@@ -28,7 +28,7 @@
 .shop-market-banner > .shop-market-picker {
   flex: 0 1 auto;
 }
-.shop-market-picker > .button.ui-button {
+.shop-market-banner .shop-market-picker > .button.ui-button {
   --button-fill: var(--brand-on-primary);
   --button-ink: var(--brand-primary);
   --button-edge: var(--brand-on-primary);

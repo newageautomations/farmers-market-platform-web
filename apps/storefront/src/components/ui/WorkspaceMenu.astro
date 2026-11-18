@@ -1,0 +1,35 @@
+---
+import type { FarmstandIconName } from '@market/ui/farmstand';
+import FarmstandIcon from './FarmstandIcon.astro';
+/**
+ * Astro adapter of the admin `WorkspaceMenu` (TAB-03 real route links in the
+ * segmented workspace menu): native links with `aria-current`, styled by
+ * `@market/ui/workspace-menu.css`.
+ */
+const { label, items, current } = Astro.props as {
+  label: string;
+  items: Array<{
+    value: string;
+    label: string;
+    href: string;
+    icon: FarmstandIconName;
+  }>;
+  current: string;
+};
+---
+
+<nav
+  class="workspace-menu"
+  aria-label={label}
+  style={`--workspace-tabs: ${items.length}; --workspace-tabs-narrow: ${Math.min(items.length, 3)}`}
+>
+  {items.map((item) => (
+    <a
+      href={item.href}
+      aria-current={item.value === current ? 'page' : undefined}
+    >
+      <FarmstandIcon name={item.icon} />
+      {item.label}
+    </a>
+  ))}
+</nav>

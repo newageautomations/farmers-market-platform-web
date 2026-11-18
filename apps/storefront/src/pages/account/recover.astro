@@ -11,7 +11,7 @@ Astro.response.headers.set('Cache-Control', 'private, no-store');
 ---
 
 <SiteLayout title="Account recovery" noindex>
-  <section class="py-12 account-panel">
+  <section class="py-12 account-panel farmstand-controls">
     <h1>Account recovery</h1>
     {Astro.url.searchParams.has('requested') && (
       <p class="alert ui-alert ui-alert-info" role="status">

@@ -1,6 +1,17 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
+import { EditorialMarketEditor } from '../apps/admin/src/EditorialMarketEditor';
+import {
+  fireEvent,
+  render,
+  screen,
+  within,
+  waitFor,
+} from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import {
+  editorialHomepageComposition,
+  type EditorialMarketSettings,
+  type StorefrontEditorSection,
   editorialMarketStarterSettings,
   editorialMarketTemplateSchema,
 } from '@market/theme/storefront';
@@ -113,4 +124,127 @@ it('maps an actual category ID to a read-only theme image without uploading it',
   expect(mediaApi.media!.upload).not.toHaveBeenCalled();
   expect(mediaApi.media!.save).not.toHaveBeenCalled();
   expect(mediaApi.media!.list).not.toHaveBeenCalled();
+});
+
+it('shares section controls while preserving Editorial native panels, visibility, assets and homepage design', async () => {
+  const mediaApi = api();
+  let current = editorialMarketStarterSettings();
+  function Editor() {
+    const [value, setValue] = useState<EditorialMarketSettings>(current);
+    const [selected, choose] =
+      useState<StorefrontEditorSection>('editorial:theme');
+    return (
+      <EditorialMarketEditor
+        value={value}
+        onChange={(next) => {
+          current = next;
+          setValue(next);
+        }}
+        api={mediaApi}
+        products={[]}
+        loadProducts={vi.fn()}
+        page="home"
+        selected={selected}
+        choose={choose}
+        collapsed={false}
+        collapse={vi.fn()}
+        busy={false}
+      />
+    );
+  }
+  render(<Editor />);
+  expect(screen.getAllByRole('button', { name: /^Duplicate:/ })).toHaveLength(
+    2,
+  );
+  expect(screen.queryByRole('switch', { name: 'Enable Hero' })).toBeNull();
+  expect(current.composition).toBeUndefined();
+  fireEvent.change(screen.getByLabelText('Homepage section spacing'), {
+    target: { value: 'spacious' },
+  });
+  fireEvent.change(screen.getByLabelText('Homepage typography scale'), {
+    target: { value: 'expressive' },
+  });
+  expect(current.homepageDesign).toEqual({
+    spacing: 'spacious',
+    typographyScale: 'expressive',
+  });
+  expect(current.composition).toBeUndefined();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Move up: Featured Products' }),
+  );
+  expect(editorialHomepageComposition(current).map((s) => s.id)).toEqual([
+    'hero',
+    'product-showcase-homepage',
+    'category-showcase-homepage',
+    'impact',
+  ]);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Product Showcase: Featured Products' }),
+  );
+  fireEvent.change(screen.getByLabelText('Layout'), {
+    target: { value: 'carousel' },
+  });
+  fireEvent.change(screen.getByLabelText('Background color'), {
+    target: { value: 'ink' },
+  });
+  expect(
+    current.composition?.find((s) => s.id === 'product-showcase-homepage'),
+  ).toMatchObject({
+    type: 'product-showcase',
+    presentation: { background: 'ink', layout: 'carousel' },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Category Showcase: Shop by Category' }),
+  );
+  fireEvent.change(screen.getByLabelText('Layout'), {
+    target: { value: 'compact' },
+  });
+  fireEvent.change(screen.getByLabelText('Background type'), {
+    target: { value: 'full' },
+  });
+  expect(
+    current.composition?.find((s) => s.id === 'category-showcase-homepage'),
+  ).toMatchObject({
+    type: 'category-showcase',
+    presentation: { backgroundType: 'full', layout: 'compact' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Hero' }));
+  fireEvent.change(screen.getByLabelText('Heading'), {
+    target: { value: 'Original hero preserved' },
+  });
+  expect(current.hero.heading).toBe('Original hero preserved');
+  fireEvent.click(screen.getByRole('button', { name: 'Add Section' }));
+  fireEvent.click(
+    within(screen.getByRole('dialog', { name: 'Add Section' })).getByRole(
+      'button',
+      { name: /^Image with Text/ },
+    ),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Photograph' }));
+  fireEvent.click(screen.getByRole('tab', { name: 'Theme Images' }));
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Choose desktopHomeHero.png' }),
+  );
+  expect(mediaApi.media!.themeImages).toHaveBeenCalledWith('editorial-market');
+  const image = current.composition?.find(
+    (s) => 'type' in s && s.type === 'image-with-text',
+  );
+  expect(
+    image &&
+      'type' in image &&
+      image.type === 'image-with-text' &&
+      image.content.image,
+  ).toEqual({
+    assetId: '91',
+    url: 'http://localhost:3000/assets/preview/editorial.png',
+    alt: '',
+  });
+  expect(current.assets).toEqual(editorialMarketStarterSettings().assets);
+  expect(
+    editorialMarketTemplateSchema.safeParse({
+      id: 'editorial-market',
+      version: 1,
+      settings: current,
+    }).success,
+  ).toBe(true);
 });

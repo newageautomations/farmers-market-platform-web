@@ -1,0 +1,85 @@
+/* Market Overview. Composes the vendor Dashboard grid, panels, tables and
+   task list (vendor-dashboard.css, @market/ui/dashboard-layout.css) and the
+   occurrence booth meter; these rules only fill the gaps between them. */
+
+/* A muted second line under a row name (an application's category). */
+.market-dashboard .vendor-dashboard-orders-table tbody th small {
+  display: block;
+  color: var(--brand-muted);
+  font-size: 11.5px;
+}
+.market-dashboard .vendor-dashboard-orders-table td .badge,
+.market-dashboard .vendor-dashboard-orders-table td [class*='status'] {
+  white-space: nowrap;
+}
+.market-dashboard .vendor-dashboard-orders-table tbody td a {
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+/* Document readiness: the booth meter, then the counts below it. */
+.market-dashboard-documents .occurrence-booth-meter {
+  margin-top: 4px;
+}
+
+/* Two columns wide (and narrow; a tablet page gives a 2-wide cell more
+   room). New applications keeps business and status on one
+   line each (the full row is one click away); Vendor documents tightens
+   the meter and counts so every count fits the cell. */
+@container dashboard-widget (max-width: 420px) {
+  .vendor-dashboard-widget[data-w='2']
+    .market-dashboard-applications
+    :is(thead th:last-child, td:last-child, tbody th small) {
+    display: none;
+  }
+  .vendor-dashboard-widget[data-w='2']
+    .market-dashboard-applications
+    .vendor-dashboard-orders-table {
+    table-layout: fixed;
+  }
+  .vendor-dashboard-widget[data-w='2']
+    .market-dashboard-applications
+    :is(th, td):nth-child(2) {
+    width: 104px;
+    padding-right: 0;
+    text-align: right;
+  }
+  .vendor-dashboard-widget[data-w='2']
+    .market-dashboard-applications
+    tbody
+    th
+    a {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .vendor-dashboard-widget[data-w='2']
+    .market-dashboard-documents
+    .occurrence-booth-meter {
+    gap: 6px;
+    padding: 9px 11px;
+  }
+  .vendor-dashboard-widget[data-w='2']
+    .market-dashboard-documents
+    .occurrence-booth-meter
+    strong {
+    font-size: 14px;
+  }
+  .vendor-dashboard-widget[data-w='2']
+    .market-dashboard-documents
+    .vendor-dashboard-facts {
+    gap: 4px;
+    margin-top: 10px;
+    padding-top: 8px;
+  }
+}
+
+/* The Market workspace gives every dd a top margin; the dashboard's
+   label/value rows keep their values centered on the label. */
+.market-dashboard
+  :is(.vendor-dashboard-facts, .vendor-dashboard-next-facts)
+  dd {
+  margin: 0;
+  align-self: center;
+}

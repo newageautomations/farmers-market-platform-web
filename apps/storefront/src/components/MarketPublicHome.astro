@@ -1,247 +1,263 @@
 ---
 import EmptyState from './ui/EmptyState.astro';
 import Button from './ui/Button.astro';
-import { cardClassName } from '@market/ui/presentation';
 import { SectionHeader, ErrorState } from '@market/ui';
 import type { StorefrontContext } from '@market/storefront-core';
-import { taxonomyNavigation, occurrenceLabel } from '@market/storefront-core';
+import {
+  taxonomyNavigation,
+  occurrenceLabel,
+  safeAsset,
+} from '@market/storefront-core';
+import {
+  harvestHomepageTarget,
+  marketOriginalSections,
+  marketText,
+} from '@market/theme/storefront';
 import type {
   PublicMarketOccurrence,
   MarketCatalog,
+  MarketOccurrenceVendor,
   AppError,
 } from '@market/api';
 import HarvestHero from './home/HarvestHero.astro';
+import HarvestArtwork from './home/HarvestArtwork.astro';
+import WebsiteSections from './WebsiteSections.astro';
+import MarketDateList from './market/MarketDateList.astro';
+import MarketVendorCards from './market/MarketVendorCards.astro';
+import { marketPageAvailable } from '../lib/market-website';
+import '../styles/harvest-sections.css';
+import '../styles/market-website.css';
 interface Props {
   context: StorefrontContext;
   occurrences: readonly PublicMarketOccurrence[];
-  totalItems: number;
-  page: number;
   catalog?: MarketCatalog;
+  vendors?: readonly MarketOccurrenceVendor[];
   error?: AppError;
   advertisedApplication?: boolean;
 }
-const {
-  context,
-  occurrences,
-  totalItems,
-  page,
-  catalog,
-  error,
-  advertisedApplication,
-} = Astro.props;
+const { context, occurrences, catalog, vendors, error } = Astro.props;
+const appearance = context.appearance;
+const preview = !!Astro.locals.editorPreview;
+const composition =
+  appearance?.harvestComposition ??
+  marketOriginalSections.map((id) => ({ id }));
 const next = occurrences[0];
-const nextHref = next ? `/occurrences/${next.id}` : '#occurrences';
-const vendors = catalog?.vendors ?? [];
+const datesPage = marketPageAvailable(appearance, 'market-dates', preview);
+const vendorsPage = marketPageAvailable(appearance, 'vendors', preview);
+const datesHref = datesPage
+  ? '/market-dates'
+  : next
+    ? `/shop?occurrence=${next.id}`
+    : '#markets';
+const shownVendors = (
+  vendors ??
+  catalog?.vendors.map((vendor) => ({
+    vendorId: vendor.vendorId,
+    name: vendor.vendorName,
+    image: null,
+    storefrontUrl: null,
+    offeringCount: vendor.count,
+  })) ??
+  []
+).slice(0, 8);
 const categories = catalog?.taxonomy
-  ? taxonomyNavigation(
-      catalog.taxonomy,
-      context.appearance?.categoryPresentation,
-    )
+  ? taxonomyNavigation(catalog.taxonomy, appearance?.categoryPresentation)
   : [];
-const dateParts = (value: PublicMarketOccurrence) => {
-  const date = new Date(value.startsAt);
-  return {
-    month: new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      timeZone: value.timezone,
-    }).format(date),
-    day: new Intl.DateTimeFormat('en-US', {
-      day: 'numeric',
-      timeZone: value.timezone,
-    }).format(date),
-  };
-};
 ---
 
 <div data-composition="market">
-  <HarvestHero
-    context={context}
-    image={
-      catalog?.items.find((item) => item.featuredAsset?.preview)?.featuredAsset
-        ?.preview
-    }
-    href={nextHref}
-    action={next ? 'Explore the next market' : 'Plan your visit'}
-  >
-    {advertisedApplication && (
-      <Button slot="action" href="/apply" variant="secondary">
-        Become a vendor
-      </Button>
-    )}
-    {next && (
-      <div slot="details" class="harvest-next-visit">
-        <span class="harvest-visit-mark" aria-hidden="true">
-          ↗
-        </span>
-        <div>
-          <p>{occurrenceLabel(next)}</p>
-          {next.venue && <p>{next.venue}</p>}
-        </div>
-      </div>
-    )}
-  </HarvestHero>
-  <section
-    id="occurrences"
-    class="harvest-section"
-    aria-labelledby="occurrences-title"
-  >
-    <SectionHeader
-      title="A good day starts at the market."
-      id="occurrences-title"
-      variant="consumer"
-    >
-      <p>Pick a date. Meet the makers. Find something wonderful.</p>
-    </SectionHeader>
-    {error ? (
-      <ErrorState error={error} />
-    ) : !occurrences.length ? (
-      <EmptyState title="Your next visit is in the making" level={3}>
-        <p>Upcoming market dates will appear here when they are announced.</p>
-      </EmptyState>
-    ) : (
-      <ul class="harvest-dates">
-        {occurrences.map((occurrence) => (
-          <li
-            class={cardClassName({
-              spacing: 'contained',
-              className: 'harvest-date',
-            })}
-          >
-            <div class="harvest-date-stamp" aria-hidden="true">
-              <span>{dateParts(occurrence).month}</span>
-              <strong>{dateParts(occurrence).day}</strong>
-            </div>
-            <div>
-              <h3>
-                <a href={`/occurrences/${occurrence.id}`}>
-                  {occurrenceLabel(occurrence)}
-                </a>
-              </h3>
-              {occurrence.venue && <p>{occurrence.venue}</p>}
-              <a
-                class="harvest-text-link"
-                href={`/occurrences/${occurrence.id}`}
-              >
-                Explore this market <span aria-hidden="true">↗</span>
-              </a>
-            </div>
-          </li>
-        ))}
-      </ul>
-    )}
-    {(totalItems > 8 || page > 1) && (
-      <nav class="pagination ui-pagination" aria-label="Market date pages">
-        <p>
-          {totalItems} market dates. Showing{' '}
-          {occurrences.length ? (page - 1) * 8 + 1 : 0} to{' '}
-          {occurrences.length ? (page - 1) * 8 + occurrences.length : 0}.
-        </p>
-        {page > 1 && (
-          <Button
-            href={`/?occurrencePage=${page - 1}#occurrences`}
-            variant="secondary"
-          >
-            Previous dates
-          </Button>
-        )}
-        {page * 8 < totalItems && (
-          <Button
-            href={`/?occurrencePage=${page + 1}#occurrences`}
-            variant="secondary"
-          >
-            More market dates
-          </Button>
-        )}
-      </nav>
-    )}
-  </section>
-  {next && categories.length > 0 && (
-    <nav
-      class="harvest-section market-filter-options"
-      aria-label="Categories for the next market date"
-    >
-      {categories.map((category) => (
-        <a
-          href={`/occurrences/${next.id}?category=${encodeURIComponent(category.id)}`}
-        >
-          {category.image && (
-            <img
-              src={category.image}
-              alt=""
-              width="80"
-              height="80"
-              loading="lazy"
-            />
-          )}
-          {category.name}
-        </a>
-      ))}
-    </nav>
-  )}
-  <section id="vendors" class="harvest-section" aria-labelledby="vendors-title">
-    <SectionHeader
-      title="Get to know your local favorites."
-      id="vendors-title"
-      variant="consumer"
-    >
-      <p>
-        {next
-          ? 'Discover vendors with offerings at this market date.'
-          : 'Discover the people behind your next market find.'}
-      </p>
-    </SectionHeader>
-    {vendors.length && next ? (
-      <ul class="harvest-vendors">
-        {vendors.slice(0, 8).map((vendor) => (
-          <li class={cardClassName({ spacing: 'contained' })}>
-            <span class="harvest-vendor-symbol" aria-hidden="true">
-              {vendor.vendorName.slice(0, 1)}
+  {composition.map((entry) =>
+    'type' in entry ? (
+      <WebsiteSections
+        context={context}
+        sections={[entry]}
+        target={harvestHomepageTarget}
+        prefix="harvest"
+      />
+    ) : entry.id === 'hero' ? (
+      <HarvestHero
+        context={context}
+        image={
+          catalog?.items.find((item) => item.featuredAsset?.preview)
+            ?.featuredAsset?.preview
+        }
+        href={appearance?.market?.heroPrimaryDestination ?? datesHref}
+        action="Find your next market day"
+        secondaryHref={
+          appearance?.market?.heroSecondaryDestination ??
+          (vendorsPage ? '/vendors' : '#vendors')
+        }
+      >
+        {next && (
+          <div slot="details" class="harvest-next-visit">
+            <span class="harvest-visit-mark" aria-hidden="true">
+              &#8599;
             </span>
-            <h3>{vendor.vendorName}</h3>
-            <a
-              href={`/occurrences/${next.id}?vendor=${encodeURIComponent(vendor.vendorId)}`}
-            >
-              Explore their offerings ↗
-            </a>
-          </li>
-        ))}
-      </ul>
-    ) : (
-      <EmptyState title="Meet us at the next market" level={3}>
-        <p>
-          Participating vendors with available offerings will appear here as the
-          next market date takes shape.
-        </p>
-      </EmptyState>
-    )}
-  </section>
-  {context.appearance?.homepage.story && (
-    <section
-      class="harvest-story harvest-section"
-      aria-label="About this market"
-    >
-      <div>
-        <h2>
-          More than a market.
-          <br />A place to belong.
-        </h2>
-        {context.appearance.about.enabled && (
-          <Button href="/about" variant="secondary">
-            Get to know us ↗
-          </Button>
+            <div>
+              <p>{occurrenceLabel(next)}</p>
+              {next.venue && <p>{next.venue}</p>}
+            </div>
+          </div>
         )}
-      </div>
-      <p>{context.appearance.homepage.story}</p>
-    </section>
+      </HarvestHero>
+    ) : entry.id === 'markets' ? (
+      <section
+        id="markets"
+        class="harvest-section"
+        data-editor-section="markets"
+        aria-labelledby="markets-title"
+      >
+        <SectionHeader
+          title={marketText(appearance, 'marketsHeading')}
+          id="markets-title"
+          variant="consumer"
+        >
+          {datesPage && (
+            <a href="/market-dates">
+              <span data-market-text="marketsLinkLabel">
+                {marketText(appearance, 'marketsLinkLabel')}
+              </span>{' '}
+              &#8599;
+            </a>
+          )}
+        </SectionHeader>
+        <p class="market-section-intro" data-market-text="marketsText">
+          {marketText(appearance, 'marketsText')}
+        </p>
+        {error ? (
+          <ErrorState error={error} />
+        ) : !occurrences.length ? (
+          <EmptyState title="Your next visit is in the making" level={3}>
+            <p>
+              Upcoming market dates will appear here when they are announced.
+            </p>
+          </EmptyState>
+        ) : (
+          <MarketDateList
+            occurrences={occurrences}
+            cardTheme={appearance?.market?.marketsCardTheme}
+          />
+        )}
+      </section>
+    ) : entry.id === 'vendors' ? (
+      <section
+        id="vendors"
+        class="harvest-section"
+        data-editor-section="vendors"
+        aria-labelledby="vendors-title"
+      >
+        <SectionHeader
+          title={marketText(appearance, 'vendorsHeading')}
+          id="vendors-title"
+          variant="consumer"
+        >
+          {vendorsPage && (
+            <a href="/vendors">
+              <span data-market-text="vendorsLinkLabel">
+                {marketText(appearance, 'vendorsLinkLabel')}
+              </span>{' '}
+              &#8599;
+            </a>
+          )}
+        </SectionHeader>
+        <p class="market-section-intro" data-market-text="vendorsText">
+          {marketText(appearance, 'vendorsText')}
+        </p>
+        {next && shownVendors.length ? (
+          <MarketVendorCards
+            vendors={shownVendors}
+            occurrenceId={next.id}
+            cardTheme={appearance?.market?.vendorsCardTheme}
+          />
+        ) : (
+          <EmptyState title="Meet us at the next market" level={3}>
+            <p>
+              Participating vendors will appear here as the next market date
+              takes shape.
+            </p>
+          </EmptyState>
+        )}
+      </section>
+    ) : entry.id === 'categories' ? (
+      (categories.length > 0 || preview) && (
+        <section
+          class="harvest-section harvest-library harvest-category-showcase market-categories"
+          data-editor-section="categories"
+          data-layout="cards"
+          data-background="surface"
+          aria-labelledby="categories-title"
+        >
+          <div class="harvest-library-heading">
+            <h2 id="categories-title" data-market-text="categoriesHeading">
+              {marketText(appearance, 'categoriesHeading')}
+            </h2>
+            <p data-market-text="categoriesText">
+              {marketText(appearance, 'categoriesText')}
+            </p>
+          </div>
+          {next && categories.length ? (
+            <nav
+              class="harvest-category-links"
+              aria-label="Categories for the next market date"
+            >
+              {categories.slice(0, 6).map((category) => (
+                <a
+                  href={`/shop?occurrence=${next.id}&category=${encodeURIComponent(category.id)}`}
+                >
+                  <span class="harvest-category-photo">
+                    {safeAsset(category.image) ? (
+                      <img
+                        src={safeAsset(category.image)}
+                        alt=""
+                        width="800"
+                        height="600"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <HarvestArtwork />
+                    )}
+                  </span>
+                  <span class="harvest-category-title farmstand-text-link">
+                    {category.name}
+                    <span aria-hidden="true"> &#8599;</span>
+                  </span>
+                </a>
+              ))}
+            </nav>
+          ) : (
+            <p>
+              Categories appear when vendors list offerings for your next market
+              date.
+            </p>
+          )}
+        </section>
+      )
+    ) : (
+      <section
+        class="harvest-invitation market-cta-banner"
+        data-editor-section="closing"
+        aria-labelledby="market-cta-title"
+      >
+        <div>
+          <h2
+            id="market-cta-title"
+            style="white-space:pre-line"
+            data-market-text="closingHeading"
+          >
+            {marketText(appearance, 'closingHeading')}
+          </h2>
+          <p data-market-text="closingText">
+            {marketText(appearance, 'closingText')}
+          </p>
+        </div>
+        <Button href={datesHref}>
+          <span data-market-text="closingLabel">
+            {marketText(appearance, 'closingLabel')}
+          </span>{' '}
+          <span aria-hidden="true">&#8599;</span>
+        </Button>
+      </section>
+    ),
   )}
-  <section class="harvest-invitation" aria-label="Plan your next visit">
-    <h2>
-      Come for the market.
-      <br />
-      Stay for the community.
-    </h2>
-    <Button href="#occurrences">
-      Find your next market day <span aria-hidden="true">↗</span>
-    </Button>
-  </section>
 </div>

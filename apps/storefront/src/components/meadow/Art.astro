@@ -1,0 +1,347 @@
+---
+/**
+ * Meadow's illustration set: flat, decorative artwork drawn for this theme.
+ * Every drawing shares one 96 x 96 frame, so it can stand alone as a sticker
+ * or be placed inside a larger scene with `x`, `y` and `size`.
+ */
+import type { MeadowArtName } from './art';
+interface Props {
+  name: MeadowArtName;
+  /** Position and size when nested inside another SVG scene. */
+  x?: number;
+  y?: number;
+  size?: number;
+  class?: string;
+}
+const { name, x, y, size, class: className } = Astro.props;
+const petals = Array.from({ length: 12 }, (_, index) => index * 30);
+---
+
+<svg
+  class:list={['mw-art', `mw-art-${name}`, className]}
+  viewBox="0 0 96 96"
+  x={x}
+  y={y}
+  width={size}
+  height={size}
+  aria-hidden="true"
+  focusable="false"
+>
+  {name === 'bee' && (
+    <>
+      <g class="mw-art-wings">
+        <ellipse
+          cx="38"
+          cy="30"
+          rx="12"
+          ry="19"
+          transform="rotate(-24 38 30)"
+          fill="#CFEAF3"
+        />
+        <ellipse
+          cx="56"
+          cy="27"
+          rx="11"
+          ry="18"
+          transform="rotate(16 56 27)"
+          fill="#E9F6FA"
+        />
+      </g>
+      <path d="M22 49 9 56l13 7z" fill="#3B2A1A" />
+      <ellipse cx="48" cy="56" rx="29" ry="21" fill="#F5B82E" />
+      <path
+        d="M37 41v30M52 40v32"
+        stroke="#3B2A1A"
+        stroke-width="8"
+        stroke-linecap="round"
+      />
+      <circle cx="67" cy="52" r="3" fill="#3B2A1A" />
+      <path
+        d="M63 62q5 4 10 0M66 38q1-9 8-12M72 40q4-7 10-7"
+        stroke="#3B2A1A"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </>
+  )}
+  {name === 'honey' && (
+    <>
+      <rect x="27" y="12" width="42" height="13" rx="4.5" fill="#C9860A" />
+      <path
+        d="M24 35a9 9 0 0 1 9-9h30a9 9 0 0 1 9 9v39a10 10 0 0 1-10 10H34a10 10 0 0 1-10-10z"
+        fill="#F5B82E"
+      />
+      <path
+        d="M24 46h48v28a10 10 0 0 1-10 10H34a10 10 0 0 1-10-10z"
+        fill="#EBA51C"
+      />
+      <path d="M35 26h10v9a5 5 0 0 1-10 0z" fill="#FFD866" />
+      <rect x="33" y="48" width="30" height="24" rx="6" fill="#FFF6DC" />
+      <path
+        d="m48 52.5 6.5 3.750v7.500L48 67.500l-6.5-3.750v-7.500z"
+        fill="#F5B82E"
+      />
+      <path
+        d="M63 31q4 2 4 8"
+        stroke="#FFE9A8"
+        stroke-width="3"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </>
+  )}
+  {name === 'tomato' && (
+    <>
+      <circle cx="48" cy="55" r="30" fill="#E4492F" />
+      <path
+        d="M27 50a22 22 0 0 1 11-14"
+        stroke="#F58A75"
+        stroke-width="5"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path
+        d="M48 31c-4-6-12-8-18-6 4 2 7 5 8 9-5-1-10 1-13 5 6-1 11 0 15 3 2-3 5-5 8-5s6 2 8 5c4-3 9-4 15-3-3-4-8-6-13-5 1-4 4-7 8-9-6-2-14 0-18 6z"
+        fill="#2F6B3A"
+      />
+      <path
+        d="M48 31q-1-8 4-13"
+        stroke="#2F6B3A"
+        stroke-width="4"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </>
+  )}
+  {name === 'carrot' && (
+    <>
+      <path
+        d="M48 34c-2-10-10-16-19-16 2 9 9 15 19 16zM48 34c2-10 10-16 19-16-2 9-9 15-19 16zM48 34c-5-8-4-19 0-26 4 7 5 18 0 26z"
+        fill="#3E8E4B"
+      />
+      <path
+        d="M48 92c-3 0-5-2-6-5L32 48c-2-9 5-17 16-17s18 8 16 17L54 87c-1 3-3 5-6 5z"
+        fill="#F28A2E"
+      />
+      <path
+        d="M37 50h9M48 62h9M42 74h8"
+        stroke="#D46C12"
+        stroke-width="3"
+        stroke-linecap="round"
+      />
+    </>
+  )}
+  {name === 'sunflower' && (
+    <>
+      <path
+        d="M48 56v36"
+        stroke="#3E8E4B"
+        stroke-width="5"
+        stroke-linecap="round"
+      />
+      <path d="M48 80c7-9 18-9 23-4-5 8-15 10-23 4z" fill="#3E8E4B" />
+      <path d="M48 86c-6-8-15-8-19-4 4 7 12 9 19 4z" fill="#2F6B3A" />
+      <g class="mw-art-petals">
+        {petals.map((angle) => (
+          <ellipse
+            cx="48"
+            cy="17"
+            rx="6.5"
+            ry="13"
+            transform={`rotate(${angle} 48 40)`}
+            fill={angle % 60 ? '#F5B82E' : '#FFD24D'}
+          />
+        ))}
+      </g>
+      <circle cx="48" cy="40" r="14" fill="#6B3F1D" />
+      <circle cx="48" cy="40" r="8" fill="#8A5326" />
+    </>
+  )}
+  {name === 'hen' && (
+    <>
+      <path
+        d="M38 80v9m-5 0h10M53 80v9m-5 0h10"
+        stroke="#F28A2E"
+        stroke-width="3"
+        stroke-linecap="round"
+      />
+      <path d="M24 52c-9-4-14-13-12-23 8 2 15 9 17 18z" fill="#B85A2A" />
+      <ellipse cx="44" cy="59" rx="26" ry="23" fill="#D9773F" />
+      <circle cx="62" cy="36" r="15" fill="#D9773F" />
+      <path d="M53 25c-1-6 4-9 7-5 1-5 7-5 8 0 4-2 7 2 5 6z" fill="#E4492F" />
+      <path d="m76 35 10 3-10 5z" fill="#F5B82E" />
+      <path d="M73 45c3 4 1 9-3 9-2-3-1-7 3-9z" fill="#E4492F" />
+      <circle cx="66" cy="34" r="2.4" fill="#23301F" />
+      <path d="M28 57c6-7 20-7 25 2-5 9-18 11-25-2z" fill="#B85A2A" />
+    </>
+  )}
+  {name === 'cow' && (
+    <>
+      <ellipse
+        cx="17"
+        cy="35"
+        rx="11"
+        ry="6.5"
+        transform="rotate(-22 17 35)"
+        fill="#3B2A1A"
+      />
+      <ellipse
+        cx="79"
+        cy="35"
+        rx="11"
+        ry="6.5"
+        transform="rotate(22 79 35)"
+        fill="#F1E4D2"
+      />
+      <path
+        d="M33 24c-3-6-1-11 4-13 0 5 1 8 4 11zM63 24c3-6 1-11-4-13 0 5-1 8-4 11z"
+        fill="#E8C690"
+      />
+      <rect x="24" y="20" width="48" height="58" rx="23" fill="#FFFDF7" />
+      <path
+        d="M24 46V43a23 23 0 0 1 21-22.900c2 10-5 23-21 25.900z"
+        fill="#3B2A1A"
+      />
+      <ellipse cx="48" cy="65" rx="21" ry="14" fill="#FFC2B4" />
+      <circle cx="41" cy="65" r="2.8" fill="#C2705F" />
+      <circle cx="55" cy="65" r="2.8" fill="#C2705F" />
+      <circle cx="36" cy="42" r="5" fill="#FFFDF7" />
+      <circle cx="36" cy="42" r="2.8" fill="#23301F" />
+      <circle cx="60" cy="42" r="3" fill="#23301F" />
+    </>
+  )}
+  {name === 'strawberry' && (
+    <>
+      <path
+        d="M48 90C32 82 20 66 20 50c0-10 8-16 16-14 5 1 9 4 12 4s7-3 12-4c8-2 16 4 16 14 0 16-12 32-28 40z"
+        fill="#E4492F"
+      />
+      <g fill="#FFE9A8">
+        <ellipse cx="36" cy="52" rx="2" ry="3" />
+        <ellipse cx="60" cy="52" rx="2" ry="3" />
+        <ellipse cx="48" cy="60" rx="2" ry="3" />
+        <ellipse cx="38" cy="68" rx="2" ry="3" />
+        <ellipse cx="58" cy="68" rx="2" ry="3" />
+        <ellipse cx="48" cy="77" rx="2" ry="3" />
+      </g>
+      <path
+        d="M48 37c-6-8-16-8-22-4 6 2 10 6 12 10 4-4 7-6 10-6s6 2 10 6c2-4 6-8 12-10-6-4-16-4-22 4z"
+        fill="#2F6B3A"
+      />
+      <path
+        d="M48 37q0-8 5-13"
+        stroke="#2F6B3A"
+        stroke-width="4"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </>
+  )}
+  {name === 'egg' && (
+    <>
+      <path
+        d="M70 40c7 14 3 34-11 42-10 5-22 0-27-10-6-13 0-33 12-41 10-6 20-1 26 9z"
+        fill="#F3DFC0"
+        transform="rotate(14 48 52)"
+      />
+      <path
+        d="M30 34c-9 8-15 25-11 38 3 10 13 16 23 14 13-3 19-21 16-36-2-11-9-19-18-19-4 0-7 1-10 3z"
+        fill="#FFF6E6"
+      />
+      <path
+        d="M28 48q2-8 8-12"
+        stroke="#fff"
+        stroke-width="4"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </>
+  )}
+  {name === 'bread' && (
+    <>
+      <path
+        d="M14 52c0-13 15-22 34-22s34 9 34 22c0 5-3 9-7 10v14a7 7 0 0 1-7 7H28a7 7 0 0 1-7-7V62c-4-1-7-5-7-10z"
+        fill="#E0A458"
+      />
+      <path
+        d="M21 62c8 3 46 3 54 0v14a7 7 0 0 1-7 7H28a7 7 0 0 1-7-7z"
+        fill="#CF8D3D"
+      />
+      <path
+        d="m34 40 6 9M46 38l6 9M58 40l6 9"
+        stroke="#A9661F"
+        stroke-width="3.5"
+        stroke-linecap="round"
+      />
+    </>
+  )}
+  {name === 'cheese' && (
+    <>
+      <path d="M12 60 60 26c12 3 21 14 24 34z" fill="#FFD24D" />
+      <path d="M12 60h72v18a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4z" fill="#F5B82E" />
+      <circle cx="34" cy="71" r="5" fill="#E19A12" />
+      <circle cx="58" cy="68" r="4" fill="#E19A12" />
+      <circle cx="72" cy="74" r="3" fill="#E19A12" />
+      <circle cx="56" cy="46" r="5" fill="#F5B82E" />
+    </>
+  )}
+  {name === 'milk' && (
+    <>
+      <rect x="36" y="8" width="24" height="9" rx="3.5" fill="#4A62B8" />
+      <path
+        d="M38 17h20v10c0 5 8 8 8 19v34a8 8 0 0 1-8 8H38a8 8 0 0 1-8-8V46c0-11 8-14 8-19z"
+        fill="#FFFDF7"
+      />
+      <path d="M30 52h36v20H30z" fill="#CFE0FF" />
+      <circle cx="48" cy="62" r="5" fill="#4A62B8" />
+      <path
+        d="M36 44q0-8 5-11"
+        stroke="#E3ECFA"
+        stroke-width="3"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </>
+  )}
+  {name === 'basket' && (
+    <>
+      <path
+        d="M22 52C22 14 74 14 74 52"
+        stroke="#B9772B"
+        stroke-width="5"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <circle cx="34" cy="40" r="13" fill="#E4492F" />
+      <circle cx="58" cy="36" r="12" fill="#F28A2E" />
+      <path d="M46 44c-2-10 2-18 8-22 3 7 1 16-8 22z" fill="#3E8E4B" />
+      <circle cx="48" cy="46" r="10" fill="#F5B82E" />
+      <path
+        d="M12 48h72l-7 34a8 8 0 0 1-8 6H27a8 8 0 0 1-8-6z"
+        fill="#D9A05B"
+      />
+      <path d="M12 48h72v6a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4z" fill="#B9772B" />
+      <path
+        d="M32 62v20M48 62v22M64 62v20"
+        stroke="#B9772B"
+        stroke-width="3"
+        stroke-linecap="round"
+      />
+    </>
+  )}
+  {name === 'sprig' && (
+    <>
+      <path
+        d="M48 90V30"
+        stroke="#2F6B3A"
+        stroke-width="4"
+        stroke-linecap="round"
+      />
+      <path
+        d="M48 34c-3-12 2-22 0-28 9 6 10 18 0 28zM48 54c-12-2-20-10-22-20 11 1 19 8 22 20zM48 54c12-2 20-10 22-20-11 1-19 8-22 20zM48 74c-12-2-20-10-22-20 11 1 19 8 22 20zM48 74c12-2 20-10 22-20-11 1-19 8-22 20z"
+        fill="#3E8E4B"
+      />
+    </>
+  )}
+</svg>

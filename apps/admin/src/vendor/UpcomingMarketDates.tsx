@@ -13,10 +13,13 @@ import {
 } from '@market/ui/farmstand';
 import { go, ReadState, useRead } from './common';
 import type { VendorService } from './service';
+import { IdentityIcon } from '@market/ui/workspace';
+import { useProfileImages } from '../profile-images';
 import { MarketsSummary } from './MarketsSummary';
 import { MarketsPagination as Pagination } from './MarketsPagination';
 import { ApplicationStatusBadge } from './MarketApplications';
 import { PackingBadge } from './packing';
+import { BoothInvoicePayment } from './BoothInvoicePayment';
 import {
   dateAttendance,
   dateAttendanceLabels,
@@ -28,8 +31,9 @@ import {
   type DateAttendance,
   type UpcomingMarketDate,
 } from './markets-data';
-import './market-applications.css';
+import '@market/ui/workspace-records.css';
 import './market-dates.css';
+import { DetailSheet, usePhoneRecords } from '../market/mobile';
 
 const PAGE_SIZE = 10;
 const DAY = 86400000;
@@ -104,7 +108,10 @@ function DatePacking({
 
 export function UpcomingMarketDates({ service }: { service: VendorService }) {
   const id = useId();
-  const read = useCallback(() => readUpcomingMarketDates(service), [service]);
+  const read = useCallback(
+    () => readUpcomingMarketDates(service, Date.now(), true),
+    [service],
+  );
   const query = useRead(`market-dates:${service.vendorId}`, read, true, {
     retainPreviousData: true,
   });
@@ -122,12 +129,15 @@ export function UpcomingMarketDates({ service }: { service: VendorService }) {
     { retainPreviousData: true },
   );
   const manage = mayCommand(service.context, 'ManageOwnMarketParticipation');
+  const records = usePhoneRecords();
   const [search, setSearch] = useState(''),
     [market, setMarket] = useState('all'),
     [range, setRange] = useState('30'),
     [attendance, setAttendance] = useState('all'),
     [page, setPage] = useState(0),
     [selected, setSelected] = useState<string>(),
+    // Phones open a tapped date's details in a bottom sheet.
+    [sheet, setSheet] = useState(false),
     [busy, setBusy] = useState(false),
     [confirming, setConfirming] = useState(false),
     [packingRevision, setPackingRevision] = useState(0),
@@ -163,7 +173,7 @@ export function UpcomingMarketDates({ service }: { service: VendorService }) {
       (d) =>
         (market === 'all' || d.membership.id === market) &&
         (attendance === 'all' ||
-          dateAttendance(d.participation) === attendance) &&
+          dateAttendance(d.participation, d.occurrence) === attendance) &&
         `${d.membership.market.name} ${d.occurrence.venue} ${dateLocation(d)} ${d.booth ?? ''} ${marketDate(d.occurrence, true)}`
           .toLocaleLowerCase()
           .includes(term),
@@ -172,13 +182,20 @@ export function UpcomingMarketDates({ service }: { service: VendorService }) {
   const shown = visible.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const current: UpcomingMarketDate | undefined =
     shown.find((d) => d.key === selected) ?? shown[0];
-  const currentAttendance = current && dateAttendance(current.participation);
+  const profileImages = useProfileImages(service.profileImage, {
+    markets: [
+      ...shown.map((d) => d.membership.marketId),
+      current?.membership.marketId,
+    ],
+  });
+  const currentAttendance =
+    current && dateAttendance(current.participation, current.occurrence);
   const packable =
     !!current &&
     !!packingDates.data?.some((o) => String(o.id) === current.occurrence.id);
   const counts = inRange.reduce<Record<DateAttendance, number>>(
     (all, d) => {
-      all[dateAttendance(d.participation)]++;
+      all[dateAttendance(d.participation, d.occurrence)]++;
       return all;
     },
     { attending: 0, tentative: 0, 'not-attending': 0, 'needs-rsvp': 0 },
@@ -359,6 +376,15 @@ export function UpcomingMarketDates({ service }: { service: VendorService }) {
                 <>
                   <FarmstandTable
                     label="Upcoming market dates"
+                    recordDetails={records({
+                      status: 4,
+                      onOpen: (index) => {
+                        const date = shown[index];
+                        if (!date) return;
+                        select(date.key);
+                        setSheet(true);
+                      },
+                    })}
                     wide
                     headings={[
                       'Market',
@@ -388,9 +414,12 @@ export function UpcomingMarketDates({ service }: { service: VendorService }) {
                       >
                         <th scope="row">
                           <div className="markets-identity">
-                            <span className="markets-identity-icon">
-                              <FarmstandIcon name="store" />
-                            </span>
+                            <IdentityIcon
+                              icon="store"
+                              image={profileImages.market(
+                                date.membership.marketId,
+                              )}
+                            />
                             <span className="market-application-name">
                               {date.membership.market.name}
                             </span>
@@ -416,14 +445,25 @@ export function UpcomingMarketDates({ service }: { service: VendorService }) {
                             <Badge tone="neutral">{date.booth}</Badge>
                           ) : (
                             <span className="markets-muted">
-                              {boothsAvailable ? 'Not assigned' : 'Unavailable'}
+                              {date.membership.market.ownerVendorId
+                                ? 'Not required'
+                                : boothsAvailable
+                                  ? 'Not assigned'
+                                  : 'Unavailable'}
                             </span>
                           )}
                         </td>
                         <td>
-                          <AttendanceBadge
-                            value={dateAttendance(date.participation)}
-                          />
+                          {date.occurrence.status === 'cancelled' ? (
+                            <Badge tone="danger">Cancelled</Badge>
+                          ) : (
+                            <AttendanceBadge
+                              value={dateAttendance(
+                                date.participation,
+                                date.occurrence,
+                              )}
+                            />
+                          )}
                         </td>
                         <td className="market-application-status-cell">
                           <div className="market-application-status-content">
@@ -471,153 +511,251 @@ export function UpcomingMarketDates({ service }: { service: VendorService }) {
               </p>
             </FarmstandPanel>
           </div>
-          <FarmstandPanel
-            as="section"
-            className="markets-next market-application-details market-date-details"
-            aria-label="Date details"
+          <DetailSheet
+            phoneOnly
+            title="Date details"
+            open={sheet}
+            onClose={() => setSheet(false)}
           >
-            <h2>
-              <FarmstandIcon name="calendar-days" />
-              Date details
-            </h2>
-            {current && currentAttendance ? (
-              <>
-                <div className="markets-next-art" aria-hidden="true">
-                  <FarmstandIcon name="store" />
-                </div>
-                <div className="markets-next-content">
-                  <h3>{current.membership.market.name}</h3>
-                  <p className="markets-venue">
-                    <FarmstandIcon name="map-pin" />
-                    {dateLocation(current)}
-                  </p>
-                  <dl className="market-application-facts">
-                    <div>
-                      <dt>Date</dt>
-                      <dd>{marketDate(current.occurrence, true)}</dd>
-                    </div>
-                    <div>
-                      <dt>Time</dt>
-                      <dd>{marketTime(current.occurrence)}</dd>
-                    </div>
-                    {current.occurrence.venue &&
-                      current.occurrence.venue !== dateLocation(current) && (
-                        <div>
-                          <dt>Venue</dt>
-                          <dd>{current.occurrence.venue}</dd>
-                        </div>
-                      )}
-                    <div>
-                      <dt>Booth</dt>
-                      <dd>
-                        {current.booth ? (
-                          <Badge tone="neutral">{current.booth}</Badge>
-                        ) : boothsAvailable ? (
-                          'Not assigned'
-                        ) : (
-                          'Unavailable'
-                        )}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Attendance</dt>
-                      <dd>
-                        <AttendanceBadge value={currentAttendance} />
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Application</dt>
-                      <dd>
-                        {current.application ? (
-                          <ApplicationStatusBadge
-                            value={current.application.status}
-                          />
-                        ) : (
-                          'No application'
-                        )}
-                      </dd>
-                    </div>
-                    {packingAllowed && (
+            <FarmstandPanel
+              as="section"
+              className="markets-next market-application-details market-date-details"
+              aria-label="Date details"
+            >
+              <h2>
+                <FarmstandIcon name="calendar-days" />
+                Date details
+              </h2>
+              {current && currentAttendance ? (
+                <>
+                  <IdentityIcon
+                    className="markets-next-art"
+                    icon="store"
+                    image={profileImages.market(current.membership.marketId)}
+                  />
+                  <div className="markets-next-content">
+                    <h3>{current.membership.market.name}</h3>
+                    <p className="markets-venue">
+                      <FarmstandIcon name="map-pin" />
+                      {dateLocation(current)}
+                    </p>
+                    <dl className="market-application-facts">
                       <div>
-                        <dt>Packing</dt>
+                        <dt>Date</dt>
+                        <dd>{marketDate(current.occurrence, true)}</dd>
+                      </div>
+                      <div>
+                        <dt>Time</dt>
+                        <dd>{marketTime(current.occurrence)}</dd>
+                      </div>
+                      {current.occurrence.venue &&
+                        current.occurrence.venue !== dateLocation(current) && (
+                          <div>
+                            <dt>Venue</dt>
+                            <dd>{current.occurrence.venue}</dd>
+                          </div>
+                        )}
+                      <div>
+                        <dt>Booth</dt>
                         <dd>
-                          <DatePacking
-                            key={current.occurrence.id}
-                            service={service}
-                            occurrenceId={current.occurrence.id}
-                            available={packable}
-                            loading={!packingDates.data && packingDates.loading}
-                            revision={packingRevision}
-                          />
+                          {current.booth ? (
+                            <span className="market-date-booth-status">
+                              <Badge tone="neutral">{current.booth}</Badge>
+                              {current.occurrence.status === 'cancelled' ? (
+                                <Badge tone="danger">Cancelled</Badge>
+                              ) : (
+                                !!current.invoices?.length && (
+                                  <Badge
+                                    tone={
+                                      current.invoices.every(
+                                        (i) => i.paidMinor >= i.totalMinor,
+                                      )
+                                        ? 'success'
+                                        : 'warning'
+                                    }
+                                  >
+                                    {current.invoices.every(
+                                      (i) => i.paidMinor >= i.totalMinor,
+                                    )
+                                      ? 'Paid'
+                                      : 'Not paid'}
+                                  </Badge>
+                                )
+                              )}
+                              {current.occurrence.status !== 'cancelled' &&
+                                current.invoices?.length === 0 && (
+                                  <Badge tone="neutral">No invoice</Badge>
+                                )}
+                            </span>
+                          ) : current.membership.market.ownerVendorId ? (
+                            'Not required'
+                          ) : boothsAvailable ? (
+                            'Not assigned'
+                          ) : (
+                            'Unavailable'
+                          )}
                         </dd>
                       </div>
+                      <div>
+                        <dt>Attendance</dt>
+                        <dd>
+                          {current.occurrence.status === 'cancelled' ? (
+                            <Badge tone="danger">Cancelled</Badge>
+                          ) : (
+                            <AttendanceBadge value={currentAttendance} />
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Application</dt>
+                        <dd>
+                          {current.application ? (
+                            <ApplicationStatusBadge
+                              value={current.application.status}
+                            />
+                          ) : current.membership.market.ownerVendorId ? (
+                            'Not required'
+                          ) : (
+                            'No application'
+                          )}
+                        </dd>
+                      </div>
+                      {packingAllowed && (
+                        <div>
+                          <dt>Packing</dt>
+                          <dd>
+                            <DatePacking
+                              key={current.occurrence.id}
+                              service={service}
+                              occurrenceId={current.occurrence.id}
+                              available={packable}
+                              loading={
+                                !packingDates.data && packingDates.loading
+                              }
+                              revision={packingRevision}
+                            />
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+                    {result?.key === current.key && (
+                      <Alert
+                        severity={result.kind === 'saved' ? 'success' : 'error'}
+                        role={result.kind === 'saved' ? 'status' : 'alert'}
+                      >
+                        {result.text}
+                      </Alert>
                     )}
-                  </dl>
-                  {result?.key === current.key && (
-                    <Alert
-                      severity={result.kind === 'saved' ? 'success' : 'error'}
-                      role={result.kind === 'saved' ? 'status' : 'alert'}
+                    {current.occurrence.status === 'cancelled' && (
+                      <Alert severity="info">
+                        {current.membership.market.ownerVendorId
+                          ? 'You cancelled this market date.'
+                          : 'The market cancelled this date. Booth assignments and invoices are cancelled. No payment is due.'}
+                      </Alert>
+                    )}
+                    {current.invoices?.map(
+                      (invoice) =>
+                        service.boothInvoices && (
+                          <BoothInvoicePayment
+                            key={invoice.id}
+                            api={service.boothInvoices}
+                            invoiceId={invoice.id}
+                            cancelled={
+                              current.occurrence.status === 'cancelled'
+                            }
+                            actionLabel={
+                              invoice.paidMinor < invoice.totalMinor
+                                ? 'Pay invoice'
+                                : 'View invoice'
+                            }
+                            onUpdated={query.refresh}
+                            marketDate={marketDate(current.occurrence, true)}
+                          />
+                        ),
+                    )}
+                    {manage &&
+                      current.occurrence.status === 'scheduled' &&
+                      !['attending', 'not-attending'].includes(
+                        currentAttendance,
+                      ) && (
+                        <>
+                          <FarmstandButton
+                            loading={busy && !confirming}
+                            disabled={busy || currentAttendance === 'attending'}
+                            onClick={() => void respond(current, true)}
+                          >
+                            <FarmstandIcon name="circle-check" />
+                            {currentAttendance === 'attending'
+                              ? 'Attending'
+                              : 'Mark attending'}
+                          </FarmstandButton>
+                          <FarmstandButton
+                            variant="secondary"
+                            disabled={
+                              busy || currentAttendance === 'not-attending'
+                            }
+                            onClick={() => setConfirming(true)}
+                          >
+                            Not attending
+                          </FarmstandButton>
+                        </>
+                      )}
+                    {packingAllowed &&
+                      (packable ? (
+                        <FarmstandLink
+                          href={packingHref}
+                          variant="secondary"
+                          onClick={(event) => inApp(event, packingHref!)}
+                        >
+                          <FarmstandIcon name="package" />
+                          Packing list
+                        </FarmstandLink>
+                      ) : (
+                        <FarmstandButton
+                          variant="secondary"
+                          disabled
+                          title="A packing list opens once you respond or receive orders for this date"
+                        >
+                          <FarmstandIcon name="package" />
+                          Packing list
+                        </FarmstandButton>
+                      ))}
+                    <FarmstandLink
+                      href={`/vendor/day/${current.occurrence.id}`}
+                      onClick={(event) =>
+                        inApp(event, `/vendor/day/${current.occurrence.id}`)
+                      }
                     >
-                      {result.text}
-                    </Alert>
-                  )}
-                  {manage && (
-                    <>
-                      <FarmstandButton
-                        loading={busy && !confirming}
-                        disabled={busy || currentAttendance === 'attending'}
-                        onClick={() => void respond(current, true)}
-                      >
-                        <FarmstandIcon name="circle-check" />
-                        {currentAttendance === 'attending'
-                          ? 'Attending'
-                          : 'Mark attending'}
-                      </FarmstandButton>
-                      <FarmstandButton
-                        variant="secondary"
-                        disabled={busy || currentAttendance === 'not-attending'}
-                        onClick={() => setConfirming(true)}
-                      >
-                        Not attending
-                      </FarmstandButton>
-                    </>
-                  )}
-                  {packingAllowed &&
-                    (packable ? (
-                      <FarmstandLink
-                        href={packingHref}
-                        variant="secondary"
-                        onClick={(event) => inApp(event, packingHref!)}
-                      >
-                        <FarmstandIcon name="package" />
-                        Packing list
-                      </FarmstandLink>
-                    ) : (
-                      <FarmstandButton
-                        variant="secondary"
-                        disabled
-                        title="A packing list opens once you respond or receive orders for this date"
-                      >
-                        <FarmstandIcon name="package" />
-                        Packing list
-                      </FarmstandButton>
-                    ))}
-                  <FarmstandLink
-                    href={marketHref}
-                    variant="secondary"
-                    onClick={(event) => inApp(event, marketHref!)}
-                  >
-                    View market
-                    <FarmstandIcon name="chevron-right" />
-                  </FarmstandLink>
-                </div>
-              </>
-            ) : (
-              <EmptyState title="No market date selected">
-                <p>Select a market date to review its details.</p>
-              </EmptyState>
-            )}
-          </FarmstandPanel>
+                      Open Market Day
+                    </FarmstandLink>
+                    <FarmstandLink
+                      href={`/vendor/markets/${current.membership.id}/dates/${current.occurrence.id}/preparation`}
+                      onClick={(event) =>
+                        inApp(
+                          event,
+                          `/vendor/markets/${current.membership.id}/dates/${current.occurrence.id}/preparation`,
+                        )
+                      }
+                    >
+                      Market preparation
+                    </FarmstandLink>
+                    <FarmstandLink
+                      href={marketHref}
+                      variant="secondary"
+                      onClick={(event) => inApp(event, marketHref!)}
+                    >
+                      View market
+                      <FarmstandIcon name="chevron-right" />
+                    </FarmstandLink>
+                  </div>
+                </>
+              ) : (
+                <EmptyState title="No market date selected">
+                  <p>Select a market date to review its details.</p>
+                </EmptyState>
+              )}
+            </FarmstandPanel>
+          </DetailSheet>
         </div>
       )}
       {current && (

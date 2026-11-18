@@ -1,14 +1,23 @@
 ---
 import type { CentralAccountData } from '../lib/account';
 import Button from './ui/Button.astro';
+import FarmstandIcon from './ui/FarmstandIcon.astro';
+import WorkspacePanel from './ui/WorkspacePanel.astro';
 import {
+  alertClassName,
   buttonClassName,
   inputClassName,
   selectClassName,
-  cardClassName,
+  statusBadgeClassName,
 } from '@market/ui/presentation';
-const { account, embedded = false } = Astro.props as {
+/**
+ * Central account settings in the Settings workspace presentation: each
+ * section is a WorkspacePanel (the Astro SettingsPanel adapter). Forms,
+ * actions and field names are unchanged; the backend remains authoritative.
+ */
+const { account } = Astro.props as {
   account: CentralAccountData;
+  /** Retained for compatibility; the page always embeds these sections. */
   embedded?: boolean;
 };
 const labels = { VENDOR: 'Vendor', MARKET_MANAGER: 'Market Manager' };
@@ -19,252 +28,282 @@ const timezones = [
     ...Intl.supportedValuesOf('timeZone'),
   ]),
 ];
+const onboarding = (role: 'VENDOR' | 'MARKET_MANAGER') => {
+  const state = account.contexts.onboarding.find((r) => r.role === role)?.state;
+  return state === 'PENDING_REVIEW'
+    ? 'Ready to finish signup'
+    : state
+      ? state.charAt(0) + state.slice(1).toLowerCase().replaceAll('_', ' ')
+      : 'Not started';
+};
+const onboarded = Astro.url.searchParams.get('onboarded') ?? '';
 ---
 
-<section class="py-12 account-panel">
-  {embedded ? (
-    <h2 class="ui-section-title-consumer">Your account</h2>
-  ) : (
-    <h1>Your account</h1>
-  )}
-  <p>
-    {account.profile.firstName} {account.profile.lastName} ·{' '}
-    <span>{account.profile.emailAddress}</span>
+{Astro.url.searchParams.has('saved') && (
+  <p class={alertClassName('success')} role="status">
+    Your changes were saved.
   </p>
-  <p>
-    Phone verified. Email{' '}
-    {account.profile.emailVerified ? 'verified' : 'unverified'}. Current mode:
-    Customer.
+)}
+{['vendor', 'market'].includes(onboarded) && (
+  <p class={alertClassName('success')} role="status">
+    Your {onboarded === 'vendor' ? 'Vendor' : 'Market Manager'} account is
+    ready.
   </p>
-  {!account.profile.emailVerified && (
-    <form method="post" action="/api/account">
-      <input type="hidden" name="action" value="requestEmailProof" />
-      <p>
-        Optional email verification allows recovery without an additional SMS
-        code. Your verified personal phone can also protect password recovery.
-      </p>
-      <Button type="submit">Send optional email verification</Button>
-    </form>
-  )}
-  {Astro.url.searchParams.has('emailSent') && (
-    <p class="alert ui-alert ui-alert-info" role="status">
-      Check your email for a verification link.
-    </p>
-  )}
-  <div class={cardClassName({ className: 'account-modes' })}>
-    <p>Use the account menu to switch among your authorized workspaces.</p>
-    {(['VENDOR', 'MARKET_MANAGER'] as const).map((role) => {
-      const businesses = account.contexts.affiliations.filter(
-        (a) => a.mode === role,
-      );
-      return (
-        <div>
-          {businesses.length ? (
-            <p>
-              {labels[role]} access: {businesses.map((a) => a.name).join(', ')}
-            </p>
-          ) : (
-            <a
-              class={buttonClassName({
-                variant: 'primary',
-                className: 'button',
-              })}
-              href={`/account/onboarding/${role === 'VENDOR' ? 'vendor' : 'market'}`}
-            >
-              {role === 'VENDOR'
-                ? 'Become a Vendor'
-                : 'Create / Manage a Market'}
-            </a>
-          )}
-          <p>
-            {labels[role]} onboarding:{' '}
-            {account.contexts.onboarding.find((r) => r.role === role)?.state ===
-            'PENDING_REVIEW'
-              ? 'ready to finish signup'
-              : (account.contexts.onboarding
-                  .find((r) => r.role === role)
-                  ?.state.toLowerCase()
-                  .replaceAll('_', ' ') ?? 'not started')}
-            .
-          </p>
-          {businesses.length > 0 && (
-            <a
-              class={buttonClassName({
-                variant: 'secondary',
-                className: 'button secondary',
-              })}
-              href={`/account/onboarding/${role === 'VENDOR' ? 'vendor' : 'market'}`}
-            >
-              View onboarding progress
-            </a>
-          )}
-        </div>
-      );
-    })}
-  </div>
-  {Astro.url.searchParams.has('saved') && (
-    <p class="alert ui-alert ui-alert-info" role="status">
-      Your changes were saved.
-    </p>
-  )}
-  {['vendor', 'market'].includes(
-    Astro.url.searchParams.get('onboarded') ?? '',
-  ) && (
-    <p class="alert ui-alert ui-alert-info" role="status">
-      Your{' '}
-      {Astro.url.searchParams.get('onboarded') === 'vendor'
-        ? 'Vendor'
-        : 'Market Manager'}{' '}
-      account is ready.
-    </p>
-  )}
-  <form method="post" action="/api/account">
-    <input type="hidden" name="action" value="updateProfile" />
-    <label class="field">
-      First name{' '}
-      <input
-        name="firstName"
-        class={inputClassName()}
-        value={account.profile.firstName}
-        autocomplete="given-name"
-        required
-        maxlength="100"
-      />
-    </label>
-    <label class="field">
-      Last name{' '}
-      <input
-        name="lastName"
-        class={inputClassName()}
-        value={account.profile.lastName}
-        autocomplete="family-name"
-        required
-        maxlength="100"
-      />
-    </label>
-    <p>
-      Verified personal phone: {account.profile.phoneNumber}.{' '}
-      <a
-        class={buttonClassName({
-          variant: 'secondary',
-          className: 'button secondary',
-        })}
-        href="/account/phone"
-      >
-        Change personal phone
-      </a>
-    </p>
-    <label class="field">
-      Time zone
-      <select
-        name="timezone"
-        class={selectClassName()}
-        data-account-timezone
-        data-detect-timezone={!account.profile.timezone ? 'true' : undefined}
-        required
-      >
-        {timezones.map((zone) => (
-          <option
-            value={zone}
-            selected={zone === (account.profile.timezone ?? 'America/Chicago')}
-          >
-            {zone.replaceAll('_', ' ')}
-          </option>
-        ))}
-      </select>
-    </label>
-    <Button type="submit">Save personal profile</Button>
-  </form>
-  <details class="ui-disclosure">
-    <summary>Password and security</summary>
-    <div class="ui-disclosure-content">
-      <form method="post" action="/api/account">
-        <input type="hidden" name="action" value="changePassword" />
-        <label class="field">
-          Current password{' '}
-          <input
-            name="currentPassword"
-            class={inputClassName('password')}
-            type="password"
-            autocomplete="current-password"
-            required
-            maxlength="1024"
-          />
-        </label>
-        <label class="field">
-          New password{' '}
-          <input
-            name="password"
-            class={inputClassName('password')}
-            type="password"
-            autocomplete="new-password"
-            required
-            minlength="12"
-            maxlength="72"
-          />
-        </label>
-        <p>
-          Use 12 to 72 English letters, numbers and keyboard symbols, with an
-          uppercase letter, a number and a special character. Changing your
-          password signs out your existing sessions.
-        </p>
-        <Button type="submit">Change password</Button>
-      </form>
-    </div>
-  </details>
-  <details class="ui-disclosure">
-    <summary>Platform communication preferences</summary>
-    <div class="ui-disclosure-content">
-      <p>
-        Role updates require completed onboarding and current access. Saving a
-        preference does not promise notification delivery. Promotions require
-        separate explicit consent.
-      </p>
-      {(['VENDOR', 'MARKET_MANAGER'] as const).map((role) => (
-        <form method="post" action="/api/account">
-          <input type="hidden" name="action" value="rolePreference" />
-          <input type="hidden" name="role" value={role} />
-          <label>
-            <input
-              type="checkbox"
-              name="updates"
-              value="true"
-              checked={account.preferences.some(
-                (p) => p.role === role && p.updatesEnabled,
-              )}
-            />{' '}
-            Receive {labels[role]} platform updates when eligible
-          </label>
-          <Button type="submit">Save {labels[role]} preference</Button>
-        </form>
-      ))}
-      <form method="post" action="/api/account">
-        <input type="hidden" name="action" value="withdrawPromotions" />
-        <Button type="submit">Withdraw platform promotional consent</Button>
-      </form>
-    </div>
-  </details>
-  <p>
-    Registration, your profile, and initial onboarding are free. Application
-    history, reusable private documents, and application notifications are
-    planned separately.
+)}
+{Astro.url.searchParams.has('emailSent') && (
+  <p class={alertClassName('info')} role="status">
+    Check your email for a verification link.
   </p>
-  {!embedded && (
-    <form method="post" action="/api/account">
-      <input type="hidden" name="action" value="logout" />
-      <Button type="submit">Sign out</Button>
-    </form>
-  )}
-  <a
-    class={buttonClassName({
-      variant: 'secondary',
-      className: 'button secondary',
-    })}
-    href="/account/recover"
+)}
+<div class="customer-settings-grid">
+  <WorkspacePanel
+    icon="user-round"
+    title="Personal profile"
+    description="Your name and time zone across the platform."
   >
-    Account recovery
-  </a>
-</section>
+    <dl class="customer-settings-facts">
+      <div>
+        <dt>Email</dt>
+        <dd>
+          {account.profile.emailAddress}{' '}
+          <span
+            class={statusBadgeClassName(
+              account.profile.emailVerified ? 'success' : 'warning',
+            )}
+          >
+            {account.profile.emailVerified ? 'Verified' : 'Unverified'}
+          </span>
+        </dd>
+      </div>
+      <div>
+        <dt>Personal phone</dt>
+        <dd>
+          {account.profile.phoneNumber}{' '}
+          <span class={statusBadgeClassName('success')}>Verified</span>
+        </dd>
+      </div>
+      <div>
+        <dt>Current mode</dt>
+        <dd>Customer</dd>
+      </div>
+    </dl>
+    <form method="post" action="/api/account" class="customer-settings-form">
+      <input type="hidden" name="action" value="updateProfile" />
+      <div class="customer-settings-fields">
+        <label class="field">
+          First name{' '}
+          <input
+            name="firstName"
+            class={inputClassName()}
+            value={account.profile.firstName}
+            autocomplete="given-name"
+            required
+            maxlength="100"
+          />
+        </label>
+        <label class="field">
+          Last name{' '}
+          <input
+            name="lastName"
+            class={inputClassName()}
+            value={account.profile.lastName}
+            autocomplete="family-name"
+            required
+            maxlength="100"
+          />
+        </label>
+      </div>
+      <label class="field">
+        Time zone
+        <select
+          name="timezone"
+          class={selectClassName()}
+          data-account-timezone
+          data-detect-timezone={!account.profile.timezone ? 'true' : undefined}
+          required
+        >
+          {timezones.map((zone) => (
+            <option
+              value={zone}
+              selected={
+                zone === (account.profile.timezone ?? 'America/Chicago')
+              }
+            >
+              {zone.replaceAll('_', ' ')}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div class="customer-settings-actions">
+        <Button type="submit">Save personal profile</Button>
+        <a
+          class={buttonClassName({
+            variant: 'secondary',
+            className: 'farmstand-button',
+          })}
+          href="/account/phone"
+        >
+          Change personal phone
+        </a>
+      </div>
+    </form>
+  </WorkspacePanel>
+  <WorkspacePanel
+    icon="shield-check"
+    title="Password and security"
+    description="Changing your password signs out your existing sessions."
+  >
+    {!account.profile.emailVerified && (
+      <form method="post" action="/api/account" class="customer-settings-form">
+        <input type="hidden" name="action" value="requestEmailProof" />
+        <p class="customer-muted">
+          Optional email verification allows recovery without an additional SMS
+          code. Your verified personal phone can also protect password recovery.
+        </p>
+        <div class="customer-settings-actions">
+          <Button type="submit" variant="secondary">
+            Send optional email verification
+          </Button>
+        </div>
+      </form>
+    )}
+    <form method="post" action="/api/account" class="customer-settings-form">
+      <input type="hidden" name="action" value="changePassword" />
+      <label class="field">
+        Current password{' '}
+        <input
+          name="currentPassword"
+          class={inputClassName('password')}
+          type="password"
+          autocomplete="current-password"
+          required
+          maxlength="1024"
+        />
+      </label>
+      <label class="field">
+        New password{' '}
+        <input
+          name="password"
+          class={inputClassName('password')}
+          type="password"
+          autocomplete="new-password"
+          required
+          minlength="12"
+          maxlength="72"
+        />
+      </label>
+      <p class="customer-muted">
+        Use 12 to 72 English letters, numbers and keyboard symbols, with an
+        uppercase letter, a number and a special character.
+      </p>
+      <div class="customer-settings-actions">
+        <Button type="submit">Change password</Button>
+        <a
+          class={buttonClassName({
+            variant: 'secondary',
+            className: 'farmstand-button',
+          })}
+          href="/account/recover"
+        >
+          Account recovery
+        </a>
+      </div>
+    </form>
+  </WorkspacePanel>
+  <WorkspacePanel
+    icon="layers"
+    title="Workspaces"
+    description="Use the account menu to switch among your authorized workspaces."
+  >
+    <ul class="customer-settings-roles">
+      {(['VENDOR', 'MARKET_MANAGER'] as const).map((role) => {
+        const businesses = account.contexts.affiliations.filter(
+          (a) => a.mode === role,
+        );
+        const href = `/account/onboarding/${role === 'VENDOR' ? 'vendor' : 'market'}`;
+        return (
+          <li>
+            <span class="markets-identity-icon">
+              <FarmstandIcon name={role === 'VENDOR' ? 'store' : 'map-pin'} />
+            </span>
+            <span>
+              <strong>{labels[role]}</strong>
+              <small>
+                {businesses.length
+                  ? `Access: ${businesses.map((a) => a.name).join(', ')}`
+                  : 'No access yet'}
+              </small>
+              <small>Onboarding: {onboarding(role)}</small>
+            </span>
+            {businesses.length ? (
+              <a
+                class={buttonClassName({
+                  variant: 'secondary',
+                  size: 'compact',
+                  className: 'farmstand-button',
+                })}
+                href={href}
+              >
+                View onboarding progress
+              </a>
+            ) : (
+              <a
+                class={buttonClassName({
+                  variant: 'primary',
+                  size: 'compact',
+                  className: 'farmstand-button',
+                })}
+                href={href}
+              >
+                {role === 'VENDOR'
+                  ? 'Become a Vendor'
+                  : 'Create / Manage a Market'}
+              </a>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+    <p class="customer-muted">
+      Registration, your profile, and initial onboarding are free.
+    </p>
+  </WorkspacePanel>
+  <WorkspacePanel
+    icon="bell"
+    title="Platform communication"
+    description="Saving a preference does not promise notification delivery. Promotions require separate explicit consent."
+  >
+    <p class="customer-muted">
+      Role updates require completed onboarding and current access.
+    </p>
+    {(['VENDOR', 'MARKET_MANAGER'] as const).map((role) => (
+      <form method="post" action="/api/account" class="customer-preference-row">
+        <input type="hidden" name="action" value="rolePreference" />
+        <input type="hidden" name="role" value={role} />
+        <label>
+          <input
+            type="checkbox"
+            name="updates"
+            value="true"
+            checked={account.preferences.some(
+              (p) => p.role === role && p.updatesEnabled,
+            )}
+          />{' '}
+          Receive {labels[role]} platform updates when eligible
+        </label>
+        <Button type="submit" variant="secondary" size="compact">
+          Save {labels[role]} preference
+        </Button>
+      </form>
+    ))}
+    <form method="post" action="/api/account">
+      <input type="hidden" name="action" value="withdrawPromotions" />
+      <Button type="submit" variant="destructive-outline">
+        Withdraw platform promotional consent
+      </Button>
+    </form>
+  </WorkspacePanel>
+</div>
 <script>
   for (const select of document.querySelectorAll<HTMLSelectElement>(
     'select[data-detect-timezone="true"]',

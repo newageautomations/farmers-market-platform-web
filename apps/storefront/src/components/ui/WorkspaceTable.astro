@@ -1,0 +1,43 @@
+---
+/**
+ * Astro adapter of `FarmstandTable` (TBL-02 `DataTable` with the Farmstand
+ * class): the same scroll region, caption and column headings. Rows are the
+ * default slot. Row selection is opt-in through `data-select-row` rows and
+ * the page's own script.
+ */
+const {
+  label,
+  headings,
+  wide = false,
+  class: className = '',
+} = Astro.props as {
+  label: string;
+  headings: readonly string[];
+  wide?: boolean;
+  class?: string;
+};
+---
+
+<div
+  class="table-scroll"
+  tabindex="0"
+  role="region"
+  aria-label={`${label} scroll area`}
+>
+  <table
+    aria-label={label}
+    class={`ui-table farmstand-data-table ${wide ? 'ui-table-wide' : ''} ${className}`.trim()}
+  >
+    <caption class="sr-only">{label}</caption>
+    <thead>
+      <tr>
+        {headings.map((heading) => (
+          <th scope="col">{heading}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      <slot />
+    </tbody>
+  </table>
+</div>

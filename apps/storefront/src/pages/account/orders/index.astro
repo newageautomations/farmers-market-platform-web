@@ -1,13 +1,28 @@
 ---
-import { buttonClassName } from '@market/ui/presentation';
+import { buttonClassName, statusBadgeClassName } from '@market/ui/presentation';
+import { formatMoney } from '@market/config';
 import CustomerLayout from '../../../layouts/CustomerLayout.astro';
-import CustomerOrders from '../../../components/CustomerOrders.astro';
+import CustomerOrderDetails from '../../../components/CustomerOrderDetails.astro';
+import EmptyState from '../../../components/ui/EmptyState.astro';
+import FarmstandIcon from '../../../components/ui/FarmstandIcon.astro';
+import WorkspacePagination from '../../../components/ui/WorkspacePagination.astro';
+import WorkspaceSummary from '../../../components/ui/WorkspaceSummary.astro';
+import WorkspaceTable from '../../../components/ui/WorkspaceTable.astro';
 import {
   customerApi,
   customerSkip,
   customerAuthenticationError,
 } from '../../../lib/customer-dashboard';
+import {
+  awaitingPickup,
+  financialStatus,
+  plural,
+  purchaseDate,
+  purchasePickup,
+  purchaseVendors,
+} from '../../../lib/customer-presentation';
 import { temporaryUnavailableResponse } from '@market/config';
+const PAGE = 10;
 const api = customerApi(Astro),
   skip = customerSkip(Astro.url.searchParams.get('skip'));
 let purchases;
@@ -19,44 +34,221 @@ try {
     ? Astro.redirect(api.login)
     : temporaryUnavailableResponse();
 }
+const items = purchases.items;
+const requested = Astro.url.searchParams.get('order');
+// The central bridge may return numeric identifiers; compare as strings.
+const key = (p: { orderId: string | number }) => String(p.orderId);
+const selected =
+  items.map(key).find((id) => id === requested) ??
+  (items[0] ? key(items[0]) : undefined);
+const pending = items.filter(awaitingPickup).length;
+const collected = items.filter(
+  (p) => purchasePickup(p).label === 'Picked up',
+).length;
+const refunded = items.filter((p) => p.financial.refunded > 0).length;
+const pageUrl = (value: number) =>
+  value > 0 ? `?skip=${value}` : '/account/orders';
 ---
 
-<CustomerLayout title="Order History" path="/account/orders">
-  <p class="customer-muted">
-    Purchases across all your markets and vendors, with each checkout shown
-    once.
-  </p>
-  <CustomerOrders purchases={purchases.items} />
-  <nav
-    class="customer-pagination ui-pagination"
-    aria-label="Order history pages"
+<CustomerLayout
+  title="Order History"
+  path="/account/orders"
+  icon="receipt-text"
+  description="Purchases across all your markets and vendors, with each checkout shown once."
+>
+  <a
+    slot="actions"
+    class={buttonClassName({
+      variant: 'secondary',
+      className: 'farmstand-button',
+    })}
+    href="/account/markets"
   >
-    <p>
-      {purchases.totalItems} orders. Showing{' '}
-      {purchases.items.length ? skip + 1 : 0} to{' '}
-      {purchases.items.length ? skip + purchases.items.length : 0}.
-    </p>
-    {skip > 0 && (
-      <a
-        class={buttonClassName({
-          variant: 'secondary',
-          className: 'button secondary',
-        })}
-        href={`?skip=${Math.max(0, skip - 10)}`}
+    <FarmstandIcon name="store" />
+    Explore markets
+  </a>
+  <WorkspaceSummary
+    class="customer-summary-four"
+    items={[
+      {
+        label: 'Orders placed',
+        value: purchases.totalItems,
+        hint: 'Across every market and vendor',
+        icon: 'receipt-text',
+      },
+      {
+        label: 'Awaiting pickup',
+        value: pending,
+        hint: `${plural(pending, 'order')} shown here still to collect`,
+        icon: 'package',
+        tone: pending ? 'warning' : undefined,
+      },
+      {
+        label: 'Picked up',
+        value: collected,
+        hint: `${plural(collected, 'order')} shown here fully collected`,
+        icon: 'circle-check',
+        tone: 'success',
+      },
+      {
+        label: 'Refunds',
+        value: refunded,
+        hint: `${plural(refunded, 'order')} shown here with a refund`,
+        icon: 'credit-card',
+      },
+    ]}
+  />
+  {items.length ? (
+    <div
+      class="markets-columns market-applications-columns customer-select-root"
+      data-select-root
+      data-select-param="order"
+    >
+      <p class="sr-only" aria-live="polite" data-select-live></p>
+      <div class="market-applications-main">
+        <section
+          class="card ui-card ui-card-contained ui-card-flush farmstand-panel markets-list market-applications-list"
+          aria-labelledby="orders-title"
+        >
+          <h2 id="orders-title">Your orders</h2>
+          <WorkspaceTable
+            label="Your orders"
+            wide
+            class="customer-orders-table"
+            headings={[
+              'Order',
+              'Placed',
+              'Vendors',
+              'Total',
+              'Payment',
+              'Pickup',
+            ]}
+          >
+            {items.map((p) => {
+              const payment = financialStatus(p),
+                pickup = purchasePickup(p);
+              return (
+                <tr
+                  tabindex="0"
+                  data-select-row={key(p)}
+                  aria-selected={key(p) === selected ? 'true' : 'false'}
+                  class={
+                    key(p) === selected
+                      ? 'market-application-selected'
+                      : undefined
+                  }
+                >
+                  <th scope="row">
+                    <div class="markets-identity">
+                      <span class="markets-identity-icon">
+                        <FarmstandIcon name="receipt-text" />
+                      </span>
+                      <span>
+                        <a
+                          class="market-application-name"
+                          href={`?${new URLSearchParams({ ...(skip ? { skip: String(skip) } : {}), order: key(p) })}`}
+                          data-select-link
+                        >
+                          Order {p.orderId}
+                        </a>
+                        <small>
+                          <FarmstandIcon name="store" />
+                          {p.storefront.displayName}
+                        </small>
+                      </span>
+                    </div>
+                  </th>
+                  <td>
+                    <div class="markets-date">
+                      <span>
+                        <FarmstandIcon name="calendar-days" />
+                        {purchaseDate(p.purchasedAt)}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="customer-wrap-cell">{purchaseVendors(p)}</td>
+                  <td>
+                    <strong>
+                      {formatMoney(
+                        p.financial.originalPaid,
+                        p.financial.currency,
+                      )}
+                    </strong>
+                  </td>
+                  <td>
+                    <span class={statusBadgeClassName(payment.tone)}>
+                      {payment.label}
+                    </span>
+                  </td>
+                  <td class="market-application-status-cell">
+                    <div class="market-application-status-content">
+                      <span class={statusBadgeClassName(pickup.tone)}>
+                        {pickup.label}
+                      </span>
+                      <FarmstandIcon name="chevron-right" />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </WorkspaceTable>
+          <WorkspacePagination
+            label="Order history pages"
+            summary={`${plural(purchases.totalItems, 'order')}. Showing ${skip + 1} to ${skip + items.length}.`}
+            previous={skip > 0 ? pageUrl(Math.max(0, skip - PAGE)) : undefined}
+            next={
+              skip + PAGE < purchases.totalItems
+                ? pageUrl(skip + PAGE)
+                : undefined
+            }
+          />
+        </section>
+      </div>
+      <section
+        class="card ui-card ui-card-contained ui-card-flush farmstand-panel markets-next market-application-details"
+        aria-label="Order details"
       >
-        Previous orders
-      </a>
-    )}
-    {skip + 10 < purchases.totalItems && (
-      <a
-        class={buttonClassName({
-          variant: 'secondary',
-          className: 'button secondary',
-        })}
-        href={`?skip=${skip + 10}`}
-      >
-        Next orders
-      </a>
-    )}
-  </nav>
+        <h2>
+          <FarmstandIcon name="receipt-text" />
+          Order details
+        </h2>
+        {items.map((p) => (
+          <div
+            data-select-panel={key(p)}
+            data-select-label={`order ${p.orderId}`}
+            hidden={key(p) !== selected}
+          >
+            <CustomerOrderDetails purchase={p} />
+          </div>
+        ))}
+      </section>
+    </div>
+  ) : (
+    <section class="card ui-card ui-card-contained ui-card-flush farmstand-panel markets-list">
+      <EmptyState title={skip ? 'No more orders' : 'No orders yet'}>
+        <p>
+          {skip
+            ? 'There are no orders on this page.'
+            : "You haven't placed any orders yet. Explore markets and vendors to get started."}
+        </p>
+        <a
+          slot="action"
+          class={buttonClassName({
+            variant: 'secondary',
+            className: 'farmstand-button',
+          })}
+          href={skip ? '/account/orders' : '/account/markets'}
+        >
+          {skip ? 'Back to your latest orders' : 'Explore markets'}
+        </a>
+      </EmptyState>
+    </section>
+  )}
+  <script>
+    import { installRowSelection } from '../../../lib/row-selection';
+    for (const root of document.querySelectorAll<HTMLElement>(
+      '[data-select-root]',
+    ))
+      installRowSelection(root);
+  </script>
 </CustomerLayout>

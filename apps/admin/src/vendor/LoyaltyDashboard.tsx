@@ -38,6 +38,12 @@ import { LoyaltyLeaderboard } from './LoyaltyLeaderboard';
 import { LoyaltyIcon } from './LoyaltyIcon';
 import { NavigationIcon } from '../NavigationIcon';
 import { WorkspaceMenu } from '../WorkspaceMenu';
+import {
+  DetailSheet,
+  SummaryCarouselDots,
+  usePhoneRecords,
+  useSummaryCarousel,
+} from '../market/mobile';
 import { LoyaltyRewards } from './LoyaltyRewards';
 import {
   filterRedemptions,
@@ -341,6 +347,10 @@ export function LoyaltyDashboard({
   initialCreate?: boolean;
   initialRewardId?: number;
 }) {
+  const carousel = useSummaryCarousel();
+  const records = usePhoneRecords();
+  // Phones open a tapped redemption's details in a bottom sheet.
+  const [redemptionSheet, setRedemptionSheet] = useState(false);
   const hashView = (): LoyaltyView =>
     window.location.hash === '#leaderboard'
       ? 'leaderboard'
@@ -693,6 +703,14 @@ export function LoyaltyDashboard({
                   <FarmstandPanel className="leaderboard-table-panel redemptions-table-panel">
                     <FarmstandTable
                       label="Redemption history"
+                      recordDetails={records({
+                        identifier: 1,
+                        status: 4,
+                        onOpen: (index) => {
+                          setSelectedRedemption(shownRedemptions[index]?.id);
+                          setRedemptionSheet(true);
+                        },
+                      })}
                       headings={[
                         'Reward redeemed',
                         'Customer',
@@ -853,162 +871,170 @@ export function LoyaltyDashboard({
                     )}
                   </FarmstandPanel>
                   {redemption && (
-                    <FarmstandPanel
-                      as="section"
-                      className="leaderboard-preview redemptions-preview"
-                      aria-label="Redemption details"
+                    <DetailSheet
+                      phoneOnly
+                      title={redemption.terms.name}
+                      open={redemptionSheet}
+                      onClose={() => setRedemptionSheet(false)}
                     >
-                      <div className="leaderboard-identity">
-                        <span className="reward-thumbnail">
-                          <LoyaltyIcon name="gift" />
-                          {redemption.terms.image && (
-                            <img
-                              src={redemption.terms.image}
-                              alt=""
-                              onError={(event) => {
-                                event.currentTarget.hidden = true;
-                              }}
-                            />
-                          )}
-                        </span>
-                        <div>
-                          <strong>{redemption.terms.name}</strong>
-                          <p>
-                            <Badge
-                              tone={
-                                redemption.status === 'COMPLETED'
-                                  ? 'success'
-                                  : redemption.status === 'REVERSED'
-                                    ? 'danger'
-                                    : 'neutral'
-                              }
-                            >
-                              {redemptionStatuses[redemption.status] ??
-                                redemption.status}
-                            </Badge>
-                          </p>
-                        </div>
-                      </div>
-                      <ReadState
-                        {...redemptionOrder}
-                        retry={redemptionOrder.refresh}
-                      />
-                      <dl className="leaderboard-facts">
-                        <div>
-                          <dt>
-                            <FarmstandIcon name="user-round" />
-                            Customer
-                          </dt>
-                          <dd>{redemption.customer || 'Unavailable'}</dd>
-                        </div>
-                        <div>
-                          <dt>
-                            <FarmstandIcon name="hash" />
-                            Order #
-                          </dt>
-                          <dd>
-                            {redemptionOrder.data?.sale?.orderCode ||
-                              (redemption.vendor_order_id
-                                ? `#${redemption.order_id}`
-                                : `Cart ${redemption.order_id}`)}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>
-                            <FarmstandIcon name="map-pin" />
-                            Redeemed at
-                          </dt>
-                          <dd>
-                            {redemptionOrder.loading
-                              ? 'Loading...'
-                              : (redemptionOrder.data?.location ??
-                                'Unavailable')}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>
-                            <LoyaltyIcon name="coins" />
-                            Points required
-                          </dt>
-                          <dd>
-                            {redemption.terms.points.toLocaleString()} pts
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>
-                            <FarmstandIcon name="tag" />
-                            Total discounted
-                          </dt>
-                          <dd>{formatMoney(redemption.discount, 'USD')}</dd>
-                        </div>
-                        <div>
-                          <dt>
-                            <FarmstandIcon name="shopping-cart" />
-                            Order total
-                          </dt>
-                          <dd>
-                            {redemptionOrder.data?.sale
-                              ? formatMoney(
-                                  redemptionOrder.data.sale.amount,
-                                  redemptionOrder.data.sale.currency as 'USD',
-                                )
-                              : redemptionOrder.data?.order.context
-                                ? formatMoney(
-                                    redemptionOrder.data.order.context.original,
-                                    redemptionOrder.data.order.context
-                                      .currency as 'USD',
-                                  )
-                                : 'Unavailable'}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>
-                            <FarmstandIcon name="calendar-days" />
-                            Recorded on
-                          </dt>
-                          <dd>
-                            {new Date(redemption.created_at).toLocaleString(
-                              undefined,
-                              {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                              },
+                      <FarmstandPanel
+                        as="section"
+                        className="leaderboard-preview redemptions-preview"
+                        aria-label="Redemption details"
+                      >
+                        <div className="leaderboard-identity">
+                          <span className="reward-thumbnail">
+                            <LoyaltyIcon name="gift" />
+                            {redemption.terms.image && (
+                              <img
+                                src={redemption.terms.image}
+                                alt=""
+                                onError={(event) => {
+                                  event.currentTarget.hidden = true;
+                                }}
+                              />
                             )}
-                          </dd>
+                          </span>
+                          <div>
+                            <strong>{redemption.terms.name}</strong>
+                            <p>
+                              <Badge
+                                tone={
+                                  redemption.status === 'COMPLETED'
+                                    ? 'success'
+                                    : redemption.status === 'REVERSED'
+                                      ? 'danger'
+                                      : 'neutral'
+                                }
+                              >
+                                {redemptionStatuses[redemption.status] ??
+                                  redemption.status}
+                              </Badge>
+                            </p>
+                          </div>
                         </div>
-                      </dl>
-                      {redemption.status === 'REVERSED' && (
-                        <p className="rewards-description">
-                          Points restored after a full vendor refund.
-                        </p>
-                      )}
-                      <div className="redemptions-actions">
-                        {redemption.relationship && (
-                          <FarmstandLink
-                            variant="secondary"
-                            href={`/vendor/customers/${encodeURIComponent(redemption.relationship.id)}`}
-                          >
-                            <FarmstandIcon name="user-round" />
-                            View customer
-                          </FarmstandLink>
+                        <ReadState
+                          {...redemptionOrder}
+                          retry={redemptionOrder.refresh}
+                        />
+                        <dl className="leaderboard-facts">
+                          <div>
+                            <dt>
+                              <FarmstandIcon name="user-round" />
+                              Customer
+                            </dt>
+                            <dd>{redemption.customer || 'Unavailable'}</dd>
+                          </div>
+                          <div>
+                            <dt>
+                              <FarmstandIcon name="hash" />
+                              Order #
+                            </dt>
+                            <dd>
+                              {redemptionOrder.data?.sale?.orderCode ||
+                                (redemption.vendor_order_id
+                                  ? `#${redemption.order_id}`
+                                  : `Cart ${redemption.order_id}`)}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>
+                              <FarmstandIcon name="map-pin" />
+                              Redeemed at
+                            </dt>
+                            <dd>
+                              {redemptionOrder.loading
+                                ? 'Loading...'
+                                : (redemptionOrder.data?.location ??
+                                  'Unavailable')}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>
+                              <LoyaltyIcon name="coins" />
+                              Points required
+                            </dt>
+                            <dd>
+                              {redemption.terms.points.toLocaleString()} pts
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>
+                              <FarmstandIcon name="tag" />
+                              Total discounted
+                            </dt>
+                            <dd>{formatMoney(redemption.discount, 'USD')}</dd>
+                          </div>
+                          <div>
+                            <dt>
+                              <FarmstandIcon name="shopping-cart" />
+                              Order total
+                            </dt>
+                            <dd>
+                              {redemptionOrder.data?.sale
+                                ? formatMoney(
+                                    redemptionOrder.data.sale.amount,
+                                    redemptionOrder.data.sale.currency as 'USD',
+                                  )
+                                : redemptionOrder.data?.order.context
+                                  ? formatMoney(
+                                      redemptionOrder.data.order.context
+                                        .original,
+                                      redemptionOrder.data.order.context
+                                        .currency as 'USD',
+                                    )
+                                  : 'Unavailable'}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>
+                              <FarmstandIcon name="calendar-days" />
+                              Recorded on
+                            </dt>
+                            <dd>
+                              {new Date(redemption.created_at).toLocaleString(
+                                undefined,
+                                {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                },
+                              )}
+                            </dd>
+                          </div>
+                        </dl>
+                        {redemption.status === 'REVERSED' && (
+                          <p className="rewards-description">
+                            Points restored after a full vendor refund.
+                          </p>
                         )}
-                        {redemption.vendor_order_id &&
-                          service.context.permissions.includes(
-                            'ReadOwnOrders',
-                          ) && (
+                        <div className="redemptions-actions">
+                          {redemption.relationship && (
                             <FarmstandLink
-                              variant="primary"
-                              href={`/vendor/orders/${redemption.vendor_order_id}`}
+                              variant="secondary"
+                              href={`/vendor/customers/${encodeURIComponent(redemption.relationship.id)}`}
                             >
-                              <UtilityIcon name="external" />
-                              View order
+                              <FarmstandIcon name="user-round" />
+                              View customer
                             </FarmstandLink>
                           )}
-                      </div>
-                    </FarmstandPanel>
+                          {redemption.vendor_order_id &&
+                            service.context.permissions.includes(
+                              'ReadOwnOrders',
+                            ) && (
+                              <FarmstandLink
+                                variant="primary"
+                                href={`/vendor/orders/${redemption.vendor_order_id}`}
+                              >
+                                <UtilityIcon name="external" />
+                                View order
+                              </FarmstandLink>
+                            )}
+                        </div>
+                      </FarmstandPanel>
+                    </DetailSheet>
                   )}
                 </div>
               </>
@@ -1063,37 +1089,41 @@ export function LoyaltyDashboard({
                   </FarmstandButton>
                 )}
               </FarmstandPanel>
-              <FarmstandPanel className="loyalty-stat">
-                <span className="loyalty-stat-icon">
-                  <LoyaltyIcon name="members" />
-                </span>
-                <dl>
-                  <dt>Loyalty members</dt>
-                  <dd>{data.metrics.customers.toLocaleString()}</dd>
-                </dl>
-              </FarmstandPanel>
-              <FarmstandPanel className="loyalty-stat">
-                <span className="loyalty-stat-icon loyalty-icon-warm">
-                  <LoyaltyIcon name="coins" />
-                </span>
-                <dl>
-                  <dt>
-                    Net points issued<span>All time</span>
-                  </dt>
-                  <dd>{Number(data.metrics.issued).toLocaleString()}</dd>
-                </dl>
-              </FarmstandPanel>
-              <FarmstandPanel className="loyalty-stat">
-                <span className="loyalty-stat-icon">
-                  <LoyaltyIcon name="gift" />
-                </span>
-                <dl>
-                  <dt>
-                    Orders using rewards<span>All time</span>
-                  </dt>
-                  <dd>{data.metrics.rewardOrders.toLocaleString()}</dd>
-                </dl>
-              </FarmstandPanel>
+              {/* `display: contents` on desktop; the phone carousel track. */}
+              <div className="loyalty-stats">
+                <FarmstandPanel className="loyalty-stat">
+                  <span className="loyalty-stat-icon">
+                    <LoyaltyIcon name="members" />
+                  </span>
+                  <dl>
+                    <dt>Loyalty members</dt>
+                    <dd>{data.metrics.customers.toLocaleString()}</dd>
+                  </dl>
+                </FarmstandPanel>
+                <FarmstandPanel className="loyalty-stat">
+                  <span className="loyalty-stat-icon loyalty-icon-warm">
+                    <LoyaltyIcon name="coins" />
+                  </span>
+                  <dl>
+                    <dt>
+                      Net points issued<span>All time</span>
+                    </dt>
+                    <dd>{Number(data.metrics.issued).toLocaleString()}</dd>
+                  </dl>
+                </FarmstandPanel>
+                <FarmstandPanel className="loyalty-stat">
+                  <span className="loyalty-stat-icon">
+                    <LoyaltyIcon name="gift" />
+                  </span>
+                  <dl>
+                    <dt>
+                      Orders using rewards<span>All time</span>
+                    </dt>
+                    <dd>{data.metrics.rewardOrders.toLocaleString()}</dd>
+                  </dl>
+                </FarmstandPanel>
+              </div>
+              {carousel && <SummaryCarouselDots count={3} />}
             </div>
             <FarmstandPanel className="loyalty-activity-panel">
               <div className="loyalty-activity-header">

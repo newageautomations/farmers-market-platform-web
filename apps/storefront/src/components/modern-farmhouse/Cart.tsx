@@ -43,19 +43,7 @@ function CartView(props: Parameters<typeof Cart>[0]) {
         {pending ? 'Updating your bag…' : state.message}
       </p>
       {state.error && <p role="alert">{state.error}</p>}
-      {state.uncertain && (
-        <p role="alert">
-          {state.issue}{' '}
-          <button
-            className="farmhouse-button"
-            type="button"
-            disabled={pending}
-            onClick={() => void state.refresh()}
-          >
-            Refresh bag
-          </button>
-        </p>
-      )}
+
       {!cart?.lines.length ? (
         <div className="farmhouse-empty">
           <h2>A place for something good.</h2>

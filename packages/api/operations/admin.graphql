@@ -214,6 +214,7 @@ fragment PreorderRule on MarketPreorderRule {
 }
 fragment BusinessMembership on MarketBusinessMembership {
   market {
+    ownerVendorId
     id
     name
     slug

@@ -1,5 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   AgreementDetail,
   ComplianceCatalog,
@@ -97,6 +103,64 @@ const compliance = {
   categories: [],
   requests: [],
 } as unknown as ComplianceData;
+afterEach(() => window.history.replaceState(null, '', '/'));
+
+function reportApi() {
+  const service = api();
+  vi.mocked(service.advanced).mockImplementation(
+    async <T,>(input: Record<string, unknown>) =>
+      (input.view === 'report'
+        ? {
+            items:
+              input.report === 'expiration'
+                ? [
+                    {
+                      vendor_id: 1,
+                      vendor: 'Farm A',
+                      requirement_id: 'insurance',
+                      title: 'Insurance',
+                      category: 'Insurance',
+                      expires_on: '2026-11-10',
+                      status: 'Expired',
+                      required: true,
+                      action_required: true,
+                    },
+                    {
+                      vendor_id: 1,
+                      vendor: 'Farm A',
+                      requirement_id: 'permit',
+                      title: 'Food permit',
+                      category: 'Permit',
+                      expires_on: '2026-11-25',
+                      status: 'Approved',
+                      required: false,
+                      action_required: false,
+                    },
+                  ]
+                : [],
+            columns: [
+              'vendor',
+              'title',
+              'category',
+              'expires_on',
+              'status',
+              'required',
+              'action_required',
+            ],
+            total: 2,
+            context: 'Market A',
+            generatedAt: '2026-11-12T12:00:00Z',
+            exportLimit: 5000,
+            dates: {
+              start: '2026-11-12',
+              end: '2026-11-12',
+              historical: false,
+            },
+          }
+        : { items: [], hasMore: false }) as T,
+  );
+  return service;
+}
 function api() {
   return {
     advanced: vi
@@ -120,6 +184,155 @@ function api() {
 }
 
 describe('Phase 3 Documents UI', () => {
+  it('previews the exact submitted file and requests an expiration notification with its revision', async () => {
+    window.history.replaceState(
+      null,
+      '',
+      '/market/documents?view=reports&report=expiration',
+    );
+    const service = reportApi();
+    vi.mocked(service.command).mockResolvedValue({ queued: true });
+    const preview = vi.fn();
+    const data = {
+      ...compliance,
+      requests: [
+        {
+          id: 'request',
+          vendor_id: 1,
+          requirement_id: 'permit',
+          title: 'Food permit',
+          expiration: 'Expiring Soon',
+          revision: 4,
+          submission: { id: 'submission', file_id: 'pinned-file' },
+        },
+      ],
+    } as unknown as ComplianceData;
+    render(
+      <ComplianceReports
+        api={service}
+        data={data}
+        canWrite
+        requestCard={() => null}
+        onPreview={preview}
+      />,
+    );
+    const table = await screen.findByRole('table', {
+      name: 'Compliance report',
+    });
+    fireEvent.click(within(table).getByText('Food permit'));
+    fireEvent.click(screen.getByRole('button', { name: 'Preview document' }));
+    expect(preview).toHaveBeenCalledWith('pinned-file', 'Food permit');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Send expiration notification' }),
+    );
+    await screen.findByText('Expiration notification queued for the vendor.');
+    expect(service.command).toHaveBeenCalledWith(
+      'SEND_EXPIRATION_NOTIFICATION',
+      { submissionId: 'submission' },
+      'request',
+      4,
+    );
+  });
+  it.each([
+    [
+      '?view=reports&status=Pending+review',
+      { report: 'vendors', status: 'Pending review' },
+    ],
+    ['?view=reports&report=expiration', { report: 'expiration' }],
+    [
+      '?view=reports&report=expiration&status=Expired',
+      { report: 'expiration', status: 'Expired' },
+    ],
+    ['?view=reports&occurrence=17', { report: 'upcoming', occurrenceId: '17' }],
+    [
+      '?view=reports&report=invalid&export=true&skip=300',
+      { report: 'vendors', skip: 0 },
+    ],
+  ])(
+    'loads report links with the requested filters: %s',
+    async (query, expected) => {
+      window.history.replaceState(null, '', '/market/documents' + query);
+      const service = reportApi();
+      render(
+        <ComplianceReports
+          api={service}
+          data={compliance}
+          canWrite={false}
+          requestCard={() => null}
+        />,
+      );
+      await screen.findByText(/Generated/);
+      expect(service.advanced).toHaveBeenCalledWith(
+        expect.objectContaining({ view: 'report', ...expected }),
+      );
+      const input = vi
+        .mocked(service.advanced)
+        .mock.calls.find(([input]) => input.view === 'report')![0];
+      expect(input).not.toHaveProperty('export');
+      fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
+      expect(screen.getByLabelText('Report')).toHaveValue(expected.report);
+      if ('status' in expected)
+        expect(screen.getByLabelText('Compliance status')).toHaveValue(
+          expected.status,
+        );
+    },
+  );
+  it('opens each expiration record separately in the reused side panel and clears selection when filtering', async () => {
+    window.history.replaceState(
+      null,
+      '',
+      '/market/documents?view=reports&report=expiration',
+    );
+    const service = reportApi();
+    render(
+      <ComplianceReports
+        api={service}
+        data={compliance}
+        canWrite={false}
+        requestCard={() => null}
+      />,
+    );
+    const table = await screen.findByRole('table', {
+      name: 'Compliance report',
+    });
+    expect(
+      screen.queryByRole('region', { name: 'Document expiration details' }),
+    ).toBeNull();
+    fireEvent.click(within(table).getByText('Insurance', { exact: true }));
+    let panel = screen.getByRole('region', {
+      name: 'Document expiration details',
+    });
+    expect(panel).toHaveTextContent('2026-11-10');
+    expect(within(panel).getByText('Expired')).toBeInTheDocument();
+    expect(
+      within(panel).getByRole('link', { name: 'Open Vendor compliance' }),
+    ).toHaveAttribute('href', '/market/documents?view=requests&vendor=1');
+    fireEvent.keyDown(within(table).getByText('Food permit').closest('tr')!, {
+      key: 'Enter',
+    });
+    panel = screen.getByRole('region', { name: 'Document expiration details' });
+    expect(panel).toHaveTextContent('Food permit');
+    expect(panel).toHaveTextContent('2026-11-25');
+    expect(within(panel).getByText('Approved')).toBeInTheDocument();
+    expect(panel).not.toHaveTextContent('2026-11-10');
+    fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
+    fireEvent.change(screen.getByLabelText('Compliance status'), {
+      target: { value: 'Expired' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await waitFor(() =>
+      expect(service.advanced).toHaveBeenCalledWith(
+        expect.objectContaining({
+          report: 'expiration',
+          status: 'Expired',
+          skip: 0,
+        }),
+      ),
+    );
+    expect(
+      screen.queryByRole('region', { name: 'Document expiration details' }),
+    ).toBeNull();
+  });
   it('renders malicious agreement markup as text and requires an unchecked explicit action', async () => {
     const service = api(),
       changed = vi.fn();
@@ -315,9 +528,16 @@ describe('Phase 3 Documents UI', () => {
           : { items: [], hasMore: false }) as T,
     );
     const { container } = render(
-      <ComplianceReports api={service} data={compliance} canWrite />,
+      <ComplianceReports
+        api={service}
+        data={compliance}
+        canWrite
+        requestCard={() => null}
+      />,
     );
     await screen.findByText(/Generated/);
+    expect(screen.queryByLabelText('Compliance status')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
     fireEvent.change(screen.getByLabelText('Compliance status'), {
       target: { value: 'Incomplete' },
     });

@@ -1,0 +1,283 @@
+@import './section-backgrounds.css';
+/* Explicit presentation variants of the shared section library. Layout, controls and
+   commerce remain shared; these surfaces use each theme's existing tokens. */
+.harvest-library[data-library-theme='editorial-market'] {
+  --brand-primary: var(--em-green-deep);
+  --brand-background: var(--em-paper);
+  --brand-surface: var(--em-cream);
+  --font-heading: Georgia, 'Times New Roman', serif;
+  --storefront-card-radius: 1.5rem;
+  max-width: 88rem;
+  margin-inline: auto;
+  border-top: 1px solid var(--em-line);
+}
+.harvest-library[data-library-theme='modern-farmhouse'] {
+  --brand-primary: var(--farmhouse-ink);
+  --brand-background: var(--farmhouse-paper);
+  --brand-surface: var(--farmhouse-surface);
+  --font-heading: var(--farmhouse-serif);
+  --storefront-card-radius: 0px;
+  max-width: 88rem;
+  margin-inline: auto;
+  border-top: 1px solid var(--farmhouse-rule);
+}
+.harvest-library[data-library-theme='editorial-market']
+  :is(.harvest-library-heading, .harvest-banner-copy)
+  > h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.2rem, 4.2vw, 4rem);
+  color: inherit;
+}
+.harvest-library[data-library-theme='modern-farmhouse']
+  :is(.harvest-library-heading, .harvest-banner-copy)
+  > h2 {
+  font-family: var(--farmhouse-serif);
+  font-size: clamp(2rem, 3.6vw, 3.7rem);
+  color: inherit;
+}
+.harvest-library[data-library-theme='editorial-market']
+  .harvest-category-photo {
+  border-radius: 42% 58% 50% 45% / 54% 42% 58% 46%;
+}
+.harvest-library[data-library-theme='modern-farmhouse']
+  :is(
+    .harvest-category-photo,
+    .harvest-gallery-images img,
+    .harvest-feature-items article
+  ) {
+  border-radius: 0;
+}
+.harvest-library[data-library-theme='modern-farmhouse'][data-layout='minimal-centered']
+  .harvest-banner-photo {
+  border-radius: 0;
+}
+.harvest-library[data-library-theme='editorial-market'][data-card-style='highlighted']
+  article {
+  border-radius: 1.5rem;
+}
+.harvest-library[data-library-theme='modern-farmhouse'][data-card-style='highlighted']
+  article {
+  border-radius: 0;
+}
+.harvest-library[data-library-theme][data-width='full'] {
+  max-width: none;
+}
+/* The Farmhouse adapter retains its existing product cards, including purchasing. */
+.harvest-showcase[data-library-theme='modern-farmhouse']
+  .farmhouse-product-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--harvest-library-columns), minmax(0, 1fr));
+  gap: var(--harvest-library-gap);
+}
+.harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='featured-product']
+  .farmhouse-product-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+.harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='featured-product']
+  .farmhouse-product-card:first-child {
+  grid-row: span 2;
+}
+.harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='featured-product']
+  .farmhouse-product-card:first-child
+  .farmhouse-product-photo {
+  aspect-ratio: 3 / 4;
+}
+.harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='compact-row']
+  .farmhouse-product-grid {
+  grid-template-columns: 1fr;
+}
+.harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='compact-row']
+  .farmhouse-product-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(8rem, auto);
+  align-items: center;
+  gap: 1.5rem;
+}
+.harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='compact-row']
+  .farmhouse-product-card
+  > a {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  align-items: center;
+  gap: 1.5rem;
+}
+.harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='compact-row']
+  .farmhouse-product-photo {
+  aspect-ratio: 1;
+}
+.harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='carousel']
+  .farmhouse-product-grid {
+  --gallery-visible: 3;
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.harvest-showcase[data-library-theme='modern-farmhouse'][data-visible-images='1']
+  .farmhouse-product-grid {
+  --gallery-visible: 1;
+}
+.harvest-showcase[data-library-theme='modern-farmhouse'][data-visible-images='2']
+  .farmhouse-product-grid {
+  --gallery-visible: 2;
+}
+.harvest-showcase[data-library-theme='modern-farmhouse'][data-visible-images='4']
+  .farmhouse-product-grid {
+  --gallery-visible: 4;
+}
+.harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='carousel']
+  .farmhouse-product-card {
+  flex: 0 0
+    calc(
+      (100% - (var(--gallery-visible) - 1) * var(--harvest-library-gap)) /
+        var(--gallery-visible)
+    );
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.harvest-library[data-library-theme='modern-farmhouse'][data-background='ink']
+  .farmhouse-product-card {
+  color: var(--farmhouse-paper);
+}
+@media (max-width: 1000px) {
+  .harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='carousel']
+    .farmhouse-product-grid {
+    --gallery-visible: 2;
+  }
+  .harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='carousel'][data-visible-images='1']
+    .farmhouse-product-grid {
+    --gallery-visible: 1;
+  }
+}
+@media (max-width: 700px) {
+  .harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='carousel']
+    .farmhouse-product-grid {
+    --gallery-visible: 1;
+  }
+  .harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='featured-product']
+    .farmhouse-product-grid {
+    grid-template-columns: 1fr;
+  }
+  .harvest-showcase[data-library-theme='modern-farmhouse'][data-layout='compact-row']
+    .farmhouse-product-card {
+    grid-template-columns: 1fr;
+  }
+}
+/* Reserve space for carousel controls inside these full-width theme layouts. */
+section.harvest-library:is(
+    [data-library-theme='modern-farmhouse'],
+    [data-library-theme='editorial-market']
+  )[data-layout='carousel']
+  .harvest-gallery-frame {
+  margin-inline: 44px;
+}
+
+.harvest-library[data-library-theme='editorial-market']
+  :is(.harvest-library-heading, .harvest-banner-copy)
+  > h2 {
+  font-family: var(--em-playful-font);
+  font-weight: 700;
+}
+/* Homepage cards retain their presentation; the showcase owns only geometry. */
+.harvest-showcase[data-library-theme='editorial-market'] .em-products {
+  grid-template-columns: repeat(var(--harvest-library-columns), minmax(0, 1fr));
+  gap: var(--harvest-library-gap);
+}
+.harvest-showcase[data-library-theme='editorial-market'][data-layout='featured-product']
+  .em-products {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.harvest-showcase[data-library-theme='editorial-market'][data-layout='compact-row']
+  .em-products {
+  grid-template-columns: 1fr;
+}
+.harvest-showcase[data-library-theme='editorial-market'][data-layout='compact-row']
+  .em-product-image {
+  aspect-ratio: 1;
+}
+.harvest-category-showcase[data-library-theme='editorial-market']
+  .em-categories {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 7.3rem), 1fr));
+}
+.harvest-category-showcase[data-library-theme='editorial-market']
+  .em-category-image {
+  aspect-ratio: 1;
+}
+.harvest-category-showcase[data-library-theme='editorial-market']
+  .em-category-image
+  img {
+  width: 68%;
+  height: 68%;
+  object-fit: contain;
+  margin: auto;
+}
+.harvest-category-showcase[data-library-theme='editorial-market']
+  .harvest-category-title {
+  justify-content: center;
+  font: inherit;
+  font-weight: 700;
+}
+@media (max-width: 700px) {
+  .harvest-showcase[data-library-theme='editorial-market'] .em-products {
+    grid-template-columns: 1fr;
+  }
+  .harvest-category-showcase[data-library-theme='editorial-market']
+    .em-categories
+    > a {
+    min-width: 7rem;
+  }
+}
+
+.harvest-category-showcase[data-library-theme='editorial-market']
+  .em-category-image {
+  display: grid;
+  place-items: center;
+}
+/* Both seeded homepage slots and added showcases share this heading row. */
+.harvest-library-heading .showcase-heading-copy > h2 {
+  font: 400 clamp(2rem, 4vw, 3.6rem) / 1.1 var(--font-heading);
+  letter-spacing: -0.04em;
+  margin: 0 0 1rem;
+}
+section.harvest-library[data-library-theme='editorial-market'] {
+  max-width: 1440px;
+  padding-inline: clamp(1.2rem, 4vw, 4rem);
+}
+.harvest-library[data-library-theme='editorial-market']
+  .harvest-library-heading.em-section-heading {
+  max-width: none;
+  width: 100%;
+  align-items: center;
+  text-align: left;
+}
+.harvest-library[data-library-theme='editorial-market'] .showcase-heading-copy {
+  min-width: 0;
+}
+.harvest-library[data-library-theme='editorial-market']
+  .showcase-heading-copy
+  > h2 {
+  font-family: var(--em-playful-font);
+  font-size: clamp(2.2rem, 4.2vw, 4rem);
+  font-weight: 700;
+}
+.harvest-library[data-library-theme='editorial-market']
+  .em-section-heading
+  > a {
+  flex-shrink: 0;
+  align-self: flex-end;
+  margin-bottom: 1rem;
+  color: inherit;
+}
+.harvest-library[data-library-theme='modern-farmhouse']
+  .showcase-heading-copy
+  > h2 {
+  font-family: var(--farmhouse-serif);
+}
+@media (max-width: 700px) {
+  .harvest-library[data-library-theme='editorial-market']
+    .harvest-library-heading.em-section-heading {
+    flex-wrap: wrap;
+  }
+}

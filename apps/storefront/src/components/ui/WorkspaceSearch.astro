@@ -1,0 +1,38 @@
+---
+import { inputClassName } from '@market/ui/presentation';
+import FarmstandIcon from './FarmstandIcon.astro';
+// Astro adapter of FarmstandSearch: icon-led native search input.
+const {
+  id,
+  name,
+  value = '',
+  label,
+  placeholder,
+  maxlength = 100,
+} = Astro.props as {
+  id: string;
+  name: string;
+  value?: string;
+  label: string;
+  placeholder?: string;
+  maxlength?: number;
+};
+---
+
+<div class="field">
+  <label class="sr-only" for={id}>
+    {label}
+  </label>
+  <div class="farmstand-search">
+    <FarmstandIcon name="search" />
+    <input
+      id={id}
+      class={inputClassName('search', 'farmstand-search-input')}
+      type="search"
+      name={name}
+      value={value}
+      maxlength={maxlength}
+      placeholder={placeholder}
+    />
+  </div>
+</div>

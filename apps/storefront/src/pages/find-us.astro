@@ -1,4 +1,6 @@
 ---
+import { supportsWebsitePageHero } from '@market/theme/storefront';
+import WebsitePageRegion from '../components/WebsitePageRegion.astro';
 import PremiumFindUs from '../components/modern-farmhouse/FindUs.astro';
 import { isFarmhouse } from '@market/theme/storefront';
 import SiteLayout from '../layouts/SiteLayout.astro';
@@ -65,6 +67,9 @@ const directions = (row: VendorMarketAppearance) =>
   /\d+\s+\S+/.test(row.venue) && !/fixture|test location/i.test(row.venue)
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.venue)}`
     : undefined;
+const sectionHero =
+  !!storefront?.appearance &&
+  supportsWebsitePageHero(storefront.appearance, 'find-us');
 ---
 
 <SiteLayout
@@ -73,41 +78,48 @@ const directions = (row: VendorMarketAppearance) =>
   title={enabled ? config.title : 'Page unavailable'}
   noindex={!enabled}
 >
+  {enabled && (
+    <WebsitePageRegion context={storefront} page="find-us" region="before" />
+  )}
   {enabled && storefront && isFarmhouse(storefront.appearance) ? (
     <PremiumFindUs
       context={storefront}
+      hideHero={sectionHero}
       rows={rows}
       failed={failed}
       preview={!!editorPreview}
     />
   ) : enabled ? (
     <article class="find-page" aria-label={config.title}>
-      <section
-        class:list={['story-section', intro.image && 'story-split']}
-        data-editor-section="find-intro"
-        data-image-position={intro.imagePosition}
-        data-image-size={intro.imageSize ?? 'small'}
-        data-text-align={intro.textAlign ?? 'left'}
-      >
-        <div class="story-copy">
-          <h1>{intro.heading || config.title}</h1>
-          {intro.body && <p>{intro.body}</p>}
-        </div>
-
-        {intro.image && (
-          <div class="story-image-column">
-            <div class="story-image-frame" data-story-shape={intro.shape}>
-              <img
-                src={intro.image}
-                alt={intro.alt}
-                data-hero-shape={intro.shape}
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
+      {!sectionHero && (
+        <section
+          class:list={['story-section', intro.image && 'story-split']}
+          data-editor-section="find-intro"
+          data-image-position={intro.imagePosition}
+          data-image-size={intro.imageSize ?? 'small'}
+          data-text-align={intro.textAlign ?? 'left'}
+        >
+          <div class="story-copy">
+            <h1>{intro.heading || config.title}</h1>
+            {intro.body && <p>{intro.body}</p>}
           </div>
-        )}
-      </section>
+
+          {intro.image && (
+            <div class="story-image-column">
+              <div class="story-image-frame" data-story-shape={intro.shape}>
+                <img
+                  src={intro.image}
+                  alt={intro.alt}
+                  data-hero-shape={intro.shape}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+      {sectionHero && <h1 class="sr-only">{config.title}</h1>}
 
       <div data-editor-section="find-markets">
         {failed ? (
@@ -205,5 +217,8 @@ const directions = (row: VendorMarketAppearance) =>
       <h1>Page unavailable</h1>
       <a href="/">Return to the storefront</a>
     </section>
+  )}
+  {enabled && (
+    <WebsitePageRegion context={storefront} page="find-us" region="after" />
   )}
 </SiteLayout>

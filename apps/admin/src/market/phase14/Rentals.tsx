@@ -23,6 +23,7 @@ import { go } from '../../vendor/common';
 import { StatusBadge } from '../presentation';
 import { moneyLabel } from './common';
 import { RentalWizard } from './RentalWizard';
+import { CompactLabel } from '../mobile';
 import './rentals.css';
 
 export type RentalMedia = Pick<VendorCategoryApi, 'images' | 'upload'>;
@@ -271,7 +272,7 @@ export function Rentals({
                       onClick={() => setEditor(r)}
                       aria-label={`Edit ${r.details.name}`}
                     >
-                      Edit
+                      <CompactLabel>Edit</CompactLabel>
                       <FarmstandIcon name="chevron-right" />
                     </FarmstandButton>
                   ) : (

@@ -1,6 +1,8 @@
 import { createAttendanceApi, type AttendanceApi } from './attendance';
 import { transport, type TransportOptions } from './transport';
 import { AppError } from './errors';
+import { parse } from 'graphql';
+import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import {
   OwnMarketOperationsDocument,
   MarketOperationsCommandDocument,
@@ -64,6 +66,10 @@ export type OperationsAction =
   | 'PUBLISH_MAP'
   | 'ISSUE_INVOICE'
   | 'VOID_REISSUE'
+  | 'ADJUST_INVOICE'
+  | 'CANCEL_INVOICE'
+  | 'PREVIEW_INVOICE_REFUND'
+  | 'REFUND_PAYMENT'
   | 'RECORD_PAYMENT'
   | 'DAY_UPDATE'
   | 'CLOSE_DAY';
@@ -299,7 +305,14 @@ export interface ApplicationReviewInput {
   take?: number;
 }
 export interface ApplicationSubmissionPage {
-  items: Array<{ id: number; businessName: string; status: string }>;
+  items: Array<{
+    id: number;
+    businessName: string;
+    status: string;
+    /** When the application was submitted (absent from older backends). */
+    createdAt?: string;
+    category?: string | null;
+  }>;
   totalItems: number;
   skip: number;
   take: number;
@@ -390,13 +403,49 @@ export interface RentalAllocation extends OperationsRecord {
   quantity: number;
   snapshot: RentalSnapshot;
 }
+export interface InvoiceAdjustment {
+  id: number;
+  amountMinor: number;
+  reason: string;
+  createdAt: string;
+  actorId: number;
+}
+export interface InvoiceRefund {
+  id: number;
+  paymentId: number;
+  amountMinor: number;
+  method: string;
+  reason: string;
+  returnedAt: string;
+  createdAt: string;
+  state: string;
+  reviewCode: string | null;
+  shares: {
+    principal: number;
+    platform: number;
+    recovery: number;
+    feeTax: number;
+    gross: number;
+  };
+}
 export interface BoothInvoice extends OperationsRecord {
+  originalTotalMinor?: number;
+  remainingMinor?: number;
+  adjustments?: InvoiceAdjustment[];
+  refunds?: InvoiceRefund[];
   assignmentId: number;
   occurrenceId: number;
   directoryId: number;
-  status: 'DRAFT' | 'OPEN' | 'PAID' | 'VOID';
+  status: 'DRAFT' | 'OPEN' | 'PAID' | 'VOID' | 'CANCEL_PENDING' | 'CANCELED';
   billingStatus?:
-    'DRAFT' | 'OPEN' | 'PAID' | 'VOID' | 'PAST_DUE' | 'COMPLIMENTARY';
+    | 'DRAFT'
+    | 'OPEN'
+    | 'PAID'
+    | 'VOID'
+    | 'PAST_DUE'
+    | 'COMPLIMENTARY'
+    | 'CANCEL_PENDING'
+    | 'CANCELED';
   lines: Array<{
     description: string;
     quantity: number;
@@ -434,7 +483,30 @@ export interface SchedulePreview {
     change: string;
   }>;
 }
+/** Why a verified platform Vendor can or cannot be approved for a date. */
+export type PlatformEligibilityState =
+  | 'ELIGIBLE'
+  | 'MEMBERSHIP_REQUIRED'
+  | 'PARTICIPATION_REQUIRED'
+  | 'PARTICIPATION_CANCELLED';
 export interface MarketOperationsData {
+  invoiceCollections?: import('./booth-invoice').BoothInvoiceCollection[];
+  payments?: Array<{
+    id: number;
+    invoiceId: number;
+    amountMinor: number;
+    currency: string;
+    method: string;
+    paidAt: string;
+  }>;
+  /** Selected-date approval eligibility for verified platform Vendors. */
+  platformEligibility?: Array<{
+    directoryId: number;
+    vendorId: number;
+    membershipId: number | null;
+    state: PlatformEligibilityState;
+    participationStatus?: string | null;
+  }>;
   rules?: BoothRecurringRule[];
   cells?: ScheduleCell[];
   exceptions?: Array<{
@@ -534,9 +606,25 @@ export interface PublicOccurrenceMap {
     vendor: Pick<
       ApplicantContact,
       'businessName' | 'description' | 'category'
-    > | null;
+    > & { vendorId?: string | null } | null;
   }>;
 }
+/** An open public application listed on the market website. */
+export interface PublicApplicationSummary {
+  slug: string;
+  name: string;
+  advertised: boolean;
+  availability: NonNullable<PublicApplication['availability']>;
+  occurrenceCount: number;
+  firstOccurrence: { startsAt: string; venue: string } | null;
+  lastOccurrence: { startsAt: string } | null;
+}
+const PublicMarketApplicationsDocument = parse(
+  'query PublicMarketApplications { publicMarketApplications }',
+) as TypedDocumentNode<
+  { publicMarketApplications: unknown },
+  Record<string, never>
+>;
 export interface PublicApplication {
   availability?: {
     state: 'OPEN' | 'CLOSED' | 'NOT_YET_OPEN';
@@ -578,6 +666,7 @@ export interface PublicApplication {
 }
 export interface VendorBoothAssignment {
   occurrenceId: number;
+  occurrenceStatus?: 'scheduled' | 'cancelled';
   startsAt: string;
   space: {
     label: string;
@@ -699,6 +788,16 @@ export function createPublicMarketOperationsApi(options: TransportOptions) {
           )
         ).marketApplicationApplicant,
       ),
+    applications: async () => {
+      const value = (
+        await execute(
+          { api: 'shop', document: PublicMarketApplicationsDocument },
+          {},
+        )
+      ).publicMarketApplications;
+      if (!Array.isArray(value)) throw new AppError('graphql');
+      return value as PublicApplicationSummary[];
+    },
     application: async (slug?: string) =>
       object<PublicApplication>(
         (

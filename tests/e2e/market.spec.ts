@@ -35,7 +35,7 @@ for (const width of [390, 768, 1280]) {
           : module === 'Analytics'
             ? 'Purchase count'
             : module === 'Overview'
-              ? 'Next Scheduled Occurrence'
+              ? 'Next market'
               : module === 'Vendors'
                 ? 'Synthetic Market A Vendor 1'
                 : module === 'Occurrences'

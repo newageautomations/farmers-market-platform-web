@@ -26,18 +26,9 @@ import {
 import { PanelSection } from './LayoutEditorChrome';
 import { LayoutImagePicker, type LayoutMedia } from './LayoutImagePicker';
 import { objectIcons } from './LayoutTools';
+import { BoothDetailsFields } from './BoothDetailsFields';
 
 export type InspectorTab = 'properties' | 'style';
-
-const amenityOptions = [
-  'ELECTRICITY',
-  'WATER',
-  'SHADE',
-  'COVERED',
-  'INDOOR',
-  'VEHICLE',
-  'FOOD_TRUCK',
-];
 
 function elementTitle(e: MapElement, booth: boolean) {
   if (booth) return 'Booth';
@@ -105,7 +96,11 @@ export function LayoutInspector({
     currentArea = definition.areas.find((a) => a.id === area),
     facts = e && s ? occupancy?.(e.id) : undefined;
   const title =
-    items.length > 1 ? `${items.length} objects` : e ? elementTitle(e, !!s) : 'Layout';
+    items.length > 1
+      ? `${items.length} objects`
+      : e
+        ? elementTitle(e, !!s)
+        : 'Layout';
   const icon: ComponentProps<typeof UtilityIcon>['name'] =
     items.length > 1 ? 'layers' : e ? objectIcons[e.type] : 'grid';
   const setMany = (patch: Partial<MapElement>) =>
@@ -140,7 +135,11 @@ export function LayoutInspector({
           </Button>
         )}
       </div>
-      <div className="designer-segmented" role="group" aria-label="Inspector view">
+      <div
+        className="designer-segmented"
+        role="group"
+        aria-label="Inspector view"
+      >
         {(['properties', 'style'] as const).map((value) => (
           <button
             key={value}
@@ -157,7 +156,10 @@ export function LayoutInspector({
           <UtilityIcon name="lock" /> Locked. Unlock it to make changes.
         </p>
       )}
-      <fieldset disabled={!editable || !!e?.locked} aria-label={`${title} ${tab}`}>
+      <fieldset
+        disabled={!editable || !!e?.locked}
+        aria-label={`${title} ${tab}`}
+      >
         {tab === 'properties' && !e && items.length < 2 && (
           <>
             <PanelSection title="General">
@@ -436,12 +438,7 @@ export function LayoutInspector({
                 <>
                   <div className="designer-image-source">
                     {e.imageUrl ? (
-                      <img
-                        src={e.imageUrl}
-                        alt=""
-                        width={56}
-                        height={56}
-                      />
+                      <img src={e.imageUrl} alt="" width={56} height={56} />
                     ) : (
                       <span aria-hidden="true">
                         <UtilityIcon name="image" />
@@ -450,7 +447,11 @@ export function LayoutInspector({
                     {media ? (
                       <LayoutImagePicker
                         media={media}
-                        label={e.imageUrl ? 'Replace image' : 'Upload or choose image'}
+                        label={
+                          e.imageUrl
+                            ? 'Replace image'
+                            : 'Upload or choose image'
+                        }
                         onPick={(photo) =>
                           geometry({ ...e, imageUrl: photo.url })
                         }
@@ -464,7 +465,9 @@ export function LayoutInspector({
                             disabled={busy || !editable || !!e.locked}
                             onClick={open}
                           >
-                            {e.imageUrl ? 'Replace image' : 'Upload or choose image'}
+                            {e.imageUrl
+                              ? 'Replace image'
+                              : 'Upload or choose image'}
                           </Button>
                         )}
                       </LayoutImagePicker>
@@ -570,70 +573,10 @@ export function LayoutInspector({
                     )}
                   </dl>
                 )}
-                <Entry
-                  label="Description"
-                  maxLength={2000}
-                  value={s.description}
-                  onChange={(v) => booth(e.id, { description: v })}
-                />
-                <Entry
-                  label="Default fee in minor units"
-                  type="number"
-                  min={0}
-                  max={100000000}
-                  step={1}
-                  value={s.feeMinor}
-                  onChange={(v) => booth(e.id, { feeMinor: Number(v) })}
-                />
-                <Entry
-                  label="Currency"
-                  maxLength={3}
-                  value={s.currency}
-                  onChange={(v) => booth(e.id, { currency: v.toUpperCase() })}
-                />
-                <fieldset className="designer-amenities">
-                  <legend>Physical amenities</legend>
-                  {amenityOptions.map((a) => (
-                    <Check
-                      key={a}
-                      label={a.toLowerCase().replaceAll('_', ' ')}
-                      checked={s.amenities.includes(a)}
-                      onChange={(v) =>
-                        booth(e.id, {
-                          amenities: v
-                            ? [...s.amenities, a]
-                            : s.amenities.filter((x) => x !== a),
-                        })
-                      }
-                    />
-                  ))}
-                </fieldset>
-                <Control label="Preferred business suggestion">
-                  {(id) => (
-                    <Select
-                      id={id}
-                      value={s.preferredDirectoryId ?? ''}
-                      onChange={(event) =>
-                        booth(e.id, {
-                          preferredDirectoryId: event.target.value
-                            ? Number(event.target.value)
-                            : null,
-                        })
-                      }
-                    >
-                      <option value="">No preference</option>
-                      {data.directory?.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.contact.businessName}
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-                </Control>
-                <Entry
-                  label="Private manager notes"
-                  value={s.managerNotes}
-                  onChange={(v) => booth(e.id, { managerNotes: v })}
+                <BoothDetailsFields
+                  details={s}
+                  data={data}
+                  onChange={(patch) => booth(e.id, patch)}
                 />
               </PanelSection>
             )}

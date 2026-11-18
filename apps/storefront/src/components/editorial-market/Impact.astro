@@ -1,0 +1,30 @@
+---
+import type { EditorialMarketSettings } from '@market/theme/storefront';
+import { safeAsset } from '@market/storefront-core';
+
+/** The supplied community impact artwork, shared by vendor and market homepages. */
+interface Props {
+  settings: EditorialMarketSettings;
+}
+const { settings } = Astro.props;
+const desktopFooter = safeAsset(settings.assets.desktopFooter.url);
+const mobileFooter = safeAsset(settings.assets.mobileFooter.url);
+---
+
+{settings.impact.visible && (desktopFooter || mobileFooter) && (
+  <section class="em-impact" data-editor-section="editorial:impact">
+    <picture>
+      {mobileFooter && (
+        <source media="(max-width: 699px)" srcset={mobileFooter} />
+      )}
+      <img
+        src={desktopFooter ?? mobileFooter}
+        alt={settings.impact.imageAlt}
+        width="2172"
+        height="724"
+        loading="lazy"
+        decoding="async"
+      />
+    </picture>
+  </section>
+)}

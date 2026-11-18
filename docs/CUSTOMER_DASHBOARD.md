@@ -198,7 +198,7 @@ Evidence belongs to `docs/evidence/customer-dashboard/`. Earlier project evidenc
 Frontend:
 
 - `apps/storefront/src/layouts/CustomerLayout.astro`, `components/CustomerNavigation.astro`, and `styles/customer-dashboard.css`: dashboard shell and responsive customer navigation using shared dashboard classes.
-- `components/CustomerOrders.astro`, `CustomerFollows.astro`, `CustomerEvents.astro`: bounded purchase, follow, and grouped timezone-aware event displays. `CentralAccount.astro` supports embedding the existing profile experience without duplicate page/signout controls.
+- `components/CustomerOverview.tsx` (Overview island with the shared dashboard grid and layout editor), `CustomerOrderDetails.astro` (order side panel) and the workspace adapters in `components/ui/`; `lib/customer-presentation.ts`, `lib/customer-overview.ts` and `lib/row-selection.ts`. These replaced the former `CustomerOrders`, `CustomerFollows` and `CustomerEvents` displays (November 8, 2026 redesign; see `UI_COMPONENTS.md`). `CentralAccount.astro` renders the settings sections as workspace panels.
 - `pages/account/index.astro`, `pages/account/orders/index.astro`, `pages/account/orders/[id].astro`: overview and existing history/detail routes in the customer shell.
 - `pages/account/[section].astro`: only markets/vendors sections; other dynamic paths return 404.
 - `pages/account/settings.astro`: preserved existing account experience moved into customer settings.

@@ -1,0 +1,67 @@
+---
+import type { PublicMarketOccurrence } from '@market/api';
+import { cardClassName } from '@market/ui/presentation';
+import { marketDateParts } from '../../lib/market-website';
+import '../../styles/market-website.css';
+/**
+ * Market dates in the Harvest date-stamp presentation. `detailed` adds hours
+ * and the vendor directory link used on the Market Dates page.
+ */
+const {
+  occurrences,
+  detailed = false,
+  vendorsHref = false,
+  cardTheme = 'standard',
+} = Astro.props as {
+  occurrences: readonly PublicMarketOccurrence[];
+  cardTheme?: 'standard' | 'inverse' | 'soft';
+  detailed?: boolean;
+  vendorsHref?: boolean;
+};
+---
+
+<ul
+  data-card-theme={cardTheme}
+  class:list={['harvest-dates', detailed && 'market-date-list']}
+>
+  {occurrences.map((occurrence) => {
+    const parts = marketDateParts(occurrence);
+    return (
+      <li
+        class={cardClassName({
+          spacing: 'contained',
+          className: 'harvest-date',
+        })}
+      >
+        <div class="harvest-date-stamp" aria-hidden="true">
+          <span>{parts.month}</span>
+          <strong>{parts.day}</strong>
+        </div>
+        <div class="market-date-copy">
+          <h3>
+            <a href={`/shop?occurrence=${occurrence.id}`}>{parts.date}</a>
+          </h3>
+          <p>{parts.hours}</p>
+          {occurrence.venue && <p>{occurrence.venue}</p>}
+          <div class="market-date-links">
+            <a
+              class="harvest-text-link"
+              href={`/shop?occurrence=${occurrence.id}`}
+            >
+              {detailed ? 'Shop this market' : 'Explore this market'}{' '}
+              <span aria-hidden="true">&#8599;</span>
+            </a>
+            {vendorsHref && (
+              <a
+                class="harvest-text-link"
+                href={`/vendors?date=${encodeURIComponent(occurrence.id)}`}
+              >
+                See who's coming
+              </a>
+            )}
+          </div>
+        </div>
+      </li>
+    );
+  })}
+</ul>

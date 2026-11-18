@@ -1,13 +1,14 @@
 ---
 import { Cart as PremiumCart } from '../components/modern-farmhouse/Cart';
 import PremiumCards from '../components/modern-farmhouse/ProductCards.astro';
-import { isFarmhouse } from '@market/theme/storefront';
+import { isFarmhouse, marketOnlyTheme } from '@market/theme/storefront';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { VendorCart, MarketCart } from '../components/ResilientSurfaces';
 import ProductCards from '../components/ProductCards.astro';
 import { cartRelatedProducts } from '@market/storefront-core';
 import { storefrontText } from '@market/theme/storefront';
 import { requestShop, requestMarketShop } from '../lib/shop';
+import { marketPreorder } from '../lib/market-preorder';
 import { vendorPreorder } from '../lib/vendor-preorder';
 import '../styles/preorder-banner.css';
 import '../styles/vendor-cart.css';
@@ -56,12 +57,13 @@ let preorder: Awaited<ReturnType<typeof vendorPreorder>> = {
 try {
   if (Astro.locals.editorPreview) {
     // Cart is intentionally outside editor preview and never reads a session.
-  } else if (storefront?.kind === 'MARKET' && storefront.source === 'backend')
+  } else if (storefront?.kind === 'MARKET' && storefront.source === 'backend') {
     marketBootstrap = await requestMarketShop(
       Astro,
       Astro.response.headers,
     ).bootstrap();
-  else if (storefront?.source === 'backend') {
+    preorder = await marketPreorder(Astro);
+  } else if (storefront?.source === 'backend') {
     bootstrap = await requestShop(Astro, Astro.response.headers).bootstrap();
     if (storefront.appearance?.vendor?.relatedEnabled !== false) {
       try {
@@ -105,18 +107,9 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 ---
 
 <SiteLayout context={storefront} path="/cart" title="Your cart" noindex>
-  <section
-    class={
-      premium
-        ? 'farmhouse-cart-route'
-        : storefront?.kind === 'VENDOR'
-          ? 'vendor-cart-page'
-          : 'py-12'
-    }
-  >
-    {(storefront?.kind !== 'VENDOR' ||
-      error ||
-      storefront.source === 'fixture' ||
+  <section class={premium ? 'farmhouse-cart-route' : 'vendor-cart-page'}>
+    {(error ||
+      storefront?.source === 'fixture' ||
       Astro.locals.editorPreview) && <h1>Your cart</h1>}
     {error ? (
       <ErrorState error={error} />
@@ -131,6 +124,8 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
             storefrontId={storefront.storefrontId ?? ''}
             marketName={storefront.name}
             initialCart={marketBootstrap.cart}
+            initialPreorder={preorder}
+            concise={!!marketOnlyTheme(storefront.appearance)}
             client:load
           />
         ) : premium ? (

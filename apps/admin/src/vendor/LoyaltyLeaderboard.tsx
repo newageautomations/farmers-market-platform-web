@@ -18,6 +18,7 @@ import {
 import type { VendorService } from './service';
 import './loyalty-leaderboard.css';
 import { LoyaltyIcon } from './LoyaltyIcon';
+import { DetailSheet, usePhoneRecords } from '../market/mobile';
 
 function navigate(event: MouseEvent<HTMLAnchorElement>) {
   if (
@@ -40,6 +41,9 @@ export function LoyaltyLeaderboard({ service }: { service: VendorService }) {
   const [sort, setSort] = useState('highest');
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<number>();
+  const records = usePhoneRecords();
+  // Phones open a tapped customer's details in a bottom sheet.
+  const [sheet, setSheet] = useState(false);
   const visible = useMemo(
     () => filterLeaderboard(query.data ?? [], search, sort),
     [query.data, search, sort],
@@ -144,6 +148,17 @@ export function LoyaltyLeaderboard({ service }: { service: VendorService }) {
               </div>
               <FarmstandTable
                 label="Customer points ranking"
+                recordDetails={records({
+                  identifier: 1,
+                  status: 3,
+                  labels: shown.map((row) => row.customer),
+                  onOpen: (index) => {
+                    const row = shown[index];
+                    if (!row) return;
+                    select(row.id);
+                    setSheet(true);
+                  },
+                })}
                 headings={[
                   'Rank',
                   'Customer',
@@ -227,71 +242,78 @@ export function LoyaltyLeaderboard({ service }: { service: VendorService }) {
               />
             </FarmstandPanel>
             {customer && (
-              <FarmstandPanel
-                as="section"
-                className="leaderboard-preview"
-                aria-label={`${customer.customer} details`}
+              <DetailSheet
+                phoneOnly
+                title={customer.customer}
+                open={sheet}
+                onClose={() => setSheet(false)}
               >
-                <div className="leaderboard-identity">
-                  <span className="leaderboard-avatar">
-                    <FarmstandIcon name="user-round" />
-                  </span>
-                  <div>
-                    <h2>{customer.customer}</h2>
-                    <p>
-                      {customer.relationship?.emailAddress ||
-                        'Email unavailable'}
-                    </p>
+                <FarmstandPanel
+                  as="section"
+                  className="leaderboard-preview"
+                  aria-label={`${customer.customer} details`}
+                >
+                  <div className="leaderboard-identity">
+                    <span className="leaderboard-avatar">
+                      <FarmstandIcon name="user-round" />
+                    </span>
+                    <div>
+                      <h2>{customer.customer}</h2>
+                      <p>
+                        {customer.relationship?.emailAddress ||
+                          'Email unavailable'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <dl className="leaderboard-facts">
-                  <div>
-                    <dt>
-                      <UtilityIcon name="trophy" /> Rank
-                    </dt>
-                    <dd>
-                      <span
-                        className="leaderboard-rank"
-                        data-place={customer.rank}
-                      >
-                        #{customer.rank}
-                      </span>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>
-                      <LoyaltyIcon name="coins" /> Net lifetime points
-                    </dt>
-                    <dd>{Number(customer.earned).toLocaleString()} pts</dd>
-                  </div>
-                  <div>
-                    <dt>
-                      <FarmstandIcon name="credit-card" /> Total spent
-                    </dt>
-                    <dd>
-                      {customer.relationship
-                        ? customerSpend(customer.relationship)
-                        : 'Unavailable'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>
-                      <FarmstandIcon name="shopping-cart" /> Completed orders
-                    </dt>
-                    <dd>{customer.orders}</dd>
-                  </div>
-                </dl>
-                {customer.relationship && (
-                  <FarmstandLink
-                    className="leaderboard-customer-link"
-                    variant="primary"
-                    href={`/vendor/customers/${encodeURIComponent(customer.relationship.id)}`}
-                    onClick={navigate}
-                  >
-                    <UtilityIcon name="external" /> View Customer Page
-                  </FarmstandLink>
-                )}
-              </FarmstandPanel>
+                  <dl className="leaderboard-facts">
+                    <div>
+                      <dt>
+                        <UtilityIcon name="trophy" /> Rank
+                      </dt>
+                      <dd>
+                        <span
+                          className="leaderboard-rank"
+                          data-place={customer.rank}
+                        >
+                          #{customer.rank}
+                        </span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>
+                        <LoyaltyIcon name="coins" /> Net lifetime points
+                      </dt>
+                      <dd>{Number(customer.earned).toLocaleString()} pts</dd>
+                    </div>
+                    <div>
+                      <dt>
+                        <FarmstandIcon name="credit-card" /> Total spent
+                      </dt>
+                      <dd>
+                        {customer.relationship
+                          ? customerSpend(customer.relationship)
+                          : 'Unavailable'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>
+                        <FarmstandIcon name="shopping-cart" /> Completed orders
+                      </dt>
+                      <dd>{customer.orders}</dd>
+                    </div>
+                  </dl>
+                  {customer.relationship && (
+                    <FarmstandLink
+                      className="leaderboard-customer-link"
+                      variant="primary"
+                      href={`/vendor/customers/${encodeURIComponent(customer.relationship.id)}`}
+                      onClick={navigate}
+                    >
+                      <UtilityIcon name="external" /> View Customer Page
+                    </FarmstandLink>
+                  )}
+                </FarmstandPanel>
+              </DetailSheet>
             )}
           </div>
         </>

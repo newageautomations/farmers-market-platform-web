@@ -9,6 +9,9 @@ const config: CodegenConfig = {
           api === 'admin'
             ? [
                 'packages/api/operations/admin.graphql',
+                'packages/api/operations/preorder-fees.graphql',
+                'packages/api/operations/order-refunds.graphql',
+                'packages/api/operations/booth-invoice.graphql',
                 'packages/api/operations/packing.graphql',
                 'packages/api/operations/market.graphql',
                 'packages/api/operations/management.graphql',
@@ -19,6 +22,7 @@ const config: CodegenConfig = {
             : [
                 'packages/api/operations/shop.graphql',
                 'packages/api/operations/checkout.graphql',
+                'packages/api/operations/stripe-checkout.graphql',
                 'packages/api/operations/customer-dashboard.graphql',
                 'packages/api/operations/preferences.graphql',
                 'packages/api/operations/public-market-operations.graphql',

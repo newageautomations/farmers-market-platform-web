@@ -1,0 +1,483 @@
+/* Market Finances › Booth invoices: Farmstand list plus the invoice modal.
+ * Uses the shared brand and status tokens; no new palette. */
+.booth-invoices {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  min-width: 0;
+}
+.booth-invoices .markets-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.markets-filters.finance-list-filters.booth-invoice-filters {
+  grid-template-columns: minmax(160px, 1fr) minmax(220px, 290px) 170px;
+}
+.booth-invoice-row {
+  cursor: pointer;
+}
+.booth-invoice-bulk-actions {
+  margin-block: 16px;
+}
+.booth-invoice-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.booth-invoice-identity {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.booth-invoice-identity .markets-muted {
+  font-size: 12px;
+  font-weight: 400;
+}
+.booth-invoice-due[data-owed='true'] {
+  color: var(--status-danger-fg);
+  font-weight: 600;
+}
+
+/* Modal */
+.booth-invoice-dialog {
+  --booth-invoice-border: color-mix(
+    in srgb,
+    var(--brand-primary) 16%,
+    var(--brand-surface)
+  );
+}
+.booth-invoice-body {
+  min-width: 0;
+}
+.booth-invoice-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  min-width: 0;
+  animation: booth-invoice-stage-enter 220ms ease both;
+}
+.booth-invoice-stage[hidden] {
+  display: none;
+}
+@keyframes booth-invoice-stage-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.booth-invoice-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  color: var(--brand-muted);
+  font-size: 13px;
+}
+.booth-invoice-meta a {
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
+/* Always-visible balance: total, paid and outstanding. */
+.booth-invoice-balance {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+.booth-invoice-balance > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--booth-invoice-border, #d5dfd8);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--brand-primary) 4%, var(--brand-surface));
+  min-width: 0;
+}
+.booth-invoice-balance dt {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-muted);
+}
+.booth-invoice-balance dd {
+  margin: 0;
+  align-self: center;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.4px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  animation: booth-invoice-value-change 700ms ease;
+}
+.booth-invoice-balance > [data-tone='paid'] dd {
+  color: var(--status-success-fg);
+}
+.booth-invoice-balance > [data-tone='owed'] {
+  border-color: color-mix(in srgb, var(--status-danger-fg) 30%, transparent);
+  background: var(--status-danger-bg);
+}
+.booth-invoice-balance > [data-tone='owed'] dd {
+  color: var(--status-danger-fg);
+}
+.booth-invoice-balance > [data-tone='settled'] {
+  border-color: color-mix(in srgb, var(--status-success-fg) 30%, transparent);
+  background: var(--status-success-bg);
+}
+.booth-invoice-balance > [data-tone='settled'] dd {
+  color: var(--status-success-fg);
+}
+/* Replays when a value changes (the dd is keyed by its amount). */
+@keyframes booth-invoice-value-change {
+  from {
+    opacity: 0.35;
+    transform: translateY(-4px);
+  }
+}
+
+.booth-invoice-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+.booth-invoice-section h3,
+.booth-invoice-action-heading h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+}
+.booth-invoice-lines .invoice-lines {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.booth-invoice-lines .invoice-lines :is(th, td) {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--booth-invoice-border, #d5dfd8);
+  overflow-wrap: anywhere;
+}
+.booth-invoice-lines .invoice-lines thead th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-muted);
+}
+.booth-invoice-lines .invoice-lines :is(th, td):nth-child(n + 2) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Label/value money rows. */
+.booth-invoice-money {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 4px 16px;
+  border: 1px solid var(--booth-invoice-border, #d5dfd8);
+  border-radius: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.booth-invoice-money > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+}
+.booth-invoice-money > div + div {
+  border-top: 1px solid var(--booth-invoice-border, #d5dfd8);
+}
+.booth-invoice-money dt {
+  font-size: 14px;
+}
+.booth-invoice-money dd {
+  margin: 0;
+  align-self: center;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: right;
+}
+.booth-invoice-money > [data-tone='muted'] :is(dt, dd) {
+  color: var(--brand-muted);
+  font-weight: 400;
+}
+.booth-invoice-money > [data-tone='total'] :is(dt, dd) {
+  font-size: 15px;
+  font-weight: 700;
+}
+.booth-invoice-money > [data-tone='total'] dd {
+  color: var(--brand-primary);
+}
+
+.booth-invoice-money-group {
+  display: grid;
+  gap: 6px;
+}
+.booth-invoice-money-group h4 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-muted);
+}
+
+/* History disclosure: date and time, message, balance change. */
+.booth-invoice-history.ui-disclosure {
+  margin: 0;
+}
+.booth-invoice-history-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.booth-invoice-history-count {
+  color: var(--brand-muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+.booth-invoice-history ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+.booth-invoice-history li {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 16px;
+  padding: 12px 0;
+  border-left: 3px solid transparent;
+  padding-left: 12px;
+}
+.booth-invoice-history li + li {
+  border-top: 1px solid var(--booth-invoice-border, #d5dfd8);
+}
+.booth-invoice-history li[data-tone='settled'] {
+  border-left-color: var(--status-success-fg);
+}
+.booth-invoice-history li[data-tone='owed'] {
+  border-left-color: var(--status-danger-fg);
+}
+.booth-invoice-history time,
+.booth-invoice-history-time {
+  display: grid;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.booth-invoice-history time span:last-child {
+  color: var(--brand-muted);
+  font-size: 12px;
+}
+.booth-invoice-history-message {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.booth-invoice-history-message strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.booth-invoice-history-message span {
+  color: var(--brand-muted);
+  font-size: 13px;
+}
+.booth-invoice-history-change {
+  justify-self: end;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: var(--status-neutral-bg);
+  color: var(--status-neutral-fg);
+}
+[data-tone='settled'] > .booth-invoice-history-change {
+  background: var(--status-success-bg);
+  color: var(--status-success-fg);
+}
+[data-tone='owed'] > .booth-invoice-history-change {
+  background: var(--status-danger-bg);
+  color: var(--status-danger-fg);
+}
+
+/* Footer actions: destructive on the left, progress actions on the right. */
+.booth-invoice-actions {
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block-start: 4px;
+}
+.booth-invoice-actions-spacer {
+  flex: 1 1 0;
+}
+
+/* Action views */
+.booth-invoice-action,
+.booth-invoice-action-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  min-width: 0;
+}
+.booth-invoice-action-heading p {
+  margin: 4px 0 0;
+  color: var(--brand-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.booth-invoice-action :is(.ops-field, .field) {
+  margin: 0;
+}
+.booth-invoice-action .farmstand-select-wrap,
+.booth-invoice-action .farmstand-select.ui-select.ui-select {
+  width: 100%;
+}
+.booth-invoice-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+  align-items: end;
+}
+.booth-invoice-amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.booth-invoice-amount > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.booth-invoice-field-error {
+  margin: -8px 0 0;
+  color: var(--status-danger-fg);
+  font-size: 13px;
+}
+.booth-invoice-action-buttons {
+  justify-content: space-between;
+  margin-block-start: 4px;
+}
+.booth-invoice-refund .reward-progress {
+  margin-bottom: 24px;
+}
+.booth-invoice-refund .reward-step-caption {
+  margin: 0 0 16px;
+}
+
+/* Animated result: the shared completion check, plus a failure variant. */
+.booth-invoice-outcome {
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+  padding: 24px 0 8px;
+  text-align: center;
+}
+.booth-invoice-outcome h3 {
+  margin: 18px 0 6px;
+  font-size: 20px;
+  outline: none;
+}
+.booth-invoice-outcome p {
+  max-width: 34rem;
+  margin: 0 auto;
+  color: var(--brand-muted);
+  line-height: 1.5;
+}
+.booth-invoice-outcome-actions {
+  justify-content: center;
+}
+.booth-invoice-outcome.is-success .booth-invoice-outcome-mark {
+  color: var(--status-success-fg);
+  background: var(--status-success-bg);
+}
+.booth-invoice-outcome.is-failure .booth-invoice-outcome-mark {
+  color: var(--status-danger-fg);
+  background: var(--status-danger-bg);
+  animation:
+    reward-published-pop 450ms cubic-bezier(0.22, 1, 0.36, 1) both,
+    booth-invoice-shake 420ms ease 380ms;
+}
+.booth-invoice-shake {
+  animation: booth-invoice-shake 420ms ease;
+}
+@keyframes booth-invoice-shake {
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+/* Compact summary used by Assignments. */
+.booth-invoice-compact {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+.booth-invoice-compact .booth-invoice-balance {
+  width: 100%;
+}
+.booth-invoice-compact .booth-invoice-balance dd {
+  font-size: 18px;
+}
+
+@media (max-width: 1080px) {
+  .booth-invoices .markets-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .markets-filters.finance-list-filters.booth-invoice-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .booth-invoice-filters > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 600px) {
+  .booth-invoices .markets-summary,
+  .booth-invoice-field-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .booth-invoice-balance {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .booth-invoice-balance > div {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+  .booth-invoice-balance dd {
+    font-size: 20px;
+    text-align: right;
+  }
+  .booth-invoice-history li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .booth-invoice-history-message {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .booth-invoice-actions-spacer {
+    display: none;
+  }
+  .booth-invoice-actions > .button,
+  .booth-invoice-action-buttons > .button {
+    flex: 1 1 auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .booth-invoice-stage,
+  .booth-invoice-balance dd,
+  .booth-invoice-shake,
+  .booth-invoice-outcome.is-success .booth-invoice-outcome-mark {
+    color: var(--status-success-fg);
+    background: var(--status-success-bg);
+  }
+  .booth-invoice-outcome.is-failure .booth-invoice-outcome-mark {
+    animation: none;
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "apps/storefront/src/env.d.ts",
+    "apps/admin/src/settings/PreorderFeeSettings.tsx",
+    "apps/storefront/src/components/Checkout.tsx",
+    "apps/storefront/src/components/VendorCheckout.tsx",
+    "apps/storefront/src/components/modern-farmhouse/Checkout.tsx",
+    "apps/storefront/src/components/CartTotals.tsx",
+    "apps/storefront/src/components/TestPreorderFeeQuote.tsx",
+    "tests/setup.ts",
+    "tests/stripe-connect-phase-d.test.tsx"
+  ]
+}

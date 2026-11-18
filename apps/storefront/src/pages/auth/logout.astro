@@ -6,7 +6,7 @@ if (!isCentral(Astro.url)) return new Response('Not found', { status: 404 });
 ---
 
 <SiteLayout title="Sign out" noindex>
-  <section class="py-12 account-panel">
+  <section class="py-12 account-panel farmstand-controls">
     <h1>Sign out</h1>
     <p>End your authenticated sessions across the platform.</p>
     <form method="post" action="/api/account">

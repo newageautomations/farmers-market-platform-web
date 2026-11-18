@@ -1,40 +1,24 @@
-import { FarmstandIcon, FarmstandPanel } from '@market/ui/farmstand';
-import type { ComponentProps, ReactNode } from 'react';
+import type { ComponentProps } from 'react';
+import { MarketsSummary as SharedMarketsSummary } from '@market/ui/workspace';
+import { SummaryCarouselDots, useSummaryCarousel } from '../market/mobile';
 
-/** Shared Markets composition; values and their meaning remain caller-owned. */
-export function MarketsSummary({
-  items,
-  className = '',
-}: {
-  items: Array<{
-    label: string;
-    /** Counts, or caller-formatted values such as money. */
-    value: number | string;
-    hint: ReactNode;
-    icon: ComponentProps<typeof FarmstandIcon>['name'];
-    tone?: 'warning' | 'success' | 'danger';
-  }>;
-  /** Optional layout modifier, for example a four-card grid. */
-  className?: string;
-}) {
+/**
+ * Admin entry point for the shared `@market/ui/workspace` summary (moved there
+ * so the customer dashboard shares it). In the Vendor dashboard the cards
+ * become a sideways carousel on a phone (`vendor-mobile.css`), with position
+ * dots added as the summary's next sibling; every other role renders the
+ * shared summary unchanged.
+ */
+export function MarketsSummary(
+  props: ComponentProps<typeof SharedMarketsSummary>,
+) {
+  const carousel = useSummaryCarousel();
+  if (!carousel || props.items.length < 2)
+    return <SharedMarketsSummary {...props} />;
   return (
-    <div className={`markets-summary ui-kpi-grid ${className}`.trim()}>
-      {items.map((stat) => (
-        <FarmstandPanel
-          as="div"
-          className={`markets-stat${stat.tone ? ` markets-stat-${stat.tone}` : ''}`}
-          key={stat.label}
-        >
-          <span className="markets-stat-icon">
-            <FarmstandIcon name={stat.icon} />
-          </span>
-          <dl>
-            <dt>{stat.label}</dt>
-            <dd>{stat.value}</dd>
-          </dl>
-          <p>{stat.hint}</p>
-        </FarmstandPanel>
-      ))}
-    </div>
+    <>
+      <SharedMarketsSummary {...props} />
+      <SummaryCarouselDots count={props.items.length} />
+    </>
   );
 }

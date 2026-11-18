@@ -34,7 +34,8 @@ it('selects the photographic hero without replacing its gradient pseudo-element'
     expect(hero).toHaveAttribute('data-editor-selected');
     expect(
       hero.querySelector('.storefront-editor-selection-label'),
-    ).toHaveTextContent('Modern Farmhouse section');
+    ).toBeNull();
+    expect(hero.textContent).toBe('');
     expect(hero.querySelector('img')).toHaveAttribute(
       'src',
       'https://example.test/farm.jpg',

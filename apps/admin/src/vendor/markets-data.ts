@@ -23,6 +23,7 @@ export interface MarketOverviewRow {
   /** Every participation in the membership projection. */
   participations: readonly Participation[];
   upcoming: Occurrence[];
+  cancelled?: Occurrence[];
   website?: string;
   application?: MarketApplicationSummary;
 }
@@ -120,6 +121,9 @@ export async function readMarketsOverview(
             },
             next,
             upcoming,
+            cancelled: occurrences.filter(
+              (o) => o.status === 'cancelled' && Date.parse(o.startsAt) >= now,
+            ),
             participations: state.participations,
             participation: state.participations.find(
               (p) => p.occurrenceId === next?.id,
@@ -139,6 +143,7 @@ export interface UpcomingMarketDate {
   participation?: Participation;
   application?: MarketApplicationSummary;
   booth?: string;
+  invoices?: VendorBoothAssignment['invoices'];
 }
 
 /** Verified booth assignments by occurrence; a failed read is never shown as unassigned. */
@@ -157,37 +162,38 @@ export async function readBoothAssignments(service: VendorService) {
     return undefined;
   }
 }
-/** Booth labels come from verified assignments; a failed read is never shown as unassigned. */
-async function readBoothLabels(service: VendorService) {
-  const assignments = await readBoothAssignments(service);
-  return (
-    assignments &&
-    new Map([...assignments].map(([id, a]) => [id, a.space.label] as const))
-  );
-}
-
 /** Scheduled dates for approved memberships only; participation and booths remain separate authorities. */
 export async function readUpcomingMarketDates(
   service: VendorService,
   now = Date.now(),
+  includeCancelled = false,
 ) {
   const [overview, booths] = await Promise.all([
     readMarketsOverview(service, now),
-    readBoothLabels(service),
+    readBoothAssignments(service),
   ]);
   const dates: UpcomingMarketDate[] = overview.rows
     .filter((row) => row.membership.status === 'approved')
     .flatMap((row) =>
-      row.upcoming.map((occurrence) => ({
-        key: `${row.membership.id}:${occurrence.id}`,
-        membership: row.membership,
-        occurrence,
-        participation: row.participations.find(
-          (p) => p.occurrenceId === occurrence.id,
-        ),
-        application: row.application,
-        booth: booths?.get(String(occurrence.id)),
-      })),
+      [...row.upcoming, ...(includeCancelled ? (row.cancelled ?? []) : [])].map(
+        (occurrence) => ({
+          key: `${row.membership.id}:${occurrence.id}`,
+          membership: row.membership,
+          occurrence,
+          participation: row.participations.find(
+            (p) => p.occurrenceId === occurrence.id,
+          ),
+          application: row.application,
+          booth: booths?.get(String(occurrence.id))?.space.label,
+          invoices: booths
+            ?.get(String(occurrence.id))
+            ?.invoices?.filter(
+              (i) =>
+                occurrence.status === 'cancelled' ||
+                !['VOID', 'CANCELED', 'CANCEL_PENDING'].includes(i.status),
+            ),
+        }),
+      ),
     )
     .sort(
       (a, b) =>
@@ -200,7 +206,11 @@ export async function readUpcomingMarketDates(
 export type DateAttendance =
   'attending' | 'tentative' | 'not-attending' | 'needs-rsvp';
 /** Only confirmed participation is Attending; no participation needs a response. */
-export function dateAttendance(participation?: Participation): DateAttendance {
+export function dateAttendance(
+  participation?: Participation,
+  occurrence?: Occurrence,
+): DateAttendance {
+  if (occurrence?.status === 'cancelled') return 'not-attending';
   return participation?.status === 'confirmed'
     ? 'attending'
     : participation?.status === 'planned'

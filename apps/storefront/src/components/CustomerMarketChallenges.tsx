@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import type { LoyaltyWallet, MarketChallenge } from '@market/api';
 import { Alert, Button, Dialog, EmptyState, Tabs } from '@market/ui';
+import { FarmstandIcon } from '@market/ui/farmstand';
+import { MarketsSummary, SettingsPanel } from '@market/ui/workspace';
 import {
   LoyaltyRedeemButton,
   MarketChallengeCard,
@@ -158,6 +160,14 @@ export function CustomerMarketChallenges({
     </>
   );
 }
+const count = (n: number, word: string) =>
+  `${n} ${n === 1 ? word : word + 's'}`;
+
+/**
+ * Customer Loyalty workspace: summary cards, the workspace-menu tabs (as on
+ * vendor Packing) and Settings-style panels around the existing wallet and
+ * challenge controllers, whose behavior is unchanged.
+ */
 export default function CustomerLoyaltyDashboard({
   wallets,
   challenges,
@@ -167,37 +177,83 @@ export default function CustomerLoyaltyDashboard({
   challenges: MarketChallenge[];
   unavailable?: boolean;
 }) {
+  const ready = wallets.reduce(
+    (total, w) => total + w.rewards.filter((r) => r.available).length,
+    0,
+  );
+  const pending = wallets.reduce((total, w) => total + w.balance.pending, 0);
+  const claimable = challenges.filter(
+    (c) => c.progress?.complete && !c.claim,
+  ).length;
   return (
-    <Tabs
-      items={[
-        {
-          label: 'Vendor Rewards',
-          content: (
-            <>
-              <p>
-                One point for every eligible product cent. Every vendor has its
-                own wallet. Pending points become available after fulfillment.
-              </p>
-              <CustomerLoyalty wallets={wallets} />
-            </>
-          ),
-        },
-        {
-          label: 'Market Challenges',
-          content: (
-            <>
-              <p>
-                Meet your market’s purchase goals and claim the rewards its
-                manager promises.
-              </p>
-              <CustomerMarketChallenges
-                initialChallenges={challenges}
-                unavailable={unavailable}
-              />
-            </>
-          ),
-        },
-      ]}
-    />
+    <div className="customer-loyalty">
+      <MarketsSummary
+        items={[
+          {
+            label: 'Rewards ready',
+            value: ready,
+            hint: ready
+              ? `${count(ready, 'reward')} you can redeem now`
+              : 'Keep earning to unlock a reward',
+            icon: 'gift',
+            tone: ready ? 'success' : undefined,
+          },
+          {
+            label: 'Pending points',
+            value: pending.toLocaleString('en-US'),
+            hint: 'Available after your orders are fulfilled',
+            icon: 'clock',
+            tone: pending ? 'warning' : undefined,
+          },
+          {
+            label: 'Market challenges',
+            value: unavailable ? '—' : challenges.length,
+            hint: unavailable
+              ? 'Challenges are currently unavailable'
+              : claimable
+                ? `${count(claimable, 'reward')} ready to claim`
+                : 'Goals set by your markets',
+            icon: 'circle-check',
+            tone: claimable ? 'success' : undefined,
+          },
+        ]}
+      />
+      <Tabs
+        className="workspace-menu customer-loyalty-tabs"
+        items={[
+          {
+            label: 'Vendor Rewards',
+            icon: <FarmstandIcon name="gift" />,
+            content: (
+              <SettingsPanel
+                icon="gift"
+                title="Vendor rewards"
+                module="customer-workspace"
+                description="One point for every eligible product cent. Every vendor has its own wallet. Pending points become available after fulfillment."
+              >
+                <CustomerLoyalty wallets={wallets} />
+              </SettingsPanel>
+            ),
+          },
+          {
+            label: 'Market Challenges',
+            icon: <FarmstandIcon name="store" />,
+            content: (
+              <SettingsPanel
+                icon="circle-check"
+                title="Market challenges"
+                module="customer-workspace"
+                description="Meet your market’s purchase goals and claim the rewards its manager promises."
+              >
+                <CustomerMarketChallenges
+                  initialChallenges={challenges}
+                  unavailable={unavailable}
+                />
+              </SettingsPanel>
+            ),
+          },
+        ]}
+      />
+    </div>
   );
 }

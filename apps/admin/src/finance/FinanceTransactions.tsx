@@ -17,6 +17,7 @@ import type {
 import { MarketsPagination } from '../vendor/MarketsPagination';
 import { go } from '../vendor/common';
 import { useResettingState } from './resetting-state';
+import { DetailSheet, usePhoneRecords } from '../market/mobile';
 
 const PAGE = 20;
 type OrderRow = FinanceOrderTransaction & { cost: number };
@@ -40,6 +41,14 @@ export function FinanceTransactions({
   const [search, setSearch] = useState(''),
     [type, setType] = useState('ALL'),
     [selected, setSelected] = useState<string>();
+  const records = usePhoneRecords();
+  // Market Manager phones and tablets open the details in a sheet; other
+  // roles and desktop keep the panel beside the list.
+  const [detailOpen, setDetailOpen] = useState(false);
+  const choose = (key: string) => {
+    setSelected(key);
+    setDetailOpen(true);
+  };
   // Paging restarts whenever the filters or the report change.
   const [page, setPage] = useResettingState(0, [search, type, report]);
   const grouped = !!report.orderTransactions;
@@ -83,11 +92,11 @@ export function FinanceTransactions({
     activity.find((t) => t.id === selected) ?? shownActivity[0];
   const select = (key: string) => ({
     tabIndex: 0,
-    onClick: () => setSelected(key),
+    onClick: () => choose(key),
     onKeyDown: (event: KeyboardEvent) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        setSelected(key);
+        choose(key);
       }
     },
   });
@@ -143,6 +152,13 @@ export function FinanceTransactions({
             <FarmstandTable
               label="Transaction history"
               wide
+              recordDetails={records({
+                status: 3,
+                onOpen: (index) => {
+                  const t = shownOrders[index];
+                  if (t) choose(t.id);
+                },
+              })}
               headings={['Order', 'Date', 'Market', 'Payment', 'Status']}
             >
               {shownOrders.map((t) => (
@@ -189,6 +205,13 @@ export function FinanceTransactions({
             <FarmstandTable
               label="Transaction history"
               wide
+              recordDetails={records({
+                status: 3,
+                onOpen: (index) => {
+                  const t = shownActivity[index];
+                  if (t) choose(t.id);
+                },
+              })}
               headings={['Transaction', 'Date', 'Market', 'Gross', 'Type']}
             >
               {shownActivity.map((t) => (
@@ -241,39 +264,45 @@ export function FinanceTransactions({
           Transactions follow the selected period, scope and currency.
         </p>
       </FarmstandPanel>
-      <FarmstandPanel
-        as="section"
-        className="markets-next market-application-details finance-details"
-        aria-label="Transaction details"
+      <DetailSheet
+        title="Transaction details"
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
       >
-        <h2>
-          <FarmstandIcon name="receipt-text" />
-          Transaction details
-        </h2>
-        {grouped && currentOrder ? (
-          <OrderDetails
-            t={currentOrder}
-            market={marketName(currentOrder.marketId, 'Independent sale')}
-            when={when}
-            money={money}
-            href={
-              orderHref && !currentOrder.cost && currentOrder.orderId
-                ? orderHref(currentOrder.orderId)
-                : undefined
-            }
-          />
-        ) : !grouped && currentActivity ? (
-          <ActivityDetails
-            t={currentActivity}
-            market={marketName(currentActivity.marketId, 'Independent')}
-            money={money}
-          />
-        ) : (
-          <EmptyState title="No transaction selected">
-            <p>Choose a transaction to see its breakdown.</p>
-          </EmptyState>
-        )}
-      </FarmstandPanel>
+        <FarmstandPanel
+          as="section"
+          className="markets-next market-application-details finance-details"
+          aria-label="Transaction details"
+        >
+          <h2>
+            <FarmstandIcon name="receipt-text" />
+            Transaction details
+          </h2>
+          {grouped && currentOrder ? (
+            <OrderDetails
+              t={currentOrder}
+              market={marketName(currentOrder.marketId, 'Independent sale')}
+              when={when}
+              money={money}
+              href={
+                orderHref && !currentOrder.cost && currentOrder.orderId
+                  ? orderHref(currentOrder.orderId)
+                  : undefined
+              }
+            />
+          ) : !grouped && currentActivity ? (
+            <ActivityDetails
+              t={currentActivity}
+              market={marketName(currentActivity.marketId, 'Independent')}
+              money={money}
+            />
+          ) : (
+            <EmptyState title="No transaction selected">
+              <p>Choose a transaction to see its breakdown.</p>
+            </EmptyState>
+          )}
+        </FarmstandPanel>
+      </DetailSheet>
     </div>
   );
 }
@@ -370,6 +399,27 @@ function OrderDetails({
                 t.refund > 0 && ['Refunded to customer', money(t.refund)],
                 t.refund > 0 && ['Sales tax refunded', money(t.refundedTax)],
                 t.refund > 0 && ['Payment remaining', money(t.remaining)],
+                ...(t.preorderFee
+                  ? [
+                      ['Original platform fee', money(t.preorderFee.platform)],
+                      [
+                        'Original processing recovery',
+                        money(t.preorderFee.recovery),
+                      ],
+                      [
+                        'Platform fee refunded to customer',
+                        money(t.preorderFee.platformRefunded),
+                      ],
+                      [
+                        'Processing recovery refunded',
+                        money(t.preorderFee.recoveryRefunded),
+                      ],
+                      [
+                        'Application fee returned to you',
+                        money(t.preorderFee.applicationFeeReturnedToVendor),
+                      ],
+                    ]
+                  : []),
               ] as Array<[string, string] | false>)),
         ]}
       />

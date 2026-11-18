@@ -1,7 +1,8 @@
 import { Badge } from '@market/ui';
 import { managementStatusTone } from './status-presentation';
 import { type ReactNode } from 'react';
-import { Card, Pagination, SelectField } from '@market/ui';
+import { Pagination, SelectField } from '@market/ui';
+import { FarmstandPanel } from '@market/ui/farmstand';
 import type { ManagementEntitlement, ModuleReadiness } from '@market/api';
 import { date } from '../vendor/common';
 export function Choice({
@@ -67,7 +68,11 @@ export function Entitlements({
   return (
     <div className="management-grid">
       {items.map((e) => (
-        <Card as="article" spacing="contained" key={e.featureCode}>
+        <FarmstandPanel
+          as="article"
+          className="management-entitlement"
+          key={e.featureCode}
+        >
           <h2 className="ui-section-title-dashboard">{e.featureCode}</h2>
           <p>
             <Badge tone={e.allowed ? 'success' : 'neutral'}>
@@ -120,7 +125,7 @@ export function Entitlements({
             </p>
           )}
           <p>Access policy: {e.accessPolicyVersion ?? 'Not configured'}</p>
-        </Card>
+        </FarmstandPanel>
       ))}
     </div>
   );
@@ -139,7 +144,11 @@ export function Readiness({ items }: { items: readonly ModuleReadiness[] }) {
   return (
     <div className="management-grid">
       {items.map((m) => (
-        <Card as="article" spacing="contained" key={m.code}>
+        <FarmstandPanel
+          as="article"
+          className="management-entitlement"
+          key={m.code}
+        >
           <h2 className="ui-section-title-dashboard">
             {names[m.code] ?? m.code}
           </h2>
@@ -151,7 +160,7 @@ export function Readiness({ items }: { items: readonly ModuleReadiness[] }) {
           <p>{m.detail}</p>
           <p>External qualification: {m.qualification}</p>
           <p>Configuration observed {date(m.asOf)}</p>
-        </Card>
+        </FarmstandPanel>
       ))}
     </div>
   );

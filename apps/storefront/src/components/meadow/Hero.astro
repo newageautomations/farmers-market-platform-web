@@ -1,0 +1,139 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { safeAsset } from '@market/storefront-core';
+import {
+  defaultStorefrontAppearance,
+  marketText,
+} from '@market/theme/storefront';
+import Button from '../ui/Button.astro';
+import FarmstandIcon from '../ui/FarmstandIcon.astro';
+import Art from './Art.astro';
+import Scene from './Scene.astro';
+
+/**
+ * Meadow's homepage hero. It shows the same editable title, introduction and
+ * two actions as the Harvest market hero. `override` supplies the fixed
+ * Market Day copy, as it does for HarvestHero.
+ */
+interface Props {
+  context: StorefrontContext;
+  href: string;
+  secondaryHref?: string;
+  override?: {
+    title: string;
+    introduction: string;
+    primaryLabel: string;
+    secondaryLabel: string;
+  };
+}
+const { context, href, secondaryHref, override } = Astro.props;
+const appearance = context.appearance ?? defaultStorefrontAppearance;
+const home = appearance.homepage;
+const media = safeAsset(home.image);
+const introduction =
+  'Fresh from the field, the hive and the oven. Meet the people who grow and make your food.';
+---
+
+<section
+  class:list={['mw-hero', 'mw-bleed', override && 'mw-hero-day']}
+  data-editor-section="hero"
+  aria-labelledby="home-title"
+>
+  <div class="mw-hero-inner">
+    <div class="mw-hero-copy">
+      {override && (
+        <p class="mw-live-pill">
+          <span class="mw-live-dot" aria-hidden="true" />
+          Market day
+        </p>
+      )}
+      {override ? (
+        <>
+          <h1 id="home-title">{override.title}</h1>
+          <p class="mw-hero-intro">{override.introduction}</p>
+        </>
+      ) : (
+        <>
+          <h1 id="home-title" data-home-text="title">
+            {home.title || context.name}
+          </h1>
+          <p
+            class="mw-hero-intro"
+            data-home-text="introduction"
+            data-fallback={introduction}
+          >
+            {home.introduction || introduction}
+          </p>
+        </>
+      )}
+      <div class="actions mw-hero-actions">
+        <Button href={href} class="mw-button-arrow">
+          {override ? (
+            <>
+              <FarmstandIcon name="map-pin" />
+              {override.primaryLabel}
+            </>
+          ) : (
+            <>
+              <span data-market-text="heroPrimaryLabel">
+                {marketText(appearance, 'heroPrimaryLabel')}
+              </span>
+              <FarmstandIcon name="arrow-right" />
+            </>
+          )}
+        </Button>
+        {secondaryHref && (
+          <Button href={secondaryHref} variant="secondary">
+            {override ? (
+              <>
+                <FarmstandIcon name="store" />
+                {override.secondaryLabel}
+              </>
+            ) : (
+              <span data-market-text="heroSecondaryLabel">
+                {marketText(appearance, 'heroSecondaryLabel')}
+              </span>
+            )}
+          </Button>
+        )}
+      </div>
+      <slot name="details" />
+    </div>
+    <div class:list={['mw-hero-visual', media && 'mw-hero-photo']}>
+      {media ? (
+        <>
+          <span class="mw-hero-blob" aria-hidden="true" />
+          <div
+            class="mw-hero-frame"
+            data-theme-hero-frame
+            data-hero-shape={appearance.market?.heroShape}
+          >
+            <img
+              class="product-media mw-hero-image"
+              src={media}
+              alt=""
+              width="960"
+              height="960"
+              fetchpriority="high"
+            />
+          </div>
+          <Art name="bee" class="mw-sticker mw-sticker-bee" />
+          <Art name="tomato" class="mw-sticker mw-sticker-tomato" />
+          <Art name="honey" class="mw-sticker mw-sticker-honey" />
+          <Art name="sunflower" class="mw-sticker mw-sticker-sunflower" />
+        </>
+      ) : (
+        <Scene bunting={!!override} />
+      )}
+    </div>
+  </div>
+  <svg
+    class="mw-hero-edge"
+    viewBox="0 0 1440 60"
+    preserveAspectRatio="none"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M0 34c120-34 240-34 360 0s240 34 360 0 240-34 360 0 240 34 360 0v26H0z"></path>
+  </svg>
+</section>

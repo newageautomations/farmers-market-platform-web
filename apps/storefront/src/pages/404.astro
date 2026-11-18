@@ -2,10 +2,15 @@
 import { buttonClassName } from '@market/ui/presentation';
 import SiteLayout from '../layouts/SiteLayout.astro';
 Astro.response.status = 404;
+// The platform host (no tenant storefront) uses the Farmstand controls;
+// tenant storefronts keep their theme's buttons.
+const platform = !Astro.locals.storefront;
 ---
 
 <SiteLayout title="Page not found">
-  <section class="py-12">
+  <section
+    class:list={['py-12', { 'account-panel farmstand-controls': platform }]}
+  >
     <h1>Page not found</h1>
     <p>This page is unavailable.</p>
     <a class={buttonClassName({ variant: 'secondary' })} href="/">

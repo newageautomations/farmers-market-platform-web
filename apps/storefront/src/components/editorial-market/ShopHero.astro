@@ -1,0 +1,29 @@
+---
+import type { EditorialMarketSettings } from '@market/theme/storefront';
+
+/** Editorial shop artwork and copy, shared by the vendor and market shops. */
+interface Props {
+  settings: EditorialMarketSettings;
+}
+const { settings } = Astro.props;
+---
+
+<section class="em-shop-hero" data-editor-section="editorial:shop-settings">
+  <picture aria-hidden="true">
+    <source
+      media="(max-width: 700px)"
+      srcset="/assets/editorial-market/mobile-shop-hero.png"
+    />
+    <img
+      src="/assets/editorial-market/desktop-shop-hero.png"
+      alt=""
+      width="2007"
+      height="784"
+      fetchpriority="high"
+    />
+  </picture>
+  <div class="em-shop-hero-copy">
+    <h1>{settings.pages.shopHeading}</h1>
+    <p>{settings.pages.shopIntroduction}</p>
+  </div>
+</section>

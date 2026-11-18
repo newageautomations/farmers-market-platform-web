@@ -1,0 +1,96 @@
+---
+import {
+  effectiveWebsiteBlocks,
+  websiteSectionStyle,
+  websiteSectionAttributes,
+  websiteObjectStyle,
+  websiteButtonStyle,
+  type WebsiteImageWithTextSection,
+} from '@market/theme/storefront';
+import type { StorefrontContext } from '@market/storefront-core';
+import { websiteSectionDestination } from '../website-section-navigation';
+import '../../styles/website-sections.css';
+import Photo from './Photo.astro';
+const { section, context, editorId } = Astro.props as {
+  section: WebsiteImageWithTextSection;
+  context: StorefrontContext;
+  editorId?: string;
+};
+const { presentation } = section;
+const blocks = effectiveWebsiteBlocks(section).filter((b) => b.visible);
+const photo = blocks.flatMap((b) =>
+  b.type === 'image' ? [b.content] : [],
+)[0]!;
+---
+
+<section
+  class="farmhouse-editorial website-section"
+  {...websiteSectionAttributes(section)}
+  style={websiteSectionStyle(section)}
+  data-editor-section={editorId ?? `farmhouse:${section.id}`}
+  data-image-layout={
+    presentation.imageSide === 'background' ? 'overlay' : undefined
+  }
+  data-variant={presentation.variant ?? 'standard'}
+  data-background={presentation.background}
+  data-alignment={presentation.alignment}
+  data-image-side={presentation.imageSide}
+  data-image-size={presentation.imageSize}
+  data-column-ratio={presentation.columnRatio}
+  data-vertical-alignment={presentation.verticalAlignment}
+  data-internal-spacing={presentation.spacing}
+>
+  <div
+    class="farmhouse-space farmhouse-image-with-text website-layout"
+    data-image-side={presentation.imageSide}
+    data-image-size={presentation.imageSize}
+    data-column-ratio={presentation.columnRatio}
+    data-vertical-alignment={presentation.verticalAlignment}
+    data-internal-spacing={presentation.spacing}
+  >
+    <Photo
+      photo={{ ...photo, desktop: 'center', mobile: 'center' }}
+      class="website-image"
+    />
+    <div class="farmhouse-editorial-copy website-copy">
+      {blocks.map((block) =>
+        block.type === 'image' ? null : block.type === 'button' ? (
+          websiteSectionDestination(context, block.content.destination) && (
+            <a
+              class="farmhouse-button"
+              href={block.content.destination}
+              data-website-button={websiteButtonStyle(section, block)}
+              data-block-id={block.id}
+              style={websiteObjectStyle(section, 'button', block)}
+            >
+              {block.content.label}
+              <span aria-hidden="true">↗</span>
+            </a>
+          )
+        ) : block.type === 'heading' ? (
+          block.content.text && (
+            <h2
+              data-block-id={block.id}
+              data-block-size={block.presentation.size}
+              style={websiteObjectStyle(section, 'heading', block)}
+            >
+              {block.content.text}
+            </h2>
+          )
+        ) : (
+          <p
+            data-block-id={block.id}
+            data-block-size={block.presentation.size}
+            class:list={{
+              'website-eyebrow': block.type === 'eyebrow',
+              'farmhouse-block-eyebrow': block.type === 'eyebrow',
+            }}
+            style={websiteObjectStyle(section, block.type, block)}
+          >
+            {block.content.text}
+          </p>
+        ),
+      )}
+    </div>
+  </div>
+</section>

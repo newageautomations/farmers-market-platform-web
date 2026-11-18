@@ -1,0 +1,54 @@
+---
+import { safeAsset } from '@market/storefront-core';
+import type { EditorialMarketSettings } from '@market/theme/storefront';
+import { categoryArt } from './category-art';
+
+/** Editorial category artwork strip, shared by the vendor and market shops. */
+interface Props {
+  settings: EditorialMarketSettings;
+  categories: Array<{
+    id: string;
+    name: string;
+    code?: string;
+    image?: string;
+  }>;
+  category: string;
+  link: (next: { category?: string; page?: number }) => string;
+}
+const { settings, categories, category, link } = Astro.props;
+---
+
+<section class="em-shop-categories" aria-label="Product categories">
+  <a
+    class="em-shop-category"
+    href={link({ category: '', page: 1 })}
+    aria-current={!category ? 'page' : undefined}
+  >
+    <span class="em-shop-category-art em-shop-category-all" aria-hidden="true">
+      ❦
+    </span>
+    <span>All Products</span>
+  </a>
+  {categories.map((item) => {
+    const image = categoryArt(
+      item.code,
+      safeAsset(item.image || settings.categories.images[item.id]?.url),
+    );
+    return (
+      <a
+        class="em-shop-category"
+        href={link({ category: item.id, page: 1 })}
+        aria-current={category === item.id ? 'page' : undefined}
+      >
+        <span class="em-shop-category-art">
+          {image ? (
+            <img src={image} alt="" width="120" height="120" loading="lazy" />
+          ) : (
+            <span aria-hidden="true">✦</span>
+          )}
+        </span>
+        <span>{item.name}</span>
+      </a>
+    );
+  })}
+</section>

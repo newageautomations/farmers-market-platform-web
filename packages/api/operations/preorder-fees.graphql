@@ -1,0 +1,26 @@
+fragment PreorderFeeSettings on OwnPreorderFeeSettings {
+  mode
+  customAmount
+  customPercentageBps
+  currency
+  version
+  editable
+  maxCustomAmount
+  platformPercent
+  example {
+    platform
+    recovery
+    preorderFee
+    total
+  }
+}
+query VendorPreorderFeeSettings {
+  ownPreorderFeeSettings {
+    ...PreorderFeeSettings
+  }
+}
+mutation SaveVendorPreorderFeeSettings($input: OwnPreorderFeeInput!) {
+  saveOwnPreorderFeeSettings(input: $input) {
+    ...PreorderFeeSettings
+  }
+}
