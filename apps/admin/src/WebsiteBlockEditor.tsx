@@ -15,6 +15,7 @@ import {
   createWebsiteBlock,
   editWebsiteBlocks,
   effectiveWebsiteBlocks,
+  themePageStructure,
   websiteBlockManifest,
   type WebsiteBlock,
   type WebsiteBlockType,
@@ -25,6 +26,7 @@ import { CategoryImageField } from './vendor/categories';
 import { WebsiteSectionDestination } from './WebsiteSectionManagement';
 import { EditorRangeField } from './TextSizeControls';
 import { WebsiteSectionSizingEditor } from './WebsiteSectionSizingEditor';
+import { ImageShapeField } from './StorefrontAppearance';
 
 type Props = {
   value: WebsiteImageWithTextSection;
@@ -223,6 +225,21 @@ export function WebsiteBlockInspector({
       <p>{definition.label}</p>
       {block.type === 'image' ? (
         <>
+          {themePageStructure(workspace?.theme ?? themeId).sectionImageShape &&
+            value.presentation.imageSide !== 'background' && (
+              <ImageShapeField
+                id={`${value.id}-image-shape`}
+                label="Image shape"
+                includeNatural
+                value={value.presentation.imageShape ?? 'dome'}
+                onChange={(imageShape) =>
+                  onChange({
+                    ...value,
+                    presentation: { ...value.presentation, imageShape },
+                  })
+                }
+              />
+            )}
           <WebsiteSectionSizingEditor
             value={value}
             onChange={(next) => onChange(next as WebsiteImageWithTextSection)}

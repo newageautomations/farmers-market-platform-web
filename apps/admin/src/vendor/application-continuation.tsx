@@ -4,8 +4,8 @@ import {
   Button,
   Card,
   Dialog,
-  Spinner,
   buttonClassName,
+  LoadingSkeleton,
 } from '@market/ui';
 import { safeStorefrontUrl, type ApplicantDraftDetail } from '@market/api';
 import type { VendorService } from './service';
@@ -65,7 +65,7 @@ export function VendorApplicationContinuation({
       <RouteLink to="/vendor/applications">Vendor Applications</RouteLink>
     </Card>
   ) : (
-    <Spinner label="Opening your Vendor application" />
+    <LoadingSkeleton variant="detail" label="Opening your Vendor application" />
   );
 }
 export function VendorDraftPreview({
@@ -182,7 +182,7 @@ export function VendorDraftPreview({
           </Dialog>
         </>
       ) : (
-        <Spinner />
+        <LoadingSkeleton variant="detail" />
       )}
     </div>
   );

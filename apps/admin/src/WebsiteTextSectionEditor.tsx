@@ -5,10 +5,19 @@ import type { StorefrontAppearanceApi } from '@market/api';
 import { CategoryImageField } from './vendor/categories';
 import { WebsiteSectionSizingEditor } from './WebsiteSectionSizingEditor';
 import {
+  InspectorGroup,
+  SectionBackgroundField,
+  SectionSpaceField,
+  WebsiteEditorContext,
+} from './WebsiteEditorContext';
+import { useContext } from 'react';
+import { ImageShapeField } from './StorefrontAppearance';
+import {
   isHarvestExpandedSection,
   websiteSectionRegistry,
   websiteSectionVariants,
   farmhouseHomepageTarget,
+  themePageStructure,
   type SectionTarget,
   type WebsiteSectionVariant,
   withWebsiteSectionContent,
@@ -113,6 +122,8 @@ function WebsiteSectionEditor({
   hiddenCategoryIds,
   target = farmhouseHomepageTarget,
 }: SectionEditorProps) {
+  // Homepage targets name the shared Harvest contract; the website's theme decides options.
+  const theme = useContext(WebsiteEditorContext)?.theme ?? target.theme;
   if (isHarvestExpandedSection(value))
     return (
       <HarvestSectionEditor
@@ -169,37 +180,38 @@ function WebsiteSectionEditor({
   if (value.type === 'text')
     return (
       <>
-        {backgroundTypeControl}
-        {variantControl}
-        <SelectField
-          id={`${value.id}-background`}
-          label="Background color"
-          value={value.presentation.background ?? 'paper'}
-          onChange={(e) =>
-            onChange(
-              withWebsiteSectionPresentation(value, {
-                background: e.target.value as 'paper' | 'surface' | 'ink',
-              }),
-            )
-          }
-        >
-          <option value="paper">Warm paper</option>
-          <option value="surface">Surface</option>
-          <option value="ink">Theme color</option>
-        </SelectField>
-        <TextSectionEditor value={value} onChange={onChange} />
-        <WebsiteSectionSizingEditor value={value} onChange={onChange} />
+        <InspectorGroup title="Content" open>
+          <TextSectionEditor value={value} onChange={onChange} />
+        </InspectorGroup>
+        <InspectorGroup title="Style">
+          {backgroundTypeControl}
+          {variantControl}
+          <SectionBackgroundField
+            id={`${value.id}-background`}
+            value={value.presentation.background ?? 'paper'}
+            onChange={(background) =>
+              onChange(withWebsiteSectionPresentation(value, { background }))
+            }
+          />
+        </InspectorGroup>
+        <InspectorGroup title="Size & spacing">
+          <SectionSpaceField
+            value={value}
+            theme={target.theme}
+            onChange={onChange}
+          />
+          <WebsiteSectionSizingEditor value={value} onChange={onChange} />
+        </InspectorGroup>
       </>
     );
   const definition = websiteSectionRegistry[value.type];
   const blockMode = value.type === 'image-with-text' && !!value.content.blocks;
   const content = value.content;
+  const image = value.type === 'image-with-text';
   return (
     <>
-      {backgroundTypeControl}
-      {variantControl}
       {!blockMode && (
-        <>
+        <InspectorGroup title="Content" open>
           <Field id={`${value.id}-heading`} label="Heading">
             <Input
               id={`${value.id}-heading`}
@@ -232,11 +244,7 @@ function WebsiteSectionEditor({
               }
             />
           </Field>
-        </>
-      )}
-      {value.type === 'image-with-text' && (
-        <>
-          {!blockMode && (
+          {image && (
             <>
               {media && (
                 <CategoryImageField
@@ -281,36 +289,6 @@ function WebsiteSectionEditor({
               </Field>
             </>
           )}
-          <SelectField
-            id={`${value.id}-side`}
-            label="Image position"
-            value={value.presentation.imageSide}
-            onChange={(e) =>
-              onChange({
-                ...value,
-                presentation: {
-                  ...value.presentation,
-                  imageSide: e.target.value as 'left' | 'right' | 'background',
-                },
-              })
-            }
-          >
-            {websiteSectionRegistry['image-with-text'].imageSides.map(
-              (side) => (
-                <option key={side} value={side}>
-                  {side === 'background'
-                    ? 'Full-width background with text overlay'
-                    : side === 'left'
-                      ? 'Left'
-                      : 'Right'}
-                </option>
-              ),
-            )}
-          </SelectField>
-        </>
-      )}
-      {!blockMode && (
-        <>
           <Field
             id={`${value.id}-label`}
             label={
@@ -332,141 +310,209 @@ function WebsiteSectionEditor({
             />
           </Field>
           {destinationControl}
-        </>
+        </InspectorGroup>
       )}
-      {value.type === 'image-with-text' && (
-        <>
-          {value.presentation.imageSide !== 'background' && (
+      <InspectorGroup title="Layout" open={blockMode}>
+        {image && (
+          <>
             <SelectField
-              id={`${value.id}-ratio`}
-              label="Column proportions (image / text)"
-              value={
-                value.presentation.sizing?.imageWidth !== undefined
-                  ? 'custom'
-                  : (value.presentation.columnRatio ??
-                    (
-                      {
-                        small: '40-60',
-                        medium: '50-50',
-                        large: '60-40',
-                      } as const
-                    )[value.presentation.imageSize])
+              id={`${value.id}-side`}
+              label="Image position"
+              value={value.presentation.imageSide}
+              onChange={(e) =>
+                onChange({
+                  ...value,
+                  presentation: {
+                    ...value.presentation,
+                    imageSide: e.target.value as
+                      'left' | 'right' | 'background',
+                  },
+                })
               }
+            >
+              {websiteSectionRegistry['image-with-text'].imageSides.map(
+                (side) => (
+                  <option key={side} value={side}>
+                    {side === 'background'
+                      ? 'Full-width background with text overlay'
+                      : side === 'left'
+                        ? 'Left'
+                        : 'Right'}
+                  </option>
+                ),
+              )}
+            </SelectField>
+            {value.presentation.imageSide !== 'background' &&
+              themePageStructure(theme).sectionImageShape && (
+                <ImageShapeField
+                  id={`${value.id}-layout-image-shape`}
+                  label="Image shape"
+                  includeNatural
+                  value={value.presentation.imageShape ?? 'dome'}
+                  onChange={(imageShape) =>
+                    onChange({
+                      ...value,
+                      presentation: { ...value.presentation, imageShape },
+                    })
+                  }
+                />
+              )}
+            {value.presentation.imageSide !== 'background' && (
+              <SelectField
+                id={`${value.id}-ratio`}
+                label="Column proportions (image / text)"
+                value={
+                  value.presentation.sizing?.imageWidth !== undefined
+                    ? 'custom'
+                    : (value.presentation.columnRatio ??
+                      (
+                        {
+                          small: '40-60',
+                          medium: '50-50',
+                          large: '60-40',
+                        } as const
+                      )[value.presentation.imageSize])
+                }
+                onChange={(e) =>
+                  onChange(
+                    withWebsiteSectionPresentation(value, {
+                      columnRatio: e.target.value as
+                        '50-50' | '40-60' | '60-40',
+                      sizing: Object.fromEntries(
+                        Object.entries(value.presentation.sizing ?? {}).filter(
+                          ([key]) => key !== 'imageWidth',
+                        ),
+                      ),
+                    }),
+                  )
+                }
+              >
+                {value.presentation.sizing?.imageWidth !== undefined && (
+                  <option value="custom" disabled>
+                    Custom width
+                  </option>
+                )}
+                <option value="50-50">50 / 50</option>
+                <option value="40-60">40 / 60</option>
+                <option value="60-40">60 / 40</option>
+              </SelectField>
+            )}
+            <SelectField
+              id={`${value.id}-vertical`}
+              label="Text vertical alignment"
+              value={value.presentation.verticalAlignment ?? 'center'}
               onChange={(e) =>
                 onChange(
                   withWebsiteSectionPresentation(value, {
-                    columnRatio: e.target.value as '50-50' | '40-60' | '60-40',
-                    sizing: Object.fromEntries(
-                      Object.entries(value.presentation.sizing ?? {}).filter(
-                        ([key]) => key !== 'imageWidth',
-                      ),
-                    ),
+                    verticalAlignment: e.target.value as
+                      'top' | 'center' | 'bottom',
                   }),
                 )
               }
             >
-              {value.presentation.sizing?.imageWidth !== undefined && (
+              <option value="top">Top</option>
+              <option value="center">Center</option>
+              <option value="bottom">Bottom</option>
+            </SelectField>
+            <SelectField
+              id={`${value.id}-spacing`}
+              label="Internal spacing"
+              value={
+                value.presentation.sizing?.gap !== undefined ||
+                value.presentation.sizing?.padding !== undefined
+                  ? 'custom'
+                  : (value.presentation.spacing ?? 'balanced')
+              }
+              onChange={(e) =>
+                onChange(
+                  withWebsiteSectionPresentation(value, {
+                    sizing: Object.fromEntries(
+                      Object.entries(value.presentation.sizing ?? {}).filter(
+                        ([key]) => key !== 'gap' && key !== 'padding',
+                      ),
+                    ),
+                    spacing: e.target.value as
+                      'compact' | 'balanced' | 'spacious',
+                  }),
+                )
+              }
+            >
+              {(value.presentation.sizing?.gap !== undefined ||
+                value.presentation.sizing?.padding !== undefined) && (
                 <option value="custom" disabled>
-                  Custom width
+                  Custom spacing
                 </option>
               )}
-              <option value="50-50">50 / 50</option>
-              <option value="40-60">40 / 60</option>
-              <option value="60-40">60 / 40</option>
+              <option value="compact">Compact</option>
+              <option value="balanced">Balanced</option>
+              <option value="spacious">Spacious</option>
+            </SelectField>
+          </>
+        )}
+        <SelectField
+          id={`${value.id}-alignment`}
+          label="Alignment"
+          value={value.presentation.alignment}
+          onChange={(e) =>
+            onChange({
+              ...value,
+              presentation: {
+                ...value.presentation,
+                alignment: e.target.value,
+              },
+            } as WebsiteSection)
+          }
+        >
+          {definition.alignments.map((alignment) => (
+            <option key={alignment} value={alignment}>
+              {alignment[0]!.toUpperCase() + alignment.slice(1)}
+            </option>
+          ))}
+        </SelectField>
+      </InspectorGroup>
+      <InspectorGroup title="Style">
+        {backgroundTypeControl}
+        {variantControl}
+        <SectionBackgroundField
+          id={`${value.id}-background`}
+          value={value.presentation.background}
+          options={definition.backgrounds}
+          onChange={(background) =>
+            onChange(withWebsiteSectionPresentation(value, { background }))
+          }
+        />
+        {value.type === 'cta-banner' &&
+          themePageStructure(theme).ctaButtonStyle && (
+            <SelectField
+              id={`${value.id}-button-style`}
+              label="Button style"
+              value={
+                value.presentation.buttonStyle ??
+                (value.presentation.background === 'ink'
+                  ? 'secondary'
+                  : 'primary')
+              }
+              onChange={(e) =>
+                onChange(
+                  withWebsiteSectionPresentation(value, {
+                    buttonStyle: e.target.value as 'primary' | 'secondary',
+                  }),
+                )
+              }
+            >
+              <option value="primary">Filled</option>
+              <option value="secondary">Outlined</option>
             </SelectField>
           )}
-          <SelectField
-            id={`${value.id}-vertical`}
-            label="Text vertical alignment"
-            value={value.presentation.verticalAlignment ?? 'center'}
-            onChange={(e) =>
-              onChange(
-                withWebsiteSectionPresentation(value, {
-                  verticalAlignment: e.target.value as
-                    'top' | 'center' | 'bottom',
-                }),
-              )
-            }
-          >
-            <option value="top">Top</option>
-            <option value="center">Center</option>
-            <option value="bottom">Bottom</option>
-          </SelectField>
-          <SelectField
-            id={`${value.id}-spacing`}
-            label="Internal spacing"
-            value={
-              value.presentation.sizing?.gap !== undefined ||
-              value.presentation.sizing?.padding !== undefined
-                ? 'custom'
-                : (value.presentation.spacing ?? 'balanced')
-            }
-            onChange={(e) =>
-              onChange(
-                withWebsiteSectionPresentation(value, {
-                  sizing: Object.fromEntries(
-                    Object.entries(value.presentation.sizing ?? {}).filter(
-                      ([key]) => key !== 'gap' && key !== 'padding',
-                    ),
-                  ),
-                  spacing: e.target.value as
-                    'compact' | 'balanced' | 'spacious',
-                }),
-              )
-            }
-          >
-            {(value.presentation.sizing?.gap !== undefined ||
-              value.presentation.sizing?.padding !== undefined) && (
-              <option value="custom" disabled>
-                Custom spacing
-              </option>
-            )}
-            <option value="compact">Compact</option>
-            <option value="balanced">Balanced</option>
-            <option value="spacious">Spacious</option>
-          </SelectField>
-        </>
-      )}
-      <SelectField
-        id={`${value.id}-alignment`}
-        label="Alignment"
-        value={value.presentation.alignment}
-        onChange={(e) =>
-          onChange({
-            ...value,
-            presentation: { ...value.presentation, alignment: e.target.value },
-          } as WebsiteSection)
-        }
-      >
-        {definition.alignments.map((alignment) => (
-          <option key={alignment} value={alignment}>
-            {alignment[0]!.toUpperCase() + alignment.slice(1)}
-          </option>
-        ))}
-      </SelectField>
-      <SelectField
-        id={`${value.id}-background`}
-        label="Background color"
-        value={value.presentation.background}
-        onChange={(e) =>
-          onChange(
-            withWebsiteSectionPresentation(value, {
-              background: e.target.value as 'paper' | 'surface' | 'ink',
-            }),
-          )
-        }
-      >
-        {definition.backgrounds.map((background) => (
-          <option key={background} value={background}>
-            {
-              { paper: 'Warm paper', surface: 'Light', ink: 'Theme color' }[
-                background
-              ]
-            }
-          </option>
-        ))}
-      </SelectField>
-      <WebsiteSectionSizingEditor value={value} onChange={onChange} />
+      </InspectorGroup>
+      <InspectorGroup title="Size & spacing">
+        <SectionSpaceField
+          value={value}
+          theme={target.theme}
+          onChange={onChange}
+        />
+        <WebsiteSectionSizingEditor value={value} onChange={onChange} />
+      </InspectorGroup>
     </>
   );
 }

@@ -1,12 +1,15 @@
 import { buttonClassName } from '@market/ui/presentation';
-import { Button, Card, Select, Input } from '@market/ui';
 import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+  ApplicationAcknowledgement,
+  ApplicationFlow,
+  applicationFlowSteps,
+  Button,
+  LoadingSkeleton,
+  Select,
+  type ApplicationFlowStep,
+} from '@market/ui';
+import '@market/ui/application-flow.css';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type {
   PublicApplication,
   ApplicationApplicant,
@@ -16,10 +19,10 @@ import {
   AppError,
   documentErrorMessages,
   activeApplicationAnswers,
+  applicationAcknowledgementVersion,
   applicationAvailabilityMessage,
 } from '@market/api';
-import { ApplicationFields } from '@market/ui';
-import { formatMoney, platformName } from '@market/config';
+import { platformName } from '@market/config';
 import { ApplicationDocuments } from './ApplicationDocuments';
 const subscribe = () => () => {};
 class ApplicationResponseError extends Error {}
@@ -38,10 +41,13 @@ export function MarketApplication({
   initialDraft,
   initialVendorId,
   vendorOrigin,
+  policiesHref,
 }: {
   initialDraft?: ApplicantDraftDetail;
   initialVendorId?: number;
   vendorOrigin?: string;
+  /** The Market's published policies page, linked from the acknowledgement. */
+  policiesHref?: string;
   application: PublicApplication;
 }) {
   const hydrated = useSyncExternalStore(
@@ -69,7 +75,6 @@ export function MarketApplication({
     [pending, setPending] = useState(false),
     [submitted, setSubmitted] = useState(false),
     [error, setError] = useState('');
-  const formId = useId();
   const key = useRef<string | null>(null);
   const submitting = useRef(false);
   const [accountChoice, setAccountChoice] = useState<'YES' | 'NO' | ''>(
@@ -91,6 +96,7 @@ export function MarketApplication({
   );
   const [submissionId, setSubmissionId] = useState<number | null>(null);
   const [invitation, setInvitation] = useState(true);
+  const [acknowledged, setAcknowledged] = useState(false);
   useEffect(() => {
     let active = true;
     void (async () => {
@@ -107,6 +113,11 @@ export function MarketApplication({
             profile.vendors.find((v) => v.id === initialVendorId) ??
             (profile.vendors.length === 1 ? profile.vendors[0] : undefined);
           setVendorChoice(selected ? String(selected.id) : '');
+          // One business: the account question is skipped and it applies.
+          // No business: the applicant chooses onboarding or no account.
+          setAccountChoice(
+            selected ? 'YES' : profile.vendors.length ? 'YES' : '',
+          );
         }
         if (initialDraft) return;
         {
@@ -142,7 +153,7 @@ export function MarketApplication({
               setDates(saved.progress.dates);
               setRentals(saved.progress.rentals);
               key.current = saved.progress.key;
-              setAccountChoice('YES');
+              if (profile.vendors.length) setAccountChoice('YES');
               if (
                 profile.vendors.some(
                   (v) => String(v.id) === saved.progress.vendorChoice,
@@ -234,7 +245,8 @@ export function MarketApplication({
     );
     return saved;
   }
-  async function signIn() {
+  /** Saves the answers, then signs in, or creates an account with `signup`. */
+  async function signIn(signup = false) {
     setPending(true);
     setError('');
     try {
@@ -257,7 +269,9 @@ export function MarketApplication({
       });
       if (!response.ok) throw new Error();
       window.location.assign(
-        '/vendor/application-continue?slug=' + encodeURIComponent(a.slug),
+        '/vendor/application-continue?slug=' +
+          encodeURIComponent(a.slug) +
+          (signup ? '&signup=1&context=vendor' : ''),
       );
     } catch {
       setError(
@@ -266,60 +280,272 @@ export function MarketApplication({
       setPending(false);
     }
   }
-  if (submitted)
-    return (
-      <div>
-        <div role="status">
-          <h2 className="ui-section-title-consumer">
-            Application submitted successfully.
-          </h2>
-          <p>
-            The Market will review your application and requested dates. No
-            payment has been taken.
-          </p>
-        </div>
-        {accountChoice === 'YES' && submissionId && (
-          <a
-            className={buttonClassName({ variant: 'primary' })}
-            href={`${vendorOrigin}/vendor/applications/${submissionId}?channel=${applicant?.vendors.find((v) => String(v.id) === vendorChoice)?.channelId ?? initialDraft?.vendor.channelId ?? ''}${initialDraft ? '' : '&account=1'}`}
-          >
-            View application
-          </a>
-        )}
-        {accountChoice === 'NO' && invitation && submissionId && (
-          <section aria-label="Track your application">
-            <p>
-              Create a Vendor account to track status and save drafts for future
-              applications. Your application is already submitted.
-            </p>
-            <div className="actions">
-              <a
-                className={buttonClassName({ variant: 'primary' })}
-                href={`/vendor/application-continue?claim=${submissionId}`}
-              >
-                {applicant?.vendors.length
-                  ? 'Track this application with my Vendor business'
-                  : 'Create a Vendor account to track your application'}
-              </a>
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={() => setInvitation(false)}
-              >
-                Finish without creating an account
-              </Button>
-            </div>
-          </section>
-        )}
-      </div>
-    );
+  async function submit() {
+    if (submitting.current) return;
+    submitting.current = true;
+    setPending(true);
+    setError('');
+    try {
+      if (availabilityMessage) {
+        setError(availabilityMessage);
+        return;
+      }
+      if (
+        !accountChoice ||
+        (accountChoice === 'YES' && (!applicant || !vendorChoice))
+      )
+        throw new Error();
+      key.current ??= submissionKey();
+      const payload = {
+        slug: a.slug,
+        versionId: a.versionId,
+        answers: activeApplicationAnswers(a.definition, answers),
+        occurrenceIds: dates,
+        rentals: a.rentals.map((r) => ({
+          optionId: r.id,
+          quantity: rentals[r.id] ?? 0,
+        })),
+        idempotencyKey: key.current,
+        acknowledgement: applicationAcknowledgementVersion,
+        accountAnswer: accountChoice,
+        vendorId: accountChoice === 'YES' ? Number(vendorChoice) : null,
+      };
+      let response: Response;
+      if (draftRef.current) {
+        if (accountChoice !== 'YES') throw new Error();
+        const saved = await saveDraft();
+        response = await fetch('/api/applicant-applications', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            action: 'SUBMIT_DRAFT',
+            input: {
+              id: saved.id,
+              revision: saved.revision,
+              vendorId: Number(vendorChoice),
+              acknowledgement: applicationAcknowledgementVersion,
+            },
+          }),
+        });
+      } else
+        response = await fetch('/api/market-application', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        if (result.message || (draftRef.current && result.error)) {
+          setError(result.message || result.error);
+          return;
+        }
+        throw new AppError('validation', result.error);
+      }
+      const result = await response.json();
+      setSubmissionId(result.submissionId);
+      setSubmitted(true);
+    } catch (failure) {
+      setError(
+        failure instanceof ApplicationResponseError
+          ? failure.message
+          : failure instanceof AppError &&
+              failure.code === 'APPLICATION_DOCUMENTS_REQUIRED'
+            ? documentErrorMessages.APPLICATION_DOCUMENTS_REQUIRED!
+            : 'The application could not be submitted. Check your answers and dates, then try again. If the application changed, refresh this page.',
+      );
+    } finally {
+      submitting.current = false;
+      setPending(false);
+    }
+  }
   const selected = applicant?.vendors.find(
     (v) => String(v.id) === vendorChoice,
   );
   const dashboard = `${vendorOrigin}/vendor/applications?channel=${selected?.channelId ?? initialDraft?.vendor.channelId ?? ''}${initialDraft ? '' : '&account=1'}`;
+  // A signed-in applicant with exactly one business (or a saved draft) skips
+  // the account question; everyone else answers it first.
+  const accountSkipped =
+    !!initialDraft || (!!applicant && applicant.vendors.length === 1);
+  const filled = useRef(false);
+  useEffect(() => {
+    // Fill empty answers from the account once its business is chosen.
+    if (
+      filled.current ||
+      accountChoice !== 'YES' ||
+      !applicant ||
+      !vendorChoice
+    )
+      return;
+    filled.current = true;
+    autofill();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountChoice, applicant, vendorChoice]);
+
+  const accountStep: ApplicationFlowStep = {
+    id: 'account',
+    title: applicant ? 'Your business' : 'Your account',
+    complete:
+      accountChoice === 'NO' || (accountChoice === 'YES' && !!vendorChoice),
+    hideNavigation: !applicant?.vendors.length,
+    items: [
+      accountChoice === 'NO'
+        ? 'Continuing without an account'
+        : selected
+          ? selected.name
+          : applicant
+            ? 'Choose a business'
+            : `${platformName} account`,
+    ],
+    content: () =>
+      !applicant ? (
+        <>
+          <p className="application-flow-lead">
+            Do you have an account with {platformName}?
+          </p>
+          <p className="application-flow-note">
+            {a.documentRequirements?.some((r) => r.submission_blocking)
+              ? 'This Market needs documents shared from a Vendor account before you submit. Sign in, or create an account; your answers are saved and you return here.'
+              : 'Signing in saves drafts and lets you track this application. You can also apply without an account.'}
+          </p>
+          <div className="application-flow-choices">
+            <Button
+              variant="primary"
+              disabled={pending || !hydrated}
+              onClick={() => void signIn()}
+            >
+              Yes, log in
+            </Button>
+            {!!a.documentRequirements?.length && (
+              <Button
+                variant="secondary"
+                disabled={pending || !hydrated}
+                onClick={() => void signIn(true)}
+              >
+                Create an account
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="secondary"
+              disabled={pending || !hydrated}
+              onClick={() => {
+                setAccountChoice('NO');
+                setVendorChoice('');
+              }}
+            >
+              No, continue without one
+            </Button>
+          </div>
+        </>
+      ) : !applicant.vendors.length ? (
+        <>
+          <p className="application-flow-lead">
+            Signed in as {applicant.profile.email}.
+          </p>
+          <p className="application-flow-note">
+            Your account has no Vendor business yet. Complete Vendor onboarding
+            to save drafts and track applications, or continue without linking
+            this application to your account.
+          </p>
+          <div className="application-flow-choices">
+            <a
+              className={buttonClassName({ variant: 'primary' })}
+              href={`/vendor/application-continue?slug=${encodeURIComponent(a.slug)}`}
+            >
+              Complete Vendor onboarding
+            </a>
+            <Button
+              type="submit"
+              variant="secondary"
+              disabled={pending || !hydrated}
+              onClick={() => {
+                setAccountChoice('NO');
+                setVendorChoice('');
+              }}
+            >
+              Continue without linking
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="application-flow-note">
+            Signed in as {applicant.profile.email}. Your business authority is
+            checked again when you submit.
+          </p>
+          <label className="ops-field">
+            Which business is applying? (required)
+            <Select
+              required
+              disabled={hasDraft}
+              value={accountChoice === 'NO' ? '' : vendorChoice}
+              onChange={(e) => {
+                setAccountChoice(e.target.value ? 'YES' : '');
+                setVendorChoice(e.target.value);
+              }}
+            >
+              <option value="">Choose a business</option>
+              {applicant.vendors.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </Select>
+          </label>
+        </>
+      ),
+  };
+  const documents = a.documentRequirements?.length
+    ? [
+        {
+          id: 'documents',
+          title: 'Documents',
+          complete: true,
+          items: a.documentRequirements.map((r) => r.title),
+          content: () => (
+            <p className="application-flow-note">
+              Share the documents this Market asks for. Requests marked as
+              required before submitting must be shared first.
+            </p>
+          ),
+          extra: () => (
+            <ApplicationDocuments
+              key={`${a.slug}:${accountChoice}:${vendorChoice}`}
+              application={a}
+              vendorId={
+                accountChoice === 'YES' &&
+                applicant?.vendors.some((v) => String(v.id) === vendorChoice)
+                  ? Number(vendorChoice)
+                  : null
+              }
+              onAccount={
+                applicant ? undefined : (signup) => void signIn(signup)
+              }
+            />
+          ),
+        } satisfies ApplicationFlowStep,
+      ]
+    : [];
+  const steps = applicationFlowSteps({
+    application: a,
+    answers,
+    onAnswer: (id, value) => setAnswers((v) => ({ ...v, [id]: value })),
+    dates,
+    onDates: setDates,
+    rentals,
+    onRentals: setRentals,
+    leading: accountSkipped ? [] : [accountStep],
+    trailing: documents,
+  });
+  const linkedVendor = accountChoice === 'YES' && selected;
+
+  if (identityLoading)
+    return (
+      <LoadingSkeleton variant="detail" rows={4} label="Loading application" />
+    );
   return (
     <>
-      {(hasDraft || selected) && (
+      {(hasDraft || selected) && !submitted && (
         <a
           className={buttonClassName({ variant: 'secondary' })}
           href={dashboard}
@@ -327,309 +553,128 @@ export function MarketApplication({
           Return to Vendor Applications
         </a>
       )}
-      {!applicant && (
-        <p>
-          Create a Vendor account to save drafts and track your applications
-          across devices. You can still submit without an account.
-        </p>
-      )}
-      {lastSaved && (
+      {lastSaved && !submitted && (
         <p role="status">
           Last saved {new Date(lastSaved).toLocaleString()}. Changes after this
           time are not saved until you save again.
         </p>
       )}
-      <form
-        id={formId}
-        className="ops-application"
-        data-ready={hydrated}
-        aria-busy={pending}
-        onSubmit={async (e) => {
-          e.preventDefault();
-          if (submitting.current) return;
-          submitting.current = true;
-          setPending(true);
-          setError('');
-          try {
-            if (availabilityMessage) {
-              setError(availabilityMessage);
-              return;
-            }
-            if (
-              !accountChoice ||
-              (accountChoice === 'YES' && (!applicant || !vendorChoice))
-            )
-              throw new Error();
-            key.current ??= submissionKey();
-            const payload = {
-              slug: a.slug,
-              versionId: a.versionId,
-              answers: activeApplicationAnswers(a.definition, answers),
-              occurrenceIds: dates,
-              rentals: a.rentals.map((r) => ({
-                optionId: r.id,
-                quantity: rentals[r.id] ?? 0,
-              })),
-              idempotencyKey: key.current,
-              accountAnswer: accountChoice,
-              vendorId: accountChoice === 'YES' ? Number(vendorChoice) : null,
-            };
-            let response: Response;
-            if (draftRef.current) {
-              if (accountChoice !== 'YES') throw new Error();
-              const saved = await saveDraft();
-              response = await fetch('/api/applicant-applications', {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({
-                  action: 'SUBMIT_DRAFT',
-                  input: {
-                    id: saved.id,
-                    revision: saved.revision,
-                    vendorId: Number(vendorChoice),
-                  },
-                }),
-              });
-            } else
-              response = await fetch('/api/market-application', {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(payload),
-              });
-            if (!response.ok) {
-              const result = await response.json().catch(() => ({}));
-              if (result.message || (draftRef.current && result.error)) {
-                setError(result.message || result.error);
-                return;
-              }
-              throw new AppError('validation', result.error);
-            }
-            const result = await response.json();
-            setSubmissionId(result.submissionId);
-            setSubmitted(true);
-          } catch (failure) {
-            setError(
-              failure instanceof ApplicationResponseError
-                ? failure.message
-                : failure instanceof AppError &&
-                    failure.code === 'APPLICATION_DOCUMENTS_REQUIRED'
-                  ? documentErrorMessages.APPLICATION_DOCUMENTS_REQUIRED!
-                  : 'The application could not be submitted. Check your answers and dates, then try again. If the application changed, refresh this page.',
-            );
-          } finally {
-            submitting.current = false;
-            setPending(false);
-          }
-        }}
-      >
-        <Card
-          as="fieldset"
-          className="ops-section"
-          disabled={pending || !hydrated}
-        >
-          <legend>Do you have an account with {platformName}?</legend>
-          {(['YES', 'NO'] as const).map((value) => (
-            <label className="ops-check" key={value}>
-              <Input
-                type="radio"
-                name="platform-account"
-                value={value}
-                required
-                disabled={hasDraft && value === 'NO'}
-                checked={accountChoice === value}
-                onChange={() => {
-                  setAccountChoice(value);
-                  if (value === 'NO') setVendorChoice('');
-                  else if (applicant?.vendors.length === 1)
-                    setVendorChoice(String(applicant.vendors[0]!.id));
-                }}
-              />
-              {value === 'YES' ? 'Yes' : 'No'}
-            </label>
-          ))}
-          {accountChoice === 'YES' &&
-            (identityLoading ? (
-              <p>Checking your account</p>
-            ) : applicant ? (
-              <>
-                <p>
-                  Signed in as {applicant.profile.email}. Your business
-                  authority is checked again when you submit.
-                </p>
-                {applicant.vendors.length ? (
-                  <label className="ops-field">
-                    Business for this application
-                    <Select
-                      required
-                      disabled={hasDraft}
-                      value={vendorChoice}
-                      onChange={(e) => setVendorChoice(e.target.value)}
-                    >
-                      <option value="">Choose or confirm a business</option>
-                      {applicant.vendors.map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </label>
-                ) : (
-                  <p>
-                    Your account has no authorized Vendor business. You must
-                    complete Vendor onboarding to manage applications. You may
-                    still submit anonymously by choosing No.
-                  </p>
-                )}
-                {!applicant.vendors.length && (
-                  <a
-                    className={buttonClassName({ variant: 'primary' })}
-                    href={`/vendor/application-continue?slug=${a.slug}`}
-                  >
-                    Complete Vendor onboarding
-                  </a>
-                )}
-                <Button variant="secondary" type="button" onClick={autofill}>
-                  Fill empty fields from my account
-                </Button>
-              </>
-            ) : (
-              <>
-                <p>
-                  Sign in to use your account and return to this application
-                  with your progress.
-                </p>
-                <Button
-                  variant="secondary"
-                  type="button"
-                  onClick={() => void signIn()}
-                >
-                  Sign in with my Vendor account
-                </Button>
-              </>
-            ))}
-          {accountChoice === 'NO' && applicant && (
-            <p>
-              This application will be submitted without linking it to your
-              signed-in account or Vendor business.
-            </p>
-          )}
-        </Card>
-        <p>
-          You can submit anonymously without a Vendor account. Saving drafts and
-          managing applications requires an authorized Vendor business. No
-          payment is collected when you apply.
-        </p>
-        <ApplicationFields
-          definition={a.definition}
-          answers={answers}
-          onAnswer={(id, value) => setAnswers((v) => ({ ...v, [id]: value }))}
-        />
-        <Card as="fieldset" className="ops-section">
-          <legend>Requested Market dates</legend>
-          {a.occurrences.map((o) => (
-            <label className="ops-check" key={o.id}>
-              <Input
-                type="checkbox"
-                checked={dates.includes(o.id)}
-                onChange={(e) =>
-                  setDates((v) =>
-                    e.target.checked
-                      ? [...v, o.id]
-                      : v.filter((id) => id !== o.id),
-                  )
-                }
-              />
-              {new Date(o.startsAt).toLocaleString()} · {o.venue}
-            </label>
-          ))}
-        </Card>
-        <Card as="fieldset" className="ops-section">
-          <legend>Requested rentals and add-ons</legend>
-          <p>
-            These quantities apply to each requested date. The manager confirms
-            accepted quantities for each occurrence. Requests do not reserve
-            resources.
-          </p>
-          {a.rentals.map((r) => (
-            <label key={r.id} className="ops-field">
-              {r.name} · {formatMoney(r.priceMinor, r.currency)} each
-              <Input
-                type="number"
-                min={0}
-                max={r.maxQuantity}
-                step={1}
-                value={rentals[r.id] ?? 0}
-                onChange={(e) =>
-                  setRentals((v) => ({ ...v, [r.id]: Number(e.target.value) }))
-                }
-              />
-            </label>
-          ))}
-        </Card>
-      </form>
-      <ApplicationDocuments
-        key={`${a.slug}:${accountChoice}:${vendorChoice}`}
-        application={a}
-        vendorId={
-          accountChoice === 'YES' &&
-          applicant?.vendors.some((v) => String(v.id) === vendorChoice)
-            ? Number(vendorChoice)
-            : null
-        }
-      />
-      {error && (
-        <p className="alert ui-alert ui-alert-error" role="alert">
-          {error}
-        </p>
-      )}
-      {availabilityMessage && (
+      {availabilityMessage && !submitted && (
         <p className="alert ui-alert ui-alert-info" role="status">
           {availabilityMessage} Saved drafts remain viewable in Vendor
           Applications.
         </p>
       )}
-      <div className="actions">
-        {accountChoice === 'YES' && !!applicant?.vendors.length && (
-          <Button
-            variant="secondary"
-            type="button"
-            disabled={pending || !vendorChoice || !hydrated}
-            onClick={() => {
-              if (submitting.current) return;
-              submitting.current = true;
-              setPending(true);
-              setError('');
-              void saveDraft()
-                .catch((failure) =>
-                  setError(
-                    failure instanceof ApplicationResponseError
-                      ? failure.message
-                      : 'Draft could not be saved. Your answers are still here. If the form changed, contact the market. If saved in another session, resume the latest draft from Applications.',
-                  ),
-                )
-                .finally(() => {
-                  submitting.current = false;
-                  setPending(false);
-                });
-            }}
-          >
-            Save draft
-          </Button>
-        )}
-        <Button
-          variant="primary"
-          type="submit"
-          form={formId}
-          disabled={
-            !!availabilityMessage ||
-            pending ||
-            !hydrated ||
-            (accountChoice === 'YES' && (!applicant || !vendorChoice))
-          }
-        >
-          {pending ? 'Submitting application' : 'Submit application'}
-        </Button>
-      </div>
+      <ApplicationFlow
+        title={
+          linkedVendor ? (
+            <>
+              Applying as <strong>{linkedVendor.name}</strong>
+            </>
+          ) : undefined
+        }
+        steps={steps}
+        disabled={!hydrated}
+        pending={pending}
+        submitDisabled={
+          !!availabilityMessage ||
+          (accountChoice === 'YES' && (!applicant || !vendorChoice))
+        }
+        onSubmit={() => void submit()}
+        beforeSubmit={
+          <ApplicationAcknowledgement
+            platform={platformName}
+            policiesHref={policiesHref}
+            checked={acknowledged}
+            onChange={setAcknowledged}
+          />
+        }
+        actions={
+          accountChoice === 'YES' &&
+          !!applicant?.vendors.length && (
+            <Button
+              variant="secondary"
+              type="button"
+              disabled={pending || !vendorChoice || !hydrated}
+              onClick={() => {
+                if (submitting.current) return;
+                submitting.current = true;
+                setPending(true);
+                setError('');
+                void saveDraft()
+                  .catch((failure) =>
+                    setError(
+                      failure instanceof ApplicationResponseError
+                        ? failure.message
+                        : 'Draft could not be saved. Your answers are still here. If the form changed, contact the market. If saved in another session, resume the latest draft from Applications.',
+                    ),
+                  )
+                  .finally(() => {
+                    submitting.current = false;
+                    setPending(false);
+                  });
+              }}
+            >
+              Save draft
+            </Button>
+          )
+        }
+        notice={
+          <>
+            {error && (
+              <p className="alert ui-alert ui-alert-error" role="alert">
+                {error}
+              </p>
+            )}
+          </>
+        }
+        done={
+          submitted ? (
+            <div role="status" className="application-flow-done-body">
+              <h2 className="ui-section-title-consumer">
+                Application submitted
+              </h2>
+              <p>
+                The Market will review your application and requested dates. No
+                payment has been taken.
+              </p>
+              {accountChoice === 'YES' && submissionId && (
+                <a
+                  className={buttonClassName({ variant: 'primary' })}
+                  href={`${vendorOrigin}/vendor/applications/${submissionId}?channel=${selected?.channelId ?? initialDraft?.vendor.channelId ?? ''}${initialDraft ? '' : '&account=1'}`}
+                >
+                  View application
+                </a>
+              )}
+              {accountChoice === 'NO' && invitation && submissionId && (
+                <section aria-label="Track your application">
+                  <p>
+                    Create a Vendor account to track status and save drafts for
+                    future applications. Your application is already submitted.
+                  </p>
+                  <div className="application-flow-choices">
+                    <a
+                      className={buttonClassName({ variant: 'primary' })}
+                      href={`/vendor/application-continue?claim=${submissionId}`}
+                    >
+                      {applicant?.vendors.length
+                        ? 'Track this application with my Vendor business'
+                        : 'Create a Vendor account to track your application'}
+                    </a>
+                    <Button
+                      variant="secondary"
+                      type="button"
+                      onClick={() => setInvitation(false)}
+                    >
+                      Finish without creating an account
+                    </Button>
+                  </div>
+                </section>
+              )}
+            </div>
+          ) : undefined
+        }
+      />
     </>
   );
 }

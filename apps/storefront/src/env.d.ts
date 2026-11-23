@@ -1,6 +1,7 @@
 /// <reference types="astro/client" />
 declare namespace App {
   interface Locals {
+    deployment?: import('@market/config').DeploymentEnvironment;
     editorPreview?: {
       config: import('@market/theme/storefront').StorefrontAppearance;
       path: string;

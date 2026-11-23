@@ -18,6 +18,7 @@ export interface StorefrontContext {
   timezone?: string;
   appearance?: StorefrontAppearance;
   appearancePublishedAt?: string;
+  defaultVendorTerms?: string;
 }
 export interface RequestContext {
   url: URL;

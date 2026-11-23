@@ -27,7 +27,8 @@
     "./dashboard-layout": "./src/dashboard-layout.tsx",
     "./dashboard-layout.css": "./src/dashboard-layout.css",
     "./workspace-menu.css": "./src/workspace-menu.css",
-    "./shell.css": "./src/shell.css"
+    "./shell.css": "./src/shell.css",
+    "./application-flow.css": "./src/application-flow.css"
   },
   "dependencies": {
     "@market/api": "0.1.0",

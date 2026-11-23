@@ -122,34 +122,34 @@ function Editor({ initial = defaultFaq }: { initial?: FaqConfig }) {
   );
 }
 describe('FAQ ordered form', () => {
-  it('uses compact question disclosures, About reorder rails and switches, with confirmed deletion inside', () => {
+  it('lists questions as draggable rail rows inside Questions, edited in the inspector with confirmed deletion', () => {
     const { container } = render(<Editor />);
     const settings = screen.getByLabelText('Page title').closest('details');
     expect(settings).toContainElement(screen.getByLabelText('Heading'));
     expect(settings).toContainElement(screen.getByLabelText('Introduction'));
     expect(screen.queryByLabelText('Question')).not.toBeInTheDocument();
+    // Questions live in their own dropdown, like Policies.
+    expect(
+      screen.queryByRole('button', { name: defaultFaq.questions[0]!.question }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Questions' }));
     const first = screen.getByRole('button', {
       name: defaultFaq.questions[0]!.question,
     });
-    expect(first).toHaveTextContent(defaultFaq.questions[0]!.question);
-    expect(first.querySelector('.faq-editor-question-label')).toHaveAttribute(
-      'title',
-      defaultFaq.questions[0]!.question,
-    );
     expect(first.textContent).not.toContain(defaultFaq.questions[0]!.answer);
+    // Rows reorder by their grip only; there are no up/down arrow buttons.
     expect(
-      first
-        .closest('.story-editor-row')
-        ?.querySelector('.story-editor-reorder'),
-    ).not.toBeNull();
+      screen.getByRole('button', {
+        name: `Drag to reorder question: ${defaultFaq.questions[0]!.question}`,
+      }),
+    ).toHaveAttribute('draggable', 'true');
     expect(
-      screen.getByRole('switch', { name: 'Enable FAQ page' }),
-    ).not.toBeChecked();
+      screen.queryByRole('button', { name: /^Move question/ }),
+    ).not.toBeInTheDocument();
+    // The page switch lives under the editor's page picker, not in the FAQ editor.
     expect(
-      screen.getByRole('button', { name: 'Add Question' }).parentElement,
-    ).toContainElement(screen.getByRole('switch'));
-    fireEvent.click(screen.getByRole('switch'));
-    expect(screen.getByRole('switch')).toBeChecked();
+      screen.queryByRole('switch', { name: 'Enable FAQ page' }),
+    ).not.toBeInTheDocument();
     fireEvent.click(first);
     expect(screen.getByLabelText('Question')).toHaveValue(
       defaultFaq.questions[0]!.question,
@@ -161,47 +161,47 @@ describe('FAQ ordered form', () => {
     fireEvent.click(screen.getByLabelText('Show question'));
     expect(screen.getByLabelText('Show question')).not.toBeChecked();
     expect(
-      screen.queryByRole('button', { name: 'Hide question' }),
-    ).not.toBeInTheDocument();
+      screen.getByRole('button', {
+        name: `${defaultFaq.questions[0]!.question} (hidden)`,
+      }),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Show question'));
-    fireEvent.click(first);
-    expect(screen.queryByLabelText('Question')).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'Delete question' }),
-    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Add Question' }));
     const added = screen.getByLabelText('Question');
     expect(added).toHaveFocus();
     fireEvent.change(added, { target: { value: 'New question' } });
-    expect(container.querySelectorAll('[data-faq-id]')).toHaveLength(5);
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Move question up: New question' }),
+    const ids = () =>
+      Array.from(container.querySelectorAll('[data-faq-id]')).map((row) =>
+        row.getAttribute('data-faq-id')!,
+      );
+    expect(ids()).toHaveLength(5);
+    const addedId = ids()[4]!;
+    const grip = screen.getByRole('button', {
+      name: 'Drag to reorder question: New question',
+    });
+    fireEvent.keyDown(grip, { key: 'ArrowUp' });
+    expect(ids()[3]).toBe(addedId);
+    fireEvent.keyDown(
+      screen.getByRole('button', {
+        name: 'Drag to reorder question: New question',
+      }),
+      { key: 'ArrowDown' },
     );
-    expect(container.querySelectorAll('[data-faq-id]')[3]).toContainElement(
-      added,
-    );
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Move question down: New question' }),
-    );
-    expect(container.querySelectorAll('[data-faq-id]')[4]).toContainElement(
-      added,
-    );
-    const deleting = screen.getByRole('button', { name: 'Delete question' });
-    expect(added.closest('details')).toContainElement(deleting);
-    fireEvent.click(deleting);
+    expect(ids()[4]).toBe(addedId);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete question' }));
     fireEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', {
         name: 'Cancel',
       }),
     );
-    expect(container.querySelectorAll('[data-faq-id]')).toHaveLength(5);
+    expect(ids()).toHaveLength(5);
     fireEvent.click(screen.getByRole('button', { name: 'Delete question' }));
     fireEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', {
         name: 'Delete question',
       }),
     );
-    expect(container.querySelectorAll('[data-faq-id]')).toHaveLength(4);
+    expect(ids()).toHaveLength(4);
   });
   it('disables adding at 30 questions', () => {
     render(
@@ -215,6 +215,7 @@ describe('FAQ ordered form', () => {
         }}
       />,
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Questions' }));
     expect(screen.getByRole('button', { name: 'Add Question' })).toBeDisabled();
     expect(screen.getByText(/Maximum 30/)).toBeInTheDocument();
   });
@@ -249,6 +250,7 @@ describe('FAQ ordered form', () => {
       target: { value: 'faq' },
     });
     fireEvent.click(screen.getByRole('switch', { name: 'Enable FAQ page' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Questions' }));
     fireEvent.click(
       screen.getByRole('button', { name: defaultFaq.questions[0]!.question }),
     );

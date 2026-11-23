@@ -71,7 +71,7 @@ export function Agreements({
         )
       }
     >
-      <ReadState {...state} retry={state.refresh} />
+      <ReadState skeleton="cards" {...state} retry={state.refresh} />
       {state.data && (
         <>
           {!state.data.items.length && (
@@ -224,7 +224,7 @@ export function AgreementEditor({
           Edited agreement text and titles remain private until published.
         </p>
       )}
-      <ReadState {...catalog} retry={catalog.refresh} />
+      <ReadState skeleton="spinner" {...catalog} retry={catalog.refresh} />
       {!!error && <DocumentFeedback error={error} />}
       <form id={id} onSubmit={(e) => void submit(e)}>
         <fieldset disabled={busy}>
@@ -416,7 +416,7 @@ export function AgreementReader({
       onClose={onClose}
       busy={busy}
     >
-      <ReadState {...state} retry={state.refresh} />
+      <ReadState skeleton="spinner" {...state} retry={state.refresh} />
       {!!error && <DocumentFeedback error={error} />}
       {data && (
         <div className="documents-dialog-body">
@@ -675,7 +675,7 @@ function AssignAgreement({
           .finally(() => setBusy(false));
       }}
     >
-      <ReadState {...state} retry={state.refresh} />
+      <ReadState skeleton="detail" rows={1} {...state} retry={state.refresh} />
       <SearchableMultiSelect
         id={id}
         name="vendorIds"

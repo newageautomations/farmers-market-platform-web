@@ -424,14 +424,12 @@ body.application-dragging * {
   transform: rotate(-0.6deg);
 }
 
-/* Preview */
-.application-builder-preview-form {
-  display: grid;
-  gap: 16px;
-  padding: 8px 24px 20px;
+/* Preview: the storefront's sectioned application (ApplicationFlow). */
+.application-builder-preview > .application-detail-note {
+  margin: 0;
 }
-.application-builder-preview-form > .button {
-  justify-self: start;
+.application-builder-flow.application-flow {
+  margin-block: 12px 0;
 }
 
 /* Publish dialog */
@@ -664,4 +662,52 @@ body.application-dragging * {
 
 .submission-review-panel-body .submission-applicant-facts {
   padding: 0;
+}
+
+/* Live link: published applications on the Market storefront. */
+.application-live h4 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+.application-live-link {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.application-live-url {
+  display: block;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--brand-muted) 30%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--brand-primary) 5%, var(--brand-surface));
+  color: var(--brand-primary);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.application-live-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.application-live-notice:empty {
+  display: none;
+}
+.application-live-notice {
+  color: var(--brand-muted);
+  font-size: 0.85rem;
+}
+.application-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.application-published {
+  min-height: 0;
+  gap: 20px;
+}
+.application-published .application-live-link {
+  width: 100%;
+  text-align: left;
 }

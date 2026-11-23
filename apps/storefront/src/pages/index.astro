@@ -14,8 +14,10 @@ import {
   isEditorialMarket,
   isHearth,
   isMeadow,
+  isPasture,
 } from '@market/theme/storefront';
 import HearthMarketHome from '../components/hearth/MarketHome.astro';
+import PastureMarketHome from '../components/pasture/MarketHome.astro';
 import MeadowMarketHome from '../components/meadow/MarketHome.astro';
 import { farmhouseCatalog } from '../lib/farmhouse-catalog';
 import SiteLayout from '../layouts/SiteLayout.astro';
@@ -247,6 +249,15 @@ if (storefrontError)
         />
       ) : storefront.source === 'backend' && isHearth(storefront.appearance) ? (
         <HearthMarketHome
+          context={storefront}
+          occurrences={occurrences}
+          catalog={marketCatalog}
+          vendors={marketVendors}
+          error={catalogError}
+        />
+      ) : storefront.source === 'backend' &&
+        isPasture(storefront.appearance) ? (
+        <PastureMarketHome
           context={storefront}
           occurrences={occurrences}
           catalog={marketCatalog}

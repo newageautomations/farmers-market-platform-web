@@ -51,6 +51,79 @@ export function VendorCheckout({
     initialCart,
     initialPreorder,
   });
+  const orderSummary = (
+    <aside className="checkout-order-summary" aria-label="Order summary">
+      <Dropdown
+        defaultOpen
+        label={
+          <>
+            <span>Order summary</span>
+            <strong className="checkout-summary-total">
+              {formatMoney(
+                legacy ? view.total : (cart?.totalWithTax ?? view.total),
+                legacy ? view.currency : (cart?.currencyCode ?? view.currency),
+              )}
+            </strong>
+          </>
+        }
+      >
+        {cart?.lines.length ? (
+          <>
+            <ul className="checkout-product-lines">
+              {cart.lines.map((line) => {
+                const image = safeAsset(line.featuredAsset?.preview);
+                return (
+                  <li key={line.id}>
+                    <div className="vendor-cart-image">
+                      {image ? (
+                        <img
+                          src={image}
+                          alt=""
+                          width="64"
+                          height="64"
+                          loading="lazy"
+                          onError={(event) => {
+                            event.currentTarget.hidden = true;
+                          }}
+                        />
+                      ) : (
+                        <span>Image unavailable</span>
+                      )}
+                    </div>
+                    <div>
+                      <strong>{line.productVariant.product.name}</strong>
+                      <p>{line.productVariant.name}</p>
+                      <p>Quantity: {line.quantity}</p>
+                    </div>
+                    <span>
+                      {formatMoney(
+                        line.discountedLinePriceWithTax,
+                        cart.currencyCode,
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            {legacy || view.preorderFee ? (
+              <CheckoutSummary view={view} totalsOnly />
+            ) : (
+              <CartTotals cart={cart} />
+            )}
+            <p>
+              Current amounts include tax. Final taxes and pickup fees are
+              confirmed during checkout.
+            </p>
+          </>
+        ) : (
+          <CheckoutSummary view={view} />
+        )}
+        <a className={buttonClassName({ variant: 'secondary' })} href="/cart">
+          Edit cart
+        </a>
+      </Dropdown>
+    </aside>
+  );
   return (
     <div className="vendor-checkout" aria-busy={pending}>
       <VendorPreorderBanner
@@ -67,220 +140,160 @@ export function VendorCheckout({
           {issue} <a href="/cart">Review your cart</a>
         </p>
       )}
-      <div className="vendor-checkout-layout">
-        <div>
-          {legacy ? (
-            <Checkout
-              preorder={preorder}
-              storefrontId={storefrontId}
-              initial={view}
-              onViewChange={setView}
-            />
-          ) : (
-            <form noValidate onSubmit={submitDetails}>
-              <section
-                className="checkout-section"
-                aria-labelledby="contact-title"
-              >
-                <h2 id="contact-title">Contact information</h2>
-                <p>
-                  Use the details we can reach you at about pickup. No account
-                  is required.
-                </p>
-                <div className="checkout-contact-grid">
-                  {(['firstName', 'lastName', 'emailAddress'] as const).map(
-                    (name) => {
-                      const label = {
-                        firstName: 'First name',
-                        lastName: 'Last name',
-                        emailAddress: 'Email address',
-                      }[name];
-                      return (
-                        <div
-                          className={`field ${name === 'emailAddress' ? 'checkout-full-field' : ''}`}
-                          key={name}
-                        >
-                          <label htmlFor={name}>{label}</label>
-                          <Input
-                            id={name}
-                            name={name}
-                            type={name === 'emailAddress' ? 'email' : 'text'}
-                            autoComplete={
-                              {
-                                firstName: 'given-name',
-                                lastName: 'family-name',
-                                emailAddress: 'email',
-                              }[name]
-                            }
-                            maxLength={fieldLimits[name]}
-                            required
-                            defaultValue={contact?.[name] ?? ''}
-                            aria-invalid={!!errors[name]}
-                            aria-describedby={
-                              errors[name] ? `${name}-error` : undefined
-                            }
-                            onBlur={(event) => {
-                              event.target.value = event.target.value.trim();
-                              setErrors((previous) => ({
-                                ...previous,
-                                [name]: checkoutFieldError(event.target),
-                              }));
-                            }}
-                          />
-                          {errors[name] && (
-                            <FormError id={`${name}-error`}>
-                              {errors[name]}
-                            </FormError>
-                          )}
-                        </div>
-                      );
-                    },
-                  )}
-                  <div className="checkout-full-field">
-                    <PhoneInput
-                      id="phoneNumber"
-                      name="phoneNumber"
-                      label="Phone number"
-                      required
-                      defaultValue={contact?.phoneNumber ?? ''}
-                      validationMode="blur"
-                      showValidation={validated}
-                    />
-                  </div>
-                </div>
-              </section>
-              <CheckoutPickup view={view} preorder={preorder} />
-              <CheckoutPaymentPlaceholder />
-              <section className="checkout-section">
-                <h2>
-                  <label htmlFor="order-notes">
-                    Order notes <span>(optional)</span>
-                  </label>
-                </h2>
-                <Textarea
-                  id="order-notes"
-                  name="note"
-                  maxLength={fieldLimits.note}
-                  rows={4}
-                  aria-describedby={`order-notes-help${errors['order-notes'] ? ' order-notes-error' : ''}`}
-                  aria-invalid={!!errors['order-notes']}
-                  onBlur={(event) =>
-                    setErrors((previous) => ({
-                      ...previous,
-                      'order-notes': checkoutFieldError(event.target),
-                    }))
-                  }
-                />
-                <p id="order-notes-help">
-                  Draft only. Notes are not sent to the vendor yet. Special
-                  requests cannot be guaranteed.
-                </p>
-                {errors['order-notes'] && (
-                  <FormError id="order-notes-error">
-                    {errors['order-notes']}
-                  </FormError>
-                )}
-              </section>
-              <div className="checkout-actions">
-                <p role="status" aria-live="polite">
-                  {feedback}
-                </p>
-                <Button type="submit" variant="secondary" disabled={pending}>
-                  Check my details
-                </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  disabled
-                  aria-describedby="payment-unavailable"
-                >
-                  Place order
-                </Button>
-                <p id="payment-unavailable">
-                  Payments not configured in this environment. Your order has
-                  not been placed.
-                </p>
-              </div>
-            </form>
+      {legacy ? (
+        <Checkout
+          preorder={preorder}
+          storefrontId={storefrontId}
+          initial={view}
+          onViewChange={setView}
+          orderSummary={orderSummary}
+          images={Object.fromEntries(
+            (cart?.lines ?? []).map((line) => [
+              line.id,
+              line.featuredAsset?.preview ?? '',
+            ]),
           )}
-        </div>
-        <aside className="checkout-order-summary" aria-label="Order summary">
-          <Dropdown
-            defaultOpen
-            label={
-              <>
-                <span>Order summary</span>
-                <strong className="checkout-summary-total">
-                  {formatMoney(
-                    legacy ? view.total : (cart?.totalWithTax ?? view.total),
-                    legacy
-                      ? view.currency
-                      : (cart?.currencyCode ?? view.currency),
-                  )}
-                </strong>
-              </>
-            }
-          >
-            {cart?.lines.length ? (
-              <>
-                <ul className="checkout-product-lines">
-                  {cart.lines.map((line) => {
-                    const image = safeAsset(line.featuredAsset?.preview);
-                    return (
-                      <li key={line.id}>
-                        <div className="vendor-cart-image">
-                          {image ? (
-                            <img
-                              src={image}
-                              alt=""
-                              width="64"
-                              height="64"
-                              loading="lazy"
-                              onError={(event) => {
-                                event.currentTarget.hidden = true;
-                              }}
-                            />
-                          ) : (
-                            <span>Image unavailable</span>
-                          )}
-                        </div>
-                        <div>
-                          <strong>{line.productVariant.product.name}</strong>
-                          <p>{line.productVariant.name}</p>
-                          <p>Quantity: {line.quantity}</p>
-                        </div>
-                        <span>
-                          {formatMoney(
-                            line.discountedLinePriceWithTax,
-                            cart.currencyCode,
-                          )}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-                {legacy || view.preorderFee ? (
-                  <CheckoutSummary view={view} totalsOnly />
-                ) : (
-                  <CartTotals cart={cart} />
-                )}
-                <p>
-                  Current amounts include tax. Final taxes and pickup fees are
-                  confirmed during checkout.
-                </p>
-              </>
-            ) : (
-              <CheckoutSummary view={view} />
-            )}
-            <a
-              className={buttonClassName({ variant: 'secondary' })}
-              href="/cart"
+        />
+      ) : (
+        <div className="vendor-checkout-layout">
+          <form noValidate onSubmit={submitDetails}>
+            <section
+              className="checkout-section"
+              aria-labelledby="contact-title"
             >
-              Edit cart
-            </a>
-          </Dropdown>
-        </aside>
-      </div>
+              <h2 id="contact-title">Contact information</h2>
+              <p className="required-legend">
+                <span className="required-mark" aria-hidden="true">
+                  *
+                </span>{' '}
+                Required
+              </p>
+              <p>
+                Use the details we can reach you at about pickup. No account is
+                required.
+              </p>
+              <div className="checkout-contact-grid">
+                {(['firstName', 'lastName', 'emailAddress'] as const).map(
+                  (name) => {
+                    const label = {
+                      firstName: 'First name',
+                      lastName: 'Last name',
+                      emailAddress: 'Email address',
+                    }[name];
+                    return (
+                      <div
+                        className={`field ${name === 'emailAddress' ? 'checkout-full-field' : ''}`}
+                        key={name}
+                      >
+                        <label htmlFor={name}>
+                          {label}{' '}
+                          <span className="required-mark" aria-hidden="true">
+                            *
+                          </span>
+                        </label>
+                        <Input
+                          id={name}
+                          name={name}
+                          type={name === 'emailAddress' ? 'email' : 'text'}
+                          autoComplete={
+                            {
+                              firstName: 'given-name',
+                              lastName: 'family-name',
+                              emailAddress: 'email',
+                            }[name]
+                          }
+                          maxLength={fieldLimits[name]}
+                          required
+                          defaultValue={contact?.[name] ?? ''}
+                          aria-invalid={!!errors[name]}
+                          aria-describedby={
+                            errors[name] ? `${name}-error` : undefined
+                          }
+                          onBlur={(event) => {
+                            event.target.value = event.target.value.trim();
+                            setErrors((previous) => ({
+                              ...previous,
+                              [name]: checkoutFieldError(event.target),
+                            }));
+                          }}
+                        />
+                        {errors[name] && (
+                          <FormError id={`${name}-error`}>
+                            {errors[name]}
+                          </FormError>
+                        )}
+                      </div>
+                    );
+                  },
+                )}
+                <div className="checkout-full-field">
+                  <PhoneInput
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    label="Phone number (optional)"
+                    defaultValue={contact?.phoneNumber ?? ''}
+                    validationMode="blur"
+                    showValidation={validated}
+                  />
+                </div>
+              </div>
+            </section>
+            <CheckoutPickup view={view} preorder={preorder} />
+            <CheckoutPaymentPlaceholder />
+            <section className="checkout-section">
+              <h2>
+                <label htmlFor="order-notes">
+                  Order notes <span>(optional)</span>
+                </label>
+              </h2>
+              <Textarea
+                id="order-notes"
+                name="note"
+                maxLength={fieldLimits.note}
+                rows={4}
+                aria-describedby={`order-notes-help${errors['order-notes'] ? ' order-notes-error' : ''}`}
+                aria-invalid={!!errors['order-notes']}
+                onBlur={(event) =>
+                  setErrors((previous) => ({
+                    ...previous,
+                    'order-notes': checkoutFieldError(event.target),
+                  }))
+                }
+              />
+              <p id="order-notes-help">
+                Draft only. Notes are not sent to the vendor yet. Special
+                requests cannot be guaranteed.
+              </p>
+              {errors['order-notes'] && (
+                <FormError id="order-notes-error">
+                  {errors['order-notes']}
+                </FormError>
+              )}
+            </section>
+            <div className="checkout-actions">
+              <p role="status" aria-live="polite">
+                {feedback}
+              </p>
+              <Button type="submit" variant="secondary" disabled={pending}>
+                Check my details
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                disabled
+                aria-describedby="payment-unavailable"
+              >
+                Place order
+              </Button>
+              <p id="payment-unavailable">
+                Payments not configured in this environment. Your order has not
+                been placed.
+              </p>
+            </div>
+          </form>
+          {orderSummary}
+        </div>
+      )}
     </div>
   );
 }

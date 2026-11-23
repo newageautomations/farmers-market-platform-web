@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev --host 127.0.0.1 --port 4321",
-    "build": "astro build",
-    "typecheck": "astro check",
+    "build": "node --import ../../scripts/frontend-build-environment.mjs ../../node_modules/astro/bin/astro.mjs build",
+    "typecheck": "node --import ../../scripts/frontend-build-environment.mjs ../../node_modules/astro/bin/astro.mjs check",
     "preview": "node dist/server/entry.mjs"
   },
   "dependencies": {

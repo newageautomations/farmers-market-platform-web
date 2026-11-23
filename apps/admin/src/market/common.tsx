@@ -25,6 +25,8 @@ import {
   InfoTip,
   ErrorState,
   Spinner,
+  LoadingSkeleton,
+  type SkeletonVariant,
 } from '@market/ui';
 import { localParts, localToInstant, TimezoneField } from './timezones';
 import { clockTime, friendlyLabel, statusTone } from './presentation';
@@ -468,13 +470,24 @@ export function ReadState({
   loading,
   error,
   retry,
+  skeleton = 'table',
+  rows,
+  label = 'Loading current records',
 }: {
   loading: boolean;
   error?: AppError;
   retry: () => void;
+  /** Page content uses a LOD-01 skeleton layout; content inside a dialog passes `'spinner'`. */
+  skeleton?: SkeletonVariant | 'spinner';
+  rows?: number;
+  label?: string;
 }) {
   return loading ? (
-    <Spinner label="Loading current records" />
+    skeleton === 'spinner' ? (
+      <Spinner label={label} />
+    ) : (
+      <LoadingSkeleton variant={skeleton} rows={rows} label={label} />
+    )
   ) : error ? (
     <>
       <ErrorState error={error} />

@@ -6,7 +6,7 @@ import {
   type LoyaltyRank,
 } from '@market/api';
 import { readLoyaltyRanks } from './loyalty-leaderboard-data';
-import { UtilityIcon } from '@market/ui';
+import { UtilityIcon, InlineSkeleton } from '@market/ui';
 import { FarmstandIcon, FarmstandPanel } from '@market/ui/farmstand';
 import { ReadState, useRead } from './common';
 import { customerName, customerSpend } from './customers-data';
@@ -148,11 +148,13 @@ function CustomerSummary({
           <dl>
             <dt>Loyalty points</dt>
             <dd>
-              {loyalty
-                ? Number(loyalty.earned).toLocaleString()
-                : loyaltyLoading
-                  ? 'Loading…'
-                  : 'Unavailable'}
+              {loyalty ? (
+                Number(loyalty.earned).toLocaleString()
+              ) : loyaltyLoading ? (
+                <InlineSkeleton />
+              ) : (
+                'Unavailable'
+              )}
             </dd>
             {loyalty && (
               <dd className="customer-detail-loyalty-note">
@@ -233,7 +235,7 @@ export function CustomerDetail({
   );
   return (
     <>
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="detail" {...query} retry={query.refresh} />
       {query.data && scope && (
         <OrdersWorkspace
           service={service}

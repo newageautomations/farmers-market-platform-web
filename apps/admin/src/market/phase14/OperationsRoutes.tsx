@@ -11,7 +11,14 @@ import type {
   VendorCategoryApi,
 } from '@market/api';
 import { safeError } from '@market/api';
-import { Select, ErrorState, Spinner, Tabs } from '@market/ui';
+import {
+  Select,
+  ErrorState,
+  Spinner,
+  Tabs,
+  LoadingSkeleton,
+  useLoadGate,
+} from '@market/ui';
 import { Applications } from './Applications';
 import { Rentals } from './Rentals';
 import { Layouts, LayoutScreen } from './Layouts';
@@ -103,9 +110,10 @@ export function Phase14Routes({
     data?: MarketOperationsData;
     error?: ReturnType<typeof safeError>;
   }>({ key: '', revision: -1 });
+  const gated = useLoadGate();
   useEffect(() => {
     let current = true;
-    load()
+    gated(load())
       .then((data) => {
         if (current) setResult({ key: viewKey, revision, data });
       })
@@ -115,7 +123,7 @@ export function Phase14Routes({
     return () => {
       current = false;
     };
-  }, [load, revision, viewKey]);
+  }, [load, revision, viewKey, gated]);
   useEffect(() => {
     if (section !== 'BILLING' || pending) return;
     let current = true,
@@ -165,7 +173,9 @@ export function Phase14Routes({
     }
   }
   if (read.loading && !data)
-    return <Spinner label="Loading Market operations" />;
+    return (
+      <LoadingSkeleton variant="detail" label="Loading Market operations" />
+    );
   if (read.error) return <ErrorState error={read.error} />;
   if (!data) return <p>Market operations connection is unavailable.</p>;
   const can = (name: string) => permissions.includes(name),

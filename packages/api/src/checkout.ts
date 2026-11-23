@@ -1,5 +1,8 @@
 import * as shop from './generated/shop';
 import { transport, type TransportOptions } from './transport';
+export type CheckoutTermsDisclosure = NonNullable<
+  shop.CheckoutViewFragment['termsDisclosure']
+>;
 export type CheckoutView = shop.CheckoutViewFragment;
 export type StripeCheckoutStatus = shop.StripeCheckoutFragment;
 export type CheckoutPaymentCoverage = NonNullable<CheckoutView['paymentGroup']>;
@@ -9,6 +12,10 @@ export type PickupOption =
   shop.CheckoutPickupQuery['availableOwnedPickup'][number];
 export type CustomerPurchase = shop.CustomerPurchaseFragment;
 export type CheckoutContact = shop.CheckoutContactMutationVariables['input'];
+
+// One checkout request can authorize and capture several vendor charges in sequence.
+const stripePaymentDeadline = { timeoutMs: 30_000 };
+
 export function createCheckoutApi(
   options: TransportOptions & { channelToken: string },
 ) {
@@ -35,11 +42,12 @@ export function createCheckoutApi(
           {},
         )
       ).prepareStripeCheckout,
-    stripeStart: async (consent: string) =>
+    stripeStart: async (consent: string, termsToken?: string) =>
       (
         await execute(
           { api: 'shop', document: shop.StartStripeCheckoutDocument },
-          { consent },
+          { consent, termsToken },
+          stripePaymentDeadline,
         )
       ).startStripeCheckout,
     stripeAdvance: async (groupId: string) =>
@@ -47,6 +55,7 @@ export function createCheckoutApi(
         await execute(
           { api: 'shop', document: shop.AdvanceStripeCheckoutDocument },
           { groupId },
+          stripePaymentDeadline,
         )
       ).advanceStripeCheckout,
     stripeCancel: async (groupId: string) =>
@@ -111,18 +120,18 @@ export function createCheckoutApi(
         { api: 'shop', document: shop.CheckoutSelectPickupDocument },
         { methodIds },
       ),
-    begin: async (mode: string) =>
+    begin: async (mode: string, termsToken?: string) =>
       mode === 'LOCAL'
         ? (
             await execute(
               { api: 'shop', document: shop.CheckoutBeginLocalDocument },
-              {},
+              { termsToken },
             )
           ).beginLocalCheckout
         : (
             await execute(
               { api: 'shop', document: shop.CheckoutBeginProviderDocument },
-              {},
+              { termsToken },
             )
           ).beginProviderCheckout,
     finalize: async (mode: string, attemptId: string) =>

@@ -178,6 +178,12 @@ it('validates the schedule and supports interactive unpublished previews', () =>
     screen.getByText('Not saved: fix the issues below'),
   ).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+  // The preview is the storefront's sectioned form: account, dates, sections.
+  fireEvent.click(
+    screen.getByRole('button', { name: 'No, continue without one' }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  expect(screen.getByRole('heading', { name: 'Business' })).toBeVisible();
   fireEvent.change(screen.getByLabelText('Prepare food?'), {
     target: { value: 'true' },
   });
@@ -223,6 +229,10 @@ it.each(['CLOSED', 'NOT_YET_OPEN'] as const)(
         ? /closed on March 10, 2027 at 5:00 PM/
         : /opens on March 10, 2027 at 9:00 AM/,
     );
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'No, continue without one' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(
       screen.getByRole('button', { name: 'Submit application' }),
     ).toBeDisabled();

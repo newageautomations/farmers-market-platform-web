@@ -52,6 +52,8 @@ function startEditorPreview() {
       contact: value.contact,
       faq: value.faq,
       policies: value.policies,
+      marketTerms: value.marketTerms,
+      terms: value.terms,
       image: value.homepage.image,
       story: value.homepage.story,
       vendor: value.vendor

@@ -6,7 +6,7 @@ import {
   type DocumentFileApi,
   type PublicApplication,
 } from '@market/api';
-import { Alert, Button, Card, Spinner } from '@market/ui';
+import { Alert, Button, Card, LoadingSkeleton } from '@market/ui';
 import {
   DocumentFeedback,
   DocumentStatus,
@@ -17,9 +17,12 @@ import {
 export function ApplicationDocuments({
   application,
   vendorId,
+  onAccount,
 }: {
   application: PublicApplication;
   vendorId: number | null;
+  /** Shown to applicants who are not signed in: save answers, then sign in or sign up. */
+  onAccount?: (signup: boolean) => void;
 }) {
   const [data, setData] = useState<ComplianceData>(),
     [error, setError] = useState<unknown>(),
@@ -87,20 +90,44 @@ export function ApplicationDocuments({
             requirements.some((r) => r.submission_blocking) ? 'warning' : 'info'
           }
         >
-          Sign in and choose a Vendor business to share documents.{' '}
+          {onAccount
+            ? 'Documents are shared from a Vendor account. Create one or sign in; your answers are saved and you return here.'
+            : 'Sign in and choose a Vendor business to share documents.'}{' '}
           {requirements.some((r) => r.submission_blocking)
             ? 'This market requires documents before submission. Account-only and anonymous applicants must first establish an authorized Vendor business.'
             : 'You may submit with these requests outstanding.'}
+          {onAccount && (
+            <span className="ui-actions application-document-account">
+              <Button type="button" onClick={() => onAccount(true)}>
+                Create a Vendor account
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => onAccount(false)}
+              >
+                Sign in
+              </Button>
+            </span>
+          )}
         </Alert>
       )}
       {!!error && <DocumentFeedback error={error} />}
       {vendorId && !data && !error && (
-        <Spinner label="Loading application documents" />
+        <LoadingSkeleton
+          variant="table"
+          rows={3}
+          label="Loading application documents"
+        />
       )}
       {requirements.map((r) => {
         const request = data?.requests.find((a) => a.requirement_id === r.id);
         return (
-          <Card key={r.id} surface="embedded">
+          <Card
+            key={r.id}
+            surface="embedded"
+            className="application-document-request"
+          >
             <p>
               <strong>{r.title}</strong>
             </p>
@@ -111,10 +138,12 @@ export function ApplicationDocuments({
                 ? 'Must be shared before submitting'
                 : 'May remain outstanding'}
             </p>
-            <DocumentStatus value={request?.status ?? 'Missing'} />
-            {request?.expiration && (
-              <DocumentStatus value={request.expiration} />
-            )}
+            <div className="application-document-statuses">
+              <DocumentStatus value={request?.status ?? 'Missing'} />
+              {request?.expiration && (
+                <DocumentStatus value={request.expiration} />
+              )}
+            </div>
             {request?.reviews
               .filter((review) => review.decision === 'Rejected')
               .slice(-1)

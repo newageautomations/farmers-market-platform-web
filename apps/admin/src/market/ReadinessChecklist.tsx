@@ -109,7 +109,13 @@ export function ReadinessChecklistPanel({
       }
     >
       <div className="operations-checklist-body">
-        <ReadState loading={loading} error={error} retry={retry} />
+        <ReadState
+          skeleton="table"
+          rows={4}
+          loading={loading}
+          error={error}
+          retry={retry}
+        />
         {(data || grouped) &&
           (data?.status === 'canceled' ? (
             <p className="operations-checklist-note">

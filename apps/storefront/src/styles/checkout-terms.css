@@ -1,0 +1,38 @@
+.checkout-terms {
+  display: grid;
+  gap: 0.75rem;
+  margin-block: 0.75rem;
+}
+
+.checkout-terms-sellers {
+  display: grid;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.checkout-terms-sellers p {
+  margin: 0;
+}
+
+.checkout-terms-policy {
+  margin-block-start: 0.5rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.checkout-terms-check {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+/* The box keeps its size and sits centred on the first line of the text. */
+.checkout-terms-check > input {
+  flex: none;
+  margin: calc((1lh - 20px) / 2) 0 0;
+}
+
+.checkout-terms-check a {
+  text-decoration: underline;
+}

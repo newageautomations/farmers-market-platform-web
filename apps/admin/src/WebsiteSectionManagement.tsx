@@ -163,12 +163,21 @@ export function WebsiteSectionManagement<T extends SectionRow>({
     management?: ReactNode,
   ) => {
     const open = !collapsed && selected === id;
+    const source = sections.find((s) => s.id === sectionKey);
+    // Only rows that reveal blocks or items in the rail behave as dropdowns.
+    const expandable =
+      !!workspace &&
+      !!source &&
+      isRepeatable(source) &&
+      (source.type === 'image-with-text' ||
+        websiteSectionItems(source).length > 0);
     const disclosure = (
       <details
         key={id}
         className={disclosureClassName('dropdown')}
         open={open}
         data-selected={open || undefined}
+        data-expandable={expandable || undefined}
         data-farmhouse-editor={prefix === 'farmhouse' ? sectionKey : undefined}
       >
         <summary

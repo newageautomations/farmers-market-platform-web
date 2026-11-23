@@ -1,5 +1,10 @@
 import { EditorRangeField } from './TextSizeControls';
-import { WebsiteEditorContext } from './WebsiteEditorContext';
+import {
+  InspectorGroup,
+  SectionBackgroundField,
+  SectionSpaceField,
+  WebsiteEditorContext,
+} from './WebsiteEditorContext';
 import { useContext, useEffect, useState, type ReactNode } from 'react';
 import {
   Button,
@@ -11,6 +16,7 @@ import {
   Textarea,
 } from '@market/ui';
 import type { StorefrontAppearanceApi } from '@market/api';
+import { FarmstandIcon } from '@market/ui/farmstand';
 import {
   harvestFeatureIcons,
   type HarvestExpandedSection,
@@ -211,7 +217,7 @@ export function HarvestSectionEditor({
       {(value.type !== 'image-gallery' || !!selectedItem) &&
         field(
           key + '-alt',
-          'Image description (leave blank for decorative images)',
+          'Image description',
           image.alt,
           (alt) => change({ ...image, alt }),
           200,
@@ -250,6 +256,12 @@ export function HarvestSectionEditor({
       />
     </div>
   );
+  // Stays mounted across item selection; opens while an item is selected.
+  const items = (title: string, children: ReactNode) => (
+    <InspectorGroup title={title} open={!!selectedItem}>
+      {children}
+    </InspectorGroup>
+  );
   return (
     <>
       {selectedItem && (
@@ -260,253 +272,243 @@ export function HarvestSectionEditor({
           Section settings
         </Button>
       )}
-      {field(
-        'heading',
-        'Heading',
-        value.content.heading,
-        (heading) => content({ heading }),
-        160,
-      )}
-      {field(
-        'body',
-        'Description (optional)',
-        value.content.body,
-        (body) => content({ body }),
-        1200,
-        true,
-      )}
-      {value.type === 'image-banner' && (
-        <>
+      {!selectedItem && (
+        <InspectorGroup title="Content" open>
           {field(
-            'introduction',
-            'Introductory text (optional)',
-            value.content.introduction,
-            (introduction) => content({ introduction }),
-            80,
+            'heading',
+            'Heading',
+            value.content.heading,
+            (heading) => content({ heading }),
+            160,
           )}
-          {photo('banner', value.content.image, (image) => content({ image }))}
           {field(
-            'label',
-            'Button label (optional)',
-            value.content.label,
-            (label) => content({ label }),
-            80,
+            'body',
+            'Description (optional)',
+            value.content.body,
+            (body) => content({ body }),
+            1200,
+            true,
           )}
-          {destinationControl}
-          {select('layout', 'Layout', [
-            'photo-overlay',
-            'split-editorial',
-            'minimal-centered',
-          ])}
-          {select('width', 'Width', ['contained', 'full'])}
-          {select('placement', 'Text placement', ['top', 'middle', 'bottom'])}
-          {select('focalPoint', 'Image focal point', [
-            'center',
-            'top',
-            'bottom',
-            'left',
-            'right',
-          ])}
-          {select('overlay', 'Image overlay', ['none', 'subtle', 'strong'])}
-          {select('height', 'Banner height', ['small', 'medium', 'large'])}
-        </>
-      )}
-      {value.type === 'image-gallery' && (
-        <>
-          {select('layout', 'Layout', ['grid', 'mosaic', 'strip', 'carousel'])}
-          {!selectedItem && value.presentation.layout === 'carousel' && (
-            <SelectField
-              id={`${value.id}-visible-images`}
-              label="Visible images"
-              value={value.presentation.visibleImages ?? 3}
-              onChange={(e) =>
-                presentation({ visibleImages: Number(e.target.value) })
-              }
-            >
-              {[1, 2, 3, 4].map((count) => (
-                <option key={count} value={count}>
-                  {count}
-                </option>
-              ))}
-            </SelectField>
-          )}
-          {select('aspectRatio', 'Image shape', [
-            'landscape',
-            'square',
-            'portrait',
-          ])}
-          {!selectedItem && (
+          {value.type === 'image-banner' && (
             <>
-              <Field id={`${value.id}-captions`} label="Show captions">
-                <Checkbox
-                  id={`${value.id}-captions`}
-                  checked={value.presentation.captions}
-                  onChange={(e) => presentation({ captions: e.target.checked })}
-                />
-              </Field>
+              {field(
+                'introduction',
+                'Introductory text (optional)',
+                value.content.introduction,
+                (introduction) => content({ introduction }),
+                80,
+              )}
+              {photo('banner', value.content.image, (image) =>
+                content({ image }),
+              )}
+              {field(
+                'label',
+                'Button label (optional)',
+                value.content.label,
+                (label) => content({ label }),
+                80,
+              )}
+              {destinationControl}
             </>
           )}
-          {value.content.images.map((item, index) => (
-            <fieldset
-              key={item.id}
-              hidden={!!selectedItem && selectedItem !== item.id}
-            >
-              {photo(item.id, item.image, (image) =>
-                content({
-                  images: value.content.images.map((i) =>
-                    i.id === item.id ? { ...i, image } : i,
-                  ),
-                }),
-              )}
-              {selectedItem === item.id &&
-                field(
-                  item.id + '-caption',
-                  'Caption (optional)',
-                  item.caption,
-                  (caption) =>
+        </InspectorGroup>
+      )}
+      {value.type === 'image-gallery' &&
+        items(
+          'Photographs',
+          <>
+            {value.content.images.map((item, index) => (
+              <fieldset
+                key={item.id}
+                hidden={!!selectedItem && selectedItem !== item.id}
+              >
+                {photo(item.id, item.image, (image) =>
+                  content({
+                    images: value.content.images.map((i) =>
+                      i.id === item.id ? { ...i, image } : i,
+                    ),
+                  }),
+                )}
+                {selectedItem === item.id &&
+                  field(
+                    item.id + '-caption',
+                    'Caption (optional)',
+                    item.caption,
+                    (caption) =>
+                      content({
+                        images: value.content.images.map((i) =>
+                          i.id === item.id ? { ...i, caption } : i,
+                        ),
+                      }),
+                    200,
+                  )}
+                {actions(
+                  value.content.images,
+                  index,
+                  (images) => content({ images }),
+                  item.image.alt || 'photograph',
+                )}
+              </fieldset>
+            ))}
+            {!selectedItem &&
+              (media ? (
+                // Adding a photograph opens the image library straight away;
+                // the new photograph is added once one is chosen.
+                <CategoryImageField
+                  api={media}
+                  themeId={themeId}
+                  label="Add photograph"
+                  presentation="library"
+                  value={null}
+                  renderTrigger={(open, disabled) => (
+                    <Button
+                      variant="secondary"
+                      aria-haspopup="dialog"
+                      disabled={disabled || value.content.images.length >= 8}
+                      onClick={open}
+                    >
+                      Add photograph
+                    </Button>
+                  )}
+                  onImageChange={(asset) => {
+                    if (!asset) return;
                     content({
-                      images: value.content.images.map((i) =>
-                        i.id === item.id ? { ...i, caption } : i,
+                      images: [
+                        ...value.content.images,
+                        {
+                          id: 'image-' + crypto.randomUUID(),
+                          image: {
+                            assetId: asset.id,
+                            url: asset.preview ?? '',
+                            alt: '',
+                          },
+                          caption: '',
+                        },
+                      ],
+                    });
+                  }}
+                />
+              ) : (
+                <Button
+                  variant="secondary"
+                  disabled={value.content.images.length >= 8}
+                  onClick={() =>
+                    content({
+                      images: [
+                        ...value.content.images,
+                        {
+                          id: 'image-' + crypto.randomUUID(),
+                          image: { assetId: null, url: '', alt: '' },
+                          caption: '',
+                        },
+                      ],
+                    })
+                  }
+                >
+                  Add photograph
+                </Button>
+              ))}
+          </>,
+        )}
+      {value.type === 'feature-grid' &&
+        items(
+          'Features',
+          <>
+            {value.content.items.map((item, index) => (
+              <fieldset
+                key={item.id}
+                hidden={!!selectedItem && selectedItem !== item.id}
+              >
+                {field(
+                  item.id + '-title',
+                  'Feature title',
+                  item.title,
+                  (title) =>
+                    content({
+                      items: value.content.items.map((i) =>
+                        i.id === item.id ? { ...i, title } : i,
                       ),
                     }),
-                  200,
+                  120,
                 )}
-              {actions(
-                value.content.images,
-                index,
-                (images) => content({ images }),
-                item.image.alt || 'photograph',
-              )}
-            </fieldset>
-          ))}
-          {!selectedItem && (
-            <>
-              <Button
-                variant="secondary"
-                disabled={value.content.images.length >= 8}
-                onClick={() =>
-                  content({
-                    images: [
-                      ...value.content.images,
-                      {
-                        id: 'image-' + crypto.randomUUID(),
-                        image: { assetId: null, url: '', alt: '' },
-                        caption: '',
-                      },
-                    ],
-                  })
-                }
-              >
-                Add photograph
-              </Button>
-              <p>{value.content.images.length} of 8 photographs</p>
-            </>
-          )}
-        </>
-      )}
-      {value.type === 'feature-grid' && (
-        <>
-          {select('columns', 'Desktop columns', [2, 3, 4])}
-          {!selectedItem && (
-            <EditorRangeField
-              id={`${value.id}-icon-size`}
-              label="Icon size"
-              min={16}
-              max={96}
-              unit="px"
-              value={value.presentation.iconSize ?? 40}
-              onChange={(iconSize) => presentation({ iconSize })}
-            />
-          )}
-          {select('iconPosition', 'Icon placement', ['above', 'beside'])}
-          {select('cardStyle', 'Feature treatment', [
-            'standard',
-            'highlighted',
-            'bordered',
-          ])}
-          {value.content.items.map((item, index) => (
-            <fieldset
-              key={item.id}
-              hidden={!!selectedItem && selectedItem !== item.id}
-            >
-              {field(
-                item.id + '-title',
-                'Feature title',
-                item.title,
-                (title) =>
-                  content({
-                    items: value.content.items.map((i) =>
-                      i.id === item.id ? { ...i, title } : i,
-                    ),
-                  }),
-                120,
-              )}
-              {field(
-                item.id + '-description',
-                'Feature description',
-                item.description,
-                (description) =>
-                  content({
-                    items: value.content.items.map((i) =>
-                      i.id === item.id ? { ...i, description } : i,
-                    ),
-                  }),
-                400,
-                true,
-              )}
-              <SelectField
-                id={`${value.id}-${item.id}-icon`}
-                label="Icon"
-                value={item.icon}
-                onChange={(e) =>
-                  content({
-                    items: value.content.items.map((i) =>
-                      i.id === item.id ? { ...i, icon: e.target.value } : i,
-                    ),
-                  })
-                }
-              >
-                <option value="">No icon</option>
-                {harvestFeatureIcons.map((icon) => (
-                  <option key={icon} value={icon}>
-                    {icon.replaceAll('-', ' ')}
+                {field(
+                  item.id + '-description',
+                  'Feature description',
+                  item.description,
+                  (description) =>
+                    content({
+                      items: value.content.items.map((i) =>
+                        i.id === item.id ? { ...i, description } : i,
+                      ),
+                    }),
+                  400,
+                  true,
+                )}
+                <SelectField
+                  id={`${value.id}-${item.id}-icon`}
+                  label="Icon"
+                  className="feature-icon-select"
+                  value={item.icon}
+                  onChange={(e) =>
+                    content({
+                      items: value.content.items.map((i) =>
+                        i.id === item.id ? { ...i, icon: e.target.value } : i,
+                      ),
+                    })
+                  }
+                >
+                  <option value="">
+                    <span className="feature-icon-option">No icon</span>
                   </option>
-                ))}
-              </SelectField>
-              {actions(
-                value.content.items,
-                index,
-                (items) => content({ items }),
-                item.title || 'feature',
-              )}
-            </fieldset>
-          ))}
-          {!selectedItem && (
-            <>
-              <Button
-                variant="secondary"
-                disabled={value.content.items.length >= 6}
-                onClick={() =>
-                  content({
-                    items: [
-                      ...value.content.items,
-                      {
-                        id: 'feature-' + crypto.randomUUID(),
-                        title: 'A little closer to home',
-                        description: 'Share what matters to you.',
-                        icon: '',
-                      },
-                    ],
-                  })
-                }
-              >
-                Add feature
-              </Button>
-              <p>{value.content.items.length} of 6 features</p>
-            </>
-          )}
-        </>
-      )}
+                  {harvestFeatureIcons.map((icon) => (
+                    <option
+                      key={icon}
+                      value={icon}
+                      aria-label={icon.replaceAll('-', ' ')}
+                    >
+                      <span className="feature-icon-option">
+                        <FarmstandIcon name={icon} />
+                        {/* Plain selects show only text; picker-styled selects show the glyph. */}
+                        <span className="sr-only">
+                          {icon.replaceAll('-', ' ')}
+                        </span>
+                      </span>
+                    </option>
+                  ))}
+                </SelectField>
+                {actions(
+                  value.content.items,
+                  index,
+                  (items) => content({ items }),
+                  item.title || 'feature',
+                )}
+              </fieldset>
+            ))}
+            {!selectedItem && (
+              <>
+                <Button
+                  variant="secondary"
+                  disabled={value.content.items.length >= 6}
+                  onClick={() =>
+                    content({
+                      items: [
+                        ...value.content.items,
+                        {
+                          id: 'feature-' + crypto.randomUUID(),
+                          title: 'A little closer to home',
+                          description: 'Share what matters to you.',
+                          icon: '',
+                        },
+                      ],
+                    })
+                  }
+                >
+                  Add feature
+                </Button>
+              </>
+            )}
+          </>,
+        )}
       {(value.type === 'product-showcase' ||
         value.type === 'category-showcase') &&
         (() => {
@@ -530,41 +532,9 @@ export function HarvestSectionEditor({
                 ).values(),
               ]
             : choices;
-          return (
+          return items(
+            product ? 'Products' : 'Categories',
             <>
-              {select(
-                'layout',
-                'Layout',
-                product
-                  ? ['grid', 'featured-product', 'compact-row', 'carousel']
-                  : ['cards', 'photo-tiles', 'compact'],
-              )}
-              {!selectedItem &&
-                value.type === 'product-showcase' &&
-                value.presentation.layout === 'carousel' && (
-                  <SelectField
-                    id={`${value.id}-visible-products`}
-                    label="Visible products"
-                    value={value.presentation.visibleImages ?? 3}
-                    onChange={(e) =>
-                      presentation({ visibleImages: Number(e.target.value) })
-                    }
-                  >
-                    {[1, 2, 3, 4].map((count) => (
-                      <option key={count} value={count}>
-                        {count}
-                      </option>
-                    ))}
-                  </SelectField>
-                )}
-              {product
-                ? value.presentation.layout !== 'carousel' &&
-                  select('columns', 'Desktop columns', [2, 3, 4])
-                : select('aspectRatio', 'Image shape', [
-                    'landscape',
-                    'square',
-                    'portrait',
-                  ])}
               {product &&
                 field('search', 'Search your products', search, setSearch, 100)}
               {!selectedItem && (
@@ -678,10 +648,6 @@ export function HarvestSectionEditor({
               ))}
               {!selectedItem && (
                 <>
-                  <p>
-                    {ids.length} of 8 selected. Only your published catalog can
-                    appear.
-                  </p>
                   <Field id={`${value.id}-shop-link`} label="Show link to Shop">
                     <Checkbox
                       id={`${value.id}-shop-link`}
@@ -693,23 +659,175 @@ export function HarvestSectionEditor({
                   </Field>
                 </>
               )}
-            </>
+            </>,
           );
         })()}
-      {select(
-        'alignment',
-        'Text alignment',
-        value.type === 'feature-grid'
-          ? ['left', 'center']
-          : ['left', 'center', 'right'],
+      {!selectedItem && (
+        <>
+          <InspectorGroup title="Layout">
+            {value.type === 'image-banner' && (
+              <>
+                {select('layout', 'Layout', [
+                  'photo-overlay',
+                  'split-editorial',
+                  'minimal-centered',
+                ])}
+                {select('width', 'Width', ['contained', 'full'])}
+                {select('placement', 'Text placement', [
+                  'top',
+                  'middle',
+                  'bottom',
+                ])}
+                {select('focalPoint', 'Image focal point', [
+                  'center',
+                  'top',
+                  'bottom',
+                  'left',
+                  'right',
+                ])}
+                {select('overlay', 'Image overlay', [
+                  'none',
+                  'subtle',
+                  'strong',
+                ])}
+                {select('height', 'Banner height', [
+                  'small',
+                  'medium',
+                  'large',
+                ])}
+              </>
+            )}
+            {value.type === 'image-gallery' && (
+              <>
+                {select('layout', 'Layout', [
+                  'grid',
+                  'mosaic',
+                  'strip',
+                  'carousel',
+                ])}
+                {!selectedItem && value.presentation.layout === 'carousel' && (
+                  <SelectField
+                    id={`${value.id}-visible-images`}
+                    label="Visible images"
+                    value={value.presentation.visibleImages ?? 3}
+                    onChange={(e) =>
+                      presentation({ visibleImages: Number(e.target.value) })
+                    }
+                  >
+                    {[1, 2, 3, 4].map((count) => (
+                      <option key={count} value={count}>
+                        {count}
+                      </option>
+                    ))}
+                  </SelectField>
+                )}
+                {select('aspectRatio', 'Image shape', [
+                  'landscape',
+                  'square',
+                  'portrait',
+                ])}
+                {!selectedItem && (
+                  <>
+                    <Field id={`${value.id}-captions`} label="Show captions">
+                      <Checkbox
+                        id={`${value.id}-captions`}
+                        checked={value.presentation.captions}
+                        onChange={(e) =>
+                          presentation({ captions: e.target.checked })
+                        }
+                      />
+                    </Field>
+                  </>
+                )}
+              </>
+            )}
+            {value.type === 'feature-grid' && (
+              <>
+                {select('columns', 'Desktop columns', [2, 3, 4])}
+                {!selectedItem && (
+                  <EditorRangeField
+                    id={`${value.id}-icon-size`}
+                    label="Icon size"
+                    min={16}
+                    max={96}
+                    unit="px"
+                    value={value.presentation.iconSize ?? 40}
+                    onChange={(iconSize) => presentation({ iconSize })}
+                  />
+                )}
+                {select('iconPosition', 'Icon placement', ['above', 'beside'])}
+                {select('cardStyle', 'Feature treatment', [
+                  'standard',
+                  'highlighted',
+                  'bordered',
+                ])}
+              </>
+            )}
+            {(value.type === 'product-showcase' ||
+              value.type === 'category-showcase') && (
+              <>
+                {select(
+                  'layout',
+                  'Layout',
+                  value.type === 'product-showcase'
+                    ? ['grid', 'featured-product', 'compact-row', 'carousel']
+                    : ['cards', 'photo-tiles', 'compact'],
+                )}
+                {value.type === 'product-showcase' &&
+                  value.presentation.layout === 'carousel' && (
+                    <SelectField
+                      id={`${value.id}-visible-products`}
+                      label="Visible products"
+                      value={value.presentation.visibleImages ?? 3}
+                      onChange={(e) =>
+                        presentation({ visibleImages: Number(e.target.value) })
+                      }
+                    >
+                      {[1, 2, 3, 4].map((count) => (
+                        <option key={count} value={count}>
+                          {count}
+                        </option>
+                      ))}
+                    </SelectField>
+                  )}
+                {value.type === 'product-showcase'
+                  ? value.presentation.layout !== 'carousel' &&
+                    select('columns', 'Desktop columns', [2, 3, 4])
+                  : select('aspectRatio', 'Image shape', [
+                      'landscape',
+                      'square',
+                      'portrait',
+                    ])}
+              </>
+            )}
+            {select(
+              'alignment',
+              'Text alignment',
+              value.type === 'feature-grid'
+                ? ['left', 'center']
+                : ['left', 'center', 'right'],
+            )}
+            {select('spacing', 'Section spacing', [
+              'compact',
+              'balanced',
+              'spacious',
+            ])}
+            <SectionSpaceField
+              value={value}
+              theme={themeId}
+              onChange={onChange}
+            />
+          </InspectorGroup>
+          <InspectorGroup title="Style">
+            {select('backgroundType', 'Background type', ['contained', 'full'])}
+            <SectionBackgroundField
+              id={`${value.id}-background`}
+              value={value.presentation.background}
+              onChange={(background) => presentation({ background })}
+            />
+          </InspectorGroup>
+        </>
       )}
-      {select('backgroundType', 'Background type', ['contained', 'full'])}
-      {select('background', 'Background color', ['paper', 'surface', 'ink'])}
-      {select('spacing', 'Section spacing', [
-        'compact',
-        'balanced',
-        'spacious',
-      ])}
     </>
   );
 }

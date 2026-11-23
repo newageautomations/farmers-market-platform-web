@@ -2,11 +2,14 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
+import { requiresInjectedEnvironment } from '@market/config';
 import {
   loadRemoteDemoConfig,
   startRemoteDemoProxy,
 } from './remote-demo-proxy-core';
 
+if (requiresInjectedEnvironment(process.env))
+  throw new Error('Remote demo requires a local environment');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Only REMOTE_DEMO_* settings and the two non-secret local account/admin
 // origins (internal identities the proxy maps to) are read from the root .env.

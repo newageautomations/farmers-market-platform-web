@@ -1,5 +1,5 @@
 import { WebsiteInspectorContent } from './WebsiteEditorContext';
-import { StorefrontReorderControls } from './StorefrontReorderControls';
+import { WebsiteRailList } from './WebsiteRailList';
 import { useEffect, useRef, useState } from 'react';
 import { Button, Checkbox, Dialog, Field, Input, Textarea } from '@market/ui';
 import { disclosureClassName } from '@market/ui/presentation';
@@ -9,7 +9,7 @@ import {
   type StorefrontEditorSection,
 } from '@market/theme/storefront';
 
-/** FAQ composition reusing About disclosure, reorder rail and switch presentation. */
+/** FAQ composition: questions are rail rows (drag to reorder within the list) edited in the inspector, like Policies. */
 export function FaqEditor({
   onlyClosing = false,
   hideClosing = false,
@@ -42,7 +42,8 @@ export function FaqEditor({
       focusNew.current ??
       (selected.startsWith('faq:') ? selected.slice(4) : undefined);
     if (id) {
-      const input = root.current?.querySelector<HTMLInputElement>(
+      // The question's fields render in the inspector, outside this fieldset.
+      const input = document.querySelector<HTMLInputElement>(
         `#faq-question-${id}`,
       );
       input?.focus();
@@ -59,156 +60,139 @@ export function FaqEditor({
         q.id === id ? { ...q, ...next } : q,
       ),
     });
-  const move = (id: string, delta: number) => {
-    const next = [...value.questions];
-    const i = next.findIndex((q) => q.id === id);
-    if (i < 0 || i + delta < 0 || i + delta >= next.length) return;
-    [next[i], next[i + delta]] = [next[i + delta]!, next[i]!];
-    patch({ questions: next });
+  const selectedQuestion =
+    !collapsed && selected.startsWith('faq:')
+      ? value.questions.find((q) => `faq:${q.id}` === selected)
+      : undefined;
+  const addQuestion = () => {
+    const id = `question-${crypto.randomUUID()}`;
+    focusNew.current = id;
+    patch({
+      questions: [
+        ...value.questions,
+        { id, question: '', answer: '', visible: true },
+      ],
+    });
+    choose(`faq:${id}`);
   };
-  const entries: Array<{
-    id: StorefrontEditorSection;
-    label: string;
-    question?: FaqConfig['questions'][number];
-  }> = [
-    { id: 'faq-settings', label: 'FAQ page' },
-    ...value.questions.map((question) => ({
-      id: `faq:${question.id}` as const,
-      label: question.question || 'Untitled question',
-      question,
-    })),
-    { id: 'faq-cta', label: 'Closing invitation' },
-  ];
+  const rows = (['faq-settings', 'faq-questions', 'faq-cta'] as const)
+    .filter((id) =>
+      onlyClosing ? id === 'faq-cta' : !hideClosing || id !== 'faq-cta',
+    )
+    .filter((id) => !sectionHero || id !== 'faq-settings');
   return (
     <fieldset
       ref={root}
       disabled={busy}
       className="faq-editor story-editor-list"
     >
-      <div className="story-editor-add-row">
-        <Button
-          variant="secondary"
-          disabled={value.questions.length >= faqQuestionLimit}
-          onClick={() => {
-            const id = `question-${crypto.randomUUID()}`;
-            focusNew.current = id;
-            patch({
-              questions: [
-                ...value.questions,
-                { id, question: '', answer: '', visible: true },
-              ],
-            });
-            choose(`faq:${id}`);
-          }}
-        >
-          Add Question
-        </Button>
-        {!sectionHero && (
-          <label className="story-page-toggle">
-            <Checkbox
-              id="faq-enabled"
-              role="switch"
-              className="sr-only"
-              aria-label="Enable FAQ page"
-              checked={value.enabled}
-              onChange={(e) => patch({ enabled: e.target.checked })}
-            />
-            <span className="story-switch-track" aria-hidden="true" />
-            <span>{value.enabled ? 'Enabled' : 'Disabled'}</span>
-          </label>
-        )}
-      </div>
-      {value.questions.length >= faqQuestionLimit && (
-        <p role="status">Maximum 30 questions. Delete one to add another.</p>
-      )}
-      {entries
-        .filter((entry) =>
-          onlyClosing
-            ? entry.id === 'faq-cta'
-            : !hideClosing || entry.id !== 'faq-cta',
-        )
-        .filter((entry) => !sectionHero || entry.id !== 'faq-settings')
-        .map(({ id, label, question: q }) => {
-          const open =
-            !collapsed &&
-            (selected === id ||
-              (id === 'faq-settings' && selected === 'faq-intro'));
-          const index = q
-            ? value.questions.findIndex((item) => item.id === q.id)
-            : -1;
-          return (
-            <div
-              key={id}
-              className={`story-editor-row${q ? ' story-editor-movable faq-editor-question' : ''}`}
-              data-faq-id={q?.id}
+      {rows.map((id) => {
+        const open =
+          id === 'faq-questions'
+            ? !collapsed && (selected === id || !!selectedQuestion)
+            : !collapsed &&
+              (selected === id ||
+                (id === 'faq-settings' && selected === 'faq-intro'));
+        return (
+          <details
+            key={id}
+            className={disclosureClassName('dropdown')}
+            data-expandable={id === 'faq-questions' || undefined}
+            data-selected={
+              (id === 'faq-questions' ? selected === id && open : open) ||
+              undefined
+            }
+            open={open}
+          >
+            <summary
+              role="button"
+              aria-expanded={open}
+              onClick={(event) => {
+                event.preventDefault();
+                if (open) collapse();
+                else choose(id);
+              }}
             >
-              {q && (
-                <StorefrontReorderControls
-                  item="question"
-                  label={label}
-                  index={index}
-                  count={value.questions.length}
-                  busy={busy}
-                  onMove={(delta) => move(q.id, delta)}
-                />
+              {
+                {
+                  'faq-settings': 'FAQ page',
+                  'faq-questions': 'Questions',
+                  'faq-cta': 'Closing invitation',
+                }[id]
+              }
+            </summary>
+            {id === 'faq-questions' && open && (
+              <WebsiteRailList
+                items={value.questions}
+                label="Questions"
+                noun="question"
+                itemAttribute="data-faq-id"
+                itemLabel={(q) =>
+                  (q.question || 'Untitled question') +
+                  (q.visible ? '' : ' (hidden)')
+                }
+                selectedId={selectedQuestion?.id}
+                busy={busy}
+                onSelect={(q) => choose(`faq:${q.id}`)}
+                onReorder={(questions) => patch({ questions })}
+                addLabel="Add Question"
+                addDisabled={value.questions.length >= faqQuestionLimit}
+                onAdd={addQuestion}
+              />
+            )}
+            {id === 'faq-questions' &&
+              open &&
+              value.questions.length >= faqQuestionLimit && (
+                <p role="status">
+                  Maximum 30 questions. Delete one to add another.
+                </p>
               )}
-              <details className={disclosureClassName('dropdown')} open={open}>
-                <summary
-                  role="button"
-                  aria-expanded={open}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    if (open) collapse();
-                    else choose(id);
-                  }}
-                >
-                  {q ? (
-                    <span className="faq-editor-question-label" title={label}>
-                      {label}
-                    </span>
-                  ) : (
-                    label
-                  )}
-                </summary>
-                {open && (
-                  <WebsiteInspectorContent>
-                    {id === 'faq-settings' && (
+            {open && (
+              <WebsiteInspectorContent>
+                {id === 'faq-settings' && (
+                  <>
+                    <Field id="faq-title" label="Page title">
+                      <Input
+                        id="faq-title"
+                        maxLength={160}
+                        value={value.title}
+                        onChange={(e) => patch({ title: e.target.value })}
+                      />
+                    </Field>
+                    {!sectionHero && (
                       <>
-                        <Field id="faq-title" label="Page title">
+                        <Field id="faq-heading" label="Heading">
                           <Input
-                            id="faq-title"
+                            id="faq-heading"
                             maxLength={160}
-                            value={value.title}
-                            onChange={(e) => patch({ title: e.target.value })}
+                            value={value.heading}
+                            onChange={(e) => patch({ heading: e.target.value })}
                           />
                         </Field>
-                        {!sectionHero && (
-                          <>
-                            <Field id="faq-heading" label="Heading">
-                              <Input
-                                id="faq-heading"
-                                maxLength={160}
-                                value={value.heading}
-                                onChange={(e) =>
-                                  patch({ heading: e.target.value })
-                                }
-                              />
-                            </Field>
-                            <Field id="faq-description" label="Introduction">
-                              <Textarea
-                                id="faq-description"
-                                maxLength={600}
-                                value={value.description}
-                                onChange={(e) =>
-                                  patch({ description: e.target.value })
-                                }
-                              />
-                            </Field>
-                          </>
-                        )}
+                        <Field id="faq-description" label="Introduction">
+                          <Textarea
+                            id="faq-description"
+                            maxLength={600}
+                            value={value.description}
+                            onChange={(e) =>
+                              patch({ description: e.target.value })
+                            }
+                          />
+                        </Field>
                       </>
                     )}
-                    {q && (
+                  </>
+                )}
+                {id === 'faq-questions' && !selectedQuestion && (
+                  <p className="website-inspector-empty">
+                    Select a question to edit it.
+                  </p>
+                )}
+                {id === 'faq-questions' &&
+                  selectedQuestion &&
+                  (() => {
+                    const q = selectedQuestion;
+                    return (
                       <>
                         <Field id={`faq-question-${q.id}`} label="Question">
                           <Input
@@ -231,11 +215,6 @@ export function FaqEditor({
                             }
                           />
                         </Field>
-                        <p>
-                          Use internal links such as [Find Us](/find-us).
-                          Supported destinations: /, /products, /about,
-                          /find-us, /contact, /faq and /policies.
-                        </p>
                         <Field id={`faq-visible-${q.id}`} label="Show question">
                           <Checkbox
                             id={`faq-visible-${q.id}`}
@@ -256,51 +235,40 @@ export function FaqEditor({
                           </Button>
                         </div>
                       </>
-                    )}
-                    {id === 'faq-cta' && (
-                      <>
-                        {(['heading', 'text', 'label'] as const).map((key) => (
-                          <Field
-                            key={key}
-                            id={`faq-cta-${key}`}
-                            label={
-                              {
-                                heading: 'Invitation heading',
-                                text: 'Invitation text',
-                                label: 'Button label',
-                              }[key]
-                            }
-                          >
-                            <Input
-                              id={`faq-cta-${key}`}
-                              maxLength={
-                                key === 'heading'
-                                  ? 160
-                                  : key === 'text'
-                                    ? 600
-                                    : 80
-                              }
-                              value={value.cta[key]}
-                              onChange={(e) =>
-                                patch({
-                                  cta: { ...value.cta, [key]: e.target.value },
-                                })
-                              }
-                            />
-                          </Field>
-                        ))}
-                        <p>
-                          The invitation links to Contact and appears when that
-                          page is enabled.
-                        </p>
-                      </>
-                    )}
-                  </WebsiteInspectorContent>
-                )}
-              </details>
-            </div>
-          );
-        })}
+                    );
+                  })()}
+                {id === 'faq-cta' &&
+                  (['heading', 'text', 'label'] as const).map((key) => (
+                    <Field
+                      key={key}
+                      id={`faq-cta-${key}`}
+                      label={
+                        {
+                          heading: 'Invitation heading',
+                          text: 'Invitation text',
+                          label: 'Button label',
+                        }[key]
+                      }
+                    >
+                      <Input
+                        id={`faq-cta-${key}`}
+                        maxLength={
+                          key === 'heading' ? 160 : key === 'text' ? 600 : 80
+                        }
+                        value={value.cta[key]}
+                        onChange={(e) =>
+                          patch({
+                            cta: { ...value.cta, [key]: e.target.value },
+                          })
+                        }
+                      />
+                    </Field>
+                  ))}
+              </WebsiteInspectorContent>
+            )}
+          </details>
+        );
+      })}
       <Dialog
         open={!!deleting}
         title="Delete this question?"

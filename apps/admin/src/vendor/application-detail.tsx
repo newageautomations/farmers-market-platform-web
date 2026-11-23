@@ -701,7 +701,7 @@ export function VendorApplicationDetail({
         <FarmstandIcon name="arrow-left" />
         Back to all applications
       </FarmstandLink>
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="detail" {...query} retry={query.refresh} />
       {detail && (
         <>
           <header className="application-detail-heading">

@@ -26,9 +26,9 @@ import {
   Field,
   Input,
   SelectField,
-  Spinner,
   Textarea,
   UtilityIcon,
+  LoadingSkeleton,
 } from '@market/ui';
 import { buttonClassName } from '@market/ui/presentation';
 import {
@@ -230,7 +230,10 @@ function DesktopAppearanceSettings({
         </Button>
       </>
     );
-  if (!records) return <Spinner label="Loading storefront appearance" />;
+  if (!records)
+    return (
+      <LoadingSkeleton variant="detail" label="Loading storefront appearance" />
+    );
   if (!records.length)
     return (
       <EmptyState title="No storefront is configured">

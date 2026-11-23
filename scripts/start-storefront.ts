@@ -1,37 +1,69 @@
-import type { Server, RequestListener } from 'node:http';
+import type { RequestListener } from 'node:http';
+import { statSync } from 'node:fs';
 import {
   validateEnvironment,
-  runtimeMode,
+  assertFrontendBuild,
+  frontendBuildManifest,
+  blocksIndexing,
+  noIndexHeader,
   responseSecurityHeaders,
   cspDirectives,
+  storefrontPreviewDocument,
 } from '@market/config';
-validateEnvironment(process.env, 'production');
-if (runtimeMode(process.env) !== 'production')
+import { readFrontendBuild } from './frontend-build-manifest';
+import {
+  frontendListener,
+  hostedFrontend,
+  storefrontPrivateApi,
+} from '@market/config/hosted';
+import {
+  authorizeFrontendRequest,
+  frontendServer,
+} from './frontend-production-http';
+const config = validateEnvironment(process.env, 'production');
+if (!config.production)
   throw new Error('Production startup requires APP_ENV=production');
-if (!process.env.SERVER_KEY_PATH || !process.env.SERVER_CERT_PATH)
-  throw new Error('HTTPS certificate paths required');
+assertFrontendBuild(
+  readFrontendBuild(
+    new URL(
+      `../apps/storefront/dist/server/${frontendBuildManifest}`,
+      import.meta.url,
+    ),
+  ),
+  config,
+  'storefront',
+);
+const listener = frontendListener(process.env, config.deployment, 'storefront');
+storefrontPrivateApi(process.env);
+const accountHost = new URL(config.accountOrigin).host;
+const pilots =
+  listener.ingressKey &&
+  hostedFrontend(process.env, [
+    config.adminOrigin,
+    config.accountOrigin,
+    new URL(config.adminApiUrl).origin,
+  ]);
 process.env.ASTRO_NODE_AUTOSTART = 'disabled';
 const entry = (await import(
   '../apps/storefront/dist/server/entry.mjs' as string
 )) as {
-  startServer(): { server: { server: Server }; done: Promise<void> };
+  handler: RequestListener;
 };
-const runtime = entry.startServer();
-const server = runtime.server.server;
-server.requestTimeout = 30000;
-server.headersTimeout = 15000;
-server.keepAliveTimeout = 5000;
-const listeners = server.listeners('request');
-if (listeners.length !== 1)
-  throw new Error('Unexpected Astro request composition');
-const adapterHandler = listeners[0] as RequestListener;
-server.removeListener('request', adapterHandler);
-let draining = false;
+if (typeof entry.handler !== 'function')
+  throw new Error('Missing Astro standalone request handler');
+if (
+  !statSync(
+    new URL('../apps/storefront/dist/client/', import.meta.url),
+  ).isDirectory()
+)
+  throw new Error('Missing Astro client build');
 // Also protect adapter-level errors and static responses which precede Astro middleware.
 // Rendered pages replace this fallback with Astro's framework-generated script hashes.
-server.on('request', (request, response) => {
+const ready = frontendServer(listener, (request, response) => {
   for (const [name, value] of Object.entries(responseSecurityHeaders(true)))
     response.setHeader(name, value);
+  if (blocksIndexing(config.deployment))
+    response.setHeader('X-Robots-Tag', noIndexHeader);
   response.setHeader('X-Request-Id', crypto.randomUUID());
   response.setHeader(
     'Content-Security-Policy',
@@ -44,33 +76,24 @@ server.on('request', (request, response) => {
   const fail = (status: number, message: string) => {
     response.writeHead(status, {
       'Content-Type': 'text/plain; charset=utf-8',
-      'X-Robots-Tag': 'noindex, nofollow',
+      'X-Robots-Tag': noIndexHeader,
     });
     response.end(message);
   };
-  try {
-    const authority = request.headers.host;
-    if (!authority || /[%\\\s/@?#]/.test(authority)) throw new Error();
-    const origin = new URL('https://' + authority);
-    if (
-      !origin.hostname ||
-      origin.username ||
-      origin.password ||
-      origin.pathname !== '/' ||
-      !request.url?.startsWith('/') ||
-      request.url.startsWith('//')
+  if (
+    !authorizeFrontendRequest(
+      request,
+      response,
+      listener,
+      ready(),
+      (host) => !pilots || host === accountHost || pilots.has(host),
     )
-      throw new Error();
-  } catch {
-    fail(400, 'Invalid request authority.');
+  )
     return;
-  }
-  if (draining) {
-    fail(503, 'Temporarily unavailable.');
-    return;
-  }
+  if (storefrontPreviewDocument(request.url!))
+    response.removeHeader('X-Frame-Options');
   try {
-    adapterHandler.call(server, request, response);
+    entry.handler(request, response);
   } catch {
     console.error(
       JSON.stringify({
@@ -84,16 +107,3 @@ server.on('request', (request, response) => {
     else response.destroy();
   }
 });
-for (const signal of ['SIGTERM', 'SIGINT'] as const)
-  process.once(signal, () => {
-    draining = true;
-    server.close();
-    server.closeIdleConnections();
-    const deadline = setTimeout(() => {
-      server.closeAllConnections();
-      process.exitCode = 1;
-    }, 30000);
-    deadline.unref();
-    void runtime.done.then(() => clearTimeout(deadline));
-  });
-await runtime.done;

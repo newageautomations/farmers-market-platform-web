@@ -403,6 +403,7 @@ export interface StorefrontAppearanceConfig {
     | 'editorial-market'
     | 'meadow'
     | 'hearth'
+    | 'pasture'
     | 'bloom';
   palette: 'sage' | 'terracotta' | 'blue' | 'charcoal';
   buttonShape: 'square' | 'soft' | 'pill';
@@ -443,6 +444,7 @@ export interface StorefrontAppearanceConfig {
     image: string;
     story: string;
   };
+  terms?: string;
   policies?: {
     version: 1;
     enabled: boolean;

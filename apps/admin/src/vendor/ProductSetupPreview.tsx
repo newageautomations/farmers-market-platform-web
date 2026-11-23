@@ -42,7 +42,7 @@ export function ProductSetupPreview({
   const base = `/vendor/products/${encodeURIComponent(id)}/setup`;
   return (
     <div className="product-editor product-setup-preview">
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="detail" {...query} retry={query.refresh} />
       {product && (
         <>
           <CommandForm
@@ -110,7 +110,12 @@ export function ProductSetupPreview({
               </Alert>
             )}
           </CommandForm>
-          <ReadState {...images} retry={images.refresh} />
+          <ReadState
+            skeleton="cards"
+            rows={1}
+            {...images}
+            retry={images.refresh}
+          />
           <HarvestProductPreview
             idPrefix="setup-preview"
             name={product.name}
@@ -139,7 +144,9 @@ export function ProductSetupPreview({
               images: (item.assetIds ?? product.assetIds ?? []).flatMap(
                 (assetId) => {
                   const asset = images.data?.find((row) => row.id === assetId);
-                  return asset ? [{ id: asset.id, preview: asset.preview }] : [];
+                  return asset
+                    ? [{ id: asset.id, preview: asset.preview }]
+                    : [];
                 },
               ),
             }))}

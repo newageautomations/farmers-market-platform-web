@@ -1,5 +1,10 @@
 ---
-import { AppError, safeError, type MarketCatalog } from '@market/api';
+import {
+  AppError,
+  safeError,
+  type MarketCatalog,
+  type MarketOccurrenceVendor,
+} from '@market/api';
 import {
   marketCatalogInputs,
   taxonomyNavigation,
@@ -7,7 +12,6 @@ import {
 import WebsitePageRegion from '../../components/WebsitePageRegion.astro';
 import HarvestShop from '../../components/home/HarvestShop.astro';
 import EditorialShopHero from '../../components/editorial-market/ShopHero.astro';
-import EditorialShopCategories from '../../components/editorial-market/ShopCategories.astro';
 import { isEditorialMarket } from '@market/theme/storefront';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { requestMarketShop } from '../../lib/shop';
@@ -16,6 +20,7 @@ import {
   marketProduct,
   marketCatalogAvailability,
   marketProductLink,
+  marketShopQuery,
   marketShopCatalog,
 } from '../../lib/market-catalog';
 import type { VendorPreorderState } from '../../lib/vendor-preorder';
@@ -24,6 +29,7 @@ const { storefront, storefrontError } = Astro.locals;
 if (storefront?.kind === 'VENDOR')
   return Astro.redirect('/products' + Astro.url.search, 302);
 Astro.response.headers.set('Cache-Control', 'private, no-store');
+const resultsOnly = Astro.request.headers.get('x-market-shop-results') === '1';
 let error = storefrontError;
 let preorder: VendorPreorderState = {
   occurrences: [],
@@ -33,22 +39,37 @@ let preorder: VendorPreorderState = {
   orderOccurrence: undefined,
 };
 let catalog: MarketCatalog | undefined;
-const query = new URLSearchParams(Astro.url.searchParams);
+let taxonomy: MarketCatalog['taxonomy'] | undefined;
+let vendors: MarketOccurrenceVendor[] = [];
+const query = marketShopQuery(Astro.url.searchParams);
 // Accept links using the vendor Harvest sort values as well.
 if (query.get('sort') === 'name' || query.get('sort') === 'default')
   query.set('sort', 'NAME_ASC');
 let { page, options } = marketCatalogInputs(new URLSearchParams());
 try {
   ({ page, options } = marketCatalogInputs(query));
+  query.set('sort', options.sort ?? 'NAME_ASC');
   if (storefront?.kind !== 'MARKET') throw new AppError('not-found');
   preorder = await marketPreorder(Astro);
   if (preorder.selected) {
-    query.set('occurrence', preorder.selected.id);
+    const occurrence = preorder.selected.id;
+    query.set('occurrence', occurrence);
     const api = requestMarketShop(Astro);
-    catalog = await marketShopCatalog(
-      (next) => api.catalog(preorder.selected!.id, next),
-      options,
-    );
+    const [results, directory, categoryOptions] = await Promise.all([
+      marketShopCatalog((next) => api.catalog(occurrence, next), options),
+      resultsOnly ? [] : api.vendors(occurrence),
+      !resultsOnly && options.vendorIds?.length
+        ? api.catalog(occurrence, {
+            ...options,
+            vendorIds: [],
+            skip: 0,
+            take: 1,
+          })
+        : undefined,
+    ]);
+    catalog = results;
+    vendors = directory;
+    taxonomy = (categoryOptions ?? catalog).taxonomy;
     preorder.availability = marketCatalogAvailability(catalog.items);
   }
 } catch (value) {
@@ -62,11 +83,8 @@ if (error)
       : 503;
 const items = catalog?.items.map(marketProduct) ?? [];
 const category = query.get('category') ?? '';
-const categories = catalog
-  ? taxonomyNavigation(
-      catalog.taxonomy,
-      storefront?.appearance?.categoryPresentation,
-    )
+const categories = taxonomy
+  ? taxonomyNavigation(taxonomy, storefront?.appearance?.categoryPresentation)
   : [];
 const sellerNames = Object.fromEntries(
   catalog?.items.map((item) => [item.productId, item.vendorName]) ?? [],
@@ -87,36 +105,33 @@ const link = (next: { category?: string; page?: number }) => {
   if (next.page && next.page > 1) params.set('page', String(next.page));
   return `/shop?${params}`;
 };
-// Editorial Market shares the vendor shop artwork and category strip.
+// Editorial Market keeps its shop artwork above the shared market catalog.
 const appearance = storefront?.appearance;
 const editorial = isEditorialMarket(appearance)
   ? appearance.template.settings
   : undefined;
-const ShopWrapper = editorial ? 'div' : Fragment;
-const wrapperProps = editorial
-  ? {
-      class: 'em-shop em-market-shop',
-      'data-template': 'editorial-market-shop',
-    }
-  : {};
+const ShopLayout = resultsOnly ? Fragment : SiteLayout;
+const ShopWrapper = editorial && !resultsOnly ? 'div' : Fragment;
+const wrapperProps =
+  editorial && !resultsOnly
+    ? {
+        class: 'em-shop em-market-shop',
+        'data-template': 'editorial-market-shop',
+      }
+    : {};
 ---
 
-<SiteLayout context={storefront} path="/shop" title="Shop" noindex={!!error}>
+<ShopLayout context={storefront} path="/shop" title="Shop" noindex={!!error}>
   <ShopWrapper {...wrapperProps}>
-    {editorial && <EditorialShopHero settings={editorial} />}
-    <WebsitePageRegion context={storefront} page="products" region="before" />
-    {editorial && !error && categories.length > 0 && (
-      <EditorialShopCategories
-        settings={editorial}
-        categories={categories}
-        category={category}
-        link={link}
-      />
+    {!resultsOnly && editorial && <EditorialShopHero settings={editorial} />}
+    {!resultsOnly && (
+      <WebsitePageRegion context={storefront} page="products" region="before" />
     )}
     <HarvestShop
       context={storefront}
       error={error}
       market
+      resultsOnly={resultsOnly}
       editorialChrome={!!editorial}
       items={items}
       visible={items}
@@ -126,7 +141,7 @@ const wrapperProps = editorial
       category={category}
       search={options.search ?? ''}
       categories={categories}
-      taxonomy={catalog?.taxonomy}
+      marketVendors={vendors}
       query={query}
       preorder={preorder}
       link={link}
@@ -141,4 +156,4 @@ const wrapperProps = editorial
       ]}
     />
   </ShopWrapper>
-</SiteLayout>
+</ShopLayout>

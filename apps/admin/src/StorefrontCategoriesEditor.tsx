@@ -11,7 +11,8 @@ import {
   ErrorState,
   Field,
   SelectField,
-  Spinner,
+  LoadingSkeleton,
+  useLoadGate,
 } from '@market/ui';
 import { disclosureClassName } from '@market/ui/presentation';
 import type { StorefrontAppearance } from '@market/theme/storefront';
@@ -40,11 +41,11 @@ export function StorefrontCategoriesEditor({
   const [error, setError] = useState<ReturnType<typeof safeError>>();
   const [selected, setSelected] = useState('');
   const [retry, setRetry] = useState(0);
+  const gated = useLoadGate();
   useEffect(() => {
     let active = true;
     if (api.hierarchy)
-      void api
-        .hierarchy()
+      void gated(api.hierarchy())
         .then((rows) => {
           if (active) {
             setNodes(rows);
@@ -57,7 +58,7 @@ export function StorefrontCategoriesEditor({
     return () => {
       active = false;
     };
-  }, [api, retry]);
+  }, [api, retry, gated]);
   if (!api.hierarchy) return null;
   const flatten = (
     rows: ProductCategoryNode[],
@@ -132,11 +133,6 @@ export function StorefrontCategoriesEditor({
       </summary>
       {(!onToggle || open) && (
         <WebsiteInspectorContent>
-          <p>
-            Order, visibility and images apply to this website. Hidden and empty
-            categories stay available here. Hiding navigation never unpublishes
-            products.
-          </p>
           {error && (
             <>
               <ErrorState error={error} />
@@ -152,7 +148,9 @@ export function StorefrontCategoriesEditor({
               </Button>
             </>
           )}
-          {!nodes && !error && <Spinner />}
+          {!nodes && !error && (
+            <LoadingSkeleton variant="table" label="Loading categories" />
+          )}
           {category && settings && (
             <fieldset disabled={busy}>
               <SelectField

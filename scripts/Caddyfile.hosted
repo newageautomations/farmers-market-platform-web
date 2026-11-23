@@ -1,0 +1,95 @@
+{
+	admin off
+	auto_https off
+	persist_config off
+	grace_period 30s
+	log default {
+		exclude http.log.error http.handlers.reverse_proxy
+	}
+	servers {
+		timeouts {
+			read_header 15s
+			idle 30s
+		}
+	}
+}
+
+(market_upstream) {
+	reverse_proxy {args[0]} {
+		header_up -Forwarded
+		header_up -X-Forwarded-*
+		header_up -X-Real-IP
+		header_up -X-Market-SSR
+		header_up -X-Market-Storefront-Host
+		header_up -X-Account-Bridge
+		header_up -X-Account-Origin
+		header_up -X-Storefront-Bridge
+		header_up -CF-*
+		header_up X-Market-Ingress {args[1]}
+		header_up X-Market-Client-IP {http.request.header.CF-Connecting-IP}
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 30s
+		}
+	}
+}
+
+http://:{$GATEWAY_PORT:8080} {
+	bind 127.0.0.1
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		Strict-Transport-Security "max-age=31536000"
+		?Cache-Control "private, no-store"
+	}
+	@staging expression `"{$DEPLOYMENT_ENV:staging}" == "staging"`
+	header @staging ?X-Robots-Tag "noindex, nofollow"
+	@probe {
+		host healthcheck.railway.app
+		method GET HEAD
+		path /health/live /health/ready
+		expression {http.request.uri} in ['/health/live', '/health/ready']
+	}
+	@tunnel {
+		header X-Forwarded-Proto https
+		header CF-Connecting-IP *
+		header Cf-Access-Jwt-Assertion *
+	}
+	route {
+		handle @probe {
+			header Content-Type application/json
+			respond /health/live `{"status":"live"}`
+			respond `{"status":"ready"}`
+		}
+		handle @tunnel {
+			@admin host {$MARKET_ADMIN_HOST}
+			handle @admin {
+				import market_upstream {$MARKET_ADMIN_UPSTREAM} {$MARKET_ADMIN_INGRESS_KEY}
+			}
+			@api host {$MARKET_API_HOST}
+			handle @api {
+				@graphql {
+					method GET POST OPTIONS
+					path /admin-api
+				}
+				@assets {
+					method GET HEAD
+					path /assets/*
+				}
+				handle @graphql {
+					import market_upstream {$MARKET_API_UPSTREAM} {$MARKET_API_INGRESS_KEY}
+				}
+				handle @assets {
+					import market_upstream {$MARKET_API_UPSTREAM} {$MARKET_API_INGRESS_KEY}
+				}
+				respond 404
+			}
+			@astro host {$MARKET_ACCOUNT_HOST} {$STOREFRONT_PILOT_HOSTS}
+			handle @astro {
+				import market_upstream {$MARKET_STOREFRONT_UPSTREAM} {$MARKET_STOREFRONT_INGRESS_KEY}
+			}
+			respond 421
+		}
+		respond 403
+	}
+}

@@ -1,4 +1,9 @@
-import type { MapDefinition, MapElement, SpaceDetails } from '@market/api';
+import type {
+  MapBounds,
+  MapDefinition,
+  MapElement,
+  SpaceDetails,
+} from '@market/api';
 
 export interface Point {
   x: number;
@@ -89,6 +94,110 @@ export function bounds(e: MapElement) {
     width: w,
     height: h,
   };
+}
+export type { MapBounds };
+/** Largest coordinate magnitude the backend accepts for map geometry. */
+export const MAP_COORDINATE_LIMIT = 100000;
+export function contentBounds(elements: MapElement[]): MapBounds | null {
+  if (!elements.length) return null;
+  const b = elements.map(bounds),
+    x = Math.min(...b.map((e) => e.x)),
+    y = Math.min(...b.map((e) => e.y));
+  return {
+    x,
+    y,
+    width: Math.max(...b.map((e) => e.x + e.width)) - x,
+    height: Math.max(...b.map((e) => e.y + e.height)) - y,
+  };
+}
+const pad = (b: MapBounds, by: number): MapBounds => ({
+  x: b.x - by,
+  y: b.y - by,
+  width: b.width + by * 2,
+  height: b.height + by * 2,
+});
+/** Default bounds: the content plus a margin of a quarter of its larger side
+ *  (at least 20 ft), or a 200 ft square around the origin for an empty area. */
+export function autoMapBounds(
+  elements: MapElement[],
+  pixelsPerFoot: number,
+): MapBounds {
+  const content = contentBounds(elements);
+  if (!content) {
+    const half = 100 * pixelsPerFoot;
+    return { x: -half, y: -half, width: half * 2, height: half * 2 };
+  }
+  return pad(
+    content,
+    Math.max(
+      20 * pixelsPerFoot,
+      Math.max(content.width, content.height) * 0.25,
+    ),
+  );
+}
+/**
+ * The rectangle the viewport is held to. Viewers get the area's custom bounds
+ * or the automatic default. Editors also keep every object reachable, so a
+ * custom rectangle grows to include content placed outside it.
+ */
+export function viewBounds(
+  custom: MapBounds | undefined,
+  elements: MapElement[],
+  pixelsPerFoot: number,
+  editing = false,
+): MapBounds {
+  if (!custom) return autoMapBounds(elements, pixelsPerFoot);
+  const content = editing ? contentBounds(elements) : null;
+  if (!content) return custom;
+  const x = Math.min(custom.x, content.x - 10 * pixelsPerFoot),
+    y = Math.min(custom.y, content.y - 10 * pixelsPerFoot),
+    right = Math.max(
+      custom.x + custom.width,
+      content.x + content.width + 10 * pixelsPerFoot,
+    ),
+    bottom = Math.max(
+      custom.y + custom.height,
+      content.y + content.height + 10 * pixelsPerFoot,
+    );
+  return { x, y, width: right - x, height: bottom - y };
+}
+/**
+ * Holds a viewport to `limit`. With `fill` (viewers) the rectangle always
+ * covers the screen, so nothing outside it is ever shown. Without it
+ * (editors) the whole rectangle can be zoomed out to fit with a little room,
+ * and is never panned out of view. On each axis where the rectangle is larger
+ * than the screen, the screen stays inside it; where smaller, it stays fully
+ * on screen.
+ */
+export function constrainView(
+  v: Viewport,
+  size: { width: number; height: number },
+  limit: MapBounds | null,
+  fill = false,
+): Viewport {
+  if (!limit || size.width <= 1 || size.height <= 1) return v;
+  const ratios = [
+      size.width / Math.max(limit.width, 1),
+      size.height / Math.max(limit.height, 1),
+    ],
+    min = clamp(
+      fill ? Math.max(...ratios) : Math.min(...ratios) * 0.8,
+      0.05,
+      8,
+    );
+  let next = v;
+  if (next.scale < min)
+    next = zoomAt(next, { x: size.width / 2, y: size.height / 2 }, min);
+  const s = next.scale,
+    axis = (value: number, start: number, length: number, screen: number) => {
+      const a = -start * s,
+        b = screen - (start + length) * s;
+      // `+ 0` turns -0 into 0 so unchanged views compare equal.
+      return clamp(value, Math.min(a, b), Math.max(a, b)) + 0;
+    };
+  const x = axis(next.x, limit.x, limit.width, size.width),
+    y = axis(next.y, limit.y, limit.height, size.height);
+  return x === v.x && y === v.y && s === v.scale ? v : { x, y, scale: s };
 }
 export function fit(
   elements: MapElement[],
@@ -580,6 +689,47 @@ export function syncBooths(
     return next;
   });
   return { ...d, definition: { ...d.definition, elements }, spaces };
+}
+/**
+ * Thins a freehand path to at most `limit` points without dropping its ends,
+ * so a long stroke keeps following the cursor instead of stopping at the
+ * saved-path point cap. Douglas-Peucker with a growing tolerance keeps the
+ * corners; a stride fallback guarantees the bound.
+ */
+export function compactPath(points: Point[], limit: number): Point[] {
+  if (points.length <= limit) return points;
+  for (let tolerance = 1; tolerance <= 4096; tolerance *= 2) {
+    const keep = new Uint8Array(points.length);
+    keep[0] = keep[points.length - 1] = 1;
+    const pending: Array<[number, number]> = [[0, points.length - 1]];
+    while (pending.length) {
+      const [first, last] = pending.pop()!;
+      const a = points[first]!,
+        b = points[last]!,
+        dx = b.x - a.x,
+        dy = b.y - a.y,
+        length = dx * dx + dy * dy || 1;
+      let farthest = -1,
+        distance = tolerance;
+      for (let i = first + 1; i < last; i++) {
+        const p = points[i]!,
+          t = clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / length, 0, 1),
+          d = Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
+        if (d > distance) {
+          distance = d;
+          farthest = i;
+        }
+      }
+      if (farthest !== -1) {
+        keep[farthest] = 1;
+        pending.push([first, farthest], [farthest, last]);
+      }
+    }
+    const kept = points.filter((_, i) => keep[i]);
+    if (kept.length <= limit) return kept;
+  }
+  const stride = Math.ceil((points.length - 1) / (limit - 1));
+  return points.filter((_, i) => i % stride === 0 || i === points.length - 1);
 }
 export function pathElement(
   points: Point[],

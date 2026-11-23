@@ -131,36 +131,62 @@ function Editor({ initial = defaultPolicies }: { initial?: PoliciesConfig }) {
     />
   );
 }
-const openManager = () =>
-  fireEvent.click(screen.getByRole('button', { name: 'Edit Policies' }));
-describe('Policies modal', () => {
-  it('uses shared Dialog, collapsed entries, exact FAQ arrows, stable editing, visibility, add focus and confirmed deletion', async () => {
+const policyRow = (container: HTMLElement, id: string) =>
+  container.querySelector(`[data-policy-id="${id}"]`)!;
+describe('Policies rail', () => {
+  it('lists policies under the Policies dropdown, reorders by dragging and edits the selected policy', async () => {
     const { container } = render(<Editor />);
-    expect(screen.queryByLabelText('Policy Content')).not.toBeInTheDocument();
-    openManager();
-    const manager = screen.getByRole('dialog', { name: 'Manage Policies' });
-    expect(manager).toHaveClass('ui-dialog');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Policy Content')).not.toBeInTheDocument();
     const first = defaultPolicies.policies[0]!;
+    const second = defaultPolicies.policies[1]!;
+    const row = policyRow(container, first.id);
+    expect(row.closest('.website-block-hierarchy')).not.toBeNull();
+    // Drag the first policy below the second.
+    const grip = screen.getByRole('button', {
+      name: `Drag to reorder policy: ${first.title}`,
+    });
+    expect(grip).toHaveAttribute('draggable', 'true');
+    const target = policyRow(container, second.id);
+    vi.spyOn(target, 'getBoundingClientRect').mockReturnValue({
+      top: 0,
+      height: 20,
+    } as DOMRect);
+    const dataTransfer = {
+      setData: vi.fn(),
+      effectAllowed: '',
+      dropEffect: '',
+    };
+    fireEvent.dragStart(grip, { dataTransfer });
+    fireEvent.dragOver(target, { dataTransfer, clientY: 15 });
+    fireEvent.drop(target, { dataTransfer, clientY: 15 });
     expect(
-      screen.getByRole('button', { name: `Move policy up: ${first.title}` }),
-    ).toBeDisabled();
-    const row = container.querySelector(`[data-policy-id="${first.id}"]`)!;
-    expect(
-      row.querySelector('.story-editor-reorder')?.nextElementSibling?.tagName,
-    ).toBe('DETAILS');
+      Array.from(container.querySelectorAll('[data-policy-id]')).map((node) =>
+        node.getAttribute('data-policy-id'),
+      ),
+    ).toEqual([
+      second.id,
+      first.id,
+      ...defaultPolicies.policies.slice(2).map((p) => p.id),
+    ]);
+    // Keyboard reorder on the grip moves it back up.
+    fireEvent.keyDown(grip, { key: 'ArrowUp' });
+    expect(container.querySelector('[data-policy-id]')).toHaveAttribute(
+      'data-policy-id',
+      first.id,
+    );
     fireEvent.click(screen.getByRole('button', { name: first.title }));
     const content = 'Paragraph\n\n' + 'Long policy text. '.repeat(600);
     fireEvent.change(screen.getByLabelText('Policy Content'), {
       target: { value: content },
     });
-    fireEvent.click(screen.getByLabelText('Show policy'));
-    fireEvent.click(
-      screen.getByRole('button', { name: `Move policy down: ${first.title}` }),
-    );
-    expect(container.querySelectorAll('[data-policy-id]')[1]).toBe(row);
-    expect(screen.getByLabelText('Policy Content')).toHaveValue(content);
-    expect(screen.getByLabelText('Show policy')).not.toBeChecked();
+    fireEvent.click(screen.getByRole('switch', { name: 'Show policy' }));
+    expect(
+      screen.getByRole('switch', { name: 'Show policy' }),
+    ).not.toBeChecked();
+    expect(
+      screen.getByRole('button', { name: `${first.title} (hidden)` }),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Delete Policy' }));
     expect(
       screen.getByRole('dialog', { name: 'Delete this policy?' }),
@@ -185,22 +211,6 @@ describe('Policies modal', () => {
       'maxlength',
       '20000',
     );
-    fireEvent.change(screen.getByLabelText('Policy Title'), {
-      target: { value: 'New policy' },
-    });
-    fireEvent.change(screen.getByLabelText('Policy Content'), {
-      target: { value: 'Retained content' },
-    });
-    fireEvent.click(within(manager).getByRole('button', { name: 'Close' }));
-    await waitFor(() =>
-      expect(
-        screen.queryByRole('dialog', { name: 'Manage Policies' }),
-      ).not.toBeInTheDocument(),
-    );
-    openManager();
-    expect(screen.getByLabelText('Policy Content')).toHaveValue(
-      'Retained content',
-    );
   });
   it('disables adding at 20 and shows unsafe link feedback without discarding text', () => {
     render(
@@ -215,9 +225,7 @@ describe('Policies modal', () => {
         }}
       />,
     );
-    openManager();
     expect(screen.getByRole('button', { name: 'Add Policy' })).toBeDisabled();
-    expect(screen.getByText(/Maximum 20/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Policy 0' }));
     fireEvent.change(screen.getByLabelText('Policy Content'), {
       target: { value: '[Bad](javascript:alert(1))' },
@@ -258,6 +266,7 @@ describe('Policies modal', () => {
           }),
       ),
     };
+    const first = defaultPolicies.policies[0]!;
     render(<StorefrontAppearanceSettings market={false} api={api} />);
     fireEvent.change(await screen.findByLabelText('Preview page'), {
       target: { value: 'policies' },
@@ -266,39 +275,16 @@ describe('Policies modal', () => {
       screen.getByRole('switch', { name: 'Enable Policies page' }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Policies' }));
-    openManager();
-    fireEvent.click(
-      screen.getByRole('button', { name: defaultPolicies.policies[0]!.title }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: first.title }));
     fireEvent.change(screen.getByLabelText('Policy Content'), {
       target: { value: 'Vendor authored policy' },
     });
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Manage Policies' })).getByRole(
-        'button',
-        { name: 'Close' },
-      ),
-    );
-    await waitFor(() =>
-      expect(
-        screen.queryByRole('dialog', { name: 'Manage Policies' }),
-      ).not.toBeInTheDocument(),
-    );
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    openManager();
     expect(screen.getByLabelText('Policy Content')).toHaveValue('');
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Manage Policies' })).getByRole(
-        'button',
-        { name: 'Close' },
-      ),
-    );
-    await waitFor(() =>
-      expect(
-        screen.queryByRole('dialog', { name: 'Manage Policies' }),
-      ).not.toBeInTheDocument(),
-    );
     fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect(screen.getByLabelText('Policy Content')).toHaveValue(
+      'Vendor authored policy',
+    );
     const frame = (await screen.findByTitle(
       'Actual storefront preview',
     )) as HTMLIFrameElement;
@@ -327,66 +313,29 @@ describe('Policies modal', () => {
           }),
         ),
       );
+    // Clicking a policy in the preview selects it in the rail and inspector.
+    fireEvent.click(screen.getByRole('button', { name: 'Policies' }));
+    expect(screen.queryByLabelText('Policy Content')).not.toBeInTheDocument();
     selectPolicy('policy:missing');
-    expect(
-      screen.queryByRole('dialog', { name: 'Manage Policies' }),
-    ).not.toBeInTheDocument();
-    selectPolicy(`policy:${defaultPolicies.policies[0]!.id}`);
-    expect(
-      screen.getByRole('dialog', { name: 'Manage Policies' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByLabelText('Policy Content')).not.toBeInTheDocument();
+    selectPolicy(`policy:${first.id}`);
     expect(screen.getByLabelText('Policy Content')).toHaveValue(
       'Vendor authored policy',
     );
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Manage Policies' })).getByRole(
-        'button',
-        { name: 'Close' },
-      ),
-    );
-    await waitFor(() =>
-      expect(
-        screen.queryByRole('dialog', { name: 'Manage Policies' }),
-      ).not.toBeInTheDocument(),
-    );
-    selectPolicy(`policy:${defaultPolicies.policies[0]!.id}`);
-    expect(
-      screen.getByRole('dialog', { name: 'Manage Policies' }),
-    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Delete Policy' }));
     fireEvent.click(
       within(
         screen.getByRole('dialog', { name: 'Delete this policy?' }),
       ).getByRole('button', { name: 'Delete Policy' }),
     );
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Manage Policies' })).getByRole(
-        'button',
-        { name: 'Close' },
-      ),
-    );
-    await waitFor(() =>
-      expect(
-        screen.queryByRole('dialog', { name: 'Manage Policies' }),
-      ).not.toBeInTheDocument(),
-    );
+    expect(
+      screen.queryByRole('button', { name: first.title }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    // Reopen from the sidebar after undo restores the same stable policy identity.
-    fireEvent.click(screen.getByRole('button', { name: 'Policies' }));
-    openManager();
+    // Undo restores the same stable policy identity in the rail.
+    fireEvent.click(screen.getByRole('button', { name: first.title }));
     expect(screen.getByLabelText('Policy Content')).toHaveValue(
       'Vendor authored policy',
-    );
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Manage Policies' })).getByRole(
-        'button',
-        { name: 'Close' },
-      ),
-    );
-    await waitFor(() =>
-      expect(
-        screen.queryByRole('dialog', { name: 'Manage Policies' }),
-      ).not.toBeInTheDocument(),
     );
     expect(
       screen.getByRole('button', { name: 'Publish saved changes' }),

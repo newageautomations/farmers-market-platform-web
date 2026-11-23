@@ -248,7 +248,7 @@ describe('Phase F automatic checkout lifecycle', () => {
     const card = { mount: vi.fn(), destroy: vi.fn(), on: vi.fn() };
     const client = {
       elements: () => ({ create: () => card }),
-      confirmCardSetup: vi.fn(),
+      confirmSetup: vi.fn(),
       handleNextAction: vi.fn(),
     };
     const loader = vi.fn(async () => () => client);
@@ -257,7 +257,7 @@ describe('Phase F automatic checkout lifecycle', () => {
         <StripeCheckout storefrontId="f" view={checkout} loadSdk={loader} />
       </StrictMode>,
     );
-    expect(shop).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(shop).toHaveBeenCalledTimes(1));
     await act(async () =>
       resolve({
         groupId: '3',
@@ -281,7 +281,7 @@ describe('Phase F automatic checkout lifecycle', () => {
       </StrictMode>,
     );
     expect(shop).toHaveBeenCalledTimes(1);
-    expect(client.confirmCardSetup).not.toHaveBeenCalled();
+    expect(client.confirmSetup).not.toHaveBeenCalled();
     expect(card.destroy).not.toHaveBeenCalled();
     expect(
       screen.queryByRole('button', {

@@ -111,7 +111,7 @@ export function OccurrenceMap({
       }
     >
       <div className="occurrence-map-body">
-        <ReadState {...state} retry={state.refresh} />
+        <ReadState skeleton="cards" rows={1} {...state} retry={state.refresh} />
         {error && <ErrorState error={error} />}
         {layout && canAssign && (
           <p className="markets-muted">

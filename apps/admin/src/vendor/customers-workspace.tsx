@@ -1,6 +1,12 @@
 import { MarketsPagination as Pagination } from './MarketsPagination';
 import { useCallback, useMemo, useState, type MouseEvent } from 'react';
-import { Badge, EmptyState, Field, UtilityIcon } from '@market/ui';
+import {
+  Badge,
+  EmptyState,
+  Field,
+  UtilityIcon,
+  InlineSkeleton,
+} from '@market/ui';
 import {
   FarmstandButton,
   FarmstandIcon,
@@ -341,7 +347,7 @@ export function CustomersWorkspace({ service }: { service: VendorService }) {
                           ) : !row.purchaseCount ? (
                             'No orders'
                           ) : previews.loading ? (
-                            'Loading…'
+                            <InlineSkeleton />
                           ) : history?.error ? (
                             'Unavailable'
                           ) : (
@@ -443,13 +449,15 @@ export function CustomersWorkspace({ service }: { service: VendorService }) {
                             Last order
                           </dt>
                           <dd>
-                            {latest
-                              ? orderDate(latest.purchasedAt)
-                              : previews.loading
-                                ? 'Loading…'
-                                : preview?.error
-                                  ? 'Unavailable'
-                                  : 'No orders'}
+                            {latest ? (
+                              orderDate(latest.purchasedAt)
+                            ) : previews.loading ? (
+                              <InlineSkeleton />
+                            ) : preview?.error ? (
+                              'Unavailable'
+                            ) : (
+                              'No orders'
+                            )}
                           </dd>
                         </div>
                       </dl>
@@ -475,6 +483,8 @@ export function CustomersWorkspace({ service }: { service: VendorService }) {
                         </FarmstandLink>
                       </div>
                       <ReadState
+                        skeleton="table"
+                        rows={2}
                         loading={previews.loading}
                         error={preview?.error}
                         retry={previews.refresh}

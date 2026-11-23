@@ -3451,12 +3451,11 @@ html[data-storefront-theme='editorial-market']
   white-space: pre-line;
 }
 
-/* Market shop: the editorial artwork and category strip from the vendor shop.
+/* Market shop: editorial artwork above the shared filters and catalog.
    The header owns market date selection wherever its selector is visible. */
 .em-market-shop > .vendor-shop {
   width: min(100% - 3rem, 88rem);
   margin-inline: auto;
-  grid-template-columns: minmax(0, 1fr);
   padding-block: 1.3rem 4rem;
   border-top: 1px solid rgb(77 91 57 / 12%);
 }

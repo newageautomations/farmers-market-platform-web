@@ -32,6 +32,115 @@
   flex-shrink: 0;
   margin: 0;
 }
+.market-shop-filter-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.market-shop-filter-form {
+  display: grid;
+  gap: 0.375rem;
+  margin-block-start: 0.75rem;
+}
+.market-shop-filter-form fieldset {
+  display: grid;
+  gap: inherit;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
+.market-shop-filter-form :is(fieldset, [data-market-shop-clear])[hidden] {
+  display: none;
+}
+/* Category counts sit at the right edge of each option, vertically centred,
+   while a long name wraps beside them. */
+.market-shop-filter-form .market-shop-category-name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.market-shop-filter-form .market-shop-category-count {
+  flex: none;
+  align-self: center;
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+}
+/* A parent category row: its label selects the whole category; the
+   disclosure summary is only the chevron box on the right, which opens the
+   subcategories below the row. */
+.market-shop-category-group {
+  --market-shop-row-height: 2.5rem;
+  --market-shop-toggle-width: 2.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--market-shop-toggle-width);
+  column-gap: 0.375rem;
+  font-size: 0.875rem;
+}
+.market-shop-category-group > .market-shop-category-parent {
+  grid-area: 1 / 1;
+  align-self: start;
+  box-sizing: border-box;
+  min-height: var(--market-shop-row-height);
+}
+.market-shop-category-group > .market-shop-category-disclosure {
+  --ui-disclosure-border-width: 0;
+  --ui-disclosure-background: transparent;
+  --ui-disclosure-summary-padding: 0;
+  --ui-disclosure-content-padding: 0.5rem;
+  grid-area: 1 / 1 / auto / -1;
+  margin: 0;
+}
+.market-shop-category-group > .market-shop-category-disclosure > summary {
+  position: relative;
+  box-sizing: border-box;
+  width: var(--market-shop-toggle-width);
+  min-height: var(--market-shop-row-height);
+  margin-inline-start: auto;
+  justify-content: center;
+  border: 1px solid var(--ui-disclosure-border-color, #d5dfd8);
+}
+/* Centred by construction, whatever else sits in the summary. */
+.market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary::after {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+.market-shop-category-group
+  > .market-shop-category-disclosure
+  > .ui-disclosure-content {
+  gap: 0.375rem;
+  margin-block-start: 0.375rem;
+  border: 1px solid var(--ui-disclosure-border-color, #d5dfd8);
+  border-radius: var(--ui-disclosure-radius, 8px);
+}
+/* Where the details content box is styleable, the disclosure joins the row's
+   grid so the chevron button stretches to the label's height when a long
+   category name wraps. Other browsers keep the fixed-height layout above. */
+@supports selector(::details-content) {
+  .market-shop-category-group > .market-shop-category-disclosure {
+    display: contents;
+  }
+  .market-shop-category-group > .market-shop-category-parent {
+    align-self: stretch;
+    min-height: 0;
+  }
+  .market-shop-category-group > .market-shop-category-disclosure > summary {
+    grid-area: 1 / 2;
+    width: auto;
+    min-height: 0;
+    margin: 0;
+  }
+  .market-shop-category-group
+    > .market-shop-category-disclosure::details-content {
+    grid-area: 2 / 1 / auto / -1;
+  }
+}
+.market-shop-filter-form [data-market-shop-clear] {
+  justify-self: start;
+  margin-block-start: 0.5rem;
+}
 .shop-products .product-card-link:is(:hover, :focus-visible) {
   text-decoration: none;
 }

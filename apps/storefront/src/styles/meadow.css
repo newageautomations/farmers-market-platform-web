@@ -1487,7 +1487,8 @@ html[data-storefront-theme='meadow'] {
   color: var(--mw-muted);
   font-size: 0.93rem;
 }
-.meadow-site .shop-market-banner .shop-market-picker > .button.ui-button {
+.meadow-site .shop-market-banner .shop-market-picker > .button.ui-button,
+.meadow-site .market-date-selector .shop-market-picker > .button.ui-button {
   --button-fill: var(--mw-paper);
   --button-ink: var(--mw-ink);
   --button-edge: transparent;
@@ -1530,6 +1531,10 @@ html[data-storefront-theme='meadow'] {
 .meadow-site .shop-date-empty .shop-market-picker > .button.ui-button::before,
 .meadow-site
   .shop-market-banner
+  .shop-market-picker
+  > .button.ui-button::before,
+.meadow-site
+  .market-date-selector
   .shop-market-picker
   > .button.ui-button::before {
   content: '';

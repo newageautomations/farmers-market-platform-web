@@ -79,7 +79,12 @@ try {
   assert.equal(new URL(ready.endpoint).hostname, '127.0.0.1');
   assert.match(ready.database, /^vendure_test_checkout_/);
   const build = child(
-    [join(frontend, 'node_modules/astro/bin/astro.mjs'), 'build'],
+    [
+      '--import',
+      join(frontend, 'scripts/frontend-build-environment.mjs'),
+      join(frontend, 'node_modules/astro/bin/astro.mjs'),
+      'build',
+    ],
     join(frontend, 'apps/storefront'),
     { FRONTEND_FIXTURE_MODE: 'false' },
   );

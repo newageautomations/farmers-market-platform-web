@@ -183,7 +183,7 @@ function ScheduleDialog({
                   dates belong to your vendor only.
                 </p>
               </div>
-              <ReadState {...query} retry={query.refresh} />
+              <ReadState skeleton="spinner" {...query} retry={query.refresh} />
               {query.data && (
                 <CommandForm
                   embedded
@@ -248,7 +248,9 @@ function ScheduleDialog({
                     )}
                     {chosen && (
                       <p className="reward-field-help">
-                        {chosen.venue}{' \u00b7 '}{chosen.timezone}
+                        {chosen.venue}
+                        {' \u00b7 '}
+                        {chosen.timezone}
                       </p>
                     )}
                   </div>
@@ -389,7 +391,9 @@ export function EditVendorMarketDate({
           busy={busy}
           onClose={() => setOpen(undefined)}
         >
-          {open === 'edit' && <ReadState {...query} retry={query.refresh} />}
+          {open === 'edit' && (
+            <ReadState skeleton="spinner" {...query} retry={query.refresh} />
+          )}
           {(open === 'cancel' || query.data) && (
             <CommandForm
               title="Market date"

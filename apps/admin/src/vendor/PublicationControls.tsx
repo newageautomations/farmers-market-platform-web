@@ -58,7 +58,7 @@ export function PublicationControls({
   };
   return (
     <>
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="detail" rows={1} {...query} retry={query.refresh} />
       {query.data && (
         <Badge tone={vendorStatusTone('publication', query.data.state)}>
           {query.data.state.replaceAll('_', ' ').toLowerCase()}
@@ -80,7 +80,12 @@ export function PublicationControls({
               submitLabel="Publish"
             >
               <p>Publish this approved listing to its Market.</p>
-              <ReadState {...classification} retry={classification.refresh} />
+              <ReadState
+                skeleton="detail"
+                rows={1}
+                {...classification}
+                retry={classification.refresh}
+              />
               {classification.data === false && (
                 <p>
                   Select a valid leaf category in the product editor before

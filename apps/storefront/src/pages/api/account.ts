@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { apiRequestAddress } from '../../lib/private-api';
 import { createHash } from 'node:crypto';
 import { boundedBody } from '@market/config';
 import {
@@ -62,7 +63,7 @@ export const POST: APIRoute = async (context) => {
     if (JSON.stringify(Object.fromEntries(form)).length > 4096)
       throw new Error('Denied');
     const boundary = createHash('sha256')
-      .update(context.clientAddress)
+      .update(apiRequestAddress.getStore() ?? context.clientAddress)
       .digest('hex');
     const central =
       context.cookies.get('platform-unified-account')?.value ?? '';
@@ -360,7 +361,7 @@ export const POST: APIRoute = async (context) => {
             email: form.get('email') ?? '',
             password: form.get('password') ?? '',
             boundary: createHash('sha256')
-              .update(context.clientAddress)
+              .update(apiRequestAddress.getStore() ?? context.clientAddress)
               .digest('hex'),
           });
           if (form.get('principal')) {

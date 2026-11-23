@@ -36,7 +36,8 @@ describe('Hearth market theme', () => {
   it('is offered to markets only, beside Meadow', () => {
     expect(storefrontThemes.hearth.available).toBe(true);
     expect(marketStorefrontThemes).toContain('hearth');
-    expect(marketOnlyStorefrontThemes).toEqual(['meadow', 'hearth']);
+    expect(marketOnlyStorefrontThemes).toContain('hearth');
+    expect(marketOnlyStorefrontThemes).toContain('meadow');
   });
 
   it('stores its homepage in the Harvest market contract', () => {

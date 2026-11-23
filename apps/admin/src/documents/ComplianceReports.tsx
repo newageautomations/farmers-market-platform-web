@@ -377,7 +377,12 @@ export function ComplianceReports({
                 <Button type="submit">Apply</Button>
               </div>
             </form>
-            <ReadState {...events} retry={events.refresh} />
+            <ReadState
+              skeleton="table"
+              rows={3}
+              {...events}
+              retry={events.refresh}
+            />
             {events.data?.hasMore && (
               <Alert severity="info">
                 Showing the first 20 upcoming events. Use a date preview for
@@ -387,7 +392,7 @@ export function ComplianceReports({
           </SettingsPanel>
         </div>
       )}
-      <ReadState {...state} retry={state.refresh} />
+      <ReadState skeleton="stats" {...state} retry={state.refresh} />
       {!!error && <DocumentFeedback error={error} />}
       {state.data?.counts && (
         <MarketsSummary
@@ -939,7 +944,7 @@ function ExceptionHistory({
       onClose={onClose}
       busy={busy}
     >
-      <ReadState {...state} retry={state.refresh} />
+      <ReadState skeleton="spinner" {...state} retry={state.refresh} />
       {!!error && <DocumentFeedback error={error} />}
       {state.data && (
         <div className="documents-dialog-body">

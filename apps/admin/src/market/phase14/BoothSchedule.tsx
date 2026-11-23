@@ -18,9 +18,10 @@ import {
   ErrorState,
   Input,
   SelectField,
-  Spinner,
   Table,
   Textarea,
+  LoadingSkeleton,
+  useLoadGate,
 } from '@market/ui';
 import { MarketDialog, date } from '../presentation';
 import { Control } from './common';
@@ -78,6 +79,7 @@ export function BoothSchedule({
     through >= from &&
     through <= latestDate,
   );
+  const gated = useLoadGate();
   useEffect(() => {
     let current = true;
     setLoading(true);
@@ -88,8 +90,7 @@ export function BoothSchedule({
       setLoading(false);
       return;
     }
-    api
-      .read('SCHEDULE', undefined, { mode: 'SCHEDULE', from, through })
+    gated(api.read('SCHEDULE', undefined, { mode: 'SCHEDULE', from, through }))
       .then((d) => {
         if (current) setData(d);
       })
@@ -102,7 +103,7 @@ export function BoothSchedule({
     return () => {
       current = false;
     };
-  }, [api, from, through, revision, validRange]);
+  }, [api, from, through, revision, validRange, gated]);
   const updated = useCallback(() => refresh((n) => n + 1), []);
   const occurrences = data?.occurrences ?? [];
   const booths = (data?.physicalBooths ?? []).filter(
@@ -220,7 +221,7 @@ export function BoothSchedule({
       </Control>
       {error && <ErrorState error={error} />}
       {loading ? (
-        <Spinner label="Loading booth schedule" />
+        <LoadingSkeleton variant="table" label="Loading booth schedule" />
       ) : (
         data && (
           <>

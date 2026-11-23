@@ -1,0 +1,3152 @@
+/*
+ * Pasture: a fresh green market storefront theme.
+ *
+ * Pasture keeps the shared Harvest market pages, commerce islands and section
+ * library, and presents them on a mint field: striped fields with trees,
+ * drifting clouds, curving sprigs, a hero photo inside a wavy green band at
+ * the window edge and a headline on a wooden sign of green slats. Everything here is scoped to the Pasture theme root or
+ * `.pasture-site`, so no other theme is affected. This file is linked only for
+ * Pasture websites.
+ */
+
+/* ------------------------------------------------------------------ tokens */
+html[data-storefront-theme='pasture'] {
+  --pw-mint: #e4f3df;
+  --pw-cream: #fbfdf6;
+  --pw-meadow: #d3ecca;
+  --pw-sun-soft: #fff3c9;
+  --pw-soil: #4a2a1f;
+  --pw-muted: #56654f;
+  --pw-leaf-deep: #2b7a37;
+  --pw-sun: #f4b400;
+  --pw-tomato: #d63f28;
+  --pw-tomato-deep: #962a17;
+  --pw-leaf: #3e9b4a;
+  --pw-bark: #8a5a3b;
+  --pw-sky: #d6eef6;
+  --pw-hill-back: #8fcb79;
+  --pw-hill-front: #5aa84b;
+  --pw-hill-middle: color-mix(
+    in srgb,
+    var(--pw-hill-back) 45%,
+    var(--pw-hill-front)
+  );
+  --pw-primary: #2a8239;
+  --pw-primary-deep: #1d6229;
+  --pw-primary-soft: #d5ecce;
+  --pw-lip: var(--pw-primary-deep);
+  --pw-shade: color-mix(in srgb, var(--pw-primary-deep) 45%, transparent);
+  --pw-line: color-mix(in srgb, var(--pw-primary) 26%, transparent);
+  --pw-radius: 18px;
+  /* The header's full height, 6px top border included. */
+  --pw-header-height: 82px;
+  --pw-edge: 2px solid color-mix(in srgb, var(--pw-primary) 20%, transparent);
+  --pw-stack: 0 10px 24px -14px var(--pw-shade);
+  --pw-stack-lift: 0 20px 34px -16px var(--pw-shade);
+  --pw-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --pw-gutter: clamp(1rem, 4vw, 2.75rem);
+  --pw-max: 1220px;
+  --pw-wrap: min(100% - 2 * var(--pw-gutter), var(--pw-max));
+  --pw-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
+  --pw-icon-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 10c0 5-8 12-8 12s-8-7-8-12a8 8 0 0 1 16 0z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E");
+  --pw-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 4.5 4.5L19 7'/%3E%3C/svg%3E");
+  --pw-icon-bag: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z'/%3E%3Cpath d='M3 6h18M16 10a4 4 0 0 1-8 0'/%3E%3C/svg%3E");
+  --pw-icon-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M8 3v4M16 3v4M3 10h18'/%3E%3C/svg%3E");
+  --pw-icon-x: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+  --pw-icon-dash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
+  --pw-icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3'/%3E%3C/svg%3E");
+  --pw-icon-store: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 10v10h16V10M3 10l2-6h14l2 6a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0zM10 20v-5h4v5'/%3E%3C/svg%3E");
+  /* The theme's own palette replaces the generic storefront presets. */
+  --brand-primary: var(--pw-primary) !important;
+  --brand-secondary: var(--pw-primary-deep) !important;
+  --brand-accent: var(--pw-sun) !important;
+  --brand-background: var(--pw-mint) !important;
+  --brand-surface: var(--pw-cream) !important;
+  --brand-foreground: var(--pw-soil) !important;
+  --brand-muted: var(--pw-muted) !important;
+  --brand-on-primary: #ffffff !important;
+  --brand-on-secondary: #ffffff !important;
+  --storefront-card-radius: var(--pw-radius) !important;
+  --ui-input-focus-background: var(--pw-cream);
+  color: var(--pw-soil);
+  background: var(--pw-mint);
+  font-family: var(--font-body);
+  scroll-padding-top: 6rem;
+}
+html[data-storefront-theme='pasture'] body {
+  background: var(--pw-mint);
+}
+/* The Colors setting chooses the leading color. Every choice is dark enough
+   for white button text. Sage, the platform default, is Pasture's field
+   green. */
+html[data-storefront-theme='pasture'][data-theme-palette='terracotta'] {
+  --pw-primary: #b8432c;
+  --pw-primary-deep: #8a2f1d;
+  --pw-primary-soft: #f6dcd3;
+}
+html[data-storefront-theme='pasture'][data-theme-palette='blue'] {
+  --pw-primary: #2c6c9c;
+  --pw-primary-deep: #1d4c72;
+  --pw-primary-soft: #d7e7f2;
+}
+html[data-storefront-theme='pasture'][data-theme-palette='charcoal'] {
+  --pw-primary: #3d4a3f;
+  --pw-primary-deep: #262f28;
+  --pw-primary-soft: #dde3dd;
+}
+
+/* ------------------------------------------------------------------- shell */
+.pasture-site {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: clip;
+}
+.pasture-site > main {
+  flex: 1;
+  min-width: 0;
+}
+.pasture-site > main > :where(:not(.pw-home, astro-island)),
+.pasture-site > main > astro-island > *,
+.pw-home > :where(:not(.pw-bleed, astro-island)),
+.pw-home > astro-island > * {
+  width: var(--pw-wrap);
+  margin-inline: auto;
+}
+.pasture-site :is(h1, h2, h3) {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  text-wrap: balance;
+}
+.pasture-site ::selection {
+  background: var(--pw-sun);
+  color: var(--pw-soil);
+}
+.pasture-site :focus-visible {
+  outline: 3px solid var(--pw-primary-deep);
+  outline-offset: 3px;
+}
+.pw-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+/* Card-like links and the section "see all" pills carry their own hover,
+   not the text underline. */
+.pasture-site
+  :is(
+    .pw-brand,
+    .pw-menu a,
+    .pw-next,
+    .pw-category,
+    .pw-footer-name,
+    .pw-more
+  )::after {
+  content: none;
+}
+
+/* ----------------------------------------------------------------- buttons */
+.pasture-site .button.ui-button {
+  border-width: 2px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.pasture-site
+  .button.ui-button:not(.secondary, .button-tertiary, .button-icon):not(
+    .button-disclosure,
+    .button-destructive-outline,
+    .button-destructive
+  ) {
+  --button-edge: var(--pw-primary);
+  --button-hover-fill: var(--pw-primary-deep);
+  --button-hover-edge: var(--pw-primary-deep);
+  box-shadow: 0 4px 0 var(--pw-lip);
+}
+.pasture-site .button.ui-button.secondary {
+  --button-fill: var(--pw-cream);
+  --button-ink: var(--pw-primary-deep);
+  --button-edge: var(--pw-primary);
+  --button-hover-fill: var(--pw-primary-soft);
+  --button-hover-edge: var(--pw-primary);
+  --button-hover-ink: var(--pw-primary-deep);
+  box-shadow: 0 4px 0 var(--pw-line);
+}
+/* Every button rises on hover and presses down on click, whatever hover
+   style is chosen. */
+.pasture-site
+  .button.ui-button:is(:hover, :focus-visible):not(:disabled):not(
+    [aria-disabled='true']
+  ):not(.button-tertiary, .button-icon, .button-disclosure) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 var(--pw-lip);
+}
+.pasture-site
+  .button.ui-button.secondary:is(:hover, :focus-visible):not(:disabled):not(
+    [aria-disabled='true']
+  ) {
+  box-shadow: 0 6px 0 var(--pw-line);
+}
+.pasture-site
+  .button.ui-button:active:not(:disabled):not([aria-disabled='true']):not(
+    .button-tertiary,
+    .button-icon,
+    .button-disclosure
+  ) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--pw-lip);
+  transition-duration: 60ms;
+}
+.pasture-site .button.ui-button:is(.button-tertiary, .button-icon) {
+  box-shadow: none;
+}
+.pasture-site
+  .button.ui-button:is(.button-tertiary, .button-icon):is(
+    :hover,
+    :focus-visible
+  ):not(:disabled) {
+  background: var(--pw-primary-soft);
+  box-shadow: none;
+}
+.pasture-site .button.ui-button:is(.button-tertiary, .button-icon):active {
+  transform: scale(0.92);
+}
+.pasture-site .button.ui-button:disabled,
+.pasture-site .button.ui-button[aria-disabled='true'] {
+  box-shadow: none;
+}
+.pasture-site .button .farmstand-icon {
+  flex: none;
+  transition: transform 220ms var(--pw-ease);
+}
+.pasture-site .pw-button-arrow:is(:hover, :focus-visible) .farmstand-icon {
+  transform: translateX(5px);
+}
+
+/* ------------------------------------------------------------------ header */
+/* The header has no background at the top of the page, so the hero's sky
+   and leaf show through it. It turns solid once the page scrolls. */
+.pw-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background-color: transparent;
+  border-top: 6px solid var(--pw-primary);
+  transition:
+    box-shadow 260ms ease,
+    background-color 260ms ease;
+}
+.pw-header[data-scrolled] {
+  background-color: color-mix(in srgb, var(--pw-cream) 94%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 26px -18px var(--pw-shade);
+}
+/* A hero that opens the homepage (the Market Day hero too) slides up under
+   the see-through header. */
+.pw-home > .pw-hero:first-child {
+  --pw-hero-offset: var(--pw-header-height);
+  margin-top: calc(-1 * var(--pw-header-height));
+  padding-top: var(--pw-header-height);
+}
+.pw-header-inner {
+  width: var(--pw-wrap);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  min-height: 76px;
+}
+.pw-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  color: var(--pw-primary-deep);
+  font: 800 clamp(1.1rem, 1.5vw, 1.4rem) / 1.15 var(--font-heading);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+.pw-brand-name {
+  overflow-wrap: anywhere;
+}
+.pw-brand-mark,
+.pw-brand img {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  transition: transform 420ms var(--pw-ease);
+}
+.pw-brand img {
+  border-radius: 50%;
+  object-fit: cover;
+}
+.pw-brand:is(:hover, :focus-visible) :is(.pw-brand-mark, img) {
+  transform: rotate(-12deg) scale(1.08);
+}
+.pw-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.2rem 0;
+}
+.pw-nav a {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.85rem;
+  color: var(--pw-soil);
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color 200ms ease,
+    transform 200ms ease;
+}
+/* A small green dot sits between the links, as in a printed menu. */
+.pw-nav a + a::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--pw-leaf);
+}
+.pasture-site .pw-nav a {
+  position: relative;
+}
+.pasture-site .pw-nav a::after {
+  bottom: 0;
+  left: 0.85rem;
+  right: 0.85rem;
+  width: auto;
+  height: 3px;
+  border-radius: 8px;
+  background: var(--pw-sun);
+}
+.pw-nav a:is(:hover, :focus-visible) {
+  color: var(--pw-primary);
+  transform: translateY(-2px);
+}
+.pw-nav a:active {
+  transform: translateY(1px);
+}
+/* The dot belongs to the next link, so it moves back against that link's
+   lift and the separator itself never reacts to hover. */
+.pw-nav a + a::before {
+  transition: transform 200ms ease;
+}
+.pw-nav a:is(:hover, :focus-visible)::before {
+  transform: translateY(2px);
+}
+.pw-nav a:active::before {
+  transform: translateY(-1px);
+}
+.pasture-site .pw-nav a[aria-current='page'] {
+  color: var(--pw-primary);
+}
+.pasture-site .pw-nav a[aria-current='page']::after {
+  background: var(--pw-primary);
+  transform: scaleX(1);
+}
+.pw-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-self: end;
+}
+.pw-header-actions .harvest-header-icon.button.ui-button,
+.pw-menu > summary {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pw-soil);
+  box-shadow: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.pasture-site
+  .pw-header-actions
+  .harvest-header-icon.button.ui-button:is(:hover, :focus-visible):not(
+    :disabled
+  ),
+.pw-menu > summary:is(:hover, :focus-visible),
+.pasture-site
+  .pw-header-actions
+  details[open]
+  > summary.harvest-header-icon.button.ui-button,
+.pw-menu[open] > summary {
+  border-color: var(--pw-primary);
+  background: var(--pw-cream);
+  box-shadow: 0 3px 0 var(--pw-line);
+  transform: translateY(-2px);
+}
+.pasture-site
+  .pw-header-actions
+  .harvest-header-icon.button.ui-button:active:not(:disabled),
+.pw-menu > summary:active {
+  box-shadow: 0 0 0 transparent;
+  transform: translateY(1px);
+}
+.pw-header-actions .harvest-header-icon::after {
+  content: none;
+}
+/* The shared account summary spreads its grid (space-between), which pinned
+   the icon to the left edge of its 44px button. */
+.pw-header-actions .harvest-header-icon.button.ui-button {
+  justify-content: center;
+}
+/* Keep the cart count inside the cart button's own box. */
+.pw-header-actions .harvest-cart-count {
+  top: -3px;
+  right: -3px;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: var(--pw-tomato);
+  color: #ffffff;
+  font-weight: 800;
+}
+.pw-header-actions .harvest-account-content {
+  top: calc(100% + 0.7rem);
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack-lift);
+  animation: pw-drop 220ms var(--pw-ease);
+}
+.pw-header-actions .harvest-account-content a {
+  font-weight: 700;
+}
+.pw-menu {
+  display: none;
+}
+.pw-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.pw-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.pw-menu-bars {
+  display: grid;
+  gap: 5px;
+  width: 20px;
+}
+.pw-menu-bars span {
+  height: 2.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transition:
+    transform 260ms var(--pw-ease),
+    opacity 180ms ease;
+}
+.pw-menu[open] .pw-menu-bars span:nth-child(1) {
+  transform: translateY(7.5px) rotate(45deg);
+}
+.pw-menu[open] .pw-menu-bars span:nth-child(2) {
+  opacity: 0;
+}
+.pw-menu[open] .pw-menu-bars span:nth-child(3) {
+  transform: translateY(-7.5px) rotate(-45deg);
+}
+.pw-menu > nav {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  left: var(--pw-gutter);
+  right: var(--pw-gutter);
+  display: grid;
+  padding: 0.5rem;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack-lift);
+  animation: pw-drop 220ms var(--pw-ease);
+}
+.pasture-site .pw-menu > nav a {
+  /* Full-width rows; the shared text-link rule would shrink them to the label. */
+  width: auto !important;
+  padding: 0.95rem 1rem;
+  border-radius: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    padding-left 220ms var(--pw-ease);
+}
+.pasture-site .pw-menu > nav a:is(:hover, :focus-visible) {
+  background: var(--pw-primary-soft);
+  padding-left: 1.5rem;
+}
+.pasture-site .pw-menu > nav a[aria-current='page'] {
+  background: var(--pw-primary);
+  color: #ffffff;
+}
+[data-theme-cart][data-bump] .harvest-cart-link {
+  animation: pw-bounce 480ms var(--pw-ease);
+}
+@media (max-width: 1100px) {
+  html[data-storefront-theme='pasture'] {
+    --pw-header-height: 72px;
+  }
+  .pw-header-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 66px;
+  }
+  .pw-nav {
+    display: none;
+  }
+  .pw-menu {
+    display: block;
+  }
+}
+@media (max-width: 420px) {
+  .pw-brand-mark,
+  .pw-brand img {
+    width: 36px;
+    height: 36px;
+  }
+  .pw-brand {
+    font-size: 1.02rem;
+    gap: 0.45rem;
+  }
+  .pw-header-actions {
+    gap: 0.15rem;
+  }
+}
+
+/* -------------------------------------------------------------------- hero */
+/* The copy sits on the left over a field scene. The photo fills the right
+   side of the hero to the window edge inside a wavy green band. */
+.pw-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: clamp(36rem, 46vw, 48rem);
+  background: var(--pw-meadow);
+}
+.pw-hero-sky {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.pw-hero-sky .pw-art {
+  position: absolute;
+}
+/* A wavy corner in a darker shade of the background, top left, echoing the
+   photo's curve. */
+.pw-hero-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: clamp(200px, 34vw, 540px);
+  height: auto;
+}
+.pw-hero-corner path {
+  fill: color-mix(in srgb, var(--pw-meadow) 86%, var(--pw-primary-deep));
+}
+.pw-cloud {
+  width: clamp(70px, 9vw, 130px);
+  opacity: 0.95;
+}
+.pw-cloud-1 {
+  top: 12%;
+  left: 14%;
+}
+.pw-cloud-2 {
+  top: 7%;
+  left: 60%;
+  width: clamp(60px, 7vw, 100px);
+}
+.pw-cloud-3 {
+  top: 4%;
+  left: 27%;
+  width: clamp(50px, 5vw, 76px);
+}
+.pw-hero-leaf {
+  top: -2.25rem;
+  left: 45%;
+  width: clamp(70px, 8vw, 116px);
+  rotate: 160deg;
+  opacity: 0.9;
+}
+.pw-hero-sprig {
+  top: calc(var(--pw-hero-offset, 0px) - 0.5rem);
+  right: -1.5rem;
+  width: clamp(90px, 10vw, 150px);
+  rotate: 115deg;
+  scale: 1 -1;
+}
+/* The field scene (Fields.astro), anchored to the bottom of the hero. */
+.pw-hills {
+  position: absolute;
+  inset: auto 0 -1px;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  /* The drawing is 6:1. Matching that ratio keeps the treetops in view on
+     wide screens; narrower screens crop it from the right. */
+  height: max(120px, 16.67vw);
+  pointer-events: none;
+}
+.pw-fields .pw-art {
+  width: auto;
+  height: auto;
+}
+.pw-hill-back {
+  fill: var(--pw-hill-back);
+}
+.pw-hill-middle {
+  fill: var(--pw-hill-middle);
+}
+.pw-hill-front {
+  fill: var(--pw-hill-front);
+}
+.pw-hill-rows {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.28);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+.pw-field-flower {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+.pw-hill-edge {
+  fill: var(--pw-primary-deep);
+}
+.pw-hero-inner {
+  position: relative;
+  z-index: 2;
+  width: var(--pw-wrap);
+  margin-inline: auto;
+  padding-block: clamp(2.5rem, 6vw, 4.75rem) max(8rem, 17vw);
+}
+/* Beside the photo, the hero copy uses a wider container than the page so
+   it sits further left. Its right edge stays clear of the photo, since the
+   copy is half the container minus a gap and the container stays centred. */
+@media (min-width: 861px) {
+  .pw-hero-inner {
+    width: min(100% - 2 * clamp(1rem, 5vw, 4.5rem), 1440px);
+  }
+}
+.pw-hero-copy {
+  width: calc(50% - 2rem);
+  min-width: 0;
+}
+.pasture-site .pw-hero-title {
+  --storefront-heading-base: clamp(2.4rem, 5vw, 4.5rem);
+  margin: 0 0 1.4rem;
+  font-size: var(--storefront-heading-base);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+/* The title is painted on one wooden sign of green slats, however many lines
+   it wraps to. Two slat ends stick out past the sides. */
+.pw-plank {
+  --pw-plank-seam: color-mix(
+    in srgb,
+    var(--pw-primary-deep) 70%,
+    var(--pw-primary)
+  );
+  --pw-plank-light: color-mix(in srgb, #ffffff 10%, var(--pw-primary));
+  --pw-plank-nail: var(--pw-primary-deep);
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.16em 0.42em 0.22em;
+  border-radius: 0.1em;
+  background:
+    radial-gradient(circle, var(--pw-plank-nail) 0.045em, transparent 0.06em)
+      0.16em 0.16em / 0.12em 0.12em no-repeat,
+    radial-gradient(circle, var(--pw-plank-nail) 0.045em, transparent 0.06em)
+      calc(100% - 0.16em) 0.16em / 0.12em 0.12em no-repeat,
+    radial-gradient(circle, var(--pw-plank-nail) 0.045em, transparent 0.06em)
+      0.16em calc(100% - 0.2em) / 0.12em 0.12em no-repeat,
+    radial-gradient(circle, var(--pw-plank-nail) 0.045em, transparent 0.06em)
+      calc(100% - 0.16em) calc(100% - 0.2em) / 0.12em 0.12em no-repeat,
+    repeating-linear-gradient(
+      180deg,
+      var(--pw-plank-light) 0 0.27em,
+      var(--pw-primary) 0.27em 0.52em,
+      var(--pw-plank-seam) 0.52em 0.56em
+    );
+  box-shadow:
+    inset 0 -0.06em 0 var(--pw-plank-seam),
+    0 0.09em 0 var(--pw-primary-deep),
+    0 0.22em 0.3em -0.16em var(--pw-shade);
+  color: #ffffff;
+  text-align: center;
+  text-shadow: 0 0.05em 0 var(--pw-primary-deep);
+}
+.pw-plank::before,
+.pw-plank::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  height: 0.3em;
+  border-radius: 0.06em;
+  background: var(--pw-primary);
+  box-shadow: 0 0.06em 0 var(--pw-primary-deep);
+}
+.pw-plank::before {
+  top: 0.12em;
+  left: -0.24em;
+  width: 0.6em;
+}
+.pw-plank::after {
+  right: -0.2em;
+  bottom: 0.2em;
+  width: 0.5em;
+}
+.pw-hero-intro {
+  --storefront-paragraph-base: clamp(1.05rem, 1.4vw, 1.25rem);
+  max-width: 44ch;
+  margin: 0;
+  color: var(--pw-primary-deep);
+  font-size: var(--storefront-paragraph-base);
+  font-weight: 700;
+  line-height: 1.55;
+}
+.pw-hero-actions {
+  margin-top: 2rem;
+  gap: 1rem;
+}
+.pw-hero-actions .button.ui-button {
+  min-height: 54px;
+  padding-inline: 1.75rem;
+  font-size: 1rem;
+}
+/* The photo box runs from the middle of the hero to the window edge. The
+   clip path and the band share one curve in the box's own 0-1 units. */
+.pw-hero-visual {
+  position: absolute;
+  inset: calc(clamp(2rem, 5vw, 4.5rem) + var(--pw-hero-offset, 0px)) 0 0 50%;
+  z-index: 1;
+}
+
+.pw-hero-defs {
+  position: absolute;
+}
+.pw-hero-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--pw-sky);
+}
+.pasture-site .pw-hero-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  aspect-ratio: auto;
+  border-radius: 0;
+  object-fit: cover;
+  object-position: 50% 30%;
+}
+.pw-hero-ribbon {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.pw-ribbon-band,
+.pw-ribbon-line {
+  fill: none;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.pw-ribbon-band {
+  stroke: var(--pw-primary);
+  stroke-width: clamp(16px, 1.9vw, 28px);
+}
+.pw-ribbon-line {
+  stroke: var(--pw-primary-deep);
+  stroke-width: 2.5px;
+  opacity: 0.6;
+}
+/* With no hero image: a sky-and-field placeholder until one is added. Its
+   badge sits in the open middle of the wavy frame. */
+.pw-hero-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.75rem;
+  padding: 12% 0 0 18%;
+  background: linear-gradient(180deg, var(--pw-sky) 0 58%, var(--pw-cream));
+  color: var(--pw-primary-deep);
+}
+.pw-placeholder-cloud {
+  position: absolute;
+  top: 26%;
+  left: 30%;
+  width: 18% !important;
+}
+.pw-placeholder-field {
+  position: absolute;
+  inset: auto 0 0;
+  width: 100%;
+  height: 40%;
+}
+.pw-placeholder-field path:first-child {
+  fill: var(--pw-hill-back);
+}
+.pw-placeholder-field path:last-child {
+  fill: var(--pw-hill-front);
+}
+.pw-placeholder-badge {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(4rem, 9vw, 5.5rem);
+  aspect-ratio: 1;
+  border: 3px dashed color-mix(in srgb, var(--pw-primary) 55%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pw-cream) 85%, transparent);
+}
+.pw-placeholder-badge .farmstand-icon {
+  width: 45%;
+  height: 45%;
+  color: var(--pw-primary);
+}
+.pw-placeholder-note {
+  position: relative;
+  max-width: 16rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: var(--pw-cream);
+  color: var(--pw-primary-deep);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* Next market date, as a rounded tag linked to its shop. */
+.pw-next {
+  display: inline-flex;
+  align-items: stretch;
+  max-width: 100%;
+  margin-top: 2rem;
+  overflow: hidden;
+  border: var(--pw-edge);
+  border-radius: 999px;
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+  color: var(--pw-soil);
+  text-decoration: none;
+  transition:
+    transform 240ms var(--pw-ease),
+    box-shadow 240ms var(--pw-ease);
+}
+.pw-next:is(:hover, :focus-visible) {
+  transform: translateY(-3px);
+  box-shadow: var(--pw-stack-lift);
+}
+.pw-next:active {
+  transform: translateY(1px);
+}
+.pw-next-date {
+  flex: none;
+  display: grid;
+  place-content: center;
+  min-width: 4.4rem;
+  padding: 0.5rem 1rem;
+  background: var(--pw-primary);
+  color: #ffffff;
+  text-align: center;
+}
+.pw-next-date span {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.pw-next-date strong {
+  font: 800 1.65rem / 1 var(--font-heading);
+}
+.pw-next-copy {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding: 0.6rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.pw-next-copy > span {
+  color: var(--pw-muted);
+  overflow-wrap: anywhere;
+}
+.pw-next-copy .pw-next-label {
+  color: var(--pw-primary-deep);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.pw-next-go {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding-inline: 1rem 1.2rem;
+  color: var(--pw-primary);
+  transition: background-color 160ms ease;
+}
+.pw-next-go .farmstand-icon {
+  transition: transform 220ms var(--pw-ease);
+}
+.pw-next:is(:hover, :focus-visible) .pw-next-go {
+  background: var(--pw-primary-soft);
+}
+.pw-next:is(:hover, :focus-visible) .pw-next-go .farmstand-icon {
+  transform: translateX(4px);
+}
+
+/* ---------------------------------------------------------------- sections */
+.pw-section {
+  padding-block: clamp(2.5rem, 5.5vw, 4.25rem);
+  scroll-margin-top: 6rem;
+}
+.pw-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  margin-bottom: clamp(1.4rem, 3vw, 2.1rem);
+}
+.pasture-site .pw-section-head h2 {
+  --storefront-heading-base: clamp(1.7rem, 3vw, 2.5rem);
+  flex: 0 1 auto;
+  margin: 0;
+  color: var(--pw-soil);
+  font-size: var(--storefront-heading-base);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+}
+.pw-section-art {
+  flex: none;
+  width: clamp(42px, 4.8vw, 56px);
+  transition: transform 360ms var(--pw-ease);
+}
+.pw-section-head:hover .pw-section-art {
+  transform: rotate(-10deg) scale(1.1);
+}
+/* A dotted furrow runs from the heading to the link. */
+.pw-rule {
+  flex: 1 1 2.5rem;
+  min-width: 2rem;
+  height: 6px;
+  background: radial-gradient(circle, var(--pw-line) 2.5px, transparent 3px) 0
+    50% / 14px 6px repeat-x;
+}
+.pw-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  background: var(--pw-primary-soft);
+  color: var(--pw-primary-deep);
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background-color 180ms ease;
+}
+.pw-more:is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--pw-primary-soft) 70%, var(--pw-primary));
+}
+.pw-more .farmstand-icon,
+.pasture-site .harvest-text-link > span[aria-hidden] {
+  display: inline-block;
+  transition: transform 220ms var(--pw-ease);
+}
+.pw-more:is(:hover, :focus-visible) .farmstand-icon {
+  transform: translateX(5px);
+}
+.pasture-site
+  .harvest-text-link:is(:hover, :focus-visible)
+  > span[aria-hidden] {
+  transform: translate(3px, -3px);
+}
+.pasture-site .harvest-text-link {
+  color: var(--pw-primary);
+  font-weight: 800;
+}
+.pasture-site .empty-state {
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 2px dotted var(--pw-line);
+  border-radius: var(--pw-radius);
+  background: color-mix(in srgb, var(--pw-cream) 70%, transparent);
+  text-align: center;
+}
+.pasture-site .empty-state :is(h2, h3, h4) {
+  margin-bottom: 0.5rem;
+  font-family: var(--font-heading);
+  font-weight: 800;
+}
+.pasture-site .empty-state p {
+  max-width: 46ch;
+  margin: 0 auto;
+  color: var(--pw-muted);
+}
+
+/* Market date cards (shared MarketDateList). */
+.pasture-site .harvest-dates {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+  gap: 1.25rem;
+  margin: 0;
+}
+.pasture-site .harvest-date.ui-card {
+  position: relative;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.1rem;
+  margin: 0;
+  padding: 1.1rem 1.2rem;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+.pasture-site .harvest-date.ui-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--pw-stack-lift);
+}
+.pasture-site .harvest-date-stamp {
+  display: grid;
+  place-content: center;
+  gap: 0;
+  width: 4.6rem;
+  height: 4.6rem;
+  border-radius: 50%;
+  background: var(--pw-primary);
+  color: #ffffff;
+  text-align: center;
+  transition: border-radius 320ms var(--pw-ease);
+}
+/* A round stamp that pinches one corner into a leaf tip on hover. */
+.pasture-site .harvest-date:hover .harvest-date-stamp {
+  border-radius: 50% 50% 14% 50%;
+}
+.pasture-site .harvest-date-stamp span {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.pasture-site .harvest-date-stamp strong {
+  color: inherit;
+  font: 800 1.65rem / 1 var(--font-heading);
+}
+.pasture-site .harvest-dates[data-card-theme='inverse'] .harvest-date-stamp {
+  background: var(--pw-sun);
+  color: var(--pw-soil);
+}
+.pasture-site .harvest-date h3 {
+  margin: 0 0 0.35rem;
+  font: 800 1.2rem / 1.3 var(--font-heading);
+}
+/* The whole card opens the date's shop; the action links stay on top. */
+.pasture-site .harvest-date h3 a::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.pasture-site .harvest-date h3 a::after {
+  content: none;
+}
+.pasture-site .harvest-date p {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0 0 0.2rem;
+  color: var(--pw-muted);
+  font-size: 0.93rem;
+}
+.pasture-site .harvest-date .market-date-copy > p::before {
+  content: '';
+  flex: none;
+  align-self: center;
+  width: 1rem;
+  height: 1rem;
+  background: var(--pw-leaf);
+  -webkit-mask: var(--pw-icon-clock) center / contain no-repeat;
+  mask: var(--pw-icon-clock) center / contain no-repeat;
+}
+.pasture-site .harvest-date .market-date-copy > p + p::before {
+  -webkit-mask-image: var(--pw-icon-pin);
+  mask-image: var(--pw-icon-pin);
+}
+.pasture-site
+  .harvest-dates[data-card-theme='inverse']
+  .market-date-copy
+  > p::before {
+  background: var(--pw-sun);
+}
+.pasture-site .market-date-links {
+  position: relative;
+  z-index: 1;
+  margin-top: 0.7rem;
+  padding-top: 0.65rem;
+  border-top: 2px dotted var(--pw-line);
+}
+
+/* Vendor cards (shared MarketVendorCards). The whole card is the link, so
+   neither the card edge nor the vendor name carries the text underline. */
+.pasture-site .market-vendor-card .market-vendor-offerings::after,
+.pasture-site
+  .market-vendor-card
+  .market-vendor-offerings
+  .farmstand-text-link::after {
+  content: none;
+}
+.pasture-site .market-vendor-cards {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: 1.25rem;
+  margin: 0;
+}
+.pasture-site .market-vendor-card.ui-card {
+  display: grid;
+  grid-template-columns: 4.2rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.15rem 1rem;
+  margin: 0;
+  padding: 1rem;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+  text-align: left;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+.pasture-site .market-vendor-card.ui-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--pw-stack-lift);
+}
+.pasture-site
+  .market-vendor-cards
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  grid-row: 1 / span 2;
+  width: 4.2rem;
+  height: 4.2rem;
+  margin: 0;
+  border-radius: 50%;
+  background: var(--pw-primary-soft);
+  object-fit: cover;
+  transition: transform 320ms var(--pw-ease);
+}
+.pasture-site .market-vendor-cards .harvest-vendor-symbol {
+  background: var(--pw-primary);
+  color: #ffffff;
+  font: 800 1.7rem var(--font-heading);
+}
+.pasture-site
+  .market-vendor-card:hover
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  transform: rotate(-6deg) scale(1.05);
+}
+.pasture-site
+  .market-vendor-card
+  :is(h3, .market-vendor-meta, [data-market-day-follow]) {
+  grid-column: 2;
+}
+.pasture-site .market-vendor-card h3 {
+  align-self: end;
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+.pasture-site .market-vendor-meta {
+  align-self: start;
+  color: var(--pw-muted);
+  font-size: 0.86rem;
+}
+.pasture-site .market-vendor-actions {
+  grid-column: 1 / -1;
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 2px dotted var(--pw-line);
+}
+
+/* Categories, as round garden tiles. */
+.pw-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 1.15rem;
+}
+.pw-category {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.75rem;
+  padding: 1.25rem 0.75rem 1.1rem;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+  color: var(--pw-soil);
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+.pasture-site .pw-category {
+  width: auto !important;
+}
+.pw-category:is(:hover, :focus-visible) {
+  transform: translateY(-4px);
+  box-shadow: var(--pw-stack-lift);
+}
+.pw-category:active {
+  transform: translateY(1px);
+}
+.pw-category-art {
+  display: grid;
+  place-items: center;
+  width: 5.2rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--pw-primary-soft);
+  transition: transform 320ms var(--pw-ease);
+}
+.pw-category:nth-child(3n + 2) .pw-category-art {
+  background: var(--pw-sun-soft);
+}
+.pw-category-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pw-category-art .pw-art {
+  width: 66%;
+}
+.pw-category:is(:hover, :focus-visible) .pw-category-art {
+  transform: rotate(-8deg) scale(1.05);
+}
+.pw-category-name {
+  overflow-wrap: anywhere;
+}
+
+/* Closing invitation, on a green field panel with a wavy top. */
+.pw-closing {
+  padding-block: clamp(2rem, 5vw, 3.5rem) clamp(1rem, 3vw, 2rem);
+}
+.pw-closing-inner {
+  position: relative;
+  width: var(--pw-wrap);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 2rem;
+  padding: clamp(2.25rem, 5vw, 3.75rem);
+  border-radius: 40px 40px var(--pw-radius) var(--pw-radius);
+  background:
+    radial-gradient(
+        120% 70% at 100% 120%,
+        var(--pw-primary-deep) 0 40%,
+        transparent 41%
+      )
+      no-repeat,
+    var(--pw-primary);
+  box-shadow: var(--pw-stack-lift);
+}
+.pasture-site .pw-closing h2 {
+  --storefront-heading-base: clamp(2rem, 4vw, 3.2rem);
+  margin: 0 0 1.6rem;
+  color: #ffffff;
+  font-size: var(--storefront-heading-base);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+/* The :not() chain matches the general Pasture button rule's specificity so
+   these colours win over its dark hover fill. */
+.pasture-site
+  .pw-closing
+  .button.ui-button:not(.secondary, .button-tertiary, .button-icon):not(
+    .button-disclosure,
+    .button-destructive-outline,
+    .button-destructive
+  ) {
+  --button-fill: var(--pw-sun);
+  --button-ink: var(--pw-soil);
+  --button-edge: var(--pw-sun);
+  --button-hover-fill: #ffc928;
+  --button-hover-ink: var(--pw-soil);
+  --button-hover-edge: #ffc928;
+  min-height: 54px;
+  padding-inline: 1.75rem;
+  box-shadow: 0 4px 0 #b88600;
+}
+.pasture-site
+  .pw-closing
+  .button.ui-button:not(.secondary):is(:hover, :focus-visible):not(
+    :disabled
+  ):not([aria-disabled='true']) {
+  box-shadow: 0 6px 0 #b88600;
+}
+.pasture-site .pw-closing .button.ui-button:active {
+  box-shadow: 0 1px 0 #b88600;
+}
+.pasture-site .pw-closing :focus-visible,
+.pasture-site .pw-footer :focus-visible {
+  outline-color: var(--pw-sun);
+}
+.pw-closing-art {
+  position: relative;
+  min-height: 12rem;
+}
+.pw-closing-art .pw-art {
+  position: absolute;
+  filter: drop-shadow(0 8px 8px rgb(0 0 0 / 0.18));
+}
+.pw-closing-art .pw-art-basket {
+  left: 50%;
+  bottom: 0;
+  width: min(58%, 10rem);
+  translate: -50% 0;
+}
+.pw-closing-art .pw-art-carrot {
+  left: 2%;
+  bottom: 6%;
+  width: 5rem;
+  rotate: -18deg;
+}
+.pw-closing-art .pw-art-pepper {
+  right: 2%;
+  bottom: 4%;
+  width: 4.6rem;
+  rotate: 12deg;
+}
+
+/* ------------------------------------------------------------------ footer */
+.pw-footer {
+  margin-top: clamp(3rem, 7vw, 5rem);
+}
+.pw-fields-footer {
+  display: block;
+  width: 100%;
+  height: max(80px, 11.8vw);
+  margin-bottom: -1px;
+  pointer-events: none;
+}
+.pw-footer-band {
+  background: var(--pw-primary-deep);
+  color: #ffffff;
+}
+.pw-footer-inner {
+  width: var(--pw-wrap);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 2.5rem;
+  padding-block: 2rem 1.4rem;
+}
+.pw-footer-name {
+  display: inline-block;
+  color: #ffffff;
+  font: 800 clamp(1.6rem, 2.6vw, 2.1rem) / 1.15 var(--font-heading);
+  text-decoration: none;
+  transition: transform 220ms var(--pw-ease);
+}
+.pw-footer-name:is(:hover, :focus-visible) {
+  transform: translateY(-2px);
+}
+.pw-footer-brand p {
+  --storefront-paragraph-base: 1rem;
+  max-width: 34ch;
+  margin: 0.7rem 0 0;
+  color: rgb(255 255 255 / 0.82);
+  font-size: var(--storefront-paragraph-base);
+}
+.pw-footer-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+}
+.pw-footer-nav > div {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 0.6rem;
+}
+.pasture-site .pw-footer-nav h2 {
+  margin: 0 0 0.3rem;
+  color: var(--pw-sun);
+  font: 800 0.78rem / 1 var(--font-body);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.pw-footer-nav a {
+  color: rgb(255 255 255 / 0.92);
+  text-decoration: none;
+  transition:
+    color 180ms ease,
+    transform 220ms var(--pw-ease);
+}
+.pw-footer-nav a:is(:hover, :focus-visible) {
+  color: var(--pw-sun);
+  transform: translateX(4px);
+}
+.pw-footer-bottom {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.4rem 1.5rem;
+  padding-top: 1.2rem;
+  border-top: 1.5px solid rgb(255 255 255 / 0.2);
+  color: rgb(255 255 255 / 0.72);
+  font-size: 0.82rem;
+}
+
+/* ------------------------------------------------------------------ motion */
+@keyframes pw-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+@keyframes pw-bounce {
+  30% {
+    transform: scale(1.3) rotate(-8deg);
+  }
+  55% {
+    transform: scale(0.9) rotate(4deg);
+  }
+}
+@keyframes pw-cloud-cross {
+  from {
+    transform: translateX(-160px);
+  }
+  to {
+    transform: translateX(100vw);
+  }
+}
+@keyframes pw-sway {
+  50% {
+    transform: rotate(6deg);
+  }
+}
+@keyframes pw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+@keyframes pw-added {
+  35% {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--pw-lip);
+  }
+  70% {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 var(--pw-lip);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* Clouds drift across the whole hero and come back round, each at its
+     own pace. The negative delays start them part way across. */
+  .pw-cloud {
+    left: 0;
+    animation: pw-cloud-cross var(--pw-cloud-time) linear var(--pw-cloud-delay)
+      infinite;
+  }
+  .pw-cloud-1 {
+    --pw-cloud-time: 64s;
+    --pw-cloud-delay: -12s;
+  }
+  .pw-cloud-2 {
+    --pw-cloud-time: 86s;
+    --pw-cloud-delay: -60s;
+  }
+  .pw-cloud-3 {
+    --pw-cloud-time: 52s;
+    --pw-cloud-delay: -30s;
+  }
+  .pw-field-flower {
+    animation: pw-sway 5s ease-in-out infinite;
+  }
+  /* `backwards`, not `both`: a held animation would keep overriding
+     transform, so hover lifts would snap instead of transitioning. */
+  .pw-hero-copy > * {
+    animation: pw-rise 620ms var(--pw-ease) backwards;
+  }
+  .pw-hero-copy > :nth-child(2) {
+    animation-delay: 70ms;
+  }
+  .pw-hero-copy > :nth-child(3) {
+    animation-delay: 140ms;
+  }
+  .pw-hero-copy > :nth-child(n + 4) {
+    animation-delay: 210ms;
+  }
+  .pw-hero-visual {
+    animation: pw-rise 720ms 100ms var(--pw-ease) backwards;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pasture-site *,
+  .pasture-site *::before,
+  .pasture-site *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* -------------------------------------------------------------- responsive */
+@media (max-width: 860px) {
+  /* The photo moves below the copy, still meeting the right edge, and the
+     fields run across its foot. */
+  .pw-hero {
+    min-height: 0;
+  }
+  .pw-hero-inner {
+    padding-block: 2rem 1.5rem;
+  }
+  .pw-hero-copy {
+    width: 100%;
+  }
+  .pw-hero-visual {
+    position: relative;
+    inset: auto;
+    height: clamp(17rem, 78vw, 32rem);
+    margin: 0 0 clamp(2rem, 6vw, 3rem) 6%;
+  }
+  .pw-hills {
+    z-index: 2;
+  }
+  .pw-hero-leaf {
+    display: none;
+  }
+  .pw-hero-sprig {
+    top: auto;
+    bottom: calc(clamp(17rem, 78vw, 32rem) + clamp(2rem, 6vw, 3rem) - 1rem);
+    width: clamp(70px, 18vw, 110px);
+  }
+  .pw-cloud-3 {
+    display: none;
+  }
+  .pw-closing-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pw-closing-art {
+    min-height: 9rem;
+  }
+  .pw-footer-inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+}
+@media (max-width: 700px) {
+  .pw-hero-actions .button.ui-button {
+    flex: 1 1 100%;
+  }
+  .pw-next {
+    display: flex;
+    border-radius: var(--pw-radius);
+  }
+  .pw-next-copy {
+    flex: 1;
+  }
+  .pw-rule {
+    display: none;
+  }
+  .pw-section-head h2 {
+    flex-basis: calc(100% - 4.5rem);
+  }
+  /* Categories become a swipeable row. */
+  .pw-categories {
+    display: flex;
+    gap: 0.9rem;
+    margin-inline: calc(-1 * var(--pw-gutter));
+    padding: 0.5rem var(--pw-gutter) 1.25rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .pw-categories::-webkit-scrollbar {
+    display: none;
+  }
+  .pw-category {
+    flex: 0 0 8.6rem;
+    scroll-snap-align: start;
+  }
+}
+
+/* ------------------------------------------------------------ shared pages */
+.pasture-site .market-page,
+.pasture-site .vendor-shop,
+.pasture-site .vendor-product,
+.pasture-site .vendor-cart-page,
+.pasture-site .vendor-checkout-page {
+  padding-block: clamp(1.5rem, 3.5vw, 3rem) 0;
+}
+.pasture-site .market-page-intro {
+  margin-bottom: clamp(1.25rem, 3vw, 2.25rem);
+}
+.pasture-site
+  :is(.market-page-intro, .checkout-heading, .vendor-cart-heading)
+  h1,
+.pasture-site .empty-state > h1 {
+  margin: 0 0 0.6rem;
+  color: var(--pw-soil);
+  font: 700 clamp(2.1rem, 4.6vw, 3.3rem) / 1.05 var(--font-heading);
+  letter-spacing: -0.02em;
+}
+.pasture-site .market-page-intro p {
+  max-width: 56ch;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+.pasture-site .ui-card {
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+}
+.pasture-site .ui-pagination {
+  justify-content: center;
+  gap: 0.75rem 1rem;
+  margin-top: 2rem;
+}
+
+/* Form controls. */
+.pasture-site
+  :is(
+    .ui-input,
+    .ui-select,
+    textarea,
+    select,
+    input:not([type='checkbox'], [type='radio'], [type='hidden'])
+  ) {
+  --pw-input-lip: 0 3px 0
+    color-mix(in srgb, var(--pw-primary-deep) 55%, var(--pw-cream));
+  border: 2px solid color-mix(in srgb, var(--pw-primary) 70%, var(--pw-cream));
+  background-color: var(--pw-cream);
+  /* The same raised lip as the buttons, for looks only: fields do not move. */
+  box-shadow: var(--pw-input-lip);
+  transition:
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+.pasture-site :is(.ui-input, .ui-select, textarea, select):hover {
+  background-color: #fff;
+}
+.pasture-site :is(.ui-input, .ui-select, textarea, select):focus-visible {
+  outline: 3px solid var(--pw-primary-deep);
+  outline-offset: 2px;
+  background-color: #fff;
+  box-shadow: var(--pw-input-lip);
+}
+.pasture-site .field label {
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+/* Dialogs. */
+.pasture-site .ui-dialog {
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack-lift);
+}
+.pasture-site .ui-dialog::backdrop {
+  background: rgb(24 56 33 / 0.55);
+}
+.pasture-site .ui-dialog[open] {
+  animation: pw-drop 240ms var(--pw-ease);
+}
+
+/* Chosen market date (shared VendorPreorderBanner), as a paper tag. */
+.pasture-site .shop-market-banner {
+  position: relative;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1.4rem;
+  padding: 0.9rem 1.1rem 0.9rem 4.6rem;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-sun-soft);
+  color: var(--pw-soil);
+  box-shadow: var(--pw-stack);
+}
+.pasture-site .shop-market-banner::before,
+.pasture-site .shop-market-banner::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 1.1rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  translate: 0 -50%;
+  border-radius: 50%;
+  background: var(--pw-primary);
+}
+.pasture-site .shop-market-banner::after {
+  background: #fbfdf6;
+  -webkit-mask: var(--pw-icon-calendar) center / 1.25rem no-repeat;
+  mask: var(--pw-icon-calendar) center / 1.25rem no-repeat;
+}
+.pasture-site .shop-market-banner h2 {
+  margin: 0 0 0.1rem;
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+}
+.pasture-site .shop-market-banner p {
+  color: var(--pw-muted);
+  font-size: 0.93rem;
+}
+.pasture-site .shop-market-banner .shop-market-picker > .button.ui-button,
+.pasture-site .market-date-selector .shop-market-picker > .button.ui-button {
+  --button-fill: var(--pw-cream);
+  --button-ink: var(--pw-soil);
+  --button-edge: var(--pw-primary);
+  --button-hover-fill: #fff;
+  --button-hover-ink: var(--pw-soil);
+  --button-hover-edge: var(--pw-primary);
+  position: relative;
+  box-shadow: 0 3px 0 var(--pw-lip);
+}
+/* The plain "choose a date" prompt folds into the invitation below it.
+   Unavailable, conflict and no-dates messages always stay visible. */
+.pasture-site
+  .vendor-shop
+  .shop-market-slot:has(.shop-market-banner[data-banner-state='choose']):has(
+    + .shop-date-empty
+  ) {
+  display: none;
+}
+.pasture-site .vendor-shop .shop-date-empty {
+  margin-block: clamp(1rem, 4vw, 3rem);
+  padding: clamp(2rem, 5vw, 3.5rem) 1.5rem;
+  border: var(--pw-edge);
+  background: var(--pw-sun-soft);
+  box-shadow: var(--pw-stack);
+}
+.pasture-site .vendor-shop .shop-date-empty > h1 {
+  font: 700 clamp(1.5rem, 3vw, 2.1rem) / 1.15 var(--font-heading);
+}
+.pasture-site .shop-date-empty .shop-market-picker > .button.ui-button {
+  --button-fill: var(--pw-primary);
+  --button-ink: #fbfdf6;
+  --button-edge: var(--pw-primary);
+  --button-hover-fill: var(--pw-primary-deep);
+  --button-hover-ink: #fbfdf6;
+  --button-hover-edge: var(--pw-primary);
+  min-height: 52px;
+  padding-inline: 1.75rem;
+  box-shadow: 0 3px 0 var(--pw-lip);
+}
+.pasture-site .shop-date-empty .shop-market-picker > .button.ui-button::before,
+.pasture-site
+  .shop-market-banner
+  .shop-market-picker
+  > .button.ui-button::before,
+.pasture-site
+  .market-date-selector
+  .shop-market-picker
+  > .button.ui-button::before {
+  content: '';
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  background: currentColor;
+  -webkit-mask: var(--pw-icon-calendar) center / contain no-repeat;
+  mask: var(--pw-icon-calendar) center / contain no-repeat;
+}
+
+/* -------------------------------------------------------------------- shop */
+.pasture-site .vendor-shop {
+  grid-template-columns: minmax(190px, 230px) minmax(0, 1fr);
+}
+.pasture-site .shop-categories.ui-card {
+  position: sticky;
+  top: 6.25rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.pasture-site .shop-categories h2 {
+  margin: 0 0 0.8rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px dotted var(--pw-line);
+  color: var(--pw-tomato);
+  font: 800 0.9rem / 1.2 var(--font-body);
+  letter-spacing: 0.01em;
+}
+.pasture-site .shop-category-filters {
+  gap: 0.5rem;
+}
+.pasture-site .shop-categories .shop-category-option {
+  position: relative;
+  gap: 0.45rem;
+  padding: 0.6rem 0.85rem 0.6rem 0.55rem;
+  border: var(--pw-edge);
+  border-radius: 12px;
+  background: var(--pw-cream);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+/* Optical centring: the body font's tall ascender leaves the line box's
+   middle above the letters. Trimming the text to its cap height centres the
+   name, the count and the selection icon on the same line, and a fixed
+   minimum height keeps every pill the same size. */
+.pasture-site .shop-categories .shop-category-option {
+  min-height: 2.6rem;
+  padding-block: 0.45rem;
+  box-sizing: border-box;
+}
+.pasture-site .shop-category-option > span:not(.sr-only) {
+  text-box: trim-both cap alphabetic;
+}
+.pasture-site .shop-category-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.pasture-site .shop-category-option:hover {
+  background: var(--pw-sun-soft);
+  box-shadow: 0 6px 12px -3px var(--pw-shade);
+  transform: translateY(-2px);
+}
+.pasture-site .shop-category-option:active {
+  box-shadow: 0 0 0 transparent;
+  transform: translateY(1px);
+}
+.pasture-site .shop-category-option:has(input:checked) {
+  background: var(--pw-primary);
+  color: #fbfdf6;
+}
+/* Every option keeps an icon slot so choosing one never re-wraps its text:
+   an X when off, a check when on, and a dash on a parent category with only
+   some of its subcategories chosen. */
+.pasture-site .shop-category-option::before {
+  content: '';
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  background: var(--pw-muted);
+  opacity: 0.55;
+  -webkit-mask: var(--pw-icon-x) center / 0.7rem no-repeat;
+  mask: var(--pw-icon-x) center / 0.7rem no-repeat;
+}
+.pasture-site .shop-category-option:has(input:checked)::before {
+  background: currentColor;
+  opacity: 1;
+  -webkit-mask: var(--pw-icon-check) center / contain no-repeat;
+  mask: var(--pw-icon-check) center / contain no-repeat;
+}
+.pasture-site
+  .market-shop-category-group:has(.ui-disclosure-content input:checked)
+  > .market-shop-category-parent:not(:has(input:checked))::before {
+  background: var(--pw-primary);
+  opacity: 1;
+  -webkit-mask: var(--pw-icon-dash) center / contain no-repeat;
+  mask: var(--pw-icon-dash) center / contain no-repeat;
+}
+.pasture-site .shop-category-option:has(input:focus-visible) {
+  outline: 3px solid var(--pw-primary-deep);
+  outline-offset: 3px;
+}
+/* Market shop filters: Categories / Vendors switch between a white button
+   and the theme's brown button for the active mode. */
+.pasture-site .market-shop-filters > .market-shop-filter-modes {
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 2px dotted var(--pw-line);
+}
+.pasture-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button {
+  --button-fill: var(--pw-cream);
+  --button-ink: var(--pw-soil);
+  --button-edge: var(--pw-primary);
+  --button-hover-fill: var(--pw-sun-soft);
+  --button-hover-ink: var(--pw-soil);
+  --button-hover-edge: var(--pw-primary);
+  flex: 1 1 auto;
+  justify-content: center;
+  min-height: 40px;
+  padding-inline: 0.6rem;
+  font-size: 0.84rem;
+  white-space: nowrap;
+  box-shadow: 0 6px 12px -3px var(--pw-shade);
+}
+.pasture-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button[aria-current='page'] {
+  --button-fill: var(--pw-primary);
+  --button-ink: var(--pw-cream);
+  --button-hover-fill: var(--pw-primary-deep);
+  --button-hover-ink: var(--pw-cream);
+  box-shadow: 0 3px 0 var(--pw-lip);
+}
+.pasture-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button:is(:hover, :focus-visible) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px var(--pw-shade);
+}
+.pasture-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button[aria-current='page']:is(:hover, :focus-visible) {
+  box-shadow: 0 5px 0 var(--pw-lip);
+}
+.pasture-site .market-shop-filter-form {
+  gap: 0.5rem;
+}
+/* Parent category dropdowns: the pill selects the whole category, the
+   square chevron button beside it opens the subcategory panel. */
+.pasture-site .market-shop-category-group {
+  --market-shop-row-height: 2.4rem;
+  --market-shop-toggle-width: 2.4rem;
+  column-gap: 0.4rem;
+}
+.pasture-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary {
+  border: var(--pw-edge);
+  border-radius: 12px;
+  background: var(--pw-cream);
+  color: var(--pw-soil);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.pasture-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary:hover {
+  background: var(--pw-sun-soft);
+  box-shadow: 0 6px 12px -3px var(--pw-shade);
+  transform: translateY(-2px);
+}
+.pasture-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary:focus-visible {
+  outline: 3px solid var(--pw-primary-deep);
+  outline-offset: 3px;
+}
+.pasture-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure[open]
+  > summary {
+  background: var(--pw-sun-soft);
+  box-shadow: inset 0 -3px 0 var(--pw-sun);
+}
+.pasture-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > .ui-disclosure-content {
+  margin-block-start: 0.4rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+  border: 0;
+  border-left: 3px solid var(--pw-sun);
+  border-radius: 0 4px 4px 0;
+  background: color-mix(in srgb, var(--pw-sun-soft) 45%, transparent);
+}
+.pasture-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  .shop-category-option {
+  padding-right: 0.7rem;
+  font-size: 0.84rem;
+}
+/* Clear wears the same white button as the inactive filter mode. */
+.pasture-site .market-shop-filter-form .button.ui-button.button-tertiary {
+  --button-fill: var(--pw-cream);
+  --button-ink: var(--pw-soil);
+  --button-edge: var(--pw-primary);
+  --button-hover-fill: var(--pw-sun-soft);
+  --button-hover-ink: var(--pw-soil);
+  --button-hover-edge: var(--pw-primary);
+  border: 1.5px solid var(--button-edge);
+  background: var(--button-fill);
+  color: var(--button-ink);
+  justify-self: start;
+  text-decoration: none;
+  box-shadow: 0 6px 12px -3px var(--pw-shade);
+}
+.pasture-site .market-shop-filter-form .button.ui-button[hidden] {
+  display: none;
+}
+.pasture-site
+  .market-shop-filter-form
+  .button.ui-button.button-tertiary:is(:hover, :focus-visible) {
+  background: var(--button-hover-fill);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px var(--pw-shade);
+}
+.pasture-site .shop-catalog-controls {
+  align-items: center;
+  margin-bottom: 1.4rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px dotted var(--pw-line);
+}
+.pasture-site .shop-catalog-heading {
+  align-items: center;
+}
+.pasture-site .shop-catalog-heading h1 {
+  font-size: clamp(1.8rem, 3.4vw, 2.5rem);
+  letter-spacing: -0.02em;
+}
+.pasture-site .shop-catalog-heading span,
+.pasture-site .vendor-cart-heading p {
+  padding: 0.2rem 0.6rem;
+  border: 1.5px solid var(--pw-tomato);
+  border-radius: 12px;
+  color: var(--pw-tomato);
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.pasture-site .shop-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: auto;
+}
+.pasture-site .shop-sort label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Product cards (shared ProductCards). */
+.pasture-site .shop-products.catalog-grid {
+  gap: 1.25rem;
+}
+.pasture-site .harvest-products .product-card.ui-card {
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.7rem 0.7rem 0.95rem;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.pasture-site .harvest-products .product-card.ui-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--pw-stack-lift);
+}
+.pasture-site .harvest-products .product-image-contents {
+  display: block;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  border: var(--pw-edge);
+  border-radius: 12px;
+  background: var(--pw-sun-soft);
+}
+.pasture-site .harvest-products .product-media {
+  display: block;
+  width: 100%;
+  margin: 0;
+  aspect-ratio: 1;
+  border-radius: 0;
+  object-fit: cover;
+  transition: transform 500ms var(--pw-ease);
+}
+.pasture-site .harvest-products .product-card:hover .product-media {
+  transform: scale(1.06);
+}
+.pasture-site .harvest-products .product-placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--pw-sun-soft);
+}
+.pasture-site
+  .harvest-products
+  .product-card:nth-child(even)
+  .product-placeholder {
+  background: var(--pw-primary-soft);
+}
+.pasture-site .harvest-products .product-placeholder .pw-art {
+  width: 58%;
+}
+.pasture-site .harvest-products :is(h2, h3) {
+  margin: 0;
+  padding-inline: 0.25rem;
+  font: 700 1.1rem / 1.25 var(--font-heading);
+}
+.pasture-site .harvest-products .product-card > p {
+  margin: 0;
+  padding-inline: 0.25rem;
+}
+.pasture-site .harvest-products .product-card > .product-seller {
+  color: var(--pw-primary-deep);
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.pasture-site .harvest-products .product-card > p:not([class]) {
+  margin-top: 0.25rem;
+  color: var(--pw-soil);
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+.pasture-site .harvest-products .shop-availability {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+  color: var(--pw-muted);
+  font-size: 0.8rem;
+}
+.pasture-site .harvest-products .shop-availability::before {
+  content: '';
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--pw-leaf);
+}
+.pasture-site
+  .harvest-products
+  .shop-product-unavailable
+  .shop-availability::before {
+  background: #b5a894;
+}
+.pasture-site .market-cart-button .market-cart-button__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pasture-site .market-cart-button .market-cart-button__label::before {
+  content: '';
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  background: currentColor;
+  -webkit-mask: var(--pw-icon-bag) center / contain no-repeat;
+  mask: var(--pw-icon-bag) center / contain no-repeat;
+}
+/* The confirmation colour holds while the pointer is still on the button. */
+.pasture-site .button.ui-button.market-cart-button.is-added,
+.pasture-site
+  .button.ui-button.market-cart-button.is-added:is(:hover, :focus-visible) {
+  --button-fill: var(--pw-leaf);
+  --button-ink: #fbfdf6;
+  --button-edge: var(--pw-primary);
+  --button-hover-fill: var(--pw-leaf);
+  --button-hover-ink: #fbfdf6;
+  --button-hover-edge: var(--pw-primary);
+  animation: pw-added 520ms var(--pw-ease);
+}
+
+/* ----------------------------------------------------------------- product */
+.pasture-site .vendor-product .product-gallery > .product-media {
+  border: 9px solid var(--pw-cream);
+  border-radius: var(--pw-radius);
+  outline: var(--pw-edge);
+  background: var(--pw-sun-soft);
+  box-shadow: 0 14px 28px -7px var(--pw-shade);
+}
+.pasture-site .product-thumbnails .ui-button {
+  padding: 3px;
+  border-radius: var(--pw-radius);
+}
+.pasture-site .product-thumbnails .ui-button img {
+  border-radius: 8px;
+}
+.pasture-site .product-thumbnails [aria-pressed='true'] {
+  outline: 3px solid var(--pw-primary-deep);
+  outline-offset: 2px;
+}
+.pasture-site .product-summary > p:first-child {
+  display: inline-block;
+  margin: 0;
+  padding: 0.2rem 0.65rem;
+  border: 1.5px solid var(--pw-tomato);
+  border-radius: 12px;
+  color: var(--pw-tomato);
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.pasture-site .vendor-product h1 {
+  margin: 0.9rem 0 1rem;
+  font-size: clamp(2.1rem, 4vw, 3.2rem);
+  letter-spacing: -0.02em;
+}
+.pasture-site .market-product-vendor {
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  padding: 0.3rem 0.9rem 0.3rem 0.3rem;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: 0 6px 12px -3px var(--pw-shade);
+  font-weight: 700;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.pasture-site .market-product-vendor:is(:hover, :focus-visible) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px var(--pw-shade);
+}
+.pasture-site
+  .market-product-vendor
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  width: 2.4rem;
+  height: 2.4rem;
+  flex-basis: 2.4rem;
+  border-radius: 12px;
+  background: var(--pw-primary);
+  color: #fbfdf6;
+  font-size: 1.1rem;
+}
+.pasture-site .vendor-product .product-price {
+  color: var(--pw-primary-deep);
+  font: 800 1.9rem / 1.2 var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+.pasture-site .vendor-product .purchase-form {
+  padding: 1.25rem;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+}
+.pasture-site .vendor-product .purchase-form > .button.ui-button {
+  width: 100%;
+  min-height: 54px;
+  font-size: 0.95rem;
+}
+.pasture-site .vendor-product .purchase-form > p[role='status'] {
+  margin: 0;
+  color: var(--pw-muted);
+  font-size: 0.9rem;
+}
+.pasture-site .vendor-product .purchase-form > p:empty {
+  display: none;
+}
+.pasture-site .product-information .ui-disclosure {
+  --ui-disclosure-border-width: 0;
+  overflow: hidden;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+}
+.pasture-site .product-information .ui-disclosure > summary {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  transition:
+    background-color 160ms ease,
+    padding-left 220ms var(--pw-ease);
+}
+.pasture-site .product-information .ui-disclosure > summary:hover {
+  background: var(--pw-sun-soft);
+  padding-left: 1.35rem;
+}
+
+/* -------------------------------------------------------------------- cart */
+.pasture-site .vendor-cart-group {
+  margin-bottom: 1.25rem;
+  padding: 1.1rem 1.25rem 0.25rem;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+}
+.pasture-site .vendor-cart-group > h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.25rem;
+  padding: 0 0 0.7rem;
+  border: 0;
+  border-bottom: 2px dotted var(--pw-line);
+  font-size: 1.2rem;
+}
+.pasture-site .vendor-cart-group > h2::before {
+  content: '';
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: var(--pw-leaf-deep);
+  -webkit-mask: var(--pw-icon-store) center / contain no-repeat;
+  mask: var(--pw-icon-store) center / contain no-repeat;
+}
+.pasture-site .vendor-cart-lines {
+  margin-bottom: 0;
+}
+.pasture-site .vendor-cart-line {
+  border-top: 2px dotted var(--pw-line);
+  padding-block: 1.1rem;
+}
+.pasture-site .vendor-cart-line:first-child {
+  border-top: 0;
+}
+.pasture-site .vendor-cart-image {
+  border: var(--pw-edge);
+  border-radius: 12px;
+  background: var(--pw-sun-soft);
+  transition: rotate 260ms var(--pw-ease);
+}
+.pasture-site .vendor-cart-image:hover {
+  rotate: -3deg;
+}
+.pasture-site .vendor-cart-line-total {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+.pasture-site .vendor-cart-stepper.button.ui-button {
+  box-shadow: 0 2px 0 var(--pw-lip);
+}
+/* Remove becomes an icon button; its accessible name is kept. It wears the
+   quantity steppers' shape (edge, offset shadow, hover) in Pasture jam red,
+   with a darker red edge and lip, so the three
+   controls read as one set. The flex gap is cleared because the hidden
+   label text would otherwise push the icon off centre. */
+.pasture-site
+  .vendor-cart-controls
+  > .button.ui-button.button-destructive-outline {
+  --pw-lip: var(--pw-tomato-deep);
+  --button-fill: var(--pw-tomato);
+  --button-ink: var(--pw-cream);
+  --button-edge: var(--pw-tomato-deep);
+  --button-hover-fill: var(--brand-surface);
+  --button-hover-ink: var(--pw-tomato);
+  --button-hover-edge: var(--pw-tomato);
+  --button-hover-transform: none;
+  justify-content: center;
+  gap: 0;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 0;
+  box-shadow: 0 3px 0 var(--pw-lip);
+}
+.pasture-site .vendor-cart-controls > .button-destructive-outline::before {
+  content: '';
+  width: 1.1rem;
+  height: 1.1rem;
+  background: currentColor;
+  -webkit-mask: var(--pw-icon-trash) center / contain no-repeat;
+  mask: var(--pw-icon-trash) center / contain no-repeat;
+}
+.pasture-site .vendor-cart-summary.ui-card {
+  position: sticky;
+  top: 6.25rem;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+}
+.pasture-site .vendor-cart-summary > h2 {
+  font-size: 1.4rem;
+}
+.pasture-site .vendor-cart-summary dd,
+.pasture-site .checkout-totals dd {
+  margin: 0;
+  align-self: center;
+}
+.pasture-site .vendor-cart-total {
+  font-size: 1.15rem;
+}
+.pasture-site .vendor-cart-summary .button.ui-button:not(.secondary) {
+  min-height: 54px;
+}
+.pasture-site :is(.vendor-cart-total-note, .cart-boundary) {
+  color: var(--pw-muted);
+  font-size: 0.82rem;
+}
+.pasture-site .vendor-cart > .empty-state {
+  margin-block: clamp(1rem, 4vw, 3rem);
+  border: var(--pw-edge);
+  background: var(--pw-sun-soft);
+  box-shadow: var(--pw-stack);
+}
+
+/* ---------------------------------------------------------------- checkout */
+.pasture-site nav[aria-label='Checkout progress'] {
+  margin-bottom: 1.4rem;
+}
+.pasture-site .checkout-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  border: 0;
+  counter-reset: pw-step;
+  list-style: none;
+}
+.pasture-site .checkout-progress li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.8rem 0.35rem 0.35rem;
+  border: var(--pw-edge);
+  border-radius: 12px;
+  background: var(--pw-cream);
+  color: var(--pw-muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  counter-increment: pw-step;
+}
+.pasture-site .checkout-progress li::before {
+  content: counter(pw-step);
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 8px;
+  background: var(--pw-primary-soft);
+  color: var(--pw-primary-deep);
+  font-size: 0.8rem;
+  letter-spacing: 0;
+}
+.pasture-site .checkout-progress li[aria-current='step'] {
+  background: var(--pw-primary);
+  color: #fbfdf6;
+  box-shadow: 0 3px 0 var(--pw-lip);
+}
+.pasture-site .checkout-progress li[aria-current='step']::before {
+  background: var(--pw-sun);
+  color: var(--pw-soil);
+}
+.pasture-site .checkout-section {
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+}
+.pasture-site .checkout-section > h2 {
+  margin-top: 0;
+  font-size: 1.4rem;
+}
+.pasture-site .vendor-checkout .checkout-order-summary {
+  overflow: hidden;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+}
+.pasture-site .checkout-order-summary > .ui-disclosure {
+  --ui-disclosure-border-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.pasture-site .checkout-summary :is(h2, h3) {
+  font-size: 1.15rem;
+}
+/* Continue buttons share the Back button's height; only their width differs. */
+.pasture-site .checkout-stage-actions .button.ui-button:not(.secondary),
+.pasture-site .checkout-section > .button.ui-button:not(.secondary) {
+  padding-inline: 1.6rem;
+}
+.pasture-site .checkout-stage-actions {
+  align-items: center;
+}
+
+/* Completed steps are buttons back to that section. */
+.pasture-site .checkout-progress li:has(.checkout-progress-step) {
+  position: relative;
+  color: var(--pw-soil);
+  transition:
+    background-color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.pasture-site .checkout-progress-step {
+  text-decoration: none;
+}
+.pasture-site .checkout-progress-step::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.pasture-site .checkout-progress li:has(.checkout-progress-step:hover) {
+  background: var(--pw-sun-soft);
+  box-shadow: 0 6px 12px -3px var(--pw-shade);
+  transform: translateY(-2px);
+}
+.pasture-site .checkout-progress li:has(.checkout-progress-step:active) {
+  box-shadow: 0 0 0 transparent;
+  transform: translateY(1px);
+}
+.pasture-site .checkout-progress li:has(.checkout-progress-step:focus-visible) {
+  outline: 3px solid var(--pw-primary-deep);
+  outline-offset: 3px;
+}
+.pasture-site .checkout-progress-step:focus-visible {
+  outline: 0;
+}
+
+/* Each vendor's pickup choice is its own card, like Pickup details. */
+.pasture-site .market-checkout fieldset {
+  min-width: 0;
+  margin: 0 0 1.25rem;
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+}
+.pasture-site .market-checkout fieldset > legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 0.85rem;
+  padding: 0 0 0.7rem;
+  border-bottom: 2px dotted var(--pw-line);
+  color: var(--pw-soil);
+  font: 700 1.4rem / 1.15 var(--font-heading);
+}
+.pasture-site .market-checkout fieldset > legend + * {
+  clear: both;
+}
+.pasture-site .market-checkout .pickup-choice {
+  position: relative;
+  gap: 0.7rem;
+  margin: 0 0 0.6rem;
+  padding: 0.8rem 1rem;
+  border: var(--pw-edge);
+  border-radius: 12px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.pasture-site .market-checkout .pickup-choice:last-child {
+  margin-bottom: 0;
+}
+.pasture-site .market-checkout .pickup-choice input[type='radio'] {
+  accent-color: var(--pw-primary);
+  cursor: pointer;
+}
+.pasture-site .market-checkout .pickup-choice:hover {
+  background: var(--pw-sun-soft);
+  box-shadow: 0 6px 12px -3px var(--pw-shade);
+  transform: translateY(-2px);
+}
+.pasture-site .market-checkout .pickup-choice:active {
+  box-shadow: 0 0 0 transparent;
+  transform: translateY(1px);
+}
+.pasture-site .market-checkout .pickup-choice:has(input:checked) {
+  background: var(--pw-sun-soft);
+  box-shadow: inset 4px 0 0 var(--pw-primary);
+}
+.pasture-site .market-checkout .pickup-choice:has(input:checked):hover {
+  box-shadow:
+    inset 4px 0 0 var(--pw-primary),
+    0 6px 12px -3px var(--pw-shade);
+}
+.pasture-site .market-checkout .pickup-choice:has(input:focus-visible) {
+  outline: 3px solid var(--pw-primary-deep);
+  outline-offset: 3px;
+}
+
+/* Order summary: the quantity is its own chip, apart from the name. */
+.pasture-site .checkout-summary-product > span:not(:last-child) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+}
+.pasture-site .checkout-summary-quantity {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border: 1.5px solid var(--pw-line);
+  border-radius: 8px;
+  background: var(--pw-sun-soft);
+  color: var(--pw-muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pasture-site .market-checkout .pickup-choice,
+  .pasture-site .checkout-progress li:has(.checkout-progress-step) {
+    transition: none;
+  }
+  .pasture-site .market-checkout .pickup-choice:is(:hover, :active),
+  .pasture-site
+    .checkout-progress
+    li:has(.checkout-progress-step:is(:hover, :active)) {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------- vendors, applying */
+.pasture-site .market-date-selector {
+  padding: 0.9rem 1.1rem;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-sun-soft);
+  box-shadow: var(--pw-stack);
+}
+.pasture-site .market-vendors-summary {
+  border-bottom: 2px dotted var(--pw-line);
+}
+.pasture-site .market-vendors-summary h2,
+.pasture-site .market-application h2 {
+  font-weight: 700;
+}
+.pasture-site .market-application.ui-card {
+  padding: 1.25rem 1.4rem;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.pasture-site .market-application.ui-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--pw-stack-lift);
+}
+.pasture-site .market-application-status {
+  border: 1.5px solid var(--pw-leaf);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--pw-leaf);
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.pasture-site
+  .market-application[data-state='closed']
+  .market-application-status {
+  border-color: var(--pw-muted);
+  background: transparent;
+  color: var(--pw-muted);
+}
+
+/* ------------------------------------------------------------ contact form */
+/* The market form runs in two columns on wider screens; long answers (the
+   message and any long-answer field) span both. */
+.pasture-site .contact-fields-configured {
+  row-gap: 1.75rem;
+  column-gap: 1.25rem;
+}
+@media (min-width: 761px) {
+  .pasture-site .contact-fields-configured {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pasture-site .contact-fields-configured > [data-wide] {
+    grid-column: 1 / -1;
+  }
+}
+/* Long answers behave like the single-line fields: focusing one doesn't
+   repaint or outline it. */
+.pasture-site .contact-fields textarea:focus-visible {
+  outline: none;
+  background-color: var(--pw-cream);
+}
+/* Validation messages sit in the gap under their field, so showing one never
+   moves the fields below it. */
+.pasture-site .contact-form-item :is(.field, .phone-field) {
+  position: relative;
+}
+.pasture-site .contact-form-item :is(.form-error, .phone-field > small) {
+  position: absolute;
+  top: calc(100% + 0.2rem);
+  left: 0;
+  right: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Booth card on the Market Day map: the vendor card look, a little smaller. */
+.pasture-site .booth-hover-card.booth-hover-card-custom {
+  width: 240px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.pasture-site .market-day-booth-card.ui-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem;
+  margin: 0;
+  box-shadow: var(--pw-stack-lift);
+}
+/* Booth name in the top-left corner. */
+.pasture-site .market-day-booth-card .market-day-booth-name {
+  margin: 0;
+  color: var(--pw-tomato);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* The vendor's picture beside their name and category. */
+.pasture-site .market-day-booth-vendor {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.pasture-site
+  .market-day-booth-card
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0;
+  border-radius: 50%;
+  background: var(--pw-primary-soft);
+  object-fit: cover;
+  /* Same eased tilt as the "Vendors today" cards. */
+  transition: transform 320ms var(--pw-ease);
+}
+.pasture-site .market-day-booth-card .harvest-vendor-symbol {
+  background: var(--pw-primary);
+  color: #ffffff;
+  font: 800 1.5rem var(--font-heading);
+}
+.pasture-site .market-day-booth-text {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.pasture-site
+  .market-day-booth-card
+  :is(h3, .market-vendor-meta, .market-vendor-actions) {
+  grid-column: auto;
+}
+.pasture-site .market-day-booth-card h3 {
+  align-self: auto;
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+.pasture-site .market-day-booth-card .market-vendor-meta {
+  margin: 0;
+}
+.pasture-site .market-day-booth-card .market-vendor-actions {
+  margin: 0;
+}
+
+/* -------------------------------------------------------- section library */
+.pasture-site
+  :is(.harvest-authored-copy, .story-copy, .story-cta, .harvest-library-heading)
+  :is(h1, h2),
+.pasture-site .harvest-library h2,
+.pasture-site .harvest-section .ui-section-heading-consumer > h2,
+.pasture-site .product-related > h2 {
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.pasture-site .harvest-photo-placeholder {
+  background: var(--pw-sun-soft);
+  color: var(--pw-primary-deep);
+}
+.pasture-site .website-page-region {
+  margin-block: clamp(1rem, 3vw, 2rem);
+}
+/* Carousels stay in the content column like every other section. The shared
+   carousel rule sets width: 100%, which outranks the column rule above. */
+.pasture-site
+  .pw-home
+  > section:is(.harvest-gallery, .harvest-showcase)[data-layout='carousel'] {
+  width: var(--pw-wrap);
+  margin-inline: auto;
+}
+.pasture-site
+  section:is(.harvest-gallery, .harvest-showcase)[data-layout='carousel'] {
+  padding-inline: clamp(1rem, 4vw, 3rem);
+}
+/* Every custom section has space above and below it: 32px by default (the
+   theme's sectionSpaceDefault), or the section's own "Space above and below"
+   setting. Framed sections are set apart by this space, not by an outline
+   that only spans the column. */
+.pasture-site :is(section.website-section, section.harvest-library) {
+  margin-block: var(--website-space-block, 32px);
+}
+.pasture-site .harvest-authored[data-variant='framed'] {
+  border: 0;
+}
+/* A background image (or its placeholder) fills the whole section; image
+   frames apply to side images only. */
+.pasture-site
+  .harvest-image-story[data-image-layout='overlay']
+  .harvest-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0;
+  /* The flower glyph would sit under the overlay copy. */
+  font-size: 0;
+}
+/* A side image keeps its chosen frame at the chosen image height. */
+.pasture-site
+  .harvest-image-story[data-image-shape]
+  .harvest-authored-image
+  img,
+.pasture-site
+  .harvest-image-story[data-image-shape]
+  .harvest-authored-image
+  .harvest-photo-placeholder {
+  max-height: none;
+}
+
+/* -------------------------------------------------------------- market day */
+/* Market day keeps the hero's everyday colors; only a live tag is added. */
+.pw-live-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 1.1rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  background: var(--pw-tomato);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.pw-live-dot {
+  position: relative;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: #ffffff;
+}
+.pw-live-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: pw-ping 1.8s ease-out infinite;
+}
+@keyframes pw-ping {
+  to {
+    opacity: 0;
+    transform: scale(3.2);
+  }
+}
+.pw-day .pw-hero-inner {
+  align-items: start;
+}
+.pasture-site .pw-day .market-day-hero-details {
+  gap: 1rem;
+  margin-top: 1.9rem;
+  max-width: 34rem;
+}
+.pasture-site .pw-day .market-day-venue {
+  gap: 0.5rem;
+  color: var(--pw-primary-deep);
+  font-weight: 700;
+}
+/* The countdown is painted on a wooden sign like the hero title: green slats,
+   a nail in each corner and two slat ends sticking out past the sides. The
+   digits sit on cream plates screwed to the boards. */
+.pasture-site .pw-day .market-day-countdown {
+  --pw-board-seam: color-mix(
+    in srgb,
+    var(--pw-primary-deep) 70%,
+    var(--pw-primary)
+  );
+  --pw-board-light: color-mix(in srgb, #ffffff 10%, var(--pw-primary));
+  position: relative;
+  /* The sign is only as wide as what's painted on it. */
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 1.15rem 1.5rem 1.35rem;
+  border: 0;
+  border-radius: 6px;
+  background:
+    radial-gradient(circle, var(--pw-primary-deep) 0.2rem, transparent 0.26rem)
+      0.35rem 0.35rem / 0.6rem 0.6rem no-repeat,
+    radial-gradient(circle, var(--pw-primary-deep) 0.2rem, transparent 0.26rem)
+      calc(100% - 0.35rem) 0.35rem / 0.6rem 0.6rem no-repeat,
+    radial-gradient(circle, var(--pw-primary-deep) 0.2rem, transparent 0.26rem)
+      0.35rem calc(100% - 0.45rem) / 0.6rem 0.6rem no-repeat,
+    radial-gradient(circle, var(--pw-primary-deep) 0.2rem, transparent 0.26rem)
+      calc(100% - 0.35rem) calc(100% - 0.45rem) / 0.6rem 0.6rem no-repeat,
+    repeating-linear-gradient(
+      180deg,
+      var(--pw-board-light) 0 1.15rem,
+      var(--pw-primary) 1.15rem 2.2rem,
+      var(--pw-board-seam) 2.2rem 2.35rem
+    );
+  box-shadow:
+    inset 0 -0.25rem 0 var(--pw-board-seam),
+    0 0.35rem 0 var(--pw-primary-deep),
+    0 1rem 1.4rem -0.8rem var(--pw-shade);
+  color: #ffffff;
+  text-shadow: 0 1px 0 var(--pw-primary-deep);
+}
+.pasture-site .pw-day .market-day-countdown::before,
+.pasture-site .pw-day .market-day-countdown::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  height: 1.1rem;
+  border-radius: 4px;
+  background: var(--pw-primary);
+  box-shadow: 0 0.2rem 0 var(--pw-primary-deep);
+}
+.pasture-site .pw-day .market-day-countdown::before {
+  top: 0.5rem;
+  left: -0.9rem;
+  width: 2rem;
+}
+.pasture-site .pw-day .market-day-countdown::after {
+  right: -0.75rem;
+  bottom: 0.8rem;
+  width: 1.7rem;
+}
+.pasture-site
+  .pw-day
+  .market-day-countdown
+  :is(
+    .market-day-countdown-label,
+    .market-day-countdown-hours,
+    .market-day-clock-lead,
+    .market-day-unit,
+    .market-day-countdown-note
+  ) {
+  color: #ffffff;
+}
+.pasture-site .pw-day .market-day-countdown-hours {
+  opacity: 0.9;
+}
+.pasture-site .pw-day .market-day-live {
+  background: var(--pw-sun);
+}
+.pasture-site .pw-day .market-day-digit {
+  border-radius: 6px;
+  background: var(--pw-cream);
+  color: var(--pw-soil);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  text-shadow: none;
+  box-shadow:
+    inset 0 -3px 0 color-mix(in srgb, var(--pw-soil) 12%, transparent),
+    0 2px 0 var(--pw-primary-deep);
+}
+.pasture-site .pw-day .market-day-digit::after {
+  background: color-mix(in srgb, var(--pw-soil) 14%, transparent);
+}
+.pasture-site .pw-day .market-day-separator {
+  color: #ffffff;
+}
+.pasture-site .pw-day .market-day-progress {
+  background: var(--pw-primary-deep);
+}
+.pasture-site .pw-day .market-day-progress > span {
+  background: var(--pw-sun);
+}
+.pasture-site .pw-day .market-day-regular {
+  justify-self: start;
+}
+.pasture-site .pw-day .harvest-section {
+  padding-block: clamp(2rem, 4.5vw, 3.5rem);
+}
+.pasture-site .pw-day .market-day-pickups-section {
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-sun-soft);
+  box-shadow: var(--pw-stack);
+}
+.pasture-site .pw-day .market-day-choices {
+  display: grid;
+  gap: 0.9rem;
+  padding: 0;
+  list-style: none;
+}
+.pasture-site .pw-day .market-day-choices a {
+  display: block;
+  width: auto !important;
+  padding: 1rem 1.25rem;
+  border: var(--pw-edge);
+  border-radius: var(--pw-radius);
+  background: var(--pw-cream);
+  box-shadow: var(--pw-stack);
+  font-weight: 700;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+.pasture-site .pw-day .market-day-choices a::after {
+  content: none;
+}
+.pasture-site .pw-day .market-day-choices a:is(:hover, :focus-visible) {
+  transform: translateY(-4px);
+  box-shadow: var(--pw-stack-lift);
+}
+
+/* ------------------------------------------------------- small screens, 2 */
+@media (max-width: 760px) {
+  .pasture-site .vendor-shop {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+  .pasture-site .shop-categories.ui-card {
+    position: static;
+    min-width: 0;
+  }
+  .pasture-site .shop-categories h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  /* Categories become a swipeable row of tags. */
+  .pasture-site .shop-category-filters {
+    display: flex;
+    margin-inline: calc(-1 * var(--pw-gutter));
+    padding: 0.25rem var(--pw-gutter) 0.6rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .pasture-site .shop-category-filters::-webkit-scrollbar {
+    display: none;
+  }
+  .pasture-site .shop-categories .shop-category-option {
+    flex: none;
+    white-space: nowrap;
+  }
+  .pasture-site .shop-category-option:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .pasture-site .shop-market-banner {
+    padding: 0.9rem;
+  }
+  .pasture-site .shop-market-banner > div:first-child {
+    flex-basis: 100%;
+    min-height: 2.3rem;
+    padding-left: 3.05rem;
+  }
+  .pasture-site .shop-market-banner::before,
+  .pasture-site .shop-market-banner::after {
+    top: 0.9rem;
+    left: 0.9rem;
+    width: 2.3rem;
+    height: 2.3rem;
+    translate: none;
+  }
+  .pasture-site .shop-market-banner > .shop-market-picker,
+  .pasture-site .shop-market-banner .shop-market-picker > .button.ui-button {
+    width: 100%;
+  }
+  .pasture-site .shop-products.catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+  }
+  .pasture-site .harvest-products .product-card.ui-card {
+    padding: 0.5rem 0.5rem 0.75rem;
+  }
+  .pasture-site .harvest-products :is(h2, h3) {
+    font-size: 0.98rem;
+  }
+  .pasture-site .shop-products .ui-button {
+    padding-inline: 0.4rem;
+    font-size: 0.74rem;
+    letter-spacing: 0.05em;
+  }
+  .pasture-site .vendor-cart-summary.ui-card {
+    position: static;
+  }
+  .pasture-site .vendor-cart-group {
+    padding-inline: 0.9rem;
+  }
+  .pasture-site .market-vendor-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The calendar's usage hint stays available to assistive technology only. */
+.pasture-site .market-pickup-calendar .market-calendar-help {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* Calendar days and menu actions keep their plain lettering. */
+.pasture-site .market-calendar-day.button.ui-button,
+.pasture-site .harvest-account-content .button.ui-button {
+  letter-spacing: 0;
+  text-transform: none;
+}
+.pasture-site .market-calendar-day.button.ui-button {
+  font-size: 0.95rem;
+}

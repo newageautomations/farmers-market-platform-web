@@ -4,7 +4,7 @@ import { MarketCartLink } from '../MarketCartLink';
 import FarmstandIcon from '../ui/FarmstandIcon.astro';
 import HeaderAccountMenu from './HeaderAccountMenu.astro';
 import { buttonClassName } from '@market/ui/presentation';
-import { isBloom, storefrontText } from '@market/theme/storefront';
+import { storefrontText } from '@market/theme/storefront';
 import { marketNavigation } from '../../lib/market-website';
 interface Props {
   context: StorefrontContext;
@@ -17,9 +17,6 @@ const active = (path: string) =>
     ? ('page' as const)
     : undefined;
 const market = context.kind === 'MARKET';
-// Bloom lists Policies in its footer only, never in the header.
-const headerPolicies =
-  !!context.appearance?.policies?.enabled && !isBloom(context.appearance);
 const marketLinks = market
   ? marketNavigation(context.appearance, !!Astro.locals.editorPreview)
   : [];
@@ -49,11 +46,6 @@ const marketLinks = market
     {context.appearance?.faq?.enabled && (
       <a href="/faq" aria-current={active('/faq')}>
         {context.appearance.faq.title}
-      </a>
-    )}
-    {headerPolicies && (
-      <a href="/policies" aria-current={active('/policies')}>
-        {context.appearance?.policies?.title}
       </a>
     )}
     {context.appearance?.contact?.enabled && (
@@ -99,11 +91,6 @@ const marketLinks = market
         {context.appearance?.faq?.enabled && (
           <a href="/faq" aria-current={active('/faq')}>
             {context.appearance.faq.title}
-          </a>
-        )}
-        {headerPolicies && (
-          <a href="/policies" aria-current={active('/policies')}>
-            {context.appearance?.policies?.title}
           </a>
         )}
         {context.appearance?.contact?.enabled && (

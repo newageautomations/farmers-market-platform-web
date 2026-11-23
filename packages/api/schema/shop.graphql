@@ -277,18 +277,18 @@ type Mutation {
   addVendorPreorderItem(occurrenceId: ID!, variantId: ID!, quantity: Int!): UpdateOrderItemsResult!
   selectCommerceContext(occurrenceId: ID): CommerceContext!
   selectOwnedPickup(methodIds: [ID!]!): OwnedPickupSelection!
-  beginLocalCheckout: LocalCheckoutResult!
+  beginLocalCheckout(termsToken: String): LocalCheckoutResult!
   finalizeLocalCheckout(attemptId: ID!): LocalCheckoutResult!
   releaseLocalCheckout(attemptId: ID!): LocalCheckoutResult!
   requestOriginalUnitRefund(input: OriginalUnitRefundInput!): OriginalUnitRefund!
   retryOriginalUnitRefund(id: ID!): OriginalUnitRefund!
   stripeCheckoutEnabled: Boolean!
   prepareStripeCheckout: StripeCheckoutStatus!
-  startStripeCheckout(consent: String!): StripeCheckoutStatus!
+  startStripeCheckout(consent: String!, termsToken: String): StripeCheckoutStatus!
   advanceStripeCheckout(groupId: ID!): StripeCheckoutStatus!
   cancelStripeCheckout(groupId: ID!): StripeCheckoutStatus!
   stripeCheckoutStatus(orderId: ID!): StripeCheckoutStatus
-  beginProviderCheckout: ProviderCheckoutResult!
+  beginProviderCheckout(termsToken: String): ProviderCheckoutResult!
   finalizeProviderCheckout(attemptId: ID!): ProviderCheckoutResult!
   releaseProviderCheckout(attemptId: ID!): ProviderCheckoutResult!
   clearTestPreorderFeeQuote: Boolean!
@@ -4073,6 +4073,7 @@ input MarketApplicationSubmissionInput {
   occurrenceIds: [Int!]!
   rentals: [MarketApplicationRentalRequest!]!
   idempotencyKey: String!
+  acknowledgement: String
 }
 
 type VendorPreorderOccurrence {
@@ -4483,6 +4484,8 @@ type StripeCheckoutStatus {
   publishableKey: String!
   consentPolicy: String!
   setupSecret: String
+  paymentSecret: String
+  paymentAccount: String
   actionSecret: String
   actionAccount: String
   charges: [StripeCheckoutCharge!]!
@@ -4685,7 +4688,26 @@ type CheckoutPaymentCoverage {
   obligations: [CheckoutVendorPaymentObligation!]!
 }
 
+type CheckoutSellerPolicy {
+  title: String!
+  content: String!
+}
+
+type CheckoutSellerTerms {
+  vendorId: ID!
+  vendorName: String!
+  version: String!
+  policies: [CheckoutSellerPolicy!]!
+  pickupRefundNotice: String
+}
+
+type CheckoutTermsDisclosure {
+  token: String!
+  sellers: [CheckoutSellerTerms!]!
+}
+
 type CustomerCheckoutView {
+  termsDisclosure: CheckoutTermsDisclosure
   preorderFee: CheckoutPreorderFee
   preorderFeeTestAvailable: Boolean!
   paymentGroup: CheckoutPaymentCoverage

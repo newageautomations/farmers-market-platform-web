@@ -1,0 +1,32 @@
+---
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import VendorTermsContent from '../../../components/VendorTermsContent.astro';
+import { vendorTermsRevision } from '../../../lib/vendor-terms';
+const { storefront, editorPreview } = Astro.locals;
+let terms;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+if (storefront?.kind === 'MARKET' && !editorPreview) {
+  try {
+    terms = await vendorTermsRevision(Astro.locals, Astro.params.version ?? '');
+  } catch {
+    Astro.response.status = 503;
+  }
+}
+if (!terms && Astro.response.status !== 503) Astro.response.status = 404;
+---
+
+<SiteLayout
+  context={storefront}
+  path="/checkout"
+  title={'Terms & Conditions'}
+  noindex
+>
+  {terms ? (
+    <VendorTermsContent {...terms} showSeller />
+  ) : (
+    <section class="story-page">
+      <h1>Terms unavailable</h1>
+      <p>The vendor’s terms could not be displayed.</p>
+    </section>
+  )}
+</SiteLayout>

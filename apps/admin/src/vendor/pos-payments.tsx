@@ -25,6 +25,7 @@ import {
   Spinner,
   Textarea,
   buttonClassName,
+  LoadingSkeleton,
 } from '@market/ui';
 import { RouteLink } from './common';
 import './pos.css';
@@ -815,7 +816,10 @@ export function PosOrderPayment({
   }
   if (!sale)
     return renderRecord
-      ? renderRecord(null, <Spinner label="Loading payment details" />)
+      ? renderRecord(
+          null,
+          <LoadingSkeleton variant="detail" label="Loading payment details" />,
+        )
       : null;
   const controls = (
     <>

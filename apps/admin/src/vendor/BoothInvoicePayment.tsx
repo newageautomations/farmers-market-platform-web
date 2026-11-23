@@ -4,14 +4,16 @@ import { FarmstandButton, FarmstandIcon } from '@market/ui/farmstand';
 import '@market/ui/farmstand.css';
 import {
   loadStripeSdk,
-  type StripeCard,
-  type StripeClient,
-  type StripeFactory,
+  type StripePaymentClient,
+  type StripePaymentElement,
+  type StripePaymentElements,
+  type StripePaymentFactory,
 } from '@market/ui/stripe-card';
 import { formatMoney } from '@market/config';
 import type {
   BoothInvoiceApi,
   BoothInvoiceDetail,
+  BoothInvoiceFee,
   BoothInvoicePayment as Payment,
 } from '@market/api';
 import { useWizardDialogHeight } from '../WizardProgress';
@@ -21,12 +23,22 @@ import {
   paymentMethodLabel,
 } from '../market/phase14/InvoiceHistory';
 import { InvoiceTable } from '../market/phase14/InvoiceTable';
-import { MoneyRows, outstanding } from '../market/phase14/InvoiceActions';
+import { outstanding } from '../market/phase14/InvoiceActions';
 import './booth-invoice-payment.css';
 
 const money = (n: number, currency: string) => formatMoney(n, currency);
 const pending = (p: Payment | null) =>
   !!p?.active && ['PROCESSING', 'CAPTURED'].includes(p.state);
+const canEnterPayment = (p: Payment | null) =>
+  !!p?.active && !p.reviewCode && p.state === 'CARD_REQUIRED';
+const matchesQuote = (expected: BoothInvoiceFee, actual: BoothInvoiceFee) =>
+  expected.base === actual.base &&
+  expected.platform === actual.platform &&
+  expected.recovery === actual.recovery &&
+  expected.feeTax === actual.feeTax &&
+  expected.gross === actual.gross &&
+  expected.currency === actual.currency &&
+  expected.policy === actual.policy;
 const day = (value: string) =>
   new Date(value).toLocaleDateString(undefined, {
     month: 'short',
@@ -39,11 +51,12 @@ type Outcome =
   | { kind: 'success' }
   | { kind: 'failure'; message: string; retry: boolean };
 const DECLINED =
-  'Your card payment was not completed. Check the card details or authentication and try again.';
+  'Your payment was not completed. Check your payment details or choose another method.';
 /** The server's payment state decides the result; a Stripe callback never does. */
 function settled(p: Payment | null | undefined): Outcome | null {
   if (!p) return null;
   if (p.state === 'COMPLETED') return { kind: 'success' };
+  if (pending(p)) return { kind: 'processing' };
   if (p.state === 'REVIEW' || p.reviewCode)
     return {
       kind: 'failure',
@@ -51,7 +64,6 @@ function settled(p: Payment | null | undefined): Outcome | null {
         'This payment needs verification. Contact the market before making another payment.',
       retry: false,
     };
-  if (pending(p)) return { kind: 'processing' };
   if (p.state === 'CANCELED')
     return {
       kind: 'failure',
@@ -127,7 +139,7 @@ export function BoothInvoicePayment({
   onUpdated: () => void;
   /** Market date label, when the caller knows it. */
   marketDate?: string;
-  loadSdk?: () => Promise<StripeFactory>;
+  loadSdk?: () => Promise<StripePaymentFactory>;
   actionLabel?: string;
   cancelled?: boolean;
   /** Open the existing invoice dialog when arriving from an invoice link. */
@@ -138,14 +150,17 @@ export function BoothInvoicePayment({
     [payment, setPayment] = useState<Payment | null>(null),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
-  const [checkout, setCheckout] = useState(false),
-    [cardReady, setCardReady] = useState(false),
+  const [entry, setEntry] = useState<{
+      id: Payment['id'];
+      secret: string;
+    } | null>(null),
+    [entryReady, setEntryReady] = useState(false),
     [outcome, setOutcome] = useState<Outcome | null>(null);
   const root = useRef<HTMLDivElement>(null),
     heading = useRef<HTMLHeadingElement>(null),
     host = useRef<HTMLDivElement>(null),
-    card = useRef<StripeCard | null>(null),
-    stripe = useRef<StripeClient | null>(null),
+    elements = useRef<StripePaymentElements | null>(null),
+    stripe = useRef<StripePaymentClient | null>(null),
     lock = useRef(false),
     /** True while the compact result waits on the server's payment status. */
     watching = useRef(false);
@@ -170,20 +185,32 @@ export function BoothInvoicePayment({
   useEffect(() => {
     if (!open) return;
     let active = true;
-    setDetail(null);
-    setError('');
+    const params = new URLSearchParams(window.location.search);
+    const returned = initialOpen ? params.get('invoice-payment-return') : null;
     void api
       .detail(invoiceId)
-      .then((d) => {
+      .then(async (d) => {
         if (!active) return;
         setDetail(d);
         if (
-          !cancelled &&
-          d.occurrenceStatus !== 'cancelled' &&
-          !['VOID', 'CANCELED', 'CANCEL_PENDING'].includes(d.invoice.status) &&
-          d.collections.some((c) => c.active)
-        ) {
-          setCheckout(true);
+          cancelled ||
+          d.occurrenceStatus === 'cancelled' ||
+          ['VOID', 'CANCELED', 'CANCEL_PENDING'].includes(d.invoice.status)
+        )
+          return;
+        const returning = d.collections.some((c) => String(c.id) === returned);
+        if (!returning && !d.collections.some((c) => c.active)) return;
+        const p = await api.act(invoiceId, 'STATUS');
+        if (!active || !p) return;
+        setPayment(p);
+        if (p.state === 'COMPLETED' && d.invoice.status !== 'PAID') {
+          await refresh();
+          if (active) onUpdated();
+        }
+        if (active && returning && String(p.id) === returned) {
+          const next = settled(p);
+          watching.current = next?.kind === 'processing';
+          show(next);
         }
       })
       .catch(() => {
@@ -195,69 +222,57 @@ export function BoothInvoicePayment({
     return () => {
       active = false;
     };
-  }, [api, invoiceId, open, cancelled]);
-  useEffect(() => {
-    if (
-      !open ||
-      !checkout ||
-      cancelled ||
-      detail?.occurrenceStatus === 'cancelled'
-    )
-      return;
-    let active = true;
-    setError('');
-    void api
-      .prepare(invoiceId)
-      .then((p) => {
-        if (active) setPayment(p);
-      })
-      .catch(() => {
-        if (active)
-          setError(
-            'Online payment is unavailable or is being checked. Your card has not been submitted again.',
-          );
-      });
-    return () => {
-      active = false;
-    };
-  }, [open, checkout, api, invoiceId, cancelled, detail?.occurrenceStatus]);
+  }, [api, invoiceId, open, cancelled, initialOpen, onUpdated, refresh, show]);
   const account = payment?.account,
     key = payment?.publishableKey;
+  const secret =
+    canEnterPayment(payment) && payment?.id === entry?.id
+      ? entry?.secret
+      : undefined;
   useEffect(() => {
-    if (!open || !checkout || !account || !key || !host.current) return;
+    if (!open || !secret || !account || !key || !host.current) return;
     let active = true,
-      mounted: StripeCard | undefined;
-    setCardReady(false);
+      mounted: StripePaymentElement | undefined;
     void loadSdk()
       .then((factory) => {
         if (!active || !host.current) return;
         const client = factory(key, { stripeAccount: account });
-        const element = client
-          .elements()
-          .create('card', { hidePostalCode: false, disableLink: true });
+        const form = client.elements({ clientSecret: secret });
+        const element = form.create('payment', {
+          layout: {
+            type: 'accordion',
+            radios: 'always',
+            defaultCollapsed: false,
+          },
+          defaultValues: { billingDetails: {} },
+          fields: {
+            billingDetails: { name: 'auto', email: 'auto', phone: 'auto' },
+          },
+        });
         stripe.current = client;
-        card.current = mounted = element;
+        elements.current = form;
+        mounted = element;
+        setEntryReady(false);
         element.on('change', (v) => {
-          if (active) setCardReady(v.complete && !v.error);
+          if (active) setEntryReady(v.complete && !v.error);
         });
         element.mount(host.current);
       })
       .catch(() => {
         if (active)
           setError(
-            'Secure card entry could not load. Close this invoice and try again.',
+            'The secure payment form could not load. Reopen this invoice to try again.',
           );
       });
     return () => {
       active = false;
       mounted?.destroy();
-      card.current = null;
+      elements.current = null;
       stripe.current = null;
     };
-  }, [open, checkout, account, key, loadSdk]);
+  }, [open, secret, account, key, loadSdk]);
   useEffect(() => {
-    if (!open || !checkout || !payment?.active || payment.state === 'REVIEW')
-      return;
+    if (!open || !payment?.active || payment.state === 'REVIEW') return;
     let active = true,
       running = false;
     const timer = setInterval(() => {
@@ -266,7 +281,7 @@ export function BoothInvoicePayment({
       void api
         .act(invoiceId, 'STATUS')
         .then(async (p) => {
-          if (!active || !p) return;
+          if (!active || lock.current || !p) return;
           setPayment(p);
           if (p.state === 'COMPLETED') {
             await refresh();
@@ -295,7 +310,6 @@ export function BoothInvoicePayment({
     };
   }, [
     open,
-    checkout,
     api,
     invoiceId,
     payment?.active,
@@ -304,14 +318,59 @@ export function BoothInvoicePayment({
     onUpdated,
     show,
   ]);
+  const choosePayment = async () => {
+    if (noPayment || lock.current || !detail?.eligible) return;
+    lock.current = true;
+    setBusy(true);
+    setError('');
+    setEntry(null);
+    setEntryReady(false);
+    try {
+      const expected = payment?.active ? payment.quote : detail.paymentQuote;
+      const prepared = payment?.active ? payment : await api.prepare(invoiceId);
+      setPayment(prepared);
+      if (!prepared.active || settled(prepared)) return;
+      // Review the frozen amount if it differs from the amount the payer saw.
+      if (!expected) return;
+      if (!matchesQuote(expected, prepared.quote)) {
+        setError(
+          'The payment total changed. Review the updated amount before choosing a payment method.',
+        );
+        return;
+      }
+      const p = await api.act(invoiceId, 'CONFIRM', prepared.consentPolicy);
+      if (!p) throw new Error('No payment');
+      setPayment(p);
+      if (p.state === 'COMPLETED') {
+        await refresh();
+        onUpdated();
+      }
+      if (p.id === prepared.id && canEnterPayment(p) && p.clientSecret) {
+        setEntry({ id: p.id, secret: p.clientSecret });
+      } else if (canEnterPayment(p) && !p.clientSecret) {
+        throw new Error('No payment form');
+      }
+    } catch {
+      setError(
+        'Secure payment could not be opened. Check the invoice and try again.',
+      );
+    } finally {
+      lock.current = false;
+      setBusy(false);
+    }
+  };
   const pay = async () => {
+    const form = elements.current;
+    const client = stripe.current;
     if (
       noPayment ||
       lock.current ||
       !payment ||
-      !card.current ||
-      !cardReady ||
-      !stripe.current?.confirmCardPayment
+      !detail ||
+      !secret ||
+      !form ||
+      !entryReady ||
+      !client?.confirmPayment
     )
       return;
     lock.current = true;
@@ -320,27 +379,41 @@ export function BoothInvoicePayment({
     show({ kind: 'processing' });
     let next: Outcome;
     try {
-      let declined = false;
       const p = await api.act(invoiceId, 'CONFIRM', payment.consentPolicy);
       if (!p) throw new Error('No payment');
       setPayment(p);
-      if (p.clientSecret && p.state === 'CARD_REQUIRED') {
-        const result = await stripe.current.confirmCardPayment(p.clientSecret, {
-          payment_method: { card: card.current },
+      if (canEnterPayment(p)) {
+        if (p.id !== payment.id || p.clientSecret !== secret)
+          throw new Error('Payment form changed');
+        const returnUrl = new URL('/vendor/booths', window.location.origin);
+        returnUrl.searchParams.set(
+          'occurrence',
+          String(detail.invoice.occurrenceId),
+        );
+        returnUrl.searchParams.set('invoice', String(invoiceId));
+        returnUrl.searchParams.set('invoice-payment-return', String(p.id));
+        await client.confirmPayment({
+          elements: form,
+          redirect: 'if_required',
+          confirmParams: {
+            return_url: returnUrl.href,
+            payment_method_data: { billing_details: {} },
+          },
         });
-        declined = !!result.error;
       }
       const verified = await api.act(invoiceId, 'STATUS');
-      if (verified) setPayment(verified);
-      if (verified?.state === 'COMPLETED') {
+      if (!verified || verified.id !== payment.id)
+        throw new Error('Payment status changed');
+      setPayment(verified);
+      if (verified.state === 'COMPLETED') {
         await refresh();
         onUpdated();
       }
-      const result = settled(verified ?? p);
-      next =
-        result && !(declined && result.kind !== 'success')
-          ? result
-          : { kind: 'failure', message: DECLINED, retry: true };
+      next = settled(verified) ?? {
+        kind: 'failure',
+        message: DECLINED,
+        retry: canEnterPayment(verified),
+      };
     } catch {
       next = {
         kind: 'failure',
@@ -358,8 +431,11 @@ export function BoothInvoicePayment({
   const close = () => {
     if (!busy) {
       setOpen(false);
-      setCheckout(false);
+      setDetail(null);
+      setError('');
       setPayment(null);
+      setEntry(null);
+      setEntryReady(false);
       setOutcome(null);
       watching.current = false;
     }
@@ -372,11 +448,16 @@ export function BoothInvoicePayment({
   const due = i && !noPayment ? Math.max(0, outstanding(i)) : 0;
   // The server decides when an invoice is past due.
   const overdue = !!i?.dueAt && due > 0 && i.billingStatus === 'PAST_DUE';
-  const cardOpen =
-    !!payment &&
-    payment.active &&
+  const quote = payment?.active ? payment.quote : detail?.paymentQuote;
+  const feeQuote = due > 0 ? quote : null;
+  const totalDue = feeQuote?.gross ?? due;
+  const canChoose =
+    !!detail?.eligible &&
+    due > 0 &&
+    !secret &&
     !pending(payment) &&
-    payment.state !== 'REVIEW';
+    !payment?.reviewCode &&
+    payment?.state !== 'REVIEW';
   return (
     <>
       <FarmstandButton
@@ -424,7 +505,7 @@ export function BoothInvoicePayment({
                 <p>
                   {outcome.kind === 'processing'
                     ? busy
-                      ? 'Keep this window open while your card is charged.'
+                      ? 'Keep this window open while we confirm your payment.'
                       : 'Your payment is processing. The invoice balance updates after Stripe verification.'
                     : outcome.kind === 'success'
                       ? 'Payment verified and recorded. Your invoice is paid.'
@@ -452,8 +533,7 @@ export function BoothInvoicePayment({
               )}
             </div>
           )}
-          {/* Hidden, not unmounted, behind a result so secure card entry stays
-            mounted for Stripe and for another attempt. */}
+          {/* Keep the secure payment form mounted behind the result for retries. */}
           <div className="booth-invoice-stage" hidden={!!outcome}>
             {error && <Alert severity="error">{error}</Alert>}
             {!detail && !error && <Spinner label="Loading invoice" />}
@@ -481,7 +561,7 @@ export function BoothInvoicePayment({
                 >
                   <div data-tone={due > 0 ? 'owed' : 'settled'}>
                     <dt>Total due</dt>
-                    <dd key={due}>{money(due, i.currency)}</dd>
+                    <dd key={totalDue}>{money(totalDue, i.currency)}</dd>
                   </div>
                   <div data-tone={overdue ? 'owed' : undefined}>
                     <dt>{overdue ? 'Past due since' : 'Due date'}</dt>
@@ -537,107 +617,90 @@ export function BoothInvoicePayment({
                             </td>
                           </tr>
                         ))}
+                        {feeQuote && (
+                          <tr>
+                            <td colSpan={3}>Online processing fee</td>
+                            <td>{money(feeQuote.fee, feeQuote.currency)}</td>
+                          </tr>
+                        )}
                       </tbody>
                       <tfoot>
                         <tr>
                           <th scope="row" colSpan={3}>
                             Total due
                           </th>
-                          <td>{money(due, i.currency)}</td>
+                          <td>{money(totalDue, i.currency)}</td>
                         </tr>
                       </tfoot>
                     </InvoiceTable>
                   </div>
+                  {!payment && !detail.eligible && i.status === 'OPEN' && (
+                    <p className="markets-muted">{detail.unavailable}</p>
+                  )}
+                  {!noPayment && (quote || payment || canChoose) && (
+                    <>
+                      <div
+                        ref={host}
+                        className="vendor-invoice-card"
+                        aria-label="Secure payment entry"
+                        hidden={!secret}
+                      />
+                      {/* The compact result announces these while it shows. */}
+                      {!outcome && pending(payment) && (
+                        <p role="status" className="markets-muted">
+                          Your payment is processing. The invoice balance
+                          updates after Stripe verification.
+                        </p>
+                      )}
+                      {!outcome && payment?.state === 'COMPLETED' && (
+                        <Alert severity="success">
+                          Payment verified and recorded. Your invoice is paid.
+                        </Alert>
+                      )}
+                      {!outcome && payment?.state === 'CANCELED' && (
+                        <p role="status" className="markets-muted">
+                          This payment was canceled. No invoice principal was
+                          settled by this attempt.
+                        </p>
+                      )}
+                      {!outcome &&
+                        !pending(payment) &&
+                        (payment?.state === 'REVIEW' ||
+                          payment?.reviewCode) && (
+                          <Alert severity="warning">
+                            This payment needs verification. Contact the market
+                            before making another payment.
+                          </Alert>
+                        )}
+                      <div className="ui-actions ui-modal-actions vendor-invoice-actions">
+                        {canChoose && (
+                          <FarmstandButton
+                            loading={busy}
+                            disabled={busy}
+                            onClick={() => void choosePayment()}
+                          >
+                            Pay Invoice
+                          </FarmstandButton>
+                        )}
+                        {secret && quote && (
+                          <FarmstandButton
+                            loading={busy}
+                            disabled={busy || !entryReady}
+                            onClick={() => void pay()}
+                          >
+                            <FarmstandIcon name="credit-card" />
+                            {`Pay invoice ${money(quote.gross, quote.currency)}`}
+                          </FarmstandButton>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </section>
                 <InvoiceHistory
                   invoice={i}
                   payments={detail.payments}
                   collections={detail.collections}
                 />
-                {!checkout && !detail.eligible && i.status === 'OPEN' && (
-                  <p className="markets-muted">{detail.unavailable}</p>
-                )}
-                {!checkout && detail.eligible && !noPayment && (
-                  <div className="ui-actions ui-modal-actions vendor-invoice-actions">
-                    <FarmstandButton onClick={() => setCheckout(true)}>
-                      <FarmstandIcon name="credit-card" />
-                      Pay invoice
-                    </FarmstandButton>
-                  </div>
-                )}
-                {checkout && !noPayment && !payment && !error && (
-                  <Spinner label="Preparing secure payment" />
-                )}
-                {checkout && !noPayment && payment && (
-                  <section
-                    className="booth-invoice-section vendor-invoice-checkout"
-                    aria-labelledby={`vendor-invoice-${i.id}-pay`}
-                  >
-                    <h3 id={`vendor-invoice-${i.id}-pay`}>Pay online</h3>
-                    <MoneyRows
-                      label="Card payment"
-                      rows={[
-                        [
-                          'Invoice balance',
-                          money(payment.quote.base, payment.quote.currency),
-                        ],
-                        [
-                          'Online payment fee',
-                          money(payment.quote.fee, payment.quote.currency),
-                          'muted',
-                        ],
-                        [
-                          'Total card charge',
-                          money(payment.quote.gross, payment.quote.currency),
-                          'total',
-                        ],
-                      ]}
-                    />
-                    <div
-                      ref={host}
-                      className="vendor-invoice-card"
-                      aria-label="Secure card entry"
-                      hidden={!cardOpen}
-                    />
-                    {/* The compact result announces these while it shows. */}
-                    {!outcome && pending(payment) && (
-                      <p role="status" className="markets-muted">
-                        Your payment is processing. The invoice balance updates
-                        after Stripe verification.
-                      </p>
-                    )}
-                    {!outcome && payment.state === 'COMPLETED' && (
-                      <Alert severity="success">
-                        Payment verified and recorded. Your invoice is paid.
-                      </Alert>
-                    )}
-                    {!outcome && payment.state === 'CANCELED' && (
-                      <p role="status" className="markets-muted">
-                        This payment was canceled. No invoice principal was
-                        settled by this attempt.
-                      </p>
-                    )}
-                    {!outcome &&
-                      (payment.state === 'REVIEW' || payment.reviewCode) && (
-                        <Alert severity="warning">
-                          This payment needs verification. Contact the market
-                          before making another payment.
-                        </Alert>
-                      )}
-                    <div className="ui-actions ui-modal-actions vendor-invoice-actions">
-                      {cardOpen && (
-                        <FarmstandButton
-                          loading={busy}
-                          disabled={busy || !cardReady || !!payment.reviewCode}
-                          onClick={() => void pay()}
-                        >
-                          <FarmstandIcon name="credit-card" />
-                          {`Pay invoice ${money(payment.quote.gross, payment.quote.currency)}`}
-                        </FarmstandButton>
-                      )}
-                    </div>
-                  </section>
-                )}
               </>
             )}
           </div>

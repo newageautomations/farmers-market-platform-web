@@ -62,6 +62,7 @@ const testCheckout: CheckoutView = {
   frozen: false,
   committed: false,
   paymentStatus: 'NONE',
+  termsDisclosure: null,
   paymentGroup: null,
   preorderFee: null,
   preorderFeeTestAvailable: false,

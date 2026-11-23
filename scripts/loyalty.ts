@@ -503,11 +503,11 @@ async function browserChecks(ready: Ready) {
           /\$24\.00/,
         );
         await page
-          .getByRole('button', { name: 'Continue to payment', exact: true })
-          .click();
-        await page
           .getByLabel('Payment method', { exact: true })
           .selectOption('dev-test-payment');
+        await page
+          .getByRole('checkbox', { name: /I agree to the Terms/ })
+          .check();
         await page
           .getByRole('button', { name: 'Place order', exact: true })
           .click();

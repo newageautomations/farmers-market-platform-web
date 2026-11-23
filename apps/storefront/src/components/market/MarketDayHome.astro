@@ -12,11 +12,17 @@ import { MarketDayCountdown } from './MarketDayCountdown';
 import MarketVendorCards from './MarketVendorCards.astro';
 import HarvestHero from '../home/HarvestHero.astro';
 import EditorialHero from '../editorial-market/Hero.astro';
-import { isEditorialMarket, marketOnlyTheme } from '@market/theme/storefront';
+import {
+  isEditorialMarket,
+  marketOnlyTheme,
+  themePageStructure,
+} from '@market/theme/storefront';
 import MeadowHero from '../meadow/Hero.astro';
 import HearthHero from '../hearth/Hero.astro';
+import PastureHero from '../pasture/Hero.astro';
 import FarmstandIcon from '../ui/FarmstandIcon.astro';
 import EmptyState from '../ui/EmptyState.astro';
+import { vendorBoothDetails } from '../../lib/market-day-booths';
 import '../../styles/harvest-sections.css';
 import '../../styles/market-website.css';
 import '../../styles/market-day.css';
@@ -51,10 +57,21 @@ const editorial = isEditorialMarket(context.appearance)
   ? context.appearance.template.settings
   : undefined;
 const welcome = `Welcome to ${context.name}`;
-// Meadow and Hearth show Market Day in their own hero; the rest is shared.
+// Meadow, Hearth and Pasture show Market Day in their own hero; the rest is shared.
 const marketTheme = marketOnlyTheme(context.appearance);
-const ThemeHero = marketTheme === 'hearth' ? HearthHero : MeadowHero;
-const themePrefix = marketTheme === 'hearth' ? 'hw' : 'mw';
+const themeHeroes = {
+  meadow: { Hero: MeadowHero, prefix: 'mw' },
+  hearth: { Hero: HearthHero, prefix: 'hw' },
+  pasture: { Hero: PastureHero, prefix: 'pw' },
+} as const;
+// Themes with booth cards point today's vendors at their booths on the map.
+const boothCards = themePageStructure(
+  context.appearance?.theme,
+).marketDayBoothCards;
+const booths =
+  boothCards && map ? vendorBoothDetails(vendors, map.spaces) : undefined;
+const ThemeHero = themeHeroes[marketTheme ?? 'meadow'].Hero;
+const themePrefix = themeHeroes[marketTheme ?? 'meadow'].prefix;
 ---
 
 <div
@@ -191,6 +208,7 @@ const themePrefix = marketTheme === 'hearth' ? 'hw' : 'mw';
           state={state}
           occurrence={occurrence}
           map={map}
+          boothVendors={boothCards ? vendors : undefined}
         />
         <section
           id="market-day-vendors"
@@ -210,6 +228,7 @@ const themePrefix = marketTheme === 'hearth' ? 'hw' : 'mw';
               occurrenceId={String(occurrence.id)}
               cardTheme={context.appearance?.market?.vendorsCardTheme}
               marketDay
+              booths={booths}
             />
           ) : (
             <EmptyState title="Vendors are setting up" level={3}>

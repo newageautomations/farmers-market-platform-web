@@ -106,10 +106,10 @@
   min-width: 0;
 }
 .website-editor-workspace .website-editor-inspector .field {
-  margin-block: 0.85rem;
+  margin-block: 0;
 }
 .website-editor-workspace .website-inspector-title {
-  padding-bottom: 1rem;
+  padding-bottom: 0.6rem;
   border-bottom: 1px solid var(--designer-line);
   font-weight: 600;
 }
@@ -121,10 +121,11 @@
   border: 0;
   border-bottom: 1px solid var(--designer-line);
   border-radius: 0;
-  padding-block: 0.4rem;
+  padding-block: 0.1rem;
 }
 .website-editor-workspace .farmhouse-section-heading {
   gap: 0.2rem;
+  align-items: center;
 }
 .website-editor-workspace .ui-disclosure {
   background: transparent;
@@ -155,6 +156,7 @@
 }
 .website-block-row > .ui-button:last-child {
   justify-content: start;
+  text-align: start;
   flex: 1;
   min-width: 0;
 }
@@ -212,4 +214,169 @@ body:has(.website-editor-workspace):not(
   font-size: 0.8125rem;
   line-height: 1.5;
   padding: 0.5rem 0.65rem;
+}
+
+/* The storefront preview shows the shared website skeleton until its grant arrives. */
+.visual-editor-preview-loading {
+  width: 100%;
+}
+
+/* Layer rail: compact rows; only rows that reveal children in the rail show a chevron. */
+.website-editor-workspace .visual-editor-sidebar nav {
+  margin-top: 0.6rem;
+}
+.website-editor-workspace .visual-editor-sidebar .ui-disclosure {
+  margin-block: 0;
+}
+.website-editor-workspace .visual-editor-sidebar .ui-disclosure > summary {
+  min-height: 0;
+  padding: 0.35rem 0.45rem;
+  line-height: 1.3;
+}
+.website-editor-workspace
+  .visual-editor-sidebar
+  .ui-disclosure:not([data-expandable])
+  > summary::after {
+  display: none;
+}
+.website-editor-workspace .website-sidebar-children,
+.website-editor-workspace .website-block-hierarchy {
+  margin: 0.15rem 0 0.25rem 1rem;
+  padding-left: 0.4rem;
+  border-left: 1px solid var(--designer-line);
+}
+.website-editor-workspace .website-sidebar-children:empty {
+  display: none;
+}
+.website-editor-workspace .farmhouse-section-heading > .ui-icon-button,
+.website-editor-workspace .website-block-row > .ui-icon-button {
+  align-self: center;
+}
+
+/* Inspector: grouped settings (layout editor PanelSection) with tight, even spacing. */
+.website-editor-workspace .website-editor-inspector {
+  padding: 0.75rem 1rem;
+}
+.website-editor-workspace
+  .website-editor-inspector
+  .visual-editor-section-content {
+  padding-top: 0.6rem;
+}
+/* Even spacing that does not depend on each editor's wrapper markup. */
+.website-editor-workspace
+  .website-editor-inspector
+  :is(
+    .visual-editor-section-content,
+    .visual-editor-section-content form,
+    .visual-editor-section-content fieldset:not(.farmhouse-section-management),
+    .website-inspector-group > .designer-section-body
+  )
+  > *
+  + * {
+  margin-top: 0.6rem;
+}
+.website-editor-workspace
+  .website-editor-inspector
+  .visual-editor-section-content
+  .field:not(:first-child) {
+  margin-top: 0.6rem;
+}
+.website-editor-workspace .website-editor-inspector fieldset[hidden] {
+  display: none;
+}
+.website-editor-workspace .website-inspector-group {
+  margin-inline: -1rem;
+}
+.website-editor-workspace
+  .website-editor-inspector
+  .visual-editor-section-content
+  details.website-inspector-group.website-inspector-group {
+  margin-top: 0;
+}
+.website-editor-workspace .website-inspector-group > summary {
+  padding: 0.55rem 1rem;
+  font-size: 0.82rem;
+}
+.website-editor-workspace .website-inspector-group > .designer-section-body {
+  display: block;
+  padding: 0 1rem 0.75rem;
+}
+.website-editor-workspace
+  .website-inspector-group
+  .storefront-text-size-controls
+  > *
+  + * {
+  margin-top: 0.6rem;
+}
+.website-editor-workspace .farmhouse-section-management {
+  margin-bottom: 0;
+  padding: 0 0 0.6rem;
+}
+.website-editor-workspace
+  .website-editor-inspector
+  .field:has(> input[type='range']) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.5rem;
+  row-gap: 0.15rem;
+}
+.website-editor-workspace
+  .website-editor-inspector
+  .field:has(> input[type='range'])
+  > input {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.website-editor-workspace
+  .website-editor-inspector
+  .field:has(> input[type='range'])
+  > output {
+  grid-row: 1;
+  grid-column: 2;
+  font-size: 0.75rem;
+  color: var(--designer-ink-muted);
+}
+
+/* Page picker: enabled state shows in the open list only (selectedcontent is a static copy). */
+.website-editor-workspace .visual-editor-page-state {
+  margin-left: auto;
+  padding-left: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--designer-ink-muted);
+}
+.website-editor-workspace selectedcontent .visual-editor-page-state {
+  display: none;
+}
+.website-editor-workspace .visual-editor-page-selector .story-page-toggle {
+  margin-top: 0.5rem;
+}
+
+/* Section background swatches span the inspector like its other selects. */
+.website-editor-workspace
+  .website-editor-inspector
+  .field:has(> .ui-palette-select) {
+  width: 100%;
+}
+/* Feature icons are chosen by their glyph, the way the storefront draws them. */
+.website-editor-workspace .feature-icon-option {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.25rem;
+}
+.website-editor-workspace .feature-icon-option .farmstand-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+@supports (appearance: base-select) {
+  .website-editor-workspace .feature-icon-select selectedcontent {
+    display: flex;
+    align-items: center;
+  }
+}
+/* "Add details" beside an empty Public contact information row. */
+.website-editor-workspace .contact-editor-needed {
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  vertical-align: middle;
 }

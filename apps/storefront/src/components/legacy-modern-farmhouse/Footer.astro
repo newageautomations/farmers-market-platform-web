@@ -1,4 +1,5 @@
 ---
+import VendorTermsLink from '../VendorTermsLink.astro';
 import type { StorefrontContext } from '@market/storefront-core';
 import {
   contactDetails,
@@ -54,9 +55,10 @@ const socials = (['instagram', 'facebook'] as const).flatMap((type) => {
     </nav>
     {(appearance?.faq?.enabled ||
       appearance?.policies?.enabled ||
-      socials.length > 0) && (
+      socials.length > 0 || context.kind === 'VENDOR') && (
       <nav aria-label="Information and social links">
         {appearance?.faq?.enabled && <a href="/faq">{appearance.faq.title}</a>}
+        <VendorTermsLink context={context} />
         {appearance?.policies?.enabled && (
           <a href="/policies">{appearance.policies.title}</a>
         )}

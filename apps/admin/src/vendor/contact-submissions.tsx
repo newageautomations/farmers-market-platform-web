@@ -250,7 +250,13 @@ export function ContactSubmissions({ api }: { api?: VendorContactApi }) {
                   })}
                 </FarmstandTable>
                 {switching && (
-                  <ReadState loading error={undefined} retry={query.refresh} />
+                  <ReadState
+                    skeleton="table"
+                    rows={3}
+                    loading
+                    error={undefined}
+                    retry={query.refresh}
+                  />
                 )}
                 {!items.length && !switching && (
                   <EmptyState
@@ -410,7 +416,12 @@ function ContactPreview({
   if (!row)
     return (
       <FarmstandPanel className="customers-preview contact-preview contact-preview-pending">
-        <ReadState loading error={undefined} retry={() => undefined} />
+        <ReadState
+          skeleton="detail"
+          loading
+          error={undefined}
+          retry={() => undefined}
+        />
       </FarmstandPanel>
     );
   return (
@@ -482,6 +493,15 @@ function ContactPreview({
             </dt>
             <dd>{row.subject}</dd>
           </div>
+          {row.answers?.map((answer, index) => (
+            <div key={index}>
+              <dt>
+                <FarmstandIcon name="tag" />
+                {answer.label}
+              </dt>
+              <dd>{answer.value || 'Not provided'}</dd>
+            </div>
+          ))}
           {row.order_number && (
             <div>
               <dt>

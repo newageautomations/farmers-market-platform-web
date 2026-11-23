@@ -1,4 +1,6 @@
 export * from './website-page-heroes';
+export * from './theme-page-structure';
+export * from './website-page-starters';
 import {
   isHarvestHomepageComposition,
   isWebsitePageCompositions,
@@ -20,6 +22,9 @@ export * from './editorial-market';
 export {
   policiesSchema,
   defaultPolicies,
+  defaultMarketTerms,
+  defaultMarketPolicies,
+  marketStarterText,
   policyLimit,
   policyTitleLimit,
   policyContentLimit,
@@ -45,7 +50,14 @@ export {
   contactValueAdvice,
   contactHref,
   contactSubjects,
+  contactFieldTypes,
+  contactFieldLimit,
+  contactFieldOptionLimit,
+  contactRequiredFieldTypes,
+  defaultMarketContactForm,
+  contactFormFields,
   type ContactConfig,
+  type ContactFormField,
 } from './contact';
 import { z } from 'zod';
 import { platformTheme, themeVariables } from './index';
@@ -86,6 +98,13 @@ export const storefrontThemes = {
       'A rustic bakehouse storefront in kraft and roast tones for breads, preserves, coffee and pastries.',
     premium: false,
   },
+  pasture: {
+    label: 'Pasture',
+    available: true,
+    description:
+      'A fresh green market storefront with rolling hills, wavy photo frames and a bold banner headline.',
+    premium: false,
+  },
   bloom: {
     label: 'Bloom',
     available: true,
@@ -101,9 +120,14 @@ export const marketStorefrontThemes: readonly StorefrontThemeId[] = [
   'editorial-market',
   'meadow',
   'hearth',
+  'pasture',
 ];
 /** Themes that only a market website can use. */
-export const marketOnlyStorefrontThemes = ['meadow', 'hearth'] as const;
+export const marketOnlyStorefrontThemes = [
+  'meadow',
+  'hearth',
+  'pasture',
+] as const;
 export type MarketOnlyStorefrontTheme =
   (typeof marketOnlyStorefrontThemes)[number];
 /** Themes that only a vendor website can use. Markets are never offered them. */
@@ -126,7 +150,7 @@ export function isBloom(value: unknown): value is { theme: 'bloom' } {
     (value as { theme?: unknown }).theme === 'bloom'
   );
 }
-/** The market-only theme of an appearance: Meadow or Hearth. */
+/** The market-only theme of an appearance: Meadow, Hearth or Pasture. */
 export function marketOnlyTheme(
   value: unknown,
 ): MarketOnlyStorefrontTheme | undefined {
@@ -140,6 +164,11 @@ export function isHearth(
   value: unknown,
 ): value is { theme: 'hearth'; market?: MarketAppearance } {
   return marketOnlyTheme(value) === 'hearth';
+}
+export function isPasture(
+  value: unknown,
+): value is { theme: 'pasture'; market?: MarketAppearance } {
+  return marketOnlyTheme(value) === 'pasture';
 }
 export function isMeadow(
   value: unknown,
@@ -662,7 +691,7 @@ export const meadowHiddenText: readonly MarketTextKey[] = [
   'categoriesText',
   'closingText',
 ];
-/** Market homepage text a theme does not show. Meadow and Hearth sections use
+/** Market homepage text a theme does not show. Meadow, Hearth and Pasture sections use
  * their headings alone. */
 export function headingOnlyMarketText(
   theme: unknown,
@@ -741,6 +770,9 @@ export const storefrontAppearanceSchema = z
     findUs: findUsSchema.optional(),
     contact: contactSchema.optional(),
     policies: policiesSchema.optional(),
+    /** A market's Terms & Conditions page, shaped like Policies. */
+    marketTerms: policiesSchema.optional(),
+    terms: z.string().max(12000).optional(),
     faq: faqSchema.optional(),
     theme: z.enum([
       'harvest',
@@ -748,6 +780,7 @@ export const storefrontAppearanceSchema = z
       'editorial-market',
       'meadow',
       'hearth',
+      'pasture',
       'bloom',
     ]),
     palette: z.enum(['sage', 'terracotta', 'blue', 'charcoal']),
@@ -784,7 +817,7 @@ export const storefrontAppearanceSchema = z
     (value) =>
       (!value.harvestComposition || usesHarvestContract(value.theme)) &&
       (!value.market || marketStorefrontThemes.includes(value.theme)) &&
-      // Meadow and Hearth are market website themes only.
+      // Meadow, Hearth and Pasture are market website themes only.
       (!marketOnlyTheme(value) || !value.vendor) &&
       // Bloom is a vendor website theme only.
       (!isBloom(value) || !value.market) &&
@@ -821,10 +854,13 @@ export const storefrontAppearanceSchema = z
       value.about.sectionsVersion === undefined ||
       value.about.sections !== undefined,
   )
-  .refine((value) => JSON.stringify(value).length <= 80000, {
-    message:
-      'Storefront content is too large. Shorten your page content, including policies and story sections.',
-  });
+  .refine(
+    (value) => JSON.stringify({ ...value, terms: undefined }).length <= 80000,
+    {
+      message:
+        'Storefront content is too large. Shorten your page content, including policies and story sections.',
+    },
+  );
 export type StorefrontAppearance = z.infer<typeof storefrontAppearanceSchema>;
 /** Absence and accidental empty adoption preserve the original full-page text. */
 export function aboutSections(
@@ -865,7 +901,8 @@ export function isStorefrontEditorSection(
       /^(?:farmhouse:(?:cinematic|discovery|products|story|collection|invitation|(?:text|image-with-text|cta-banner|image-banner|image-gallery|feature-grid|product-showcase|category-showcase)-[a-zA-Z0-9][a-zA-Z0-9_-]{0,58}|shop-settings|story-layout|gallery)|editorial:(?:header|hero|categories|products|impact|markets|vendors|closing|footer|theme|(?:text|image-with-text|cta-banner|image-banner|image-gallery|feature-grid|product-showcase|category-showcase)-[a-zA-Z0-9][a-zA-Z0-9_-]{0,58}|shop-settings))$/.test(
         value,
       ) ||
-      /^(?:story|faq|policy):[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(value))
+      /^(?:story|faq|policy):[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(value) ||
+      /^contact-field:[a-z][a-z0-9-]{0,39}$/.test(value))
   );
 }
 export function storefrontEditorSectionLabel(value: StorefrontEditorSection) {
@@ -886,11 +923,13 @@ export function storefrontEditorSectionLabel(value: StorefrontEditorSection) {
         ? 'Policy'
         : value.startsWith('faq:')
           ? 'Question'
-          : value.startsWith('story:')
-            ? 'Story section'
-            : storefrontEditorSections[
-                value as keyof typeof storefrontEditorSections
-              ];
+          : value.startsWith('contact-field:')
+            ? 'Form field'
+            : value.startsWith('story:')
+              ? 'Story section'
+              : storefrontEditorSections[
+                  value as keyof typeof storefrontEditorSections
+                ];
 }
 export function storefrontText(
   config: StorefrontAppearance | undefined,
@@ -916,6 +955,7 @@ export const storefrontEditorSections = {
   footer: 'Footer',
   theme: 'Theme settings',
   'policies-settings': 'Policies page',
+  'terms-content': 'Terms & Conditions',
   'policies-intro': 'Introduction',
   'policies-list': 'Policies',
   'policies-cta': 'Closing invitation',
@@ -948,6 +988,7 @@ export type StorefrontEditorSection =
   | `story:${string}`
   | `faq:${string}`
   | `policy:${string}`
+  | `contact-field:${string}`
   | `farmhouse:${string}`
   | `editorial:${string}`;
 /** Only existing, read-only storefront routes can be browsed inside the editor. */
@@ -955,7 +996,7 @@ export function storefrontPreviewPath(value: unknown): value is string {
   return (
     typeof value === 'string' &&
     value.length <= 400 &&
-    /^\/$|^\/about$|^\/find-us$|^\/contact$|^\/faq$|^\/policies$|^\/market-dates$|^\/vendors$|^\/applications$|^\/occurrences\/[1-9][0-9]{0,9}$|^\/shop(?:\/products\/[1-9][0-9]{0,9})?$|^\/products(?:\/[a-zA-Z0-9_%~-]+)?$/.test(
+    /^\/$|^\/about$|^\/find-us$|^\/contact$|^\/faq$|^\/policies$|^\/terms-and-conditions$|^\/market-dates$|^\/vendors$|^\/applications$|^\/occurrences\/[1-9][0-9]{0,9}$|^\/shop(?:\/products\/[1-9][0-9]{0,9})?$|^\/products(?:\/[a-zA-Z0-9_%~-]+)?$/.test(
       value,
     ) &&
     !/%(?:2f|5c|2e|00)/i.test(value)

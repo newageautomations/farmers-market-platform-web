@@ -1,6 +1,6 @@
 import { WebsiteInspectorContent } from './WebsiteEditorContext';
 import { TextSizeControls } from './TextSizeControls';
-import { Checkbox, Field, Input, SelectField, Textarea } from '@market/ui';
+import { Field, Input, SelectField, Textarea } from '@market/ui';
 import { disclosureClassName } from '@market/ui/presentation';
 import {
   defaultFindUs,
@@ -86,13 +86,6 @@ export function FindUsEditor({
               <WebsiteInspectorContent>
                 {id === 'find-settings' && (
                   <>
-                    <label>
-                      <Checkbox
-                        checked={value.enabled}
-                        onChange={(e) => patch({ enabled: e.target.checked })}
-                      />{' '}
-                      Enable Find Us page
-                    </label>
                     <Field label="Page title" id="find-title">
                       <Input
                         id="find-title"
@@ -191,10 +184,8 @@ export function FindUsEditor({
                   </>
                 )}
                 {id === 'find-markets' && (
-                  <p>
-                    Confirmed appearances and preorder availability come from
-                    your market schedules and participation. Manage attendance
-                    through the existing market workflows.
+                  <p className="website-inspector-empty">
+                    No settings for this section.
                   </p>
                 )}
                 {id === 'find-cta' && (

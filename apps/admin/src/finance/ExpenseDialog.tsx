@@ -145,7 +145,7 @@ export function ExpenseDialog({
       }
     >
       <div className="finance-dialog">
-        <ReadState {...query} retry={query.refresh} />
+        <ReadState skeleton="spinner" {...query} retry={query.refresh} />
         {error && <Alert severity="error">{error}</Alert>}
         {editing && (!id || e) && (
           <form id={formId} className="finance-expense-form" onSubmit={submit}>

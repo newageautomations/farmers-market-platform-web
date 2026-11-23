@@ -1,5 +1,8 @@
 ---
-import type { WebsiteImageBannerSection } from '@market/theme/storefront';
+import {
+  websiteSectionSpaceStyle,
+  type WebsiteImageBannerSection,
+} from '@market/theme/storefront';
 import { safeAsset, type StorefrontContext } from '@market/storefront-core';
 import { websiteSectionDestination } from '../website-section-navigation';
 import Button from '../ui/Button.astro';
@@ -35,6 +38,7 @@ const image = safeAsset(c.image.url);
   data-background-type={p.backgroundType ?? 'contained'}
   data-background={p.background}
   data-spacing={p.spacing}
+  style={websiteSectionSpaceStyle(section) || undefined}
 >
   <div class="harvest-banner-photo">
     {image ? (

@@ -1,5 +1,9 @@
 ---
-import { supportsWebsitePageHero } from '@market/theme/storefront';
+import {
+  supportsWebsitePageHero,
+  themePageStructure,
+  contactFormFields,
+} from '@market/theme/storefront';
 import WebsitePageRegion from '../components/WebsitePageRegion.astro';
 import { isFarmhouse } from '@market/theme/storefront';
 import SiteLayout from '../layouts/SiteLayout.astro';
@@ -18,8 +22,12 @@ import '../styles/contact.css';
 const { storefront, editorPreview } = Astro.locals;
 const config = storefront?.appearance?.contact ?? defaultContact;
 const enabled = !!storefront && (config.enabled || !!editorPreview);
-// Markets have no contact inbox: their page shows public contact information only.
-const formAvailable = storefront?.kind === 'VENDOR';
+// Vendors always have a contact inbox. Markets have one on themes that opt in;
+// otherwise their page shows public contact information only.
+const marketForm =
+  storefront?.kind === 'MARKET' &&
+  themePageStructure(storefront.appearance?.theme).marketContactForm;
+const formAvailable = storefront?.kind === 'VENDOR' || marketForm;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 if (!enabled) Astro.response.status = storefront ? 404 : 503;
 let profile = null;
@@ -87,6 +95,8 @@ const sectionHero =
             <ContactForm
               initial={profile}
               preview={!!editorPreview}
+              fields={marketForm ? contactFormFields(config) : undefined}
+              recipient={marketForm ? 'market' : 'vendor'}
               client:load
             />
           </section>

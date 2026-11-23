@@ -5,6 +5,8 @@ fragment StripeCheckout on StripeCheckoutStatus {
   publishableKey
   consentPolicy
   setupSecret
+  paymentSecret
+  paymentAccount
   actionSecret
   actionAccount
   charges {
@@ -16,8 +18,8 @@ fragment StripeCheckout on StripeCheckoutStatus {
 mutation StripeCheckoutEnabled {
   stripeCheckoutEnabled
 }
-mutation StartStripeCheckout($consent: String!) {
-  startStripeCheckout(consent: $consent) {
+mutation StartStripeCheckout($consent: String!, $termsToken: String) {
+  startStripeCheckout(consent: $consent, termsToken: $termsToken) {
     ...StripeCheckout
   }
 }

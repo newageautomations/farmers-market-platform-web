@@ -64,7 +64,7 @@ try {
   title={application?.name ?? 'Vendor application'}
   noindex
 >
-  <div class="ops-public">
+  <div class="ops-public application-page">
     <h1>{application?.name ?? 'Vendor application'}</h1>
     {application ? (
       <MarketApplication
@@ -74,6 +74,11 @@ try {
           Number.isSafeInteger(vendorId) && vendorId > 0 ? vendorId : undefined
         }
         vendorOrigin={process.env.ADMIN_ORIGIN}
+        policiesHref={
+          Astro.locals.storefront?.appearance?.policies?.enabled
+            ? '/policies'
+            : undefined
+        }
         client:load
       />
     ) : (

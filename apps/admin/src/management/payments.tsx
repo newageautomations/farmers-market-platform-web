@@ -164,7 +164,7 @@ export function Payments({
   const payout = account?.readiness.find((r) => r.purpose === 'RECEIVE_PAYOUT');
   return (
     <>
-      <ReadState {...result} retry={result.refresh} />
+      <ReadState skeleton="detail" {...result} retry={result.refresh} />
       {error && <ErrorState error={error} />}
       <Alert>
         Stripe test mode. Payment collection, checkout capture and booth invoice

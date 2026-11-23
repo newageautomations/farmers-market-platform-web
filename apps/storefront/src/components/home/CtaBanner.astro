@@ -26,6 +26,7 @@ const { content, presentation } = section;
   data-variant={presentation.variant ?? 'standard'}
   data-background={presentation.background}
   data-alignment={presentation.alignment}
+  data-button-style={presentation.buttonStyle}
 >
   <div class="harvest-authored-copy website-copy">
     {content.heading && (
@@ -38,7 +39,10 @@ const { content, presentation } = section;
       <Button
         style={websiteObjectStyle(section, 'button')}
         href={content.destination}
-        variant={presentation.background === 'ink' ? 'secondary' : 'primary'}
+        variant={
+          presentation.buttonStyle ??
+          (presentation.background === 'ink' ? 'secondary' : 'primary')
+        }
       >
         {content.label}
         <span aria-hidden="true">↗</span>

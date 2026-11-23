@@ -1,0 +1,550 @@
+/* Sectioned vendor application (ApplicationFlow). Colors come from the
+ * storefront theme tokens, so each Market's palette carries through. */
+.application-flow {
+  --flow-line: color-mix(in srgb, var(--brand-muted) 30%, transparent);
+  --flow-tint: color-mix(
+    in srgb,
+    var(--brand-primary) 10%,
+    var(--brand-surface)
+  );
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  gap: 0;
+  min-width: 0;
+  margin-block: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--brand-muted) 24%, transparent);
+  border-radius: var(--ui-card-radius, 14px);
+  background: var(--brand-surface);
+  color: var(--brand-foreground);
+  box-shadow: 0 10px 30px
+    color-mix(in srgb, var(--brand-foreground) 7%, transparent);
+  overflow: hidden;
+  scroll-margin-top: 1rem;
+}
+
+/* Step list */
+.application-flow-nav {
+  padding: 1.5rem 1.25rem;
+  background: color-mix(in srgb, var(--brand-primary) 5%, var(--brand-surface));
+  border-right: 1px solid var(--flow-line);
+  min-width: 0;
+}
+.application-flow-count {
+  margin: 0 0 1rem;
+  color: var(--brand-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.application-flow-nav > ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.application-flow-nav > ol > li {
+  position: relative;
+  padding-bottom: 1rem;
+}
+/* Rail between markers; filled once the step is complete. */
+.application-flow-nav > ol > li:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 28px;
+  bottom: 2px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--flow-line);
+  transition: background-color 300ms ease;
+}
+.application-flow-nav
+  > ol
+  > li[data-state='complete']:not(:last-child)::before {
+  background: var(--brand-primary);
+}
+.application-flow-step {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+/* Step buttons ignore page-wide button styles (`.ops-public button`, themes). */
+.application-flow-nav button.application-flow-step.application-flow-step {
+  min-height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  transform: none;
+  cursor: pointer;
+}
+button.application-flow-step:hover .application-flow-step-title {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+button.application-flow-step:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 3px;
+}
+.application-flow-marker {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  box-sizing: border-box;
+  border: 2px solid color-mix(in srgb, var(--brand-muted) 55%, transparent);
+  border-radius: 50%;
+  background: var(--brand-surface);
+  color: var(--brand-on-primary, #fff);
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease,
+    box-shadow 300ms ease;
+}
+.application-flow-marker svg {
+  width: 15px;
+  height: 15px;
+}
+[data-state='current'] > .application-flow-step .application-flow-marker {
+  border-color: var(--brand-primary);
+  box-shadow: inset 0 0 0 4px var(--brand-surface);
+  background: var(--brand-primary);
+}
+[data-state='complete'] > .application-flow-step .application-flow-marker {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+}
+.application-flow-step-title {
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+[data-state='upcoming'] > .application-flow-step .application-flow-step-title {
+  color: var(--brand-muted);
+}
+/* Scoped twice so page list resets (`.application-detail ul`) do not win. */
+.application-flow .application-flow-items {
+  list-style: none;
+  margin: 0.3rem 0 0;
+  padding: 0 0 0 calc(24px + 0.7rem);
+  color: var(--brand-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.application-flow-items li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.application-flow-progress {
+  display: none;
+}
+
+/* Section */
+.application-flow-main {
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+}
+.application-flow-title {
+  margin-bottom: 0.25rem;
+  color: var(--brand-muted);
+  font-size: 0.9rem;
+}
+.application-flow .application-flow-heading {
+  margin: 0 0 1rem;
+  text-transform: none;
+  font-family: var(--font-heading);
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  line-height: 1.15;
+}
+.application-flow-heading:focus {
+  outline: none;
+}
+.application-flow-fields {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.application-flow .ops-section:not(.ui-card) {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.application-flow .ops-field {
+  margin-block: 0 1.1rem;
+}
+.application-flow .ops-field > label,
+.application-flow .application-choice-group > legend {
+  font-weight: 600;
+}
+.application-flow .ops-field > p {
+  margin: 0;
+  color: var(--brand-muted);
+  font-size: 0.88rem;
+}
+.application-flow-note {
+  margin: 0 0 1rem;
+  color: var(--brand-muted);
+}
+.application-flow-panel[data-direction] {
+  animation: application-flow-in 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.application-flow-panel[data-direction='back'] {
+  animation-name: application-flow-back;
+}
+.application-flow:not([data-animate]) .application-flow-panel {
+  animation: none;
+}
+@keyframes application-flow-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+}
+@keyframes application-flow-back {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+}
+
+/* Market dates */
+.application-flow-dates,
+.application-flow-rentals {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.application-flow-dates-head > .ui-button {
+  flex: none;
+  white-space: nowrap;
+}
+.application-flow-dates-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.application-flow-date-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+.application-flow-date {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--brand-muted) 35%, transparent);
+  border-radius: 10px;
+  background: var(--brand-surface);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+.application-flow-date:hover {
+  border-color: var(--brand-primary);
+}
+.application-flow-date:has(input:checked) {
+  border-color: var(--brand-primary);
+  background: var(--flow-tint);
+}
+.application-flow-date:has(input:focus-visible) {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+.application-flow-date input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--brand-primary);
+}
+.application-flow-date-tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 46px;
+  height: 50px;
+  border-radius: 8px;
+  background: var(--flow-tint);
+  color: var(--brand-primary);
+  line-height: 1.05;
+}
+.application-flow-date-tile small {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.application-flow-date-tile strong {
+  font-size: 1.25rem;
+}
+.application-flow-date-text {
+  display: grid;
+  min-width: 0;
+}
+.application-flow-date-text small {
+  color: var(--brand-muted);
+}
+
+/* Rentals */
+.application-flow-rentals {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--flow-line);
+}
+.application-flow-rentals > legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 0.4rem;
+  padding: 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.application-flow-rentals > legend + * {
+  clear: left;
+}
+.application-flow-rental {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--flow-line);
+}
+.application-flow-rental label {
+  display: grid;
+}
+.application-flow-rental label small {
+  color: var(--brand-muted);
+}
+.application-flow-rental .ui-input.ui-input {
+  width: 6rem;
+  flex: none;
+}
+
+/* Controls */
+.application-flow-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--flow-line);
+}
+.application-flow-actions-end {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+.application-flow-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* Submitted */
+.application-flow-done {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding-block: 1.5rem;
+  text-align: center;
+}
+.application-flow-done > :not(.application-flow-check) {
+  max-width: 34rem;
+}
+.application-flow-check {
+  display: grid;
+  place-items: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  color: var(--brand-primary);
+  background: var(--flow-tint);
+}
+.application-flow-check svg {
+  width: 42px;
+  height: 42px;
+}
+.application-flow[data-animate] .application-flow-check {
+  animation: application-flow-pop 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.application-flow[data-animate] .application-flow-check path {
+  stroke-dasharray: 24;
+  animation: application-flow-draw 380ms ease 180ms backwards;
+}
+@keyframes application-flow-pop {
+  from {
+    transform: scale(0.65);
+  }
+}
+@keyframes application-flow-draw {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Narrow screens: a progress bar and a scrollable row of steps. */
+@media (max-width: 760px) {
+  .application-flow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .application-flow-nav {
+    padding: 1rem 1rem 0.75rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--flow-line);
+  }
+  .application-flow-count {
+    margin-bottom: 0.5rem;
+  }
+  .application-flow-nav > ol {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* Fade the edge so steps visibly continue off-screen. */
+    mask-image: linear-gradient(to right, #000 85%, transparent);
+    padding-inline-end: 2.5rem;
+  }
+  .application-flow-nav > ol::-webkit-scrollbar {
+    display: none;
+  }
+  .application-flow-nav > ol > li {
+    flex: none;
+    padding-bottom: 0.25rem;
+  }
+  .application-flow-nav > ol > li::before,
+  .application-flow .application-flow-items {
+    display: none;
+  }
+  .application-flow-nav
+    > ol
+    > li:not([data-current])
+    .application-flow-step-title {
+    font-size: 0.85rem;
+  }
+  .application-flow-progress {
+    display: block;
+    height: 4px;
+    margin-top: 0.6rem;
+    border-radius: 4px;
+    background: var(--flow-line);
+    overflow: hidden;
+  }
+  .application-flow-progress > span {
+    display: block;
+    height: 100%;
+    background: var(--brand-primary);
+    transition: width 300ms ease;
+  }
+  .application-flow-actions > .ui-button,
+  .application-flow-actions-end {
+    flex: 1 1 100%;
+  }
+  .application-flow-actions-end > .ui-button {
+    flex: 1;
+  }
+}
+
+.application-flow-lead {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.application-flow-done-body {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+}
+.application-flow-done-body > * {
+  margin: 0;
+}
+.application-flow-done-body .application-flow-choices {
+  justify-content: center;
+}
+/* Public application page: a centered container rather than the full width. */
+.ops-public.application-page {
+  max-width: 1120px;
+}
+.application-page > h1 {
+  margin-bottom: 0;
+}
+
+/* Documents step: one block per requested document. */
+.application-document-request p {
+  margin: 0 0 0.4rem;
+}
+.application-document-request + .application-document-request {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--flow-line, #ddd);
+}
+.application-document-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 0.75rem 1rem;
+}
+
+/* Acknowledgement before submitting. */
+.application-flow-confirm {
+  min-width: 0;
+  margin: 1.5rem 0 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--flow-line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--brand-primary) 4%, var(--brand-surface));
+}
+.application-flow-acknowledge {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.application-flow-acknowledge input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0.1rem 0 0;
+  accent-color: var(--brand-primary);
+}
+.application-flow-acknowledge a {
+  color: var(--brand-primary);
+  text-decoration: underline;
+}
+.application-document-account {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}

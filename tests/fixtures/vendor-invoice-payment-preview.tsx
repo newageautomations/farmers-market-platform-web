@@ -5,7 +5,10 @@ import type {
   BoothInvoicePayment as Payment,
   BoothInvoice,
 } from '@market/api';
-import type { StripeCard, StripeFactory } from '@market/ui/stripe-card';
+import type {
+  StripePaymentElement,
+  StripePaymentFactory,
+} from '@market/ui/stripe-card';
 import { BoothInvoicePayment } from '../../apps/admin/src/vendor/BoothInvoicePayment';
 import '@market/ui/styles.css';
 
@@ -18,15 +21,16 @@ import '@market/ui/styles.css';
 const quote = {
   base: 6000,
   eligible: 6000,
-  platform: 610,
-  recovery: 414,
-  fee: 1024,
+  platform: 300,
+  recovery: 220,
+  fee: 520,
   feeTax: 0,
-  gross: 7024,
+  gross: 6520,
   currency: 'USD',
-  policy: 'booth-invoice-preview',
+  policy: 'booth-invoice-sandbox-5pct-v1',
 };
 let paid = false,
+  prepared = false,
   confirmed = false,
   cardText = '',
   polls = 0;
@@ -45,6 +49,7 @@ const detail = (): BoothInvoiceDetail => ({
   marketName: 'Boerne Market',
   eligible: !paid,
   unavailable: '',
+  paymentQuote: paid ? null : quote,
   invoice: {
     id: 17,
     marketId: 2,
@@ -90,11 +95,14 @@ const api: BoothInvoiceApi = {
   act: async (_id, action) => {
     await wait(400);
     if (action === 'CONFIRM') {
-      confirmed = true;
+      prepared = true;
       return { ...payment('CARD_REQUIRED'), clientSecret: 'pi_preview' };
     }
     // Background status checks before Pay leave the payment prepared.
-    if (!confirmed) return payment(paid ? 'COMPLETED' : 'PREPARED');
+    if (!confirmed)
+      return payment(
+        paid ? 'COMPLETED' : prepared ? 'CARD_REQUIRED' : 'PREPARED',
+      );
     if (/decline/i.test(cardText)) {
       confirmed = false;
       return payment('CARD_REQUIRED');
@@ -104,12 +112,12 @@ const api: BoothInvoiceApi = {
     return payment('COMPLETED');
   },
 };
-const loadSdk = async (): Promise<StripeFactory> => () => ({
+const loadSdk = async (): Promise<StripePaymentFactory> => () => ({
   elements: () => ({
     create: () => {
       let input: HTMLInputElement | null = null;
       let listener: (v: { complete: boolean }) => void = () => {};
-      const card: StripeCard = {
+      const card: StripePaymentElement = {
         mount: (host) => {
           input = document.createElement('input');
           input.placeholder = 'Card (type "decline" or "slow" to vary)';
@@ -129,10 +137,11 @@ const loadSdk = async (): Promise<StripeFactory> => () => ({
       return card;
     },
   }),
-  confirmCardSetup: async () => ({}),
+  confirmSetup: async () => ({}),
   handleNextAction: async () => ({}),
-  confirmCardPayment: async () => {
+  confirmPayment: async () => {
     await wait(1200);
+    confirmed = true;
     return /decline/i.test(cardText) ? { error: { type: 'card_error' } } : {};
   },
 });

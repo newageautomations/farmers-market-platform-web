@@ -241,7 +241,7 @@ function MarketsOverview({
   });
   return (
     <>
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="stats" {...query} retry={query.refresh} />
       {query.data && (
         <>
           <MarketsSummary

@@ -2,6 +2,7 @@
 import '@market/ui/styles.css';
 import '@market/ui/farmstand.css';
 import { seo, type StorefrontContext } from '@market/storefront-core';
+import { storefrontRobotsMeta } from '@market/config';
 import { themeStyle, platformTheme, fonts } from '@market/theme';
 import '../styles/vendor.css';
 import '../styles/market.css';
@@ -18,6 +19,7 @@ import '@market/theme/storefront.css';
 import '../styles/homepage.css';
 import HarvestHeader from '../components/home/HarvestHeader.astro';
 import HarvestFooter from '../components/home/HarvestFooter.astro';
+import VendorTermsLink from '../components/VendorTermsLink.astro';
 import EditorBridge from '../components/EditorBridge.astro';
 import PremiumHeader from '../components/modern-farmhouse/Header.astro';
 import PremiumFooter from '../components/modern-farmhouse/Footer.astro';
@@ -41,6 +43,9 @@ import hearthStyles from '../styles/hearth.css?url';
 import MeadowHeader from '../components/meadow/Header.astro';
 import MeadowFooter from '../components/meadow/Footer.astro';
 import meadowStyles from '../styles/meadow.css?url';
+import PastureHeader from '../components/pasture/Header.astro';
+import PastureFooter from '../components/pasture/Footer.astro';
+import pastureStyles from '../styles/pasture.css?url';
 import bloomStyles from '../styles/bloom.css?url';
 import { isBloom } from '@market/theme/storefront';
 interface Props {
@@ -75,12 +80,13 @@ const editorial =
 const editorialMarket = editorial && context?.kind === 'MARKET';
 const farmhouse =
   sharedVendor && appearance.theme === 'modern-farmhouse' && !premium;
-// Meadow and Hearth are market website themes with their own header, footer and styles
-// around the shared Harvest market pages.
+// Meadow, Hearth and Pasture are market website themes with their own header, footer
+// and styles around the shared Harvest market pages.
 const marketTheme =
   context?.kind === 'MARKET' ? marketOnlyTheme(appearance) : undefined;
 const meadow = marketTheme === 'meadow';
 const hearth = marketTheme === 'hearth';
+const pasture = marketTheme === 'pasture';
 // Bloom is a vendor website theme: the shared Harvest vendor shell and pages with
 // its own stylesheet.
 const bloom = sharedVendor && isBloom(appearance);
@@ -159,6 +165,7 @@ const editorialMarketSelected = editorialMarketDates.some(
     {editorial && <link rel="stylesheet" href={editorialStyles} />}
     {meadow && <link rel="stylesheet" href={meadowStyles} />}
     {hearth && <link rel="stylesheet" href={hearthStyles} />}
+    {pasture && <link rel="stylesheet" href={pastureStyles} />}
     {bloom && <link rel="stylesheet" href={bloomStyles} />}
     <style
       id="storefront-text-sizes"
@@ -174,11 +181,11 @@ const editorialMarketSelected = editorialMarketDates.some(
     <meta name="description" content={pageDescription} />
     <meta
       name="robots"
-      content={
-        noindex || Astro.locals.editorPreview
-          ? 'noindex,nofollow'
-          : (metadata?.robots ?? 'noindex,nofollow')
-      }
+      content={storefrontRobotsMeta(
+        Astro.locals.deployment,
+        noindex || !!Astro.locals.editorPreview,
+        metadata?.robots,
+      )}
     />
     {metadata && <link rel="canonical" href={metadata.canonical} />}
     <meta property="og:title" content={pageTitle} />
@@ -211,6 +218,7 @@ const editorialMarketSelected = editorialMarketDates.some(
         bloom && 'bloom-site',
         meadow && 'meadow-site',
         hearth && 'hearth-site',
+        pasture && 'pasture-site',
         premium && 'farmhouse-site',
         premium && homepage && 'farmhouse-homepage',
         premium && (homepage || path === '/products') && 'farmhouse-refined',
@@ -241,6 +249,7 @@ const editorialMarketSelected = editorialMarketDates.some(
       {context && farmhouse && <FarmhouseHeader context={context} />}
       {context && meadow && <MeadowHeader context={context} />}
       {context && hearth && <HearthHeader context={context} />}
+      {context && pasture && <PastureHeader context={context} />}
       {context &&
         !editorial &&
         !farmhouse &&
@@ -292,6 +301,8 @@ const editorialMarketSelected = editorialMarketDates.some(
         <MeadowFooter context={context} />
       ) : context && hearth ? (
         <HearthFooter context={context} />
+      ) : context && pasture ? (
+        <PastureFooter context={context} />
       ) : context && farmhouse ? (
         <FarmhouseFooter context={context} />
       ) : context && harvestShell ? (
@@ -299,6 +310,7 @@ const editorialMarketSelected = editorialMarketDates.some(
       ) : (
         <footer class="site-footer">
           <p>{context?.name ?? 'Market platform'}</p>
+          <VendorTermsLink context={context} />
           <p>
             {context?.source === 'fixture'
               ? 'Local development preview.'

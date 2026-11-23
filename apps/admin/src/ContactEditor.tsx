@@ -1,15 +1,41 @@
 import { WebsiteInspectorContent } from './WebsiteEditorContext';
-import { Checkbox, Field, Input, PhoneInput, Textarea } from '@market/ui';
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Field,
+  Input,
+  PhoneInput,
+  SelectField,
+  Textarea,
+} from '@market/ui';
 import { disclosureClassName } from '@market/ui/presentation';
+import { WebsiteRailList } from './WebsiteRailList';
 import {
   defaultContact,
   contactEntryTypes,
   contactDetails,
+  contactFormFields,
+  contactFieldLimit,
+  contactFieldOptionLimit,
+  contactRequiredFieldTypes,
   contactTextAdvice,
   contactValueAdvice,
   type ContactConfig,
+  type ContactFormField,
   type StorefrontEditorSection,
 } from '@market/theme/storefront';
+const fieldTypeLabels: Record<ContactFormField['type'], string> = {
+  name: 'Full name',
+  email: 'Email address',
+  phone: 'Phone number',
+  subject: 'Subject',
+  message: 'Message',
+  text: 'Short answer',
+  textarea: 'Long answer',
+  select: 'Dropdown',
+};
+const customFieldTypes = ['text', 'textarea', 'select'] as const;
 const sections = {
   'contact-settings': 'Contact page',
   'contact-intro': 'Introduction',
@@ -29,9 +55,12 @@ export function ContactEditor({
   onChange,
   busy,
   formAvailable = true,
+  editableForm = false,
 }: {
   /** Market websites have no contact inbox, so they show contact information only. */
   formAvailable?: boolean;
+  /** Market themes with an inquiry form: managers add, remove and reorder its fields. */
+  editableForm?: boolean;
   value?: ContactConfig;
   selected: StorefrontEditorSection;
   collapsed: boolean;
@@ -45,6 +74,20 @@ export function ContactEditor({
 }) {
   const patch = (v: Partial<ContactConfig>) => onChange({ ...value, ...v });
   const details = contactDetails(value);
+  // Nudge only when every public detail is blank.
+  const informationEmpty = !contactEntryTypes.some((type) =>
+    details[type].trim(),
+  );
+  const formFields = contactFormFields(value);
+  const setFields = (fields: ContactFormField[]) => patch({ form: { fields } });
+  const selectedField =
+    !collapsed && selected.startsWith('contact-field:')
+      ? formFields.find((f) => `contact-field:${f.id}` === selected)
+      : undefined;
+  const updateField = (id: string, next: Partial<ContactFormField>) =>
+    setFields(formFields.map((f) => (f.id === id ? { ...f, ...next } : f)));
+  const essential = (field: ContactFormField) =>
+    (contactRequiredFieldTypes as readonly string[]).includes(field.type);
   const setDetail = (
     type: (typeof contactEntryTypes)[number],
     input: string,
@@ -120,36 +163,69 @@ export function ContactEditor({
         .filter(([key]) => formAvailable || key !== 'contact-form')
         .map(([key, label]) => {
           const id = key as keyof typeof sections;
+          const open =
+            !collapsed &&
+            (selected === id ||
+              (id === 'contact-form' && editableForm && !!selectedField));
           return (
             <details
               key={id}
               className={disclosureClassName('visual-editor-group')}
-              open={!collapsed && selected === id}
+              data-expandable={
+                (id === 'contact-form' && editableForm) || undefined
+              }
+              open={open}
             >
               <summary
                 role="button"
-                aria-expanded={!collapsed && selected === id}
+                aria-expanded={open}
                 onClick={(e) => {
                   e.preventDefault();
-                  if (!collapsed && selected === id) collapse();
+                  if (open) collapse();
                   else choose(id);
                 }}
               >
                 {label}
+                {id === 'contact-information' && informationEmpty && (
+                  <Badge tone="warning" className="contact-editor-needed">
+                    Add details
+                  </Badge>
+                )}
               </summary>
-              {!collapsed && selected === id && (
+              {id === 'contact-form' && editableForm && open && (
+                <WebsiteRailList
+                  items={formFields}
+                  label="Form fields"
+                  noun="field"
+                  itemAttribute="data-contact-field"
+                  itemLabel={(f) =>
+                    `${f.label}${f.required ? '' : ' (optional)'}`
+                  }
+                  selectedId={selectedField?.id}
+                  busy={busy}
+                  onSelect={(f) => choose(`contact-field:${f.id}`)}
+                  onReorder={setFields}
+                  addLabel="Add Field"
+                  addDisabled={formFields.length >= contactFieldLimit}
+                  onAdd={() => {
+                    const id = `field-${crypto.randomUUID().slice(0, 8)}`;
+                    setFields([
+                      ...formFields,
+                      {
+                        id,
+                        type: 'text',
+                        label: 'New question',
+                        required: false,
+                      },
+                    ]);
+                    choose(`contact-field:${id}`);
+                  }}
+                />
+              )}
+              {open && (
                 <WebsiteInspectorContent>
                   {id === 'contact-settings' && (
-                    <>
-                      <label>
-                        <Checkbox
-                          checked={value.enabled}
-                          onChange={(e) => patch({ enabled: e.target.checked })}
-                        />{' '}
-                        Enable Contact page
-                      </label>
-                      {field('title', 'Page title', 160)}
-                    </>
+                    <>{field('title', 'Page title', 160)}</>
                   )}
                   {id === 'contact-intro' && (
                     <>
@@ -157,20 +233,163 @@ export function ContactEditor({
                       {field('description', 'Description', 600, true)}
                     </>
                   )}
-                  {id === 'contact-form' && (
-                    <p>
-                      The form requires a full name, email, subject and message.
-                      Phone and order reference are optional. Customers contact
-                      you through this form; you respond outside the platform.
-                      Preview never sends a message.
+                  {id === 'contact-form' && !editableForm && (
+                    <p className="website-inspector-empty">
+                      No settings for this section.
                     </p>
                   )}
+                  {id === 'contact-form' && editableForm && !selectedField && (
+                    <p className="website-inspector-empty">
+                      Messages sent through this form arrive in your
+                      notifications. Select a field to edit it, drag fields to
+                      reorder them, or add your own questions. Name, email and
+                      message are always included.
+                    </p>
+                  )}
+                  {id === 'contact-form' &&
+                    editableForm &&
+                    selectedField &&
+                    (() => {
+                      const f = selectedField;
+                      const optionsField =
+                        f.type === 'select' || f.type === 'subject';
+                      return (
+                        <>
+                          <Field
+                            id={`contact-field-label-${f.id}`}
+                            label="Label"
+                          >
+                            <Input
+                              id={`contact-field-label-${f.id}`}
+                              maxLength={80}
+                              value={f.label}
+                              onChange={(e) =>
+                                updateField(f.id, { label: e.target.value })
+                              }
+                            />
+                          </Field>
+                          {(customFieldTypes as readonly string[]).includes(
+                            f.type,
+                          ) ? (
+                            <SelectField
+                              id={`contact-field-type-${f.id}`}
+                              label="Answer type"
+                              value={f.type}
+                              onChange={(e) => {
+                                const type = e.target
+                                  .value as ContactFormField['type'];
+                                updateField(f.id, {
+                                  type,
+                                  options:
+                                    type === 'select'
+                                      ? (f.options ?? ['Option 1'])
+                                      : undefined,
+                                });
+                              }}
+                            >
+                              {customFieldTypes.map((type) => (
+                                <option key={type} value={type}>
+                                  {fieldTypeLabels[type]}
+                                </option>
+                              ))}
+                            </SelectField>
+                          ) : (
+                            <p className="website-inspector-empty">
+                              {fieldTypeLabels[f.type]} field
+                            </p>
+                          )}
+                          {optionsField && (
+                            <Field
+                              id={`contact-field-options-${f.id}`}
+                              label="Choices (one per line)"
+                              error={
+                                (f.options?.length ?? 0) >
+                                contactFieldOptionLimit
+                                  ? `Use up to ${contactFieldOptionLimit} choices.`
+                                  : !f.options?.length
+                                    ? 'Add at least one choice.'
+                                    : undefined
+                              }
+                            >
+                              <Textarea
+                                id={`contact-field-options-${f.id}`}
+                                rows={5}
+                                value={(f.options ?? []).join('\n')}
+                                onChange={(e) =>
+                                  updateField(f.id, {
+                                    options: e.target.value
+                                      .split('\n')
+                                      .map((line) => line.slice(0, 80))
+                                      .filter(
+                                        (line, index, all) =>
+                                          line.trim() ||
+                                          index === all.length - 1,
+                                      ),
+                                  })
+                                }
+                                onBlur={() =>
+                                  updateField(f.id, {
+                                    options: (f.options ?? [])
+                                      .map((line) => line.trim())
+                                      .filter(Boolean),
+                                  })
+                                }
+                              />
+                            </Field>
+                          )}
+                          <label
+                            className="story-page-toggle"
+                            htmlFor={`contact-field-required-${f.id}`}
+                          >
+                            <Checkbox
+                              id={`contact-field-required-${f.id}`}
+                              role="switch"
+                              className="sr-only"
+                              aria-label="Required"
+                              checked={f.required}
+                              disabled={essential(f)}
+                              onChange={(e) =>
+                                updateField(f.id, {
+                                  required: e.target.checked,
+                                })
+                              }
+                            />
+                            <span
+                              className="story-switch-track"
+                              aria-hidden="true"
+                            />
+                            <span>Required</span>
+                          </label>
+                          {essential(f) ? (
+                            <p className="website-inspector-empty">
+                              This field is always included so you can reply.
+                            </p>
+                          ) : (
+                            <div className="ui-actions">
+                              <Button
+                                variant="destructive-outline"
+                                onClick={() => {
+                                  setFields(
+                                    formFields.filter((x) => x.id !== f.id),
+                                  );
+                                  choose('contact-form');
+                                }}
+                              >
+                                Remove field
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   {id === 'contact-information' && (
                     <>
-                      <p>
-                        Leave a field blank to omit it from your public Contact
-                        page. Only enter an address you want customers to see.
-                      </p>
+                      {informationEmpty && (
+                        <p className="website-inspector-empty">
+                          Add at least one way for visitors to reach you. Only
+                          the details you fill in are shown.
+                        </p>
+                      )}
                       {contactEntryTypes.map((type) =>
                         type === 'phone' ? (
                           <PhoneInput
@@ -265,10 +484,6 @@ export function ContactEditor({
                           />
                         </Field>
                       ))}
-                      <p>
-                        Links to your Find Us page. The invitation appears when
-                        Find Us is enabled.
-                      </p>
                     </>
                   )}
                 </WebsiteInspectorContent>

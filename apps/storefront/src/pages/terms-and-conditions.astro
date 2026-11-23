@@ -1,0 +1,74 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import VendorTermsContent from '../components/VendorTermsContent.astro';
+import PolicyListPage from '../components/PolicyListPage.astro';
+import { vendorTermsRevision } from '../lib/vendor-terms';
+import {
+  defaultMarketTerms,
+  themePageStructure,
+} from '@market/theme/storefront';
+const { storefront, editorPreview } = Astro.locals;
+const version = Astro.url.searchParams.get('version');
+let terms;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+// A market's Terms & Conditions page is shaped like Policies (themes that opt in).
+const marketTerms =
+  storefront?.kind === 'MARKET' &&
+  themePageStructure(storefront.appearance?.theme).marketTermsPage
+    ? (storefront.appearance?.marketTerms ??
+      (editorPreview ? defaultMarketTerms : undefined))
+    : undefined;
+const marketEnabled = !!marketTerms && (marketTerms.enabled || !!editorPreview);
+if (storefront?.kind === 'MARKET') {
+  if (!marketEnabled) Astro.response.status = 404;
+} else if (storefront?.kind !== 'VENDOR') {
+  Astro.response.status = storefront ? 404 : 503;
+} else if (version !== null && !editorPreview) {
+  try {
+    const revision = await vendorTermsRevision(Astro.locals, version);
+    if (revision?.vendorId === storefront.subjectId) terms = revision;
+    else Astro.response.status = 404;
+  } catch {
+    Astro.response.status = 503;
+  }
+} else {
+  const custom = storefront.appearance?.terms?.trim();
+  const body = custom
+    ?.split('\n')
+    .some((line) => !!line.trim() && !/^#+(?:\s|$)/.test(line.trim()))
+    ? custom.replace(/\[Vendor Name\]/g, () => storefront.name)
+    : storefront.defaultVendorTerms;
+  if (body) terms = { name: storefront.name, body };
+  else Astro.response.status = 503;
+}
+---
+
+<SiteLayout
+  context={storefront}
+  path="/terms-and-conditions"
+  title={marketEnabled ? marketTerms!.title : 'Terms & Conditions'}
+  noindex={storefront?.kind === 'MARKET' ? !marketEnabled : !terms || !!version}
+>
+  {storefront?.kind === 'MARKET' ? (
+    marketEnabled ? (
+      <PolicyListPage
+        config={marketTerms!}
+        sectionHero={false}
+        closing={false}
+        emptyMessage="Add a complete, visible term to preview it here."
+      />
+    ) : (
+      <section class="story-page">
+        <h1>Page unavailable</h1>
+        <p>This Terms &amp; Conditions page is not available.</p>
+      </section>
+    )
+  ) : terms ? (
+    <VendorTermsContent {...terms} />
+  ) : (
+    <section class="story-page">
+      <h1>Terms unavailable</h1>
+      <p>The vendor’s terms could not be displayed.</p>
+    </section>
+  )}
+</SiteLayout>

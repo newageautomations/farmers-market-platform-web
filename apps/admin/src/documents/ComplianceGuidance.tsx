@@ -31,7 +31,7 @@ export function ComplianceGuidance({
   const state = useRead('compliance-guidance', read);
   return (
     <div className="documents-view">
-      <ReadState {...state} retry={state.refresh} />
+      <ReadState skeleton="detail" {...state} retry={state.refresh} />
       {state.data && (
         <>
           <SettingsPanel

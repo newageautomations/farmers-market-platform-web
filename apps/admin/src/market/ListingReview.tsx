@@ -140,8 +140,8 @@ export function ListingReview({
         {confirmDeny && (
           <Alert severity="warning">
             Deny this listing? The Vendor cannot sell it at your market until
-            you approve it again. This does not delete the product or refund
-            any orders.
+            you approve it again. This does not delete the product or refund any
+            orders.
           </Alert>
         )}
         {canReview && !membershipApproved && (
@@ -156,6 +156,7 @@ export function ListingReview({
           </p>
         )}
         <ReadState
+          skeleton="spinner"
           loading={preview.loading}
           error={preview.error}
           retry={preview.refresh}

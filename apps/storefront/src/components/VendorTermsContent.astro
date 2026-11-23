@@ -1,0 +1,39 @@
+---
+import '../styles/about-story.css';
+import '../styles/policies.css';
+interface Props {
+  name: string;
+  body: string;
+  showSeller?: boolean;
+}
+const { name, body, showSeller = false } = Astro.props;
+const blocks = body.split(/\n[\t ]*\n/).flatMap((paragraph) => {
+  const heading = /^##\s+([^\n]+)(?:\n|$)/.exec(paragraph);
+  if (!heading) return [{ text: paragraph, heading: false }];
+  const content = paragraph.slice(heading[0].length).trim();
+  return [
+    { text: heading[1], heading: true },
+    ...(content ? [{ text: content, heading: false }] : []),
+  ];
+});
+---
+
+<article
+  class="story-page policies-page"
+  data-editor-section="terms-content"
+  aria-label={`Terms & Conditions for ${name}`}
+>
+  <header>
+    <h1>Terms &amp; Conditions</h1>
+    {showSeller && <p>{name}</p>}
+  </header>
+  <div class="policies-list">
+    {blocks.map((block) =>
+      block.heading ? (
+        <h2>{block.text}</h2>
+      ) : (
+        <p class="policy-content">{block.text}</p>
+      ),
+    )}
+  </div>
+</article>

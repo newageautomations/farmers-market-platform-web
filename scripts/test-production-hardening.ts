@@ -303,7 +303,7 @@ try {
       'test/production-hardening/seed.ts',
     ],
     back,
-    { ...env, APP_ENV: 'test', NODE_ENV: 'test' },
+    { ...env, APP_ENV: 'test', NODE_ENV: 'test', DEPLOYMENT_ENV: 'test' },
   );
   const ready = await new Promise<Ready>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Seed timeout')), 240000);

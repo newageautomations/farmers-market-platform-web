@@ -23,7 +23,10 @@ import {
 } from '@market/api';
 import {
   Alert,
+  ApplicationAcknowledgement,
   ApplicationFields,
+  ApplicationFlow,
+  applicationFlowSteps,
   Badge,
   Button,
   Checkbox,
@@ -60,9 +63,16 @@ import {
   windowSummary,
   type ApplicationRow,
 } from './applications-data';
-import { ApplicationStateBadge, sharingLabel } from './application-status';
+import {
+  ApplicationLiveLink,
+  ApplicationStateBadge,
+  liveApplicationUrl,
+  sharingLabel,
+} from './application-status';
 import '@market/ui/farmstand.css';
+import '@market/ui/application-flow.css';
 import '../../vendor/application-detail.css';
+import '../../vendor/loyalty-reward-wizard.css';
 import './applications.css';
 
 type Command = (c: OperationsCommand) => Promise<unknown>;
@@ -826,7 +836,7 @@ function Builder({
       <div className="application-detail-columns application-builder-columns">
         <div className="application-detail-main">
           {preview ? (
-            <PreviewPanel definition={definition} />
+            <PreviewPanel definition={definition} data={data} />
           ) : (
             <>
               <Panel
@@ -1120,12 +1130,21 @@ function Builder({
               id: draft.id,
               expectedRevision: draft.revision,
               data: sharing,
-            })) as ApplicationVersion | undefined;
+            })) as (ApplicationVersion & { templateSlug?: string }) | undefined;
             if (!published) throw new Error('publish');
+            const slug = published.templateSlug ?? row?.template.slug;
+            return slug
+              ? liveApplicationUrl(data.storefrontOrigin, {
+                  state: 'PUBLISHED',
+                  template: { slug },
+                })
+              : undefined;
+          }}
+          onDone={() =>
             go(
               `/market/applications?application=${autosave.target.current.templateId}`,
-            );
-          }}
+            )
+          }
         />
       )}
     </div>
@@ -1312,45 +1331,123 @@ function QuestionPreview({
   );
 }
 
-function PreviewPanel({ definition }: { definition: ApplicationDefinition }) {
+/**
+ * The storefront's sectioned application, filled with this draft. Answers stay
+ * in the browser; there is no account step to sign in from and no animation.
+ */
+function PreviewPanel({
+  definition,
+  data,
+}: {
+  definition: ApplicationDefinition;
+  data: MarketOperationsData;
+}) {
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
+  const [dates, setDates] = useState<number[]>([]);
+  const [rentals, setRentals] = useState<Record<number, number>>({});
+  const [account, setAccount] = useState('');
   const [checked, setChecked] = useState(false);
+  const [now] = useState(() => Date.now());
+  const [acknowledged, setAcknowledged] = useState(false);
+  const application = {
+    definition,
+    occurrences: data.occurrences
+      .filter(
+        (o) =>
+          o.status === 'scheduled' &&
+          definition.occurrenceIds.includes(o.id) &&
+          Date.parse(o.startsAt) > now,
+      )
+      .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))
+      .map(({ id, startsAt, endsAt, venue }) => ({
+        id,
+        startsAt,
+        endsAt,
+        venue,
+      })),
+    rentals: (data.rentals ?? [])
+      .filter((r) => r.details.enabled && definition.rentalIds.includes(r.id))
+      .map((r) => ({
+        id: r.id,
+        name: r.details.name,
+        priceMinor: r.details.priceMinor,
+        currency: r.details.currency,
+        maxQuantity: r.details.maxQuantity,
+        defaultQuantity: r.details.defaultQuantity,
+      })),
+  };
+  const steps = applicationFlowSteps({
+    application,
+    answers,
+    onAnswer: (id, value) => {
+      setChecked(false);
+      setAnswers((a) => ({ ...a, [id]: value }));
+    },
+    dates,
+    onDates: setDates,
+    rentals,
+    onRentals: setRentals,
+    leading: [
+      {
+        id: 'account',
+        title: 'Your account',
+        complete: !!account,
+        hideNavigation: true,
+        items: [`${platformName} account`],
+        content: () => (
+          <>
+            <p className="application-flow-lead">
+              Do you have an account with {platformName}?
+            </p>
+            <p className="application-flow-note">
+              Vendors who are already signed in skip this question.
+            </p>
+            <div className="application-flow-choices">
+              {['Yes, log in', 'No, continue without one'].map((label, i) => (
+                <Button
+                  key={label}
+                  type="submit"
+                  variant={i ? 'secondary' : 'primary'}
+                  onClick={() => setAccount(label)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </>
+        ),
+      },
+    ],
+  });
   return (
-    <Panel
-      icon={{ utility: 'eye' }}
-      title="Preview"
-      className="application-builder-preview"
-    >
+    <section className="application-builder-preview" aria-label="Preview">
       <p className="application-detail-note">
-        This is what vendors fill in. Try it out: nothing you enter here is
-        saved or submitted.
+        This is what vendors see on your storefront. Try it out: nothing you
+        enter here is saved or submitted.
       </p>
-      <form
-        className="application-builder-preview-form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setChecked(true);
-        }}
-      >
-        <ApplicationFields
-          definition={definition}
-          answers={answers}
-          onAnswer={(id, v) => {
-            setChecked(false);
-            setAnswers((a) => ({ ...a, [id]: v }));
-          }}
-        />
-        <Button type="submit" variant="secondary">
-          Check preview answers
-        </Button>
-        {checked && (
-          <p role="status">
-            Visible required questions are answered. This preview creates no
-            application or draft.
-          </p>
-        )}
-      </form>
-    </Panel>
+      <ApplicationFlow
+        className="application-builder-flow"
+        steps={steps}
+        animate={false}
+        submitLabel="Check preview answers"
+        onSubmit={() => setChecked(true)}
+        beforeSubmit={
+          <ApplicationAcknowledgement
+            platform={platformName}
+            checked={acknowledged}
+            onChange={setAcknowledged}
+          />
+        }
+        notice={
+          checked && (
+            <p role="status" className="application-detail-note">
+              Visible required questions are answered. This preview creates no
+              application or draft.
+            </p>
+          )
+        }
+      />
+    </section>
   );
 }
 
@@ -1538,16 +1635,19 @@ function PublishDialog({
   data,
   onClose,
   onPublish,
+  onDone,
 }: {
   row?: ApplicationRow;
   definition: ApplicationDefinition;
   timeZone?: string;
   data: MarketOperationsData;
   onClose: () => void;
+  /** Resolves with the live link, when the storefront has one. */
   onPublish: (sharing: {
     visibility: 'PUBLIC' | 'PRIVATE';
     advertised: boolean;
-  }) => Promise<void>;
+  }) => Promise<string | undefined>;
+  onDone: () => void;
 }) {
   const id = useId();
   const [visibility, setVisibility] = useState<'PUBLIC' | 'PRIVATE'>(
@@ -1558,10 +1658,47 @@ function PublishDialog({
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [published, setPublished] = useState<{ url?: string }>();
   const featured = (data.templates ?? []).find(
     (t) => t.advertised && t.id !== row?.template.id,
   );
   const submissionWindow = windowSummary(definition, timeZone);
+  if (published)
+    return (
+      <Dialog
+        open
+        size="standard"
+        title="Application published"
+        onClose={onDone}
+        className="farmstand-controls application-publish-dialog"
+        actions={
+          <FarmstandButton variant="primary" onClick={onDone}>
+            Done
+          </FarmstandButton>
+        }
+      >
+        <div className="reward-published application-published">
+          <div role="status" aria-live="polite">
+            <span className="reward-published-check" aria-hidden="true">
+              <UtilityIcon name="check" />
+            </span>
+            <h3>Your application is live</h3>
+            <p>
+              {visibility === 'PRIVATE'
+                ? 'Only vendors you send this link to can apply.'
+                : 'Vendors can apply now. Share this link anywhere you find vendors.'}
+            </p>
+          </div>
+          {published.url ? (
+            <ApplicationLiveLink url={published.url} />
+          ) : (
+            <p>
+              Publish your Market storefront to get a link vendors can open.
+            </p>
+          )}
+        </div>
+      </Dialog>
+    );
   return (
     <Dialog
       open
@@ -1589,10 +1726,12 @@ function PublishDialog({
               setBusy(true);
               setError('');
               try {
-                await onPublish({
+                const url = await onPublish({
                   visibility,
                   advertised: visibility === 'PUBLIC' && advertised,
                 });
+                setPublished({ url });
+                setBusy(false);
               } catch {
                 setError(
                   'The application could not be published. Check your changes and try again.',

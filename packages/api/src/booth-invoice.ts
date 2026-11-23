@@ -13,7 +13,7 @@ export interface BoothInvoiceFee {
   policy: string;
 }
 export interface BoothInvoiceCollection {
-  id: string;
+  id: number | string;
   invoiceId: number;
   state:
     | 'PREPARED'
@@ -40,6 +40,8 @@ export interface BoothInvoiceDetail {
   marketName: string;
   eligible: boolean;
   unavailable: string;
+  /** Amounts shown before preparation, or the frozen quote for an active attempt. */
+  paymentQuote?: BoothInvoiceFee | null;
   payments: Array<{
     id: string;
     amountMinor: number;

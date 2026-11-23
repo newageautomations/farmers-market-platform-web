@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { APIContext } from 'astro';
+import { AppError } from '@market/api';
+import { readCheckoutStatus } from '../apps/storefront/src/lib/checkout-status';
 import { restartCheckout } from '../apps/storefront/src/lib/restart-checkout';
 import {
   openCheckoutData,
@@ -9,6 +11,7 @@ import {
 const mocks = vi.hoisted(() => ({
   checkout: {
     status: vi.fn(),
+    clearTestPreorderFee: vi.fn(),
     stripeStatus: vi.fn(),
     contact: vi.fn(),
     pickup: vi.fn(),
@@ -68,6 +71,7 @@ beforeEach(() => {
       contact,
       groups: [{ vendorId: '1', pickup: [{ name: 'Booth pickup' }] }],
     })),
+    clearTestPreorderFee: vi.fn(async () => true),
     stripeStatus: vi.fn(async () => ({ state: 'CANCELED' })),
     contact: vi.fn(async () => {}),
     pickup: vi.fn(async () => [
@@ -94,6 +98,48 @@ beforeEach(() => {
   mocks.market = { ...mocks.vendor, applyCoupon: vi.fn() };
 });
 afterEach(() => vi.unstubAllEnvs());
+describe('market checkout fee recovery', () => {
+  const stale = new AppError('conflict', 'PREORDER_FEE_REQUOTE_REQUIRED');
+  const editableCart = { id: '9', state: 'AddingItems', totalQuantity: 2 };
+
+  it('retries checkout for the same editable order after clearing its stale quote', async () => {
+    mocks.checkout.status.mockRejectedValueOnce(stale);
+    mocks.market.bootstrap.mockReset().mockResolvedValue({ cart: editableCart });
+
+    await expect(readCheckoutStatus(context('MARKET'), new Headers(), '9'))
+      .resolves.toMatchObject({
+        orderId: '9',
+        contact,
+        groups: [{ vendorId: '1', pickup: [{ name: 'Booth pickup' }] }],
+      });
+    expect(mocks.checkout.status.mock.calls).toEqual([['9'], ['9']]);
+    expect(mocks.checkout.clearTestPreorderFee).toHaveBeenCalledOnce();
+    expect(mocks.market.remove).not.toHaveBeenCalled();
+    expect(mocks.checkout.selectPickup).not.toHaveBeenCalled();
+  });
+
+  it('leaves an existing valid quote alone', async () => {
+    await readCheckoutStatus(context('MARKET'), new Headers(), '9');
+    expect(mocks.market.bootstrap).not.toHaveBeenCalled();
+    expect(mocks.checkout.clearTestPreorderFee).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { ...editableCart, state: 'ArrangingPayment' },
+    { ...editableCart, id: '12' },
+  ])('does not clear a quote when the active cart is $state on order $id', async (cart) => {
+    mocks.checkout.status.mockRejectedValueOnce(stale);
+    mocks.market.bootstrap.mockReset().mockResolvedValue({ cart });
+    await expect(readCheckoutStatus(context('MARKET'), new Headers(), '9')).rejects.toBe(stale);
+    expect(mocks.checkout.clearTestPreorderFee).not.toHaveBeenCalled();
+  });
+
+  it('preserves the original error for vendor checkout', async () => {
+    mocks.checkout.status.mockRejectedValueOnce(stale);
+    await expect(readCheckoutStatus(context(), new Headers(), '9')).rejects.toBe(stale);
+    expect(mocks.checkout.clearTestPreorderFee).not.toHaveBeenCalled();
+  });
+});
 describe('checkout form privacy', () => {
   it('encrypts contact prefill and rejects tampering, the wrong purpose and expired drafts', () => {
     const token = sealCheckoutData(contact, 'signup');

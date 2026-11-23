@@ -267,6 +267,8 @@ export function DayActions({
   const alerts = active && (
     <>
       <ReadState
+        skeleton="detail"
+        rows={2}
         loading={!view && query.loading}
         error={query.error}
         retry={refresh}
@@ -497,6 +499,7 @@ export function DayActions({
           aria-label="Market day recap"
         >
           <ReadState
+            skeleton="stats"
             loading={recap.loading}
             error={recap.error}
             retry={recap.refresh}
@@ -684,6 +687,7 @@ export function DayActions({
                 </p>
               )}
               <ReadState
+                skeleton="spinner"
                 loading={warnings.loading}
                 error={warnings.error}
                 retry={warnings.refresh}

@@ -1,12 +1,15 @@
 export { safeAdminDestination } from './account-destination.ts';
 export * from './remote-demo.ts';
 import { z } from 'zod';
+import { normalizeOrigin, requireStrongSecret } from './security.ts';
 import {
-  normalizeOrigin,
-  runtimeMode,
-  requireStrongSecret,
-} from './security.ts';
+  deploymentEnvironment,
+  isLoopbackHost,
+  validateDeploymentHost,
+  validateStagingAdmission,
+} from './deployment-environment.ts';
 export * from './security.ts';
+export * from './deployment-environment.ts';
 export const platformName = 'Market platform';
 
 const endpoint = z
@@ -24,45 +27,91 @@ const envSchema = z.object({
   FRONTEND_FIXTURE_MODE: z.enum(['true', 'false']).default('false'),
 });
 export type RuntimeMode = 'development' | 'test' | 'production';
+type Environment = Record<string, string | undefined>;
+type ConfigurationUse = 'build' | 'storefront-runtime' | 'admin-runtime';
+
 export function validateEnvironment(
-  input: Record<string, string | undefined>,
+  input: Environment,
   mode: RuntimeMode,
+  use: ConfigurationUse = 'storefront-runtime',
 ) {
+  const identity = deploymentEnvironment(
+    input,
+    input.NODE_ENV === 'test' || mode === 'test' ? 'test' : 'dev',
+  );
+  const { deployment } = identity;
+  const production = identity.mode === 'production';
+  if (production && mode !== 'production')
+    throw new Error('Hardened frontend requires a production build');
   const parsed = envSchema.parse(input);
-  const production = runtimeMode(input) === 'production';
+  const adminOrigin = input.ADMIN_ORIGIN ?? '';
+  const accountOrigin = input.PLATFORM_ACCOUNT_ORIGIN ?? '';
+  const customerOrigin = input.CUSTOMER_STOREFRONT_ORIGIN ?? '';
+  const assetUrl = input.ASSET_URL_PREFIX ?? '';
+  const origin = (value: string, name: string) => {
+    if (value !== normalizeOrigin(value) || !value.startsWith('https://'))
+      throw new Error(`${name} requires a canonical HTTPS origin`);
+    validateDeploymentHost(new URL(value).hostname, deployment, name);
+  };
   if (production) {
-    if (input.NODE_ENV !== 'production')
-      throw new Error('NODE_ENV production required');
-    for (const name of ['PLATFORM_ACCOUNT_ORIGIN', 'ADMIN_ORIGIN']) {
-      if (!input[name] || !normalizeOrigin(input[name]).startsWith('https://'))
-        throw new Error(`${name} requires HTTPS`);
-    }
-    if (
-      input.PLATFORM_ACCOUNT_ORIGIN !==
-      normalizeOrigin(input.PLATFORM_ACCOUNT_ORIGIN!)
-    )
-      throw new Error('PLATFORM_ACCOUNT_ORIGIN requires a canonical origin');
-    for (const name of ['SHOP_API_URL', 'PUBLIC_ADMIN_API_URL'])
+    origin(adminOrigin, 'ADMIN_ORIGIN');
+    origin(accountOrigin, 'PLATFORM_ACCOUNT_ORIGIN');
+    if (customerOrigin) origin(customerOrigin, 'CUSTOMER_STOREFRONT_ORIGIN');
+    for (const name of ['SHOP_API_URL', 'PUBLIC_ADMIN_API_URL'] as const) {
+      const url = new URL(parsed[name]);
+      origin(url.origin, name);
+      const path = name === 'SHOP_API_URL' ? '/shop-api' : '/admin-api';
       if (
-        !new URL(
-          parsed[name as 'SHOP_API_URL' | 'PUBLIC_ADMIN_API_URL'],
-        ).href.startsWith('https://')
+        url.href !== parsed[name] ||
+        url.pathname !== path ||
+        url.search ||
+        url.hash
       )
-        throw new Error(`${name} requires HTTPS`);
-    requireStrongSecret(
-      input.PLATFORM_ACCOUNT_BRIDGE_KEY,
-      'PLATFORM_ACCOUNT_BRIDGE_KEY',
-    );
+        throw new Error(`${name} requires a canonical HTTPS API URL`);
+    }
+    if (assetUrl || (deployment === 'staging' && use !== 'admin-runtime')) {
+      const url = URL.parse(assetUrl);
+      if (
+        !url ||
+        url.username ||
+        url.password ||
+        url.search ||
+        url.hash ||
+        url.href !== assetUrl ||
+        !url.pathname.endsWith('/')
+      )
+        throw new Error(
+          'ASSET_URL_PREFIX requires a canonical HTTPS media URL',
+        );
+      origin(url.origin, 'ASSET_URL_PREFIX');
+    }
+    if (use === 'storefront-runtime')
+      requireStrongSecret(
+        input.PLATFORM_ACCOUNT_BRIDGE_KEY,
+        'PLATFORM_ACCOUNT_BRIDGE_KEY',
+      );
+    if (deployment === 'staging') validateStagingAdmission(input);
+    if (
+      deployment === 'local-qualification' &&
+      input.HOST &&
+      !isLoopbackHost(input.HOST)
+    )
+      throw new Error('Local qualification requires a loopback listener');
+    if (
+      input.REMOTE_DEMO_ADMIN === 'true' ||
+      input.DEMO_LOCAL_HOST_ALIASES === 'true'
+    )
+      throw new Error(
+        'Demo proxy and host aliases are forbidden in hardened environments',
+      );
     if (input.TRUSTED_PROXY_CIDRS && input.TRUSTED_PROXY_CIDRS !== 'disabled')
       throw new Error(
-        'Storefront adapter proxy trust is disabled; terminate HTTPS in the application',
+        'Generic proxy trust is disabled for the frontend',
       );
     if (
       Object.keys(input).some(
         (name) =>
-          /^(PUBLIC_|VITE_).*(SECRET|PASSWORD|PRIVATE_KEY|BRIDGE_KEY|API_KEY|DATABASE_URL)/i.test(
-            name,
-          ) && input[name],
+          /^(PUBLIC_|VITE_)/i.test(name) && name !== 'PUBLIC_ADMIN_API_URL',
       )
     )
       throw new Error('Server secrets cannot use public environment prefixes');
@@ -73,10 +122,51 @@ export function validateEnvironment(
   )
     throw new Error('Fixture mode is forbidden in production');
   return Object.freeze({
+    deployment,
+    production,
     shopApiUrl: parsed.SHOP_API_URL,
     adminApiUrl: parsed.PUBLIC_ADMIN_API_URL,
+    adminOrigin,
+    accountOrigin,
+    customerOrigin,
+    assetUrl,
     fixtureMode: parsed.FRONTEND_FIXTURE_MODE === 'true',
   });
+}
+
+export const frontendBuildManifest = '.deployment.json';
+
+export function frontendBuildSettings(
+  config: ReturnType<typeof validateEnvironment>,
+  service: 'admin' | 'storefront',
+) {
+  return {
+    deployment: config.deployment,
+    adminOrigin: config.adminOrigin,
+    accountOrigin: config.accountOrigin,
+    adminApiUrl: config.adminApiUrl,
+    ...(service === 'admin'
+      ? { customerOrigin: config.customerOrigin }
+      : { shopApiUrl: config.shopApiUrl, assetUrl: config.assetUrl }),
+  };
+}
+
+export function assertFrontendBuild(
+  build: unknown,
+  config: ReturnType<typeof validateEnvironment>,
+  service: 'admin' | 'storefront',
+) {
+  const expected = frontendBuildSettings(config, service);
+  if (
+    !build ||
+    typeof build !== 'object' ||
+    Object.entries(expected).some(
+      ([key, value]) =>
+        !Object.hasOwn(build, key) ||
+        (build as Record<string, unknown>)[key] !== value,
+    )
+  )
+    throw new Error('Frontend runtime requires matching build configuration');
 }
 
 export function formatMoney(

@@ -8,8 +8,8 @@ import {
   type AdminContext,
 } from '@market/admin-core';
 import { AppError, safeError } from '@market/api';
-import { Button, ErrorState, Spinner } from '@market/ui';
-import { AdminShell } from './AdminShell';
+import { Button, ErrorState } from '@market/ui';
+import { AdminShell, AdminShellSkeleton } from './AdminShell';
 import { AccountModes } from './AccountModes';
 import {
   completePlatformAccountLogin,
@@ -238,14 +238,7 @@ export function AdminApp({
     }
   }
   if (session.status === 'loading' || endpoint !== sessionEndpoint)
-    return (
-      <main className="login farmstand-controls">
-        <h1>
-          <MarketPlatformLogo />
-        </h1>
-        <Spinner label="Checking your session" />
-      </main>
-    );
+    return <AdminShellSkeleton label="Checking your session" />;
   if (session.status === 'error')
     return (
       <main className="login farmstand-controls">
@@ -351,15 +344,7 @@ export function AdminApp({
         </div>
       </main>
     );
-  if (!context)
-    return (
-      <main className="login farmstand-controls">
-        <h1>
-          <MarketPlatformLogo />
-        </h1>
-        <Spinner label="Loading your workspace" />
-      </main>
-    );
+  if (!context) return <AdminShellSkeleton label="Loading your workspace" />;
   return (
     <AdminShell
       context={context}

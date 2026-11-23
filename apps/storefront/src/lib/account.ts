@@ -2,6 +2,7 @@ import { safeAdminDestination } from '@market/config';
 import type { APIContext } from 'astro';
 import { randomBytes } from 'node:crypto';
 import { AppError } from '@market/api';
+import { backendFetch, shopTransportEndpoint } from './private-api';
 export interface CentralAccountData {
   profile: {
     timezone?: string | null;
@@ -108,17 +109,20 @@ export async function accountBridge<T>(
   if (!endpoint || !key || key.length < 32) throw new AppError('unavailable');
   let response: Response;
   try {
-    response = await fetch(new URL('/customer-account-bridge', endpoint), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-account-bridge': key,
-        'x-account-origin': accountOrigin(),
+    response = await backendFetch(
+      new URL('/customer-account-bridge', shopTransportEndpoint(endpoint)),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-account-bridge': key,
+          'x-account-origin': accountOrigin(),
+        },
+        body: JSON.stringify(input),
+        cache: 'no-store',
+        signal: AbortSignal.timeout(8000),
       },
-      body: JSON.stringify(input),
-      cache: 'no-store',
-      signal: AbortSignal.timeout(8000),
-    });
+    );
   } catch {
     throw new AccountBridgeError('ACCOUNT_UNAVAILABLE', 503);
   }

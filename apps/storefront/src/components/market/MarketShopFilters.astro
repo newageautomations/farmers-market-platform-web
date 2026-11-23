@@ -1,0 +1,203 @@
+---
+import type { MarketOccurrenceVendor } from '@market/api';
+import type { taxonomyNavigation } from '@market/storefront-core';
+import {
+  buttonClassName,
+  cardClassName,
+  disclosureClassName,
+} from '@market/ui/presentation';
+import Button from '../ui/Button.astro';
+
+interface Props {
+  query: URLSearchParams;
+  categories: ReturnType<typeof taxonomyNavigation>;
+  vendors: readonly MarketOccurrenceVendor[];
+}
+const { query, categories, vendors } = Astro.props;
+const mode = query.get('filter') === 'vendor' ? 'vendor' : 'category';
+const selected = query.getAll(mode);
+const preserve = [...query.entries()].filter(
+  ([key]) => !['category', 'vendor', 'page', 'filter'].includes(key),
+);
+const filterUrl = (next: typeof mode) => {
+  const params = new URLSearchParams(preserve);
+  params.set('filter', next);
+  return `/shop?${params}`;
+};
+const choices = [
+  { value: 'category', label: 'Categories' },
+  { value: 'vendor', label: 'Vendors' },
+] as const;
+const categoryName = (category: Props['categories'][number]) =>
+  category.pathNames.at(-1) ?? category.name;
+const roots = categories.filter((category) => category.parentId === null);
+const descendants = new Map<string, Props['categories']>();
+for (const category of categories) {
+  const root = category.pathIds[0];
+  if (!root || !category.parentId) continue;
+  const group = descendants.get(root) ?? [];
+  group.push(category);
+  descendants.set(root, group);
+}
+---
+
+<aside
+  class={cardClassName({
+    className: 'shop-categories market-shop-filters',
+    spacing: 'contained',
+  })}
+  aria-label="Shop filters"
+>
+  <nav
+    class="market-shop-filter-modes"
+    aria-label="Filter products by"
+    data-market-shop-modes
+    data-active-class={buttonClassName({
+      variant: 'secondary',
+      size: 'compact',
+    })}
+    data-inactive-class={buttonClassName({
+      variant: 'tertiary',
+      size: 'compact',
+    })}
+  >
+    {choices.map(({ value, label }) => (
+      <Button
+        href={mode === value ? `/shop?${query}` : filterUrl(value)}
+        variant={mode === value ? 'secondary' : 'tertiary'}
+        size="compact"
+        aria-current={mode === value ? 'page' : undefined}
+        data-market-shop-mode={value}
+      >
+        {label}
+      </Button>
+    ))}
+  </nav>
+  <form
+    method="get"
+    action="/shop"
+    class="market-shop-filter-form"
+    aria-label="Product filters"
+    data-market-shop-filters
+    data-query={query.toString()}
+  >
+    <input type="hidden" name="filter" value={mode} />
+    {preserve.map(([name, value]) => (
+      <input type="hidden" name={name} value={value} />
+    ))}
+    <fieldset
+      data-market-shop-options="vendor"
+      aria-label="Vendors"
+      hidden={mode !== 'vendor'}
+      disabled={mode !== 'vendor'}
+    >
+      {vendors.length ? (
+        vendors.map((vendor) => (
+          <label class="shop-category-option">
+            <input
+              type="checkbox"
+              name="vendor"
+              value={vendor.vendorId}
+              checked={selected.includes(vendor.vendorId)}
+            />
+            <span>{vendor.name}</span>
+          </label>
+        ))
+      ) : (
+        <p>No vendors for this date.</p>
+      )}
+    </fieldset>
+    <fieldset
+      data-market-shop-options="category"
+      aria-label="Product categories"
+      hidden={mode !== 'category'}
+      disabled={mode !== 'category'}
+    >
+      {roots.length ? (
+        roots.map((category) => {
+          const children = descendants.get(category.id) ?? [];
+          // The row selects the whole category; the chevron on its right opens
+          // the subcategories to choose individually instead.
+          return children.length ? (
+            <div class="market-shop-category-group">
+              <label class="shop-category-option market-shop-category-parent">
+                <input
+                  type="checkbox"
+                  name="category"
+                  value={category.id}
+                  checked={selected.includes(category.id)}
+                />
+                <span class="market-shop-category-name">
+                  {categoryName(category)}
+                </span>
+                <span class="market-shop-category-count">
+                  ({category.count})
+                </span>
+              </label>
+              <details
+                class={disclosureClassName('market-shop-category-disclosure')}
+                open={children.some((child) => selected.includes(child.id))}
+              >
+                <summary>
+                  <span class="sr-only">
+                    {category.pathNames.at(-1) ?? category.name} subcategories
+                  </span>
+                </summary>
+                <div class="ui-disclosure-content">
+                  {children.map((child) => (
+                    <label
+                      class="shop-category-option"
+                      title={child.pathNames.join(' / ')}
+                    >
+                      <input
+                        type="checkbox"
+                        name="category"
+                        value={child.id}
+                        checked={selected.includes(child.id)}
+                      />
+                      <span class="market-shop-category-name">
+                        {categoryName(child)}
+                      </span>
+                      <span class="market-shop-category-count">
+                        ({child.count})
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+            </div>
+          ) : (
+            <label class="shop-category-option">
+              <input
+                type="checkbox"
+                name="category"
+                value={category.id}
+                checked={selected.includes(category.id)}
+              />
+              <span class="market-shop-category-name">
+                {categoryName(category)}
+              </span>
+              <span class="market-shop-category-count">({category.count})</span>
+            </label>
+          );
+        })
+      ) : (
+        <p>No product categories for this date.</p>
+      )}
+    </fieldset>
+    <noscript>
+      <Button type="submit" variant="secondary" size="compact">
+        Apply filters
+      </Button>
+    </noscript>
+    <Button
+      href={filterUrl(mode)}
+      variant="tertiary"
+      size="compact"
+      data-market-shop-clear
+      hidden={!selected.length}
+    >
+      Clear
+    </Button>
+  </form>
+</aside>

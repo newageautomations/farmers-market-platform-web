@@ -8,6 +8,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
+import { requiresInjectedEnvironment } from '@market/config';
 import { localAccountEnvironment } from './local-account-environment';
 import {
   ADMIN_BASE,
@@ -15,6 +16,8 @@ import {
   parsePort,
 } from './remote-demo-proxy-core';
 
+if (requiresInjectedEnvironment(process.env))
+  throw new Error('Remote demo requires a local environment');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const vite = path.join(root, 'node_modules/vite/bin/vite.js');
 if (!existsSync(vite))

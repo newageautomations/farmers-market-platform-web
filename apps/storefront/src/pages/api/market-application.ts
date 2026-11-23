@@ -35,6 +35,7 @@ export const POST: APIRoute = async (context) => {
             'idempotencyKey',
             'accountAnswer',
             'vendorId',
+            'acknowledgement',
           ].includes(k),
       )
     )
@@ -48,6 +49,9 @@ export const POST: APIRoute = async (context) => {
           Number(input.vendorId) <= 0)) ||
       typeof input.versionId !== 'number' ||
       typeof input.idempotencyKey !== 'string' ||
+      (input.acknowledgement !== undefined &&
+        (typeof input.acknowledgement !== 'string' ||
+          input.acknowledgement.length > 40)) ||
       !input.answers ||
       typeof input.answers !== 'object' ||
       Array.isArray(input.answers) ||

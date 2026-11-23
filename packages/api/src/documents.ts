@@ -136,6 +136,8 @@ export const documentErrorMessages: Record<string, string> = {
   COMPLIANCE_EXPORT_LIMIT:
     'More than 5,000 rows match. Narrow the report filters before exporting.',
   DOCUMENT_INPUT_INVALID: 'Check the document information and dates.',
+  DOCUMENT_EXPIRATION_REQUIRED:
+    'This Market needs the expiration date for this request. Enter the date shown on the document.',
   DOCUMENT_FORMAT_INVALID:
     'Choose a PDF, JPG, PNG or WebP file with a matching file extension.',
   DOCUMENT_TOO_LARGE: 'Documents must be 10 MB or smaller.',

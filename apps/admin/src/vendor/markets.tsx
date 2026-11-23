@@ -26,7 +26,7 @@ function VendorLinkRequests({ service }: { service: VendorService }) {
     [failed, setFailed] = useState(false);
   return (
     <section aria-label="Market identity link requests">
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="table" rows={2} {...query} retry={query.refresh} />
       {query.data?.map((r) => (
         <div
           key={r.id}

@@ -40,7 +40,7 @@ export function marketNavigation(
   ];
 }
 
-/** Every header link of a market website: market pages, then enabled content pages. */
+/** Every header link of a market website: market pages, then enabled content pages. Policies live only in the footer. */
 export function marketSiteNavigation(
   appearance: StorefrontAppearance | undefined,
   preview: boolean,
@@ -49,9 +49,6 @@ export function marketSiteNavigation(
     ...marketNavigation(appearance, preview),
     ...(appearance?.faq?.enabled
       ? [{ href: '/faq', label: appearance.faq.title }]
-      : []),
-    ...(appearance?.policies?.enabled
-      ? [{ href: '/policies', label: appearance.policies.title }]
       : []),
     ...(appearance?.contact?.enabled
       ? [{ href: '/contact', label: appearance.contact.title }]

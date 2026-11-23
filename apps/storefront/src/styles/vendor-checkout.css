@@ -162,7 +162,13 @@
   max-width: none;
   margin: 0;
 }
-.checkout-confirmation > .ui-button {
+/* The closing actions sit in one row with a gap, wrapping on narrow
+   screens. */
+.checkout-confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
   margin-block: 1.5rem;
 }
 @media (min-width: 960px) and (min-height: 900px) {
@@ -176,7 +182,8 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 1.5rem;
   }
-  .vendor-checkout .checkout-order-summary {
+  .vendor-checkout .checkout-order-summary,
+  .checkout-review-summary {
     grid-row: 1;
   }
   .checkout-contact-grid {
@@ -284,6 +291,14 @@
   object-fit: cover;
   border-radius: var(--storefront-card-radius);
 }
+/* As in the order summary before checkout, the quantity sits on its own
+   line under the product name. */
+.checkout-confirmation .checkout-summary-product > span:not(:last-child) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
 .checkout-account-invitation {
   background: var(--brand-surface);
 }
@@ -293,9 +308,18 @@
   margin-top: 0;
 }
 
-.market-checkout.checkout-shell {
+.market-checkout.checkout-shell,
+.checkout-shell:has(> .vendor-checkout-layout) {
   max-width: none;
   margin: 0;
+}
+.checkout-review-summary,
+:where(.vendor-checkout-layout:has(> .checkout-review-summary))
+  :is(.checkout-contact-details, .checkout-pickup) {
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  border: 1px solid color-mix(in srgb, var(--brand-foreground) 15%, transparent);
+  border-radius: var(--storefront-card-radius);
+  background: var(--brand-surface);
 }
 .market-checkout .checkout-contact-grid .field {
   margin: 0;
@@ -318,15 +342,59 @@
   border-radius: var(--storefront-card-radius);
 }
 @media (max-width: 420px) {
-  .market-checkout .checkout-summary-product:has(img) {
+  :is(.market-checkout, .checkout-review-summary)
+    .checkout-summary-product:has(img) {
     grid-template-columns: 52px minmax(0, 1fr);
   }
-  .market-checkout .checkout-summary-product img {
+  :is(.market-checkout, .checkout-review-summary)
+    .checkout-summary-product
+    img {
     width: 52px;
     height: 52px;
     grid-row: span 2;
   }
-  .market-checkout .checkout-summary-product:has(img) > span:last-child {
+  :is(.market-checkout, .checkout-review-summary)
+    .checkout-summary-product:has(img)
+    > span:last-child {
     grid-column: 2;
   }
+}
+
+/* Checkout and confirmation cards, in every theme: the card's padding alone
+   sets the space between its text and its edges, so text sits as far from
+   the top and bottom as from the sides. The first and last items drop their
+   outer margins (a heading, a list row, the totals list, a paragraph or a
+   button), and the order summary's first vendor group drops its top
+   padding. */
+:is(.checkout-section, .checkout-order-summary, .checkout-account-invitation)
+  > :first-child,
+:is(.checkout-section, .checkout-order-summary, .checkout-account-invitation)
+  > :first-child
+  > :first-child,
+:is(.checkout-section, .checkout-order-summary, .checkout-account-invitation)
+  > :first-child
+  > :first-child
+  > :first-child {
+  margin-top: 0;
+}
+:is(.checkout-section, .checkout-order-summary, .checkout-account-invitation)
+  > :last-child,
+:is(.checkout-section, .checkout-order-summary, .checkout-account-invitation)
+  > :last-child
+  > :last-child,
+:is(.checkout-section, .checkout-order-summary, .checkout-account-invitation)
+  > :last-child
+  > :last-child
+  > :last-child {
+  margin-bottom: 0;
+}
+:is(.checkout-section, .checkout-order-summary)
+  .checkout-summary
+  > section:first-child {
+  padding-top: 0;
+}
+/* Stacked cards keep a clear gap between them. */
+.checkout-confirmation-details > .checkout-section + .checkout-section,
+.vendor-checkout-layout > div > .checkout-section + .checkout-section {
+  margin-top: 1.5rem;
 }

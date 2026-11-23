@@ -235,11 +235,11 @@ export async function marketLoyaltyBrowserChecks(ready: Ready) {
           .getByRole('button', { name: 'Review order', exact: true })
           .click();
         await customer
-          .getByRole('button', { name: 'Continue to payment', exact: true })
-          .click();
-        await customer
           .getByLabel('Payment method', { exact: true })
           .selectOption('dev-test-payment');
+        await customer
+          .getByRole('checkbox', { name: /I agree to the Terms/ })
+          .check();
         await customer
           .getByRole('button', { name: 'Place order', exact: true })
           .click();

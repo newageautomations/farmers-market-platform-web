@@ -1,7 +1,14 @@
 import { useCallback, useId, useMemo, useState, type MouseEvent } from 'react';
 import { mayCommand } from '@market/admin-core';
 import { hasPermission } from '@market/auth';
-import { Alert, Badge, Dialog, EmptyState, Field } from '@market/ui';
+import {
+  Alert,
+  Badge,
+  Dialog,
+  EmptyState,
+  Field,
+  InlineSkeleton,
+} from '@market/ui';
 import {
   FarmstandButton,
   FarmstandIcon,
@@ -87,7 +94,7 @@ function DatePacking({
     available,
   );
   if (loading || packing.loading)
-    return <span className="markets-muted">Checking packing…</span>;
+    return <InlineSkeleton label="Checking packing" />;
   if (!available)
     return <span className="markets-muted">No packing list yet</span>;
   if (packing.error)
@@ -257,7 +264,7 @@ export function UpcomingMarketDates({ service }: { service: VendorService }) {
     current && `/vendor/markets/${encodeURIComponent(current.membership.id)}`;
   return (
     <>
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="stats" {...query} retry={query.refresh} />
       {query.data && (
         <div className="markets-columns market-applications-columns">
           <div className="market-applications-main">

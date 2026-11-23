@@ -94,7 +94,7 @@ export function OrderDetail({
   }
   return (
     <div className="order-detail">
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="detail" {...query} retry={query.refresh} />
       {query.data && (
         <div key={JSON.stringify(query.data)}>
           {query.data.portion.kind === 'IN_PERSON' &&

@@ -20,7 +20,7 @@ import {
   Field,
   Input,
   Radio,
-  Spinner,
+  LoadingSkeleton,
 } from '@market/ui';
 import {
   FarmstandButton as Button,
@@ -484,7 +484,9 @@ function TeamContent({
           </Button>
         </>
       )}
-      {loading && <Spinner label="Loading team and invitations" />}
+      {loading && (
+        <LoadingSkeleton variant="table" label="Loading team and invitations" />
+      )}
       {snapshot && (
         <div className="team-columns">
           <div className="team-directory">

@@ -606,7 +606,11 @@ export function LoyaltyRewardWizard({
                       placeholder="All your products"
                     />
                   )}
-                  <ReadState {...products} retry={products.refresh} />
+                  <ReadState
+                    skeleton="spinner"
+                    {...products}
+                    retry={products.refresh}
+                  />
                 </div>
                 <div className="reward-minimum-field">
                   <Field

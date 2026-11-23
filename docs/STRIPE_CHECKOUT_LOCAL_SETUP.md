@@ -1,5 +1,19 @@
 # Local Stripe checkout setup correction
 
+## Forwarding webhooks to the local demo
+
+If Stripe CLI logs `Failed to POST` for `localhost:4242/webhook`, it is forwarding events to a port where the demo has no listener. The demo backend handles ordinary Stripe events and Stripe Connect events at separate routes on port 3000. In the same Stripe test sandbox as the demo, replace the old listener with:
+
+```powershell
+stripe listen --all-snapshot --forward-to http://127.0.0.1:3000/payments/stripe/platform --forward-connect-to http://127.0.0.1:3000/payments/stripe/connected
+```
+
+Set both `STRIPE_TEST_PLATFORM_WEBHOOK_SECRETS` and `STRIPE_TEST_CONNECTED_WEBHOOK_SECRETS` in the backend's `.env.demo-market-operations` to include the signing secret printed by that listener. The demo uses that file for provider settings. Keep the listener open and restart the demo backend and recovery worker with the commands below after changing the settings. A `400 INVALID_WEBHOOK` from both routes is a reason to check that the active listener secret is present in each list and that the server has loaded the updated settings.
+
+The CLI's `Ready` line also shows the snapshot API version. The backend processes supported snapshot events at `2026-09-30.endive`. A correctly signed snapshot at a different version can receive HTTP 200 and still be recorded as `EVENT_API_VERSION_UNSUPPORTED`. Use a Stripe test sandbox with the pinned default version for processing tests. The CLI's `--latest` flag uses Stripe's latest version, so check the `Ready` line again if you use it.
+
+A forwarding failure can occur after Stripe has already captured a charge. The storefront checks the saved order before showing confirmation.
+
 The persistent demo supports account onboarding and checkout collection through separate opt-ins. The local no-charge payment guard must allow the three checkout settings only when the full guarded Stripe test configuration is present. It continues to reject live keys, ordinary Stripe collection, unrelated providers, and databases other than `vendure_demo_market_ops`.
 
 With the Stripe checkout service registered, checkout status advertises `STRIPE_TEST` before a fee quote exists. Both vendor designs reuse the shared staged checkout. After contact information and pickup selection, `useCheckout` calls the existing backend fee-quote mutation, reads the authoritative totals, and advances to review only when the fee quote is present. Quoting failures leave the customer on pickup. The manual quotation controls remain available for fee-only testing and are hidden in the Stripe flow. No new UI components or styling were introduced.

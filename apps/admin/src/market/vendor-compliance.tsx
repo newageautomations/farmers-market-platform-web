@@ -7,7 +7,7 @@ import type {
   DocumentsApi,
   NotificationsApi,
 } from '@market/api';
-import { Badge, Spinner } from '@market/ui';
+import { Badge, LoadingSkeleton, InlineSkeleton } from '@market/ui';
 import { DocumentStatus } from '@market/ui/documents';
 import { FarmstandIcon } from '@market/ui/farmstand';
 import { date, useRead } from './common';
@@ -155,7 +155,11 @@ export function ComplianceSummary({
   return (
     <div className="vendor-compliance">
       {compliance.loading && !readiness ? (
-        <Spinner label="Checking compliance" />
+        <LoadingSkeleton
+          variant="detail"
+          rows={2}
+          label="Checking compliance"
+        />
       ) : readiness?.status === 'No requirements' ? (
         <p className="market-application-guidance">
           No documents are required from this Vendor.
@@ -181,7 +185,11 @@ export function ComplianceSummary({
         </div>
       )}
       {requests.loading ? (
-        <Spinner label="Loading document requests" />
+        <LoadingSkeleton
+          variant="table"
+          rows={3}
+          label="Loading document requests"
+        />
       ) : requests.data ? (
         open.length || expiring.length ? (
           <ul className="vendor-gaps" aria-label="What is missing">
@@ -230,7 +238,11 @@ export function ComplianceCell({
   if (!ready)
     return (
       <span className="markets-muted">
-        {compliance.loading ? 'Checking…' : 'Unavailable'}
+        {compliance.loading ? (
+          <InlineSkeleton label="Checking compliance" />
+        ) : (
+          'Unavailable'
+        )}
       </span>
     );
   const gaps = outstanding(ready);

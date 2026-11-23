@@ -107,3 +107,67 @@ test('smart objects survive the existing backend validator and public JSON proje
   expect(result.status, result.stderr).toBe(0);
   expect(result.stdout).toContain('Validated 4 save/publish JSON contracts');
 }, 35000);
+
+test('area viewer bounds pass the backend validator and reach the public map', () => {
+  const backend = resolve('../farmers-market-platform');
+  const definition = {
+    pixelsPerFoot: 10,
+    areas: [
+      {
+        id: 'main',
+        name: 'Main',
+        bounds: { x: -200, y: -100, width: 3000, height: 2000 },
+      },
+    ],
+    elements: [],
+  };
+  const result = spawnSync(
+    process.execPath,
+    [
+      '-r',
+      resolve(backend, 'node_modules/ts-node/register/transpile-only'),
+      '-e',
+      `
+    const assert = require('node:assert/strict');
+    const fs = require('node:fs');
+    const model = require(process.argv[1]);
+    const definition = JSON.parse(fs.readFileSync(0, 'utf8'));
+    const saved = model.validateLayout(structuredClone(definition));
+    assert.deepEqual(saved.areas[0].bounds, definition.areas[0].bounds);
+    const published = JSON.parse(JSON.stringify(model.publicLayout(saved)));
+    assert.deepEqual(published.areas[0].bounds, definition.areas[0].bounds);
+    for (const bounds of [
+      { x: 0, y: 0, width: 0, height: 10 },
+      { x: 99999, y: 0, width: 10, height: 10 },
+      { x: 'a', y: 0, width: 10, height: 10 },
+      null,
+    ]) {
+      const bad = structuredClone(definition);
+      bad.areas[0].bounds = bounds;
+      assert.throws(() => model.validateLayout(bad));
+    }
+    const extra = structuredClone(definition);
+    extra.areas[0].bounds.note = 'x';
+    assert.equal(model.validateLayout(extra).areas[0].bounds.note, undefined);
+    process.stdout.write('Validated bounds');
+  `,
+      resolve(backend, 'src/plugins/market-operations/model.ts'),
+    ],
+    {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      timeout: 30000,
+      env: {
+        ...process.env,
+        TS_NODE_PROJECT: resolve(
+          backend,
+          'test/market-operations/tsconfig.json',
+        ),
+      },
+      input: JSON.stringify(definition),
+    },
+  );
+  expect(result.error, result.error?.message).toBeUndefined();
+  expect(result.status, result.stderr).toBe(0);
+  expect(result.stdout).toContain('Validated bounds');
+}, 35000);

@@ -59,6 +59,7 @@ export type OperationsAction =
   | 'PUBLISH_LAYOUT'
   | 'ARCHIVE_LAYOUT'
   | 'UNARCHIVE_LAYOUT'
+  | 'SET_LAYOUT_FAVORITE'
   | 'SET_PLAN'
   | 'APPROVE_OCCURRENCE'
   | 'ASSIGN'
@@ -158,9 +159,17 @@ export interface MapElement {
   /** Reference IMAGE objects are never part of published content. */
   referenceOnly?: boolean;
 }
+/** World-unit rectangle that limits how far an area's map can be panned or
+ *  zoomed out. Without one, viewers use an automatic margin around content. */
+export interface MapBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 export interface MapDefinition {
   pixelsPerFoot: number;
-  areas: Array<{ id: string; name: string }>;
+  areas: Array<{ id: string; name: string; bounds?: MapBounds }>;
   elements: MapElement[];
   background?: { color: string; gridColor?: string; gridOpacity?: number };
 }
@@ -342,6 +351,8 @@ export interface RentalOption extends OperationsRecord {
 }
 export interface Layout extends OperationsRecord {
   name: string;
+  /** Starred layouts lead the saved layout library. */
+  favorite?: boolean;
   deletedAt?: string | null;
 }
 export interface LayoutVersion extends OperationsRecord {
@@ -350,6 +361,8 @@ export interface LayoutVersion extends OperationsRecord {
   versionNumber: number;
   status: 'DRAFT' | 'PUBLISHED' | 'RETIRED';
   definition: MapDefinition;
+  /** Saving a layout always rewrites its current version. */
+  updatedAt?: string;
 }
 export interface PhysicalBooth extends OperationsRecord {
   name: string;
@@ -549,6 +562,8 @@ export interface MarketOperationsData {
   versions?: ApplicationVersion[];
   /** Default definition for a new, not yet saved application. */
   applicationDefaults?: ApplicationDefinition;
+  /** Server-owned origin of the Market's active storefront; published applications are live at `/apply/<slug>`. */
+  storefrontOrigin?: string | null;
   applicationActivity?: ApplicationActivity[];
   submissions?: ApplicationSubmission[];
   directory?: DirectoryEntry[];
@@ -665,6 +680,9 @@ export interface PublicApplication {
   }>;
 }
 export interface VendorBoothAssignment {
+  /** Market owning the date; absent from backends older than the booth list filters. */
+  marketId?: number;
+  marketName?: string;
   occurrenceId: number;
   occurrenceStatus?: 'scheduled' | 'cancelled';
   startsAt: string;
@@ -826,6 +844,8 @@ export function createPublicMarketOperationsApi(options: TransportOptions) {
       occurrenceIds: number[];
       rentals: Array<{ optionId: number; quantity: number }>;
       idempotencyKey: string;
+      /** Version of the acknowledgement the applicant accepted. */
+      acknowledgement?: string;
     }) =>
       object<{ submitted: boolean; submissionId: number }>(
         (

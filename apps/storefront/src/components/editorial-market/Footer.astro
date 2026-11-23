@@ -1,4 +1,5 @@
 ---
+import VendorTermsLink from '../VendorTermsLink.astro';
 import type { StorefrontContext } from '@market/storefront-core';
 import {
   contactDetails,
@@ -75,6 +76,7 @@ const details = context.appearance.contact?.enabled
       {context.appearance.faq?.enabled && (
         <a href="/faq">{context.appearance.faq.title}</a>
       )}
+      <VendorTermsLink context={context} />
       {context.appearance.policies?.enabled && (
         <a href="/policies">{context.appearance.policies.title}</a>
       )}

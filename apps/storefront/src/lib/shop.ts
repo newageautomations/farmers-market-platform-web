@@ -12,6 +12,7 @@ import {
   createMarketDayStorefrontApi,
 } from '@market/api';
 import type { APIContext } from 'astro';
+import { apiRequestAddress, backendFetch } from './private-api';
 
 function requestOptions(
   context: Pick<APIContext, 'locals' | 'request'>,
@@ -29,6 +30,11 @@ function requestOptions(
   let cookie = context.locals.editorPreview
     ? ''
     : (context.request.headers.get('cookie') ?? '');
+  if (process.env.HOSTED_TRANSPORT === 'railway-private')
+    cookie = cookie
+      .split(';')
+      .filter((part) => !/^\s*(?:CF_Authorization|CF_AppSession)=/i.test(part))
+      .join(';');
   const requestFetch: typeof fetch = async (input, init) => {
     const headers = new Headers(init?.headers);
     if (process.env.PLATFORM_ACCOUNT_BRIDGE_KEY)
@@ -37,7 +43,7 @@ function requestOptions(
         process.env.PLATFORM_ACCOUNT_BRIDGE_KEY,
       );
     if (cookie) headers.set('cookie', cookie);
-    const response = await fetch(input, {
+    const response = await backendFetch(input, {
       ...init,
       headers,
       cache: 'no-store',
@@ -124,8 +130,22 @@ export function requestApplicationDocuments(
 ) {
   if (context.locals.storefront?.kind !== 'MARKET')
     throw new AppError('forbidden');
+  const options = requestOptions(context);
+  const storefrontId = context.locals.storefront.storefrontId;
   return createApplicationDocumentsApi({
-    ...requestOptions(context),
+    ...options,
+    fetch: async (url, init) => {
+      if (!(init?.body instanceof FormData)) return options.fetch(url, init);
+      if (!storefrontId) throw new AppError('forbidden');
+      const headers = new Headers(init.headers);
+      headers.set('x-storefront-id', storefrontId);
+      const response = await options.fetch(url, { ...init, headers });
+      if (response.status === 403) {
+        await response.body?.cancel();
+        throw new AppError('forbidden', 'FORBIDDEN');
+      }
+      return response;
+    },
     application,
   });
 }
@@ -147,8 +167,14 @@ export function requestContact(context: APIContext, headers: Headers) {
     ...options,
     fetch: (url, init) => {
       const outbound = new Headers(init?.headers);
-      outbound.set('origin', context.locals.storefront!.canonicalOrigin);
-      outbound.set('x-contact-client', context.clientAddress);
+      outbound.set(
+        'x-storefront-origin',
+        context.locals.storefront!.canonicalOrigin,
+      );
+      outbound.set(
+        'x-contact-client',
+        apiRequestAddress.getStore() ?? context.clientAddress,
+      );
       return options.fetch(url, { ...init, headers: outbound });
     },
   });

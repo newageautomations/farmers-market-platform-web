@@ -162,6 +162,8 @@ export function PreparationWorkspace({
         </FarmstandSelect>
       </Field>
       <ReadState
+        skeleton="table"
+        rows={3}
         loading={!!dates?.loading}
         error={dates?.error}
         retry={dates?.refresh ?? (() => {})}

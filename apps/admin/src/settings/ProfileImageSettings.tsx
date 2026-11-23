@@ -53,7 +53,12 @@ export function ProfileImageSettings({
   };
   return (
     <div className="profile-image-settings">
-      <ReadState {...current} retry={current.refresh} />
+      <ReadState
+        skeleton="detail"
+        rows={1}
+        {...current}
+        retry={current.refresh}
+      />
       {current.data !== undefined && (
         <>
           <div className="profile-image-row">

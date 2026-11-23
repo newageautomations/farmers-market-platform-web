@@ -20,6 +20,96 @@ export const contactSubjects = [
   'Wholesale / Business Inquiry',
   'Other',
 ] as const;
+/**
+ * Market contact form fields. Name, email and message are always present and
+ * required so every inquiry can be answered; the rest can be removed. Custom
+ * fields are a short answer, a long answer or a dropdown.
+ */
+export const contactFieldTypes = [
+  'name',
+  'email',
+  'phone',
+  'subject',
+  'message',
+  'text',
+  'textarea',
+  'select',
+] as const;
+export const contactRequiredFieldTypes = ['name', 'email', 'message'] as const;
+export const contactFieldLimit = 12;
+export const contactFieldOptionLimit = 10;
+const fieldLabel = z
+  .string()
+  .max(80)
+  .refine((v) => !/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(v))
+  .refine((v) => !!v.trim(), 'Every field needs a label.');
+export const contactFormFieldSchema = z
+  .object({
+    id: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/),
+    type: z.enum(contactFieldTypes),
+    label: fieldLabel,
+    required: z.boolean(),
+    options: z.array(fieldLabel).max(contactFieldOptionLimit).optional(),
+  })
+  .strict();
+export type ContactFormField = z.infer<typeof contactFormFieldSchema>;
+export const contactFormSchema = z
+  .object({
+    fields: z
+      .array(contactFormFieldSchema)
+      .max(contactFieldLimit)
+      .refine(
+        (fields) => new Set(fields.map((f) => f.id)).size === fields.length,
+        'Form field IDs must be unique.',
+      )
+      .refine(
+        (fields) =>
+          contactRequiredFieldTypes.every(
+            (type) =>
+              fields.filter((f) => f.type === type && f.required).length === 1,
+          ) &&
+          (['phone', 'subject'] as const).every(
+            (type) => fields.filter((f) => f.type === type).length <= 1,
+          ),
+        'The form keeps one required name, email and message field.',
+      )
+      .refine(
+        (fields) =>
+          fields.every((f) =>
+            f.type === 'select' || f.type === 'subject'
+              ? (f.options?.length ?? 0) > 0
+              : f.options === undefined,
+          ),
+        'Dropdown fields need at least one choice.',
+      ),
+  })
+  .strict();
+export const defaultMarketContactForm: z.infer<typeof contactFormSchema> = {
+  fields: [
+    { id: 'name', type: 'name', label: 'Full name', required: true },
+    { id: 'email', type: 'email', label: 'Email', required: true },
+    { id: 'phone', type: 'phone', label: 'Phone', required: false },
+    {
+      id: 'subject',
+      type: 'subject',
+      label: 'Subject',
+      required: true,
+      options: [
+        'General Question',
+        'Market / Pickup Question',
+        'Vendor Inquiry',
+        'Other',
+      ],
+    },
+    { id: 'message', type: 'message', label: 'Message', required: true },
+  ],
+};
+/** The fields a market form shows: its saved list, or the default list. */
+export function contactFormFields(config: {
+  form?: z.infer<typeof contactFormSchema>;
+}): ContactFormField[] {
+  return config.form?.fields ?? defaultMarketContactForm.fields;
+}
 /** Formatting and recommended lengths are editor advice; structural bounds remain enforced. */
 export const contactSchema = z
   .object({
@@ -44,6 +134,8 @@ export const contactSchema = z
     cta: z
       .object({ heading: text(20000), text: text(20000), label: text(20000) })
       .strict(),
+    /** Market websites only: the inquiry form's fields. */
+    form: contactFormSchema.optional(),
   })
   .strict()
   .refine(

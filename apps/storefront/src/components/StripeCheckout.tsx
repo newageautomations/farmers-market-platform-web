@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { Button, Dialog, Spinner } from '@market/ui';
+import { Button, Dialog, LoadingSkeleton, Spinner } from '@market/ui';
 import { formatMoney } from '@market/config';
 import {
   AppError,
@@ -8,12 +8,14 @@ import {
   type StripeCheckoutStatus,
 } from '@market/api';
 import { shopCall } from './shop-client';
+import { CheckoutTermsAcceptance } from './CheckoutTermsAcceptance';
 import {
   loadStripeSdk,
   prepareStripeForm,
-  type StripeCard,
-  type StripeClient,
-  type StripeFactory,
+  type StripePaymentClient,
+  type StripePaymentElement,
+  type StripePaymentElements,
+  type StripePaymentFactory,
 } from '../lib/stripe-checkout';
 
 const messages: Record<string, string> = {
@@ -24,7 +26,8 @@ const messages: Record<string, string> = {
   CAPTURING: 'Completing your purchase.',
   VERIFYING:
     'We are verifying the payment outcome. Please do not submit another payment.',
-  COMPLETED: 'Purchase confirmed.',
+  COMPLETED:
+    'Your payment was received. We are verifying your order confirmation. Do not pay again.',
   DECLINED: 'Your card was declined. This purchase was not placed.',
   AUTHORIZATION_FAILED: 'A vendor payment could not be authorized.',
   CAPTURE_FAILED:
@@ -45,22 +48,29 @@ const terminal = [
   'COMPENSATION_COMPLETED',
   'MANUAL_INTERVENTION_REQUIRED',
 ];
+const statusInterval = 4000;
 /** Checkout-specific composition: existing primitives cannot host Stripe's account-scoped card/authentication lifecycle. */
 export function StripeCheckout({
   storefrontId,
   view,
   loadSdk = loadStripeSdk,
+  accordion = false,
   disabled = false,
   onBusyChange,
   backAction,
   concise = false,
+  market = false,
+  onTermsChanged,
 }: {
   storefrontId: string;
   view: CheckoutView;
-  loadSdk?: () => Promise<StripeFactory>;
+  loadSdk?: () => Promise<StripePaymentFactory>;
+  accordion?: boolean;
   disabled?: boolean;
   onBusyChange?: (busy: boolean) => void;
   backAction?: ReactNode;
+  market?: boolean;
+  onTermsChanged?: () => Promise<CheckoutView>;
   /** Omit general reassurance copy. Charges, authorization and status stay. */
   concise?: boolean;
 }) {
@@ -68,54 +78,75 @@ export function StripeCheckout({
   const [loading, setLoading] = useState(true),
     [pending, setPending] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [paymentSubmitted, setPaymentSubmitted] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [complete, setComplete] = useState(false),
     [error, setError] = useState('');
   const [uncertain, setUncertain] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState<string>();
+  const termsToken = view.termsDisclosure?.token;
+  const termsAccepted = !!termsToken && acceptedTerms === termsToken;
+  useEffect(() => setAcceptedTerms(undefined), [termsToken]);
   const cardHost = useRef<HTMLDivElement>(null),
-    card = useRef<StripeCard | null>(null),
-    client = useRef<StripeClient | null>(null);
+    elements = useRef<StripePaymentElements | null>(null),
+    client = useRef<StripePaymentClient | null>(null);
   const lock = useRef(false),
     mounted = useRef(true),
-    factory = useRef<StripeFactory | null>(null);
+    factory = useRef<StripePaymentFactory | null>(null);
+  const checkingOutcome =
+    !confirmed &&
+    uncertain &&
+    submitted &&
+    !terminal.includes(status?.state ?? '');
+  const checkingConfirmation = status?.state === 'COMPLETED' || checkingOutcome;
+  const contact = view.contact ?? view.profile;
+  const name = contact
+    ? `${contact.firstName} ${contact.lastName}`.trim() || undefined
+    : undefined;
+  const email = contact?.emailAddress || undefined;
+  const phone = contact?.phoneNumber || undefined;
+  const paymentAccount = status?.paymentAccount;
+  const showCardEntry = !confirmed && status?.state === 'SETUP_REQUIRED';
+  const entrySecret =
+    showCardEntry
+      ? paymentAccount
+        ? status.paymentSecret
+        : status.setupSecret
+      : null;
+  const publishableKey = status?.publishableKey;
+  const [entryRetry, setEntryRetry] = useState(0);
   useEffect(() => {
-    onBusyChange?.(pending || processing);
+    onBusyChange?.(pending || processing || checkingConfirmation);
     return () => onBusyChange?.(false);
-  }, [pending, processing, onBusyChange]);
-  async function accept(next: StripeCheckoutStatus | null) {
+  }, [pending, processing, checkingConfirmation, onBusyChange]);
+  function accept(next: StripeCheckoutStatus | null) {
     if (!mounted.current) return;
     if (next && next.orderId !== view.orderId)
       throw new Error('Checkout changed');
-    setStatus(
-      next?.state === 'COMPLETED' ? { ...next, state: 'VERIFYING' } : next,
-    );
+    setStatus(next);
     setUncertain(false);
     if (
       next &&
       ['AUTHORIZING', 'CAPTURING', 'VERIFYING', 'COMPLETED'].includes(
         next.state,
       )
-    )
+    ) {
+      setSubmitted(true);
       setProcessing(true);
-    if (next && terminal.includes(next.state)) setProcessing(false);
-    if (next?.state === 'COMPLETED') {
-      const confirmed = await shopCall<CheckoutView>(
-        storefrontId,
-        'checkout-status',
-        { orderId: view.orderId },
-      );
-      if (confirmed.committed && confirmed.orderId === view.orderId) {
-        setStatus(next);
-        window.location.assign(
-          `/checkout/success?order=${encodeURIComponent(view.orderId)}`,
-        );
-      } else
-        setError(
-          'Your payment was received, but order confirmation is still being verified. Do not pay again.',
-        );
     }
+    if (
+      next &&
+      (terminal.includes(next.state) ||
+        (next.paymentAccount &&
+          ['SETUP_REQUIRED', 'AUTHENTICATION_REQUIRED'].includes(next.state)))
+    )
+      setProcessing(false);
   }
-  async function run(work: () => Promise<void>) {
+  async function run(
+    work: () => Promise<void>,
+    verifyOnFailure = submitted && !terminal.includes(status?.state ?? ''),
+  ) {
     if (lock.current) return;
     lock.current = true;
     setPending(true);
@@ -125,9 +156,25 @@ export function StripeCheckout({
     } catch (cause) {
       if (mounted.current) {
         setProcessing(false);
-        // This sentinel is returned by route qualification before a new group or
-        // provider setup is created. Unknown failures still require reconciliation.
         if (
+          cause instanceof AppError &&
+          ['VENDOR_TERMS_CHANGED', 'VENDOR_TERMS_ACCEPTANCE_REQUIRED'].includes(
+            cause.code ?? '',
+          )
+        ) {
+          setSubmitted(false);
+          setAcceptedTerms(undefined);
+          setShowPaymentDialog(false);
+          setUncertain(false);
+          try {
+            await onTermsChanged?.();
+            setError(cause.message);
+          } catch {
+            setError(
+              'Seller terms could not be refreshed. Refresh checkout to try again.',
+            );
+          }
+        } else if (
           !status &&
           cause instanceof AppError &&
           cause.code === 'ACCOUNT_NOT_READY'
@@ -136,9 +183,10 @@ export function StripeCheckout({
           setError(cause.message);
         } else {
           setUncertain(true);
-          setError(
-            'We could not verify the payment outcome. Your order is not yet confirmed. Do not pay again while we check its status.',
-          );
+          if (!verifyOnFailure)
+            setError(
+              'We could not verify the payment outcome. Your order is not yet confirmed. Do not pay again while we check its status.',
+            );
         }
       }
     } finally {
@@ -149,67 +197,138 @@ export function StripeCheckout({
       }
     }
   }
+  async function readPayment() {
+    if (
+      submitted ||
+      (!accordion &&
+        new URLSearchParams(window.location.search).get('payment-order') ===
+          view.orderId)
+    )
+      return shopCall<StripeCheckoutStatus | null>(
+        storefrontId,
+        'stripe-checkout-status',
+        { orderId: view.orderId },
+      );
+    return prepareStripeForm(storefrontId, view.orderId, () =>
+      shopCall<StripeCheckoutStatus>(
+        storefrontId,
+        'stripe-checkout-prepare',
+        {},
+      ),
+    );
+  }
   useEffect(() => {
     mounted.current = true;
     void Promise.resolve().then(() => {
       if (!mounted.current) return;
-      return run(async () =>
-        accept(
-          await prepareStripeForm(storefrontId, view.orderId, () =>
-            shopCall<StripeCheckoutStatus>(
-              storefrontId,
-              'stripe-checkout-prepare',
-              {},
-            ),
-          ),
-        ),
-      );
+      return run(async () => accept(await readPayment()));
     });
     return () => {
       mounted.current = false;
-      card.current?.destroy();
-      card.current = null;
     };
   }, [storefrontId, view.orderId]);
   useEffect(() => {
-    if (
-      status?.state !== 'SETUP_REQUIRED' ||
-      !status.setupSecret ||
-      !cardHost.current
-    )
-      return;
+    if (!entrySecret || !publishableKey || !cardHost.current) return;
     let active = true;
+    let element: StripePaymentElement | undefined;
     void loadSdk()
       .then((sdk) => {
         if (!active || !cardHost.current) return;
         factory.current = sdk;
-        client.current = sdk(status.publishableKey);
-        const element = client.current
-          .elements()
-          .create('card', { hidePostalCode: false, disableLink: true });
-        card.current = element;
+        client.current = paymentAccount
+          ? sdk(publishableKey, { stripeAccount: paymentAccount })
+          : sdk(publishableKey);
+        elements.current = client.current.elements({
+          clientSecret: entrySecret,
+        });
+        element = elements.current.create('payment', {
+          layout:
+            accordion || paymentAccount
+              ? { type: 'accordion', radios: 'always', defaultCollapsed: false }
+              : undefined,
+          defaultValues: { billingDetails: { name, email, phone } },
+          fields: {
+            billingDetails: {
+              name: name ? 'never' : 'auto',
+              email: email ? 'never' : 'auto',
+              phone: phone ? 'never' : 'auto',
+            },
+          },
+          ...(!paymentAccount && {
+            wallets: { applePay: 'never', googlePay: 'never', link: 'never' },
+          }),
+        });
         element.on('change', (value) => {
+          if (!active) return;
           setComplete(value.complete);
-          setError(value.error ? 'Check your card information.' : '');
+          setError(
+            value.error
+              ? paymentAccount
+                ? 'Check your payment information.'
+                : 'Check your card information.'
+              : '',
+          );
         });
         element.mount(cardHost.current);
       })
       .catch(() => {
         if (active)
           setError(
-            'The secure card form could not load. Refresh the status to try loading it again.',
+            paymentAccount
+              ? 'The secure payment form could not load. Refresh the status to try loading it again.'
+              : 'The secure card form could not load. Refresh the status to try loading it again.',
           );
       });
     return () => {
       active = false;
-      card.current?.destroy();
-      card.current = null;
+      element?.destroy();
+      elements.current = null;
       setComplete(false);
     };
-  }, [status?.setupSecret, loadSdk]);
+  }, [
+    entrySecret,
+    paymentAccount,
+    publishableKey,
+    name,
+    email,
+    phone,
+    loadSdk,
+    entryRetry,
+    accordion,
+  ]);
+  useEffect(() => {
+    if (!checkingConfirmation || confirmed) return;
+    let active = true;
+    let timer: number | undefined;
+    async function checkOrder() {
+      // A slow or lost response can outlive the browser's payment request.
+      // Read the native order without starting or advancing another payment.
+      const order = await shopCall<CheckoutView | null>(
+        storefrontId,
+        'checkout-status',
+        { orderId: view.orderId },
+      ).catch(() => null);
+      if (!active) return;
+      if (order?.committed && order.orderId === view.orderId) {
+        setConfirmed(true);
+        setError('');
+        window.location.assign(
+          `/checkout/success?order=${encodeURIComponent(view.orderId)}`,
+        );
+        return;
+      }
+      timer = window.setTimeout(checkOrder, statusInterval);
+    }
+    void checkOrder();
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [checkingConfirmation, confirmed, storefrontId, view.orderId]);
   useEffect(() => {
     if (
       !status ||
+      checkingConfirmation ||
       terminal.includes(status.state) ||
       ['COMPLETED', 'SETUP_REQUIRED', 'AUTHENTICATION_REQUIRED'].includes(
         status.state,
@@ -226,46 +345,89 @@ export function StripeCheckout({
           ),
         ),
       );
-    }, 4000);
+    }, statusInterval);
     return () => window.clearInterval(timer);
-  }, [status?.groupId, status?.state]);
+  }, [status?.groupId, status?.state, checkingConfirmation]);
   async function pay() {
-    setPaymentSubmitted(true);
+    setShowPaymentDialog(true);
     await run(async () => {
       if (!status) return;
+      let next: StripeCheckoutStatus;
+      let submittedVendorPayment = false;
       if (status.state === 'SETUP_REQUIRED') {
+        const paymentElements = elements.current;
+        const stripe = client.current;
         if (
-          !card.current ||
-          !client.current ||
-          !complete ||
-          !status.setupSecret
-        )
-          return;
-        const result = await client.current.confirmCardSetup(
-          status.setupSecret,
-          { payment_method: { card: card.current } },
+          !paymentElements || !stripe || !complete || !entrySecret || !termsAccepted
+        ) return;
+        setSubmitted(true);
+        next = await shopCall<StripeCheckoutStatus>(
+          storefrontId,
+          'stripe-checkout-start',
+          { consent: 'checkout-vendors-once-v1', termsToken },
         );
-        if (result.error) {
-          setError(
-            'Your card could not be set up. Check your details or complete the bank authentication.',
+        if (next.orderId !== view.orderId || next.groupId !== status.groupId)
+          throw new Error('Checkout changed');
+        if (next.state === 'SETUP_REQUIRED' && paymentAccount) {
+          if (!stripe.confirmPayment)
+            throw new Error('Stripe payment confirmation is unavailable');
+          if (
+            next.paymentSecret !== entrySecret ||
+            next.paymentAccount !== paymentAccount
+          )
+            throw new Error('Checkout payment changed');
+          const returnUrl = new URL('/checkout', window.location.origin);
+          returnUrl.searchParams.set('payment-order', view.orderId);
+          await stripe.confirmPayment({
+            elements: paymentElements,
+            redirect: 'if_required',
+            confirmParams: {
+              return_url: returnUrl.href,
+              payment_method_data: {
+                billing_details: { name, email, phone },
+              },
+            },
+          });
+          submittedVendorPayment = true;
+          next = await shopCall<StripeCheckoutStatus>(
+            storefrontId,
+            'stripe-checkout-advance',
+            { groupId: status.groupId },
           );
-          return;
+        } else if (next.state === 'SETUP_REQUIRED') {
+          if (next.setupSecret !== entrySecret)
+            throw new Error('Checkout payment changed');
+          const result = await stripe.confirmSetup({
+            elements: paymentElements,
+            redirect: 'if_required',
+            confirmParams: {
+              payment_method_data: { billing_details: { name, email, phone } },
+            },
+          });
+          if (result.error || result.setupIntent?.status !== 'succeeded') {
+            setError(
+              'Your card could not be set up. Check your details or complete the bank authentication.',
+            );
+            return;
+          }
+          setProcessing(true);
+          next = await shopCall<StripeCheckoutStatus>(
+            storefrontId,
+            'stripe-checkout-advance',
+            { groupId: status.groupId },
+          );
         }
+      } else {
+        setSubmitted(true);
+        next = await shopCall<StripeCheckoutStatus>(
+          storefrontId,
+          'stripe-checkout-advance',
+          { groupId: status.groupId },
+        );
       }
       setProcessing(true);
-      let next =
-        status.state === 'SETUP_REQUIRED'
-          ? await shopCall<StripeCheckoutStatus>(
-              storefrontId,
-              'stripe-checkout-start',
-              { consent: 'checkout-vendors-once-v1' },
-            )
-          : await shopCall<StripeCheckoutStatus>(
-              storefrontId,
-              'stripe-checkout-advance',
-              { groupId: status.groupId },
-            );
       if (
+        !submittedVendorPayment &&
         next.state === 'AUTHENTICATION_REQUIRED' &&
         next.actionSecret &&
         next.actionAccount
@@ -290,48 +452,59 @@ export function StripeCheckout({
           );
       }
       setProcessing(true);
-      await accept(next);
+      accept(next);
       if (next.state === 'SETUP_REQUIRED')
         setError(
-          'Card setup has not completed. Your order is not confirmed. Check your card details before continuing.',
+          paymentAccount
+            ? 'Payment was not completed. Check your payment details or choose another method.'
+            : 'Card setup has not completed. Your order is not confirmed. Check your card details before continuing.',
         );
       if (terminal.includes(next.state) || next.state === 'SETUP_REQUIRED')
         setProcessing(false);
-    });
+    }, true);
   }
   const paymentProblem =
     error ||
     (status && [...terminal, 'COMPENSATION_PENDING'].includes(status.state)
       ? messages[status.state]
       : '');
+  const showPaymentActions =
+    !confirmed &&
+    (!status ||
+      ['SETUP_REQUIRED', 'AUTHENTICATION_REQUIRED'].includes(status.state));
+  const progressTitle = checkingOutcome
+    ? 'Verifying your order'
+    : 'Processing your order';
+  const progressMessage = checkingOutcome
+    ? 'This is taking longer than expected. We are checking your order. Do not pay again.'
+    : 'We are confirming your payment and order. Please keep this page open.';
   return (
     <section
       className="checkout-section"
-      aria-label="Secure card payment"
+      aria-label={paymentAccount ? 'Secure payment' : 'Secure card payment'}
       aria-busy={pending || loading}
     >
       <Dialog
-        open={paymentSubmitted && (processing || !!paymentProblem)}
+        open={
+          showPaymentDialog && (processing || checkingOutcome || !!paymentProblem)
+        }
         title={
           error
             ? 'Payment needs verification'
             : paymentProblem
               ? 'Order not placed'
-              : 'Processing your order'
+              : progressTitle
         }
         size="standard"
         busy={processing && !paymentProblem}
-        onClose={() => setPaymentSubmitted(false)}
+        onClose={() => setShowPaymentDialog(false)}
       >
         {paymentProblem ? (
           <p role="alert">{paymentProblem}</p>
         ) : (
           <>
-            <Spinner label="Processing your order" />
-            <p>
-              We are confirming your payment and order. Please keep this page
-              open.
-            </p>
+            <Spinner label={progressTitle} />
+            <p>{progressMessage}</p>
           </>
         )}
       </Dialog>
@@ -342,7 +515,9 @@ export function StripeCheckout({
           separate vendor charges.
         </p>
       )}
-      <ul aria-label="Vendor card charges">
+      <ul
+        aria-label={paymentAccount ? 'Vendor charges' : 'Vendor card charges'}
+      >
         {(
           status?.charges ??
           view.preorderFee?.vendors.map((v) => ({
@@ -359,50 +534,70 @@ export function StripeCheckout({
           </li>
         ))}
       </ul>
-      {status?.state === 'SETUP_REQUIRED' && (
+      {loading && <LoadingSkeleton variant="checkout" label={null} />}
+      {showCardEntry && (
         <div className="checkout-card-entry">
-          <p id="checkout-card-label">Card details</p>
-          <p
-            id="checkout-card-help"
-            className={concise ? 'sr-only' : undefined}
-          >
-            Enter your card number, expiration date, security code and ZIP code.
+          <p id="checkout-card-label">
+            {paymentAccount ? 'Payment method' : 'Card details'}
           </p>
+          {!paymentAccount && (
+            <p
+              id="checkout-card-help"
+              className={concise ? 'sr-only' : undefined}
+            >
+              Enter your card number, expiration date, security code and ZIP
+              code.
+            </p>
+          )}
           <div
             className="checkout-card-host"
             role="group"
             ref={cardHost}
             aria-labelledby="checkout-card-label"
-            aria-describedby="checkout-card-help"
+            aria-describedby={paymentAccount ? undefined : 'checkout-card-help'}
           />
         </div>
       )}
-      {status?.state === 'SETUP_REQUIRED' && (
+      {showCardEntry && (
         <p>
           By selecting Complete purchase, you authorize the vendor charges shown
           above for this checkout.
         </p>
       )}
       <p role="status" aria-live="polite">
-        {loading
-          ? 'Loading secure payment status.'
-          : status
-            ? concise && status.state === 'SETUP_REQUIRED'
-              ? ''
-              : (messages[status.state] ?? messages.VERIFYING)
-            : concise
-              ? ''
-              : 'Your card will be used only for this checkout.'}
+        {confirmed
+          ? 'Purchase confirmed.'
+          : checkingOutcome
+            ? messages.VERIFYING
+            : loading
+              ? 'Loading secure payment status.'
+              : status
+                ? concise && status.state === 'SETUP_REQUIRED'
+                  ? ''
+                  : paymentAccount && status.state === 'SETUP_REQUIRED'
+                    ? 'Choose a payment method securely with Stripe.'
+                    : (messages[status.state] ?? messages.VERIFYING)
+                : concise
+                  ? ''
+                  : 'Your card will be used only for this checkout.'}
       </p>
       {error && (
         <p className="ui-alert ui-alert-error" role="alert">
           {error}
         </p>
       )}
-      {(!status ||
-        ['SETUP_REQUIRED', 'AUTHENTICATION_REQUIRED'].includes(
-          status.state,
-        )) && (
+      {showCardEntry && (
+        <CheckoutTermsAcceptance
+          disclosure={view.termsDisclosure}
+          market={market}
+          checked={termsAccepted}
+          disabled={pending || uncertain}
+          onChange={(checked) =>
+            setAcceptedTerms(checked ? termsToken : undefined)
+          }
+        />
+      )}
+      {showPaymentActions && (
         <div className="checkout-stage-actions">
           {backAction}{' '}
           <Button
@@ -414,7 +609,8 @@ export function StripeCheckout({
               loading ||
               pending ||
               !status ||
-              (status.state === 'SETUP_REQUIRED' && !complete)
+              (status.state === 'SETUP_REQUIRED' &&
+                (!complete || !termsAccepted))
             }
             onClick={() => void pay()}
           >
@@ -428,24 +624,19 @@ export function StripeCheckout({
           </Button>
         </div>
       )}
-      {(error || uncertain) && (
+      {(error || uncertain) && !confirmed && (
         <Button
           type="button"
           variant="secondary"
           disabled={pending}
           onClick={() =>
-            void run(async () =>
-              accept(
-                await shopCall<StripeCheckoutStatus>(
-                  storefrontId,
-                  'stripe-checkout-prepare',
-                  {},
-                ),
-              ),
-            )
+            void run(async () => {
+              accept(await readPayment());
+              setEntryRetry((retry) => retry + 1);
+            })
           }
         >
-          Retry secure payment
+          {submitted ? 'Check payment status' : 'Retry secure payment'}
         </Button>
       )}
       {status && terminal.includes(status.state) && (

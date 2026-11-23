@@ -17,7 +17,7 @@ import type {
   FinanceReport,
   PackingView,
 } from '@market/api';
-import { EmptyState, Field, UtilityIcon } from '@market/ui';
+import { EmptyState, Field, UtilityIcon, InlineSkeleton } from '@market/ui';
 import {
   FarmstandButton,
   FarmstandIcon,
@@ -505,7 +505,11 @@ function KeyMetrics({
   now: number;
 }) {
   const pending = (read?: { loading: boolean; error?: unknown }) =>
-    read?.loading ? 'Loading…' : read?.error ? 'Unavailable' : undefined;
+    read?.loading ? (
+      <InlineSkeleton />
+    ) : read?.error ? (
+      'Unavailable'
+    ) : undefined;
   const current = report?.data?.summary,
     prior = previous.data?.summary;
   const compare = (key: 'orders' | 'gross' | 'profit') =>
@@ -598,7 +602,7 @@ function NextMarket({
         <FarmstandIcon name="calendar-days" />
         Next upcoming market
       </h2>
-      <ReadState {...dates} retry={dates.refresh} />
+      <ReadState skeleton="detail" rows={2} {...dates} retry={dates.refresh} />
       {dates.data &&
         (next ? (
           <div className="vendor-dashboard-next-body">
@@ -748,7 +752,7 @@ function ThisWeek({
           </span>
         )}
       </PanelHeader>
-      <ReadState {...dates} retry={dates.refresh} />
+      <ReadState skeleton="table" rows={3} {...dates} retry={dates.refresh} />
       {dates.data &&
         (tasks.length ? (
           <ul className="vendor-dashboard-tasks">
@@ -827,6 +831,8 @@ function SalesTrend({
         ref={body}
       >
         <ReadState
+          skeleton="detail"
+          rows={3}
           {...report}
           loading={!report.data && report.loading}
           retry={report.refresh}
@@ -871,6 +877,8 @@ function DonutPanel({
     >
       <PanelHeader id={id} title={title} />
       <ReadState
+        skeleton="detail"
+        rows={3}
         {...report}
         loading={!report.data && report.loading}
         retry={report.refresh}
@@ -912,9 +920,16 @@ function TopCustomers({
         title="Top customers"
         link={{ href: '/vendor/customers', label: 'View all' }}
       />
-      <ReadState {...customers} retry={customers.refresh} />
+      <ReadState
+        skeleton="table"
+        rows={3}
+        {...customers}
+        retry={customers.refresh}
+      />
       {customers.data && (
         <ReadState
+          skeleton="table"
+          rows={3}
           {...spending}
           loading={!spending.data && spending.loading}
           retry={spending.refresh}
@@ -984,7 +999,11 @@ function RecentOrders({
   const shown = orders.slice(0, cell.h >= 3 ? 9 : 5);
   const customer = (order: FinanceOrderTransaction) =>
     names.data?.get(order.id) ??
-    (names.loading ? 'Loading…' : unknownCustomer(order.channel));
+    (names.loading ? (
+      <InlineSkeleton label="Loading customer" />
+    ) : (
+      unknownCustomer(order.channel)
+    ));
   return (
     <FarmstandPanel
       as="section"
@@ -997,6 +1016,8 @@ function RecentOrders({
         link={{ href: '/vendor/orders', label: 'View all' }}
       />
       <ReadState
+        skeleton="table"
+        rows={3}
         {...report}
         loading={!report.data && report.loading}
         retry={report.refresh}
@@ -1069,6 +1090,8 @@ function TopProducts({
         link={{ href: '/vendor/products', label: 'Products' }}
       />
       <ReadState
+        skeleton="table"
+        rows={3}
         {...report}
         loading={!report.data && report.loading}
         retry={report.refresh}

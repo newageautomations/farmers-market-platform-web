@@ -18,11 +18,30 @@
   border-color: currentColor;
   font-weight: 600;
 }
+/* A completed step returns to that section; it reads as part of the step
+   label rather than as a separate button. */
+.checkout-progress-step {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.checkout-progress-step:disabled {
+  cursor: wait;
+}
 .checkout-shell .field,
 .account-panel .field {
   margin: 1rem 0;
 }
-.checkout-shell input:not([type='radio']),
+/* Text fields fill the column. Checkboxes and radios keep their own size. */
+.checkout-shell input:not([type='radio']):not([type='checkbox']),
 .account-panel input:not([type='hidden']):not([type='checkbox']) {
   width: 100%;
   box-sizing: border-box;
@@ -91,9 +110,8 @@
 .account-panel p {
   overflow-wrap: anywhere;
 }
-.checkout-shell h2:focus {
-  outline: 2px solid currentColor;
-  outline-offset: 4px;
+.checkout-shell > h2:focus {
+  outline: none;
 }
 @media (max-width: 480px) {
   .checkout-progress {
@@ -251,4 +269,15 @@
   :is(.ui-inline-controls, .ui-control-row)
   .button.ui-button:not(.button-tertiary) {
   --ui-control-height: 40px;
+}
+
+/* Required checkout contact fields carry an asterisk; a short legend explains it. */
+.required-mark {
+  color: var(--brand-primary);
+  font-weight: 700;
+}
+.required-legend {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--brand-muted);
 }

@@ -68,7 +68,7 @@ export function VendorTaxSettings({
   });
   return (
     <>
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="detail" {...query} retry={query.refresh} />
       {settings && (
         <CommandForm
           key={settings.version}

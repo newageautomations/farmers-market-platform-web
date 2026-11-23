@@ -1,4 +1,5 @@
 ---
+import VendorTermsLink from '../VendorTermsLink.astro';
 import type { StorefrontContext } from '@market/storefront-core';
 import { marketText, storefrontText } from '@market/theme/storefront';
 import { marketNavigation } from '../../lib/market-website';
@@ -58,6 +59,7 @@ const visit = marketNavigation(appearance, !!Astro.locals.editorPreview);
           {appearance?.faq?.enabled && (
             <a href="/faq">{appearance.faq.title}</a>
           )}
+          <VendorTermsLink context={context} />
           {appearance?.policies?.enabled && (
             <a href="/policies">{appearance.policies.title}</a>
           )}

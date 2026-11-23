@@ -1,6 +1,9 @@
 ---
 import type { StorefrontContext } from '@market/storefront-core';
-import type { WebsiteFeatureGridSection } from '@market/theme/storefront';
+import {
+  websiteSectionSpaceStyle,
+  type WebsiteFeatureGridSection,
+} from '@market/theme/storefront';
 import FarmstandIcon from '../ui/FarmstandIcon.astro';
 import '../../styles/harvest-sections.css';
 import '../../styles/theme-section-library.css';
@@ -31,7 +34,7 @@ const prefix =
   data-columns={p.columns}
   data-icon-position={p.iconPosition}
   data-card-style={p.cardStyle}
-  style={`--harvest-feature-icon-size:${typeof p.iconSize === 'number' && Number.isInteger(p.iconSize) && p.iconSize >= 16 && p.iconSize <= 96 ? p.iconSize : 40}px`}
+  style={`--harvest-feature-icon-size:${typeof p.iconSize === 'number' && Number.isInteger(p.iconSize) && p.iconSize >= 16 && p.iconSize <= 96 ? p.iconSize : 40}px;${websiteSectionSpaceStyle(section)}`}
 >
   <header class="harvest-library-heading">
     {c.heading && <h2>{c.heading}</h2>}

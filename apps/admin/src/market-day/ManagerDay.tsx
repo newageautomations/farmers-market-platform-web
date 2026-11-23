@@ -203,6 +203,8 @@ export function ManagerDay({
       }
     >
       <ReadState
+        skeleton="cards"
+        rows={1}
         loading={!map.data && map.loading}
         error={map.error}
         retry={map.refresh}

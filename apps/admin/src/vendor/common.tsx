@@ -21,6 +21,9 @@ import {
   Field,
   Input,
   Spinner,
+  LoadingSkeleton,
+  useLoadGate,
+  type SkeletonVariant,
 } from '@market/ui';
 export { DataTable } from '@market/ui';
 import { formatDate } from '@market/config';
@@ -89,10 +92,12 @@ export function useRead<T>(
   }>({ key: '' });
   const [revision, setRevision] = useState(0);
   const requestKey = `${key}:${revision}`;
+  // Content reads on one page settle together (LOD-01 load gate).
+  const gated = useLoadGate();
   useEffect(() => {
     if (!enabled) return;
     let current = true;
-    read()
+    gated(read())
       .then((data) => {
         if (current) setResult({ key: requestKey, data });
       })
@@ -102,7 +107,7 @@ export function useRead<T>(
     return () => {
       current = false;
     };
-  }, [requestKey, read, enabled]);
+  }, [requestKey, read, enabled, gated]);
   const refresh = useCallback(() => setRevision((value) => value + 1), []);
   return {
     data:
@@ -118,13 +123,24 @@ export function ReadState({
   loading,
   error,
   retry,
+  skeleton = 'table',
+  rows,
+  label = 'Loading current records',
 }: {
   loading: boolean;
   error?: AppError;
   retry: () => void;
+  /** Page content uses a LOD-01 skeleton layout; content inside a dialog passes `'spinner'`. */
+  skeleton?: SkeletonVariant | 'spinner';
+  rows?: number;
+  label?: string;
 }) {
   return loading ? (
-    <Spinner label="Loading current records" />
+    skeleton === 'spinner' ? (
+      <Spinner label={label} />
+    ) : (
+      <LoadingSkeleton variant={skeleton} rows={rows} label={label} />
+    )
   ) : error ? (
     <>
       <ErrorState error={error} />

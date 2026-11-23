@@ -2,20 +2,17 @@ import { HarvestCartLine } from './HarvestCartLine';
 import { VendorPreorderBanner } from './VendorPreorderBanner';
 import type { VendorPreorderState } from '../lib/vendor-preorder';
 import { buttonClassName } from '@market/ui/presentation';
-import { Card, Field, Select } from '@market/ui';
+import { Card } from '@market/ui';
 import { useRef, useState } from 'react';
 import {
-  AppError,
   cartMessage,
   type MarketCart as Cart,
   type MarketBootstrap,
-  type PickupOption,
 } from '@market/api';
 import { formatMoney } from '@market/config';
 import { occurrenceLabel } from '@market/storefront-core/market';
 import { shopCall } from './shop-client';
 import CheckoutLoyalty from './CheckoutLoyalty';
-import { prepareMarketCheckout } from '../lib/prepare-market-checkout';
 
 export function MarketCart({
   storefrontId,
@@ -33,58 +30,8 @@ export function MarketCart({
 }) {
   const [cart, setCart] = useState(initialCart),
     [pending, setPending] = useState(false),
-    [error, setError] = useState(''),
-    [message, setMessage] = useState('');
+    [error, setError] = useState('');
   const lock = useRef(false);
-  const [preparing, setPreparing] = useState(false);
-  const [pickupOptions, setPickupOptions] = useState<PickupOption[]>([]);
-  const [pickupSelection, setPickupSelection] = useState<
-    Record<string, string>
-  >({});
-  async function continueCheckout() {
-    if (lock.current || !cart) return;
-    lock.current = true;
-    setPending(true);
-    setPreparing(true);
-    setError('');
-    try {
-      const result = await prepareMarketCheckout(
-        storefrontId,
-        cart.id,
-        pickupOptions.length
-          ? cart.groups.map((group) => pickupSelection[group.vendorId] ?? '')
-          : undefined,
-      );
-      if ('pickupOptions' in result) {
-        setPickupOptions(result.pickupOptions);
-        setPickupSelection(
-          Object.fromEntries(
-            cart.groups.map((group) => {
-              const options = result.pickupOptions.filter(
-                (option) => option.vendorId === group.vendorId,
-              );
-              return [
-                group.vendorId,
-                options.length === 1 ? options[0]!.methodId : '',
-              ];
-            }),
-          ),
-        );
-        setMessage('Choose pickup for each vendor before continuing.');
-      } else window.location.assign('/checkout');
-    } catch (error) {
-      setError(
-        error instanceof AppError &&
-          error.code === 'MARKET_VENDOR_PICKUP_UNAVAILABLE'
-          ? error.message
-          : 'Checkout could not be prepared. Check your pickup choices and try again to refresh the fees.',
-      );
-    } finally {
-      lock.current = false;
-      setPending(false);
-      setPreparing(false);
-    }
-  }
   async function refreshRewards() {
     const next = (await shopCall<MarketBootstrap>(storefrontId, 'cart')).cart;
     setCart(next);
@@ -102,7 +49,6 @@ export function MarketCart({
     lock.current = true;
     setPending(true);
     setError('');
-    setMessage('');
     try {
       const result = await shopCall<{ cart: Cart | null }>(
         storefrontId,
@@ -110,14 +56,11 @@ export function MarketCart({
         input,
       );
       setCart(result.cart);
-      setPickupOptions([]);
-      setPickupSelection({});
       window.dispatchEvent(
         new CustomEvent('market-cart-updated', {
           detail: { storefrontId, quantity: result.cart?.totalQuantity ?? 0 },
         }),
       );
-      setMessage('Cart updated.');
     } catch (e) {
       setError(cartMessage(e as { kind?: string; code?: string }));
       try {
@@ -160,19 +103,8 @@ export function MarketCart({
           }}
         />
       )}
-      <p
-        className={
-          pending || message ? 'alert ui-alert ui-alert-info' : undefined
-        }
-        role="status"
-        aria-live="polite"
-      >
-        {pending
-          ? preparing
-            ? 'Preparing checkout…'
-            : 'Updating your cart…'
-          : message}
-      </p>
+      {/* Only errors are announced here. A completed change shows in the
+          cart itself, and aria-busy marks the cart while it updates. */}
       {error && (
         <p className="alert ui-alert ui-alert-error" role="alert">
           {error}
@@ -196,7 +128,7 @@ export function MarketCart({
       ) : (
         <>
           {!editable && (
-            <p className="alert ui-alert ui-alert-info" role="status">
+            <p className="alert ui-alert ui-alert-error" role="alert">
               This cart cannot be edited in its current state.
             </p>
           )}
@@ -334,60 +266,15 @@ export function MarketCart({
               <p className="cart-boundary">
                 Adding items does not reserve them.
               </p>
-              {!!pickupOptions.length &&
-                cart.groups.map((group) => (
-                  <Field
-                    key={group.vendorId}
-                    id={`cart-pickup-${group.vendorId}`}
-                    label={`Pickup for ${group.vendorName}`}
-                  >
-                    <Select
-                      id={`cart-pickup-${group.vendorId}`}
-                      value={pickupSelection[group.vendorId] ?? ''}
-                      disabled={pending}
-                      onChange={(event) =>
-                        setPickupSelection((previous) => ({
-                          ...previous,
-                          [group.vendorId]: event.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">Choose pickup</option>
-                      {pickupOptions
-                        .filter((option) => option.vendorId === group.vendorId)
-                        .map((option) => (
-                          <option key={option.methodId} value={option.methodId}>
-                            {option.name} ·{' '}
-                            {formatMoney(option.price, option.currencyCode)}
-                          </option>
-                        ))}
-                    </Select>
-                  </Field>
-                ))}
               <a
                 className={buttonClassName({
                   variant: 'primary',
                   className: 'button',
                 })}
                 href="/checkout"
-                aria-disabled={
-                  pending ||
-                  (!!pickupOptions.length &&
-                    cart.groups.some(
-                      (group) => !pickupSelection[group.vendorId],
-                    ))
-                }
+                aria-disabled={pending}
                 onClick={(event) => {
-                  event.preventDefault();
-                  if (
-                    pending ||
-                    (!!pickupOptions.length &&
-                      cart.groups.some(
-                        (group) => !pickupSelection[group.vendorId],
-                      ))
-                  )
-                    return;
-                  void continueCheckout();
+                  if (lock.current) event.preventDefault();
                 }}
               >
                 Continue to checkout

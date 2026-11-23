@@ -148,17 +148,13 @@ describe('Our Story sections', () => {
     });
     expect(api.media.remove).not.toHaveBeenCalled();
   });
-  it('explains alternative text and offers proportional rounded and straight-edge images', async () => {
+  it('offers alternative text without help text and proportional rounded and straight-edge images', async () => {
     const { api } = setup([section()]);
     await openAbout(api);
     fireEvent.click(screen.getByRole('button', { name: 'Our farm' }));
-    const info = screen.getByRole('button', {
-      name: 'About Image alternative text',
-    });
-    fireEvent.focus(info);
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(
-      'Screen readers read it aloud',
-    );
+    expect(
+      screen.queryByRole('button', { name: 'About Image alternative text' }),
+    ).not.toBeInTheDocument();
     const shapes = screen.getByLabelText('Image shape');
     for (const name of [
       'Straight edges',
@@ -184,16 +180,15 @@ describe('Our Story sections', () => {
     const top = Array.from(
       nav.querySelectorAll(':scope > details > summary'),
     ).map((node) => node.textContent?.trim());
-    expect(top).toEqual(['Header', 'Footer', 'Theme settings']);
+    expect(top).toEqual(['Theme settings']);
     const addButton = screen.getByRole('button', { name: 'Add Section' });
     const toggle = screen.getByRole('switch', {
       name: 'Enable the About page',
     });
-    expect(addButton.parentElement).toContainElement(toggle);
+    expect(addButton.parentElement).not.toContainElement(toggle);
     expect(toggle).toBeChecked();
     fireEvent.click(toggle);
     expect(toggle).not.toBeChecked();
-    expect(screen.getByText('Disabled')).toBeInTheDocument();
     const up = screen.getByRole('button', { name: 'Move up: Second story' });
     expect(up.closest('details')).toBeNull();
     expect(up.querySelector('svg')).not.toBeNull();

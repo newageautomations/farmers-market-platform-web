@@ -84,6 +84,7 @@ export function ApplicationSubmissionDetail({
         Back to submitted applications
       </FarmstandLink>
       <ReadState
+        skeleton="detail"
         loading={query.loading && !submission}
         error={query.error}
         retry={query.refresh}

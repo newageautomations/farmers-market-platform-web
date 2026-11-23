@@ -1,8 +1,9 @@
 export {
   loadStripeSdk,
-  type StripeCard,
-  type StripeClient,
-  type StripeFactory,
+  type StripePaymentClient,
+  type StripePaymentElement,
+  type StripePaymentElements,
+  type StripePaymentFactory,
 } from '@market/ui/stripe-card';
 
 const preparations = new Map<

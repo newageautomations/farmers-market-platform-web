@@ -15,7 +15,7 @@ import type {
   MarketOccurrence,
   MarketOperationsData,
 } from '@market/api';
-import { Badge, EmptyState, UtilityIcon } from '@market/ui';
+import { Badge, EmptyState, UtilityIcon, InlineSkeleton } from '@market/ui';
 import {
   FarmstandButton,
   FarmstandIcon,
@@ -342,7 +342,7 @@ export function MarketOverview({ service }: { service: MarketService }) {
 }
 
 const pending = (read?: { loading: boolean; error?: unknown }) =>
-  read?.loading ? 'Loading…' : read?.error ? 'Unavailable' : undefined;
+  read?.loading ? <InlineSkeleton /> : read?.error ? 'Unavailable' : undefined;
 
 function KeyMetrics({
   overview,
@@ -478,7 +478,14 @@ function NextMarket({
         <FarmstandIcon name="calendar-days" />
         Next market
       </h2>
-      {!next && <ReadState {...dates} retry={dates.refresh} />}
+      {!next && (
+        <ReadState
+          skeleton="detail"
+          rows={2}
+          {...dates}
+          retry={dates.refresh}
+        />
+      )}
       {next ? (
         <div className="vendor-dashboard-next-body">
           <DateTile startsAt={next.startsAt} timezone={next.timezone} />
@@ -607,8 +614,17 @@ function BoothAvailability({
           next ? { href: assignmentsPath(next.id), label: 'Assign' } : undefined
         }
       />
-      {loading && <ReadState loading retry={() => undefined} />}
-      {next && <ReadState {...booths} retry={booths.refresh} />}
+      {loading && (
+        <ReadState skeleton="detail" rows={3} loading retry={() => undefined} />
+      )}
+      {next && (
+        <ReadState
+          skeleton="detail"
+          rows={3}
+          {...booths}
+          retry={booths.refresh}
+        />
+      )}
       {!next && !loading && (
         <p className="vendor-dashboard-muted">No upcoming market.</p>
       )}
@@ -699,6 +715,8 @@ function MarketChecklist({
       </PanelHeader>
       {checklist && next && (
         <ReadState
+          skeleton="table"
+          rows={3}
           {...checklist}
           loading={!checklist.data && checklist.loading}
           retry={checklist.refresh}
@@ -788,6 +806,8 @@ function NewApplications({
         )}
       </PanelHeader>
       <ReadState
+        skeleton="table"
+        rows={3}
         {...applications}
         loading={!applications.data && applications.loading}
         retry={applications.refresh}
@@ -861,6 +881,8 @@ function InvoicesDue({
         )}
       </PanelHeader>
       <ReadState
+        skeleton="table"
+        rows={3}
         {...billing}
         loading={!billing.data && billing.loading}
         retry={billing.refresh}
@@ -947,7 +969,12 @@ function VendorDocuments({
         title="Vendor documents"
         link={{ href: DOCUMENTS_PATH, label: 'Documents' }}
       />
-      <ReadState {...compliance} retry={compliance.refresh} />
+      <ReadState
+        skeleton="detail"
+        rows={2}
+        {...compliance}
+        retry={compliance.refresh}
+      />
       {unused && (
         <EmptyState title="No document requirements yet">
           <p>
@@ -1024,6 +1051,8 @@ function VendorRequests({
         )}
       </PanelHeader>
       <ReadState
+        skeleton="table"
+        rows={3}
         {...requests}
         loading={!requests.data && requests.loading}
         retry={requests.refresh}

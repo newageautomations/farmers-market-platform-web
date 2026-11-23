@@ -6,9 +6,13 @@ import {
 import { safeError } from '@market/api';
 import {
   validateEnvironment,
-  runtimeMode,
+  deploymentEnvironment,
+  assertFrontendBuild,
+  blocksIndexing,
+  noIndexHeader,
   responseSecurityHeaders,
   cspDirectives,
+  storefrontPreviewDocument,
 } from '@market/config';
 import { isCentral } from './lib/account';
 import {
@@ -16,23 +20,30 @@ import {
   editorPreviewConnectSource,
 } from './lib/editor-preview-server';
 import { createHash } from 'node:crypto';
+import { isIP } from 'node:net';
+import { centralAccountPath } from '@market/config/hosted';
+import {
+  apiRequestAddress,
+  resolverTransport,
+  shopTransportEndpoint,
+} from './lib/private-api';
 
 // The built SSR module also fails closed when started without the convenience wrapper.
-declare const __PRODUCTION_BUILD__: boolean;
-declare const __PRODUCTION_CSP_ORIGINS__: { account: string; asset: string };
-if (runtimeMode(process.env) === 'production') {
-  if (!__PRODUCTION_BUILD__)
-    throw new Error('Production runtime requires an explicit production build');
-  validateEnvironment(process.env, 'production');
-  if (
-    process.env.PLATFORM_ACCOUNT_ORIGIN !==
-      __PRODUCTION_CSP_ORIGINS__.account ||
-    (process.env.ASSET_URL_PREFIX
-      ? new URL(process.env.ASSET_URL_PREFIX).origin
-      : '') !== __PRODUCTION_CSP_ORIGINS__.asset
-  )
-    throw new Error('Production CSP origins require a matching build');
-}
+declare const __STOREFRONT_HARDENED_BUILD__: boolean;
+declare const __STOREFRONT_BUILD_SETTINGS__: unknown;
+const hardenedConfig =
+  __STOREFRONT_HARDENED_BUILD__ || process.env.APP_ENV === 'production'
+    ? validateEnvironment(process.env, 'production')
+    : undefined;
+const hosted = process.env.HOSTED_TRANSPORT === 'railway-private';
+if (hosted && process.env.ASTRO_NODE_AUTOSTART !== 'disabled')
+  throw new Error('Hosted Astro requires the production launcher');
+if (hardenedConfig)
+  assertFrontendBuild(
+    __STOREFRONT_BUILD_SETTINGS__,
+    hardenedConfig,
+    'storefront',
+  );
 
 // Supplementary, bounded process-local limit. Backend durable account limits remain authoritative.
 const requests = new Map<string, { expires: number; count: number }>();
@@ -48,9 +59,22 @@ function allowed(key: string) {
   }
   return ++row.count <= 120;
 }
-export const onRequest = defineMiddleware(async (context, next) => {
+export const onRequest = defineMiddleware((context, next) => {
+  if (!hosted || apiRequestAddress.getStore())
+    return renderRequest(context, next);
+  const address = context.clientAddress;
+  if (!isIP(address)) return new Response('Request denied.', { status: 403 });
+  return apiRequestAddress.run(address, () => renderRequest(context, next));
+});
+
+const renderRequest = defineMiddleware(async (context, next) => {
   const requestId = crypto.randomUUID();
-  const production = runtimeMode(process.env) === 'production';
+  const { mode, deployment } = deploymentEnvironment(
+    process.env,
+    process.env.NODE_ENV === 'test' ? 'test' : 'dev',
+  );
+  const production = mode === 'production';
+  context.locals.deployment = deployment;
   // The populated demo registers localhost, not the numeric loopback authority.
   // Canonicalize browser navigation only; preserve POST origin checks and production routing.
   if (
@@ -74,14 +98,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
     /^\/(account|auth|checkout|api|notifications)(\/|$)/.test(
       context.url.pathname,
     );
-  if (privateRoute) headers.set('X-Robots-Tag', 'noindex, nofollow');
+  if (privateRoute || blocksIndexing(deployment))
+    headers.set('X-Robots-Tag', noIndexHeader);
   async function finish(response: Response) {
     if (
-      context.url.pathname.startsWith('/storefront-editor-preview') ||
+      storefrontPreviewDocument(context.url.pathname) ||
       context.locals.editorPreview
     ) {
       headers.delete('X-Frame-Options');
-      headers.set('X-Robots-Tag', 'noindex, nofollow');
+      headers.set('X-Robots-Tag', noIndexHeader);
       // no-referrer makes a browser form's Origin opaque (null), which Astro
       // correctly rejects before this middleware. Origin-only referrers expose no draft/token.
       headers.set('Referrer-Policy', 'strict-origin');
@@ -136,7 +161,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
     for (const [key, value] of headers) response.headers.set(key, value);
     if (response.status >= 400)
-      response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+      response.headers.set('X-Robots-Tag', noIndexHeader);
     if (
       production &&
       !import.meta.env.DEV &&
@@ -153,21 +178,23 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return response;
   }
   try {
-    const config = validateEnvironment(
-      {
-        ...process.env,
-        APP_ENV: process.env.APP_ENV ?? 'dev',
-        SHOP_API_URL: process.env.SHOP_API_URL ?? import.meta.env.SHOP_API_URL,
-        PUBLIC_ADMIN_API_URL:
-          process.env.PUBLIC_ADMIN_API_URL ??
-          import.meta.env.PUBLIC_ADMIN_API_URL,
-        FRONTEND_FIXTURE_MODE:
-          process.env.FRONTEND_FIXTURE_MODE ??
-          import.meta.env.FRONTEND_FIXTURE_MODE,
-      },
-      import.meta.env.DEV ? 'development' : 'production',
-    );
-    context.locals.shopApiUrl = config.shopApiUrl;
+    const config =
+      hardenedConfig ??
+      validateEnvironment(
+        {
+          ...process.env,
+          SHOP_API_URL:
+            process.env.SHOP_API_URL ?? import.meta.env.SHOP_API_URL,
+          PUBLIC_ADMIN_API_URL:
+            process.env.PUBLIC_ADMIN_API_URL ??
+            import.meta.env.PUBLIC_ADMIN_API_URL,
+          FRONTEND_FIXTURE_MODE:
+            process.env.FRONTEND_FIXTURE_MODE ??
+            import.meta.env.FRONTEND_FIXTURE_MODE,
+        },
+        import.meta.env.DEV ? 'development' : 'production',
+      );
+    context.locals.shopApiUrl = shopTransportEndpoint(config.shopApiUrl);
     // Astro allowedDomains is empty. Security decisions never consume forwarded headers.
     if (production && context.url.protocol !== 'https:')
       return finish(new Response('HTTPS is required.', { status: 400 }));
@@ -177,14 +204,23 @@ export const onRequest = defineMiddleware(async (context, next) => {
       context.request.headers.get('origin') !== context.url.origin
     )
       return finish(new Response('Request denied.', { status: 403 }));
+    if (blocksIndexing(deployment) && context.url.pathname === '/robots.txt')
+      return finish(await next());
+    const central = isCentral(context.url);
+    if (hosted && central && !centralAccountPath(context.url.pathname))
+      return finish(new Response('Page unavailable.', { status: 404 }));
     if (
       context.url.pathname.startsWith('/api/') &&
-      !allowed(context.url.host + ':' + context.clientAddress)
+      !allowed(
+        context.url.host +
+          ':' +
+          (apiRequestAddress.getStore() ?? context.clientAddress),
+      )
     ) {
       headers.set('Retry-After', '60');
       return finish(new Response('Please try again later.', { status: 429 }));
     }
-    if (!isCentral(context.url)) {
+    if (!central) {
       try {
         const fixtures =
           import.meta.env.DEV && config.fixtureMode
@@ -197,7 +233,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
             fixtureMode: config.fixtureMode,
             production,
           },
-          publicStorefrontResolver(config.shopApiUrl),
+          publicStorefrontResolver(
+            config.shopApiUrl,
+            undefined,
+            resolverTransport(),
+          ),
           fixtures?.resolveFixture,
         );
       } catch (error) {
@@ -211,6 +251,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
             requestId,
           }),
         );
+        if (hosted && context.url.pathname !== '/') {
+          const unavailable =
+            context.locals.storefrontError.kind !== 'not-found';
+          return finish(
+            new Response(
+              unavailable ? 'Storefront unavailable.' : 'Page unavailable.',
+              {
+                status: unavailable ? 503 : 404,
+              },
+            ),
+          );
+        }
       }
     }
     if (context.locals.editorPreview) {

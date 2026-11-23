@@ -270,7 +270,7 @@ export function LoyaltyRewards({
   }
   return (
     <section className="loyalty-rewards" aria-label="Loyalty rewards">
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="stats" {...query} retry={query.refresh} />
       {notice && (
         <p role="status" className="sr-only">
           {notice}

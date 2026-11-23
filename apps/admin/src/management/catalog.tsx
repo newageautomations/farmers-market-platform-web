@@ -210,7 +210,7 @@ export function Catalog({
         immutable. Production pricing is configured explicitly by platform
         administrators.
       </p>
-      <ReadState {...result} retry={refresh} />
+      <ReadState skeleton="cards" {...result} retry={refresh} />
       {result.data && (
         <>
           <div className="management-grid">

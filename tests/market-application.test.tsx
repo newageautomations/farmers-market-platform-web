@@ -1,7 +1,16 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { PublicApplication } from '@market/api';
+import {
+  applicationAcknowledgementVersion,
+  type PublicApplication,
+} from '@market/api';
 import { MarketApplication } from '../apps/storefront/src/components/MarketApplication';
 
 afterEach(() => {
@@ -63,7 +72,27 @@ const application: PublicApplication = {
   rentals: [],
 };
 
-it('enables the HTTP form without randomUUID and retries with the same submission key', async () => {
+const anonymous = (url: unknown) => url === '/api/application-applicant';
+
+/** Answers the account question with No and moves past the market dates. */
+async function continueWithoutAccount(
+  user: ReturnType<typeof userEvent.setup>,
+) {
+  await user.click(
+    await screen.findByRole('button', { name: 'No, continue without one' }),
+  );
+  await user.click(screen.getByLabelText(/Town square/));
+  await user.click(screen.getByRole('button', { name: 'Next' }));
+}
+
+/** Accepts the acknowledgement (if not yet) and submits from the last step. */
+async function submitApplication(user: ReturnType<typeof userEvent.setup>) {
+  const acknowledge = screen.getByRole('checkbox', { name: /I confirm/ });
+  if (!(acknowledge as HTMLInputElement).checked) await user.click(acknowledge);
+  await user.click(screen.getByRole('button', { name: 'Submit application' }));
+}
+
+it('steps through sections and retries with the same submission key without randomUUID', async () => {
   vi.stubGlobal('crypto', {
     getRandomValues: crypto.getRandomValues.bind(crypto),
   });
@@ -71,28 +100,32 @@ it('enables the HTTP form without randomUUID and retries with the same submissio
   const fetcher = vi
     .spyOn(globalThis, 'fetch')
     .mockImplementation(async (url) =>
-      url === '/api/application-applicant'
+      anonymous(url)
         ? new Response('{}', { status: 401 })
         : new Response('{}', { status: ++attempts === 1 ? 400 : 200 }),
     );
   const user = userEvent.setup();
   render(<MarketApplication application={application} />);
-  const submit = screen.getByRole('button', { name: 'Submit application' });
-  expect(submit).toBeEnabled();
-  await user.click(screen.getByLabelText('No'));
+  expect(
+    await screen.findByRole('heading', { name: 'Your account' }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('navigation', { name: 'Application sections' }),
+  ).toHaveTextContent('Business');
+  await continueWithoutAccount(user);
+  expect(screen.getByRole('heading', { name: 'Business' })).toBeVisible();
   await user.type(
     screen.getByLabelText('Business name (required)'),
     'Orchard Farm',
   );
   await user.click(screen.getByLabelText('Flowers'));
-  await user.click(screen.getByLabelText(/Town square/));
+  await user.click(screen.getByRole('checkbox', { name: /I confirm/ }));
+  const submit = screen.getByRole('button', { name: 'Submit application' });
   await user.click(submit);
   await screen.findByRole('alert');
   expect(submit).toBeEnabled();
   await user.click(submit);
-  await screen.findByRole('heading', {
-    name: 'Application submitted successfully.',
-  });
+  await screen.findByRole('heading', { name: 'Application submitted' });
   const payloads = fetcher.mock.calls
     .filter(([url]) => url === '/api/market-application')
     .map(([, init]) => JSON.parse(String(init?.body)));
@@ -103,6 +136,7 @@ it('enables the HTTP form without randomUUID and retries with the same submissio
       occurrenceIds: [1],
       accountAnswer: 'NO',
       vendorId: null,
+      acknowledgement: applicationAcknowledgementVersion,
     }),
   );
   expect(payloads[0].idempotencyKey).toMatch(
@@ -111,10 +145,105 @@ it('enables the HTTP form without randomUUID and retries with the same submissio
   expect(payloads[1].idempotencyKey).toBe(payloads[0].idempotencyKey);
 });
 
-it('keeps submission clickable after hydration and prevents duplicate pending requests', async () => {
+it('keeps a section until its required answers are valid and lets earlier sections be revisited', async () => {
+  const fetcher = vi
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValue(new Response('{}', { status: 401 }));
+  const user = userEvent.setup();
+  render(
+    <MarketApplication
+      application={{
+        ...application,
+        definition: {
+          ...application.definition,
+          sections: ['Business', 'Social'],
+          questions: application.definition.questions.map((q) =>
+            q.id === 'website' ? { ...q, section: 'Social' } : q,
+          ),
+        },
+      }}
+    />,
+  );
+  await continueWithoutAccount(user);
+  // Next stays on an incomplete section.
+  await user.click(screen.getByRole('button', { name: 'Next' }));
+  expect(screen.getByRole('heading', { name: 'Business' })).toBeVisible();
+  await user.type(
+    screen.getByLabelText('Business name (required)'),
+    'Orchard Farm',
+  );
+  await user.click(screen.getByLabelText('Produce'));
+  await user.click(screen.getByRole('button', { name: 'Next' }));
+  expect(screen.getByRole('heading', { name: 'Social' })).toBeVisible();
+  await user.click(screen.getByRole('button', { name: /^Market dates/ }));
+  expect(screen.getByRole('heading', { name: 'Market dates' })).toBeVisible();
+  expect(screen.getByLabelText(/Town square/)).toBeChecked();
+  expect(
+    fetcher.mock.calls.some(([url]) => url === '/api/market-application'),
+  ).toBe(false);
+});
+
+it('does not submit while the last section is incomplete', async () => {
+  const fetcher = vi
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValue(new Response('{}', { status: 401 }));
+  const user = userEvent.setup();
+  render(<MarketApplication application={application} />);
+  await continueWithoutAccount(user);
+  await submitApplication(user);
+  expect(screen.getByRole('heading', { name: 'Business' })).toBeVisible();
+  expect(
+    fetcher.mock.calls.some(([url]) => url === '/api/market-application'),
+  ).toBe(false);
+});
+
+it('shows requested documents outside the answers form', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    new Response('{}', { status: 401 }),
+  );
+  const user = userEvent.setup();
+  render(
+    <MarketApplication
+      application={{
+        ...application,
+        documentRequirements: [
+          {
+            id: 'insurance',
+            title: 'Liability insurance',
+            instructions: 'Upload your certificate.',
+            required: true,
+            submission_blocking: false,
+          },
+        ],
+      }}
+    />,
+  );
+  expect(
+    within(
+      await screen.findByRole('navigation', { name: 'Application sections' }),
+    ).getByText('Documents'),
+  ).toBeInTheDocument();
+  await continueWithoutAccount(user);
+  await user.type(
+    screen.getByLabelText('Business name (required)'),
+    'Orchard Farm',
+  );
+  await user.click(screen.getByLabelText('Produce'));
+  await user.click(screen.getByRole('button', { name: 'Next' }));
+  const documents = screen.getByRole('region', {
+    name: 'Application documents',
+  });
+  expect(documents).toHaveTextContent('Liability insurance');
+  expect(documents.closest('form')).toBeNull();
+  expect(
+    screen.getByRole('button', { name: 'Submit application' }),
+  ).toBeEnabled();
+});
+
+it('prevents duplicate pending requests', async () => {
   let complete!: (response: Response) => void;
   const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation((url) =>
-    url === '/api/application-applicant'
+    anonymous(url)
       ? Promise.resolve(new Response('{}', { status: 401 }))
       : new Promise((resolve) => {
           complete = resolve;
@@ -122,13 +251,13 @@ it('keeps submission clickable after hydration and prevents duplicate pending re
   );
   const user = userEvent.setup();
   render(<MarketApplication application={application} />);
-  await user.click(screen.getByLabelText('No'));
+  await continueWithoutAccount(user);
   await user.type(
     screen.getByLabelText('Business name (required)'),
     'Orchard Farm',
   );
   await user.click(screen.getByLabelText('Produce'));
-  await user.click(screen.getByRole('button', { name: 'Submit application' }));
+  await submitApplication(user);
   expect(
     screen.getByRole('button', { name: 'Submitting application' }),
   ).toBeDisabled();
@@ -139,28 +268,28 @@ it('keeps submission clickable after hydration and prevents duplicate pending re
   complete(new Response('{}'));
   await waitFor(() =>
     expect(
-      screen.getByRole('heading', {
-        name: 'Application submitted successfully.',
-      }),
+      screen.getByRole('heading', { name: 'Application submitted' }),
     ).toBeVisible(),
   );
 });
 
-it('requires the permanent question before any custom questions and cannot submit Yes anonymously', async () => {
+it('asks about an account first and signs in without submitting', async () => {
   const fetcher = vi
     .spyOn(globalThis, 'fetch')
     .mockResolvedValue(new Response('{}', { status: 401 }));
+  const assign = vi.fn();
+  vi.stubGlobal('location', { ...window.location, assign });
   render(<MarketApplication application={application} />);
-  expect(document.querySelector('fieldset')?.textContent).toContain(
-    'Do you have an account with Market platform?',
+  expect(
+    await screen.findByText('Do you have an account with Market platform?'),
+  ).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Next' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Yes, log in' }));
+  await waitFor(() =>
+    expect(
+      fetcher.mock.calls.some(([url]) => url === '/api/application-progress'),
+    ).toBe(true),
   );
-  expect(screen.getByLabelText('Yes')).toBeRequired();
-  expect(screen.getByLabelText('No')).toBeRequired();
-  fireEvent.submit(document.querySelector('form')!);
-  await screen.findByRole('alert');
-  fireEvent.click(screen.getByLabelText('Yes'));
-  await screen.findByRole('button', { name: 'Sign in with my Vendor account' });
-  fireEvent.submit(document.querySelector('form')!);
   expect(
     fetcher.mock.calls.some(([url]) => url === '/api/market-application'),
   ).toBe(false);
@@ -170,25 +299,25 @@ it('shows the optional invitation after submission and dismisses it without losi
   vi.spyOn(globalThis, 'fetch').mockImplementation(
     async (url) =>
       new Response(JSON.stringify({ submitted: true, submissionId: 42 }), {
-        status: url === '/api/application-applicant' ? 401 : 200,
+        status: anonymous(url) ? 401 : 200,
       }),
   );
   const user = userEvent.setup();
   render(<MarketApplication application={application} />);
+  await continueWithoutAccount(user);
   expect(
     screen.queryByRole('link', {
       name: 'Create a Vendor account to track your application',
     }),
   ).toBeNull();
-  await user.click(screen.getByLabelText('No'));
   await user.type(
     screen.getByLabelText('Business name (required)'),
     'Independent Farm',
   );
   await user.click(screen.getByLabelText('Produce'));
-  await user.click(screen.getByRole('button', { name: 'Submit application' }));
+  await submitApplication(user);
   const success = await screen.findByRole('heading', {
-    name: 'Application submitted successfully.',
+    name: 'Application submitted',
   });
   expect(
     screen.getByRole('link', {
@@ -206,12 +335,12 @@ it('shows the optional invitation after submission and dismisses it without losi
   ).toBeNull();
 });
 
-it('offers only current businesses and autofills empty semantic fields while keeping answers editable', async () => {
+it('asks signed-in owners of several businesses which one applies and fills only empty fields', async () => {
   const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(
     async (url) =>
       new Response(
         JSON.stringify(
-          url === '/api/application-applicant'
+          anonymous(url)
             ? {
                 authenticated: true,
                 principalId: '7',
@@ -227,14 +356,14 @@ it('offers only current businesses and autofills empty semantic fields while kee
   );
   const user = userEvent.setup();
   render(<MarketApplication application={application} />);
-  await user.click(screen.getByLabelText('Yes'));
   const businesses = await screen.findByRole('combobox', {
-    name: 'Business for this application',
+    name: 'Which business is applying? (required)',
   });
+  expect(screen.queryByText(/Do you have an account/)).toBeNull();
   await user.selectOptions(businesses, '4');
-  await user.click(
-    screen.getByRole('button', { name: 'Fill empty fields from my account' }),
-  );
+  await user.click(screen.getByRole('button', { name: 'Next' }));
+  await user.click(screen.getByLabelText(/Town square/));
+  await user.click(screen.getByRole('button', { name: 'Next' }));
   expect(screen.getByLabelText('Business name (required)')).toHaveValue(
     'Verified Orchard',
   );
@@ -243,17 +372,9 @@ it('offers only current businesses and autofills empty semantic fields while kee
     screen.getByLabelText('Business name (required)'),
     'Edited Orchard',
   );
-  await user.click(
-    screen.getByRole('button', { name: 'Fill empty fields from my account' }),
-  );
-  expect(screen.getByLabelText('Business name (required)')).toHaveValue(
-    'Edited Orchard',
-  );
   await user.click(screen.getByLabelText('Flowers'));
-  await user.click(screen.getByRole('button', { name: 'Submit application' }));
-  await screen.findByRole('heading', {
-    name: 'Application submitted successfully.',
-  });
+  await submitApplication(user);
+  await screen.findByRole('heading', { name: 'Application submitted' });
   const payload = JSON.parse(
     String(
       fetcher.mock.calls.find(([url]) => url === '/api/market-application')?.[1]
@@ -270,6 +391,27 @@ it('offers only current businesses and autofills empty semantic fields while kee
       name: 'Create a Vendor account to track your application',
     }),
   ).toBeNull();
+});
+
+it('skips the account question for a signed-in owner of one business', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) =>
+    anonymous(url)
+      ? new Response(
+          JSON.stringify({
+            authenticated: true,
+            principalId: '7',
+            profile: { email: 'owner@test.invalid' },
+            vendors: [{ id: 4, name: 'Verified Orchard' }],
+          }),
+        )
+      : new Response(null, { status: 204 }),
+  );
+  render(<MarketApplication application={application} />);
+  expect(
+    await screen.findByRole('heading', { name: 'Market dates' }),
+  ).toBeVisible();
+  expect(screen.getByText('Verified Orchard', { selector: 'strong' }));
+  expect(screen.queryByText(/Do you have an account/)).toBeNull();
 });
 it('saves incomplete drafts and submits the saved revision through the draft endpoint', async () => {
   const fetcher = vi
@@ -341,21 +483,25 @@ it('saves incomplete drafts and submits the saved revision through the draft end
     action: 'SAVE_DRAFT',
     input: { id: 42, revision: 1, answers: {} },
   });
+  await user.click(screen.getByRole('button', { name: 'Next' }));
   await user.type(
     screen.getByLabelText('Business name (required)'),
     'New Farm',
   );
   await user.click(screen.getByLabelText('Produce'));
-  await user.click(screen.getByRole('button', { name: 'Submit application' }));
-  await screen.findByRole('heading', {
-    name: 'Application submitted successfully.',
-  });
+  await submitApplication(user);
+  await screen.findByRole('heading', { name: 'Application submitted' });
   const commands = fetcher.mock.calls
     .filter(([url]) => url === '/api/applicant-applications')
     .map(([, init]) => JSON.parse(String(init?.body)));
   expect(commands.at(-1)).toEqual({
     action: 'SUBMIT_DRAFT',
-    input: { id: 42, revision: 3, vendorId: 4 },
+    input: {
+      id: 42,
+      revision: 3,
+      vendorId: 4,
+      acknowledgement: applicationAcknowledgementVersion,
+    },
   });
   expect(
     fetcher.mock.calls.some(([url]) => url === '/api/market-application'),
@@ -367,9 +513,9 @@ it('saves incomplete drafts and submits the saved revision through the draft end
     'http://localhost:4322/vendor/applications/77?channel=35',
   );
 });
-it('Customer-only accounts must onboard a Vendor and cannot choose account-only management', async () => {
+it('Customer-only accounts must onboard a Vendor or continue without linking', async () => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) =>
-    url === '/api/application-applicant'
+    anonymous(url)
       ? new Response(
           JSON.stringify({
             authenticated: true,
@@ -380,15 +526,83 @@ it('Customer-only accounts must onboard a Vendor and cannot choose account-only 
         )
       : new Response(null, { status: 204 }),
   );
-  const user = userEvent.setup();
   render(<MarketApplication application={application} />);
-  await user.click(screen.getByLabelText('Yes'));
   expect(
     await screen.findByRole('link', { name: 'Complete Vendor onboarding' }),
   ).toHaveAttribute('href', '/vendor/application-continue?slug=season');
   expect(screen.queryByRole('button', { name: 'Save draft' })).toBeNull();
   expect(
-    screen.getByRole('button', { name: 'Submit application' }),
-  ).toBeDisabled();
+    screen.getByRole('button', { name: 'Continue without linking' }),
+  ).toBeEnabled();
   expect(screen.queryByText('Apply with my account only')).toBeNull();
+});
+
+it('requires the acknowledgement before submitting', async () => {
+  const fetcher = vi
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValue(new Response('{}', { status: 401 }));
+  const user = userEvent.setup();
+  render(
+    <MarketApplication application={application} policiesHref="/policies" />,
+  );
+  await continueWithoutAccount(user);
+  await user.type(
+    screen.getByLabelText('Business name (required)'),
+    'Orchard Farm',
+  );
+  await user.click(screen.getByLabelText('Produce'));
+  const acknowledge = screen.getByRole('checkbox', { name: /I confirm/ });
+  expect(acknowledge).toBeRequired();
+  expect(screen.getByRole('link', { name: 'policies' })).toHaveAttribute(
+    'href',
+    '/policies',
+  );
+  await user.click(screen.getByRole('button', { name: 'Submit application' }));
+  expect(
+    fetcher.mock.calls.some(([url]) => url === '/api/market-application'),
+  ).toBe(false);
+});
+
+it('offers account creation on the Documents step to applicants without an account', async () => {
+  const fetcher = vi
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValue(new Response('{}', { status: 401 }));
+  const assign = vi.fn();
+  vi.stubGlobal('location', { ...window.location, assign });
+  const user = userEvent.setup();
+  render(
+    <MarketApplication
+      application={{
+        ...application,
+        documentRequirements: [
+          {
+            id: 'insurance',
+            title: 'Liability insurance',
+            instructions: 'Upload your certificate.',
+            required: true,
+            submission_blocking: true,
+          },
+        ],
+      }}
+    />,
+  );
+  expect(
+    await screen.findByRole('button', { name: 'Create an account' }),
+  ).toBeVisible();
+  await continueWithoutAccount(user);
+  await user.type(
+    screen.getByLabelText('Business name (required)'),
+    'Orchard Farm',
+  );
+  await user.click(screen.getByLabelText('Produce'));
+  await user.click(screen.getByRole('button', { name: 'Next' }));
+  fetcher.mockResolvedValue(new Response('{}'));
+  await user.click(
+    screen.getByRole('button', { name: 'Create a Vendor account' }),
+  );
+  await waitFor(() =>
+    expect(assign).toHaveBeenCalledWith(
+      '/vendor/application-continue?slug=season&signup=1&context=vendor',
+    ),
+  );
 });

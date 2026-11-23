@@ -5,6 +5,7 @@ import MarketVendorCards from '../components/market/MarketVendorCards.astro';
 import WorkspaceSelect from '../components/ui/WorkspaceSelect.astro';
 import EmptyState from '../components/ui/EmptyState.astro';
 import Button from '../components/ui/Button.astro';
+import { ShopMarketSelection } from '../components/ShopMarketSelection';
 import { ErrorState } from '@market/ui';
 import { isEditorialMarket, marketPage } from '@market/theme/storefront';
 import {
@@ -13,7 +14,12 @@ import {
   type MarketOccurrenceVendor,
   type PublicMarketOccurrence,
 } from '@market/api';
-import { requestMarketShop } from '../lib/shop';
+import {
+  requestMarketDay,
+  requestMarketShop,
+  requestPublicMarketOperations,
+} from '../lib/shop';
+import { vendorBoothDetails } from '../lib/market-day-booths';
 import { marketDateParts, marketPageAvailable } from '../lib/market-website';
 import '../styles/market-website.css';
 
@@ -30,16 +36,50 @@ const requested = Astro.url.searchParams.get('date') ?? '';
 let occurrences: readonly PublicMarketOccurrence[] = [],
   selected: PublicMarketOccurrence | undefined,
   vendors: readonly MarketOccurrenceVendor[] = [],
+  booths: ReturnType<typeof vendorBoothDetails> | undefined,
   error: AppError | undefined;
 if (enabled) {
   try {
     const shop = requestMarketShop(Astro);
+    // A market in Market Day mode right now, if any. It is the default date
+    // until it ends, and its vendor cards lead to their booths on its map.
+    const live = preview
+      ? undefined
+      : await requestMarketDay(Astro)
+          .state()
+          .then((state) => state.occurrences[0])
+          .catch(() => undefined);
+    const liveId = live ? String(live.id) : undefined;
     occurrences = (await shop.occurrences({ options: { skip: 0, take: 50 } }))
       .marketStorefrontOccurrences.items;
+    // Shop dates end once a market starts, so the live market joins the
+    // list from its Market Day state.
+    if (live && !occurrences.some((occurrence) => occurrence.id === liveId)) {
+      const current: PublicMarketOccurrence = {
+        id: String(live.id),
+        scheduleDate: new Intl.DateTimeFormat('en-CA', {
+          timeZone: live.timezone,
+        }).format(new Date(live.startsAt)),
+        startsAt: live.startsAt,
+        endsAt: live.endsAt,
+        timezone: live.timezone,
+        venue: live.venue ?? '',
+      };
+      occurrences = [current, ...occurrences];
+    }
     selected =
       occurrences.find((occurrence) => occurrence.id === requested) ??
+      occurrences.find((occurrence) => occurrence.id === liveId) ??
       occurrences[0];
     if (selected) vendors = await shop.vendors(selected.id);
+    // The shop no longer sells a started date, so the live date's cards
+    // lead to booths only; without a map they show "Not on today's map".
+    if (selected && selected.id === liveId) {
+      const map = await requestPublicMarketOperations(Astro)
+        .map(Number(liveId))
+        .catch(() => null);
+      booths = map ? vendorBoothDetails(vendors, map.spaces) : {};
+    }
   } catch (value) {
     error = safeError(value);
     Astro.response.status = 503;
@@ -49,6 +89,13 @@ const optionLabel = (occurrence: PublicMarketOccurrence) => {
   const parts = marketDateParts(occurrence);
   return `${parts.date} \u00b7 ${occurrence.venue || parts.hours}`;
 };
+// The shop's market calendar picker, in browse-only mode: choosing a date
+// filters this page and never changes the cart's pickup market.
+const pickerDates = occurrences.map((occurrence) => ({
+  ...occurrence,
+  marketId: storefront?.subjectId ?? '',
+  marketName: storefront?.name ?? '',
+}));
 ---
 
 <SiteLayout
@@ -82,43 +129,68 @@ const optionLabel = (occurrence: PublicMarketOccurrence) => {
           </EmptyState>
         ) : (
           <>
-            <form
-              class="market-date-selector farmstand-controls"
-              method="get"
-              action="/vendors"
-              data-market-date-selector
-            >
-              <WorkspaceSelect
-                id="vendors-date"
-                name="date"
-                label="Market date"
-                icon="calendar-days"
-              >
-                {occurrences.map((occurrence) => (
-                  <option
-                    value={occurrence.id}
-                    selected={occurrence.id === selected!.id}
+            <div class="market-date-selector">
+              <p class="market-date-selector-current">
+                <span>Market date</span>
+                <strong>{optionLabel(selected)}</strong>
+              </p>
+              <ShopMarketSelection
+                storefrontId={storefront?.storefrontId ?? ''}
+                occurrences={pickerDates}
+                selectedId={selected.id}
+                buttonLabel="Change date"
+                preview={preview}
+                navigate={{ path: '/vendors', param: 'date' }}
+                client:load
+              />
+              <noscript>
+                <form
+                  class="market-date-selector-fallback farmstand-controls"
+                  method="get"
+                  action="/vendors"
+                >
+                  <WorkspaceSelect
+                    id="vendors-date"
+                    name="date"
+                    label="Market date"
+                    icon="calendar-days"
                   >
-                    {optionLabel(occurrence)}
-                  </option>
-                ))}
-              </WorkspaceSelect>
-              <Button type="submit" variant="secondary">
-                Show vendors
-              </Button>
-            </form>
+                    {occurrences.map((occurrence) => (
+                      <option
+                        value={occurrence.id}
+                        selected={occurrence.id === selected!.id}
+                      >
+                        {optionLabel(occurrence)}
+                      </option>
+                    ))}
+                  </WorkspaceSelect>
+                  <Button type="submit" variant="secondary">
+                    Show vendors
+                  </Button>
+                </form>
+              </noscript>
+            </div>
             <div class="market-vendors-summary" aria-live="polite">
               <h2>
                 {vendors.length} {vendors.length === 1 ? 'vendor' : 'vendors'}{' '}
                 on {marketDateParts(selected).date}
               </h2>
-              <a
-                class="harvest-text-link"
-                href={`/shop?occurrence=${selected.id}`}
-              >
-                Shop every offering for this date{' '}
-                <span aria-hidden="true">&#8599;</span>
-              </a>
+              {booths ? (
+                <a
+                  class="harvest-text-link"
+                  href={`/?marketDay=${selected.id}#market-day-map`}
+                >
+                  See today's market map <span aria-hidden="true">&#8594;</span>
+                </a>
+              ) : (
+                <a
+                  class="harvest-text-link"
+                  href={`/shop?occurrence=${selected.id}`}
+                >
+                  Shop every offering for this date{' '}
+                  <span aria-hidden="true">&#8599;</span>
+                </a>
+              )}
             </div>
             {vendors.length ? (
               <MarketVendorCards
@@ -126,6 +198,8 @@ const optionLabel = (occurrence: PublicMarketOccurrence) => {
                 vendors={vendors}
                 occurrenceId={selected.id}
                 detailed
+                booths={booths}
+                boothPage={booths && `/?marketDay=${selected.id}`}
               />
             ) : (
               <EmptyState title="Vendors are still signing up" level={3}>
@@ -147,16 +221,3 @@ const optionLabel = (occurrence: PublicMarketOccurrence) => {
     </section>
   )}
 </SiteLayout>
-<script>
-  // Progressive enhancement: choosing a date applies it immediately.
-  for (const form of document.querySelectorAll<HTMLFormElement>(
-    '[data-market-date-selector]',
-  )) {
-    const submit = form.querySelector<HTMLButtonElement>('[type="submit"]');
-    if (submit && !document.documentElement.dataset.editorPreview)
-      submit.hidden = true;
-    form
-      .querySelector('select')
-      ?.addEventListener('change', () => form.requestSubmit());
-  }
-</script>

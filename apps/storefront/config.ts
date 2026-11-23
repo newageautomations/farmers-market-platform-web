@@ -2,18 +2,25 @@ import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import node from '@astrojs/node';
 import tailwind from '@tailwindcss/vite';
-import { loadEnv } from 'vite';
+import { writeFile } from 'node:fs/promises';
 import {
   validateEnvironment,
   cspDirectives,
-  runtimeMode,
+  frontendBuildManifest,
+  frontendBuildSettings,
 } from '@market/config';
+import { frontendToolingEnvironment } from '../../scripts/frontend-tooling.ts';
 const development = process.argv.includes('dev');
-const environment = {
-  ...loadEnv(development ? 'development' : 'production', '../..', ''),
-  ...process.env,
-};
-validateEnvironment(environment, development ? 'development' : 'production');
+const { environment, envDir } = frontendToolingEnvironment(
+  development ? 'development' : 'production',
+  process.argv.includes('build') || process.argv.includes('check'),
+);
+const config = validateEnvironment(
+  environment,
+  development ? 'development' : 'production',
+  'build',
+);
+const build = frontendBuildSettings(config, 'storefront');
 // Astro's dev import.meta env loader does not populate process.env. These are
 // server-only account settings consumed by SSR; never add them to vite.define.
 if (development) {
@@ -26,54 +33,53 @@ if (development) {
   }
 }
 export default defineConfig({
-  logger:
-    runtimeMode(environment) === 'production'
-      ? { entrypoint: './src/production-logger.mjs' }
-      : undefined,
+  logger: config.production
+    ? { entrypoint: './src/production-logger.mjs' }
+    : undefined,
   security: {
     checkOrigin: true,
     allowedDomains: [],
-    csp:
-      runtimeMode(environment) === 'production'
-        ? {
-            directives: [
-              ...cspDirectives(
-                runtimeMode(environment) === 'production'
-                  ? {
-                      accountOrigin: environment.PLATFORM_ACCOUNT_ORIGIN,
-                      assetOrigin: environment.ASSET_URL_PREFIX
-                        ? new URL(environment.ASSET_URL_PREFIX).origin
-                        : undefined,
-                    }
-                  : {},
-              ),
-            ],
-            scriptDirective: { resources: ["'self'"] },
-            // Theme custom properties and React style attributes need inline CSS. Executable scripts stay hashed.
-            styleDirective: { resources: ["'self'", "'unsafe-inline'"] },
-          }
-        : undefined,
+    csp: config.production
+      ? {
+          directives: [
+            ...cspDirectives({
+              accountOrigin: config.accountOrigin,
+              assetOrigin: config.assetUrl
+                ? new URL(config.assetUrl).origin
+                : undefined,
+            }),
+          ],
+          scriptDirective: { resources: ["'self'"] },
+          // Theme custom properties and React style attributes need inline CSS. Executable scripts stay hashed.
+          styleDirective: { resources: ["'self'", "'unsafe-inline'"] },
+        }
+      : undefined,
   },
   session: false,
   devToolbar: { enabled: false },
   output: 'server',
   adapter: node({ mode: 'standalone' }),
-  integrations: [react()],
+  integrations: [
+    react(),
+    {
+      name: 'market-storefront-build-settings',
+      hooks: {
+        'astro:build:done': ({ dir }) =>
+          writeFile(
+            new URL(`../server/${frontendBuildManifest}`, dir),
+            JSON.stringify(build),
+          ),
+      },
+    },
+  ],
   vite: {
     server: { strictPort: true },
-    envDir: '../..',
+    envDir,
     plugins: [tailwind()],
     build: { sourcemap: false },
     define: {
-      __PRODUCTION_BUILD__: JSON.stringify(
-        runtimeMode(environment) === 'production',
-      ),
-      __PRODUCTION_CSP_ORIGINS__: JSON.stringify({
-        account: environment.PLATFORM_ACCOUNT_ORIGIN ?? '',
-        asset: environment.ASSET_URL_PREFIX
-          ? new URL(environment.ASSET_URL_PREFIX).origin
-          : '',
-      }),
+      __STOREFRONT_HARDENED_BUILD__: JSON.stringify(config.production),
+      __STOREFRONT_BUILD_SETTINGS__: JSON.stringify(build),
     },
   },
   server: { port: 4321, host: '127.0.0.1' },

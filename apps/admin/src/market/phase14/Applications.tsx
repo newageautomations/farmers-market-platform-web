@@ -4,7 +4,7 @@ import type {
   MarketOperationsData,
   OperationsCommand,
 } from '@market/api';
-import { Dialog, EmptyState, Field } from '@market/ui';
+import { Dialog, EmptyState, Field, UtilityIcon } from '@market/ui';
 import {
   FarmstandButton,
   FarmstandIcon,
@@ -29,7 +29,12 @@ import {
   windowSummary,
   type ApplicationRow,
 } from './applications-data';
-import { ApplicationStateBadge, sharingLabel } from './application-status';
+import {
+  ApplicationLiveLink,
+  ApplicationStateBadge,
+  liveApplicationUrl,
+  sharingLabel,
+} from './application-status';
 import '@market/ui/farmstand.css';
 import '@market/ui/workspace.css';
 import '@market/ui/workspace-records.css';
@@ -437,24 +442,44 @@ function ApplicationList({
                           )}
                         </td>
                         <td>
-                          <FarmstandLink
-                            href={href}
-                            variant="secondary"
-                            className="occurrence-manage"
-                            aria-label={`${canManage && !['ARCHIVED', 'CLOSED'].includes(row.state) ? 'Edit' : 'View'} ${row.template.name}`}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              inApp(event, href);
-                            }}
-                          >
-                            <CompactLabel>
-                              {canManage &&
-                              !['ARCHIVED', 'CLOSED'].includes(row.state)
-                                ? 'Edit'
-                                : 'View'}
-                            </CompactLabel>
-                            <FarmstandIcon name="chevron-right" />
-                          </FarmstandLink>
+                          <div className="application-row-actions">
+                            {liveApplicationUrl(data.storefrontOrigin, row) && (
+                              <FarmstandLink
+                                href={liveApplicationUrl(
+                                  data.storefrontOrigin,
+                                  row,
+                                )}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="secondary"
+                                iconOnly
+                                className="application-row-live"
+                                aria-label={`Open live ${row.template.name} (opens in a new tab)`}
+                                title="Open live application"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                <UtilityIcon name="external" />
+                              </FarmstandLink>
+                            )}
+                            <FarmstandLink
+                              href={href}
+                              variant="secondary"
+                              className="occurrence-manage"
+                              aria-label={`${canManage && !['ARCHIVED', 'CLOSED'].includes(row.state) ? 'Edit' : 'View'} ${row.template.name}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                inApp(event, href);
+                              }}
+                            >
+                              <CompactLabel>
+                                {canManage &&
+                                !['ARCHIVED', 'CLOSED'].includes(row.state)
+                                  ? 'Edit'
+                                  : 'View'}
+                              </CompactLabel>
+                              <FarmstandIcon name="chevron-right" />
+                            </FarmstandLink>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -496,6 +521,8 @@ function ApplicationList({
         >
           <ApplicationDetails
             row={current}
+            liveUrl={liveApplicationUrl(data.storefrontOrigin, current)}
+            storefront={!!data.storefrontOrigin}
             timeZone={data.timeZone}
             canManage={canManage}
             busy={busy}
@@ -541,6 +568,8 @@ function ApplicationList({
 
 function ApplicationDetails({
   row,
+  liveUrl,
+  storefront,
   timeZone,
   canManage,
   busy,
@@ -548,6 +577,8 @@ function ApplicationDetails({
   onRestore,
 }: {
   row?: ApplicationRow;
+  liveUrl?: string;
+  storefront: boolean;
   timeZone?: string;
   canManage: boolean;
   busy: boolean;
@@ -623,6 +654,23 @@ function ApplicationDetails({
               <dd>{shortDate(row.updatedAt) ?? 'Unknown'}</dd>
             </div>
           </dl>
+          {row.state === 'PUBLISHED' && (
+            <section
+              className="application-live"
+              aria-label="Live application link"
+            >
+              <h4>Live link</h4>
+              {liveUrl ? (
+                <ApplicationLiveLink url={liveUrl} compact />
+              ) : (
+                <p className="market-application-guidance">
+                  {storefront
+                    ? 'The live link is unavailable for this application.'
+                    : 'Publish your Market storefront to get a live link to share.'}
+                </p>
+              )}
+            </section>
+          )}
           <p className="market-application-guidance">
             {row.state === 'ARCHIVED'
               ? 'This application is archived. Restore it to edit it or accept vendors again.'

@@ -35,7 +35,7 @@ export function Pos({
     );
   return (
     <>
-      <ReadState {...result} retry={result.refresh} />
+      <ReadState skeleton="cards" {...result} retry={result.refresh} />
       <Unavailable>
         POS connections observe inventory by default. A connection does not
         establish physical authority. Marketplace order export and Customer
@@ -281,7 +281,7 @@ function PosDetail({
       <h2 className="ui-section-title-dashboard">
         {providerName(c.providerCode)} connection details
       </h2>
-      <ReadState {...result} retry={refresh} />
+      <ReadState skeleton="detail" {...result} retry={refresh} />
       {result.data && (
         <>
           <p>

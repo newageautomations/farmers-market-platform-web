@@ -54,12 +54,17 @@ export function DocumentStatus({ value }: { value: string }) {
 export function MetadataFields({
   categories,
   value,
+  expirationRequired = false,
 }: {
   categories: readonly string[];
   value?: DocumentMetadata;
+  /** The request needs an expiration date, so "does not expire" is not offered. */
+  expirationRequired?: boolean;
 }) {
   const id = useId(),
-    [noExpiration, setNoExpiration] = useState(value?.noExpiration ?? false);
+    [noExpiration, setNoExpiration] = useState(
+      !expirationRequired && (value?.noExpiration ?? false),
+    );
   return (
     <>
       <Field id={`${id}-title`} label="Document title">
@@ -98,15 +103,21 @@ export function MetadataFields({
           defaultValue={value?.issuedOn ?? ''}
         />
       </Field>
-      <label className="document-checkbox">
-        <input
-          type="checkbox"
-          name="noExpiration"
-          checked={noExpiration}
-          onChange={(e) => setNoExpiration(e.target.checked)}
-        />{' '}
-        This document does not expire
-      </label>
+      {expirationRequired ? (
+        <p className="field-help">
+          This request needs the document&apos;s expiration date.
+        </p>
+      ) : (
+        <label className="document-checkbox">
+          <input
+            type="checkbox"
+            name="noExpiration"
+            checked={noExpiration}
+            onChange={(e) => setNoExpiration(e.target.checked)}
+          />{' '}
+          This document does not expire
+        </label>
+      )}
       <Field id={`${id}-expires`} label="Expiration date">
         <Input
           id={`${id}-expires`}
@@ -226,6 +237,7 @@ export function DocumentUploadDialog({
           <MetadataFields
             categories={assignment ? [assignment.category] : categories}
             value={document?.metadata}
+            expirationRequired={assignment?.expiration_required}
           />
           <Field
             id={`${id}-file`}

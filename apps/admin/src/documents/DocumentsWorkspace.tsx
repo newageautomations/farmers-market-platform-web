@@ -25,9 +25,9 @@ import {
   Field,
   Input,
   SelectField,
-  Spinner,
   Tabs,
   Tooltip,
+  LoadingSkeleton,
 } from '@market/ui';
 import {
   FarmstandButton as Button,
@@ -974,7 +974,8 @@ export function Workspace({
       {content}
     </WorkspaceFrame>
   );
-  if (!loaded) return frame(<Spinner label="Loading documents" />);
+  if (!loaded)
+    return frame(<LoadingSkeleton variant="cards" label="Loading documents" />);
   if (result.error)
     return frame(
       <div className="documents-error">

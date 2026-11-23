@@ -5,13 +5,20 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import type { CheckoutView, PublicCart } from '@market/api';
+import type {
+  StripePaymentElements,
+  StripePaymentFactory,
+} from '@market/ui/stripe-card';
 import type { VendorPreorderState } from '../apps/storefront/src/lib/vendor-preorder';
 import { VendorCheckout } from '../apps/storefront/src/components/VendorCheckout';
 import { PurchaseSuccess } from '../apps/storefront/src/components/PurchaseSuccess';
 import { CheckoutPickup } from '../apps/storefront/src/components/CheckoutPickup';
+import { Checkout } from '../apps/storefront/src/components/Checkout';
+import { Checkout as FarmhouseCheckout } from '../apps/storefront/src/components/modern-farmhouse/Checkout';
 import { shopCall } from '../apps/storefront/src/components/shop-client';
 vi.mock('../apps/storefront/src/components/shop-client', () => ({
   shopCall: vi.fn(),
@@ -21,7 +28,9 @@ vi.mock('../apps/storefront/src/components/CheckoutLoyalty', () => ({
 }));
 afterEach(() => {
   cleanup();
+  window.history.replaceState(null, '', '/');
   vi.mocked(shopCall).mockReset();
+  vi.unstubAllGlobals();
 });
 
 const view: CheckoutView = {
@@ -36,6 +45,7 @@ const view: CheckoutView = {
   frozen: false,
   committed: false,
   paymentStatus: 'NONE',
+  termsDisclosure: null,
   paymentGroup: null,
   preorderFee: null,
   preorderFeeTestAvailable: false,
@@ -76,20 +86,334 @@ function mount(
   );
 }
 function fill() {
-  fireEvent.change(screen.getByLabelText('First name'), {
+  fireEvent.change(screen.getByLabelText(/^First name/), {
     target: { value: '  Zoë Anne  ' },
   });
-  fireEvent.change(screen.getByLabelText('Last name'), {
+  fireEvent.change(screen.getByLabelText(/^Last name/), {
     target: { value: 'O’Connor-Smith' },
   });
-  fireEvent.change(screen.getByLabelText('Email address'), {
+  fireEvent.change(screen.getByLabelText(/^Email address/), {
     target: { value: 'zoe+pickup@example.test' },
   });
-  fireEvent.change(screen.getByLabelText('Phone number (required)'), {
+  fireEvent.change(screen.getByLabelText('Phone number (optional)'), {
     target: { value: '2025550123' },
   });
 }
+describe('market checkout review', () => {
+  it('shows each saved pickup choice, including free pickup', async () => {
+    window.history.replaceState(null, '', '/checkout?step=Pickup');
+    const initial: CheckoutView = {
+      ...view,
+      kind: 'MARKET_OCCURRENCE',
+      availability: { state: 'AVAILABLE', mode: 'STRIPE_TEST' },
+      contact: {
+        firstName: 'Zoë',
+        lastName: 'Smith',
+        emailAddress: 'zoe@example.test',
+        phoneNumber: '+12025550123',
+      },
+      groups: [
+        view.groups[0],
+        { ...view.groups[0], vendorId: '3', vendorName: 'Bakery' },
+      ],
+    };
+    const choices = [
+      { methodId: '20', vendorId: '2', name: 'Morning pickup', price: 0 },
+      { methodId: '21', vendorId: '2', name: 'Afternoon pickup', price: 0 },
+      { methodId: '30', vendorId: '3', name: 'Bakery counter', price: 100 },
+    ];
+    vi.mocked(shopCall)
+      .mockResolvedValueOnce(
+        choices.map((choice) => ({ ...choice, currencyCode: 'USD' })),
+      )
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        ...initial,
+        preorderFee: {
+          quoteId: '10',
+          total: initial.total,
+          preorderFee: 0,
+          vendors: [],
+        },
+        groups: [
+          {
+            ...initial.groups[0],
+            pickup: [{ name: 'Afternoon pickup', fee: 0 }],
+          },
+          {
+            ...initial.groups[1],
+            pickup: [{ name: 'Bakery counter', fee: 100 }],
+          },
+        ],
+      });
+
+    render(<Checkout storefrontId="5" initial={initial} marketLayout />);
+    fireEvent.click(
+      await screen.findByRole('radio', { name: 'Afternoon pickup' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Review order' }));
+
+    await screen.findByRole('heading', { name: 'Review & Pay' });
+    expect(shopCall).toHaveBeenCalledWith('5', 'checkout-select-pickup', {
+      methodIds: ['21', '30'],
+    });
+    expect(
+      vi
+        .mocked(shopCall)
+        .mock.calls.slice(0, 3)
+        .map(([, action]) => action),
+    ).toEqual(['checkout-pickup', 'checkout-select-pickup', 'checkout-status']);
+    const summary = screen.getByRole('list', {
+      name: 'Selected pickup options',
+    });
+    expect(summary).toHaveTextContent('Garden Vendor · Afternoon pickup');
+    expect(summary).toHaveTextContent('Bakery · Bakery counter · $1.00');
+    expect(summary).not.toHaveTextContent('Morning pickup');
+  });
+});
+
+it('shows the summary, contact and payment controls together in Market Review & Pay', async () => {
+  window.history.replaceState(null, '', '/checkout?step=Pickup');
+  const charges = [
+    { vendorId: '2', amount: 1199, currency: 'USD' },
+    { vendorId: '3', amount: 600, currency: 'USD' },
+  ];
+  const initial: CheckoutView = {
+    ...view,
+    kind: 'MARKET_OCCURRENCE',
+    termsDisclosure: {
+      token: 'a'.repeat(64),
+      sellers: charges.map(({ vendorId }, index) => ({
+        vendorId,
+        vendorName: index === 0 ? 'Garden Vendor' : 'Bakery',
+        version: (index === 0 ? 'b' : 'c').repeat(64),
+        pickupRefundNotice: null,
+        policies: [],
+      })),
+    },
+    contact: {
+      firstName: 'Zoë',
+      lastName: 'Smith',
+      emailAddress: 'zoe@example.test',
+      phoneNumber: '+12025550123',
+    },
+    groups: [
+      { ...view.groups[0], pickup: [{ name: 'Garden booth', fee: 0 }] },
+      {
+        ...view.groups[0],
+        vendorId: '3',
+        vendorName: 'Bakery',
+        pickup: [{ name: 'Bakery booth', fee: 0 }],
+      },
+    ],
+    total: 1799,
+    availability: { state: 'AVAILABLE', mode: 'STRIPE_TEST' },
+    preorderFee: {
+      quoteId: '9',
+      total: 1799,
+      preorderFee: 0,
+      vendors: charges.map(({ vendorId, amount }) => ({
+        vendorId,
+        total: amount,
+        platform: 0,
+        recovery: 0,
+        feeTax: 0,
+        preorderFee: 0,
+      })),
+    },
+  };
+  const mountCard = vi.fn();
+  const createPaymentElement = vi.fn<StripePaymentElements['create']>(() => ({
+    mount: mountCard,
+    on: (_event, onChange) => onChange({ complete: true }),
+    destroy: vi.fn(),
+  }));
+  const stripe: StripePaymentFactory = () => ({
+    elements: () => ({ create: createPaymentElement }),
+    confirmSetup: vi.fn(),
+    handleNextAction: vi.fn(),
+  });
+  vi.stubGlobal('Stripe', stripe);
+  vi.mocked(shopCall).mockImplementation(async (_store, action) => {
+    if (action === 'checkout-pickup')
+      return [
+        {
+          vendorId: '2',
+          methodId: '20',
+          name: 'Garden booth',
+          price: 0,
+          currencyCode: 'USD',
+        },
+        {
+          vendorId: '3',
+          methodId: '30',
+          name: 'Bakery booth',
+          price: 0,
+          currencyCode: 'USD',
+        },
+      ];
+    if (action === 'checkout-status') return initial;
+    if (action === 'stripe-checkout-prepare')
+      return {
+        orderId: initial.orderId,
+        state: 'SETUP_REQUIRED',
+        charges,
+        setupSecret: 'seti_fixture_secret',
+        publishableKey: 'pk_test_fixture',
+      };
+    return null;
+  });
+
+  render(
+    <Checkout
+      storefrontId="5"
+      initial={initial}
+      marketLayout
+      preorder={preorder}
+    />,
+  );
+  await screen.findByRole('radio', { name: 'Garden booth' });
+  fireEvent.click(screen.getByRole('button', { name: 'Review order' }));
+  await screen.findByRole('heading', { name: 'Review & Pay' });
+  const summary = screen.getByRole('complementary', { name: 'Order summary' });
+  expect(summary).toHaveTextContent('$17.99');
+  const contact = screen.getByRole('region', { name: 'Contact details' });
+  expect(contact).toHaveTextContent(/Name:\s*Zoë Smith/);
+  expect(contact).toHaveTextContent(/Email:\s*zoe@example.test/);
+  expect(contact).toHaveTextContent(/Phone:\s*\+12025550123/);
+
+  const vendors = await screen.findByRole('list', {
+    name: 'Vendor card charges',
+  });
+  expect(vendors).toHaveTextContent('Garden Vendor: $11.99');
+  expect(vendors).toHaveTextContent('Bakery: $6.00');
+  expect(
+    await screen.findByRole('group', { name: 'Card details' }),
+  ).toBeVisible();
+  await waitFor(() => expect(mountCard).toHaveBeenCalledOnce());
+  expect(createPaymentElement).toHaveBeenCalledExactlyOnceWith(
+    'payment',
+    expect.objectContaining({
+      layout: { type: 'accordion', radios: 'always', defaultCollapsed: false },
+      wallets: { applePay: 'never', googlePay: 'never', link: 'never' },
+    }),
+  );
+  const purchase = screen.getByRole('button', { name: 'Complete purchase' });
+  expect(purchase).toBeDisabled();
+  const terms = screen.getByRole('checkbox', {
+    name: /my purchases from Garden Vendor, Bakery/,
+  });
+  terms.focus();
+  fireEvent.click(terms);
+  expect(purchase).toBeEnabled();
+  const checkoutReads = () =>
+    vi
+      .mocked(shopCall)
+      .mock.calls.filter(([, action]) => action === 'checkout-status').length;
+  const reads = checkoutReads();
+  fireEvent(window, new Event('focus'));
+  await waitFor(() => expect(checkoutReads()).toBe(reads + 1));
+  expect(terms).toBeChecked();
+  expect(terms).toHaveFocus();
+  expect(
+    contact.compareDocumentPosition(purchase) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect(screen.getByRole('region', { name: 'Pickup details' })).toBeVisible();
+  expect(summary.parentElement).toHaveClass('vendor-checkout-layout');
+  expect(summary.querySelector('details')).toBeNull();
+  expect(within(summary).queryByRole('link', { name: 'Edit cart' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Change Market' })).toBeNull();
+  expect(
+    screen.queryByRole('button', { name: 'Continue to payment' }),
+  ).toBeNull();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+  await screen.findByRole('radio', { name: 'Garden booth' });
+  expect(shopCall).toHaveBeenCalledWith('5', 'stripe-checkout-status', {
+    orderId: initial.orderId,
+  });
+});
+
 describe('vendor checkout UI', () => {
+  it.each(['shared', 'vendor', 'farmhouse'] as const)(
+    'shows the Pasture review layout in %s checkout',
+    async (layout) => {
+      const initial: CheckoutView = {
+        ...view,
+        contact: {
+          firstName: 'Example',
+          lastName: 'Customer',
+          emailAddress: 'example@example.com',
+          phoneNumber: null,
+        },
+        groups: [
+          { ...view.groups[0], pickup: [{ name: 'Garden booth', fee: 0 }] },
+        ],
+        availability: { state: 'AVAILABLE', mode: 'LOCAL' },
+      };
+      window.history.replaceState(null, '', '/checkout?step=Pickup');
+      const options = [
+        {
+          vendorId: '2',
+          methodId: '20',
+          name: 'Garden booth',
+          price: 0,
+          currencyCode: 'USD',
+        },
+      ];
+      vi.mocked(shopCall).mockImplementation(async (_store, action) =>
+        action === 'checkout-pickup' ? options : initial,
+      );
+      if (layout === 'vendor') mount(initial);
+      else if (layout === 'farmhouse')
+        render(
+          <FarmhouseCheckout
+            storefrontId="5"
+            initial={initial}
+            initialCart={cart}
+            initialPreorder={preorder}
+          />,
+        );
+      else render(<Checkout storefrontId="5" initial={initial} />);
+
+      await screen.findByRole('radio', { name: 'Garden booth' });
+      fireEvent.click(screen.getByRole('button', { name: /Review order/ }));
+      await screen.findByRole('heading', { name: 'Review & Pay' });
+      const contact = screen.getByRole('region', { name: 'Contact details' });
+      const pickup = screen.getByRole('region', { name: 'Pickup details' });
+      const payment = screen.getByLabelText('Payment method');
+      const summary = screen.getByRole('complementary', {
+        name: 'Order summary',
+      });
+      expect(contact).toHaveTextContent(/Name:\s*Example Customer/);
+      expect(contact).toHaveTextContent(/Email:\s*example@example.com/);
+      expect(contact).not.toHaveTextContent('Phone:');
+      expect(pickup).toHaveTextContent('Garden booth');
+      expect(contact.nextElementSibling).toBe(pickup);
+      expect(
+        pickup.compareDocumentPosition(payment) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(pickup.parentElement?.nextElementSibling).toBe(summary);
+      expect(summary.parentElement).toHaveClass('vendor-checkout-layout');
+      expect(summary).toHaveTextContent('$11.99');
+      expect(summary.querySelector('details, a[href="/cart"]')).toBeNull();
+      expect(
+        screen.queryByRole('button', { name: /Continue to payment/ }),
+      ).toBeNull();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+      await screen.findByRole('radio', { name: 'Garden booth' });
+      if (layout === 'vendor')
+        expect(screen.getByRole('link', { name: 'Edit cart' })).toBeVisible();
+      if (layout === 'farmhouse')
+        expect(
+          screen.getByRole('link', { name: /Edit your bag/ }),
+        ).toBeVisible();
+    },
+  );
+
   it('reuses the market banner, authoritative totals, variant and product image', () => {
     const { container } = mount();
     expect(
@@ -122,34 +446,43 @@ describe('vendor checkout UI', () => {
   it('keeps untouched validation hidden and focuses the first invalid field on submit', () => {
     mount();
     expect(screen.queryByText('Enter your first name.')).toBeNull();
-    expect(screen.getByLabelText('Phone number (required)')).toHaveAttribute(
+    expect(screen.getByLabelText('Phone number (optional)')).toHaveAttribute(
       'aria-invalid',
       'false',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Check my details' }));
     expect(screen.getByText('Enter your first name.')).toBeInTheDocument();
     expect(screen.getByText('Enter your last name.')).toBeInTheDocument();
-    expect(screen.getByLabelText('First name')).toHaveFocus();
-    expect(screen.getByText('Enter a phone number.')).toBeInTheDocument();
+    expect(screen.getByLabelText(/^First name/)).toHaveFocus();
+    // Phone is optional: leaving it blank is not an error.
+    expect(screen.queryByText('Enter a phone number.')).toBeNull();
+    // Every required contact field is marked with an asterisk.
+    for (const label of [/^First name/, /^Last name/, /^Email address/])
+      expect(
+        screen
+          .getByLabelText(label)
+          .labels?.[0]?.querySelector('.required-mark'),
+      ).not.toBeNull();
+    expect(screen.getByLabelText('Phone number (optional)')).not.toBeRequired();
   });
   it('normalizes names, supports Unicode, rejects invalid email and retains other fields', () => {
     mount();
     fill();
-    fireEvent.blur(screen.getByLabelText('First name'));
-    expect(screen.getByLabelText('First name')).toHaveValue('Zoë Anne');
-    fireEvent.change(screen.getByLabelText('Email address'), {
+    fireEvent.blur(screen.getByLabelText(/^First name/));
+    expect(screen.getByLabelText(/^First name/)).toHaveValue('Zoë Anne');
+    fireEvent.change(screen.getByLabelText(/^Email address/), {
       target: { value: 'invalid' },
     });
-    fireEvent.blur(screen.getByLabelText('Email address'));
+    fireEvent.blur(screen.getByLabelText(/^Email address/));
     expect(
       screen.getByText('Enter a valid email address.'),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText('Last name')).toHaveValue('O’Connor-Smith');
-    expect(screen.getByLabelText('First name')).toHaveAttribute(
+    expect(screen.getByLabelText(/^Last name/)).toHaveValue('O’Connor-Smith');
+    expect(screen.getByLabelText(/^First name/)).toHaveAttribute(
       'maxlength',
       '100',
     );
-    expect(screen.getByLabelText('Email address')).toHaveAttribute(
+    expect(screen.getByLabelText(/^Email address/)).toHaveAttribute(
       'maxlength',
       '254',
     );
@@ -157,17 +490,17 @@ describe('vendor checkout UI', () => {
   it('checks programmatic length violations including notes and email', () => {
     mount();
     fill();
-    fireEvent.change(screen.getByLabelText('First name'), {
+    fireEvent.change(screen.getByLabelText(/^First name/), {
       target: { value: 'A'.repeat(101) },
     });
-    fireEvent.blur(screen.getByLabelText('First name'));
+    fireEvent.blur(screen.getByLabelText(/^First name/));
     expect(
       screen.getByText('This field is too long. Please shorten it.'),
     ).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Email address'), {
+    fireEvent.change(screen.getByLabelText(/^Email address/), {
       target: { value: 'a'.repeat(255) + '@example.test' },
     });
-    fireEvent.blur(screen.getByLabelText('Email address'));
+    fireEvent.blur(screen.getByLabelText(/^Email address/));
     fireEvent.change(screen.getByLabelText(/Order notes/), {
       target: { value: 'a'.repeat(5001) },
     });
@@ -207,12 +540,10 @@ describe('vendor checkout UI', () => {
       cart,
       { ...preorder, selected: undefined },
     );
-    expect(screen.getByLabelText('First name')).toHaveValue('Zoë');
-    expect(
-      screen.getByText(
-        /Your cart’s pickup market cannot be confirmed. Refresh/,
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/^First name/)).toHaveValue('Zoë');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Your cart’s pickup market is temporarily unavailable.',
+    );
     expect(shopCall).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Place order' })).toBeDisabled();
   });
@@ -230,7 +561,7 @@ describe('vendor checkout UI', () => {
     ).toBeNull();
     fireEvent(window, new Event('focus'));
     await screen.findByText(/The latest order could not be confirmed/);
-    expect(screen.getByLabelText('Last name')).toHaveValue('O’Connor-Smith');
+    expect(screen.getByLabelText(/^Last name/)).toHaveValue('O’Connor-Smith');
     expect(screen.getByRole('button', { name: 'Place order' })).toBeDisabled();
   });
   it('omits unavailable pickup lines instead of adding explanatory copy', () => {
@@ -372,7 +703,9 @@ describe('order confirmation security and presentation', () => {
       expect(source).toContain('private, no-store');
       expect(source).toContain('!Astro.locals.editorPreview');
       expect(source).toContain(
-        'requestCheckout(Astro, Astro.response.headers).status(',
+        file === 'index'
+          ? 'readCheckoutStatus('
+          : 'requestCheckout(Astro, Astro.response.headers).status(',
       );
       expect(source).toContain('SiteLayout');
     }

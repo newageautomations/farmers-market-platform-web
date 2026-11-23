@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parse } from 'graphql';
+import { createCheckoutApi } from '../packages/api/src/checkout';
 import { withRequestTimeout } from '../packages/api/src/request-timeout';
 import { transport } from '../packages/api/src/transport';
 
@@ -112,6 +113,33 @@ describe('portable request deadlines in the web runtime without AbortSignal.time
     await vi.advanceTimersByTimeAsync(1);
     await rejected;
     expect(fetcher.mock.calls[1]?.[1]?.signal?.aborted).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('lets Stripe payment requests settle after the default deadline', async () => {
+    const status = { orderId: '9', groupId: '3', state: 'COMPLETED' };
+    const fetcher = vi.fn<typeof fetch>((_url, init) => {
+      const query = JSON.parse(String(init?.body)).query as string;
+      const field = query.includes('advanceStripeCheckout')
+        ? 'advanceStripeCheckout'
+        : 'startStripeCheckout';
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(Response.json({ data: { [field]: status } }));
+        }, 14_000);
+      });
+    });
+    const checkout = createCheckoutApi({
+      endpoint: 'https://api.example.invalid/shop-api',
+      channelToken: 'channel',
+      fetch: fetcher,
+    });
+    const start = expect(
+      checkout.stripeStart('checkout-vendors-once-v1'),
+    ).resolves.toEqual(status);
+    const advance = expect(checkout.stripeAdvance('3')).resolves.toEqual(status);
+    await vi.advanceTimersByTimeAsync(14_000);
+    await Promise.all([start, advance]);
     expect(vi.getTimerCount()).toBe(0);
   });
 });

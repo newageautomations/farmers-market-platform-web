@@ -11,7 +11,7 @@ export function PreorderFeeSettings({ service }: { service: VendorService }) {
   const query = useRead(`preorder-fees:${service.vendorId}`, read);
   return (
     <>
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="detail" {...query} retry={query.refresh} />
       {query.data && (
         <FeeForm
           key={`${service.vendorId}:${query.data.version}`}

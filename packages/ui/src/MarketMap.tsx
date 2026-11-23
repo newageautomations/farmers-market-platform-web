@@ -56,6 +56,9 @@ export function MarketMap({
   renderSpaceDetails,
   showBoothList = true,
   boothListLimit,
+  renderHoverCard,
+  locateId,
+  onLocated,
 }: {
   boothCards?: boolean;
   definition: MapDefinition;
@@ -74,6 +77,19 @@ export function MarketMap({
   renderSpaceDetails?: (id: string) => ReactNode;
   showBoothList?: boolean;
   boothListLimit?: number;
+  /**
+   * Replaces the default booth details with the caller's card. The card fades
+   * in, can be pointed at and clicked, and stays open while the pointer is
+   * on it. Callers without it keep the default read-only tooltip.
+   */
+  renderHoverCard?: (space: PublicOccurrenceMap['spaces'][number]) => ReactNode;
+  /** Selects this booth and moves the map to it whenever it changes. */
+  locateId?: string;
+  /**
+   * Called once a locate request is done. Callers clear `locateId` here so a
+   * remount (e.g. a `key` change) does not repeat it.
+   */
+  onLocated?: () => void;
 }) {
   const [area, setArea] = useState(
       definition.elements.find((e) => e.id === selectedId)?.areaId ??
@@ -126,12 +142,55 @@ export function MarketMap({
       pendingLocate.current = '';
     }
   }, [shownArea]);
+  // An interactive card closes a moment after the pointer leaves the booth,
+  // so the pointer can travel onto the card and use its link.
+  const closing = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const overCard = useRef(false);
+  const keepOpen = () => {
+    overCard.current = true;
+    clearTimeout(closing.current);
+  };
+  const closeSoon = () => {
+    clearTimeout(closing.current);
+    closing.current = setTimeout(() => {
+      if (!overCard.current) setHover(null);
+    }, 200);
+  };
+  const leaveCard = () => {
+    overCard.current = false;
+    closeSoon();
+  };
+  useEffect(() => () => clearTimeout(closing.current), []);
+  // A caller's card follows its booth while the map pans or zooms (a card
+  // opened by `locateId` has no pointer on the booth to move it).
+  const onViewChange = useCallback(() => {
+    if (!renderHoverCard) return;
+    setHover((current) => {
+      const booth = current && canvas.current?.boxOf(current.id);
+      if (!current || !booth) return current;
+      const was = current.booth;
+      return booth.x === was.x &&
+        booth.y === was.y &&
+        booth.width === was.width &&
+        booth.height === was.height
+        ? current
+        : { id: current.id, booth };
+    });
+  }, [renderHoverCard]);
   const onHover = useCallback(
     (
       id: string | null,
       booth?: { x: number; y: number; width: number; height: number },
-    ) => setHover(id && booth ? { id, booth } : null),
-    [],
+    ) => {
+      if (renderHoverCard && !(id && booth)) {
+        closeSoon();
+        return;
+      }
+      clearTimeout(closing.current);
+      overCard.current = false;
+      setHover(id && booth ? { id, booth } : null);
+    },
+    [renderHoverCard],
   );
   function choose(id: string, notify = true) {
     setHighlight(id);
@@ -144,6 +203,41 @@ export function MarketMap({
       onAreaChange?.(e.areaId);
     }
   }
+  // A new locate request selects the booth and shows its area in this render;
+  // the effect then moves the canvas to it. A request present at mount counts.
+  const [located, setLocated] = useState<string>();
+  if (locateId !== located) {
+    setLocated(locateId);
+    const target = definition.elements.find((e) => e.id === locateId);
+    if (target) {
+      setHighlight(target.id);
+      setArea(target.areaId);
+    }
+  }
+  useEffect(() => {
+    if (!locateId) return;
+    canvas.current?.locate(locateId);
+    // With a caller's card, a located booth also opens its card, as if it
+    // were pointed at. The box is read once the canvas has moved to it.
+    if (!renderHoverCard || !spaces.some((s) => s.elementId === locateId)) {
+      onLocated?.();
+      return;
+    }
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        const booth = canvas.current?.boxOf(locateId);
+        if (booth) {
+          clearTimeout(closing.current);
+          overCard.current = false;
+          setHover({ id: locateId, booth });
+        }
+        onLocated?.();
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+    // Only a new locate request reopens the card.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locateId]);
   return (
     <div className="ops-map">
       <div className="map-read-surface" ref={viewport}>
@@ -183,11 +277,26 @@ export function MarketMap({
           }}
           onChange={(es) => es.forEach((e) => onEdit?.(e))}
           onHover={onHover}
+          onViewChange={onViewChange}
           statuses={statuses}
           overlays={overlays}
           highlightedIds={highlightedIds}
         />
-        {hoveredSpace && (
+        {hoveredSpace && renderHoverCard && (
+          <div
+            key={hoveredSpace.elementId}
+            className="booth-hover-card booth-hover-card-custom"
+            ref={tip}
+            style={{ left: position.x, top: position.y }}
+            onPointerEnter={keepOpen}
+            onPointerLeave={leaveCard}
+            onFocus={keepOpen}
+            onBlur={leaveCard}
+          >
+            {renderHoverCard(hoveredSpace)}
+          </div>
+        )}
+        {hoveredSpace && !renderHoverCard && (
           <div
             className="booth-hover-card"
             ref={tip}

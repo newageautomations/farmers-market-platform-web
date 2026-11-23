@@ -88,6 +88,7 @@ export function MarketDetailPage({
       </FarmstandLink>
       {/* Refreshes after a command run in the background; only the first load shows progress. */}
       <ReadState
+        skeleton="detail"
         loading={!detail && query.loading}
         error={query.error}
         retry={query.refresh}

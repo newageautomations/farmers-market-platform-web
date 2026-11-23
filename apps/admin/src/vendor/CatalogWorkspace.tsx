@@ -356,8 +356,18 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
           </div>
           <div className="catalog-read-state">
             <ReadState {...catalog} retry={catalog.refresh} />
-            <ReadState {...inventory} retry={inventory.refresh} />
-            <ReadState {...images} retry={images.refresh} />
+            <ReadState
+              skeleton="table"
+              rows={2}
+              {...inventory}
+              retry={inventory.refresh}
+            />
+            <ReadState
+              skeleton="table"
+              rows={2}
+              {...images}
+              retry={images.refresh}
+            />
           </div>
           {loaded && (
             <>
@@ -620,7 +630,12 @@ export function CatalogWorkspace({ service }: { service: VendorService }) {
               </div>
             </div>
             <div className="catalog-category-status">
-              <ReadState {...categories} retry={categories.refresh} />
+              <ReadState
+                skeleton="table"
+                rows={4}
+                {...categories}
+                retry={categories.refresh}
+              />
             </div>
             {categories.data &&
               navigation.map((category) => (

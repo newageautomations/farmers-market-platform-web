@@ -6,6 +6,20 @@ import { AdminApp } from './AdminApp';
 import { ErrorBoundary } from '@market/ui';
 import { themeVariables, platformTheme } from '@market/theme';
 import { installRemoteDemoLinks } from './remote-demo';
+
+const paymentReturn = new URL(window.location.href);
+if (
+  paymentReturn.pathname === '/vendor/booths' &&
+  paymentReturn.searchParams.has('invoice-payment-return')
+) {
+  for (const key of [
+    'payment_intent',
+    'payment_intent_client_secret',
+    'redirect_status',
+  ])
+    paymentReturn.searchParams.delete(key);
+  window.history.replaceState(window.history.state, '', paymentReturn);
+}
 installRemoteDemoLinks();
 for (const [key, value] of Object.entries(themeVariables(platformTheme)))
   document.documentElement.style.setProperty(key, value);

@@ -293,7 +293,14 @@ function ProductFields({
                   onChange={() => setChanged(true)}
                 />
               </Field>
-              {!product && <ReadState {...defaults} retry={defaults.refresh} />}
+              {!product && (
+                <ReadState
+                  skeleton="detail"
+                  rows={1}
+                  {...defaults}
+                  retry={defaults.refresh}
+                />
+              )}
               {product && !product.taxConfigured && (
                 <p>
                   {product.collectTaxes == null
@@ -647,7 +654,7 @@ function ProductDetail({
         />
       )}
       {!query.data && <ProductHeading title="Product" />}
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="detail" {...query} retry={query.refresh} />
       {query.data && (
         <div key={JSON.stringify(query.data)}>
           {can && (
@@ -764,7 +771,7 @@ function VariantPage({
           back={`/vendor/products/${encodeURIComponent(productId)}${setup ? '/setup' : ''}`}
         />
       )}
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="detail" {...query} retry={query.refresh} />
       {query.data && can && (creating || variant) && (
         <VariantEditor
           key={JSON.stringify(query.data)}
@@ -938,7 +945,7 @@ function VariantEditor({
   const back = `/vendor/products/${encodeURIComponent(product.id)}${setup ? '/setup' : ''}`;
   return (
     <>
-      <ReadState {...costs} retry={costs.refresh} />
+      <ReadState skeleton="detail" {...costs} retry={costs.refresh} />
       {costs.data && (
         <CommandForm
           embedded

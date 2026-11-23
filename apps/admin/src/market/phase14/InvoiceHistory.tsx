@@ -23,7 +23,7 @@ export type InvoiceHistoryEntry = {
 
 export const paymentMethodLabel = (method: string) =>
   method === 'STRIPE'
-    ? 'Stripe card'
+    ? 'Stripe'
     : method.charAt(0) + method.slice(1).toLowerCase().replaceAll('_', ' ');
 
 /** One newest-first ledger from the invoice's adjustments, payments, refunds
@@ -66,13 +66,13 @@ export function invoiceHistory(
         .join(' · '),
       balance: r.amountMinor,
     })),
-    // A completed card payment also appears as its payment record, which
+    // A completed online payment also appears as its payment record, which
     // carries the balance change; the attempt itself only explains the fees.
     ...collections.map((c) => ({
       key: `collection:${c.id}`,
       at: c.createdAt ?? '',
-      message: `Online card payment · ${c.state.toLowerCase().replaceAll('_', ' ')}${c.reviewCode ? ' · requires reconciliation' : ''}`,
-      detail: `Invoice principal ${moneyLabel(c.quote.base, c.quote.currency)} · Card charge ${moneyLabel(c.quote.gross, c.quote.currency)} · Online payment fee ${moneyLabel(c.quote.fee, c.quote.currency)} (platform ${moneyLabel(c.quote.platform, c.quote.currency)}, estimated processing recovery ${moneyLabel(c.quote.recovery, c.quote.currency)})`,
+      message: `Online payment · ${c.state === 'CARD_REQUIRED' ? 'awaiting payment details' : c.state.toLowerCase().replaceAll('_', ' ')}${c.reviewCode ? ' · requires reconciliation' : ''}`,
+      detail: `Invoice principal ${moneyLabel(c.quote.base, c.quote.currency)} · Online charge ${moneyLabel(c.quote.gross, c.quote.currency)} · Online processing fee ${moneyLabel(c.quote.fee, c.quote.currency)}`,
       balance: null,
     })),
   ];

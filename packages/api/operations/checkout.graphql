@@ -10,6 +10,16 @@ fragment CheckoutView on CustomerCheckoutView {
   frozen
   committed
   paymentStatus
+  termsDisclosure {
+    token
+    sellers {
+      vendorId
+      vendorName
+      version
+      pickupRefundNotice
+      policies { title content }
+    }
+  }
   preorderFeeTestAvailable
   preorderFee {
     quoteId
@@ -128,8 +138,8 @@ mutation CheckoutSelectPickup($methodIds: [ID!]!) {
     orderId
   }
 }
-mutation CheckoutBeginLocal {
-  beginLocalCheckout {
+mutation CheckoutBeginLocal($termsToken: String) {
+  beginLocalCheckout(termsToken: $termsToken) {
     attemptId
     orderId
     state
@@ -149,8 +159,8 @@ mutation CheckoutReleaseLocal($attemptId: ID!) {
     state
   }
 }
-mutation CheckoutBeginProvider {
-  beginProviderCheckout {
+mutation CheckoutBeginProvider($termsToken: String) {
+  beginProviderCheckout(termsToken: $termsToken) {
     attemptId
     orderId
     state

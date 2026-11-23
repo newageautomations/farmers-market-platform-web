@@ -40,7 +40,7 @@ export function PlatformOverview({ service }: { service: ManagementService }) {
   const result = useRead('platform-overview', read);
   return (
     <>
-      <ReadState {...result} retry={result.refresh} />
+      <ReadState skeleton="stats" {...result} retry={result.refresh} />
       {result.data && (
         <>
           <dl className="ui-kpi-grid">
@@ -339,7 +339,7 @@ export function TenantDetail({
     subject = kind === 'VENDOR' ? { vendorId: id } : { marketId: id };
   return (
     <>
-      <ReadState {...result} retry={result.refresh} />
+      <ReadState skeleton="detail" {...result} retry={result.refresh} />
       {data && (
         <>
           <Card>

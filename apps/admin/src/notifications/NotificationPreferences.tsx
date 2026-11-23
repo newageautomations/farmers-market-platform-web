@@ -95,7 +95,7 @@ export function NotificationPreferences({
         Enabled notifications are currently written to the backend console for
         testing.
       </Alert>
-      <ReadState {...state} retry={state.refresh} />
+      <ReadState skeleton="detail" {...state} retry={state.refresh} />
       {state.data && (
         <PreferenceForm
           key={state.data.revision}

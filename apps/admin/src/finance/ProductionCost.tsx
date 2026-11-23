@@ -29,7 +29,7 @@ export function ProductionCost({
     query = useRead(`cost:${variantId}`, read);
   return (
     <>
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="detail" rows={2} {...query} retry={query.refresh} />
       {query.data && (
         <CommandForm
           key={query.data[0]?.id ?? 'unknown'}

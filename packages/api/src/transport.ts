@@ -33,7 +33,7 @@ export function transport<K extends ApiKind>(
   return async function execute<R, V>(
     operation: Operation<K, R, V>,
     variables: V,
-    optionsForRequest: { signal?: AbortSignal } = {},
+    optionsForRequest: { signal?: AbortSignal; timeoutMs?: number } = {},
   ): Promise<R> {
     if (operation.api !== api) throw new AppError('validation');
     if (api === 'shop' && !options.channelToken?.trim())
@@ -41,7 +41,7 @@ export function transport<K extends ApiKind>(
     const requestId = crypto.randomUUID();
     try {
       return await withRequestTimeout(
-        8000,
+        optionsForRequest.timeoutMs ?? 8000,
         async (signal) => {
           const headers: Record<string, string> = {
             'Content-Type': 'application/json',
@@ -102,6 +102,8 @@ export function transport<K extends ApiKind>(
                     typeof first.message === 'string' &&
                     [
                       'PREORDER_FEE_REQUOTE_REQUIRED',
+                      'VENDOR_TERMS_ACCEPTANCE_REQUIRED',
+                      'VENDOR_TERMS_CHANGED',
                       'ACCOUNT_NOT_READY',
                       'STRIPE_ONBOARDING_NOT_CONFIGURED',
                       'STRIPE_ACCOUNT_CONFIGURATION_BLOCKED',

@@ -1,0 +1,153 @@
+---
+/**
+ * Pasture's field scene: three layers of rolling fields with curved crop
+ * rows, with trees and small swaying flowers standing part way down the
+ * slopes, never on the crest. The hero and the footer
+ * draw the same fields, so they match. The footer crops the sky off the top
+ * and adds a deep green strip that runs into the footer band. The drawing is
+ * 1440 units wide and keeps its proportions; narrow screens crop it from the
+ * right. Decorative only.
+ */
+import Art from './Art.astro';
+interface Props {
+  scene: 'hero' | 'footer';
+  class?: string;
+}
+const { scene, class: className } = Astro.props;
+const id = `pw-fields-${scene}`;
+const back =
+  'M0 150C120 110 260 96 400 120C520 140 600 150 720 128C860 100 1000 92 1140 116C1260 136 1360 128 1440 112V240H0z';
+const middle =
+  'M0 190C140 150 300 140 460 166C600 188 700 196 860 176C1000 158 1180 150 1440 180V240H0z';
+const front = 'M0 212C160 178 360 174 560 206C640 218 700 228 760 244H0z';
+/* Crop rows follow the top of each field, a little lower each time. */
+const rows = (top: (offset: number) => string, offsets: number[]) =>
+  offsets.map(top).join('');
+const middleRows = rows(
+  (y) =>
+    `M-20 ${190 + y}C140 ${150 + y} 300 ${140 + y} 460 ${166 + y}C600 ${188 + y} 700 ${196 + y} 860 ${176 + y}C1000 ${158 + y} 1180 ${150 + y} 1460 ${180 + y}`,
+  [16, 32, 48],
+);
+const frontRows = rows(
+  (y) =>
+    `M-20 ${212 + y}C160 ${178 + y} 360 ${174 + y} 560 ${206 + y}C640 ${218 + y} 700 ${228 + y} 760 ${244 + y}`,
+  [10, 22],
+);
+/*
+ * Each plant is placed by its centre `x`, the `base` it stands on and its
+ * `size`, all in the drawing's units. A base a little below a field's top
+ * keeps the ground shadow on the hillside. `back` plants stand on the back
+ * field, `middle` flowers on the middle one and `front` flowers on the front
+ * mound, so each is drawn in front of the field it stands on.
+ */
+type Plant = {
+  name: 'tree' | 'pine' | 'flower';
+  x: number;
+  base: number;
+  size: number;
+};
+const scenes: Record<
+  Props['scene'],
+  { back: Plant[]; middle: Plant[]; front: Plant[] }
+> = {
+  hero: {
+    back: [
+      { name: 'pine', x: 102, base: 141, size: 80 },
+      { name: 'tree', x: 224, base: 124, size: 104 },
+      { name: 'tree', x: 320, base: 145, size: 64 },
+    ],
+    middle: [
+      { name: 'flower', x: 392, base: 168, size: 44 },
+      { name: 'flower', x: 452, base: 180, size: 34 },
+      { name: 'flower', x: 528, base: 192, size: 46 },
+      { name: 'flower', x: 600, base: 199, size: 32 },
+      { name: 'flower', x: 678, base: 204, size: 40 },
+    ],
+    front: [
+      { name: 'flower', x: 128, base: 212, size: 30 },
+      { name: 'flower', x: 262, base: 204, size: 38 },
+      { name: 'flower', x: 470, base: 214, size: 32 },
+    ],
+  },
+  footer: {
+    back: [
+      { name: 'pine', x: 40, base: 150, size: 54 },
+      { name: 'tree', x: 133, base: 131, size: 66 },
+      { name: 'tree', x: 230, base: 130, size: 44 },
+      { name: 'tree', x: 620, base: 156, size: 50 },
+      { name: 'tree', x: 980, base: 124, size: 56 },
+      { name: 'tree', x: 1060, base: 120, size: 46 },
+      { name: 'pine', x: 1180, base: 140, size: 56 },
+      { name: 'tree', x: 1330, base: 146, size: 52 },
+    ],
+    middle: [
+      { name: 'flower', x: 300, base: 160, size: 34 },
+      { name: 'flower', x: 760, base: 200, size: 30 },
+      { name: 'flower', x: 820, base: 194, size: 38 },
+      { name: 'flower', x: 1100, base: 172, size: 40 },
+      { name: 'flower', x: 1250, base: 176, size: 32 },
+    ],
+    front: [
+      { name: 'flower', x: 160, base: 208, size: 30 },
+      { name: 'flower', x: 420, base: 206, size: 34 },
+    ],
+  },
+};
+const plants = scenes[scene];
+/* Art drawings stand on y 92 of their 96 unit frame. */
+const place = (plant: Plant) => ({
+  x: plant.x - plant.size / 2,
+  y: plant.base - (plant.size * 92) / 96,
+});
+/* Flowers sway out of step with each other. */
+const sway = (index: number) => `animation-delay: ${-(index * 0.83) % 5}s`;
+---
+
+<svg
+  class:list={['pw-fields', `pw-fields-${scene}`, className]}
+  viewBox={scene === 'hero' ? '0 0 1440 240' : '0 70 1440 170'}
+  preserveAspectRatio="xMinYMax slice"
+  aria-hidden="true"
+  focusable="false"
+>
+  <defs>
+    <clipPath id={`${id}-middle`}>
+      <path d={middle}></path>
+    </clipPath>
+    <clipPath id={`${id}-front`}>
+      <path d={front}></path>
+    </clipPath>
+  </defs>
+  <path class="pw-hill-back" d={back}></path>
+  {plants.back.map((plant) => (
+    <Art name={plant.name} {...place(plant)} size={plant.size} />
+  ))}
+  <path class="pw-hill-middle" d={middle}></path>
+  <path
+    class="pw-hill-rows"
+    d={middleRows}
+    clip-path={`url(#${id}-middle)`}
+  ></path>
+  {plants.middle.map((plant, index) => (
+    <g class="pw-field-flower" style={sway(index)}>
+      <Art name={plant.name} {...place(plant)} size={plant.size} />
+    </g>
+  ))}
+  <path class="pw-hill-front" d={front}></path>
+  <path
+    class="pw-hill-rows"
+    d={frontRows}
+    clip-path={`url(#${id}-front)`}
+  ></path>
+  {plants.front.map((plant, index) => (
+    <g class="pw-field-flower" style={sway(index + plants.middle.length)}>
+      <Art name={plant.name} {...place(plant)} size={plant.size} />
+    </g>
+  ))}
+  {scene === 'footer' && (
+    <path
+      class="pw-hill-edge"
+      d="M0 226C320 206 720 210 1040 222C1220 229 1350 226 1440 218V241H0z"
+    />
+  )}
+</svg>

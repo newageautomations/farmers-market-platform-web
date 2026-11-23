@@ -1,8 +1,11 @@
+import type { ReactNode } from 'react';
 import { VendorPreorderBanner } from './VendorPreorderBanner';
 import { safeAsset } from '@market/storefront-core/catalog';
 import { CheckoutPickup } from './CheckoutPickup';
 import type { VendorPreorderState } from '../lib/vendor-preorder';
 import { StripeCheckout } from './StripeCheckout';
+import { CheckoutTermsAcceptance } from './CheckoutTermsAcceptance';
+import { CheckoutContactDetails } from './CheckoutContactDetails';
 import { checkoutFieldError } from '../lib/checkout-contact';
 import CheckoutLoyalty from './CheckoutLoyalty';
 import { buttonClassName } from '@market/ui/presentation';
@@ -60,7 +63,10 @@ export function CheckoutSummary({
                     />
                   )}
                   <span>
-                    {line.name} × {line.quantity}
+                    <span className="checkout-summary-name">{line.name}</span>{' '}
+                    <span className="checkout-summary-quantity">
+                      × {line.quantity}
+                    </span>
                   </span>
                   <span>{formatMoney(line.total, view.currency)}</span>
                 </li>
@@ -134,12 +140,42 @@ export function CheckoutSummary({
     </div>
   );
 }
+export function CheckoutReviewSummary({
+  view,
+  images,
+  unresolved,
+}: Pick<
+  Parameters<typeof CheckoutSummary>[0],
+  'view' | 'images' | 'unresolved'
+>) {
+  return (
+    <aside
+      className="checkout-section checkout-order-summary checkout-review-summary"
+      aria-label="Order summary"
+    >
+      <h2>Order summary</h2>
+      <CheckoutSummary
+        view={view}
+        images={images}
+        showPickup={false}
+        showContact={false}
+        unresolved={unresolved}
+      />
+    </aside>
+  );
+}
+
+export const checkoutSteps = ['Contact', 'Pickup', 'Review', 'Confirmation'];
+export const checkoutStageLabel = (step: string) =>
+  step === 'Review' ? 'Review & Pay' : step;
+
 export function Checkout({
   storefrontId,
   initial,
   onViewChange,
   preorder,
   marketLayout = false,
+  orderSummary,
   images = {},
   concise = false,
 }: {
@@ -148,6 +184,8 @@ export function Checkout({
   onViewChange?: (view: CheckoutView) => void;
   preorder?: VendorPreorderState;
   marketLayout?: boolean;
+  /** Storefront-specific summary for the editable checkout steps. */
+  orderSummary?: ReactNode;
   images?: Record<string, string>;
   /** Omit general guidance that only describes the checkout steps. */
   concise?: boolean;
@@ -171,7 +209,6 @@ export function Checkout({
     contact,
     run,
     refresh,
-    go,
     submitContact,
     submitPickup,
     pay,
@@ -180,7 +217,20 @@ export function Checkout({
     setPickupSelections,
     setPaymentBusy,
     paymentBusy,
-  } = useCheckout({ storefrontId, initial, onViewChange });
+    termsAccepted,
+    setTermsAccepted,
+  } = useCheckout({
+    storefrontId,
+    initial,
+    onViewChange,
+    reviewIncludesPayment: true,
+  });
+  const review = stage === 'Review' && !view.committed;
+  const showColumns = marketLayout || !!orderSummary || review;
+  const awaitingPickupTotal =
+    stripeEnabled &&
+    !view.preorderFee &&
+    (stage === 'Contact' || stage === 'Pickup');
   const backAction = !view.committed &&
     stage !== 'Contact' &&
     stage !== 'Confirmation' && (
@@ -188,15 +238,7 @@ export function Checkout({
         type="button"
         variant="secondary"
         disabled={pending || paymentBusy}
-        onClick={() =>
-          void back(
-            stage === 'Payment'
-              ? 'Review'
-              : stage === 'Review'
-                ? 'Pickup'
-                : 'Contact',
-          )
-        }
+        onClick={() => void back(review ? 'Pickup' : 'Contact')}
       >
         Back
       </Button>
@@ -212,7 +254,7 @@ export function Checkout({
     >
       {marketLayout && (
         <>
-          {preorder && (
+          {preorder && !review && (
             <VendorPreorderBanner
               storefrontId={storefrontId}
               preorder={preorder}
@@ -228,27 +270,48 @@ export function Checkout({
           </header>
         </>
       )}
-      {stage !== 'Confirmation' && !view.committed && view.profile && (
-        <CheckoutLoyalty
-          earnedOnly={marketLayout}
-          vendors={view.groups.map((g) => g.vendorId)}
-          onApplied={refresh}
-          disabled={pending || !!view.attempt || stage === 'Payment'}
-        />
-      )}
+      {stage !== 'Confirmation' &&
+        !review &&
+        !view.committed &&
+        view.profile && (
+          <CheckoutLoyalty
+            earnedOnly={marketLayout}
+            vendors={view.groups.map((g) => g.vendorId)}
+            onApplied={refresh}
+            disabled={pending || !!view.attempt}
+          />
+        )}
       <nav aria-label="Checkout progress">
         <ol className="checkout-progress">
-          {['Contact', 'Pickup', 'Review', 'Payment', 'Confirmation'].map(
-            (step) => (
-              <li key={step} aria-current={stage === step ? 'step' : undefined}>
-                {step}
-              </li>
-            ),
-          )}
+          {checkoutSteps.map((step, index) => (
+            <li key={step} aria-current={stage === step ? 'step' : undefined}>
+              {/* Completed steps go back like the Back button; later steps
+                  can't be skipped to. */}
+              {index < checkoutSteps.indexOf(stage) &&
+              !view.committed &&
+              stage !== 'Confirmation' ? (
+                <button
+                  type="button"
+                  className="checkout-progress-step"
+                  disabled={pending || paymentBusy}
+                  aria-label={`Return to ${checkoutStageLabel(step)}`}
+                  onClick={() => void back(step)}
+                >
+                  {checkoutStageLabel(step)}
+                </button>
+              ) : (
+                checkoutStageLabel(step)
+              )}
+            </li>
+          ))}
         </ol>
       </nav>
-      <h2 className="sr-only" ref={heading} tabIndex={-1}>
-        {stage}
+      <h2
+        className={review ? undefined : 'sr-only'}
+        ref={heading}
+        tabIndex={-1}
+      >
+        {checkoutStageLabel(stage)}
       </h2>
       {error && (
         <>
@@ -271,7 +334,7 @@ export function Checkout({
           )}
         </>
       )}
-      <div className={marketLayout ? 'vendor-checkout-layout' : undefined}>
+      <div className={showColumns ? 'vendor-checkout-layout' : undefined}>
         <div>
           {view.committed ? (
             <p>
@@ -314,11 +377,22 @@ export function Checkout({
                   account.
                 </p>
               )}
+              <p className="required-legend">
+                <span className="required-mark" aria-hidden="true">
+                  *
+                </span>{' '}
+                Required
+              </p>
               <div
                 className={marketLayout ? 'checkout-contact-grid' : undefined}
               >
                 <div className="field">
-                  <label htmlFor="firstName">First name</label>
+                  <label htmlFor="firstName">
+                    First name{' '}
+                    <span className="required-mark" aria-hidden="true">
+                      *
+                    </span>
+                  </label>
                   <Input
                     aria-invalid={!!contactErrors.firstName}
                     aria-describedby={
@@ -339,7 +413,12 @@ export function Checkout({
                   )}
                 </div>
                 <div className="field">
-                  <label htmlFor="lastName">Last name</label>
+                  <label htmlFor="lastName">
+                    Last name{' '}
+                    <span className="required-mark" aria-hidden="true">
+                      *
+                    </span>
+                  </label>
                   <Input
                     aria-invalid={!!contactErrors.lastName}
                     aria-describedby={
@@ -364,7 +443,12 @@ export function Checkout({
                     marketLayout ? 'field checkout-full-field' : 'field'
                   }
                 >
-                  <label htmlFor="emailAddress">Email</label>
+                  <label htmlFor="emailAddress">
+                    Email{' '}
+                    <span className="required-mark" aria-hidden="true">
+                      *
+                    </span>
+                  </label>
                   <Input
                     aria-invalid={!!contactErrors.emailAddress}
                     aria-describedby={
@@ -396,8 +480,7 @@ export function Checkout({
                   <PhoneInput
                     id="phoneNumber"
                     name="phoneNumber"
-                    label="Phone number"
-                    required
+                    label="Phone number (optional)"
                     validationMode="blur"
                     showValidation={contactSubmitted}
                     defaultValue={contact?.phoneNumber ?? ''}
@@ -475,83 +558,33 @@ export function Checkout({
                 </Button>
               </div>
             </form>
-          ) : stage === 'Review' ? (
-            <>
-              {marketLayout && (
-                <section className="checkout-section">
-                  <h2>Review your order</h2>
-                  {!concise && (
-                    <p>
-                      Check the items and totals in your order summary before
-                      continuing to payment.
-                    </p>
-                  )}
-                  <p>
-                    {contact?.firstName} {contact?.lastName} ·{' '}
-                    {contact?.emailAddress}
-                  </p>
-                  <CheckoutPickup view={view} preorder={preorder} />
-                </section>
-              )}
-              {!marketLayout && (
-                <CheckoutSummary
-                  view={view}
-                  unresolved={
-                    stripeEnabled &&
-                    (pending || quoting || !!error || !view.preorderFee)
-                  }
-                />
-              )}{' '}
-              <div className="checkout-stage-actions">
-                {backAction}
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={pending}
-                  onClick={() =>
-                    void run(async () => {
-                      await refresh();
-                      go('Payment');
-                    })
-                  }
-                >
-                  Continue to payment
-                </Button>
-              </div>
-            </>
           ) : (
             <>
-              {marketLayout && (
-                <section className="checkout-section">
-                  <h2>Payment</h2>
-                  <CheckoutPickup view={view} preorder={preorder} compact />
-                </section>
-              )}
-              {!marketLayout && (
-                <CheckoutSummary
-                  view={view}
-                  unresolved={
-                    stripeEnabled &&
-                    (pending || quoting || !!error || !view.preorderFee)
-                  }
-                />
-              )}
+              <CheckoutContactDetails contact={contact} />
+              <CheckoutPickup view={view} preorder={preorder} showSelections />
               {stripeEnabled ? (
                 view.preorderFee ? (
                   <StripeCheckout
+                    accordion={marketLayout}
                     backAction={backAction}
                     onBusyChange={setPaymentBusy}
                     disabled={pending || quoting || !!error}
                     key={view.orderId}
                     storefrontId={storefrontId}
                     view={view}
-                    concise={concise}
+                    market={marketLayout}
+                    onTermsChanged={refresh}
+                    concise={concise || marketLayout}
                   />
                 ) : (
-                  <p role="status">Updating order total…</p>
+                  <>
+                    <p role="status">Updating order total…</p>
+                    {backAction}
+                  </>
                 )
               ) : (
                 <>
+                  {!view.attempt && backAction}
                   {paymentUncertain ||
                   ['PENDING', 'RECONCILIATION_REQUIRED'].includes(
                     view.paymentStatus,
@@ -627,11 +660,19 @@ export function Checkout({
                           . Check status before resuming.
                         </p>
                       )}
+                      <CheckoutTermsAcceptance
+                        disclosure={view.termsDisclosure}
+                        market={marketLayout}
+                        checked={termsAccepted}
+                        disabled={pending}
+                        onChange={setTermsAccepted}
+                      />
                       <Button
                         type="submit"
                         variant="primary"
                         disabled={
                           pending ||
+                          !termsAccepted ||
                           view.availability.mode !== 'LOCAL' ||
                           paymentMethod !== 'dev-test-payment'
                         }
@@ -684,15 +725,32 @@ export function Checkout({
             </>
           )}
         </div>
-        {marketLayout && (
+        {review ? (
+          <CheckoutReviewSummary
+            view={view}
+            images={images}
+            unresolved={
+              stripeEnabled &&
+              (pending || quoting || !!error || !view.preorderFee)
+            }
+          />
+        ) : (
+          orderSummary
+        )}
+        {marketLayout && !review && (
           <aside className="checkout-order-summary" aria-label="Order summary">
             <Dropdown
               defaultOpen
               label={
                 <>
-                  <span>Order summary</span>
+                  <span>
+                    {awaitingPickupTotal
+                      ? 'Order summary before fees'
+                      : 'Order summary'}
+                  </span>
                   <strong className="checkout-summary-total">
-                    {quoting || (stripeEnabled && !view.preorderFee)
+                    {quoting ||
+                    (stripeEnabled && !view.preorderFee && !awaitingPickupTotal)
                       ? 'Updating…'
                       : formatMoney(view.total, view.currency)}
                   </strong>
@@ -706,7 +764,10 @@ export function Checkout({
                 showContact={false}
                 unresolved={
                   stripeEnabled &&
-                  (pending || quoting || !!error || !view.preorderFee)
+                  (pending ||
+                    quoting ||
+                    !!error ||
+                    (!view.preorderFee && !awaitingPickupTotal))
                 }
               />
               {!view.committed && (

@@ -1,9 +1,15 @@
 import {
   isWebsiteSectionSizing,
+  isWebsiteSpaceBlock,
   type WebsiteBlock,
   type WebsiteSection,
 } from './website-section-contract';
 
+/** The section's own space above and below, when the manager has set one. */
+export function websiteSectionSpaceStyle(section: WebsiteSection): string {
+  const space = section.presentation.spaceBlock;
+  return isWebsiteSpaceBlock(space) ? `--website-space-block:${space}px` : '';
+}
 /** Only validated numbers become CSS. These helpers are shared by the three SSR adapters. */
 export function websiteSectionStyle(section: WebsiteSection): string {
   const sizing = section.presentation.sizing;
@@ -32,6 +38,8 @@ export function websiteSectionStyle(section: WebsiteSection): string {
         `--website-copy-padding:${values.padding ?? (p.spacing === 'compact' ? 24 : p.spacing === 'spacious' ? 80 : 48)}px`,
       );
   }
+  const space = websiteSectionSpaceStyle(section);
+  if (space) styles.push(space);
   return styles.join(';');
 }
 export function websiteSectionAttributes(section: WebsiteSection) {

@@ -32,6 +32,18 @@ export const harvestFeatureIcons = [
   'map-pin',
   'shield-check',
 ] as const;
+/** Image frames shared with the About story images and the hero shape picker. */
+export const websiteImageShapes = [
+  'natural',
+  'natural-rounded',
+  'square',
+  'rounded',
+  'circle',
+  'dome',
+  'star',
+  'corner',
+] as const;
+export type WebsiteImageShape = (typeof websiteImageShapes)[number];
 const harvestSectionBase = {
   version: 1,
   themes: [
@@ -40,6 +52,7 @@ const harvestSectionBase = {
     { id: 'editorial-market', version: 1 },
     { id: 'meadow', version: 1 },
     { id: 'hearth', version: 1 },
+    { id: 'pasture', version: 1 },
     { id: 'bloom', version: 1 },
   ],
   repeatable: true,
@@ -50,6 +63,7 @@ const harvestSectionBase = {
     'editorial-market': ['standard'],
     meadow: ['standard'],
     hearth: ['standard'],
+    pasture: ['standard'],
     bloom: ['standard'],
   },
   alignments: ['left', 'center', 'right'],
@@ -99,6 +113,7 @@ export const harvestExpandedSectionManifest = {
       'editorial-market': 'editorial-image-banner',
       meadow: 'harvest-image-banner',
       hearth: 'harvest-image-banner',
+      pasture: 'harvest-image-banner',
       bloom: 'harvest-image-banner',
     },
   },
@@ -128,6 +143,7 @@ export const harvestExpandedSectionManifest = {
       'editorial-market': 'editorial-image-gallery',
       meadow: 'harvest-image-gallery',
       hearth: 'harvest-image-gallery',
+      pasture: 'harvest-image-gallery',
       bloom: 'harvest-image-gallery',
     },
   },
@@ -181,6 +197,7 @@ export const harvestExpandedSectionManifest = {
       'editorial-market': 'editorial-feature-grid',
       meadow: 'harvest-feature-grid',
       hearth: 'harvest-feature-grid',
+      pasture: 'harvest-feature-grid',
       bloom: 'harvest-feature-grid',
     },
   },
@@ -209,6 +226,7 @@ export const harvestExpandedSectionManifest = {
       'editorial-market': 'editorial-product-showcase',
       meadow: 'harvest-product-showcase',
       hearth: 'harvest-product-showcase',
+      pasture: 'harvest-product-showcase',
       bloom: 'harvest-product-showcase',
     },
   },
@@ -241,6 +259,7 @@ export const harvestExpandedSectionManifest = {
       'editorial-market': 'editorial-category-showcase',
       meadow: 'harvest-category-showcase',
       hearth: 'harvest-category-showcase',
+      pasture: 'harvest-category-showcase',
       bloom: 'harvest-category-showcase',
     },
   },
@@ -271,6 +290,7 @@ export const websiteSectionManifest = {
       { id: 'editorial-market', version: 1 },
       { id: 'meadow', version: 1 },
       { id: 'hearth', version: 1 },
+      { id: 'pasture', version: 1 },
       { id: 'bloom', version: 1 },
     ],
     variants: {
@@ -279,6 +299,7 @@ export const websiteSectionManifest = {
       'editorial-market': ['standard', 'featured', 'framed'],
       meadow: ['standard', 'featured', 'framed'],
       hearth: ['standard', 'featured', 'framed'],
+      pasture: ['standard', 'featured', 'framed'],
       bloom: ['standard', 'featured', 'framed'],
     },
     repeatable: true,
@@ -299,6 +320,7 @@ export const websiteSectionManifest = {
       'editorial-market': 'editorial-text',
       meadow: 'harvest-text',
       hearth: 'harvest-text',
+      pasture: 'harvest-text',
       bloom: 'harvest-text',
     },
   },
@@ -325,6 +347,7 @@ export const websiteSectionManifest = {
       { id: 'editorial-market', version: 1 },
       { id: 'meadow', version: 1 },
       { id: 'hearth', version: 1 },
+      { id: 'pasture', version: 1 },
       { id: 'bloom', version: 1 },
     ],
     variants: {
@@ -333,6 +356,7 @@ export const websiteSectionManifest = {
       'editorial-market': ['standard', 'featured', 'framed'],
       meadow: ['standard', 'featured', 'framed'],
       hearth: ['standard', 'featured', 'framed'],
+      pasture: ['standard', 'featured', 'framed'],
       bloom: ['standard', 'featured', 'framed'],
     },
     repeatable: true,
@@ -364,6 +388,7 @@ export const websiteSectionManifest = {
       'editorial-market': 'editorial-image-with-text',
       meadow: 'harvest-image-with-text',
       hearth: 'harvest-image-with-text',
+      pasture: 'harvest-image-with-text',
       bloom: 'harvest-image-with-text',
     },
   },
@@ -390,6 +415,7 @@ export const websiteSectionManifest = {
       { id: 'editorial-market', version: 1 },
       { id: 'meadow', version: 1 },
       { id: 'hearth', version: 1 },
+      { id: 'pasture', version: 1 },
       { id: 'bloom', version: 1 },
     ],
     variants: {
@@ -398,6 +424,7 @@ export const websiteSectionManifest = {
       'editorial-market': ['standard', 'featured', 'framed'],
       meadow: ['standard', 'featured', 'framed'],
       hearth: ['standard', 'featured', 'framed'],
+      pasture: ['standard', 'featured', 'framed'],
       bloom: ['standard', 'featured', 'framed'],
     },
     repeatable: true,
@@ -421,6 +448,7 @@ export const websiteSectionManifest = {
       'editorial-market': 'editorial-cta-banner',
       meadow: 'harvest-cta-banner',
       hearth: 'harvest-cta-banner',
+      pasture: 'harvest-cta-banner',
       bloom: 'harvest-cta-banner',
     },
   },
@@ -447,6 +475,16 @@ export const websiteSizingLimits = {
   gap: [0, 128],
   padding: [0, 160],
 } as const;
+/** Space above and below a section, in pixels. */
+export const websiteSpaceBlockLimits = [0, 160] as const;
+export function isWebsiteSpaceBlock(value: unknown): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= websiteSpaceBlockLimits[0] &&
+    value <= websiteSpaceBlockLimits[1]
+  );
+}
 export type WebsiteSectionSizing = Partial<
   Record<keyof typeof websiteSizingLimits, number>
 >;
@@ -479,6 +517,7 @@ export type WebsiteTextSection = {
     backgroundType?: 'contained' | 'full';
     background?: 'paper' | 'surface' | 'ink';
     sizing?: WebsiteSectionSizing;
+    spaceBlock?: number;
   };
 };
 export type WebsiteImageWithTextSection = {
@@ -506,6 +545,9 @@ export type WebsiteImageWithTextSection = {
     columnRatio?: '50-50' | '40-60' | '60-40';
     verticalAlignment?: 'top' | 'center' | 'bottom';
     spacing?: 'compact' | 'balanced' | 'spacious';
+    /** Frame of the side image. Ignored when the image is the background. */
+    imageShape?: WebsiteImageShape;
+    spaceBlock?: number;
     background: 'paper' | 'surface' | 'ink';
   };
 };
@@ -526,6 +568,9 @@ export type WebsiteCtaBannerSection = {
     sizing?: WebsiteSectionSizing;
     alignment: 'left' | 'center';
     background: 'paper' | 'surface' | 'ink';
+    /** Explicit button treatment; absent keeps the background-derived default. */
+    buttonStyle?: 'primary' | 'secondary';
+    spaceBlock?: number;
   };
 };
 export type WebsiteSectionImage = {
@@ -538,6 +583,7 @@ type HarvestPresentation = {
   alignment: 'left' | 'center' | 'right';
   background: 'paper' | 'surface' | 'ink';
   spacing: 'compact' | 'balanced' | 'spacious';
+  spaceBlock?: number;
   variant?: never;
   sizing?: never;
 };
@@ -762,7 +808,15 @@ function isExpandedSection(value: Record<string, unknown>): boolean {
     ...(p && typeof p === 'object' && 'backgroundType' in p
       ? ['backgroundType']
       : []),
+    ...(p && typeof p === 'object' && 'spaceBlock' in p ? ['spaceBlock'] : []),
   ];
+  if (
+    p &&
+    typeof p === 'object' &&
+    'spaceBlock' in p &&
+    !isWebsiteSpaceBlock(p.spaceBlock)
+  )
+    return false;
   if (
     p &&
     typeof p === 'object' &&
@@ -989,9 +1043,15 @@ export function isWebsiteSection(value: unknown): value is WebsiteSection {
       ...(value.type === 'image-with-text' &&
       presentation &&
       typeof presentation === 'object'
-        ? ['columnRatio', 'verticalAlignment', 'spacing'].filter(
+        ? ['columnRatio', 'verticalAlignment', 'spacing', 'imageShape'].filter(
             (key) => key in presentation,
           )
+        : []),
+      ...(value.type === 'cta-banner' &&
+      presentation &&
+      typeof presentation === 'object' &&
+      'buttonStyle' in presentation
+        ? ['buttonStyle']
         : []),
       ...(presentation &&
       typeof presentation === 'object' &&
@@ -1002,6 +1062,11 @@ export function isWebsiteSection(value: unknown): value is WebsiteSection {
       typeof presentation === 'object' &&
       'variant' in presentation
         ? ['variant']
+        : []),
+      ...(presentation &&
+      typeof presentation === 'object' &&
+      'spaceBlock' in presentation
+        ? ['spaceBlock']
         : []),
     ]) &&
     definition.alignments.some(
@@ -1015,6 +1080,11 @@ export function isWebsiteSection(value: unknown): value is WebsiteSection {
   )
     return false;
   if ('sizing' in presentation && !isWebsiteSectionSizing(presentation.sizing))
+    return false;
+  if (
+    'spaceBlock' in presentation &&
+    !isWebsiteSpaceBlock(presentation.spaceBlock)
+  )
     return false;
   if (
     'variant' in presentation &&
@@ -1046,7 +1116,20 @@ export function isWebsiteSection(value: unknown): value is WebsiteSection {
       )
     )
       return false;
+    if (
+      'imageShape' in presentation &&
+      !(websiteImageShapes as readonly unknown[]).includes(
+        presentation.imageShape,
+      )
+    )
+      return false;
   }
+  if (
+    value.type === 'cta-banner' &&
+    'buttonStyle' in presentation &&
+    !['primary', 'secondary'].includes(presentation.buttonStyle as string)
+  )
+    return false;
   const content = value.content as Record<string, unknown>;
   const contentDefinition =
     value.type === 'image-with-text'
@@ -1405,6 +1488,7 @@ export const websitePageRules = {
       'editorial-market': ['hero', 'categories', 'products', 'impact'],
       meadow: ['hero', 'markets', 'vendors', 'categories', 'closing'],
       hearth: ['hero', 'markets', 'vendors', 'categories', 'closing'],
+      pasture: ['hero', 'markets', 'vendors', 'categories', 'closing'],
       bloom: ['hero', 'featured', 'about', 'closing'],
     },
     protected: true,

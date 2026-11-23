@@ -26,10 +26,55 @@
   position: sticky;
   top: 0;
   height: 100dvh;
-  overflow: hidden auto;
-  padding: 0 10px 1rem;
+  /* The brand row stays put; only the navigation below it scrolls. */
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 10px;
   border-right: 1px solid var(--shell-line);
+  --shell-scrollbar-thumb: transparent;
+}
+/* Phones hide the sidebar (styles.css) and use the menu instead. */
+@media (min-width: 768px) {
+  .ui-shell .ui-dashboard > .admin-sidebar {
+    display: flex;
+  }
+}
+.ui-shell .ui-dashboard > .admin-sidebar > .ui-sidebar-brand {
+  flex: none;
+}
+/* The scroll area spans the sidebar's full width so its scrollbar sits on the
+   sidebar edge. A thin thumb stays hidden until the sidebar is hovered or
+   holds keyboard focus; the track is never painted, and the reserved space
+   keeps the links from shifting when it appears. */
+.ui-shell .ui-dashboard > .admin-sidebar > nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-content: start;
+  margin: 0 -10px;
+  padding: 0 10px 1rem;
+  overflow: hidden auto;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
+  scrollbar-color: var(--shell-scrollbar-thumb) transparent;
+}
+.ui-shell .ui-dashboard > .admin-sidebar:is(:hover, :focus-within) {
+  --shell-scrollbar-thumb: color-mix(
+    in srgb,
+    var(--brand-muted) 40%,
+    transparent
+  );
+}
+/* Browsers without `scrollbar-color` (Safari) use the WebKit pseudo-elements. */
+.ui-shell .ui-dashboard > .admin-sidebar > nav::-webkit-scrollbar {
+  width: 8px;
+}
+.ui-shell .ui-dashboard > .admin-sidebar > nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ui-shell .ui-dashboard > .admin-sidebar > nav::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--shell-scrollbar-thumb) padding-box;
 }
 .ui-shell .admin-sidebar .ui-sidebar-brand {
   position: relative;
@@ -149,8 +194,8 @@
     grid-template-columns: 64px minmax(0, 1fr);
   }
   .ui-shell .ui-dashboard.sidebar-collapsed > .admin-sidebar {
-    padding: 0 10px 1rem;
-    overflow: hidden auto;
+    padding: 0 10px;
+    overflow: hidden;
     opacity: 1;
     visibility: visible;
   }
@@ -200,6 +245,69 @@
   .ui-shell .admin-sidebar .nav-section-title::before {
     transition: none;
   }
+}
+
+/* Boot skeleton (AdminShellSkeleton): only the skeleton blocks show, laid
+   over the page. The shell's surfaces and borders are not painted (its
+   account colors are not known yet); the blocks keep the real rows'
+   geometry, so the shell fades in with each item where its block was. */
+.admin-shell-skeleton {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.admin-shell-skeleton.ui-shell .ui-dashboard :is(.admin-sidebar, .admin-topbar),
+.admin-shell-skeleton.ui-shell .ui-dashboard .admin-topbar.shell-topbar,
+.admin-shell-skeleton.ui-shell .admin-sidebar .ui-sidebar-brand {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.admin-shell-skeleton.ui-shell .ui-dashboard {
+  background: transparent;
+}
+.admin-shell-skeleton .skeleton {
+  min-height: 0;
+}
+.admin-shell-skeleton .skeleton.admin-shell-skeleton-brand {
+  width: 8.5rem;
+  height: 1rem;
+  border-radius: 999px;
+}
+.admin-shell-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 34px;
+  padding: 0.35rem 0.7rem 0.35rem 13px;
+}
+.admin-shell-skeleton .skeleton.admin-shell-skeleton-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+}
+.admin-shell-skeleton .skeleton.admin-shell-skeleton-label {
+  width: 60%;
+  height: 0.7rem;
+  border-radius: 999px;
+}
+.admin-shell-skeleton .skeleton.admin-shell-skeleton-title {
+  width: 40%;
+  height: 0.55rem;
+  border-radius: 999px;
+}
+.admin-shell-skeleton .skeleton.admin-shell-skeleton-name {
+  width: 9rem;
+  height: 0.85rem;
+  border-radius: 999px;
+}
+.admin-shell-skeleton .skeleton.admin-shell-skeleton-control {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
 }
 
 /* Topbar */

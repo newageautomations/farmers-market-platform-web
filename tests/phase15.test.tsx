@@ -376,3 +376,64 @@ test('new subpages retain their permission boundaries', () => {
   expect(routeAllowed(context, '/market/occurrences/generate')).toBe(false);
   expect(routeAllowed(context, '/market/rentals')).toBe(false);
 });
+test('published applications show their live storefront link in the list', async () => {
+  const live = structuredClone(data);
+  live.storefrontOrigin = 'https://market.example';
+  live.versions![0]!.status = 'PUBLISHED';
+  render(<Applications data={live} run={vi.fn()} canManage />);
+  const panel = screen.getByRole('region', { name: 'Live application link' });
+  expect(
+    within(panel).getByRole('link', { name: /market\.example\/apply\/season/ }),
+  ).toHaveAttribute('href', 'https://market.example/apply/season');
+  expect(
+    screen.getByRole('link', {
+      name: 'Open live Season application (opens in a new tab)',
+    }),
+  ).toHaveAttribute('href', 'https://market.example/apply/season');
+});
+test('drafts and markets without a storefront show no live link', () => {
+  render(<Applications data={structuredClone(data)} run={vi.fn()} canManage />);
+  expect(
+    screen.queryByRole('region', { name: 'Live application link' }),
+  ).toBeNull();
+  expect(screen.queryByRole('link', { name: /^Open live/ })).toBeNull();
+});
+test('publishing ends on the live link instead of leaving the builder', async () => {
+  const user = userEvent.setup();
+  const run = vi.fn(async (command: OperationsCommand) =>
+    command.action === 'PUBLISH_APPLICATION'
+      ? {
+          ...data.versions![0]!,
+          status: 'PUBLISHED',
+          templateSlug: 'season',
+        }
+      : {
+          ...data.versions![0]!,
+          revision: (command.expectedRevision ?? 0) + 1,
+        },
+  );
+  render(
+    <Applications
+      data={{
+        ...structuredClone(data),
+        storefrontOrigin: 'https://market.example',
+      }}
+      run={run}
+      canManage
+      path="/market/applications/1"
+    />,
+  );
+  await user.click(screen.getByRole('button', { name: 'Publish' }));
+  await user.click(
+    within(screen.getByRole('dialog')).getByRole('button', { name: 'Publish' }),
+  );
+  expect(
+    await screen.findByRole('heading', { name: 'Your application is live' }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole('link', { name: /market\.example\/apply\/season/ }),
+  ).toHaveAttribute('href', 'https://market.example/apply/season');
+  expect(run).toHaveBeenCalledWith(
+    expect.objectContaining({ action: 'PUBLISH_APPLICATION' }),
+  );
+});

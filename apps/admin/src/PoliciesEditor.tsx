@@ -1,6 +1,7 @@
 import { WebsiteInspectorContent } from './WebsiteEditorContext';
 import { useEffect, useRef, useState } from 'react';
 import { Button, Checkbox, Dialog, Field, Input, Textarea } from '@market/ui';
+import { WebsiteRailList } from './WebsiteRailList';
 import { disclosureClassName } from '@market/ui/presentation';
 import {
   policiesSchema,
@@ -10,9 +11,23 @@ import {
   type PoliciesConfig,
   type StorefrontEditorSection,
 } from '@market/theme/storefront';
-import { StorefrontReorderControls } from './StorefrontReorderControls';
 
-/** Feature composition: shared disclosures and fields inside the shared Dialog. */
+const policyLabels = {
+  page: 'Policies page',
+  list: 'Policies',
+  noun: 'policy',
+  title: 'Policy',
+  add: 'Add Policy',
+};
+export const termsLabels: typeof policyLabels = {
+  page: 'Terms & Conditions page',
+  list: 'Terms',
+  noun: 'term',
+  title: 'Term',
+  add: 'Add Term',
+};
+
+/** Feature composition: policies are rail items (drag to reorder) edited in the website inspector. */
 export function PoliciesEditor({
   onlyClosing = false,
   hideClosing = false,
@@ -25,7 +40,8 @@ export function PoliciesEditor({
   onChange,
   busy,
   validationError,
-  selectionRequest = 0,
+  labels = policyLabels,
+  starterText,
 }: {
   value: PoliciesConfig;
   selected: StorefrontEditorSection;
@@ -38,45 +54,27 @@ export function PoliciesEditor({
   hideClosing?: boolean;
   busy: boolean;
   validationError?: string;
+  /** Wording for reuse on list pages shaped like Policies, such as Terms & Conditions. */
+  labels?: typeof policyLabels;
+  /** Example text by item id, offered for items that are still blank. */
+  starterText?: Record<string, string>;
+  /** Preview inspection re-requests a selection; selection state lives in the parent. */
   selectionRequest?: number;
 }) {
-  const [managing, setManaging] = useState(
-    selected.startsWith('policy:') && !collapsed,
-  );
-  const [expanded, setExpanded] = useState<string | undefined>(
-    selected.startsWith('policy:') && !collapsed
-      ? selected.slice(7)
-      : undefined,
-  );
   const [deleting, setDeleting] = useState<string>();
   const focusNew = useRef<string | undefined>(undefined);
-  const root = useRef<HTMLFieldSetElement>(null);
-  // Preview inspection selects a policy through the parent's existing section state.
-  // Adjust local disclosure state only when that external selection changes.
-  const [selection, setSelection] = useState({
-    selected,
-    collapsed,
-    selectionRequest,
-  });
-  if (
-    selection.selected !== selected ||
-    selection.collapsed !== collapsed ||
-    selection.selectionRequest !== selectionRequest
-  ) {
-    setSelection({ selected, collapsed, selectionRequest });
-    if (selected.startsWith('policy:') && !collapsed) {
-      setManaging(true);
-      setExpanded(selected.slice(7));
-    }
-  }
+  const selectedPolicy =
+    !collapsed && selected.startsWith('policy:')
+      ? value.policies.find((p) => `policy:${p.id}` === selected)
+      : undefined;
   useEffect(() => {
-    if (focusNew.current && managing) {
-      root.current
-        ?.querySelector<HTMLInputElement>(`#policy-title-${focusNew.current}`)
+    if (focusNew.current && selectedPolicy?.id === focusNew.current) {
+      document
+        .querySelector<HTMLInputElement>(`#policy-title-${focusNew.current}`)
         ?.focus();
       focusNew.current = undefined;
     }
-  }, [value.policies.length, managing, expanded]);
+  }, [selectedPolicy?.id]);
   const patch = (next: Partial<PoliciesConfig>) =>
     onChange({ ...value, ...next });
   const update = (
@@ -88,38 +86,18 @@ export function PoliciesEditor({
         p.id === id ? { ...p, ...next } : p,
       ),
     });
-  const move = (id: string, delta: number) => {
-    const policies = [...value.policies];
-    const index = policies.findIndex((p) => p.id === id);
-    if (index < 0 || index + delta < 0 || index + delta >= policies.length)
-      return;
-    [policies[index], policies[index + delta]] = [
-      policies[index + delta]!,
-      policies[index]!,
-    ];
-    patch({ policies });
-  };
   const validation = policiesSchema.safeParse(value);
+  const problem =
+    validationError ??
+    (!validation.success
+      ? validation.error.issues
+          .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+          .join(' ')
+      : undefined);
+  const listOpen =
+    !collapsed && (selected === 'policies-list' || !!selectedPolicy);
   return (
-    <fieldset
-      ref={root}
-      disabled={busy}
-      className="policies-editor story-editor-list"
-    >
-      {!sectionHero && (
-        <label className="story-page-toggle">
-          <Checkbox
-            id="policies-enabled"
-            role="switch"
-            className="sr-only"
-            aria-label="Enable Policies page"
-            checked={value.enabled}
-            onChange={(e) => patch({ enabled: e.target.checked })}
-          />
-          <span className="story-switch-track" aria-hidden="true" />
-          <span>{value.enabled ? 'Enabled' : 'Disabled'}</span>
-        </label>
-      )}
+    <fieldset disabled={busy} className="policies-editor story-editor-list">
       {(['policies-settings', 'policies-list', 'policies-cta'] as const)
         .filter((id) =>
           onlyClosing
@@ -129,13 +107,21 @@ export function PoliciesEditor({
         .filter((id) => !sectionHero || id !== 'policies-settings')
         .map((id) => {
           const open =
-            !collapsed &&
-            (selected === id ||
-              (id === 'policies-settings' && selected === 'policies-intro'));
+            id === 'policies-list'
+              ? listOpen
+              : !collapsed &&
+                (selected === id ||
+                  (id === 'policies-settings' &&
+                    selected === 'policies-intro'));
           return (
             <details
               key={id}
               className={disclosureClassName('dropdown')}
+              data-expandable={id === 'policies-list' || undefined}
+              data-selected={
+                (id === 'policies-list' ? selected === id && open : open) ||
+                undefined
+              }
               open={open}
             >
               <summary
@@ -149,278 +135,225 @@ export function PoliciesEditor({
               >
                 {
                   {
-                    'policies-settings': 'Policies page',
-                    'policies-list': 'Policies',
+                    'policies-settings': labels.page,
+                    'policies-list': labels.list,
                     'policies-cta': 'Closing invitation',
                   }[id]
                 }
               </summary>
+              {id === 'policies-list' && open && (
+                <WebsiteRailList
+                  items={value.policies}
+                  label={labels.list}
+                  noun={labels.noun}
+                  itemAttribute="data-policy-id"
+                  itemLabel={(policy) =>
+                    (policy.title || `Untitled ${labels.noun}`) +
+                    (policy.visible ? '' : ' (hidden)')
+                  }
+                  selectedId={selectedPolicy?.id}
+                  busy={busy}
+                  onSelect={(policy) => choose(`policy:${policy.id}`)}
+                  onReorder={(policies) => patch({ policies })}
+                  addLabel={labels.add}
+                  addDisabled={value.policies.length >= policyLimit}
+                  onAdd={() => {
+                    const policyId = `policy-${crypto.randomUUID()}`;
+                    focusNew.current = policyId;
+                    patch({
+                      policies: [
+                        ...value.policies,
+                        {
+                          id: policyId,
+                          title: '',
+                          content: '',
+                          visible: true,
+                        },
+                      ],
+                    });
+                    choose(`policy:${policyId}`);
+                  }}
+                />
+              )}
               {open && (
                 <WebsiteInspectorContent>
-                  {id === 'policies-settings' && (
-                    <>
-                      {(['title', 'heading', 'description'] as const)
-                        .filter((key) => !sectionHero || key === 'title')
-                        .map((key) => (
-                          <Field
-                            key={key}
-                            id={`policies-${key}`}
-                            label={
-                              {
-                                title: 'Page title',
-                                heading: 'Introductory heading',
-                                description: 'Introductory description',
-                              }[key]
-                            }
-                          >
-                            {key === 'description' ? (
-                              <Textarea
-                                id={`policies-${key}`}
-                                maxLength={600}
-                                value={value[key]}
-                                onChange={(e) =>
-                                  patch({ [key]: e.target.value })
-                                }
-                              />
-                            ) : (
-                              <Input
-                                id={`policies-${key}`}
-                                maxLength={160}
-                                value={value[key]}
-                                onChange={(e) =>
-                                  patch({ [key]: e.target.value })
-                                }
-                              />
-                            )}
-                          </Field>
-                        ))}
-                    </>
-                  )}
-                  {id === 'policies-list' && (
-                    <Button
-                      variant="secondary"
-                      onClick={() => setManaging(true)}
-                    >
-                      Edit Policies
-                    </Button>
-                  )}
-                  {id === 'policies-cta' && (
-                    <>
-                      {(['heading', 'text', 'label'] as const).map((key) => (
+                  {id === 'policies-settings' &&
+                    (['title', 'heading', 'description'] as const)
+                      .filter((key) => !sectionHero || key === 'title')
+                      .map((key) => (
                         <Field
                           key={key}
-                          id={`policies-cta-${key}`}
+                          id={`policies-${key}`}
                           label={
                             {
-                              heading: 'Invitation heading',
-                              text: 'Invitation text',
-                              label: 'Button label',
+                              title: 'Page title',
+                              heading: 'Introductory heading',
+                              description: 'Introductory description',
                             }[key]
                           }
                         >
-                          <Input
-                            id={`policies-cta-${key}`}
-                            maxLength={
-                              key === 'heading'
-                                ? 160
-                                : key === 'text'
-                                  ? 600
-                                  : 80
-                            }
-                            value={value.cta[key]}
-                            onChange={(e) =>
-                              patch({
-                                cta: { ...value.cta, [key]: e.target.value },
-                              })
-                            }
-                          />
+                          {key === 'description' ? (
+                            <Textarea
+                              id={`policies-${key}`}
+                              maxLength={600}
+                              value={value[key]}
+                              onChange={(e) => patch({ [key]: e.target.value })}
+                            />
+                          ) : (
+                            <Input
+                              id={`policies-${key}`}
+                              maxLength={160}
+                              value={value[key]}
+                              onChange={(e) => patch({ [key]: e.target.value })}
+                            />
+                          )}
                         </Field>
                       ))}
-                      <p>
-                        The invitation links to Contact and appears when that
-                        page is enabled.
-                      </p>
+                  {id === 'policies-list' && !selectedPolicy && (
+                    <p className="website-inspector-empty">
+                      Select a {labels.noun} to edit it.
+                    </p>
+                  )}
+                  {id === 'policies-list' && selectedPolicy && (
+                    <>
+                      {problem && <p role="alert">{problem}</p>}
+                      <label
+                        className="story-page-toggle"
+                        htmlFor={`policy-visible-${selectedPolicy.id}`}
+                      >
+                        <Checkbox
+                          id={`policy-visible-${selectedPolicy.id}`}
+                          role="switch"
+                          className="sr-only"
+                          aria-label={`Show ${labels.noun}`}
+                          checked={selectedPolicy.visible}
+                          onChange={(e) =>
+                            update(selectedPolicy.id, {
+                              visible: e.target.checked,
+                            })
+                          }
+                        />
+                        <span
+                          className="story-switch-track"
+                          aria-hidden="true"
+                        />
+                        <span>Show {labels.noun}</span>
+                      </label>
+                      <Field
+                        id={`policy-title-${selectedPolicy.id}`}
+                        label={`${labels.title} Title`}
+                      >
+                        <Input
+                          id={`policy-title-${selectedPolicy.id}`}
+                          maxLength={policyTitleLimit}
+                          value={selectedPolicy.title}
+                          onChange={(e) =>
+                            update(selectedPolicy.id, { title: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <Field
+                        id={`policy-content-${selectedPolicy.id}`}
+                        label={`${labels.title} Content`}
+                      >
+                        <Textarea
+                          id={`policy-content-${selectedPolicy.id}`}
+                          rows={16}
+                          maxLength={policyContentLimit}
+                          value={selectedPolicy.content}
+                          onChange={(e) =>
+                            update(selectedPolicy.id, {
+                              content: e.target.value,
+                            })
+                          }
+                        />
+                      </Field>
+                      {!selectedPolicy.content.trim() &&
+                        starterText?.[selectedPolicy.id] && (
+                          <Button
+                            variant="secondary"
+                            onClick={() =>
+                              update(selectedPolicy.id, {
+                                content: starterText[selectedPolicy.id]!,
+                              })
+                            }
+                          >
+                            Use example text
+                          </Button>
+                        )}
+                      <div className="ui-actions">
+                        <Button
+                          variant="destructive-outline"
+                          onClick={() => setDeleting(selectedPolicy.id)}
+                        >
+                          Delete {labels.title}
+                        </Button>
+                      </div>
                     </>
                   )}
+                  {id === 'policies-cta' &&
+                    (['heading', 'text', 'label'] as const).map((key) => (
+                      <Field
+                        key={key}
+                        id={`policies-cta-${key}`}
+                        label={
+                          {
+                            heading: 'Invitation heading',
+                            text: 'Invitation text',
+                            label: 'Button label',
+                          }[key]
+                        }
+                      >
+                        <Input
+                          id={`policies-cta-${key}`}
+                          maxLength={
+                            key === 'heading' ? 160 : key === 'text' ? 600 : 80
+                          }
+                          value={value.cta[key]}
+                          onChange={(e) =>
+                            patch({
+                              cta: { ...value.cta, [key]: e.target.value },
+                            })
+                          }
+                        />
+                      </Field>
+                    ))}
                 </WebsiteInspectorContent>
               )}
             </details>
           );
         })}
       <Dialog
-        open={managing}
-        onClose={() => setManaging(false)}
-        title="Manage Policies"
-        size="wide"
+        open={!!deleting}
+        onClose={() => setDeleting(undefined)}
+        title={`Delete this ${labels.noun}?`}
         busy={busy}
-        description="Edits stay in your unsaved storefront when you close this window. Use Save draft, then Publish saved changes in the editor to make them public."
-      >
-        <div className="story-editor-list policies-manager">
-          {(validationError || !validation.success) && (
-            <p role="alert">
-              {validationError ??
-                (!validation.success
-                  ? validation.error.issues
-                      .map(
-                        (issue) => `${issue.path.join('.')}: ${issue.message}`,
-                      )
-                      .join(' ')
-                  : '')}
-            </p>
-          )}
-          <p>
-            Write the policies that apply to your business. Blank or hidden
-            policies do not appear publicly. Each title supports 160 characters
-            and each policy supports 20,000 characters, within the shared
-            storefront size limit.
-          </p>
-          {value.policies.map((policy, index) => {
-            const open = expanded === policy.id;
-            const label = policy.title || 'Untitled policy';
-            return (
-              <div
-                key={policy.id}
-                data-policy-id={policy.id}
-                className="story-editor-row story-editor-movable faq-editor-question"
-              >
-                <StorefrontReorderControls
-                  item="policy"
-                  label={label}
-                  index={index}
-                  count={value.policies.length}
-                  busy={busy}
-                  onMove={(delta) => move(policy.id, delta)}
-                />
-                <details
-                  className={disclosureClassName('dropdown')}
-                  open={open}
-                >
-                  <summary
-                    role="button"
-                    aria-expanded={open}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setExpanded(open ? undefined : policy.id);
-                    }}
-                  >
-                    <span className="faq-editor-question-label" title={label}>
-                      {label}
-                    </span>
-                  </summary>
-                  {open && (
-                    <WebsiteInspectorContent>
-                      <Field
-                        id={`policy-title-${policy.id}`}
-                        label="Policy Title"
-                      >
-                        <Input
-                          id={`policy-title-${policy.id}`}
-                          maxLength={policyTitleLimit}
-                          value={policy.title}
-                          onChange={(e) =>
-                            update(policy.id, { title: e.target.value })
-                          }
-                        />
-                      </Field>
-                      <Field
-                        id={`policy-content-${policy.id}`}
-                        label="Policy Content"
-                      >
-                        <Textarea
-                          id={`policy-content-${policy.id}`}
-                          rows={12}
-                          maxLength={policyContentLimit}
-                          value={policy.content}
-                          onChange={(e) =>
-                            update(policy.id, { content: e.target.value })
-                          }
-                        />
-                      </Field>
-                      <p>
-                        Use internal links such as [Contact Us](/contact).
-                        Supported destinations: /, /products, /about, /find-us,
-                        /contact, /faq and /policies. HTML is displayed as text.
-                      </p>
-                      <Field
-                        id={`policy-visible-${policy.id}`}
-                        label="Show policy"
-                      >
-                        <Checkbox
-                          id={`policy-visible-${policy.id}`}
-                          checked={policy.visible}
-                          onChange={(e) =>
-                            update(policy.id, { visible: e.target.checked })
-                          }
-                        />
-                      </Field>
-                      <div className="ui-actions">
-                        <Button
-                          variant="destructive-outline"
-                          onClick={() => setDeleting(policy.id)}
-                        >
-                          Delete Policy
-                        </Button>
-                      </div>
-                    </WebsiteInspectorContent>
-                  )}
-                </details>
-              </div>
-            );
-          })}
-          <div className="ui-actions">
+        actions={
+          <>
+            <Button variant="tertiary" onClick={() => setDeleting(undefined)}>
+              Cancel
+            </Button>
             <Button
-              variant="secondary"
-              disabled={busy || value.policies.length >= policyLimit}
+              variant="destructive-outline"
               onClick={() => {
-                const id = `policy-${crypto.randomUUID()}`;
-                focusNew.current = id;
-                setExpanded(id);
                 patch({
-                  policies: [
-                    ...value.policies,
-                    { id, title: '', content: '', visible: true },
-                  ],
+                  policies: value.policies.filter((p) => p.id !== deleting),
                 });
+                setDeleting(undefined);
+                choose('policies-list');
               }}
             >
-              Add Policy
+              Delete {labels.title}
             </Button>
-          </div>
-          {value.policies.length >= policyLimit && (
-            <p role="status">Maximum 20 policies. Delete one to add another.</p>
-          )}
-        </div>
-        <Dialog
-          open={!!deleting}
-          onClose={() => setDeleting(undefined)}
-          title="Delete this policy?"
-          busy={busy}
-          actions={
-            <>
-              <Button variant="tertiary" onClick={() => setDeleting(undefined)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive-outline"
-                onClick={() => {
-                  patch({
-                    policies: value.policies.filter((p) => p.id !== deleting),
-                  });
-                  setDeleting(undefined);
-                }}
-              >
-                Delete Policy
-              </Button>
-            </>
-          }
-        >
-          <p>
-            Remove{' '}
-            {value.policies.find((p) => p.id === deleting)?.title ||
-              'Untitled policy'}{' '}
-            from your draft? You can undo this change before saving.
-          </p>
-        </Dialog>
+          </>
+        }
+      >
+        <p>
+          Remove{' '}
+          {value.policies.find((p) => p.id === deleting)?.title ||
+            `Untitled ${labels.noun}`}{' '}
+          from your draft? You can undo this change before saving.
+        </p>
       </Dialog>
     </fieldset>
   );

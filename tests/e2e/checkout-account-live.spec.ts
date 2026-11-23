@@ -93,17 +93,13 @@ async function checkout(page: Page, authenticated = false) {
     .getByRole('button', { name: 'Review order', exact: true })
     .press('Enter');
   await expect(
-    page.getByRole('heading', { name: 'Review', exact: true }),
-  ).toBeVisible();
-  await accessibility(page);
-  await page.getByRole('button', { name: 'Continue to payment' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Payment', exact: true }),
+    page.getByRole('heading', { name: 'Review & Pay', exact: true }),
   ).toBeVisible();
   await accessibility(page);
   await page
     .getByLabel('Payment method', { exact: true })
     .selectOption('dev-test-payment');
+  await page.getByRole('checkbox', { name: /I agree to the Terms/ }).check();
   await page
     .getByRole('button', { name: /^(Place order|Complete purchase)$/ })
     .click();

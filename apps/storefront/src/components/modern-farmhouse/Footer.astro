@@ -1,4 +1,5 @@
 ---
+import VendorTermsLink from '../VendorTermsLink.astro';
 import { vendorCategoryNavigation } from '../../lib/storefront-taxonomy';
 import type { StorefrontContext } from '@market/storefront-core';
 import { contactDetails, contactHref } from '@market/theme/storefront';
@@ -67,7 +68,7 @@ const details = context.appearance?.contact?.enabled
         {links.some((link) => link.href === '/policies') && (
           <a href="/policies">Policies</a>
         )}
-        <span aria-disabled="true">Terms &amp; Conditions</span>
+        <VendorTermsLink context={context} />
       </nav>
     </div>
     <div class="farmhouse-colophon">

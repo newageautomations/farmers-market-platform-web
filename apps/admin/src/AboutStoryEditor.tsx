@@ -110,20 +110,6 @@ export function AboutStoryEditor({
             Add Section
           </Button>
         )}
-        {allowAdd && (
-          <label className="story-page-toggle">
-            <Checkbox
-              id="story-enabled"
-              role="switch"
-              className="sr-only"
-              aria-label="Enable the About page"
-              checked={about.enabled}
-              onChange={(e) => patch({ enabled: e.target.checked })}
-            />
-            <span className="story-switch-track" aria-hidden="true" />
-            <span>{about.enabled ? 'Enabled' : 'Disabled'}</span>
-          </label>
-        )}
       </div>
       {limit && (
         <p role="status">
@@ -219,10 +205,6 @@ export function AboutStoryEditor({
                             />
                           </Field>
                         )}
-                        <p>
-                          The page and navigation link appear after publishing.
-                          Disabling preserves your content.
-                        </p>
                       </>
                     )}
                     {item && (
@@ -338,7 +320,6 @@ export function AboutStoryEditor({
                             <Field
                               id="story-alt"
                               label="Image alternative text"
-                              info="A short description of what the image shows. Screen readers read it aloud, and it can appear if the image cannot load. Describe meaningful details; leave it blank for a purely decorative image."
                             >
                               <Input
                                 id="story-alt"
@@ -488,10 +469,6 @@ export function AboutStoryEditor({
                           <option value="/products">Shop</option>
                           <option value="/">Homepage</option>
                         </SelectField>
-                        <p>
-                          This invitation always stays below your story
-                          sections.
-                        </p>
                       </>
                     )}
                   </WebsiteInspectorContent>

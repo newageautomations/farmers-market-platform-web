@@ -277,7 +277,11 @@ export function CategoryImageField({
                     content: (
                       <div className="stack">
                         {uploadField}
-                        <ReadState {...images} retry={images.refresh} />
+                        <ReadState
+                          skeleton="spinner"
+                          {...images}
+                          retry={images.refresh}
+                        />
                         <div className="image-library-grid">
                           <Button
                             variant="secondary"
@@ -445,7 +449,12 @@ export function CategoryImageField({
             }))}
             disabled={busy || images.loading}
           />
-          <ReadState {...images} retry={images.refresh} />
+          <ReadState
+            skeleton="detail"
+            rows={1}
+            {...images}
+            retry={images.refresh}
+          />
           {uploadField}
           {selected && options.find((i) => i.id === selected)?.preview && (
             <img

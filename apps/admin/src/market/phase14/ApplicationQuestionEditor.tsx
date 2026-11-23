@@ -89,7 +89,14 @@ export function ApplicationQuestionEditor({
         value={q.help}
         onChange={(v) => edit({ help: v })}
       />
-      {choiceTypes.includes(q.type) && (
+      {choiceTypes.includes(q.type) && q.semantic && (
+        <p className="field-help">
+          {q.semantic === 'category'
+            ? `Choices are the platform's ${q.options.length} primary categories, so vendors match the categories shoppers browse.`
+            : `Choices are fixed (${q.options.join(', ')}) so vendors can be compared across markets.`}
+        </p>
+      )}
+      {choiceTypes.includes(q.type) && !q.semantic && (
         <div className="question-options">
           {q.options.map((option, optionIndex) => (
             <div className="option-row" key={optionIndex}>

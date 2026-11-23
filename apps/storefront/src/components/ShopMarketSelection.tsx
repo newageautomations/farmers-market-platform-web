@@ -12,6 +12,7 @@ export function ShopMarketSelection({
   disabled = false,
   onBusyChange,
   buttonLabel = 'Change Market',
+  navigate,
 }: {
   storefrontId: string;
   occurrences: readonly VendorPreorderOccurrence[];
@@ -20,6 +21,9 @@ export function ShopMarketSelection({
   disabled?: boolean;
   onBusyChange?: (busy: boolean) => void;
   buttonLabel?: string;
+  /** Browse-only: open `path?param=<date id>` without changing the cart's
+   * pickup market. Used where a date only filters what the page shows. */
+  navigate?: { path: string; param: string };
 }) {
   const [open, setOpen] = useState(false),
     [pending, setPending] = useState(false),
@@ -28,13 +32,21 @@ export function ShopMarketSelection({
   async function select(value: string) {
     if (
       lock.current ||
-      preview ||
+      (preview && !navigate) ||
       disabled ||
       !occurrences.some((o) => o.id === value)
     )
       return;
     if (value === selectedId) {
       setOpen(false);
+      return;
+    }
+    if (navigate) {
+      lock.current = true;
+      setPending(true);
+      const url = new URL(navigate.path, window.location.href);
+      url.searchParams.set(navigate.param, value);
+      window.location.assign(url.pathname + url.search);
       return;
     }
     lock.current = true;
@@ -72,7 +84,7 @@ export function ShopMarketSelection({
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title="Choose a pickup market"
+        title={navigate ? 'Choose a market date' : 'Choose a pickup market'}
         size="standard"
         className="market-selection-dialog"
         busy={pending}
@@ -81,12 +93,20 @@ export function ShopMarketSelection({
           <MarketPickupCalendar
             occurrences={occurrences}
             selectedId={selectedId}
-            disabled={disabled || pending || preview}
+            disabled={disabled || pending || (preview && !navigate)}
             onSelect={(value) => void select(value)}
           />
         )}
-        {preview && <p>Market selection is disabled in the editor preview.</p>}
-        {pending && <p role="status">Changing your pickup market…</p>}
+        {preview && !navigate && (
+          <p>Market selection is disabled in the editor preview.</p>
+        )}
+        {pending && (
+          <p role="status">
+            {navigate
+              ? 'Opening that market date…'
+              : 'Changing your pickup market…'}
+          </p>
+        )}
         {error && (
           <p className="ui-alert ui-alert-error" role="alert">
             {error} <a href="/cart">Review your cart</a>

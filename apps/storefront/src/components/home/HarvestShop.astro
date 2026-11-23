@@ -1,5 +1,10 @@
 ---
-import type { AppError, PublicCatalog, StorefrontTaxonomy } from '@market/api';
+import type {
+  AppError,
+  MarketOccurrenceVendor,
+  PublicCatalog,
+  StorefrontTaxonomy,
+} from '@market/api';
 import type { StorefrontContext } from '@market/storefront-core';
 import {
   taxonomyNavigation,
@@ -7,7 +12,10 @@ import {
   safeAsset,
   SHOP_PAGE_SIZE,
 } from '@market/storefront-core';
-import { isEditorialMarket } from '@market/theme/storefront';
+import {
+  isEditorialMarket,
+  themePageStructure,
+} from '@market/theme/storefront';
 import {
   cardClassName,
   selectClassName,
@@ -18,7 +26,9 @@ import type { VendorPreorderState } from '../../lib/vendor-preorder';
 import ProductCards from '../ProductCards.astro';
 import { ShopMarketSelection } from '../ShopMarketSelection';
 import VendorPreorderBanner from '../VendorPreorderBanner.astro';
+import MarketShopFilters from '../market/MarketShopFilters.astro';
 import Button from '../ui/Button.astro';
+import NumberedPagination from '../ui/NumberedPagination.astro';
 import '../../styles/vendor-shop.css';
 
 // Shared Harvest composition. Commerce reads and eligibility stay with each route.
@@ -34,13 +44,15 @@ interface Props {
   search: string;
   categories: ReturnType<typeof taxonomyNavigation>;
   taxonomy?: StorefrontTaxonomy;
+  marketVendors?: readonly MarketOccurrenceVendor[];
   query: URLSearchParams;
   preorder: VendorPreorderState;
   preview?: boolean;
   market?: boolean;
+  resultsOnly?: boolean;
   /**
    * Editorial Market market shop: the page renders the editorial shop artwork
-   * and category strip, and the header owns market date selection on desktop.
+   * and the header owns market date selection on desktop.
    */
   editorialChrome?: boolean;
   sellerNames?: Record<string, string>;
@@ -63,6 +75,8 @@ const {
   preorder,
   preview = false,
   market = false,
+  resultsOnly = false,
+  marketVendors = [],
   editorialChrome = false,
   sellerNames,
   productLinks,
@@ -73,6 +87,8 @@ const {
   ],
 } = Astro.props;
 const selected = preorder.selected;
+const Section = resultsOnly ? Fragment : 'section';
+const Results = market ? 'div' : Fragment;
 const sortedCategories = categories
   .map((c) => ({ ...c, label: `${c.pathNames.at(-1) ?? c.name} (${c.count})` }))
   .sort((a, b) =>
@@ -85,6 +101,8 @@ const selectedCategories = query.getAll('category');
 const categoryPreserve = [...query.entries()].filter(
   ([key]) => !['category', 'page'].includes(key),
 );
+const filter = query.get('filter');
+const filtered = market && (query.has('category') || query.has('vendor'));
 const skip = (page - 1) * SHOP_PAGE_SIZE;
 const heading =
   categories.find((c) => c.id === category)?.name ??
@@ -98,7 +116,7 @@ const noneAvailable =
   );
 ---
 
-<section
+<Section
   class="vendor-shop"
   data-composition={market ? 'market' : 'vendor'}
   data-editorial-chrome={editorialChrome ? 'true' : undefined}
@@ -111,10 +129,12 @@ const noneAvailable =
     </>
   ) : (
     <>
-      {storefront?.appearance?.theme === 'modern-farmhouse' && (
+      {!resultsOnly && storefront?.appearance?.theme === 'modern-farmhouse' && (
         <div class="mf-shop-intro">
           <div>
-            <h1>{heading}</h1>
+            <h1 data-market-shop-heading={market ? '' : undefined}>
+              {heading}
+            </h1>
             <p>
               Find your next market favorite. Choose a pickup market to see what
               is available.
@@ -133,6 +153,7 @@ const noneAvailable =
         </div>
       )}
       {storefront &&
+        !resultsOnly &&
         !editorialChrome &&
         isEditorialMarket(storefront.appearance) && (
           <div
@@ -145,19 +166,21 @@ const noneAvailable =
             </p>
           </div>
         )}
-      <div
-        class:list={[
-          'shop-market-slot',
-          editorialChrome && 'shop-market-header-owned',
-        ]}
-      >
-        <VendorPreorderBanner
-          selectionRequired={market}
-          preorder={preorder}
-          storefrontId={storefront?.storefrontId ?? ''}
-          preview={preview}
-        />
-      </div>
+      {!resultsOnly && (
+        <div
+          class:list={[
+            'shop-market-slot',
+            editorialChrome && 'shop-market-header-owned',
+          ]}
+        >
+          <VendorPreorderBanner
+            selectionRequired={market}
+            preorder={preorder}
+            storefrontId={storefront?.storefrontId ?? ''}
+            preview={preview}
+          />
+        </div>
+      )}
       {market && !selected ? (
         <div class="shop-market-slot shop-date-empty empty-state">
           {editorialChrome ? (
@@ -183,7 +206,14 @@ const noneAvailable =
         </div>
       ) : (
         <>
-          {!editorialChrome && (
+          {market && !resultsOnly && (
+            <MarketShopFilters
+              query={query}
+              categories={categories}
+              vendors={marketVendors}
+            />
+          )}
+          {!market && !editorialChrome && (
             <aside
               class={cardClassName({
                 className: 'shop-categories',
@@ -232,130 +262,191 @@ const noneAvailable =
             </aside>
           )}
           <div class="shop-catalog">
-            <form method="get" class="shop-catalog-controls">
-              {selected && (
-                <input type="hidden" name="occurrence" value={selected.id} />
-              )}
-              <div class="shop-catalog-heading">
-                {storefront?.appearance?.theme !== 'modern-farmhouse' &&
-                  !isEditorialMarket(storefront?.appearance) && (
-                    <h1>{heading}</h1>
-                  )}
-                <span>
-                  {total} {total === 1 ? 'product' : 'products'}
-                </span>
-              </div>
-              {query.getAll('category').map((value) => (
-                <input type="hidden" name="category" value={value} />
-              ))}
-              {search && <input type="hidden" name="search" value={search} />}
-              {query.getAll('tag').map((value) => (
-                <input type="hidden" name="tag" value={value} />
-              ))}
-              {query.getAll('vendor').map((value) => (
-                <input type="hidden" name="vendor" value={value} />
-              ))}
-              {query.getAll('facet').map((value) => (
-                <input type="hidden" name="facet" value={value} />
-              ))}
-              <div class="field shop-sort">
-                <label for="shop-sort">Sort by</label>
-                <select id="shop-sort" name="sort" class={selectClassName()}>
-                  {sortOptions.map((option) => (
-                    <option
-                      value={option.value}
-                      selected={sort === option.value}
-                    >
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <Button type="submit" variant="secondary">
-                Apply
-              </Button>
-            </form>
-            {preorder.unavailable && selected && (
-              <p class="ui-alert ui-alert-info" role="status">
-                Availability could not be confirmed. Purchasing is paused until
-                you refresh the page.
-              </p>
-            )}
-            {noneAvailable && (
-              <p class="ui-alert ui-alert-info" role="status">
-                These products cannot currently be preordered for this market.
-                Preordering may be closed or products may be sold out. Choose
-                another market or check back later.
-              </p>
-            )}
-            {visible.length ? (
-              <ProductCards
-                theme={storefront?.appearance?.theme}
-                items={visible}
-                shop
-                storefrontId={storefront?.storefrontId}
-                occurrenceId={selected?.id}
-                availability={preorder.availability}
-                preview={preview}
-                sellerNames={sellerNames}
-                productLinks={productLinks}
-                market={market}
-              />
-            ) : (
-              <div class="empty-state">
-                <h2 class="ui-section-title-consumer">
-                  {!items.length
-                    ? 'No products yet'
-                    : 'No products in this view'}
-                </h2>
-                <p>
-                  {!items.length
-                    ? 'Products will appear here when they are available. Please check back soon.'
-                    : 'Choose All Products or return to the first page.'}
-                </p>
-                {!!items.length && (
-                  <Button
-                    href={link({ category: '', page: 1 })}
-                    variant="secondary"
+            {!resultsOnly && (
+              <form
+                method="get"
+                class="shop-catalog-controls"
+                data-market-shop-sort={market ? '' : undefined}
+              >
+                {market && filter && (
+                  <input type="hidden" name="filter" value={filter} />
+                )}
+                {selected && (
+                  <input type="hidden" name="occurrence" value={selected.id} />
+                )}
+                <div class="shop-catalog-heading">
+                  {storefront?.appearance?.theme !== 'modern-farmhouse' &&
+                    !isEditorialMarket(storefront?.appearance) && (
+                      <h1 data-market-shop-heading={market ? '' : undefined}>
+                        {heading}
+                      </h1>
+                    )}
+                  <span
+                    data-market-shop-count={market ? '' : undefined}
+                    tabindex={market ? -1 : undefined}
                   >
-                    All Products
+                    {total} {total === 1 ? 'product' : 'products'}
+                  </span>
+                </div>
+                {query.getAll('category').map((value) => (
+                  <input type="hidden" name="category" value={value} />
+                ))}
+                {search && <input type="hidden" name="search" value={search} />}
+                {query.getAll('tag').map((value) => (
+                  <input type="hidden" name="tag" value={value} />
+                ))}
+                {query.getAll('vendor').map((value) => (
+                  <input type="hidden" name="vendor" value={value} />
+                ))}
+                {query.getAll('facet').map((value) => (
+                  <input type="hidden" name="facet" value={value} />
+                ))}
+                <div class="field shop-sort">
+                  <label for="shop-sort">Sort by</label>
+                  <select id="shop-sort" name="sort" class={selectClassName()}>
+                    {sortOptions.map((option) => (
+                      <option
+                        value={option.value}
+                        selected={sort === option.value}
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {market ? (
+                  <noscript>
+                    <Button type="submit" variant="secondary">
+                      Apply sort
+                    </Button>
+                  </noscript>
+                ) : (
+                  <Button type="submit" variant="secondary">
+                    Apply
                   </Button>
                 )}
-              </div>
+              </form>
             )}
-            {total > SHOP_PAGE_SIZE && (
-              <nav class="ui-pagination pagination" aria-label="Shop pages">
-                {page > 1 && (
-                  <a
-                    class={buttonClassName({ variant: 'secondary' })}
-                    href={link({ page: page - 1 })}
-                  >
-                    Previous page
-                  </a>
-                )}
-                <span>
-                  Page {page} · {visible.length ? skip + 1 : 0} to{' '}
-                  {visible.length ? skip + visible.length : 0} of {total}{' '}
-                  products
-                </span>
-                {skip + SHOP_PAGE_SIZE < total && (
-                  <a
-                    class={buttonClassName({ variant: 'secondary' })}
-                    href={link({ page: page + 1 })}
-                  >
-                    Next page
-                  </a>
-                )}
-              </nav>
+            {market && !resultsOnly && (
+              <p data-market-shop-status role="status" class="sr-only" />
             )}
+            <Results
+              data-market-shop-results
+              data-heading={heading}
+              data-count={`${total} ${total === 1 ? 'product' : 'products'}`}
+            >
+              {preorder.unavailable && selected && (
+                <p class="ui-alert ui-alert-info" role="status">
+                  Availability could not be confirmed. Purchasing is paused
+                  until you refresh the page.
+                </p>
+              )}
+              {noneAvailable && (
+                <p class="ui-alert ui-alert-info" role="status">
+                  These products cannot currently be preordered for this market.
+                  Preordering may be closed or products may be sold out. Choose
+                  another market or check back later.
+                </p>
+              )}
+              {visible.length ? (
+                <ProductCards
+                  theme={storefront?.appearance?.theme}
+                  items={visible}
+                  shop
+                  storefrontId={storefront?.storefrontId}
+                  occurrenceId={selected?.id}
+                  availability={preorder.availability}
+                  preview={preview}
+                  sellerNames={sellerNames}
+                  productLinks={productLinks}
+                  market={market}
+                />
+              ) : (
+                <div class="empty-state">
+                  <h2 class="ui-section-title-consumer">
+                    {filtered
+                      ? 'No products match these filters'
+                      : !items.length
+                        ? 'No products yet'
+                        : 'No products in this view'}
+                  </h2>
+                  <p>
+                    {filtered
+                      ? 'Change your category or vendor selections to see more products.'
+                      : !items.length
+                        ? 'Products will appear here when they are available. Please check back soon.'
+                        : 'Choose All Products or return to the first page.'}
+                  </p>
+                  {!!items.length && (
+                    <Button
+                      href={link({ category: '', page: 1 })}
+                      variant="secondary"
+                    >
+                      All Products
+                    </Button>
+                  )}
+                </div>
+              )}
+              {total > SHOP_PAGE_SIZE &&
+                themePageStructure(storefront?.appearance?.theme)
+                  .shopPagination === 'numbered' && (
+                  <NumberedPagination
+                    page={page}
+                    pageCount={Math.ceil(total / SHOP_PAGE_SIZE)}
+                    href={(target) => link({ page: target })}
+                    label="Shop pages"
+                    pageAttribute={market ? 'data-market-shop-page' : undefined}
+                  />
+                )}
+              {total > SHOP_PAGE_SIZE &&
+                themePageStructure(storefront?.appearance?.theme)
+                  .shopPagination !== 'numbered' && (
+                  <nav class="ui-pagination pagination" aria-label="Shop pages">
+                    {page > 1 && (
+                      <a
+                        class={buttonClassName({ variant: 'secondary' })}
+                        href={link({ page: page - 1 })}
+                        data-market-shop-page={
+                          market ? String(page - 1) : undefined
+                        }
+                      >
+                        Previous page
+                      </a>
+                    )}
+                    <span>
+                      Page {page} · {visible.length ? skip + 1 : 0} to{' '}
+                      {visible.length ? skip + visible.length : 0} of {total}{' '}
+                      products
+                    </span>
+                    {skip + SHOP_PAGE_SIZE < total && (
+                      <a
+                        class={buttonClassName({ variant: 'secondary' })}
+                        href={link({ page: page + 1 })}
+                        data-market-shop-page={
+                          market ? String(page + 1) : undefined
+                        }
+                      >
+                        Next page
+                      </a>
+                    )}
+                  </nav>
+                )}
+            </Results>
           </div>
         </>
       )}
     </>
   )}
-</section>
+</Section>
 
 <script>
+  import { installMarketShopFilters } from '../market/shop-filters';
+
+  for (const shop of document.querySelectorAll<HTMLElement>(
+    '.vendor-shop[data-composition="market"]',
+  ))
+    installMarketShopFilters(shop);
+
   document.addEventListener('change', (event) => {
     const input = event.target;
     if (!(input instanceof HTMLInputElement) || input.type !== 'checkbox')

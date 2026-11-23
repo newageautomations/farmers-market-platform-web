@@ -1,6 +1,9 @@
 ---
 import type { StorefrontContext } from '@market/storefront-core';
-import type { WebsiteImageGallerySection } from '@market/theme/storefront';
+import {
+  websiteSectionSpaceStyle,
+  type WebsiteImageGallerySection,
+} from '@market/theme/storefront';
 import { safeAsset } from '@market/storefront-core';
 import CarouselControls from './CarouselControls.astro';
 import '../../styles/harvest-sections.css';
@@ -32,6 +35,7 @@ const prefix =
   data-spacing={p.spacing}
   data-alignment={p.alignment}
   data-visible-images={p.visibleImages ?? 3}
+  style={websiteSectionSpaceStyle(section) || undefined}
 >
   {(c.heading || c.body) && (
     <header class="harvest-library-heading">

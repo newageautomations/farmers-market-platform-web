@@ -151,7 +151,7 @@ export function MarketSettings({
   const edit = mayMarketCommand(service.context, 'ManageOwnMarketSchedule');
   return (
     <>
-      <ReadState {...state} retry={state.refresh} />
+      <ReadState skeleton="detail" {...state} retry={state.refresh} />
       {market && (
         <>
           <Card

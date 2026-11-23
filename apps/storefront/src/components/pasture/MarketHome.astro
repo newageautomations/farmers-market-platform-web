@@ -1,0 +1,277 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { safeAsset, taxonomyNavigation } from '@market/storefront-core';
+import {
+  harvestHomepageTarget,
+  marketOriginalSections,
+  marketText,
+} from '@market/theme/storefront';
+import type {
+  AppError,
+  MarketCatalog,
+  MarketOccurrenceVendor,
+  PublicMarketOccurrence,
+} from '@market/api';
+import { ErrorState } from '@market/ui';
+import EmptyState from '../ui/EmptyState.astro';
+import Button from '../ui/Button.astro';
+import FarmstandIcon from '../ui/FarmstandIcon.astro';
+import WebsiteSections from '../WebsiteSections.astro';
+import MarketDateList from '../market/MarketDateList.astro';
+import MarketVendorCards from '../market/MarketVendorCards.astro';
+import { marketDateParts, marketPageAvailable } from '../../lib/market-website';
+import Art from './Art.astro';
+import Hero from './Hero.astro';
+import { pastureCategoryArt } from './art';
+import '../../styles/harvest-sections.css';
+import '../../styles/market-website.css';
+
+/**
+ * A market's Pasture homepage. It keeps the market Harvest homepage order,
+ * data, links and editor identities (MarketPublicHome) in Pasture's
+ * presentation. Section headings stand alone, without supporting text.
+ */
+interface Props {
+  context: StorefrontContext;
+  occurrences: readonly PublicMarketOccurrence[];
+  catalog?: MarketCatalog;
+  vendors?: readonly MarketOccurrenceVendor[];
+  error?: AppError;
+}
+const { context, occurrences, catalog, vendors, error } = Astro.props;
+const appearance = context.appearance;
+const preview = !!Astro.locals.editorPreview;
+const composition =
+  appearance?.harvestComposition ??
+  marketOriginalSections.map((id) => ({ id }));
+const next = occurrences[0];
+const nextParts = next ? marketDateParts(next) : undefined;
+const datesPage = marketPageAvailable(appearance, 'market-dates', preview);
+const vendorsPage = marketPageAvailable(appearance, 'vendors', preview);
+const datesHref = datesPage
+  ? '/market-dates'
+  : next
+    ? `/shop?occurrence=${next.id}`
+    : '#markets';
+const shownVendors = (
+  vendors ??
+  catalog?.vendors.map((vendor) => ({
+    vendorId: vendor.vendorId,
+    name: vendor.vendorName,
+    image: null,
+    storefrontUrl: null,
+    offeringCount: vendor.count,
+  })) ??
+  []
+).slice(0, 8);
+const categories = catalog?.taxonomy
+  ? taxonomyNavigation(catalog.taxonomy, appearance?.categoryPresentation)
+  : [];
+---
+
+<div class="pw-home" data-composition="market" data-template="pasture">
+  {composition.map((entry) =>
+    'type' in entry ? (
+      <WebsiteSections
+        context={context}
+        sections={[entry]}
+        target={harvestHomepageTarget}
+        prefix="harvest"
+      />
+    ) : entry.id === 'hero' ? (
+      <Hero
+        context={context}
+        href={appearance?.market?.heroPrimaryDestination ?? datesHref}
+        secondaryHref={
+          appearance?.market?.heroSecondaryDestination ??
+          (vendorsPage ? '/vendors' : '#vendors')
+        }
+      >
+        {next && nextParts && (
+          <a
+            slot="details"
+            class="pw-next"
+            href={`/shop?occurrence=${next.id}`}
+          >
+            <span class="pw-next-date" aria-hidden="true">
+              <span>{nextParts.month}</span>
+              <strong>{nextParts.day}</strong>
+            </span>
+            <span class="pw-next-copy">
+              <span class="pw-next-label">Next market</span>
+              <strong>
+                {nextParts.weekday} · {nextParts.hours}
+              </strong>
+              {next.venue && <span>{next.venue}</span>}
+            </span>
+            <span class="pw-next-go">
+              <FarmstandIcon name="arrow-right" />
+            </span>
+          </a>
+        )}
+      </Hero>
+    ) : entry.id === 'markets' ? (
+      <section
+        id="markets"
+        class="pw-section"
+        data-editor-section="markets"
+        aria-labelledby="markets-title"
+      >
+        <header class="pw-section-head">
+          <Art name="sprout" class="pw-section-art" />
+          <h2 id="markets-title" data-market-text="marketsHeading">
+            {marketText(appearance, 'marketsHeading')}
+          </h2>
+          <span class="pw-rule" aria-hidden="true"></span>
+          {datesPage && (
+            <a class="pw-more" href="/market-dates">
+              <span data-market-text="marketsLinkLabel">
+                {marketText(appearance, 'marketsLinkLabel')}
+              </span>
+              <FarmstandIcon name="arrow-right" />
+            </a>
+          )}
+        </header>
+        {error ? (
+          <ErrorState error={error} />
+        ) : !occurrences.length ? (
+          <EmptyState title="Your next visit is in the making" level={3}>
+            <p>
+              Upcoming market dates will appear here when they are announced.
+            </p>
+          </EmptyState>
+        ) : (
+          <MarketDateList
+            occurrences={occurrences}
+            cardTheme={appearance?.market?.marketsCardTheme}
+          />
+        )}
+      </section>
+    ) : entry.id === 'vendors' ? (
+      <section
+        id="vendors"
+        class="pw-section"
+        data-editor-section="vendors"
+        aria-labelledby="vendors-title"
+      >
+        <header class="pw-section-head">
+          <Art name="basket" class="pw-section-art" />
+          <h2 id="vendors-title" data-market-text="vendorsHeading">
+            {marketText(appearance, 'vendorsHeading')}
+          </h2>
+          <span class="pw-rule" aria-hidden="true"></span>
+          {vendorsPage && (
+            <a class="pw-more" href="/vendors">
+              <span data-market-text="vendorsLinkLabel">
+                {marketText(appearance, 'vendorsLinkLabel')}
+              </span>
+              <FarmstandIcon name="arrow-right" />
+            </a>
+          )}
+        </header>
+        {next && shownVendors.length ? (
+          <MarketVendorCards
+            vendors={shownVendors}
+            occurrenceId={next.id}
+            cardTheme={appearance?.market?.vendorsCardTheme}
+          />
+        ) : (
+          <EmptyState title="Meet us at the next market" level={3}>
+            <p>
+              Participating vendors will appear here as the next market date
+              takes shape.
+            </p>
+          </EmptyState>
+        )}
+      </section>
+    ) : entry.id === 'categories' ? (
+      (categories.length > 0 || preview) && (
+        <section
+          class="pw-section pw-categories-section"
+          data-editor-section="categories"
+          aria-labelledby="categories-title"
+        >
+          <header class="pw-section-head">
+            <Art name="lettuce" class="pw-section-art" />
+            <h2 id="categories-title" data-market-text="categoriesHeading">
+              {marketText(appearance, 'categoriesHeading')}
+            </h2>
+            <span class="pw-rule" aria-hidden="true"></span>
+            {next && (
+              <a class="pw-more" href={`/shop?occurrence=${next.id}`}>
+                <span>Shop everything</span>
+                <FarmstandIcon name="arrow-right" />
+              </a>
+            )}
+          </header>
+          {next && categories.length ? (
+            <nav
+              class="pw-categories"
+              aria-label="Categories for the next market date"
+            >
+              {categories.slice(0, 8).map((category, index) => {
+                const photo = safeAsset(category.image);
+                return (
+                  <a
+                    class="pw-category"
+                    href={`/shop?occurrence=${next.id}&category=${encodeURIComponent(category.id)}`}
+                  >
+                    <span class="pw-category-art">
+                      {photo ? (
+                        <img
+                          src={photo}
+                          alt=""
+                          width="320"
+                          height="320"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <Art name={pastureCategoryArt(category.name, index)} />
+                      )}
+                    </span>
+                    <span class="pw-category-name">{category.name}</span>
+                  </a>
+                );
+              })}
+            </nav>
+          ) : (
+            <p>
+              Categories appear when vendors list offerings for your next market
+              date.
+            </p>
+          )}
+        </section>
+      )
+    ) : (
+      <section
+        class="pw-closing pw-bleed"
+        data-editor-section="closing"
+        aria-labelledby="market-cta-title"
+      >
+        <div class="pw-closing-inner">
+          <div class="pw-closing-copy">
+            <h2
+              id="market-cta-title"
+              style="white-space:pre-line"
+              data-market-text="closingHeading"
+            >
+              {marketText(appearance, 'closingHeading')}
+            </h2>
+            <Button href={datesHref} class="pw-button-arrow">
+              <span data-market-text="closingLabel">
+                {marketText(appearance, 'closingLabel')}
+              </span>
+              <FarmstandIcon name="arrow-right" />
+            </Button>
+          </div>
+          <div class="pw-closing-art" aria-hidden="true">
+            <Art name="carrot" />
+            <Art name="basket" />
+            <Art name="pepper" />
+          </div>
+        </div>
+      </section>
+    ),
+  )}
+</div>

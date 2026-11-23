@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { MarketMap, Card, Alert, SectionHeader } from '@market/ui';
+import { cardClassName } from '@market/ui/presentation';
+import { safeAsset } from '@market/storefront-core/catalog';
 import {
   marketDayRemaining,
+  type MarketOccurrenceVendor,
   type MarketDayOccurrence,
   type MarketDayPersonal,
   type MarketDayPublicState,
   type PublicOccurrenceMap,
 } from '@market/api';
 import { pickupStatus } from '../../lib/customer-presentation';
+import { boothCategoryLabel, boothVendor } from '../../lib/market-day-booths';
 
 /** Only follows participate in map overlays. Orders never enter this function. */
 export function followedBoothOverlays(
@@ -24,6 +28,62 @@ export function followedBoothOverlays(
       .map((space) => [space.elementId, 'Following']),
   );
 }
+/**
+ * The booth card shown when a shopper points at a booth on the map, built
+ * from the vendor-card classes so it matches the "Vendors today" cards: the
+ * vendor's picture, the booth, the vendor, their main category and a link to
+ * their storefront.
+ */
+function BoothVendorCard({
+  space,
+  vendor,
+}: {
+  space: PublicOccurrenceMap['spaces'][number];
+  vendor?: MarketOccurrenceVendor;
+}) {
+  const name = vendor?.name ?? space.vendor?.businessName;
+  const image = safeAsset(vendor?.image ?? undefined);
+  const category = boothCategoryLabel(space.vendor?.category);
+  return (
+    <div
+      className={cardClassName({
+        spacing: 'contained',
+        className: 'market-vendor-card market-day-booth-card',
+      })}
+    >
+      {/* Booth name in the top corner; the picture sits beside the name and category. */}
+      <p className="market-day-booth-name">{space.label}</p>
+      <div className="market-day-booth-vendor">
+        {name &&
+          (image ? (
+            <img
+              className="market-vendor-image"
+              src={image}
+              alt=""
+              width="56"
+              height="56"
+            />
+          ) : (
+            <span className="harvest-vendor-symbol" aria-hidden="true">
+              {name.trim()[0]?.toUpperCase() ?? '•'}
+            </span>
+          ))}
+        <div className="market-day-booth-text">
+          {/* Plain text: "Visit storefront" below is the card's only link. */}
+          <h3>{name ?? 'Open booth'}</h3>
+          {category && <p className="market-vendor-meta">{category}</p>}
+        </div>
+      </div>
+      {name && vendor?.storefrontUrl && (
+        <div className="market-vendor-actions">
+          <a className="harvest-text-link" href={vendor.storefrontUrl}>
+            Visit storefront <span aria-hidden="true">&#8599;</span>
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
 const signature = (state: MarketDayPublicState) =>
   state.occurrences.map((o) => `${o.id}:${o.startsAt}:${o.endsAt}`).join('|');
 
@@ -32,10 +92,13 @@ export function MarketDayLive({
   state,
   occurrence,
   map,
+  boothVendors,
 }: {
   state: MarketDayPublicState;
   occurrence?: MarketDayOccurrence;
   map?: PublicOccurrenceMap | null;
+  /** Themes that show vendor cards on the map pass today's vendors. */
+  boothVendors?: readonly MarketOccurrenceVendor[];
 }) {
   const [clock, setClock] = useState(() => ({
     serverNow: state.serverNow,
@@ -44,6 +107,44 @@ export function MarketDayLive({
   }));
   const [personal, setPersonal] = useState<MarketDayPersonal>();
   const [unavailable, setUnavailable] = useState(false);
+  // "Find their booth" links on the vendor cards (data-market-day-booth)
+  // scroll to the map and select that booth.
+  const [locateId, setLocateId] = useState<string>();
+  // Done once the map has shown the booth, so a remounted map (sign-in
+  // state changes its key) does not repeat it.
+  const clearLocate = useCallback(() => setLocateId(undefined), []);
+  useEffect(() => {
+    const find = (event: MouseEvent) => {
+      const link =
+        event.target instanceof Element
+          ? event.target.closest<HTMLElement>('[data-market-day-booth]')
+          : null;
+      const id = link?.dataset.marketDayBooth;
+      if (!id || !map?.spaces.some((s) => s.elementId === id)) return;
+      event.preventDefault();
+      document.getElementById('market-day-map')?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'auto'
+          : 'smooth',
+        block: 'start',
+      });
+      // Clearing first lets the same booth be chosen again.
+      setLocateId(undefined);
+      requestAnimationFrame(() => setLocateId(id));
+    };
+    document.addEventListener('click', find);
+    return () => document.removeEventListener('click', find);
+  }, [map]);
+  // The vendors page's booth links arrive as `?booth=<elementId>`.
+  useEffect(() => {
+    const id = new URLSearchParams(location.search).get('booth');
+    if (!id || !map?.spaces.some((s) => s.elementId === id)) return;
+    document
+      .getElementById('market-day-map')
+      ?.scrollIntoView({ block: 'start' });
+    const frame = requestAnimationFrame(() => setLocateId(id));
+    return () => cancelAnimationFrame(frame);
+  }, [map]);
   useEffect(() => {
     let epoch = 0,
       active = true,
@@ -211,6 +312,18 @@ export function MarketDayLive({
               overlays={overlays}
               highlightedIds={Object.keys(overlays)}
               showBoothList={false}
+              locateId={locateId}
+              onLocated={clearLocate}
+              renderHoverCard={
+                boothVendors
+                  ? (space) => (
+                      <BoothVendorCard
+                        space={space}
+                        vendor={boothVendor(space, boothVendors)}
+                      />
+                    )
+                  : undefined
+              }
             />
           </>
         ) : (

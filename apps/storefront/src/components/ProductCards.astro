@@ -7,7 +7,11 @@ import Button from './ui/Button.astro';
 import HarvestArtwork from './home/HarvestArtwork.astro';
 import MeadowArt from './meadow/Art.astro';
 import HearthArt from './hearth/Art.astro';
-import { usesHarvestContract } from '@market/theme/storefront';
+import PastureArt from './pasture/Art.astro';
+import {
+  themePageStructure,
+  usesHarvestContract,
+} from '@market/theme/storefront';
 import {
   safeAsset,
   plainDescription,
@@ -48,6 +52,9 @@ const {
 } = Astro.props;
 // Meadow and Hearth share the Harvest product card structure with their own placeholder art.
 const harvestCards = usesHarvestContract(theme);
+// Some themes let an enabled Add to cart speak for itself: the availability
+// line appears only when the product can't be added.
+const availabilityNote = themePageStructure(theme).shopAvailabilityNote;
 const productLink = (slug: string) =>
   `/products/${encodeURIComponent(slug)}${occurrenceId && !preview ? `?occurrence=${encodeURIComponent(occurrenceId)}` : ''}`;
 ---
@@ -115,6 +122,8 @@ const productLink = (slug: string) =>
                   <MeadowArt name="basket" />
                 ) : theme === 'hearth' && (featured || shop) ? (
                   <HearthArt name="basket" />
+                ) : theme === 'pasture' && (featured || shop) ? (
+                  <PastureArt name="basket" />
                 ) : (theme === 'harvest' || theme === 'bloom') &&
                   (featured || shop) ? (
                   <HarvestArtwork />
@@ -145,9 +154,11 @@ const productLink = (slug: string) =>
         )}
         {shop && (
           <>
-            <p class="shop-availability">
-              {!occurrenceId ? 'No upcoming pickup market' : status.reason}
-            </p>
+            {(availabilityNote || !status.available || !occurrenceId) && (
+              <p class="shop-availability">
+                {!occurrenceId ? 'No upcoming pickup market' : status.reason}
+              </p>
+            )}
             {status.available && occurrenceId && !preview ? (
               status.variantId && storefrontId ? (
                 <FeaturedAdd

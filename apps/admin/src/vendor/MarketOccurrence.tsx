@@ -82,6 +82,7 @@ export function MarketOccurrencePage({
         Back to {detail?.state.membership.market.name ?? 'market'}
       </FarmstandLink>
       <ReadState
+        skeleton="detail"
         loading={!detail && query.loading}
         error={query.error}
         retry={query.refresh}

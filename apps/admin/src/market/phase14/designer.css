@@ -22,6 +22,19 @@
 .layout-library .layout-card-preview {
   background: var(--markets-soft);
 }
+.layout-library .layout-card-title {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+  min-width: 0;
+}
+.layout-library .layout-card-star {
+  flex: none;
+  display: inline-flex;
+}
+.layout-library .layout-card-star.is-favorite {
+  color: var(--brand-accent);
+}
 
 /*
  * Layout editor (TAB-02 retained specialist).
@@ -491,7 +504,8 @@
   gap: 0.3rem;
 }
 .designer-palette-field .field-title label,
-.designer-drawer .ops-field .field-title label {
+.designer-drawer .ops-field .field-title label,
+.designer-drawer .ui-search-select > label {
   font-size: 0.78rem;
   font-weight: 500;
   color: var(--designer-ink-muted);

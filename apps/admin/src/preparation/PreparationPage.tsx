@@ -262,6 +262,7 @@ export function PreparationPage({
         </Alert>
       )}
       <ReadState
+        skeleton="detail"
         loading={query.loading && !data}
         error={query.error}
         retry={query.refresh}

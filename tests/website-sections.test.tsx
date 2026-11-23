@@ -2519,7 +2519,15 @@ it('shows page enablement above Theme settings and removes page metadata dropdow
     fireEvent.change(screen.getByLabelText('Preview page'), {
       target: { value: page },
     });
-    const toggle = screen.getByRole('switch', { name: 'Enable page' });
+    const toggle = screen.getByRole('switch', {
+      name: {
+        about: 'Enable the About page',
+        contact: 'Enable Contact page',
+        find: 'Enable Find Us page',
+        faq: 'Enable FAQ page',
+        policies: 'Enable Policies page',
+      }[page],
+    });
     const theme = screen.getByRole('button', { name: 'Theme settings' });
     expect(
       toggle.compareDocumentPosition(theme) & Node.DOCUMENT_POSITION_FOLLOWING,

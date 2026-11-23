@@ -15,6 +15,7 @@ import {
   Input,
   SelectField,
   Spinner,
+  LoadingSkeleton,
 } from '@market/ui';
 import type { VendorService } from './service';
 import { RouteLink } from './common';
@@ -210,7 +211,10 @@ export function SquarePaymentIntegration({
       setBusy(false);
     }
   }
-  if (!data && !error) return <Spinner label="Loading payment integrations" />;
+  if (!data && !error)
+    return (
+      <LoadingSkeleton variant="detail" label="Loading payment integrations" />
+    );
   const connected = data?.connection?.status === 'CONNECTED';
   return (
     <div className="pos-payment-sections square-integration">

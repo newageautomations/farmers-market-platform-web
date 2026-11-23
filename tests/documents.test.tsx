@@ -677,3 +677,18 @@ describe('Document API transport', () => {
     expect(failure).toHaveBeenCalledOnce();
   });
 });
+
+it('does not offer "does not expire" when the request needs an expiration date', async () => {
+  const { MetadataFields } = await import('@market/ui/documents');
+  const { render: draw, screen: view } = await import('@testing-library/react');
+  draw(
+    <form>
+      <MetadataFields categories={['Liability Insurance']} expirationRequired />
+    </form>,
+  );
+  expect(view.queryByLabelText('This document does not expire')).toBeNull();
+  expect(view.getByLabelText('Expiration date')).toBeRequired();
+  expect(
+    view.getByText("This request needs the document's expiration date."),
+  ).toBeInTheDocument();
+});

@@ -5,18 +5,152 @@ import {
   validateEnvironment,
   cspDirectives,
   responseSecurityHeaders,
+  deploymentEnvironment,
+  assertFrontendBuild,
+  frontendBuildSettings,
+  blocksIndexing,
+  noIndexHeader,
+  restrictiveRobots,
+  storefrontRobotsMeta,
 } from '@market/config';
 import { vi } from 'vitest';
+import { GET as robots } from '../apps/storefront/src/pages/robots.txt';
 const production = {
   APP_ENV: 'production',
   NODE_ENV: 'production',
-  SHOP_API_URL: 'https://api.platform.localhost/shop-api',
-  PUBLIC_ADMIN_API_URL: 'https://api.platform.localhost/admin-api',
-  ADMIN_ORIGIN: 'https://admin.platform.localhost',
-  PLATFORM_ACCOUNT_ORIGIN: 'https://auth.platform.localhost',
+  DEPLOYMENT_ENV: 'production',
+  SHOP_API_URL: 'https://api.example.com/shop-api',
+  PUBLIC_ADMIN_API_URL: 'https://api.example.com/admin-api',
+  ADMIN_ORIGIN: 'https://admin.example.com',
+  PLATFORM_ACCOUNT_ORIGIN: 'https://auth.example.com',
+  ASSET_URL_PREFIX: 'https://api.example.com/assets/',
   PLATFORM_ACCOUNT_BRIDGE_KEY: 'Z7cXq4uR8eA6fM9sT2wB5nK3vH1dP0yL',
   FRONTEND_FIXTURE_MODE: 'false',
 };
+const staging = { ...production, DEPLOYMENT_ENV: 'staging' };
+
+describe('deployment configuration', () => {
+  it('keeps local defaults and requires an explicit, compatible hardened identity', () => {
+    for (const [input, expected] of [
+      [{ APP_ENV: 'dev' }, 'development'],
+      [{ APP_ENV: 'test', NODE_ENV: 'test' }, 'test'],
+      [production, 'production'],
+      [staging, 'staging'],
+    ] as const)
+      expect(deploymentEnvironment(input).deployment).toBe(expected);
+
+    for (const patch of [
+      { DEPLOYMENT_ENV: undefined },
+      { DEPLOYMENT_ENV: 'unrecognized' },
+      { DEPLOYMENT_ENV: 'development' },
+      { APP_ENV: undefined },
+      { APP_ENV: 'staging' },
+      { APP_ENV: 'dev' },
+      { APP_ENV: 'test', NODE_ENV: 'test' },
+      { NODE_ENV: undefined },
+      { NODE_ENV: 'development' },
+    ])
+      expect(() =>
+        validateEnvironment({ ...staging, ...patch }, 'production'),
+      ).toThrow();
+  });
+
+  it('validates staged public hosts, secret boundaries, and deferred access', () => {
+    expect(validateEnvironment(staging, 'production').production).toBe(true);
+    const marker = 'private-value-marker';
+    for (const patch of [
+      { ADMIN_ORIGIN: 'https://admin.localhost' },
+      { PLATFORM_ACCOUNT_ORIGIN: 'https://127.1' },
+      { PLATFORM_ACCOUNT_ORIGIN: 'https://[::1]' },
+      { SHOP_API_URL: 'https://127.0.0.2/shop-api' },
+      { PUBLIC_ADMIN_API_URL: 'http://api.example.com/admin-api' },
+      { ASSET_URL_PREFIX: 'https://localhost/assets/' },
+      { CUSTOMER_STOREFRONT_ORIGIN: 'https://tenant.example.com/' },
+      { ADMIN_ORIGIN: `https://${marker}@` },
+      { PUBLIC_ADMIN_API_URL: `https://${marker}@api.example.com/admin-api` },
+      { PLATFORM_ACCOUNT_BRIDGE_KEY: marker },
+      { VITE_PROVIDER_TOKEN: marker },
+      { PUBLIC_PHONE_OTP_KEY: marker },
+      { FRONTEND_FIXTURE_MODE: 'true' },
+      { REMOTE_DEMO_ADMIN: 'true' },
+      { DEMO_LOCAL_HOST_ALIASES: 'true' },
+      { TRUSTED_PROXY_CIDRS: '127.0.0.1/32' },
+      { STAGING_TESTER_ACCESS: 'enabled' },
+      { STAGING_ANONYMOUS_STOREFRONTS: 'enabled' },
+      { DEPLOYMENT_ENV: 'local-qualification' },
+    ]) {
+      const run = () =>
+        validateEnvironment({ ...staging, ...patch }, 'production');
+      expect(run).toThrow();
+      expect(run).not.toThrow(marker);
+    }
+  });
+
+  it('binds the public build settings to the hardened runtime, with secrets supplied only to SSR', () => {
+    const build = validateEnvironment(
+      { ...staging, PLATFORM_ACCOUNT_BRIDGE_KEY: undefined },
+      'production',
+      'build',
+    );
+    const runtime = validateEnvironment(staging, 'production');
+    const adminRuntime = validateEnvironment(
+      { ...staging, PLATFORM_ACCOUNT_BRIDGE_KEY: undefined },
+      'production',
+      'admin-runtime',
+    );
+    for (const [service, config] of [
+      ['storefront', runtime],
+      ['admin', adminRuntime],
+    ] as const) {
+      const settings = frontendBuildSettings(build, service);
+      expect(JSON.stringify(settings)).not.toContain(
+        staging.PLATFORM_ACCOUNT_BRIDGE_KEY,
+      );
+      expect(() =>
+        assertFrontendBuild(settings, config, service),
+      ).not.toThrow();
+      for (const patch of [
+        { deployment: 'production' },
+        { deployment: 'development' },
+        { deployment: undefined },
+        { adminApiUrl: 'https://api.other.example.com/admin-api' },
+        {
+          [service === 'storefront' ? 'assetUrl' : 'customerOrigin']:
+            'https://other.example.com/',
+        },
+      ])
+        expect(() =>
+          assertFrontendBuild({ ...settings, ...patch }, config, service),
+        ).toThrow(/matching build/);
+    }
+    expect(() => validateEnvironment(staging, 'development', 'build')).toThrow(
+      /production build/,
+    );
+  });
+
+  it('overrides indexable tenants in staging and preserves private and production directives', async () => {
+    const indexable = 'index,follow';
+    expect(blocksIndexing('staging')).toBe(true);
+    expect(noIndexHeader).toBe('noindex, nofollow');
+    expect(storefrontRobotsMeta('staging', false, indexable)).toBe(
+      'noindex,nofollow',
+    );
+    expect(storefrontRobotsMeta('production', false, indexable)).toBe(
+      indexable,
+    );
+    expect(storefrontRobotsMeta('production', true, indexable)).toBe(
+      'noindex,nofollow',
+    );
+    for (const deployment of ['staging', 'production'] as const) {
+      const response = await robots({
+        locals: { deployment, storefront: { source: 'backend' } },
+      } as Parameters<typeof robots>[0]);
+      const body = await response.text();
+      if (deployment === 'staging') expect(body).toBe(restrictiveRobots);
+      else expect(body).toContain('Allow: /\n');
+    }
+  });
+});
 describe('production policy', () => {
   it('omits token URLs, stacks and arbitrary framework labels from Astro logs', async () => {
     const { default: createLogger } = (await import(

@@ -12,6 +12,7 @@ export function ApplicationFields({
   onAnswer,
   readOnly = false,
   compact = false,
+  section: only,
 }: {
   definition: ApplicationDefinition;
   answers: Record<string, unknown>;
@@ -19,6 +20,11 @@ export function ApplicationFields({
   readOnly?: boolean;
   /** Compact read-only layout; editable consumers retain their fieldsets. */
   compact?: boolean;
+  /**
+   * Render one section only, with its legend visually hidden because the
+   * sectioned application shows the section name as the step heading.
+   */
+  section?: string;
 }) {
   const prefix = useId();
   const visibleQuestions = definition.questions.filter(
@@ -86,12 +92,16 @@ export function ApplicationFields({
   return (
     <>
       {definition.sections
-        .filter((section) =>
-          visibleQuestions.some((q) => q.section === section),
+        .filter(
+          (section) =>
+            (only === undefined || section === only) &&
+            visibleQuestions.some((q) => q.section === section),
         )
         .map((section) => (
           <fieldset key={section} className="ops-section">
-            <legend>{section}</legend>
+            <legend className={only === undefined ? undefined : 'sr-only'}>
+              {section}
+            </legend>
             {visibleQuestions
               .filter((q) => q.section === section)
               .map((q) => {

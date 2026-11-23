@@ -58,7 +58,11 @@ const fake = createServer(async (req, res) => {
     return;
   }
   if (query.includes('submitStorefrontContact')) {
-    assert.equal(req.headers.origin, `http://contact.localhost:${port}`);
+    assert.equal(req.headers.origin, undefined);
+    assert.equal(
+      req.headers['x-storefront-origin'],
+      `http://contact.localhost:${port}`,
+    );
     assert.equal(req.headers['vendure-token'], 'contact');
     submissions++;
     res.end(

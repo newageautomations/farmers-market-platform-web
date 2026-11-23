@@ -1,0 +1,186 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import { safeAsset } from '@market/storefront-core';
+import {
+  defaultStorefrontAppearance,
+  marketText,
+} from '@market/theme/storefront';
+import Button from '../ui/Button.astro';
+import FarmstandIcon from '../ui/FarmstandIcon.astro';
+import Art from './Art.astro';
+import Fields from './Fields.astro';
+
+/**
+ * Pasture's homepage hero. It shows the same editable title, introduction,
+ * two actions and hero image as the Harvest market hero. Without a hero image
+ * the frame shows a field-and-sky placeholder until the manager adds one.
+ * `override` supplies the fixed Market Day copy, as it does for HarvestHero.
+ */
+interface Props {
+  context: StorefrontContext;
+  href: string;
+  secondaryHref?: string;
+  override?: {
+    title: string;
+    introduction: string;
+    primaryLabel: string;
+    secondaryLabel: string;
+  };
+}
+const { context, href, secondaryHref, override } = Astro.props;
+const appearance = context.appearance ?? defaultStorefrontAppearance;
+const home = appearance.homepage;
+const media = safeAsset(home.image);
+const preview = !!Astro.locals.editorPreview;
+const introduction =
+  'Fresh vegetables, fruit and farm goods, grown close to home and sold by the people who raise them.';
+/* The photo's wavy edge, in the photo box's own 0-1 units. The same curve
+   clips the photo and draws the green band along its edge, so they always
+   meet. `photoClip` closes it along the box's right and bottom sides. */
+const photoEdge =
+  'M1.04 0.1C0.9 0 0.78 0.12 0.62 0.1C0.46 0.08 0.4 0 0.24 0.04C0.1 0.08 0.1 0.24 0.14 0.36C0.18 0.5 0.26 0.6 0.18 0.76C0.12 0.88 0.08 0.94 0.1 1.04';
+const photoClip = `${photoEdge}L1.04 1.04z`;
+const photoLine =
+  'M1.06 0.06C0.98 -0.04 0.86 -0.07 0.74 -0.03C0.66 0 0.62 0.04 0.56 0.02C0.4 0 0.32 -0.06 0.18 -0.02C0.04 0.02 0.02 0.2 0.06 0.34C0.1 0.48 0.16 0.6 0.1 0.74C0.05 0.86 0 0.94 0.02 1.04';
+---
+
+<section
+  class:list={['pw-hero', 'pw-bleed', override && 'pw-hero-day']}
+  data-editor-section="hero"
+  aria-labelledby="home-title"
+>
+  <div class="pw-hero-sky" aria-hidden="true">
+    <svg
+      class="pw-hero-corner"
+      viewBox="0 0 500 640"
+      preserveAspectRatio="xMinYMin meet"
+      focusable="false"
+    >
+      <path d="M0 0H470C430 70 360 96 286 112C196 132 170 196 176 270C182 352 148 420 92 470C56 502 26 548 0 600z"></path>
+    </svg>
+    <Art name="cloud" class="pw-cloud pw-cloud-1" />
+    <Art name="cloud" class="pw-cloud pw-cloud-2" />
+    <Art name="cloud" class="pw-cloud pw-cloud-3" />
+    <Art name="leaf" class="pw-hero-leaf" />
+    <Art name="sprig" class="pw-hero-sprig" />
+  </div>
+  <Fields scene="hero" class="pw-hills" />
+  <div class="pw-hero-inner">
+    <div class="pw-hero-copy">
+      {override && (
+        <p class="pw-live-tag">
+          <span class="pw-live-dot" aria-hidden="true" />
+          Market day
+        </p>
+      )}
+      {override ? (
+        <>
+          <h1 id="home-title" class="pw-hero-title">
+            <span class="pw-plank">{override.title}</span>
+          </h1>
+          <p class="pw-hero-intro">{override.introduction}</p>
+        </>
+      ) : (
+        <>
+          <h1 id="home-title" class="pw-hero-title">
+            <span class="pw-plank" data-home-text="title">
+              {home.title || context.name}
+            </span>
+          </h1>
+          <p
+            class="pw-hero-intro"
+            data-home-text="introduction"
+            data-fallback={introduction}
+          >
+            {home.introduction || introduction}
+          </p>
+        </>
+      )}
+      <div class="actions pw-hero-actions">
+        <Button href={href} class="pw-button-arrow">
+          {override ? (
+            <>
+              {override.primaryLabel}
+              <FarmstandIcon name="arrow-right" />
+            </>
+          ) : (
+            <>
+              <span data-market-text="heroPrimaryLabel">
+                {marketText(appearance, 'heroPrimaryLabel')}
+              </span>
+              <FarmstandIcon name="arrow-right" />
+            </>
+          )}
+        </Button>
+        {secondaryHref && (
+          <Button href={secondaryHref} variant="secondary">
+            {override ? (
+              <>
+                <FarmstandIcon name="store" />
+                {override.secondaryLabel}
+              </>
+            ) : (
+              <span data-market-text="heroSecondaryLabel">
+                {marketText(appearance, 'heroSecondaryLabel')}
+              </span>
+            )}
+          </Button>
+        )}
+      </div>
+      <slot name="details" />
+    </div>
+  </div>
+  <div class="pw-hero-visual">
+    <svg class="pw-hero-defs" width="0" height="0" aria-hidden="true">
+      <clipPath id="pw-hero-clip" clipPathUnits="objectBoundingBox">
+        <path d={photoClip}></path>
+      </clipPath>
+    </svg>
+    <div
+      class:list={['pw-hero-frame', !media && 'pw-hero-empty']}
+      style="clip-path: url(#pw-hero-clip)"
+    >
+      {media ? (
+        <img
+          class="product-media pw-hero-image"
+          src={media}
+          alt=""
+          width="1200"
+          height="900"
+          fetchpriority="high"
+        />
+      ) : (
+        <div class="pw-hero-placeholder" aria-hidden="true">
+          <Art name="cloud" class="pw-placeholder-cloud" />
+          <svg
+            class="pw-placeholder-field"
+            viewBox="0 0 400 160"
+            preserveAspectRatio="none"
+            focusable="false"
+          >
+            <path d="M0 60C80 20 160 30 240 52s120 20 160 0v108H0z"></path>
+            <path d="M0 100c90-30 190-20 260 4s110 10 140 0v56H0z"></path>
+          </svg>
+          <span class="pw-placeholder-badge">
+            <FarmstandIcon name="file-image" />
+          </span>
+          {preview && (
+            <span class="pw-placeholder-note">
+              Add a hero image in Hero settings
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+    <svg
+      class="pw-hero-ribbon"
+      viewBox="0 0 1 1"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path class="pw-ribbon-line" d={photoLine}></path>
+      <path class="pw-ribbon-band" d={photoEdge}></path>
+    </svg>
+  </div>
+</section>

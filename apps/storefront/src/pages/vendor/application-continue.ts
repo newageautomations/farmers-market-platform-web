@@ -34,9 +34,17 @@ export const GET: APIRoute = async (context) => {
   // from this storefront (no vendor) keep the central account sign-in.
   const adminHandoff =
     !!draft || (!claim && !!slug && !!vendor && /^[1-9]\d*$/.test(vendor));
+  // `signup=1` (from a new storefront application) opens account creation
+  // directly; the saved answers are restored on return either way.
   if (!adminHandoff)
     return context.redirect(
-      await centralSignIn(context, returnTo, 'vendor-applications'),
+      await centralSignIn(
+        context,
+        returnTo,
+        p.get('signup') === '1' && slug && !claim
+          ? 'signup'
+          : 'vendor-applications',
+      ),
     );
   const admin = process.env.ADMIN_ORIGIN;
   if (!admin || !vendor || !/^[1-9]\d*$/.test(vendor))

@@ -39,9 +39,6 @@ function CartView(props: Parameters<typeof Cart>[0]) {
         disabled={pending}
         onBusyChange={state.setExternalBusy}
       />
-      <p role="status" aria-live="polite">
-        {pending ? 'Updating your bag…' : state.message}
-      </p>
       {state.error && <p role="alert">{state.error}</p>}
 
       {!cart?.lines.length ? (

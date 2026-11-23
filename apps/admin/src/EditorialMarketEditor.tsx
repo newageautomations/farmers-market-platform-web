@@ -1,5 +1,8 @@
 import { createPortal } from 'react-dom';
-import { WebsiteInspectorContent } from './WebsiteEditorContext';
+import {
+  InspectorGroup,
+  WebsiteInspectorContent,
+} from './WebsiteEditorContext';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Field, Input, Textarea } from '@market/ui';
 import { disclosureClassName } from '@market/ui/presentation';
@@ -249,20 +252,22 @@ export function EditorialMarketEditor({
             (announcement) =>
               patch({ header: { ...value.header, announcement } }),
           )}
-          {(
-            [
-              ['shopLabel', 'Shop navigation label'],
-              ['storyLabel', 'Story navigation label'],
-              ['findUsLabel', 'Find Us navigation label'],
-              ['contactLabel', 'Contact navigation label'],
-            ] as const
-          )
-            .filter(([key]) => !market || key !== 'findUsLabel')
-            .map(([key, label]) =>
-              text(`editorial-${key}`, label, value.header[key], 60, (next) =>
-                patch({ header: { ...value.header, [key]: next } }),
-              ),
-            )}
+          <InspectorGroup title="Navigation labels">
+            {(
+              [
+                ['shopLabel', 'Shop navigation label'],
+                ['storyLabel', 'Story navigation label'],
+                ['findUsLabel', 'Find Us navigation label'],
+                ['contactLabel', 'Contact navigation label'],
+              ] as const
+            )
+              .filter(([key]) => !market || key !== 'findUsLabel')
+              .map(([key, label]) =>
+                text(`editorial-${key}`, label, value.header[key], 60, (next) =>
+                  patch({ header: { ...value.header, [key]: next } }),
+                ),
+              )}
+          </InspectorGroup>
         </>,
       )}
 
@@ -347,33 +352,40 @@ export function EditorialMarketEditor({
               if (section.id === 'hero')
                 return (
                   <>
-                    {text(
-                      'editorial-hero-heading',
-                      'Heading',
-                      value.hero.heading,
-                      160,
-                      (heading) => patch({ hero: { ...value.hero, heading } }),
-                    )}
-                    {text(
-                      'editorial-hero-introduction',
-                      'Introduction',
-                      value.hero.introduction,
-                      600,
-                      (introduction) =>
-                        patch({ hero: { ...value.hero, introduction } }),
-                      true,
-                    )}
-                    {text(
-                      'editorial-hero-button',
-                      'Button label',
-                      value.hero.buttonLabel,
-                      80,
-                      (buttonLabel) =>
-                        patch({ hero: { ...value.hero, buttonLabel } }),
-                    )}
-                    {marketHeroFields}
-                    {image('desktopHero', 'Desktop hero artwork')}
-                    {image('mobileHero', 'Mobile hero artwork')}
+                    <InspectorGroup title="Content" open>
+                      {text(
+                        'editorial-hero-heading',
+                        'Heading',
+                        value.hero.heading,
+                        160,
+                        (heading) =>
+                          patch({ hero: { ...value.hero, heading } }),
+                      )}
+                      {text(
+                        'editorial-hero-introduction',
+                        'Introduction',
+                        value.hero.introduction,
+                        600,
+                        (introduction) =>
+                          patch({ hero: { ...value.hero, introduction } }),
+                        true,
+                      )}
+                    </InspectorGroup>
+                    <InspectorGroup title="Button">
+                      {text(
+                        'editorial-hero-button',
+                        'Button label',
+                        value.hero.buttonLabel,
+                        80,
+                        (buttonLabel) =>
+                          patch({ hero: { ...value.hero, buttonLabel } }),
+                      )}
+                      {marketHeroFields}
+                    </InspectorGroup>
+                    <InspectorGroup title="Artwork">
+                      {image('desktopHero', 'Desktop hero artwork')}
+                      {image('mobileHero', 'Mobile hero artwork')}
+                    </InspectorGroup>
                   </>
                 );
               if (

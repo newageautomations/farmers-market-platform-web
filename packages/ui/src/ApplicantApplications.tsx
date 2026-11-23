@@ -14,7 +14,7 @@ import {
   Card,
   Dialog,
   EmptyState,
-  Spinner,
+  LoadingSkeleton,
 } from './index';
 import { buttonClassName } from './presentation';
 import { formatMoney } from '@market/config';
@@ -163,7 +163,7 @@ export function ApplicantApplications({
   return (
     <div className="applicant-applications" aria-busy={pending}>
       {loading ? (
-        <Spinner label="Loading applications" />
+        <LoadingSkeleton variant="table" label="Loading applications" />
       ) : error ? (
         <>
           <p role="alert">{error}</p>

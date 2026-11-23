@@ -4,6 +4,7 @@ import {
   storefrontPreviewPath,
 } from '@market/theme/storefront';
 import type { APIContext } from 'astro';
+import { adminPreviewTransportEndpoint, backendFetch } from './private-api';
 
 export function editorOrigin() {
   return normalizeOrigin(process.env.ADMIN_ORIGIN ?? 'http://localhost:4322');
@@ -43,7 +44,7 @@ export async function authorizeEditorRender(context: APIContext) {
     throw new Error('Invalid storefront');
   const endpoint =
     process.env.PUBLIC_ADMIN_API_URL ?? import.meta.env.PUBLIC_ADMIN_API_URL;
-  const response = await fetch(endpoint, {
+  const response = await backendFetch(adminPreviewTransportEndpoint(endpoint), {
     method: 'POST',
     cache: 'no-store',
     signal: AbortSignal.timeout(8000),

@@ -27,9 +27,9 @@ import {
   IconButton,
   Pagination,
   SelectField,
-  Spinner,
   Textarea,
   Table,
+  LoadingSkeleton,
 } from '@market/ui';
 import { useRead } from '../../vendor/common';
 
@@ -467,7 +467,7 @@ function AttendanceTable({
         {loading ? (
           <tr>
             <td colSpan={4} className="attendance-table-message">
-              <Spinner label="Loading" />
+              <LoadingSkeleton variant="table" rows={3} label="Loading" />
             </td>
           </tr>
         ) : !rows.length ? (
@@ -908,7 +908,9 @@ export function AttendanceHistory({
         )}
       </div>
       {error && <ErrorState error={error} />}
-      {read.loading && <Spinner label="Loading market appearances" />}
+      {read.loading && (
+        <LoadingSkeleton variant="table" label="Loading market appearances" />
+      )}
       {read.error && <ErrorState error={read.error} />}
       {read.data && (
         <>

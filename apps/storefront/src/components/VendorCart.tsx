@@ -22,7 +22,6 @@ export function VendorCart({
   const {
     pending,
     error,
-    message,
     affectedLine,
     cart,
     preorder,
@@ -45,14 +44,6 @@ export function VendorCart({
         disabled={pending}
         onBusyChange={setExternalBusy}
       />
-      <div
-        className="vendor-cart-feedback"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {pending ? 'Updating your cart…' : message}
-      </div>
       {error && (
         <p className="ui-alert ui-alert-error" role="alert">
           {error}

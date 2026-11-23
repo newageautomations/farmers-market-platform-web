@@ -515,7 +515,14 @@ input[type='radio'] {
 .skeleton {
   min-height: 100px;
   border-radius: 6px;
-  background: #e1e6e1;
+  background: var(
+    --ui-skeleton-color,
+    color-mix(
+      in srgb,
+      var(--brand-foreground, #1f2a1f) 14%,
+      var(--brand-surface, #fff)
+    )
+  );
   animation: ui-skeleton-pulse 1.4s ease-in-out infinite;
 }
 @keyframes ui-skeleton-pulse {
@@ -527,6 +534,249 @@ input[type='radio'] {
   .skeleton {
     animation: none;
   }
+}
+/* LOD-01 content-loading skeleton layouts (LoadingSkeleton / InlineSkeleton).
+   Blocks are sized by their layout, so the 100px default does not apply. */
+.ui-skeleton-layout {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+  margin-block: 1rem;
+}
+.ui-skeleton-layout .skeleton {
+  min-height: 0;
+  height: 0.85rem;
+}
+.ui-skeleton-layout .ui-skeleton-short {
+  width: 40%;
+}
+.ui-skeleton-layout .ui-skeleton-title {
+  width: min(16rem, 55%);
+  height: 1.25rem;
+}
+.ui-skeleton-layout .ui-skeleton-field {
+  height: 2.75rem;
+  border-radius: var(--ui-button-radius, 6px);
+}
+.ui-skeleton-layout .ui-skeleton-button {
+  width: min(14rem, 100%);
+  height: 2.75rem;
+  border-radius: var(--ui-button-radius, 6px);
+}
+.ui-skeleton-layout .ui-skeleton-chart {
+  height: 12rem;
+  border-radius: 10px;
+}
+/* Page: one skeleton for a whole page's first load (PageLoad). */
+.ui-skeleton-toolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
+  gap: 0.75rem;
+}
+.ui-skeleton-panel {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid
+    color-mix(in srgb, var(--brand-foreground, #1f2a1f) 10%, transparent);
+  border-radius: 10px;
+}
+.ui-skeleton-page .ui-skeleton-title {
+  height: 1.6rem;
+}
+/* The page skeleton spans the visible page area (PageLoad measures its top
+   and the layout spacing below it). Its panel takes the remaining height and
+   spreads the rows evenly; taller pages only scroll past the minimum. */
+.ui-skeleton-layout.ui-skeleton-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-block: 0;
+  min-height: calc(
+    100dvh - var(--ui-page-load-top, 0px) - var(--ui-page-load-below, 0px)
+  );
+}
+.ui-skeleton-page > .ui-skeleton-panel {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.ui-skeleton-page .ui-skeleton-panel > .ui-skeleton-table-head {
+  flex: none;
+  margin-bottom: 0.5rem;
+}
+.ui-skeleton-page .ui-skeleton-panel > .ui-skeleton-table-row {
+  flex: 1 1 0;
+  min-height: 3rem;
+}
+.ui-skeleton-page .ui-skeleton-panel > .ui-skeleton-table-row:last-child {
+  border-bottom: 0;
+}
+/* The page renders beneath its skeleton, laid out at full width (so charts
+   and grids measure correctly) but hidden, inert and clipped to the
+   skeleton's height so it never adds a scrollbar. */
+.ui-page-load {
+  position: relative;
+  min-width: 0;
+}
+.ui-page-load-content[data-page-loading] {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+/* Table/list */
+.ui-skeleton-table .ui-skeleton-table-head,
+.ui-skeleton-page .ui-skeleton-table-head {
+  height: 2.25rem;
+  border-radius: 8px;
+}
+.ui-skeleton-table-row {
+  display: grid;
+  grid-template-columns: 2fr 1.4fr 1fr 0.8fr;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--brand-foreground, #1f2a1f) 8%, transparent);
+}
+.ui-skeleton-table-row > .skeleton:nth-child(2) {
+  width: 80%;
+}
+.ui-skeleton-table-row > .skeleton:nth-child(3) {
+  width: 60%;
+}
+.ui-skeleton-table-row:nth-child(odd) > .skeleton:first-child {
+  width: 75%;
+}
+/* Stats/dashboard */
+.ui-skeleton-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+}
+.ui-skeleton-tile {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem;
+  border: 1px solid
+    color-mix(in srgb, var(--brand-foreground, #1f2a1f) 10%, transparent);
+  border-radius: 10px;
+}
+.ui-skeleton-tile > .ui-skeleton-line {
+  width: 60%;
+}
+.ui-skeleton-layout .ui-skeleton-value {
+  width: 45%;
+  height: 1.6rem;
+}
+/* Card grid */
+.ui-skeleton-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: 1rem;
+}
+.ui-skeleton-card {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border: 1px solid
+    color-mix(in srgb, var(--brand-foreground, #1f2a1f) 10%, transparent);
+  border-radius: 10px;
+}
+.ui-skeleton-layout .ui-skeleton-media {
+  height: auto;
+  aspect-ratio: 16 / 10;
+  max-height: 22rem;
+}
+/* Detail/form */
+.ui-skeleton-detail-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 0.4fr) 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+.ui-skeleton-detail-row > .ui-skeleton-line {
+  width: 75%;
+}
+/* Page/module shell */
+.ui-skeleton-shell {
+  display: grid;
+  gap: 1rem;
+}
+.ui-skeleton-layout .ui-skeleton-shell-header {
+  height: 3rem;
+  border-radius: 8px;
+}
+.ui-skeleton-shell-body {
+  display: grid;
+  grid-template-columns: minmax(10rem, 14rem) 1fr;
+  gap: 1.5rem;
+}
+.ui-skeleton-shell-nav,
+.ui-skeleton-shell-main {
+  display: grid;
+  gap: 0.9rem;
+  align-content: start;
+}
+@media (max-width: 767px) {
+  .ui-skeleton-shell-body {
+    grid-template-columns: 1fr;
+  }
+  .ui-skeleton-shell-nav {
+    display: none;
+  }
+}
+/* Checkout/payment */
+.ui-skeleton-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+/* Loaded content fades in after its skeleton (skeleton-reveal.ts). Rows,
+   list items and grid cards settle in one after another, top to bottom.
+   They start above their place, never below: a downward offset overflows the
+   bottom of scroll containers and the page, flashing a scrollbar that shifts
+   the layout. Overflow above the top edge is never scrollable. */
+.ui-reveal {
+  animation: ui-reveal-fade 220ms ease-out backwards;
+}
+.ui-reveal-item {
+  animation: ui-reveal-rise 260ms ease-out backwards;
+  animation-delay: calc(var(--ui-reveal-order, 0) * 35ms);
+}
+@keyframes ui-reveal-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ui-reveal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-reveal,
+  .ui-reveal-item {
+    animation: none;
+  }
+}
+/* Inline value */
+.ui-skeleton-inline {
+  display: inline-block;
+  vertical-align: middle;
+  width: 4.5em;
+  max-width: 100%;
+}
+.ui-skeleton-inline > .skeleton {
+  display: block;
+  min-height: 0;
+  height: 0.9em;
+  border-radius: 4px;
 }
 .progress {
   display: flex;
@@ -1121,6 +1371,22 @@ td {
 .booth-hover-card p {
   margin: 0.45rem 0 0;
   font-size: 0.9rem;
+}
+/* A caller-supplied booth card can be pointed at and fades in. */
+.booth-hover-card.booth-hover-card-custom {
+  pointer-events: auto;
+  animation: booth-hover-card-in 180ms ease-out both;
+}
+@keyframes booth-hover-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .booth-hover-card.booth-hover-card-custom {
+    animation-duration: 1ms;
+  }
 }
 .booth-state {
   display: inline-flex;
@@ -2375,6 +2641,25 @@ select:not([multiple]):is([size='0'], [size='1']):open {
 }
 .admin-dashboard {
   color: var(--brand-foreground);
+}
+/* The dashboard stays hidden until the account's saved colors load
+   (AdminShell `data-colors-pending`), then fades in, so it never paints in the
+   default palette first. Its content keeps loading underneath. */
+.admin-dashboard[data-colors-pending] {
+  visibility: hidden;
+}
+.admin-dashboard:not([data-colors-pending], .admin-shell-skeleton) {
+  animation: admin-dashboard-fade-in 220ms ease-out backwards;
+}
+@keyframes admin-dashboard-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-dashboard:not([data-colors-pending]) {
+    animation: none;
+  }
 }
 .admin-dashboard .admin-sidebar nav a,
 .admin-dashboard .ui-dashboard-mobile-links nav a {

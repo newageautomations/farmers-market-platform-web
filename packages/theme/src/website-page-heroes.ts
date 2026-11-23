@@ -8,6 +8,7 @@ import {
   type WebsiteSection,
   type SectionTarget,
 } from './website-section-contract';
+import { themePageStructure } from './theme-page-structure';
 export const websiteHeroPages = [
   'about',
   'contact',
@@ -21,6 +22,9 @@ export function supportsWebsitePageHero(
 ): boolean {
   return (
     (websiteHeroPages as readonly string[]).includes(page) &&
+    !(
+      themePageStructure(appearance.theme).headingOnlyPages as readonly string[]
+    ).includes(page) &&
     permitsWebsiteSection('image-with-text', {
       theme: appearance.theme,
       themeVersion: appearance.template?.version ?? 1,
@@ -34,8 +38,13 @@ export function effectiveWebsitePageSections(
   page: WebsiteEditorialPage,
   region: WebsitePageRegion,
 ): WebsiteSection[] {
+  const structure = themePageStructure(appearance.theme);
   const saved = appearance.pageSections?.[page]?.[region];
-  if (saved !== undefined) return saved;
+  // Heading-only pages never show a page hero, including one saved earlier.
+  if (saved !== undefined)
+    return (structure.headingOnlyPages as readonly string[]).includes(page)
+      ? saved.filter((s) => s.id !== `image-with-text-page-hero-${page}`)
+      : saved;
   if (region !== 'before' || !supportsWebsitePageHero(appearance, page))
     return [];
   if (
@@ -90,5 +99,10 @@ export function effectiveWebsitePageSections(
     hero.presentation.alignment = intro.textAlign ?? 'left';
     hero.presentation.imageSize = intro.imageSize ?? 'medium';
   }
+  if ((structure.shortHeroPages as readonly string[]).includes(page))
+    hero.presentation.sizing = {
+      ...hero.presentation.sizing,
+      imageHeight: structure.shortHeroHeight,
+    };
   return [hero];
 }

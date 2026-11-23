@@ -6,6 +6,7 @@ import {
   marketProduct,
   marketCatalogAvailability,
   marketShopCatalog,
+  marketShopQuery,
 } from '../apps/storefront/src/lib/market-catalog';
 import { marketPreorder } from '../apps/storefront/src/lib/market-preorder';
 import { ProductPurchase } from '../apps/storefront/src/components/ProductPurchase';
@@ -63,7 +64,10 @@ function context(search = '', preview = false, cookie?: string) {
       editorPreview: preview ? {} : undefined,
     },
     url: new URL('http://market.localhost/shop' + search),
-    cookies: { get: () => (cookie ? { value: cookie } : undefined) },
+    cookies: {
+      get: () => (cookie ? { value: cookie } : undefined),
+      set: vi.fn(),
+    },
   } as unknown as APIContext;
 }
 beforeEach(() => {
@@ -77,6 +81,17 @@ beforeEach(() => {
   mocks.api.bootstrap.mockResolvedValue({ signedIn: false, cart: null });
 });
 describe('Harvest market shop', () => {
+  it.each([
+    ['occurrence=80&vendor=7&category=2', 'vendor', ['7']],
+    ['filter=category&vendor=7&category=2', 'category', ['2']],
+    ['filter=vendor&vendor=7&vendor=8&category=2', 'vendor', ['7', '8']],
+    ['occurrence=80', 'category', []],
+  ] as const)('uses one filter type for %s', (search, mode, ids) => {
+    const query = marketShopQuery(new URLSearchParams(search));
+    expect(query.get('filter')).toBe(mode);
+    expect(query.getAll(mode)).toEqual(ids);
+    expect(query.has(mode === 'vendor' ? 'category' : 'vendor')).toBe(false);
+  });
   it.each(['NAME_ASC', 'NAME_DESC'] as const)(
     'sorts customer product names across API pages for %s',
     async (sort) => {

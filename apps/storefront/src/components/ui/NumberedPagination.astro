@@ -1,0 +1,115 @@
+---
+import { buttonClassName } from '@market/ui/presentation';
+import { UtilityIcon } from '@market/ui';
+/**
+ * Numbered paging with real links: a chevron to the first page, up to three
+ * page numbers around the current page, and a chevron to the last page. The
+ * chevrons are the dropdown menus' UtilityIcon glyphs. There is no one-step
+ * previous/next control (the page numbers cover it) and no item count. The shared `Pagination` and `WorkspacePagination` only offer
+ * Previous/Next with a summary, so this adapter adds the numbered form on the
+ * same button classes. `pageAttribute` lets a client script intercept the
+ * links (the market shop refreshes results in place).
+ */
+interface Props {
+  page: number;
+  pageCount: number;
+  href: (page: number) => string;
+  label?: string;
+  pageAttribute?: string;
+}
+const { page, pageCount, href, label = 'Pages', pageAttribute } = Astro.props;
+const start = Math.max(1, Math.min(page - 1, pageCount - 2));
+const numbers = Array.from(
+  { length: Math.min(3, pageCount) },
+  (_, index) => start + index,
+);
+const control = (current = false) =>
+  buttonClassName({
+    variant: current ? 'primary' : 'secondary',
+    size: 'compact',
+    className: 'numbered-pagination-link',
+  });
+const attributes = (target: number) =>
+  pageAttribute ? { [pageAttribute]: String(target) } : {};
+const step = (
+  target: number,
+  icon: 'chevron-left' | 'chevron-right',
+  name: string,
+  disabled: boolean,
+) => ({ target, icon, name, disabled }) as const;
+const before = [step(1, 'chevron-left', 'First page', page <= 1)];
+const after = [
+  step(pageCount, 'chevron-right', 'Last page', page >= pageCount),
+];
+---
+
+<nav class="numbered-pagination" aria-label={label}>
+  {before.map((item) =>
+    item.disabled ? (
+      <span class={control()} aria-disabled="true" aria-label={item.name}>
+        <UtilityIcon name={item.icon} />
+      </span>
+    ) : (
+      <a
+        class={control()}
+        href={href(item.target)}
+        aria-label={item.name}
+        {...attributes(item.target)}
+      >
+        <UtilityIcon name={item.icon} />
+      </a>
+    ),
+  )}
+  {numbers.map((number) =>
+    number === page ? (
+      <span class={control(true)} aria-current="page">
+        {number}
+      </span>
+    ) : (
+      <a
+        class={control()}
+        href={href(number)}
+        aria-label={`Page ${number}`}
+        {...attributes(number)}
+      >
+        {number}
+      </a>
+    ),
+  )}
+  {after.map((item) =>
+    item.disabled ? (
+      <span class={control()} aria-disabled="true" aria-label={item.name}>
+        <UtilityIcon name={item.icon} />
+      </span>
+    ) : (
+      <a
+        class={control()}
+        href={href(item.target)}
+        aria-label={item.name}
+        {...attributes(item.target)}
+      >
+        <UtilityIcon name={item.icon} />
+      </a>
+    ),
+  )}
+</nav>
+
+<style>
+  .numbered-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-block: 2rem 0;
+  }
+  .numbered-pagination :global(.numbered-pagination-link) {
+    min-width: 2.5rem;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .numbered-pagination :global(.numbered-pagination-link[aria-disabled]) {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+</style>

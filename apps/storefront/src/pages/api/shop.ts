@@ -4,6 +4,7 @@ import { boundedBody } from '@market/config';
 import { preorderCookie, vendorPreorder } from '../../lib/vendor-preorder';
 import { restartCheckout } from '../../lib/restart-checkout';
 import { recoverEditableCart } from '../../lib/recover-editable-cart';
+import { readCheckoutStatus } from '../../lib/checkout-status';
 import { marketCatalogAvailability } from '../../lib/market-catalog';
 import {
   requestShop,
@@ -88,7 +89,10 @@ export const POST: APIRoute = async (context) => {
       case 'stripe-checkout-start':
         if (input.consent !== 'checkout-vendors-once-v1')
           throw new AppError('validation');
-        result = await checkout.stripeStart(input.consent);
+        result = await checkout.stripeStart(
+          input.consent,
+          typeof input.termsToken === 'string' ? input.termsToken : undefined,
+        );
         break;
       case 'stripe-checkout-advance':
         result = await checkout.stripeAdvance(id(input.groupId));
@@ -176,7 +180,9 @@ export const POST: APIRoute = async (context) => {
         result = await checkout.freezeTestPreorderFee();
         break;
       case 'checkout-status':
-        result = await checkout.status(
+        result = await readCheckoutStatus(
+          context,
+          headers,
           input.orderId ? id(input.orderId) : undefined,
         );
         break;
@@ -216,8 +222,10 @@ export const POST: APIRoute = async (context) => {
         const current = await checkout.status();
         if (!current || current.availability.state !== 'AVAILABLE')
           throw new AppError('unavailable');
-        result =
-          current.attempt ?? (await checkout.begin(current.availability.mode));
+        result = await checkout.begin(
+          current.availability.mode,
+          typeof input.termsToken === 'string' ? input.termsToken : undefined,
+        );
         break;
       }
       case 'checkout-finalize':

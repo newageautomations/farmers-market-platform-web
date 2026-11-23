@@ -19,11 +19,20 @@ export function contactFieldError(
     input.validity.typeMismatch
   )
     return 'Enter a valid email address.';
+  // Market forms list their own subjects; the select's options are authoritative there.
   if (
     input.name === 'subject' &&
+    !(input instanceof HTMLSelectElement && input.dataset.configured) &&
     !(contactSubjects as readonly string[]).includes(input.value)
   )
     return 'Choose a subject.';
+  if (
+    input instanceof HTMLSelectElement &&
+    input.dataset.configured &&
+    input.value &&
+    ![...input.options].some((o) => o.value && o.value === input.value)
+  )
+    return 'Choose an option.';
   return '';
 }
 
@@ -35,8 +44,14 @@ export type ContactFormProps = {
     emailAddress: string;
     phoneNumber?: string | null;
   } | null;
+  /** Market forms: send custom field answers with the message. */
+  configured?: boolean;
 };
-export function useContactForm({ preview = false, initial }: ContactFormProps) {
+export function useContactForm({
+  preview = false,
+  initial,
+  configured = false,
+}: ContactFormProps) {
   const [subject, setSubject] = useState(''),
     [phone, setPhone] = useState(initial?.phoneNumber ?? ''),
     [errors, setErrors] = useState<Record<string, string>>({}),
@@ -100,9 +115,19 @@ export function useContactForm({ preview = false, initial }: ContactFormProps) {
         subject,
         message: String(data.get('message') ?? '').trim(),
         orderNumber:
-          subject === 'Existing Order'
+          !configured && subject === 'Existing Order'
             ? String(data.get('orderNumber') ?? '').trim()
             : '',
+        ...(configured
+          ? {
+              answers: [...data.entries()]
+                .filter(([key]) => key.startsWith('answer:'))
+                .map(([key, value]) => ({
+                  id: key.slice('answer:'.length),
+                  value: String(value).trim(),
+                })),
+            }
+          : {}),
       };
     const payload = JSON.stringify(values);
     if (!attempt.current || attempt.current.payload !== payload)

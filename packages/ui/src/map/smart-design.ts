@@ -19,6 +19,10 @@ export interface BoothRowOptions {
   start: number;
   prefix: string;
   rotation: number;
+  /** Booth fee in minor units applied to every booth in the row. */
+  feeMinor?: number;
+  /** Physical amenities applied to every booth in the row. */
+  amenities?: string[];
 }
 const finiteRange = (n: number, min: number, max: number) =>
   Number.isFinite(n) && n >= min && n <= max;
@@ -42,10 +46,14 @@ export function boothRow(
     o.start < 0 ||
     !finiteRange(o.rotation, -360, 360) ||
     !['horizontal', 'vertical'].includes(o.orientation) ||
+    (o.feeMinor !== undefined &&
+      (!Number.isSafeInteger(o.feeMinor) ||
+        !finiteRange(o.feeMinor, 0, 100000000))) ||
+    (o.amenities !== undefined && o.amenities.length > 20) ||
     !d.definition.areas.some((a) => a.id === areaId)
   )
     throw new Error(
-      'Enter valid row measurements, a whole booth count (1 to 100), and a nonnegative starting number.',
+      'Enter valid row measurements, a whole booth count (1 to 100), a nonnegative starting number, and a booth price up to $1,000,000.00.',
     );
   if (d.definition.elements.length + o.count > 1000)
     throw new Error('This row would exceed the 1,000 object layout limit.');
@@ -87,6 +95,8 @@ export function boothRow(
       ...baseSpace(label),
       widthFeet: o.widthFeet,
       depthFeet: o.depthFeet,
+      ...(o.feeMinor !== undefined ? { feeMinor: o.feeMinor } : {}),
+      ...(o.amenities ? { amenities: [...o.amenities] } : {}),
     };
     return {
       id,

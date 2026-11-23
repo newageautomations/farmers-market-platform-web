@@ -29,11 +29,58 @@ export type StripeFactory = (
   key: string,
   options?: { stripeAccount: string },
 ) => StripeClient;
-let sdk: Promise<StripeFactory> | undefined;
-/** Stripe hosts card inputs in its own iframe. Card values never enter application state or our API. */
-export function loadStripeSdk(): Promise<StripeFactory> {
+
+export type StripeBillingDetails = {
+  name?: string;
+  email?: string;
+  phone?: string;
+};
+export type StripePaymentElement = Pick<StripeCard, 'mount' | 'destroy' | 'on'>;
+export interface StripePaymentElements {
+  create(
+    type: 'payment',
+    options: {
+      layout?: { type: 'accordion'; radios: 'always'; defaultCollapsed: false };
+      defaultValues: { billingDetails: StripeBillingDetails };
+      fields: {
+        billingDetails: Record<keyof StripeBillingDetails, 'auto' | 'never'>;
+      };
+      wallets?: { applePay: 'never'; googlePay: 'never'; link: 'never' };
+    },
+  ): StripePaymentElement;
+}
+export interface StripePaymentClient extends Pick<
+  StripeClient,
+  'handleNextAction'
+> {
+  elements(options: { clientSecret: string }): StripePaymentElements;
+  confirmSetup(options: {
+    elements: StripePaymentElements;
+    redirect: 'if_required';
+    confirmParams: {
+      payment_method_data: { billing_details: StripeBillingDetails };
+    };
+  }): Promise<{ setupIntent?: { status: string }; error?: unknown }>;
+  confirmPayment?(options: {
+    elements: StripePaymentElements;
+    redirect: 'if_required';
+    confirmParams: {
+      return_url: string;
+      payment_method_data: { billing_details: StripeBillingDetails };
+    };
+  }): Promise<{ error?: unknown }>;
+}
+export type StripePaymentFactory = (
+  ...args: Parameters<StripeFactory>
+) => StripePaymentClient;
+type StripeSdkFactory = (
+  ...args: Parameters<StripeFactory>
+) => StripeClient & StripePaymentClient;
+let sdk: Promise<StripeSdkFactory> | undefined;
+/** Stripe hosts payment inputs in its own iframe. */
+export function loadStripeSdk(): Promise<StripeSdkFactory> {
   sdk ??= new Promise((resolve, reject) => {
-    const existing = (window as Window & { Stripe?: StripeFactory }).Stripe;
+    const existing = (window as Window & { Stripe?: StripeSdkFactory }).Stripe;
     if (existing) {
       resolve(existing);
       return;
@@ -42,7 +89,7 @@ export function loadStripeSdk(): Promise<StripeFactory> {
     script.src = 'https://js.stripe.com/v3/';
     script.async = true;
     script.onload = () => {
-      const factory = (window as Window & { Stripe?: StripeFactory }).Stripe;
+      const factory = (window as Window & { Stripe?: StripeSdkFactory }).Stripe;
       if (factory) resolve(factory);
       else reject(new Error('Stripe did not load'));
     };

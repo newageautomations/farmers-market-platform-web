@@ -246,6 +246,8 @@ type Query {
   ownListingPublication(listingId: ID!): OwnListingPublication!
   vendorContactSubmissions(skip: Int!, status: String): JSON!
   vendorContactSubmission(id: String!): JSON!
+  marketContactSubmissions(skip: Int!, status: String): JSON!
+  marketContactSubmission(id: String!): JSON!
 }
 
 type Mutation {
@@ -921,6 +923,7 @@ type Mutation {
   downloadComplianceDocument(fileId: String!): JSON!
   setOwnNotificationPreferences(input: JSON!): JSON!
   setVendorContactRead(id: String!, read: Boolean!): JSON!
+  setMarketContactRead(id: String!, read: Boolean!): JSON!
 }
 
 type Address implements Node {
@@ -7111,6 +7114,7 @@ enum MarketOperationsAction {
   PUBLISH_LAYOUT
   ARCHIVE_LAYOUT
   UNARCHIVE_LAYOUT
+  SET_LAYOUT_FAVORITE
   SET_PLAN
   APPROVE_OCCURRENCE
   ASSIGN

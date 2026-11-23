@@ -20,8 +20,8 @@ import {
   Field,
   IconButton,
   Input,
-  Spinner,
   Tabs,
+  LoadingSkeleton,
 } from '@market/ui';
 import {
   FarmstandButton,
@@ -77,7 +77,13 @@ export function PackingCardStatus({
   const read = useRead(`packing-card:${occurrenceId}`, load);
   return (
     <div className="packing-card-status">
-      {read.loading && <Spinner label="Loading packing status" />}
+      {read.loading && (
+        <LoadingSkeleton
+          variant="detail"
+          rows={1}
+          label="Loading packing status"
+        />
+      )}
       {read.error && <p role="status">Packing status unavailable</p>}
       {read.data && (
         <>
@@ -198,7 +204,13 @@ export function VendorPacking({ service }: { service: VendorService }) {
         </div>
       </header>
       <section className="packing-workspace">
-        {read.loading && <Spinner label="Loading market dates" />}
+        {read.loading && (
+          <LoadingSkeleton
+            variant="table"
+            rows={3}
+            label="Loading market dates"
+          />
+        )}
         {read.error && <ErrorState error={read.error} />}
         {read.data && (
           <>
@@ -604,7 +616,9 @@ function PackingOccurrence({
           </FarmstandButton>
         </FarmstandPanel>
       )}
-      {loading && <Spinner label="Loading packing lists" />}
+      {loading && (
+        <LoadingSkeleton variant="table" label="Loading packing lists" />
+      )}
       {error && <ErrorState error={error} />}
       {data && (
         <>

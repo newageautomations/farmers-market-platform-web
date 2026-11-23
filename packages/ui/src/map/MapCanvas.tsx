@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   type Ref,
+  type SetStateAction,
 } from 'react';
 import Konva from 'konva';
 import { Stage, Layer, Line, Rect, Transformer } from 'react-konva';
@@ -18,14 +19,17 @@ import { visibleMapElements } from './visuals';
 import { mapLegendEntries, isMapLegend } from './smart-design';
 import {
   bounds,
+  constrainView,
   fit,
   marquee,
   normalizeTransform,
   objectSnap,
+  compactPath,
   pan,
   pathElement,
   selectIds,
   snapGrid,
+  viewBounds,
   worldPoint,
   zoomAt,
   PATH_POINT_LIMIT,
@@ -37,6 +41,8 @@ export type MapTool = 'select' | 'pan' | 'draw' | 'points';
 export interface MapCanvasHandle {
   center: () => Point;
   locate: (id: string) => void;
+  /** The element's box on screen in the current view, as `onHover` reports it. */
+  boxOf: (id: string) => ReturnType<typeof bounds> | undefined;
   fit: () => void;
   /** Multiplies the zoom around the viewport center. */
   zoomBy: (factor: number) => void;
@@ -75,8 +81,11 @@ export function MapCanvas({
   showNavigation = true,
   onViewChange,
   initialView,
+  showBounds = false,
   ref,
 }: {
+  /** Outlines the area's viewer bounds (editor only). */
+  showBounds?: boolean;
   navigationEnd?: import('react').ReactNode;
   /** Default true. Hosts that render their own zoom controls through the
    *  handle can omit the built-in navigation row and hint. */
@@ -122,7 +131,7 @@ export function MapCanvas({
       null,
     );
   const [size, setSize] = useState({ width: 0, height: 0 }),
-    [view, setView] = useState<Viewport>(
+    [rawView, setRawView] = useState<Viewport>(
       initialView ?? { x: 40, y: 40, scale: 1 },
     ),
     [modifier, setModifier] = useState(false),
@@ -143,6 +152,41 @@ export function MapCanvas({
           : [],
       };
     }, [definition.elements, areaId, editable, spaces, statuses]);
+  // Pan and zoom stay inside the area's bounds so the map cannot be scrolled
+  // away indefinitely. Every view update passes through `setView`.
+  const customBounds = definition.areas.find((a) => a.id === areaId)?.bounds,
+    limit = useMemo(
+      () =>
+        viewBounds(customBounds, elements, definition.pixelsPerFoot, editable),
+      [customBounds, elements, definition.pixelsPerFoot, editable],
+    ),
+    viewerLimit = useMemo(
+      () =>
+        showBounds
+          ? viewBounds(customBounds, elements, definition.pixelsPerFoot)
+          : null,
+      [showBounds, customBounds, elements, definition.pixelsPerFoot],
+    ),
+    // Viewers only ever see inside the bounds; editors may zoom out to
+    // see the whole layout at once.
+    fill = !editable,
+    view = constrainView(rawView, size, limit, fill),
+    limits = useRef({ size, limit, fill });
+  useLayoutEffect(() => {
+    limits.current = { size, limit, fill };
+  });
+  const setView = useCallback((next: SetStateAction<Viewport>) => {
+    setRawView((current) => {
+      const { size, limit, fill } = limits.current,
+        base = constrainView(current, size, limit, fill);
+      return constrainView(
+        typeof next === 'function' ? next(base) : next,
+        size,
+        limit,
+        fill,
+      );
+    });
+  }, []);
   useEffect(() => {
     chosen.current = selectedIds;
   }, [selectedIds]);
@@ -250,6 +294,17 @@ export function MapCanvas({
     () => ({
       center: () => worldPoint({ x: size.width / 2, y: size.height / 2 }, view),
       locate,
+      boxOf: (id: string) => {
+        const e = definition.elements.find((e) => e.id === id);
+        if (!e) return undefined;
+        const b = bounds(e);
+        return {
+          x: b.x * view.scale + view.x,
+          y: b.y * view.scale + view.y,
+          width: b.width * view.scale,
+          height: b.height * view.scale,
+        };
+      },
       fit: () => setView(fit(elements, size)),
       zoomBy: (factor: number) =>
         setView((v) =>
@@ -262,7 +317,7 @@ export function MapCanvas({
       resetZoom: () =>
         setView((v) => zoomAt(v, { x: size.width / 2, y: size.height / 2 }, 1)),
     }),
-    [view, size, locate, elements],
+    [view, size, locate, elements, definition.elements],
   );
   useEffect(() => {
     onViewChange?.(view, size);
@@ -367,10 +422,13 @@ export function MapCanvas({
     if (g.kind === 'marquee') setBox({ a: g.world, b: w });
     if (
       g.kind === 'draw' &&
-      g.points.length < PATH_POINT_LIMIT &&
       Math.hypot(w.x - g.points.at(-1)!.x, w.y - g.points.at(-1)!.y) > 2
     ) {
       g.points.push(w);
+      // Thin the stroke as it reaches the saved-path cap so it keeps
+      // following the cursor; compacting to half leaves room to keep drawing.
+      if (g.points.length >= PATH_POINT_LIMIT)
+        g.points = compactPath(g.points, PATH_POINT_LIMIT / 2);
       setPath([...g.points]);
     }
   }
@@ -753,6 +811,15 @@ export function MapCanvas({
                 listening={false}
               />
             ))}
+            {viewerLimit && (
+              <Rect
+                {...viewerLimit}
+                stroke="#2456b8"
+                strokeWidth={1.5 / view.scale}
+                dash={[8 / view.scale, 6 / view.scale]}
+                listening={false}
+              />
+            )}
             {box && (
               <Rect
                 x={Math.min(box.a.x, box.b.x)}

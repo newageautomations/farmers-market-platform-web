@@ -1,11 +1,20 @@
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import tailwind from '@tailwindcss/vite';
-import { validateEnvironment } from '@market/config';
+import {
+  frontendBuildManifest,
+  frontendBuildSettings,
+  validateEnvironment,
+} from '@market/config';
+import { frontendToolingEnvironment } from '../../scripts/frontend-tooling.ts';
 export default defineConfig(({ mode, command }) => {
-  const environment = { ...loadEnv(mode, '../..', ''), ...process.env };
+  const { environment, envDir } = frontendToolingEnvironment(
+    mode,
+    command === 'build',
+  );
   const config = validateEnvironment(
     environment,
-    command === 'serve' && mode !== 'production' ? 'development' : 'production',
+    command === 'serve' ? 'development' : 'production',
+    'build',
   );
   // Opt-in Cloudflare Quick Tunnel demo (scripts/remote-demo-admin.ts). Read
   // from the process only, never from .env, and only for the dev server.
@@ -26,8 +35,21 @@ export default defineConfig(({ mode, command }) => {
       : null;
   return {
     build: { sourcemap: false },
-    envDir: '../..',
-    plugins: [tailwind()],
+    envDir,
+    plugins: [
+      tailwind(),
+      {
+        name: 'market-admin-build-settings',
+        apply: 'build',
+        generateBundle() {
+          this.emitFile({
+            type: 'asset',
+            fileName: frontendBuildManifest,
+            source: JSON.stringify(frontendBuildSettings(config, 'admin')),
+          });
+        },
+      },
+    ],
     define: {
       // Remote demo: same-origin path, resolved against the page's own (tunnel)
       // origin, so a new Quick Tunnel hostname needs no admin restart.
@@ -36,12 +58,8 @@ export default defineConfig(({ mode, command }) => {
       ),
       __REMOTE_DEMO__: JSON.stringify(remoteDemo),
       __FIXTURE_MODE__: JSON.stringify(config.fixtureMode),
-      __PLATFORM_ACCOUNT_ORIGIN__: JSON.stringify(
-        environment.PLATFORM_ACCOUNT_ORIGIN ?? '',
-      ),
-      __CUSTOMER_STOREFRONT_ORIGIN__: JSON.stringify(
-        environment.CUSTOMER_STOREFRONT_ORIGIN ?? '',
-      ),
+      __PLATFORM_ACCOUNT_ORIGIN__: JSON.stringify(config.accountOrigin),
+      __CUSTOMER_STOREFRONT_ORIGIN__: JSON.stringify(config.customerOrigin),
     },
   };
 });

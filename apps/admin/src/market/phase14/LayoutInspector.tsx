@@ -1,9 +1,11 @@
-import type { Drawing, SyncCategory } from '@market/ui';
+import type { Drawing, MapBounds, SyncCategory } from '@market/ui';
 import {
   Button,
   Input,
   Select,
   UtilityIcon,
+  autoMapBounds,
+  clamp,
   defaults,
   mapAsset,
   syncCategories,
@@ -764,8 +766,145 @@ export function LayoutInspector({
 }
 
 /** Settings drawer: published background plus editor-only grid and snapping. */
+/** Snaps world bounds to whole feet so the feet inputs stay exact. */
+function wholeFeet(b: MapBounds, pixelsPerFoot: number): MapBounds {
+  const snap = (n: number) => Math.round(n / pixelsPerFoot) * pixelsPerFoot;
+  return {
+    x: snap(b.x),
+    y: snap(b.y),
+    width: Math.max(10 * pixelsPerFoot, snap(b.width)),
+    height: Math.max(10 * pixelsPerFoot, snap(b.height)),
+  };
+}
+// Feature composition of the approved Select, Entry and Button controls; no
+// shared component edits a map area's viewer bounds.
+function MapBoundsControls({
+  drawing,
+  area,
+  update,
+}: {
+  drawing: Drawing;
+  area: string;
+  update: (d: Drawing) => void;
+}) {
+  const d = drawing.definition,
+    ppf = d.pixelsPerFoot,
+    current = d.areas.find((a) => a.id === area);
+  if (!current) return null;
+  const automatic = wholeFeet(
+      autoMapBounds(
+        d.elements.filter((e) => e.areaId === area),
+        ppf,
+      ),
+      ppf,
+    ),
+    shown = current.bounds ?? automatic;
+  function set(bounds?: MapBounds) {
+    update({
+      ...drawing,
+      definition: {
+        ...d,
+        areas: d.areas.map((a) =>
+          a.id !== area
+            ? a
+            : bounds
+              ? { ...a, bounds }
+              : { id: a.id, name: a.name },
+        ),
+      },
+    });
+  }
+  function field(key: keyof MapBounds, value: string) {
+    const feet = Number(value);
+    if (value === '' || !Number.isFinite(feet)) return;
+    const size = key === 'width' || key === 'height',
+      world = size
+        ? clamp(feet, 10, 20000) * ppf
+        : clamp(feet, -10000, 10000) * ppf;
+    const next = { ...shown, [key]: world };
+    // Keep the rectangle inside the coordinate range the server accepts.
+    next.width = Math.min(next.width, 100000 - next.x);
+    next.height = Math.min(next.height, 100000 - next.y);
+    if (next.width < ppf || next.height < ppf) return;
+    set(next);
+  }
+  const feet = (n: number) => Math.round(n / ppf);
+  return (
+    <>
+      <Control label="Viewer bounds">
+        {(id) => (
+          <Select
+            id={id}
+            value={current.bounds ? 'custom' : 'auto'}
+            onChange={(e) =>
+              set(e.target.value === 'custom' ? automatic : undefined)
+            }
+          >
+            <option value="auto">Auto</option>
+            <option value="custom">Custom</option>
+          </Select>
+        )}
+      </Control>
+      {current.bounds && (
+        <>
+          <div className="inspector-pair">
+            <Entry
+              label="Width (ft)"
+              type="number"
+              min={10}
+              max={20000}
+              value={feet(shown.width)}
+              onChange={(v) => field('width', v)}
+            />
+            <Entry
+              label="Height (ft)"
+              type="number"
+              min={10}
+              max={20000}
+              value={feet(shown.height)}
+              onChange={(v) => field('height', v)}
+            />
+          </div>
+          <div className="inspector-pair">
+            <Entry
+              label="Left (ft)"
+              type="number"
+              min={-10000}
+              max={10000}
+              value={feet(shown.x)}
+              onChange={(v) => field('x', v)}
+            />
+            <Entry
+              label="Top (ft)"
+              type="number"
+              min={-10000}
+              max={10000}
+              value={feet(shown.y)}
+              onChange={(v) => field('y', v)}
+            />
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="compact"
+            onClick={() => set(automatic)}
+          >
+            Fit bounds to map content
+          </Button>
+        </>
+      )}
+      <p className="designer-muted">
+        Visitors only see the map inside the dashed outline; it always fills
+        their screen. Auto keeps a margin around everything in this area (
+        {feet(automatic.width)} × {feet(automatic.height)} ft). Every object
+        stays reachable while editing.
+      </p>
+    </>
+  );
+}
 export function LayoutCanvasSettings({
   drawing,
+  area,
   editable,
   update,
   grid,
@@ -788,9 +927,16 @@ export function LayoutCanvasSettings({
   setSnapObjects: (v: boolean) => void;
   spacing: number;
   setSpacing: (v: number) => void;
+  /** Active area whose viewer bounds the settings edit. */
+  area: string;
 }) {
   return (
     <div className="designer-inspector designer-settings">
+      <PanelSection title="Map bounds">
+        <fieldset disabled={!editable}>
+          <MapBoundsControls drawing={drawing} area={area} update={update} />
+        </fieldset>
+      </PanelSection>
       <PanelSection title="Canvas background">
         <fieldset disabled={!editable}>
           <LayoutBackgroundControls

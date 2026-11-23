@@ -20,9 +20,10 @@ import {
   Input,
   Pagination,
   SelectField,
-  Spinner,
   Tooltip,
   UtilityIcon,
+  LoadingSkeleton,
+  useLoadGate,
 } from '@market/ui';
 import { buttonClassName } from '@market/ui/presentation';
 import {
@@ -143,19 +144,20 @@ export function WebsiteLibrary({
       active = false;
     };
   }, [appearance, generation]);
+  const gated = useLoadGate();
   useEffect(() => {
     let active = true;
     if (!storefrontId) return;
     void (
       websiteId
-        ? library.read(storefrontId, websiteId).then((value) => {
+        ? gated(library.read(storefrontId, websiteId)).then((value) => {
             if (active) {
               setSelected(value);
               setLoadedKey(requestKey);
               setError(undefined);
             }
           })
-        : library.list(storefrontId, skip, 20).then((value) => {
+        : gated(library.list(storefrontId, skip, 20)).then((value) => {
             if (active) {
               setPage(value);
               setLoadedKey(requestKey);
@@ -168,7 +170,7 @@ export function WebsiteLibrary({
     return () => {
       active = false;
     };
-  }, [library, storefrontId, websiteId, skip, generation, requestKey]);
+  }, [library, storefrontId, websiteId, skip, generation, requestKey, gated]);
   async function run(work: () => Promise<void>) {
     if (lock.current) return;
     lock.current = true;
@@ -199,7 +201,9 @@ export function WebsiteLibrary({
       return (
         <WebsiteWorkspace>
           {feedback}
-          {!error && <Spinner label="Loading website" />}
+          {!error && (
+            <LoadingSkeleton variant="detail" label="Loading website" />
+          )}
           <a
             className={buttonClassName({
               variant: 'secondary',
@@ -385,7 +389,7 @@ export function WebsiteLibrary({
         <EmptyState title="No storefront is configured" />
       )}
       {!page && storefrontId && !error && (
-        <Spinner label="Loading Website Library" />
+        <LoadingSkeleton variant="cards" label="Loading Website Library" />
       )}
       {page && (
         <div className="website-library-columns">

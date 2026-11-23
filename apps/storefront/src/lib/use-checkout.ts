@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, type SubmitEvent } from 'react';
+import { AppError } from '@market/api';
 import type {
   CheckoutView,
   PickupOption,
@@ -10,13 +11,21 @@ export function useCheckout({
   storefrontId,
   initial,
   onViewChange,
+  reviewIncludesPayment = false,
 }: {
   storefrontId: string;
   initial: CheckoutView;
   onViewChange?: (view: CheckoutView) => void;
+  reviewIncludesPayment?: boolean;
 }) {
   const [view, setView] = useState(initial),
-    [stage, setStage] = useState(initial.attempt ? 'Payment' : 'Contact'),
+    [stage, setStage] = useState(
+      initial.attempt
+        ? reviewIncludesPayment
+          ? 'Review'
+          : 'Payment'
+        : 'Contact',
+    ),
     [options, setOptions] = useState<PickupOption[]>([]),
     [pending, setPending] = useState(false),
     [quoting, setQuoting] = useState(false),
@@ -32,12 +41,21 @@ export function useCheckout({
     Record<string, string>
   >({});
   const [paymentBusy, setPaymentBusy] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState<string>();
+  const termsToken = view.termsDisclosure?.token;
+  const termsAccepted = !!termsToken && acceptedTerms === termsToken;
   const refreshVersion = useRef(0),
     latestView = useRef(initial),
     queuedRefresh = useRef(false);
   const lock = useRef(false),
     heading = useRef<HTMLHeadingElement>(null);
+  const focusNextStage = useRef(false);
   const contact = view.contact ?? view.profile;
+  useEffect(() => {
+    if (!focusNextStage.current) return;
+    focusNextStage.current = false;
+    heading.current?.focus();
+  }, [stage]);
   useEffect(() => {
     if (view.committed)
       window.location.assign(
@@ -72,7 +90,15 @@ export function useCheckout({
           ['Contact', 'Pickup', 'Review'].includes(requested) &&
           !initial.attempt
         )
-          go(requested);
+          setStage(
+            reviewIncludesPayment &&
+              requested === 'Review' &&
+              (initial.groups.some((group) => !group.pickup.length) ||
+                (initial.availability.mode === 'STRIPE_TEST' &&
+                  !initial.preorderFee))
+              ? 'Pickup'
+              : requested,
+          );
       })
       .catch(() => {
         /* Contact submission can retry the pickup read. */
@@ -83,7 +109,10 @@ export function useCheckout({
   }, [storefrontId, initial.orderId]);
   async function back(next: string) {
     if (paymentBusy || pending) return;
-    if (!stripeEnabled || stage !== 'Payment') {
+    if (
+      !stripeEnabled ||
+      (stage !== 'Payment' && !(reviewIncludesPayment && stage === 'Review'))
+    ) {
       go(next);
       return;
     }
@@ -133,7 +162,6 @@ export function useCheckout({
     } finally {
       lock.current = false;
       setPending(false);
-      heading.current?.focus();
       if (queuedRefresh.current) {
         queuedRefresh.current = false;
         void run(async () => {
@@ -161,12 +189,19 @@ export function useCheckout({
   function updateView(current: CheckoutView) {
     if (current.orderId !== initial.orderId)
       throw new Error('Checkout changed');
+    if (
+      current.termsDisclosure?.token !== latestView.current.termsDisclosure?.token
+    )
+      setAcceptedTerms(undefined);
     latestView.current = current;
     setView(current);
     onViewChange?.(current);
   }
   useEffect(() => {
-    if (!stripeEnabled || !['Review', 'Payment'].includes(stage)) return;
+    if (
+      stage !== 'Payment' &&
+      !(stage === 'Review' && (stripeEnabled || reviewIncludesPayment))
+    ) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const update = () => {
@@ -179,7 +214,7 @@ export function useCheckout({
         }
         void run(async () => {
           const current = await refresh();
-          if (!current.preorderFee)
+          if (stripeEnabled && !current.preorderFee)
             throw new Error('Authoritative total unavailable');
         });
       }, 150);
@@ -196,10 +231,11 @@ export function useCheckout({
       window.removeEventListener('vendor-cart-updated', update);
       window.removeEventListener('market-cart-updated', update);
     };
-  }, [storefrontId, view.orderId, stripeEnabled, stage]);
+  }, [storefrontId, view.orderId, stripeEnabled, stage, reviewIncludesPayment]);
   function go(next: string) {
+    if (next === stage) return;
+    focusNextStage.current = true;
     setStage(next);
-    setTimeout(() => heading.current?.focus(), 0);
   }
   async function submitContact(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -255,9 +291,14 @@ export function useCheckout({
   }
   function pay() {
     return run(async () => {
+      if (!termsAccepted) return;
       const current = await refresh();
       if (current.committed) {
         window.location.assign(`/checkout/success?order=${current.orderId}`);
+        return;
+      }
+      if (current.termsDisclosure?.token !== termsToken) {
+        setError(new AppError('conflict', 'VENDOR_TERMS_CHANGED').message);
         return;
       }
       if (
@@ -270,12 +311,26 @@ export function useCheckout({
         return;
       // Once payment work starts, a lost response must be reconciled by a status read.
       setPaymentUncertain(true);
-      const attempt =
-        current.attempt ??
-        (await shopCall<{ attemptId: string; state: string }>(
+      let attempt;
+      try {
+        attempt = await shopCall<{ attemptId: string; state: string }>(
           storefrontId,
           'checkout-begin',
-        ));
+          { termsToken },
+        );
+      } catch (cause) {
+        if (
+          !(cause instanceof AppError) ||
+          !['VENDOR_TERMS_CHANGED', 'VENDOR_TERMS_ACCEPTANCE_REQUIRED'].includes(
+            cause.code ?? '',
+          )
+        ) throw cause;
+        setPaymentUncertain(false);
+        setAcceptedTerms(undefined);
+        await refresh();
+        setError(cause.message);
+        return;
+      }
       if (attempt.state !== 'HELD' && attempt.state !== 'COMMITTED') {
         const status = await refresh();
         setPaymentUncertain(
@@ -334,6 +389,9 @@ export function useCheckout({
     setPickupSelections,
     setPaymentBusy,
     paymentBusy,
+    termsAccepted,
+    setTermsAccepted: (checked: boolean) =>
+      setAcceptedTerms(checked ? termsToken : undefined),
     pay,
   };
 }

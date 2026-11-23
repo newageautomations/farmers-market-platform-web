@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Button,
   Select,
+  SearchableMultiSelect,
   boothRow,
   mapStylePresets,
   applyMapStyle,
@@ -19,6 +20,8 @@ import {
   type MapArrangement,
 } from '@market/ui';
 import { Check, Control, Entry } from './common';
+import { MinorPriceInput } from '../../PriceInput';
+import { amenityOptions } from './BoothDetailsFields';
 
 // Feature composition of the editor's approved controls. No shared component
 // owns row validation, batch insertion, or these map-specific operations.
@@ -37,6 +40,7 @@ export function LayoutSmartTools({
   setStatusMode,
   activeTool,
   onToolChange,
+  defaultBoothPrice,
 }: {
   drawing: Drawing;
   area: string;
@@ -52,6 +56,8 @@ export function LayoutSmartTools({
   setStatusMode: (value: boolean) => void;
   activeTool?: string;
   onToolChange?: (tool: string) => void;
+  /** The editor's remembered booth price seeds the row price. */
+  defaultBoothPrice?: number;
 }) {
   const [localTool, setTool] = useState('row'),
     [error, setError] = useState(''),
@@ -65,6 +71,8 @@ export function LayoutSmartTools({
       start: 1,
       prefix: 'A',
       rotation: 0,
+      feeMinor: defaultBoothPrice ?? 0,
+      amenities: [],
     }),
     [preset, setPreset] = useState<MapStylePreset>('natural'),
     [replace, setReplace] = useState(false),
@@ -201,9 +209,31 @@ export function LayoutSmartTools({
               value={row.rotation}
               onChange={(v) => setRow({ ...row, rotation: Number(v) })}
             />
+            <Control label="Booth price">
+              {(id) => (
+                <MinorPriceInput
+                  id={id}
+                  valueMinor={row.feeMinor ?? 0}
+                  onMinorChange={(feeMinor) =>
+                    setRow({ ...row, feeMinor: Math.min(feeMinor, 100000000) })
+                  }
+                />
+              )}
+            </Control>
+            <SearchableMultiSelect
+              label="Booth amenities"
+              placeholder="No amenities"
+              value={row.amenities ?? []}
+              onChange={(amenities) => setRow({ ...row, amenities })}
+              options={amenityOptions.map((a) => ({
+                value: a,
+                label: a.toLowerCase().replaceAll('_', ' '),
+              }))}
+            />
             <p>
-              The row is centered in the current canvas view. Every booth stays
-              independent. Duplicate labels stop the entire insertion.
+              The row is centered in the current canvas view. Every booth gets
+              this price and these amenities and stays independent afterward.
+              Duplicate labels stop the entire insertion.
             </p>
             <Button
               type="button"

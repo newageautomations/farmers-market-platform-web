@@ -326,7 +326,12 @@ function FinanceWorkspace({
       }
     >
       {error && <Alert severity="error">{error}</Alert>}
-      <ReadState {...options} retry={options.refresh} />
+      <ReadState
+        skeleton="detail"
+        rows={2}
+        {...options}
+        retry={options.refresh}
+      />
       {filtered && (!api || options.data) && (
         <FarmstandPanel
           as="section"

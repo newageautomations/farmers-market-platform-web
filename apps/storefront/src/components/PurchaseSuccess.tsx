@@ -2,6 +2,7 @@ import { CheckoutPickup } from './CheckoutPickup';
 import { buttonClassName } from '@market/ui/presentation';
 import type { CheckoutView } from '@market/api';
 import { CheckoutSummary } from './Checkout';
+import { CheckoutContactDetails } from './CheckoutContactDetails';
 export function PurchaseSuccess({
   view,
   images = {},
@@ -37,30 +38,7 @@ export function PurchaseSuccess({
           <p>
             Order reference: <strong>{view.code}</strong>
           </p>
-          {contact && (
-            <section
-              className="checkout-section checkout-contact-details"
-              aria-labelledby="confirmation-contact-title"
-            >
-              <h2 id="confirmation-contact-title">Contact details</h2>
-              <dl className="checkout-contact-facts">
-                <div>
-                  <dt>Name:</dt>
-                  <dd>
-                    {contact.firstName} {contact.lastName}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Email:</dt>
-                  <dd>{contact.emailAddress}</dd>
-                </div>
-                <div>
-                  <dt>Phone:</dt>
-                  <dd>{contact.phoneNumber || 'Not provided'}</dd>
-                </div>
-              </dl>
-            </section>
-          )}
+          <CheckoutContactDetails contact={contact} showMissingPhone />
           <CheckoutPickup view={view} timezone={timezone} />
         </div>
         <section
@@ -75,14 +53,7 @@ export function PurchaseSuccess({
           />
         </section>
       </div>
-      {view.profile ? (
-        <a
-          className={buttonClassName({ variant: 'secondary' })}
-          href="/account/orders"
-        >
-          View your orders
-        </a>
-      ) : (
+      {!view.profile && (
         <section
           className="checkout-account-invitation"
           aria-label="Track your orders"
@@ -99,9 +70,19 @@ export function PurchaseSuccess({
           </a>
         </section>
       )}
-      <a className={buttonClassName({ variant: 'primary' })} href={shopHref}>
-        Continue shopping
-      </a>
+      <div className="checkout-confirmation-actions">
+        {view.profile && (
+          <a
+            className={buttonClassName({ variant: 'secondary' })}
+            href="/account/orders"
+          >
+            View your orders
+          </a>
+        )}
+        <a className={buttonClassName({ variant: 'primary' })} href={shopHref}>
+          Continue shopping
+        </a>
+      </div>
     </div>
   );
 }

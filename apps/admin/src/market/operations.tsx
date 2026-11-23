@@ -1,6 +1,6 @@
 import { useCallback, useId, useMemo, useState, type MouseEvent } from 'react';
 import { type MarketOccurrence } from '@market/api';
-import { Alert, Badge, EmptyState, Field } from '@market/ui';
+import { Alert, Badge, EmptyState, Field, InlineSkeleton } from '@market/ui';
 import {
   FarmstandIcon,
   FarmstandLink,
@@ -124,7 +124,7 @@ function ReadinessCell({
 }) {
   if (phase === 'cancelled' || phase === 'ended')
     return <span className="markets-muted">Not tracked</span>;
-  if (checking) return <span className="markets-muted">Checking…</span>;
+  if (checking) return <InlineSkeleton label="Checking readiness" />;
   if (attention)
     return (
       <Badge tone="warning" className="operations-readiness">
@@ -769,6 +769,7 @@ function OperationsDetail({
         Back to operations
       </FarmstandLink>
       <ReadState
+        skeleton="detail"
         loading={!occurrence && detail.loading}
         error={detail.error}
         retry={detail.refresh}
@@ -891,6 +892,8 @@ function OperationsDetail({
                 <Panel icon={{ farmstand: 'store' }} title="Vendors and booths">
                   <div className="operations-booths">
                     <ReadState
+                      skeleton="detail"
+                      rows={3}
                       loading={facts.loading}
                       error={facts.error}
                       retry={facts.refresh}

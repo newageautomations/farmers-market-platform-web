@@ -145,15 +145,7 @@ export function WebsiteThumbnail({
       aria-label={`${record.name} homepage preview`}
       style={{ '--thumb-scale': scale || undefined } as CSSProperties}
     >
-      <div className="website-thumbnail-skeleton" aria-hidden="true">
-        <Skeleton className="website-thumbnail-skeleton-bar" />
-        <Skeleton className="website-thumbnail-skeleton-hero" />
-        <div className="website-thumbnail-skeleton-row">
-          <Skeleton />
-          <Skeleton />
-          <Skeleton />
-        </div>
-      </div>
+      <WebsitePreviewSkeleton />
       {live && scale > 0 && (
         <iframe
           ref={frame}
@@ -171,6 +163,25 @@ export function WebsiteThumbnail({
           referrerPolicy="no-referrer"
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * The generic website skeleton (a bar, a hero block and three cards), the same for
+ * every theme. Shared by Website Library thumbnails and the storefront editor
+ * preview while a website renders.
+ */
+export function WebsitePreviewSkeleton() {
+  return (
+    <div className="website-thumbnail-skeleton" aria-hidden="true">
+      <Skeleton className="website-thumbnail-skeleton-bar" />
+      <Skeleton className="website-thumbnail-skeleton-hero" />
+      <div className="website-thumbnail-skeleton-row">
+        <Skeleton />
+        <Skeleton />
+        <Skeleton />
+      </div>
     </div>
   );
 }

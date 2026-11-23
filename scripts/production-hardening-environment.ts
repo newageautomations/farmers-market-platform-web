@@ -3,6 +3,7 @@ export function syntheticProductionEnvironment() {
   const env: Record<string, string> = {
     APP_ENV: 'production',
     NODE_ENV: 'production',
+    DEPLOYMENT_ENV: 'local-qualification',
     FRONTEND_FIXTURE_MODE: 'false',
     COOKIE_SECRET: randomBytes(48).toString('base64url'),
     PLATFORM_ACCOUNT_BRIDGE_KEY: randomBytes(48).toString('base64url'),
@@ -41,7 +42,7 @@ export function syntheticProductionEnvironment() {
     PHONE_SMS_ALLOW_NETWORK: 'false',
     SAAS_BILLING_ALLOW_NETWORK: 'false',
   };
-  // Empty optional credentials stop dotenv from adopting any configured real provider values.
+  // Override provider values inherited from the developer's process.
   for (const key of [
     'RESEND_API_KEY',
     'RESEND_FROM_TRANSACTIONAL',

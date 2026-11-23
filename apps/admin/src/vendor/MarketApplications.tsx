@@ -301,7 +301,12 @@ export function FindMarketApplications({
         </EmptyState>
       ) : (
         <>
-          <ReadState {...cities} retry={cities.refresh} />
+          <ReadState
+            skeleton="detail"
+            rows={1}
+            {...cities}
+            retry={cities.refresh}
+          />
           <ReadState {...query} retry={query.refresh} />
           {query.data &&
             (query.data.items.length ? (
@@ -480,7 +485,7 @@ export function MarketApplicationRecords({
   }
   return (
     <>
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="stats" {...query} retry={query.refresh} />
       <div className="markets-columns market-applications-columns">
         <div className="market-applications-main">
           {query.data && (
@@ -729,7 +734,12 @@ export function MarketApplicationRecords({
                       </div>
                     )}
                   </dl>
-                  <ReadState {...steps} retry={steps.refresh} />
+                  <ReadState
+                    skeleton="detail"
+                    rows={2}
+                    {...steps}
+                    retry={steps.refresh}
+                  />
                   <p className="market-application-guidance">{next.detail}</p>
                   <ApplicationLink href={next.href} primary>
                     {next.label}

@@ -4,23 +4,40 @@ import { safeAsset } from '@market/storefront-core';
 import { cardClassName } from '@market/ui/presentation';
 import { vendorInitial } from '../../lib/market-website';
 import '../../styles/market-website.css';
-/**
- * Vendors confirmed for one market date. The card links to their storefront;
- * `detailed` retains the separate date-specific offerings action.
- */
+/** Each card opens its vendor's offerings for the displayed market date. */
 const {
   vendors,
   occurrenceId,
   detailed = false,
   cardTheme = 'standard',
   marketDay = false,
+  booths,
+  boothPage,
 } = Astro.props as {
   vendors: readonly MarketOccurrenceVendor[];
   occurrenceId: string;
   detailed?: boolean;
   cardTheme?: 'standard' | 'inverse' | 'soft';
   marketDay?: boolean;
+  /**
+   * Market Day on themes with booth cards: each vendor's booth on the map.
+   * The card then shows the vendor's category and leads to their booth
+   * instead of their shop offerings.
+   */
+  booths?: Record<
+    string,
+    { elementId: string; label: string; category: string }
+  >;
+  /**
+   * Booth links on another page (the vendors page) lead to this Market Day
+   * homepage, e.g. `/?marketDay=12`, which opens the booth on its map.
+   */
+  boothPage?: string;
 };
+const boothHref = (elementId: string) =>
+  boothPage
+    ? `${boothPage}&booth=${encodeURIComponent(elementId)}#market-day-map`
+    : '#market-day-map';
 const offeringsHref = (vendor: MarketOccurrenceVendor) =>
   `/shop?occurrence=${encodeURIComponent(occurrenceId)}&vendor=${encodeURIComponent(vendor.vendorId)}`;
 ---
@@ -31,6 +48,7 @@ const offeringsHref = (vendor: MarketOccurrenceVendor) =>
 >
   {vendors.map((vendor) => {
     const image = safeAsset(vendor.image ?? undefined);
+    const booth = booths?.[vendor.vendorId];
     return (
       <li
         class={cardClassName({
@@ -54,12 +72,22 @@ const offeringsHref = (vendor: MarketOccurrenceVendor) =>
           </span>
         )}
         <h3>
-          {vendor.storefrontUrl ? (
-            <a class="market-vendor-storefront" href={vendor.storefrontUrl}>
+          {booths ? (
+            booth ? (
+              <a
+                class="market-vendor-offerings"
+                href={boothHref(booth.elementId)}
+                data-market-day-booth={booth.elementId}
+              >
+                <span class="farmstand-text-link">{vendor.name}</span>
+              </a>
+            ) : (
+              vendor.name
+            )
+          ) : (
+            <a class="market-vendor-offerings" href={offeringsHref(vendor)}>
               <span class="farmstand-text-link">{vendor.name}</span>
             </a>
-          ) : (
-            vendor.name
           )}
         </h3>
         {marketDay && (
@@ -67,15 +95,30 @@ const offeringsHref = (vendor: MarketOccurrenceVendor) =>
             Following
           </p>
         )}
-        <p class="market-vendor-meta">
-          {vendor.offeringCount > 0
-            ? `${vendor.offeringCount} ${vendor.offeringCount === 1 ? 'offering' : 'offerings'} this market day`
-            : 'Visit their booth on market day'}
-        </p>
+        {booths ? (
+          booth?.category && <p class="market-vendor-meta">{booth.category}</p>
+        ) : (
+          <p class="market-vendor-meta">
+            {vendor.offeringCount > 0
+              ? `${vendor.offeringCount} ${vendor.offeringCount === 1 ? 'offering' : 'offerings'} this market day`
+              : 'Visit their booth on market day'}
+          </p>
+        )}
         <div class="market-vendor-actions">
-          <a class="harvest-text-link" href={offeringsHref(vendor)}>
-            Shop offerings <span aria-hidden="true">&#8599;</span>
-          </a>
+          {booths ? (
+            booth ? (
+              <span class="harvest-text-link" aria-hidden="true">
+                Find their booth ({booth.label}){' '}
+                <span aria-hidden="true">&#8594;</span>
+              </span>
+            ) : (
+              <span class="market-vendor-meta">Not on today's map</span>
+            )
+          ) : (
+            <span class="harvest-text-link" aria-hidden="true">
+              Shop offerings <span aria-hidden="true">&#8599;</span>
+            </span>
+          )}
           {detailed && vendor.storefrontUrl && (
             <a class="harvest-text-link" href={vendor.storefrontUrl}>
               Visit storefront <span aria-hidden="true">&#8599;</span>

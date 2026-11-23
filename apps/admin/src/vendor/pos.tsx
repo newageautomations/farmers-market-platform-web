@@ -22,8 +22,8 @@ import {
   Field,
   Input,
   SelectField,
-  Spinner,
   UtilityIcon,
+  LoadingSkeleton,
 } from '@market/ui';
 import type { VendorService } from './service';
 import { PosCartQueue } from './pos-queue';
@@ -1145,7 +1145,11 @@ export function PosRegister({
             {pending > 0 ? ` · ${pending} pending` : ''}
           </div>
           {loading && !catalog ? (
-            <Spinner label="Loading products" />
+            <LoadingSkeleton
+              variant="cards"
+              rows={6}
+              label="Loading products"
+            />
           ) : catalog?.items.length ? (
             <>
               <div className="pos-product-grid" aria-busy={loading}>

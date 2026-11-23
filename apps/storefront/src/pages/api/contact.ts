@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { boundedBody } from '@market/config';
 import { safeError, type ContactSubmissionInput } from '@market/api';
 import { requestContact } from '../../lib/shop';
+import { themePageStructure } from '@market/theme/storefront';
 export const POST: APIRoute = async (context) => {
   const headers = new Headers({
     'Content-Type': 'application/json',
@@ -10,7 +11,11 @@ export const POST: APIRoute = async (context) => {
   const storefront = context.locals.storefront;
   if (
     context.locals.editorPreview ||
-    storefront?.kind !== 'VENDOR' ||
+    !(
+      storefront?.kind === 'VENDOR' ||
+      (storefront?.kind === 'MARKET' &&
+        themePageStructure(storefront.appearance?.theme).marketContactForm)
+    ) ||
     !storefront.appearance?.contact?.enabled ||
     context.request.headers.get('origin') !== storefront.canonicalOrigin
   )

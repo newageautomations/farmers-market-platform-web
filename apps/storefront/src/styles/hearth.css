@@ -52,6 +52,8 @@ html[data-storefront-theme='hearth'] {
   --hw-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 4.5 4.5L19 7'/%3E%3C/svg%3E");
   --hw-icon-bag: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z'/%3E%3Cpath d='M3 6h18M16 10a4 4 0 0 1-8 0'/%3E%3C/svg%3E");
   --hw-icon-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M8 3v4M16 3v4M3 10h18'/%3E%3C/svg%3E");
+  --hw-icon-x: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+  --hw-icon-dash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
   --hw-icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3'/%3E%3C/svg%3E");
   --hw-icon-store: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 10v10h16V10M3 10l2-6h14l2 6a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0zM10 20v-5h4v5'/%3E%3C/svg%3E");
   /* The theme's own palette replaces the generic storefront presets. */
@@ -1539,7 +1541,8 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
   color: var(--hw-muted);
   font-size: 0.93rem;
 }
-.hearth-site .shop-market-banner .shop-market-picker > .button.ui-button {
+.hearth-site .shop-market-banner .shop-market-picker > .button.ui-button,
+.hearth-site .market-date-selector .shop-market-picker > .button.ui-button {
   --button-fill: var(--hw-flour);
   --button-ink: var(--hw-ink);
   --button-edge: var(--hw-ink);
@@ -1585,6 +1588,10 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
 .hearth-site
   .shop-market-banner
   .shop-market-picker
+  > .button.ui-button::before,
+.hearth-site
+  .market-date-selector
+  .shop-market-picker
   > .button.ui-button::before {
   content: '';
   flex: none;
@@ -1621,7 +1628,8 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
 }
 .hearth-site .shop-categories .shop-category-option {
   position: relative;
-  padding: 0.6rem 0.85rem;
+  gap: 0.45rem;
+  padding: 0.6rem 0.85rem 0.6rem 0.55rem;
   border: var(--hw-edge);
   border-radius: 4px;
   background: var(--hw-flour);
@@ -1655,18 +1663,175 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
   background: var(--hw-primary);
   color: #fcf7ec;
 }
-.hearth-site .shop-category-option:has(input:checked)::before {
+/* Every option keeps an icon slot so choosing one never re-wraps its text:
+   an X when off, a check when on, and a dash on a parent category with only
+   some of its subcategories chosen. */
+.hearth-site .shop-category-option::before {
   content: '';
   flex: none;
   width: 0.9rem;
   height: 0.9rem;
+  background: var(--hw-muted);
+  opacity: 0.55;
+  -webkit-mask: var(--hw-icon-x) center / 0.7rem no-repeat;
+  mask: var(--hw-icon-x) center / 0.7rem no-repeat;
+}
+.hearth-site .shop-category-option:has(input:checked)::before {
   background: currentColor;
+  opacity: 1;
   -webkit-mask: var(--hw-icon-check) center / contain no-repeat;
   mask: var(--hw-icon-check) center / contain no-repeat;
+}
+.hearth-site
+  .market-shop-category-group:has(.ui-disclosure-content input:checked)
+  > .market-shop-category-parent:not(:has(input:checked))::before {
+  background: var(--hw-primary);
+  opacity: 1;
+  -webkit-mask: var(--hw-icon-dash) center / contain no-repeat;
+  mask: var(--hw-icon-dash) center / contain no-repeat;
 }
 .hearth-site .shop-category-option:has(input:focus-visible) {
   outline: 3px solid var(--hw-jam);
   outline-offset: 3px;
+}
+/* Market shop filters: Categories / Vendors switch between a white button
+   and the theme's brown button for the active mode. */
+.hearth-site .market-shop-filters > .market-shop-filter-modes {
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 2px dashed var(--hw-line);
+}
+.hearth-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button {
+  --button-fill: var(--hw-flour);
+  --button-ink: var(--hw-ink);
+  --button-edge: var(--hw-ink);
+  --button-hover-fill: var(--hw-butter);
+  --button-hover-ink: var(--hw-ink);
+  --button-hover-edge: var(--hw-ink);
+  flex: 1 1 auto;
+  justify-content: center;
+  min-height: 40px;
+  padding-inline: 0.6rem;
+  font-size: 0.74rem;
+  white-space: nowrap;
+  box-shadow: 3px 3px 0 var(--hw-shade);
+}
+.hearth-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button[aria-current='page'] {
+  --button-fill: var(--hw-primary);
+  --button-ink: var(--hw-flour);
+  --button-hover-fill: var(--hw-primary-deep);
+  --button-hover-ink: var(--hw-flour);
+  box-shadow: 3px 3px 0 var(--hw-ink);
+}
+.hearth-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button:is(:hover, :focus-visible) {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--hw-shade);
+}
+.hearth-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button[aria-current='page']:is(:hover, :focus-visible) {
+  box-shadow: 5px 5px 0 var(--hw-ink);
+}
+.hearth-site .market-shop-filter-form {
+  gap: 0.5rem;
+}
+/* Parent category dropdowns: the pill selects the whole category, the
+   square chevron button beside it opens the subcategory panel. */
+.hearth-site .market-shop-category-group {
+  --market-shop-row-height: 2.4rem;
+  --market-shop-toggle-width: 2.4rem;
+  column-gap: 0.4rem;
+}
+.hearth-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary {
+  border: var(--hw-edge);
+  border-radius: 4px;
+  background: var(--hw-flour);
+  color: var(--hw-ink);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.hearth-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary:hover {
+  background: var(--hw-butter);
+  box-shadow: 3px 3px 0 var(--hw-shade);
+  transform: translate(-2px, -2px);
+}
+.hearth-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary:focus-visible {
+  outline: 3px solid var(--hw-jam);
+  outline-offset: 3px;
+}
+.hearth-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure[open]
+  > summary {
+  background: var(--hw-butter);
+  box-shadow: inset 0 -3px 0 var(--hw-caramel);
+}
+.hearth-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > .ui-disclosure-content {
+  margin-block-start: 0.4rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+  border: 0;
+  border-left: 3px solid var(--hw-caramel);
+  border-radius: 0 4px 4px 0;
+  background: color-mix(in srgb, var(--hw-butter) 45%, transparent);
+}
+.hearth-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  .shop-category-option {
+  padding-right: 0.7rem;
+  font-size: 0.84rem;
+}
+/* Clear wears the same white button as the inactive filter mode. */
+.hearth-site .market-shop-filter-form .button.ui-button.button-tertiary {
+  --button-fill: var(--hw-flour);
+  --button-ink: var(--hw-ink);
+  --button-edge: var(--hw-ink);
+  --button-hover-fill: var(--hw-butter);
+  --button-hover-ink: var(--hw-ink);
+  --button-hover-edge: var(--hw-ink);
+  border: 1.5px solid var(--button-edge);
+  background: var(--button-fill);
+  color: var(--button-ink);
+  justify-self: start;
+  text-decoration: none;
+  box-shadow: 3px 3px 0 var(--hw-shade);
+}
+.hearth-site .market-shop-filter-form .button.ui-button[hidden] {
+  display: none;
+}
+.hearth-site
+  .market-shop-filter-form
+  .button.ui-button.button-tertiary:is(:hover, :focus-visible) {
+  background: var(--button-hover-fill);
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--hw-shade);
 }
 .hearth-site .shop-catalog-controls {
   align-items: center;
@@ -1998,12 +2163,28 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
 .hearth-site .vendor-cart-stepper.button.ui-button {
   box-shadow: 2px 2px 0 var(--hw-ink);
 }
-/* Remove becomes an icon button; its accessible name is kept. */
-.hearth-site .vendor-cart-controls > .button-destructive-outline {
-  width: 40px;
-  min-width: 40px;
+/* Remove becomes an icon button; its accessible name is kept. It wears the
+   quantity steppers' shape (edge, offset shadow, hover) in Hearth jam red so the three
+   controls read as one set. The flex gap is cleared because the hidden
+   label text would otherwise push the icon off centre. */
+.hearth-site
+  .vendor-cart-controls
+  > .button.ui-button.button-destructive-outline {
+  --button-fill: var(--hw-jam);
+  --button-ink: var(--hw-flour);
+  --button-edge: var(--hw-ink);
+  --button-hover-fill: var(--brand-surface);
+  --button-hover-ink: var(--hw-jam);
+  --button-hover-edge: var(--hw-jam);
+  --button-hover-transform: none;
+  justify-content: center;
+  gap: 0;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
   padding: 0;
   font-size: 0;
+  box-shadow: 3px 3px 0 var(--hw-ink);
 }
 .hearth-site .vendor-cart-controls > .button-destructive-outline::before {
   content: '';
@@ -2126,10 +2307,149 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
 .hearth-site .checkout-summary :is(h2, h3) {
   font-size: 1.15rem;
 }
+/* Continue buttons share the Back button's height; only their width differs. */
 .hearth-site .checkout-stage-actions .button.ui-button:not(.secondary),
 .hearth-site .checkout-section > .button.ui-button:not(.secondary) {
-  min-height: 52px;
   padding-inline: 1.6rem;
+}
+.hearth-site .checkout-stage-actions {
+  align-items: center;
+}
+
+/* Completed steps are buttons back to that section. */
+.hearth-site .checkout-progress li:has(.checkout-progress-step) {
+  position: relative;
+  color: var(--hw-ink);
+  transition:
+    background-color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.hearth-site .checkout-progress-step {
+  text-decoration: none;
+}
+.hearth-site .checkout-progress-step::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.hearth-site .checkout-progress li:has(.checkout-progress-step:hover) {
+  background: var(--hw-butter);
+  box-shadow: 3px 3px 0 var(--hw-shade);
+  transform: translate(-2px, -2px);
+}
+.hearth-site .checkout-progress li:has(.checkout-progress-step:active) {
+  box-shadow: 0 0 0 var(--hw-shade);
+  transform: translate(1px, 1px);
+}
+.hearth-site .checkout-progress li:has(.checkout-progress-step:focus-visible) {
+  outline: 3px solid var(--hw-jam);
+  outline-offset: 3px;
+}
+.hearth-site .checkout-progress-step:focus-visible {
+  outline: 0;
+}
+
+/* Each vendor's pickup choice is its own card, like Pickup details. */
+.hearth-site .market-checkout fieldset {
+  min-width: 0;
+  margin: 0 0 1.25rem;
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  border: var(--hw-edge);
+  border-radius: var(--hw-radius);
+  background: var(--hw-flour);
+  box-shadow: var(--hw-stack);
+}
+.hearth-site .market-checkout fieldset > legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 0.85rem;
+  padding: 0 0 0.7rem;
+  border-bottom: 2px dashed var(--hw-line);
+  color: var(--hw-ink);
+  font: 700 1.4rem / 1.15 var(--font-heading);
+}
+.hearth-site .market-checkout fieldset > legend + * {
+  clear: both;
+}
+.hearth-site .market-checkout .pickup-choice {
+  position: relative;
+  gap: 0.7rem;
+  margin: 0 0 0.6rem;
+  padding: 0.8rem 1rem;
+  border: var(--hw-edge);
+  border-radius: 4px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.hearth-site .market-checkout .pickup-choice:last-child {
+  margin-bottom: 0;
+}
+.hearth-site .market-checkout .pickup-choice input[type='radio'] {
+  accent-color: var(--hw-primary);
+  cursor: pointer;
+}
+.hearth-site .market-checkout .pickup-choice:hover {
+  background: var(--hw-butter);
+  box-shadow: 3px 3px 0 var(--hw-shade);
+  transform: translate(-2px, -2px);
+}
+.hearth-site .market-checkout .pickup-choice:active {
+  box-shadow: 0 0 0 var(--hw-shade);
+  transform: translate(1px, 1px);
+}
+.hearth-site .market-checkout .pickup-choice:has(input:checked) {
+  background: var(--hw-butter);
+  box-shadow: inset 4px 0 0 var(--hw-primary);
+}
+.hearth-site .market-checkout .pickup-choice:has(input:checked):hover {
+  box-shadow:
+    inset 4px 0 0 var(--hw-primary),
+    3px 3px 0 var(--hw-shade);
+}
+.hearth-site .market-checkout .pickup-choice:has(input:focus-visible) {
+  outline: 3px solid var(--hw-jam);
+  outline-offset: 3px;
+}
+
+/* Order summary: the quantity is its own chip, apart from the name. */
+.hearth-site .checkout-summary-product > span:not(:last-child) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+}
+.hearth-site .checkout-summary-quantity {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border: 1.5px solid var(--hw-line);
+  border-radius: 3px;
+  background: var(--hw-butter);
+  color: var(--hw-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hearth-site .market-checkout .pickup-choice,
+  .hearth-site .checkout-progress li:has(.checkout-progress-step) {
+    transition: none;
+  }
+  .hearth-site .market-checkout .pickup-choice:is(:hover, :active),
+  .hearth-site
+    .checkout-progress
+    li:has(.checkout-progress-step:is(:hover, :active)) {
+    transform: none;
+  }
 }
 
 /* ------------------------------------------------------- vendors, applying */

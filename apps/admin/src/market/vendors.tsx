@@ -248,6 +248,7 @@ function VendorDetail({
         Back to Vendors
       </FarmstandLink>
       <ReadState
+        skeleton="detail"
         loading={!detail.data && detail.loading}
         error={detail.error}
         retry={detail.refresh}
@@ -592,7 +593,13 @@ function Relationship({
                       Private notes are unavailable with your permissions.
                     </p>
                   ) : operations.loading && !row ? (
-                    <ReadState loading error={undefined} retry={() => {}} />
+                    <ReadState
+                      skeleton="detail"
+                      rows={2}
+                      loading
+                      error={undefined}
+                      retry={() => {}}
+                    />
                   ) : operations.error ? (
                     <ReadState
                       loading={false}
@@ -1166,7 +1173,12 @@ function ParticipationPanel({
         />
       </div>
       <ReadState {...occurrences} retry={occurrences.refresh} />
-      <ReadState {...participations} retry={participations.refresh} />
+      <ReadState
+        skeleton="table"
+        rows={2}
+        {...participations}
+        retry={participations.refresh}
+      />
       {occurrences.data &&
         participations.data &&
         (visible.length ? (
@@ -1260,7 +1272,11 @@ function ParticipationPanel({
         >
           {() => (
             <div className="farmstand-controls">
-              <ReadState {...config} retry={config.refresh} />
+              <ReadState
+                skeleton="spinner"
+                {...config}
+                retry={config.refresh}
+              />
               {editable && config.data ? (
                 <CommandForm
                   submitClassName="farmstand-button"

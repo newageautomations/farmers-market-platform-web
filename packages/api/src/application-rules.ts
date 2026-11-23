@@ -95,7 +95,14 @@ export function applicationAvailabilityMessage(
   }).format(new Date(instant));
   return `This application ${a.state === 'CLOSED' ? 'closed' : 'opens'} on ${date} (${a.timeZone}).`;
 }
+/**
+ * Wording version of the acknowledgement applicants accept before submitting;
+ * it must match the backend's `applicationAcknowledgementVersion`.
+ */
+export const applicationAcknowledgementVersion = '2026-11-18';
 export const applicationErrorMessages: Record<string, string> = {
+  APPLICATION_ACKNOWLEDGEMENT_OUTDATED:
+    'The application terms changed. Refresh this page to review them, then submit again.',
   APPLICATION_CLOSED:
     'This application has closed. Your saved draft remains available in Vendor Applications.',
   APPLICATION_NOT_YET_OPEN:

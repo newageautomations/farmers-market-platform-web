@@ -151,7 +151,12 @@ export function MarketAnalytics({
             </Field>
           )}
         </div>
-        <ReadState {...availability} retry={availability.refresh} />
+        <ReadState
+          skeleton="detail"
+          rows={1}
+          {...availability}
+          retry={availability.refresh}
+        />
         {availability.data && <AvailabilityState value={availability.data} />}
         {availability.data === 'ALLOWED' && !bounds && (
           <Alert severity="info">

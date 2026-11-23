@@ -547,7 +547,11 @@ export function GenerateOccurrencesWizard({
                 </div>
               </dl>
             </Card>
-            <ReadState {...existing} retry={existing.refresh} />
+            <ReadState
+              skeleton="spinner"
+              {...existing}
+              retry={existing.refresh}
+            />
             {previews.map(({ schedule, dates }) => (
               <section
                 key={schedule.id}

@@ -1,0 +1,433 @@
+---
+/**
+ * Pasture's illustration set: flat, rounded field-and-garden artwork drawn
+ * for this theme. Every drawing shares one 96 x 96 frame, so it can stand
+ * alone or be placed inside a larger scene with `x`, `y` and `size`.
+ * Decorative only.
+ */
+import type { PastureArtName } from './art';
+interface Props {
+  name: PastureArtName;
+  x?: number;
+  y?: number;
+  size?: number;
+  class?: string;
+}
+const { name, x, y, size, class: className } = Astro.props;
+/* A leaf pointing along +x from its base at the origin. */
+const leafShape = (length: number) =>
+  `M0 0C${length * 0.3} ${-length * 0.36} ${length * 0.72} ${-length * 0.34} ${length} 0C${length * 0.72} ${length * 0.3} ${length * 0.3} ${length * 0.3} 0 0z`;
+/* A leaf whose tip curls up, away from the +x axis. */
+const curledLeaf = (length: number) =>
+  `M0 0C${length * 0.22} ${-length * 0.46} ${length * 0.68} ${-length * 0.52} ${length} ${-length * 0.2}C${length * 0.72} ${length * 0.14} ${length * 0.3} ${length * 0.22} 0 0z`;
+/* The sprig's stem is one arching curve. Each leaf sits on the curve and
+   points away from it, alternating sides and shrinking toward the tip. */
+const stem = [
+  [10, 92],
+  [12, 54],
+  [40, 18],
+  [88, 12],
+] as const;
+const sprigStem = `M${stem[0].join(' ')}C${stem[1].join(' ')} ${stem[2].join(' ')} ${stem[3].join(' ')}`;
+const pointOnStem = (t: number) => {
+  const u = 1 - t;
+  const weights = [u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t];
+  const slopes = [
+    -3 * u * u,
+    3 * u * u - 6 * u * t,
+    6 * u * t - 3 * t * t,
+    3 * t * t,
+  ];
+  const sum = (values: readonly number[], axis: 0 | 1) =>
+    values.reduce(
+      (total, value, index) => total + value * stem[index]![axis],
+      0,
+    );
+  return {
+    x: sum(weights, 0),
+    y: sum(weights, 1),
+    angle: (Math.atan2(sum(slopes, 1), sum(slopes, 0)) * 180) / Math.PI,
+  };
+};
+const sprigLeaves = [0.16, 0.28, 0.4, 0.52, 0.64, 0.76, 0.88]
+  .map((t, index) => {
+    const point = pointOnStem(t);
+    const side = index % 2 === 0 ? -1 : 1;
+    return {
+      x: point.x,
+      y: point.y,
+      angle: point.angle + side * 52,
+      length: 24 - index * 1.8,
+      light: index % 2 === 0,
+    };
+  })
+  .concat({ ...pointOnStem(1), length: 15, light: false });
+---
+
+<svg
+  class:list={['pw-art', `pw-art-${name}`, className]}
+  viewBox="0 0 96 96"
+  x={x}
+  y={y}
+  width={size}
+  height={size}
+  aria-hidden="true"
+  focusable="false"
+>
+  {name === 'sprig' && (
+    <>
+      <path
+        d={sprigStem}
+        stroke="#2F7D3A"
+        stroke-width="3"
+        stroke-linecap="round"
+        fill="none"
+      />
+      {sprigLeaves.map((leaf) => (
+        <path
+          d={leafShape(leaf.length)}
+          transform={`translate(${leaf.x} ${leaf.y}) rotate(${leaf.angle})`}
+          fill={leaf.light ? '#4FA857' : '#2F7D3A'}
+        />
+      ))}
+    </>
+  )}
+  {name === 'leaf' && (
+    <>
+      <path d="M10 88C4 54 26 20 86 8c8 44-18 80-76 80z" fill="#3E9B4A" />
+      <path d="M12 86C34 62 56 36 84 10c8 44-18 76-72 76z" fill="#56B060" />
+      <path
+        d="M12 86C30 60 52 34 84 10"
+        stroke="#2A7034"
+        stroke-width="3"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path
+        d="M28 64c-6-6-8-14-6-22M40 50c-4-8-4-16 0-24M54 36c-2-6 0-12 4-16M28 64c8 2 16 0 22-4M40 50c8 2 16 0 22-6M54 36c6 0 12-2 18-8"
+        stroke="#2A7034"
+        stroke-width="2"
+        stroke-linecap="round"
+        fill="none"
+        opacity=".75"
+      />
+    </>
+  )}
+  {name === 'flower' && (
+    <>
+      <path
+        d="M50 94C42 80 56 66 48 46"
+        stroke="#2F7D3A"
+        stroke-width="3"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path
+        d={leafShape(20)}
+        transform="translate(48 76) rotate(-150)"
+        fill="#3E9B4A"
+      />
+      <path
+        d={leafShape(16)}
+        transform="translate(50 64) rotate(-30)"
+        fill="#2F7D3A"
+      />
+      <g fill="#2F7D3A">
+        {[0, 60, 120, 180, 240, 300].map((angle) => (
+          <ellipse
+            cx="48"
+            cy="18"
+            rx="7.5"
+            ry="12"
+            transform={`rotate(${angle} 48 30)`}
+          />
+        ))}
+      </g>
+      <circle cx="48" cy="30" r="8.5" fill="#F7F3E6" />
+      <circle cx="48" cy="30" r="4" fill="#2F7D3A" />
+    </>
+  )}
+  {name === 'tree' && (
+    <>
+      <ellipse cx="48" cy="92" rx="22" ry="3.5" fill="#2A7034" opacity=".35" />
+      <path
+        d="M41 93c4-2 5-8 5-16l-9-11 2-2 8 8V58h4v13l8-9 2 2-10 12c0 8 1 14 5 17z"
+        fill="#6B4430"
+      />
+      <g fill="#3A8F43">
+        <circle cx="29" cy="45" r="14" />
+        <circle cx="47" cy="30" r="19" />
+        <circle cx="66" cy="42" r="15" />
+        <circle cx="38" cy="58" r="12" />
+        <circle cx="58" cy="58" r="12" />
+        <circle cx="48" cy="48" r="16" />
+      </g>
+      <g fill="#5BAE4F">
+        <circle cx="29" cy="42" r="12" />
+        <circle cx="46" cy="27" r="17" />
+        <circle cx="64" cy="39" r="12.5" />
+        <circle cx="40" cy="52" r="10" />
+        <circle cx="47" cy="43" r="14" />
+      </g>
+      <g fill="#7CC36A">
+        <circle cx="40" cy="21" r="7" />
+        <circle cx="26" cy="38" r="5" />
+        <circle cx="61" cy="33" r="4.5" />
+      </g>
+      <path
+        d="M47 62c-2 4-6 6-10 6M48 60c2 3 6 5 10 5"
+        stroke="#6B4430"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </>
+  )}
+  {name === 'pine' && (
+    <>
+      <ellipse cx="48" cy="92" rx="16" ry="3" fill="#2A7034" opacity=".35" />
+      <path d="M45 74h6v19h-6z" fill="#6B4430" />
+      <path
+        d="M48 34c8 12 16 26 26 36-8 4-17 5-26 5s-18-1-26-5c10-10 18-24 26-36z"
+        fill="#2F7D3A"
+      />
+      <path
+        d="M48 20c7 10 13 20 21 28-7 4-14 5-21 5s-14-1-21-5c8-8 14-18 21-28z"
+        fill="#3A8F43"
+      />
+      <path
+        d="M48 6c5 8 10 16 16 22-5 3-10 4-16 4s-11-1-16-4c6-6 11-14 16-22z"
+        fill="#5BAE4F"
+      />
+      <path
+        d="M46.5 12c-2 4-5 8-8.5 12M40.5 35c-2 4-4 7-7.5 10.5M36.5 56c-2 4-5 7-8 10"
+        stroke="#7CC36A"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </>
+  )}
+  {name === 'cloud' && (
+    <path
+      d="M14 66a14 14 0 0 1 6-26 18 18 0 0 1 32-10 16 16 0 0 1 28 10 13 13 0 0 1 2 26z"
+      fill="#FFFFFF"
+    />
+  )}
+  {name === 'sprout' && (
+    <>
+      <path d="M18 74h60l-6 18H24z" fill="#B8643B" />
+      <rect x="14" y="66" width="68" height="10" rx="4" fill="#C9774A" />
+      <path
+        d="M48 67C46 58 54 52 51 43C49 36 44 32 46 23"
+        stroke="#2F7D3A"
+        stroke-width="3.5"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path
+        d={curledLeaf(36)}
+        transform="translate(51 46) rotate(-168) scale(1 -1)"
+        fill="#5BAE4F"
+      />
+      <path
+        d={curledLeaf(31)}
+        transform="translate(47 33) rotate(-28)"
+        fill="#3E9B4A"
+      />
+      <path
+        d={curledLeaf(14)}
+        transform="translate(46 24) rotate(-112) scale(1 -1)"
+        fill="#5BAE4F"
+      />
+    </>
+  )}
+  {name === 'tomato' && (
+    <>
+      <circle cx="48" cy="56" r="32" fill="#E5462F" />
+      <path
+        d="M30 46a20 20 0 0 1 12-12"
+        stroke="#F58A75"
+        stroke-width="5"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path
+        d="M48 26l-6-8 8 4 6-8 0 10 10-2-8 8 10 4-12 2-4 8-4-8-12-2 10-4z"
+        fill="#2F7D3A"
+      />
+    </>
+  )}
+  {name === 'carrot' && (
+    <g transform="rotate(32 48 52)">
+      <path d="M48 30c-3-10-11-17-20-18 1 10 9 16 20 18z" fill="#3E9B4A" />
+      <path d="M48 30c-1-12 3-21 10-26 3 11-1 20-10 26z" fill="#5BAE4F" />
+      <path d="M49 31c7-8 17-10 25-6-6 7-15 9-25 6z" fill="#2F7D3A" />
+      <path
+        d="M35 36c0-5 6-8 13-8s13 3 13 8c0 15-6 36-11 55-1 3-3 3-4 0-5-19-11-40-11-55z"
+        fill="#F08A24"
+      />
+      <path
+        d="M37 39c0 14 4 32 9 50"
+        stroke="#F7A65A"
+        stroke-width="3"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path
+        d="M48 45h9M38 54h7M50 63h7M41 72h5M49 80h4"
+        stroke="#C9650F"
+        stroke-width="2.5"
+        stroke-linecap="round"
+      />
+    </g>
+  )}
+  {name === 'lettuce' && (
+    <>
+      <path
+        d="M14 58c-4-20 10-36 22-34 4-10 20-12 26-2 12-4 26 8 22 24 8 8 4 26-8 30H24c-12-2-14-12-10-18z"
+        fill="#7CC36A"
+      />
+      <path
+        d="M24 76c-6-14 2-30 16-32 10-2 22 6 24 18 10-4 18 4 14 14z"
+        fill="#5BAE4F"
+      />
+      <path
+        d="M48 80V50M48 62l-10-8M48 68l12-10"
+        stroke="#D8EFC9"
+        stroke-width="3"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </>
+  )}
+  {name === 'apple' && (
+    <>
+      <path
+        d="M48 30c-8-6-34-6-34 22 0 22 16 36 26 36 4 0 6-2 8-2s4 2 8 2c10 0 26-14 26-36 0-28-26-28-34-22z"
+        fill="#E5462F"
+      />
+      <path
+        d="M24 48a14 14 0 0 1 10-12"
+        stroke="#F58A75"
+        stroke-width="5"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path
+        d="M48 30c0-8 2-14 6-20"
+        stroke="#6B4430"
+        stroke-width="3.5"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path d="M54 20c6-10 18-12 24-8-6 10-16 12-24 8z" fill="#3E9B4A" />
+    </>
+  )}
+  {name === 'pepper' && (
+    <>
+      <path
+        d="M30 34c-12 4-16 22-10 38 4 12 12 18 18 16 6 6 14 6 20 0 6 2 14-4 18-16 6-16 2-34-10-38-8-3-14 0-18 2-4-2-10-5-18-2z"
+        fill="#F4B400"
+      />
+      <path
+        d="M30 50c0 12 2 22 8 30"
+        stroke="#FFD75E"
+        stroke-width="5"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path d="M40 34c2-6 6-8 8-8s6 2 8 8c-6 2-10 2-16 0z" fill="#2F7D3A" />
+      <path
+        d="M48 26c0-8 4-14 10-16"
+        stroke="#2F7D3A"
+        stroke-width="4"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </>
+  )}
+  {name === 'egg' && (
+    <>
+      <ellipse cx="48" cy="84" rx="34" ry="6" fill="#B8643B" opacity=".25" />
+      <path
+        d="M48 12c16 0 28 26 28 44a28 28 0 0 1-56 0c0-18 12-44 28-44z"
+        fill="#F7EBD4"
+      />
+      <path
+        d="M34 44a18 18 0 0 1 8-16"
+        stroke="#FFFFFF"
+        stroke-width="5"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path
+        d="M20 62c10 6 46 6 56 0"
+        stroke="#E6D3AE"
+        stroke-width="3"
+        fill="none"
+      />
+    </>
+  )}
+  {name === 'jar' && (
+    <>
+      <rect x="28" y="12" width="40" height="14" rx="4" fill="#3E9B4A" />
+      <path
+        d="M30 28h36c4 4 6 8 6 14v34a8 8 0 0 1-8 8H32a8 8 0 0 1-8-8V42c0-6 2-10 6-14z"
+        fill="#F2A93B"
+      />
+      <path d="M24 60h48v16a8 8 0 0 1-8 8H32a8 8 0 0 1-8-8z" fill="#E08E1E" />
+      <rect x="32" y="46" width="32" height="22" rx="4" fill="#F7F3E6" />
+      <path
+        d="M40 57h16"
+        stroke="#3E9B4A"
+        stroke-width="4"
+        stroke-linecap="round"
+      />
+    </>
+  )}
+  {name === 'loaf' && (
+    <>
+      <path
+        d="M10 70c0-24 16-40 38-40s38 16 38 40a6 6 0 0 1-6 6H16a6 6 0 0 1-6-6z"
+        fill="#C77B3A"
+      />
+      <path
+        d="M16 64c2-18 16-28 32-28s30 10 32 28c-8 6-20 8-32 8s-24-2-32-8z"
+        fill="#E0A05A"
+      />
+      <path
+        d="M34 46q5 7 3 16M48 42q4 8 2 20M62 46q2 7-2 16"
+        stroke="#F7E3C2"
+        stroke-width="4"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </>
+  )}
+  {name === 'basket' && (
+    <>
+      <path
+        d="M24 48c0-20 10-34 24-34s24 14 24 34"
+        stroke="#8A5A3B"
+        stroke-width="5"
+        fill="none"
+      />
+      <circle cx="34" cy="44" r="12" fill="#E5462F" />
+      <circle cx="56" cy="40" r="13" fill="#7CC36A" />
+      <circle cx="68" cy="50" r="9" fill="#F4B400" />
+      <path d="M52 28c0-6 4-8 8-8 0 6-4 8-8 8z" fill="#2F7D3A" />
+      <path
+        d="M12 52h72l-8 32a6 6 0 0 1-6 4H26a6 6 0 0 1-6-4z"
+        fill="#C98A4E"
+      />
+      <path
+        d="M30 60v24M48 60v26M66 60v24M16 70h64"
+        stroke="#A56B37"
+        stroke-width="3"
+        stroke-linecap="round"
+      />
+      <rect x="9" y="48" width="78" height="9" rx="4.5" fill="#8A5A3B" />
+    </>
+  )}
+</svg>

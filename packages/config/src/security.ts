@@ -1,7 +1,11 @@
+import { deploymentEnvironment } from './deployment-environment.ts';
+import type { DeploymentEnvironment } from './deployment-environment.ts';
+
 export function normalizeOrigin(value: string): string {
   if (!value || /[%\\\s]/.test(value)) throw new Error('Invalid origin');
-  const url = new URL(value);
+  const url = URL.parse(value);
   if (
+    !url ||
     !['https:', 'http:'].includes(url.protocol) ||
     url.username ||
     url.password ||
@@ -13,10 +17,28 @@ export function normalizeOrigin(value: string): string {
   return url.origin;
 }
 export function runtimeMode(input: Record<string, string | undefined>) {
-  const mode = input.APP_ENV ?? (input.NODE_ENV === 'test' ? 'test' : 'dev');
-  if (!['dev', 'test', 'production'].includes(mode))
-    throw new Error('APP_ENV explicit mode required');
-  return mode;
+  return deploymentEnvironment(
+    input,
+    input.NODE_ENV === 'test' ? 'test' : 'dev',
+  ).mode;
+}
+
+export const noIndexHeader = 'noindex, nofollow';
+export const noIndexMeta = 'noindex,nofollow';
+export const restrictiveRobots = 'User-agent: *\nDisallow: /\n';
+
+export function blocksIndexing(deployment?: DeploymentEnvironment) {
+  return deployment === 'staging';
+}
+
+export function storefrontRobotsMeta(
+  deployment: DeploymentEnvironment | undefined,
+  privatePage: boolean,
+  tenantDirective?: string,
+) {
+  return blocksIndexing(deployment) || privatePage
+    ? noIndexMeta
+    : (tenantDirective ?? noIndexMeta);
 }
 export function requireStrongSecret(value: string | undefined, name: string) {
   if (
@@ -24,7 +46,7 @@ export function requireStrongSecret(value: string | undefined, name: string) {
     value.length < 32 ||
     value.length > 4096 ||
     new Set(value).size < 12 ||
-    /example|change.?me|placeholder|default|test.?only|disposable|password/i.test(
+    /example|change.?me|placeholder|default|test.?only|disposable|password|secret.?here/i.test(
       value,
     )
   )
@@ -70,6 +92,24 @@ export function responseSecurityHeaders(production: boolean) {
     'X-Frame-Options': 'DENY',
     ...(production ? { 'Strict-Transport-Security': 'max-age=31536000' } : {}),
   };
+}
+
+/** Admin must load a new document when entering or leaving a preview-capable editor. */
+export function storefrontEditorDocument(path: string) {
+  const pathname = documentPath(path);
+  return pathname === '/vendor/storefront' || pathname === '/market/storefront';
+}
+
+export function storefrontPreviewDocument(path: string) {
+  const pathname = documentPath(path);
+  return (
+    pathname === '/storefront-editor-preview' ||
+    pathname === '/storefront-editor-preview/render'
+  );
+}
+
+function documentPath(path: string) {
+  return path.split(/[?#]/, 1)[0]?.replace(/\/$/, '');
 }
 /** Stream bounded before parsing, including chunked and multi-byte input. */
 export async function boundedBody(

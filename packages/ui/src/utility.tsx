@@ -63,6 +63,7 @@ const utilityPaths = {
   panel: navigationIconPaths['panel-left'],
   heart:
     'M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5',
+  star: 'M12 2.5l2.94 5.96 6.56.95-4.75 4.63 1.12 6.54L12 17.5l-5.87 3.08 1.12-6.54L2.5 9.41l6.56-.95L12 2.5Z',
   'chevron-left': 'm15 18-6-6 6-6',
   'chevron-right': 'm9 6 6 6-6 6',
   'chevron-down': 'm6 9 6 6 6-6',
@@ -196,15 +197,21 @@ export function Tooltip({
 export function IconButton({
   icon,
   label,
+  filled,
   ...props
 }: Omit<
   ComponentProps<typeof Button>,
   'children' | 'iconOnly' | 'aria-label'
-> & { icon: keyof typeof utilityPaths; label: string }) {
+> & {
+  icon: keyof typeof utilityPaths;
+  label: string;
+  /** Fills the icon, e.g. for a pressed favorite toggle. */
+  filled?: boolean;
+}) {
   return (
     <Tooltip label={label}>
       <Button variant="secondary" {...props} iconOnly aria-label={label}>
-        <UtilityIcon name={icon} />
+        <UtilityIcon name={icon} filled={filled} />
       </Button>
     </Tooltip>
   );

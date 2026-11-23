@@ -14,7 +14,7 @@ import {
   ErrorState,
   Field,
   SelectField,
-  Spinner,
+  LoadingSkeleton,
 } from '@market/ui';
 import { date } from '../common';
 import {
@@ -432,7 +432,7 @@ export function ApplicationSubmissions({ api, data }: Props) {
               <Button onClick={refresh}>Retry applications</Button>
             </>
           ) : loading ? (
-            <Spinner label="Loading applications" />
+            <LoadingSkeleton variant="table" label="Loading applications" />
           ) : (
             page && (
               <>
@@ -592,7 +592,10 @@ export function ApplicationSubmissions({ api, data }: Props) {
                     </div>
                   </dl>
                 ) : (
-                  <Spinner label="Loading submission details" />
+                  <LoadingSkeleton
+                    variant="detail"
+                    label="Loading submission details"
+                  />
                 )}
                 <div className="application-details-actions">
                   <FarmstandLink

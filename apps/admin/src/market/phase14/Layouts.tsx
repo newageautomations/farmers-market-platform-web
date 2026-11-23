@@ -8,6 +8,7 @@ import {
   useReducer,
   useRef,
   useState,
+  type ReactNode,
 } from 'react';
 import { PriceInput, amountToMinor } from '../../PriceInput';
 import type {
@@ -50,6 +51,7 @@ import {
   isMapLegend,
   MAP_LEGEND_TEMPLATE,
   type Viewport,
+  bounds,
 } from '@market/ui';
 import { Check, Control } from './common';
 import {
@@ -74,6 +76,12 @@ import {
   type LayoutPhoto,
 } from './LayoutImagePicker';
 import { LayoutSmartTools } from './LayoutSmartTools';
+import {
+  MobileSheet,
+  MobileToolbar,
+  useLayoutEditorMobile,
+  type BarItem,
+} from './LayoutEditorMobile';
 import { boothStatus } from './booth-status';
 import { WorkspaceFrame } from '../../WorkspaceFrame';
 import { FarmstandButton, FarmstandIcon } from '@market/ui/farmstand';
@@ -186,7 +194,11 @@ interface EditorSession {
   tool: MapTool;
   defaultBoothPrice?: number;
   view?: Viewport;
+  /** Phone presentation only: the sheet that was open. */
+  mobileSheet?: MobileSheetId | null;
 }
+type MobileSheetId =
+  DrawerId | 'properties' | 'arrange' | 'align' | 'actions' | 'menu';
 const editorSessions = new Map<string, EditorSession>();
 // Save-and-publish remounts twice (one per revision), so a session is kept
 // until it expires or the next save replaces it.
@@ -242,9 +254,33 @@ export function Layouts({
   >(null);
   const [archiveBusy, setArchiveBusy] = useState(false);
   const archiving = useRef(false);
-  const savedLayouts = (data.layouts ?? []).filter(
-    (layout) => !layout.deletedAt,
-  );
+  const [starring, setStarring] = useState<number | null>(null);
+  // Starred layouts lead the list; each group is ordered by last edit. Saving
+  // always rewrites the current version, so its timestamp is the last edit.
+  const edited = (layoutId: number) =>
+    Date.parse(currentLayoutVersion(data, layoutId)?.updatedAt ?? '') || 0;
+  const savedLayouts = (data.layouts ?? [])
+    .filter((layout) => !layout.deletedAt)
+    .sort(
+      (a, b) =>
+        Number(!!b.favorite) - Number(!!a.favorite) ||
+        edited(b.id) - edited(a.id) ||
+        b.id - a.id,
+    );
+  async function star(layout: (typeof savedLayouts)[number]) {
+    if (starring !== null) return;
+    setStarring(layout.id);
+    try {
+      await run({
+        action: 'SET_LAYOUT_FAVORITE',
+        id: layout.id,
+        expectedRevision: layout.revision,
+        data: { favorite: !layout.favorite },
+      });
+    } finally {
+      setStarring(null);
+    }
+  }
   const archivedLayouts =
     data.archivedLayouts ??
     (data.layouts ?? []).filter((layout) => !!layout.deletedAt);
@@ -298,7 +334,34 @@ export function Layouts({
                   <LayoutPreview data={data} version={version} />
                 </div>
                 <div className="layout-card-info">
-                  <span className="layout-card-name">{layout.name}</span>
+                  <span className="layout-card-title">
+                    {canManage ? (
+                      <IconButton
+                        icon="star"
+                        filled={!!layout.favorite}
+                        label={
+                          layout.favorite
+                            ? `Remove ${layout.name} from favorites`
+                            : `Add ${layout.name} to favorites`
+                        }
+                        variant="tertiary"
+                        size="compact"
+                        type="button"
+                        className={`layout-card-star${layout.favorite ? ' is-favorite' : ''}`}
+                        aria-pressed={!!layout.favorite}
+                        disabled={starring !== null}
+                        onClick={() => star(layout)}
+                      />
+                    ) : (
+                      layout.favorite && (
+                        <span className="layout-card-star is-favorite">
+                          <UtilityIcon name="star" filled />
+                          <span className="sr-only">Favorite</span>
+                        </span>
+                      )
+                    )}
+                    <span className="layout-card-name">{layout.name}</span>
+                  </span>
                   <StatusBadge>{version.status}</StatusBadge>
                 </div>
                 <div className="layout-card-actions">
@@ -568,6 +631,36 @@ export function LayoutEditor({
     [priceBoothId, setPriceBoothId] = useState<string | null>(null),
     [boothPrice, setBoothPrice] = useState(''),
     [reuseBoothPrice, setReuseBoothPrice] = useState(false);
+  // Phone presentation: one sheet at a time over a full-screen map. The
+  // desktop drawer/sidebar state above is left alone so desktop is unchanged.
+  const mobile = useLayoutEditorMobile();
+  const [mobileSheet, setMobileSheet] = useState<MobileSheetId | null>(
+    restored?.mobileSheet ?? null,
+  );
+  // With a sheet over the lower half of the phone, the map shrinks to the
+  // space above it; bring the selection back into view when it fell outside.
+  useEffect(() => {
+    if (!mobile || mobileSheet !== 'properties' || !viewport) return;
+    const { view, size } = viewport;
+    const shown = definition.elements.filter((e) => selected.includes(e.id));
+    if (!shown.length) return;
+    const box = shown.map(bounds);
+    const top = Math.min(...box.map((b) => b.y)) * view.scale + view.y,
+      bottom =
+        Math.max(...box.map((b) => b.y + b.height)) * view.scale + view.y,
+      left = Math.min(...box.map((b) => b.x)) * view.scale + view.x,
+      right = Math.max(...box.map((b) => b.x + b.width)) * view.scale + view.x;
+    if (top < 0 || left < 0 || bottom > size.height || right > size.width)
+      canvas.current?.locate(shown[0]!.id);
+    // Only a new sheet, selection or map size re-centres; panning does not.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    mobile,
+    mobileSheet,
+    selected,
+    viewport?.size.width,
+    viewport?.size.height,
+  ]);
   const boothPriceFormId = useId();
   const canvas = useRef<MapCanvasHandle>(null),
     typing = useRef(''),
@@ -761,6 +854,8 @@ export function LayoutEditor({
     setSelected([id]);
     if (!path) setTool('select');
     setSidebarOpen(true);
+    // On a phone the new element should be visible, not covered by a sheet.
+    if (mobile) setMobileSheet(null);
     if (type === 'SPACE' && defaultBoothPrice === undefined) {
       setBoothPrice('');
       setReuseBoothPrice(false);
@@ -973,6 +1068,7 @@ export function LayoutEditor({
       defaultBoothPrice,
       tool: tool === 'draw' || tool === 'points' ? 'select' : tool,
       view: viewport?.view,
+      mobileSheet,
     });
     try {
       if (onSave) {
@@ -999,6 +1095,7 @@ export function LayoutEditor({
   function openSmart(next: string) {
     setSmartTool(next);
     setDrawer('smart');
+    if (mobile) setMobileSheet('smart');
   }
   const onViewChange = useCallback(
     (view: Viewport, size: { width: number; height: number }) =>
@@ -1044,8 +1141,11 @@ export function LayoutEditor({
       : []),
     { id: 'settings', label: 'Settings', icon: 'settings' },
   ];
-  const openDrawer =
-    drawer && drawerItems.some((item) => item.id === drawer) ? drawer : null;
+  const openDrawer = mobile
+    ? (drawerItems.find((item) => item.id === mobileSheet)?.id ?? null)
+    : drawer && drawerItems.some((item) => item.id === drawer)
+      ? drawer
+      : null;
   const drawerTitle = {
     add: 'Add elements',
     layers: 'Layers',
@@ -1069,135 +1169,474 @@ export function LayoutEditor({
         : tool === 'pan'
           ? 'Pan'
           : 'Select';
-  return (
-    <section
-      className={`designer ${preview ? 'is-preview' : ''} ${sidebarOpen ? '' : 'sidebar-collapsed'} ${openDrawer && !preview ? 'drawer-open' : ''}`}
-      aria-label="Market layout editor"
-      data-testid="layout-editor"
-      onBlurCapture={() => {
-        typing.current = '';
+  const drawerContent =
+    openDrawer === 'add' ? (
+      <LayoutTools
+        tool={tool}
+        setTool={
+          mobile
+            ? (next) => {
+                setTool(next);
+                // Drawing happens on the map, so move the sheet out of the way.
+                if (next !== 'select') setMobileSheet(null);
+              }
+            : setTool
+        }
+        add={add}
+        addBooth={addBooth}
+        addAsset={addAsset}
+        environment={environment}
+        setEnvironment={setEnvironment}
+        canEditPoints={
+          items.length === 1 &&
+          items[0]?.type === 'LINE' &&
+          !!items[0]?.points &&
+          mutable
+        }
+        openSmart={openSmart}
+        media={media}
+        addPhoto={addPhoto}
+      />
+    ) : openDrawer === 'smart' ? (
+      <LayoutSmartTools
+        activeTool={smartTool}
+        onToolChange={setSmartTool}
+        drawing={drawing}
+        area={activeArea}
+        selected={ids}
+        editable={editable}
+        center={() => canvas.current?.center() ?? { x: 100, y: 100 }}
+        update={update}
+        select={(ids) => {
+          setSelected(ids);
+          setTool('select');
+        }}
+        snapObjects={snapObjects}
+        setSnapObjects={setSnapObjects}
+        occurrence={!!occurrenceId}
+        statusMode={statusMode}
+        setStatusMode={setStatusMode}
+        defaultBoothPrice={defaultBoothPrice}
+      />
+    ) : openDrawer === 'assets' ? (
+      <LayoutAssets
+        arrangements={() => openSmart('arrangement')}
+        disabled={!editable || definition.elements.length >= 1000}
+        insert={addAsset}
+        media={media}
+        insertPhoto={addPhoto}
+      />
+    ) : openDrawer === 'settings' ? (
+      <LayoutCanvasSettings
+        drawing={drawing}
+        area={activeArea}
+        editable={editable}
+        update={update}
+        grid={grid}
+        setGrid={setGrid}
+        snap={snap}
+        setSnap={setSnap}
+        snapObjects={snapObjects}
+        setSnapObjects={setSnapObjects}
+        spacing={spacing}
+        setSpacing={setSpacing}
+      />
+    ) : (
+      <LayoutLayers
+        elements={definition.elements.filter((e) => e.areaId === activeArea)}
+        selected={ids}
+        select={(id, shift) =>
+          setSelected(selectIds(definition.elements, ids, id, shift))
+        }
+        locate={(id) => {
+          canvas.current?.locate(id);
+          setSelected(selectIds(definition.elements, [], id));
+        }}
+        rename={(id, value) => {
+          const element = definition.elements.find((e) => e.id === id);
+          if (!element || element.locked) return;
+          if (element.type === 'SPACE') changeBooth(id, { label: value });
+          else
+            change([
+              {
+                ...element,
+                text: isMapLegend(element)
+                  ? MAP_LEGEND_TEMPLATE + value
+                  : value,
+              },
+            ]);
+        }}
+        order={(id, direction) => {
+          const targets = selectIds(definition.elements, [], id);
+          if (
+            definition.elements.some(
+              (e) => targets.includes(e.id) && (e.locked || e.editorHidden),
+            )
+          )
+            return;
+          update(reorder(drawing, targets, direction));
+        }}
+        flags={flags}
+        editable={editable}
+      />
+    );
+  const inspector = (
+    <LayoutInspector
+      drawing={drawing}
+      selected={ids}
+      editable={editable}
+      version={version}
+      data={data}
+      area={activeArea}
+      update={update}
+      geometry={inspectorGeometry}
+      booth={changeBooth}
+      sync={sync}
+      design={(next) => openSmart(next)}
+      tab={inspectorTab}
+      setTab={setInspectorTab}
+      remove={() => update(remove(drawing, ids))}
+      canRemove={removable}
+      occupancy={occurrenceId ? occupancy : undefined}
+      media={media}
+    />
+  );
+  // ---- Phone presentation (rendered only while `mobile`) -----------------
+  const toggleSheet = (id: NonNullable<typeof mobileSheet>) =>
+    setMobileSheet(mobileSheet === id ? null : id);
+  const saveState =
+    saving === 'publish'
+      ? 'Publishing…'
+      : saving
+        ? 'Saving…'
+        : !onSave && !name.trim()
+          ? 'Layout name required'
+          : dirty
+            ? 'Unsaved changes'
+            : 'All changes saved';
+  const canPublish = editable && !onSave && version.status === 'DRAFT';
+  const mobileHeader = (
+    <header className="designer-mobile-header designer-chrome">
+      {exit && (
+        <span className="designer-exit">
+          <RouteLink to={exit.to}>
+            <UtilityIcon name="close" />
+            <span className="sr-only">{exit.label}</span>
+          </RouteLink>
+        </span>
+      )}
+      <div className="designer-mobile-title">
+        <h1 className="sr-only">
+          {occurrenceId ? 'Occurrence Layout Editor' : 'Market Layout Editor'}
+        </h1>
+        {!onSave && editable && !preview ? (
+          <Input
+            className="designer-name-input"
+            aria-label="Layout name"
+            aria-invalid={!name.trim()}
+            value={name}
+            maxLength={200}
+            enterKeyHint="done"
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === 'Escape')
+                event.currentTarget.blur();
+            }}
+          />
+        ) : (
+          <span className="designer-title-name">{name}</span>
+        )}
+        <span
+          className={
+            dirty ? 'designer-save-state is-dirty' : 'designer-save-state'
+          }
+          role="status"
+        >
+          {saveState}
+        </span>
+      </div>
+      <div className="designer-mobile-actions">
+        {!preview && editable && (
+          <>
+            <IconButton
+              icon="undo"
+              label="Undo"
+              variant="tertiary"
+              size="compact"
+              type="button"
+              disabled={!history.past.length}
+              onClick={() => dispatch({ type: 'UNDO' })}
+            />
+            <IconButton
+              icon="redo"
+              label="Redo"
+              variant="tertiary"
+              size="compact"
+              type="button"
+              disabled={!history.future.length}
+              onClick={() => dispatch({ type: 'REDO' })}
+            />
+          </>
+        )}
+        {preview ? (
+          <Button
+            variant="secondary"
+            size="compact"
+            type="button"
+            aria-pressed
+            aria-label="Back to editing"
+            onClick={() => setPreview(false)}
+          >
+            <UtilityIcon name="edit" />
+            Edit
+          </Button>
+        ) : (
+          editable && (
+            <Button
+              variant="primary"
+              size="compact"
+              type="button"
+              className="designer-save"
+              aria-label="Save layout"
+              loading={saving === 'save'}
+              disabled={!dirty || !!saving || (!onSave && !name.trim())}
+              onClick={() => save()}
+            >
+              Save
+            </Button>
+          )
+        )}
+        {!preview && (
+          <IconButton
+            icon="more"
+            label="Layout options"
+            variant="tertiary"
+            size="compact"
+            type="button"
+            aria-expanded={mobileSheet === 'menu'}
+            aria-controls="layout-menu"
+            onClick={() => toggleSheet('menu')}
+          />
+        )}
+      </div>
+    </header>
+  );
+  const drawingPath = tool === 'draw' || tool === 'points';
+  const mobileCanvasTools = (
+    <>
+      {drawingPath && (
+        <div className="designer-mobile-mode designer-chrome" role="status">
+          <UtilityIcon name={tool === 'points' ? 'cursor' : 'path'} />
+          <span>
+            <strong>{toolLabel}</strong>
+            <small>
+              {tool === 'points'
+                ? 'Drag a point to move it'
+                : 'Drag on the map to draw'}
+            </small>
+          </span>
+          <Button
+            type="button"
+            variant="primary"
+            size="compact"
+            onClick={() => setTool('select')}
+          >
+            Done
+          </Button>
+        </div>
+      )}
+      <div
+        className="designer-mobile-float designer-chrome"
+        role="group"
+        aria-label="Map navigation"
+      >
+        <IconButton
+          icon="cursor"
+          label="Select"
+          variant="tertiary"
+          size="compact"
+          type="button"
+          aria-pressed={tool === 'select'}
+          onClick={() => setTool('select')}
+        />
+        <IconButton
+          icon="hand"
+          label="Pan"
+          variant="tertiary"
+          size="compact"
+          type="button"
+          aria-pressed={tool === 'pan'}
+          onClick={() => setTool('pan')}
+        />
+        <span className="designer-mobile-float-rule" aria-hidden="true" />
+        <IconButton
+          icon="expand"
+          label="Fit map"
+          variant="tertiary"
+          size="compact"
+          type="button"
+          onClick={() => canvas.current?.fit()}
+        />
+      </div>
+    </>
+  );
+  const actionSheet = (
+    id: 'arrange' | 'align' | 'actions' | 'menu',
+    title: string,
+    content: ReactNode,
+  ) => (
+    <MobileSheet
+      key={id}
+      id={`layout-${id}`}
+      title={title}
+      detent="auto"
+      className="designer-action-sheet"
+      open={!preview && mobileSheet === id && (id === 'menu' || ids.length > 0)}
+      onClose={() => setMobileSheet(null)}
+    >
+      {content}
+    </MobileSheet>
+  );
+  const sheetItem = (
+    label: string,
+    run: () => void,
+    options: {
+      icon?: Parameters<typeof UtilityIcon>[0]['name'];
+      disabled?: boolean;
+    } = {},
+  ) => (
+    <MenuItem
+      key={label}
+      icon={options.icon}
+      disabled={options.disabled}
+      onClick={() => {
+        run();
+        setMobileSheet(null);
       }}
     >
-      <header className="designer-header designer-chrome">
-        <div className="designer-header-start">
-          {exit && (
-            <span className="designer-exit">
-              <RouteLink to={exit.to}>
-                <UtilityIcon name="close" />
-                <span aria-hidden="true">Exit</span>
-                <span className="sr-only">{exit.label}</span>
-              </RouteLink>
+      {label}
+    </MenuItem>
+  );
+  const mobileSheets = (
+    <>
+      <MobileSheet
+        id="layout-drawer"
+        title={openDrawer ? drawerTitle[openDrawer] : ''}
+        className="designer-drawer"
+        open={!preview && !!openDrawer}
+        onClose={() => setMobileSheet(null)}
+      >
+        {drawerContent}
+      </MobileSheet>
+      <MobileSheet
+        id="layout-properties"
+        title={items.length ? 'Edit selection' : 'Layout details'}
+        hideTitle
+        className="designer-sidebar"
+        open={!preview && mobileSheet === 'properties'}
+        onClose={() => setMobileSheet(null)}
+      >
+        {inspector}
+      </MobileSheet>
+      {actionSheet(
+        'arrange',
+        'Arrange',
+        <div className="designer-sheet-list">
+          {(
+            [
+              ['front', 'Bring to front', 'arrow-up'],
+              ['forward', 'Bring forward', 'arrow-up'],
+              ['backward', 'Send backward', 'arrow-down'],
+              ['back', 'Send to back', 'arrow-down'],
+            ] as const
+          ).map(([value, label, icon]) =>
+            sheetItem(label, () => update(reorder(drawing, ids, value)), {
+              icon,
+              disabled: !editable || !mutable,
+            }),
+          )}
+        </div>,
+      )}
+      {actionSheet(
+        'align',
+        'Align selection',
+        <div className="designer-sheet-list">
+          {alignOptions.map(([value, label]) =>
+            sheetItem(label, () => update(align(drawing, ids, value)), {
+              icon: 'align',
+              disabled:
+                !editable ||
+                !mutable ||
+                alignmentUnits < 2 ||
+                (['horizontal', 'vertical'].includes(value) &&
+                  alignmentUnits < 3),
+            }),
+          )}
+        </div>,
+      )}
+      {actionSheet(
+        'actions',
+        'More actions',
+        <div className="designer-sheet-list">
+          {sheetItem('Copy', copy, { icon: 'copy', disabled: !editable })}
+          {sheetItem(
+            allHidden ? 'Show' : 'Hide',
+            () => flags(ids, { editorHidden: !allHidden }),
+            { icon: allHidden ? 'eye' : 'eye-off', disabled: !editable },
+          )}
+          {sheetItem(
+            'Group',
+            () => update(group(drawing, ids, crypto.randomUUID())),
+            {
+              icon: 'layers',
+              disabled:
+                !editable ||
+                !mutable ||
+                ids.length < 2 ||
+                items.some((e) => e.type === 'SPACE'),
+            },
+          )}
+          {sheetItem('Ungroup', () => update(group(drawing, ids)), {
+            icon: 'grid',
+            disabled: !editable || !mutable || !items.some((e) => e.groupId),
+          })}
+          {sheetItem('Spacing and size', () => openSmart('precision'), {
+            icon: 'align',
+          })}
+        </div>,
+      )}
+      {actionSheet(
+        'menu',
+        'Layout options',
+        <>
+          <div className="designer-sheet-summary">
+            <StatusBadge>{version.status}</StatusBadge>
+            <span>
+              {definition.elements.length} objects ·{' '}
+              {Object.keys(drawing.spaces).length} booths
             </span>
-          )}
-          <div className="designer-title">
-            <h1>
-              {occurrenceId
-                ? 'Occurrence Layout Editor'
-                : 'Market Layout Editor'}
-            </h1>
-            <p>
-              {!onSave && editable && !preview ? (
-                <span className="designer-name">
-                  <Input
-                    className="designer-name-input"
-                    aria-label="Layout name"
-                    aria-invalid={!name.trim()}
-                    title="Rename layout"
-                    value={name}
-                    maxLength={200}
-                    size={Math.max(8, Math.min(40, name.length + 1))}
-                    onChange={(event) => setName(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === 'Escape')
-                        event.currentTarget.blur();
-                    }}
-                  />
-                  <UtilityIcon name="edit" />
-                </span>
-              ) : (
-                <span className="designer-title-name">{name}</span>
-              )}
-              {areaName && <span aria-hidden="true">·</span>}
-              {areaName && <span>{areaName}</span>}
-              <StatusBadge>{version.status}</StatusBadge>
-              <span
-                className={
-                  dirty ? 'designer-save-state is-dirty' : 'designer-save-state'
-                }
-                role="status"
-              >
-                {saving === 'publish'
-                  ? 'Publishing…'
-                  : saving
-                    ? 'Saving…'
-                    : !onSave && !name.trim()
-                      ? 'Layout name required'
-                      : dirty
-                        ? 'Unsaved changes'
-                        : 'All changes saved'}
-              </span>
-            </p>
           </div>
-        </div>
-        <div className="designer-header-center">
-          {!preview && (
-            <div
-              className="designer-segment"
-              role="group"
-              aria-label="Navigation"
-            >
-              <IconButton
-                icon="cursor"
-                label="Select"
-                variant="tertiary"
-                size="compact"
-                type="button"
-                aria-pressed={tool === 'select'}
-                onClick={() => setTool('select')}
-              />
-              <IconButton
-                icon="hand"
-                label="Pan"
-                variant="tertiary"
-                size="compact"
-                type="button"
-                aria-pressed={tool === 'pan'}
-                onClick={() => setTool('pan')}
-              />
-            </div>
+          {definition.areas.length > 0 && (
+            <Control label="Area" className="designer-palette-field">
+              {(id) => (
+                <Select
+                  id={id}
+                  value={activeArea}
+                  onChange={(e) => {
+                    setArea(e.target.value);
+                    setSelected([]);
+                  }}
+                >
+                  {definition.areas.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Control>
           )}
-          {!preview && (
-            <div className="designer-segment" role="group" aria-label="History">
-              <IconButton
-                icon="undo"
-                label="Undo"
-                variant="tertiary"
-                size="compact"
-                type="button"
-                disabled={!editable || !history.past.length}
-                onClick={() => dispatch({ type: 'UNDO' })}
-              />
-              <IconButton
-                icon="redo"
-                label="Redo"
-                variant="tertiary"
-                size="compact"
-                type="button"
-                disabled={!editable || !history.future.length}
-                onClick={() => dispatch({ type: 'REDO' })}
-              />
-              <IconButton
-                icon="paste"
-                label="Paste"
-                variant="tertiary"
-                size="compact"
-                type="button"
-                disabled={!editable || !clipboard}
-                onClick={() => paste()}
-              />
-            </div>
-          )}
-          <div className="designer-segment" role="group" aria-label="Zoom">
+          <div className="designer-sheet-zoom" role="group" aria-label="Zoom">
             <IconButton
               icon="minus"
               label="Zoom out"
@@ -1212,7 +1651,6 @@ export function LayoutEditor({
               size="compact"
               className="designer-zoom-value"
               aria-label="Reset zoom"
-              title="Reset zoom to 100%"
               onClick={() => canvas.current?.resetZoom()}
             >
               {zoom}%
@@ -1226,97 +1664,384 @@ export function LayoutEditor({
               onClick={() => canvas.current?.zoomBy(1.25)}
             />
           </div>
-          <IconButton
-            icon="expand"
-            label="Fit map"
-            variant="tertiary"
-            size="compact"
+          <div className="designer-sheet-list">
+            {sheetItem('Preview public map', () => setPreview(true), {
+              icon: 'eye',
+            })}
+            {sheetItem('Paste', () => paste(), {
+              icon: 'paste',
+              disabled: !editable || !clipboard,
+            })}
+            {canManage &&
+              !onSave &&
+              sheetItem('Copy layout', () => setCopyOpen(true), {
+                icon: 'copy',
+                disabled: dirty || !!saving,
+              })}
+            {canPublish &&
+              sheetItem('Save and publish layout', () => save(true), {
+                icon: 'check',
+                disabled: !!saving || !name.trim(),
+              })}
+          </div>
+        </>,
+      )}
+    </>
+  );
+  const mainItems: BarItem[] = [
+    ...drawerItems.map((item) => ({
+      id: item.id,
+      label: item.id === 'smart' ? 'Smart' : item.label,
+      icon: item.icon,
+      pressed: mobileSheet === item.id,
+      controls: 'layout-drawer',
+      onClick: () => toggleSheet(item.id),
+    })),
+    {
+      id: 'properties',
+      label: 'Details',
+      icon: 'panel',
+      pressed: mobileSheet === 'properties',
+      controls: 'layout-properties',
+      onClick: () => toggleSheet('properties'),
+    },
+  ];
+  const selectionItems: BarItem[] = [
+    {
+      id: 'edit',
+      label: 'Edit',
+      icon: 'edit',
+      pressed: mobileSheet === 'properties',
+      controls: 'layout-properties',
+      onClick: () => toggleSheet('properties'),
+    },
+    {
+      id: 'duplicate',
+      label: 'Duplicate',
+      icon: 'copy',
+      disabled: !editable,
+      onClick: duplicate,
+    },
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: 'trash',
+      danger: true,
+      disabled: !removable,
+      onClick: () => update(remove(drawing, ids)),
+    },
+    {
+      id: 'lock',
+      label: allLocked ? 'Unlock' : 'Lock',
+      icon: allLocked ? 'unlock' : 'lock',
+      disabled: !editable,
+      onClick: () => flags(ids, { locked: !allLocked }),
+    },
+    {
+      id: 'arrange',
+      label: 'Arrange',
+      icon: 'layers',
+      pressed: mobileSheet === 'arrange',
+      controls: 'layout-arrange',
+      disabled: !editable || !mutable,
+      onClick: () => toggleSheet('arrange'),
+    },
+    {
+      id: 'align',
+      label: 'Align',
+      icon: 'align',
+      pressed: mobileSheet === 'align',
+      controls: 'layout-align',
+      disabled: !editable || !mutable || alignmentUnits < 2,
+      onClick: () => toggleSheet('align'),
+    },
+    {
+      id: 'more',
+      label: 'More',
+      icon: 'more',
+      pressed: mobileSheet === 'actions',
+      controls: 'layout-actions',
+      onClick: () => toggleSheet('actions'),
+    },
+  ];
+  const mobileBar =
+    ids.length > 0 ? (
+      <MobileToolbar
+        label="Selection commands"
+        className="is-selection"
+        items={selectionItems}
+        leading={
+          <button
             type="button"
-            onClick={() => canvas.current?.fit()}
-          />
-        </div>
-        <div className="designer-header-end">
-          {definition.areas.length > 0 && (
-            <Select
-              aria-label="Area"
-              className="designer-area"
-              value={activeArea}
-              onChange={(e) => {
-                setArea(e.target.value);
-                setSelected([]);
-              }}
-            >
-              {definition.areas.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </Select>
-          )}
-          <Button
-            variant="secondary"
-            size="compact"
-            type="button"
-            aria-pressed={preview}
-            onClick={() => setPreview(!preview)}
+            className="designer-mobile-done"
+            aria-label={`Done, clear ${ids.length} selected`}
+            onClick={() => setSelected([])}
           >
-            <UtilityIcon name={preview ? 'edit' : 'eye'} />
-            {preview ? 'Back to editing' : 'Preview'}
-          </Button>
-          {!preview && (
+            <UtilityIcon name="check" />
+            <span aria-hidden="true">{ids.length}</span>
+          </button>
+        }
+      />
+    ) : (
+      <MobileToolbar label="Design tools" items={mainItems} />
+    );
+  return (
+    <section
+      className={`designer ${preview ? 'is-preview' : ''} ${sidebarOpen ? '' : 'sidebar-collapsed'} ${openDrawer && !preview ? 'drawer-open' : ''}${mobile ? ' is-mobile' : ''}`}
+      aria-label="Market layout editor"
+      data-testid="layout-editor"
+      onBlurCapture={() => {
+        typing.current = '';
+      }}
+    >
+      {mobile && mobileHeader}
+      {!mobile && (
+        <header className="designer-header designer-chrome">
+          <div className="designer-header-start">
+            {exit && (
+              <span className="designer-exit">
+                <RouteLink to={exit.to}>
+                  <UtilityIcon name="close" />
+                  <span aria-hidden="true">Exit</span>
+                  <span className="sr-only">{exit.label}</span>
+                </RouteLink>
+              </span>
+            )}
+            <div className="designer-title">
+              <h1>
+                {occurrenceId
+                  ? 'Occurrence Layout Editor'
+                  : 'Market Layout Editor'}
+              </h1>
+              <p>
+                {!onSave && editable && !preview ? (
+                  <span className="designer-name">
+                    <Input
+                      className="designer-name-input"
+                      aria-label="Layout name"
+                      aria-invalid={!name.trim()}
+                      title="Rename layout"
+                      value={name}
+                      maxLength={200}
+                      size={Math.max(8, Math.min(40, name.length + 1))}
+                      onChange={(event) => setName(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === 'Escape')
+                          event.currentTarget.blur();
+                      }}
+                    />
+                    <UtilityIcon name="edit" />
+                  </span>
+                ) : (
+                  <span className="designer-title-name">{name}</span>
+                )}
+                {areaName && <span aria-hidden="true">·</span>}
+                {areaName && <span>{areaName}</span>}
+                <StatusBadge>{version.status}</StatusBadge>
+                <span
+                  className={
+                    dirty
+                      ? 'designer-save-state is-dirty'
+                      : 'designer-save-state'
+                  }
+                  role="status"
+                >
+                  {saving === 'publish'
+                    ? 'Publishing…'
+                    : saving
+                      ? 'Saving…'
+                      : !onSave && !name.trim()
+                        ? 'Layout name required'
+                        : dirty
+                          ? 'Unsaved changes'
+                          : 'All changes saved'}
+                </span>
+              </p>
+            </div>
+          </div>
+          <div className="designer-header-center">
+            {!preview && (
+              <div
+                className="designer-segment"
+                role="group"
+                aria-label="Navigation"
+              >
+                <IconButton
+                  icon="cursor"
+                  label="Select"
+                  variant="tertiary"
+                  size="compact"
+                  type="button"
+                  aria-pressed={tool === 'select'}
+                  onClick={() => setTool('select')}
+                />
+                <IconButton
+                  icon="hand"
+                  label="Pan"
+                  variant="tertiary"
+                  size="compact"
+                  type="button"
+                  aria-pressed={tool === 'pan'}
+                  onClick={() => setTool('pan')}
+                />
+              </div>
+            )}
+            {!preview && (
+              <div
+                className="designer-segment"
+                role="group"
+                aria-label="History"
+              >
+                <IconButton
+                  icon="undo"
+                  label="Undo"
+                  variant="tertiary"
+                  size="compact"
+                  type="button"
+                  disabled={!editable || !history.past.length}
+                  onClick={() => dispatch({ type: 'UNDO' })}
+                />
+                <IconButton
+                  icon="redo"
+                  label="Redo"
+                  variant="tertiary"
+                  size="compact"
+                  type="button"
+                  disabled={!editable || !history.future.length}
+                  onClick={() => dispatch({ type: 'REDO' })}
+                />
+                <IconButton
+                  icon="paste"
+                  label="Paste"
+                  variant="tertiary"
+                  size="compact"
+                  type="button"
+                  disabled={!editable || !clipboard}
+                  onClick={() => paste()}
+                />
+              </div>
+            )}
+            <div className="designer-segment" role="group" aria-label="Zoom">
+              <IconButton
+                icon="minus"
+                label="Zoom out"
+                variant="tertiary"
+                size="compact"
+                type="button"
+                onClick={() => canvas.current?.zoomBy(1 / 1.25)}
+              />
+              <Button
+                type="button"
+                variant="tertiary"
+                size="compact"
+                className="designer-zoom-value"
+                aria-label="Reset zoom"
+                title="Reset zoom to 100%"
+                onClick={() => canvas.current?.resetZoom()}
+              >
+                {zoom}%
+              </Button>
+              <IconButton
+                icon="plus"
+                label="Zoom in"
+                variant="tertiary"
+                size="compact"
+                type="button"
+                onClick={() => canvas.current?.zoomBy(1.25)}
+              />
+            </div>
             <IconButton
-              icon="panel"
-              label={sidebarOpen ? 'Hide panel' : 'Show panel'}
+              icon="expand"
+              label="Fit map"
               variant="tertiary"
               size="compact"
               type="button"
-              className="designer-panel-toggle"
-              aria-expanded={sidebarOpen}
-              aria-controls="layout-properties"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
+              onClick={() => canvas.current?.fit()}
             />
-          )}
-          {!preview && canManage && !onSave && (
-            <IconButton
-              icon="copy"
-              label="Copy Layout"
-              variant="tertiary"
-              size="compact"
-              type="button"
-              disabled={dirty || !!saving}
-              onClick={() => setCopyOpen(true)}
-            />
-          )}
-          {!preview && editable && (
+          </div>
+          <div className="designer-header-end">
+            {definition.areas.length > 0 && (
+              <Select
+                aria-label="Area"
+                className="designer-area"
+                value={activeArea}
+                onChange={(e) => {
+                  setArea(e.target.value);
+                  setSelected([]);
+                }}
+              >
+                {definition.areas.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </Select>
+            )}
             <Button
               variant="secondary"
               size="compact"
               type="button"
-              className="designer-save"
-              loading={saving === 'save'}
-              disabled={!dirty || !!saving || (!onSave && !name.trim())}
-              onClick={() => save()}
+              aria-pressed={preview}
+              onClick={() => setPreview(!preview)}
             >
-              Save layout
+              <UtilityIcon name={preview ? 'edit' : 'eye'} />
+              {preview ? 'Back to editing' : 'Preview'}
             </Button>
-          )}
-          {!preview && editable && !onSave && version.status === 'DRAFT' && (
-            <Button
-              variant="primary"
-              size="compact"
-              type="button"
-              className="designer-publish"
-              aria-label="Save and publish layout"
-              loading={saving === 'publish'}
-              disabled={!!saving || !name.trim()}
-              onClick={() => save(true)}
-            >
-              <UtilityIcon name="check" />
-              Publish layout
-            </Button>
-          )}
-        </div>
-      </header>
+            {!preview && (
+              <IconButton
+                icon="panel"
+                label={sidebarOpen ? 'Hide panel' : 'Show panel'}
+                variant="tertiary"
+                size="compact"
+                type="button"
+                className="designer-panel-toggle"
+                aria-expanded={sidebarOpen}
+                aria-controls="layout-properties"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              />
+            )}
+            {!preview && canManage && !onSave && (
+              <IconButton
+                icon="copy"
+                label="Copy Layout"
+                variant="tertiary"
+                size="compact"
+                type="button"
+                disabled={dirty || !!saving}
+                onClick={() => setCopyOpen(true)}
+              />
+            )}
+            {!preview && editable && (
+              <Button
+                variant="secondary"
+                size="compact"
+                type="button"
+                className="designer-save"
+                loading={saving === 'save'}
+                disabled={!dirty || !!saving || (!onSave && !name.trim())}
+                onClick={() => save()}
+              >
+                Save layout
+              </Button>
+            )}
+            {!preview && editable && !onSave && version.status === 'DRAFT' && (
+              <Button
+                variant="primary"
+                size="compact"
+                type="button"
+                className="designer-publish"
+                aria-label="Save and publish layout"
+                loading={saving === 'publish'}
+                disabled={!!saving || !name.trim()}
+                onClick={() => save(true)}
+              >
+                <UtilityIcon name="check" />
+                Publish layout
+              </Button>
+            )}
+          </div>
+        </header>
+      )}
       {notice && !preview && (
         <p className="designer-notice">
           <UtilityIcon name="calendar" />
@@ -1331,14 +2056,14 @@ export function LayoutEditor({
         </p>
       )}
       <div className="designer-body">
-        {!preview && (
+        {!preview && !mobile && (
           <EditorRail
             items={drawerItems}
             active={openDrawer}
             onSelect={(id) => setDrawer(openDrawer === id ? null : id)}
           />
         )}
-        {!preview && openDrawer && (
+        {!preview && !mobile && openDrawer && (
           <aside
             id="layout-drawer"
             className="designer-drawer designer-chrome"
@@ -1348,115 +2073,7 @@ export function LayoutEditor({
               title={drawerTitle[openDrawer]}
               onClose={() => setDrawer(null)}
             />
-            <div className="designer-drawer-content">
-              {openDrawer === 'add' ? (
-                <LayoutTools
-                  tool={tool}
-                  setTool={setTool}
-                  add={add}
-                  addBooth={addBooth}
-                  addAsset={addAsset}
-                  environment={environment}
-                  setEnvironment={setEnvironment}
-                  canEditPoints={
-                    items.length === 1 &&
-                    items[0]?.type === 'LINE' &&
-                    !!items[0]?.points &&
-                    mutable
-                  }
-                  openSmart={openSmart}
-                  media={media}
-                  addPhoto={addPhoto}
-                />
-              ) : openDrawer === 'smart' ? (
-                <LayoutSmartTools
-                  activeTool={smartTool}
-                  onToolChange={setSmartTool}
-                  drawing={drawing}
-                  area={activeArea}
-                  selected={ids}
-                  editable={editable}
-                  center={() => canvas.current?.center() ?? { x: 100, y: 100 }}
-                  update={update}
-                  select={(ids) => {
-                    setSelected(ids);
-                    setTool('select');
-                  }}
-                  snapObjects={snapObjects}
-                  setSnapObjects={setSnapObjects}
-                  occurrence={!!occurrenceId}
-                  statusMode={statusMode}
-                  setStatusMode={setStatusMode}
-                />
-              ) : openDrawer === 'assets' ? (
-                <LayoutAssets
-                  arrangements={() => openSmart('arrangement')}
-                  disabled={!editable || definition.elements.length >= 1000}
-                  insert={addAsset}
-                  media={media}
-                  insertPhoto={addPhoto}
-                />
-              ) : openDrawer === 'settings' ? (
-                <LayoutCanvasSettings
-                  drawing={drawing}
-                  editable={editable}
-                  update={update}
-                  grid={grid}
-                  setGrid={setGrid}
-                  snap={snap}
-                  setSnap={setSnap}
-                  snapObjects={snapObjects}
-                  setSnapObjects={setSnapObjects}
-                  spacing={spacing}
-                  setSpacing={setSpacing}
-                />
-              ) : (
-                <LayoutLayers
-                  elements={definition.elements.filter(
-                    (e) => e.areaId === activeArea,
-                  )}
-                  selected={ids}
-                  select={(id, shift) =>
-                    setSelected(selectIds(definition.elements, ids, id, shift))
-                  }
-                  locate={(id) => {
-                    canvas.current?.locate(id);
-                    setSelected(selectIds(definition.elements, [], id));
-                  }}
-                  rename={(id, value) => {
-                    const element = definition.elements.find(
-                      (e) => e.id === id,
-                    );
-                    if (!element || element.locked) return;
-                    if (element.type === 'SPACE')
-                      changeBooth(id, { label: value });
-                    else
-                      change([
-                        {
-                          ...element,
-                          text: isMapLegend(element)
-                            ? MAP_LEGEND_TEMPLATE + value
-                            : value,
-                        },
-                      ]);
-                  }}
-                  order={(id, direction) => {
-                    const targets = selectIds(definition.elements, [], id);
-                    if (
-                      definition.elements.some(
-                        (e) =>
-                          targets.includes(e.id) &&
-                          (e.locked || e.editorHidden),
-                      )
-                    )
-                      return;
-                    update(reorder(drawing, targets, direction));
-                  }}
-                  flags={flags}
-                  editable={editable}
-                />
-              )}
-            </div>
+            <div className="designer-drawer-content">{drawerContent}</div>
           </aside>
         )}
         <div className="designer-stage">
@@ -1512,12 +2129,13 @@ export function LayoutEditor({
               );
             }}
             tool={preview ? 'pan' : tool}
+            showBounds={!preview}
             grid={grid && !preview}
             snap={snap}
             snapObjects={snapObjects}
             spacing={spacing}
           />
-          {!preview && ids.length > 0 && (
+          {!preview && !mobile && ids.length > 0 && (
             <div
               className={`designer-selection-toolbar designer-chrome ${anchor ? (anchor.below ? 'is-below' : 'is-above') : 'is-docked'}`}
               role="toolbar"
@@ -1667,34 +2285,18 @@ export function LayoutEditor({
               </ToolbarMenu>
             </div>
           )}
+          {mobile && !preview && mobileCanvasTools}
         </div>
-        {!preview && sidebarOpen && (
+        {!preview && !mobile && sidebarOpen && (
           <aside
             id="layout-properties"
             className="designer-sidebar designer-chrome"
             aria-label="Layout properties"
           >
-            <LayoutInspector
-              drawing={drawing}
-              selected={ids}
-              editable={editable}
-              version={version}
-              data={data}
-              area={activeArea}
-              update={update}
-              geometry={inspectorGeometry}
-              booth={changeBooth}
-              sync={sync}
-              design={(next) => openSmart(next)}
-              tab={inspectorTab}
-              setTab={setInspectorTab}
-              remove={() => update(remove(drawing, ids))}
-              canRemove={removable}
-              occupancy={occurrenceId ? occupancy : undefined}
-              media={media}
-            />
+            {inspector}
           </aside>
         )}
+        {mobile && mobileSheets}
       </div>
       {priceBoothId && (
         <MarketDialog
@@ -1769,17 +2371,20 @@ export function LayoutEditor({
           onCopied={(v) => onClone?.(v)}
         />
       )}
-      <footer className="designer-footer designer-chrome">
-        <span>
-          {definition.elements.length} objects ·{' '}
-          {Object.keys(drawing.spaces).length} booths
-        </span>
-        <span>
-          {preview
-            ? 'Public appearance · Drag to pan · Scroll to zoom'
-            : `${toolLabel} · Shift-click or drag to multi-select · Space or Alt + drag to pan · Scroll to zoom · Ctrl/Cmd + D duplicate · Arrows nudge · Esc clear`}
-        </span>
-      </footer>
+      {mobile && !preview && mobileBar}
+      {!mobile && (
+        <footer className="designer-footer designer-chrome">
+          <span>
+            {definition.elements.length} objects ·{' '}
+            {Object.keys(drawing.spaces).length} booths
+          </span>
+          <span>
+            {preview
+              ? 'Public appearance · Drag to pan · Scroll to zoom'
+              : `${toolLabel} · Shift-click or drag to multi-select · Space or Alt + drag to pan · Scroll to zoom · Ctrl/Cmd + D duplicate · Arrows nudge · Esc clear`}
+          </span>
+        </footer>
+      )}
     </section>
   );
 }

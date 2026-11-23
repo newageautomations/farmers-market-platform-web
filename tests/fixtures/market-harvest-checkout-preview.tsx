@@ -7,7 +7,7 @@ import type { CheckoutView } from '@market/api';
 import { Checkout } from '../../apps/storefront/src/components/Checkout';
 import { PurchaseSuccess } from '../../apps/storefront/src/components/PurchaseSuccess';
 import { StripeCheckout } from '../../apps/storefront/src/components/StripeCheckout';
-import type { StripeFactory } from '@market/ui/stripe-card';
+import type { StripePaymentFactory } from '@market/ui/stripe-card';
 import '@market/ui/styles.css';
 import '../../packages/theme/src/storefront.css';
 import '../../apps/storefront/src/styles/checkout.css';
@@ -25,6 +25,7 @@ export const view: CheckoutView = {
   frozen: false,
   committed: false,
   paymentStatus: 'NOT_STARTED',
+  termsDisclosure: null,
   preorderFee: null,
   preorderFeeTestAvailable: false,
   paymentGroup: null,
@@ -55,7 +56,7 @@ export const view: CheckoutView = {
     },
   ],
 };
-const sdk: StripeFactory = () => ({
+const sdk: StripePaymentFactory = () => ({
   elements: () => ({
     create: () => ({
       mount: (host: HTMLElement) => {
@@ -67,7 +68,7 @@ const sdk: StripeFactory = () => ({
       destroy: () => {},
     }),
   }),
-  confirmCardSetup: async () => ({}),
+  confirmSetup: async () => ({ setupIntent: { status: 'succeeded' } }),
   handleNextAction: async () => ({}),
 });
 const occurrence = {

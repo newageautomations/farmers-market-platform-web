@@ -19,7 +19,6 @@ export function useVendorCart({
   });
   const [pending, setPending] = useState(false),
     [error, setError] = useState(''),
-    [message, setMessage] = useState(''),
     [uncertain, setUncertain] = useState(false),
     [affectedLine, setAffectedLine] = useState('');
   const lock = useRef(false);
@@ -115,7 +114,6 @@ export function useVendorCart({
     lock.current = true;
     setPending(true);
     setError('');
-    setMessage('');
     setAffectedLine(lineId);
     try {
       const result = await shopCall<{ cart: PublicCart | null }>(
@@ -125,11 +123,6 @@ export function useVendorCart({
       );
       setSnapshot((previous) => ({ ...previous, cart: result.cart }));
       await read();
-      setMessage(
-        action === 'remove'
-          ? 'Item removed from your cart.'
-          : 'Quantity and order totals updated.',
-      );
     } catch (e) {
       setError(cartMessage(e as { kind?: string; code?: string }));
       try {
@@ -170,7 +163,6 @@ export function useVendorCart({
   return {
     pending,
     error,
-    message,
     uncertain,
     affectedLine,
     cart,

@@ -5,6 +5,7 @@ export {
   MarketPlatformLogo,
 } from './utility';
 export { RecordCard } from './record-details';
+export { LoadGate, LoadGateProvider, useLoadGate } from './load-gate';
 export { CategoryIcon } from './CategoryIcon';
 import { scrollToPaginatedTable } from './table-navigation';
 export { scrollToPaginatedTable } from './table-navigation';
@@ -24,6 +25,7 @@ import {
   useSyncExternalStore,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentProps,
@@ -31,6 +33,11 @@ import {
 } from 'react';
 import { safeError, type ErrorKind } from '@market/api';
 import { Tooltip } from './utility';
+import {
+  revealContentAfterSkeleton,
+  revealLoadedPage,
+} from './skeleton-reveal';
+import { HOLD_LIMIT_MS, useLoadGateInstance, useLoadHold } from './load-gate';
 import {
   buttonClassName,
   cardClassName,
@@ -374,6 +381,265 @@ export function SectionHeader({
 export function Skeleton({ className = '' }: { className?: string } = {}) {
   return <div className={`skeleton ${className}`.trim()} aria-hidden="true" />;
 }
+/**
+ * LOD-01 content-loading skeletons: one generic layout per category of load,
+ * built from the shared pulsing `Skeleton` blocks (the Website Library
+ * thumbnail's animation). For page and section content only. Dialog content
+ * and action progress (saving, paying, verifying) keep `Spinner`.
+ */
+export type SkeletonVariant =
+  'page' | 'table' | 'stats' | 'cards' | 'detail' | 'shell' | 'checkout';
+const skeletonBlocks: Record<SkeletonVariant, (rows: number) => ReactNode> = {
+  page: (rows) => (
+    <>
+      <Skeleton className="ui-skeleton-title" />
+      <Skeleton className="ui-skeleton-line ui-skeleton-short" />
+      <div className="ui-skeleton-toolbar">
+        <Skeleton className="ui-skeleton-field" />
+        <Skeleton className="ui-skeleton-field" />
+        <Skeleton className="ui-skeleton-field" />
+      </div>
+      <div className="ui-skeleton-panel">
+        <Skeleton className="ui-skeleton-table-head" />
+        {Array.from({ length: rows }, (_, row) => (
+          <div className="ui-skeleton-table-row" key={row}>
+            <Skeleton className="ui-skeleton-line" />
+            <Skeleton className="ui-skeleton-line" />
+            <Skeleton className="ui-skeleton-line" />
+            <Skeleton className="ui-skeleton-line" />
+          </div>
+        ))}
+      </div>
+    </>
+  ),
+  table: (rows) => (
+    <>
+      <Skeleton className="ui-skeleton-table-head" />
+      {Array.from({ length: rows }, (_, row) => (
+        <div className="ui-skeleton-table-row" key={row}>
+          <Skeleton className="ui-skeleton-line" />
+          <Skeleton className="ui-skeleton-line" />
+          <Skeleton className="ui-skeleton-line" />
+          <Skeleton className="ui-skeleton-line" />
+        </div>
+      ))}
+    </>
+  ),
+  stats: () => (
+    <>
+      <div className="ui-skeleton-tiles">
+        {[0, 1, 2, 3].map((tile) => (
+          <div className="ui-skeleton-tile" key={tile}>
+            <Skeleton className="ui-skeleton-line" />
+            <Skeleton className="ui-skeleton-value" />
+          </div>
+        ))}
+      </div>
+      <Skeleton className="ui-skeleton-chart" />
+    </>
+  ),
+  cards: (rows) => (
+    <div className="ui-skeleton-cards">
+      {Array.from({ length: rows }, (_, card) => (
+        <div className="ui-skeleton-card" key={card}>
+          <Skeleton className="ui-skeleton-media" />
+          <Skeleton className="ui-skeleton-line" />
+          <Skeleton className="ui-skeleton-line ui-skeleton-short" />
+        </div>
+      ))}
+    </div>
+  ),
+  detail: (rows) => (
+    <>
+      <Skeleton className="ui-skeleton-title" />
+      {Array.from({ length: rows }, (_, row) => (
+        <div className="ui-skeleton-detail-row" key={row}>
+          <Skeleton className="ui-skeleton-line" />
+          <Skeleton className="ui-skeleton-field" />
+        </div>
+      ))}
+    </>
+  ),
+  shell: () => (
+    <div className="ui-skeleton-shell">
+      <Skeleton className="ui-skeleton-shell-header" />
+      <div className="ui-skeleton-shell-body">
+        <div className="ui-skeleton-shell-nav">
+          {[0, 1, 2, 3, 4].map((item) => (
+            <Skeleton className="ui-skeleton-line" key={item} />
+          ))}
+        </div>
+        <div className="ui-skeleton-shell-main">
+          <Skeleton className="ui-skeleton-title" />
+          <Skeleton className="ui-skeleton-chart" />
+          <Skeleton className="ui-skeleton-chart" />
+        </div>
+      </div>
+    </div>
+  ),
+  checkout: () => (
+    <>
+      <Skeleton className="ui-skeleton-line ui-skeleton-short" />
+      <Skeleton className="ui-skeleton-line" />
+      <Skeleton className="ui-skeleton-field" />
+      <div className="ui-skeleton-split">
+        <Skeleton className="ui-skeleton-field" />
+        <Skeleton className="ui-skeleton-field" />
+      </div>
+      <Skeleton className="ui-skeleton-button" />
+    </>
+  ),
+};
+/** On unmount, fades in the content that replaces the skeleton inside `scope`. */
+function useRevealAfterSkeleton<T extends HTMLElement>(
+  scope: (element: T) => Element | null | undefined,
+) {
+  const ref = useRef<T>(null);
+  const pick = useRef(scope);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    const target = element ? pick.current(element) : undefined;
+    return () => revealContentAfterSkeleton(target);
+  }, []);
+  return ref;
+}
+export function LoadingSkeleton({
+  variant,
+  label = 'Loading',
+  rows,
+  className = '',
+  hold = true,
+}: {
+  variant: SkeletonVariant;
+  /** Announced loading text. `null` when a nearby live region already announces it. */
+  label?: string | null;
+  /** Row or card count for page, table, cards and detail layouts. */
+  rows?: number;
+  className?: string;
+  /** Keeps the surrounding page in its loading phase while shown (`PageLoad`). */
+  hold?: boolean;
+}) {
+  const count =
+    rows ??
+    (variant === 'cards'
+      ? 3
+      : variant === 'detail'
+        ? 4
+        : variant === 'page'
+          ? 6
+          : 5);
+  useLoadHold(hold);
+  const ref = useRevealAfterSkeleton<HTMLDivElement>(
+    (element) => element.closest('main') ?? element.parentElement,
+  );
+  return (
+    <div
+      ref={ref}
+      className={`ui-skeleton-layout ui-skeleton-${variant} ${className}`.trim()}
+      {...(label === null
+        ? { 'aria-hidden': true }
+        : { role: 'status', 'aria-live': 'polite' as const })}
+    >
+      {label !== null && <span className="sr-only">{label}</span>}
+      {skeletonBlocks[variant](count)}
+    </div>
+  );
+}
+/** A text-height placeholder for a single value still loading inside a tile, cell or sentence. */
+export function InlineSkeleton({ label = 'Loading' }: { label?: string }) {
+  useLoadHold();
+  const ref = useRevealAfterSkeleton<HTMLSpanElement>(
+    (element) => element.parentElement?.parentElement,
+  );
+  return (
+    <span ref={ref} className="ui-skeleton-inline">
+      <span className="skeleton" aria-hidden="true" />
+      <span className="sr-only">{label}</span>
+    </span>
+  );
+}
+/**
+ * One page-sized skeleton for a page's first load. The page renders hidden
+ * (and inert) beneath it so every section starts loading at once; it is shown
+ * only when no read is in flight and no skeleton is mounted inside it, then
+ * fades in as a whole with its tables and lists filling top to bottom. A new
+ * `pageKey` (a different page) starts a new loading phase; filter, sort and
+ * tab changes within the page keep their own section skeletons instead.
+ */
+export function PageLoad({
+  pageKey,
+  label = 'Loading page',
+  children,
+}: {
+  pageKey: string;
+  label?: string;
+  children: ReactNode;
+}) {
+  const gate = useLoadGateInstance();
+  const [state, setState] = useState({ key: pageKey, ready: false });
+  if (state.key !== pageKey) setState({ key: pageKey, ready: false });
+  const ready = !gate || (state.key === pageKey && state.ready);
+  const content = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
+  const shown = useRef(ready);
+  // The page skeleton fills the visible page area: from its own top to the
+  // viewport bottom, less the spacing below it in the dashboard layout. A
+  // page that is taller than the screen is unaffected (it is a minimum).
+  useLayoutEffect(() => {
+    const element = frame.current;
+    if (ready || !element) return;
+    let below = 0;
+    for (
+      let node = element.parentElement;
+      node && node !== document.documentElement;
+      node = node.parentElement
+    ) {
+      const style = getComputedStyle(node);
+      below +=
+        parseFloat(style.paddingBottom) +
+        parseFloat(style.borderBottomWidth) +
+        parseFloat(style.marginBottom);
+    }
+    element.style.setProperty(
+      '--ui-page-load-top',
+      `${Math.max(0, element.getBoundingClientRect().top)}px`,
+    );
+    element.style.setProperty('--ui-page-load-below', `${below || 0}px`);
+  }, [ready, pageKey]);
+  useEffect(() => {
+    if (ready || !gate) return;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      setState({ key: pageKey, ready: true });
+    };
+    const cancel = gate.onIdle(finish);
+    const limit = setTimeout(finish, HOLD_LIMIT_MS);
+    return () => {
+      done = true;
+      cancel();
+      clearTimeout(limit);
+    };
+  }, [gate, pageKey, ready]);
+  useLayoutEffect(() => {
+    if (ready && !shown.current) revealLoadedPage(content.current);
+    shown.current = ready;
+  }, [ready]);
+  return (
+    <div ref={frame} className="ui-page-load">
+      {!ready && <LoadingSkeleton variant="page" label={label} hold={false} />}
+      <div
+        ref={content}
+        className="ui-page-load-content"
+        data-page-loading={ready ? undefined : ''}
+        inert={!ready}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 export function Spinner({ label = 'Loading' }: { label?: string }) {
   return (
     <p className="progress" role="status">
@@ -687,6 +953,13 @@ export * from './map/assets';
 export * from './map/visuals';
 export * from './map/smart-design';
 export { ApplicationFields } from './ApplicationFields';
+export {
+  ApplicationAcknowledgement,
+  ApplicationFlow,
+  applicationFlowSteps,
+  rentalSection,
+  type ApplicationFlowStep,
+} from './ApplicationFlow';
 
 export {
   passwordChecks,

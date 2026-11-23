@@ -19,7 +19,7 @@ import {
   Field,
   Input,
   SelectField,
-  Spinner,
+  LoadingSkeleton,
 } from '@market/ui';
 import {
   dashboardPaletteDefaults,
@@ -160,7 +160,10 @@ export function DashboardAppearanceSettings({
         <p>Sign in to save your dashboard colors.</p>
       </Card>
     );
-  if (!appearance.loaded) return <Spinner label="Loading dashboard colors" />;
+  if (!appearance.loaded)
+    return (
+      <LoadingSkeleton variant="detail" label="Loading dashboard colors" />
+    );
   if (appearance.error)
     return (
       <Card surface={surface}>

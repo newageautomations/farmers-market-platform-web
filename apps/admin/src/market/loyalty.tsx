@@ -763,7 +763,7 @@ export function MarketLoyalty({
       }
       className="market-loyalty-workspace farmstand-controls"
     >
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="stats" {...query} retry={query.refresh} />
       {error && <Alert severity="error">{error}</Alert>}
       {data &&
         (path.endsWith('/new') || path.endsWith('/edit') || replacement ? (

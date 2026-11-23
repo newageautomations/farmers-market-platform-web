@@ -7,6 +7,19 @@ import type {
 } from '@market/api';
 import { AppError } from '@market/api';
 
+/** Explicit filter links take precedence; legacy vendor-card links select vendors. */
+export function marketShopQuery(params: URLSearchParams): URLSearchParams {
+  const query = new URLSearchParams(params);
+  const requested = query.get('filter');
+  const mode =
+    requested === 'vendor' || (requested !== 'category' && query.has('vendor'))
+      ? 'vendor'
+      : 'category';
+  query.set('filter', mode);
+  query.delete(mode === 'vendor' ? 'category' : 'vendor');
+  return query;
+}
+
 /** The public API orders NAME_* by variant name. Sort full product results before paging. */
 export async function marketShopCatalog(
   read: (options: MarketCatalogOptions) => Promise<MarketCatalog>,

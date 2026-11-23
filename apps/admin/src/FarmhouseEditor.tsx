@@ -1,5 +1,8 @@
 import { createPortal } from 'react-dom';
-import { WebsiteInspectorContent } from './WebsiteEditorContext';
+import {
+  InspectorGroup,
+  WebsiteInspectorContent,
+} from './WebsiteEditorContext';
 import { useState, type ReactNode } from 'react';
 import { disclosureClassName } from '@market/ui/presentation';
 import {
@@ -229,106 +232,122 @@ export function FarmhouseEditor({
         'theme',
         'Appearance',
         <>
-          <HomepageDesignEditor
-            value={value.homepageDesign}
-            onChange={(homepageDesign) => patch({ homepageDesign })}
-            id="farmhouse-homepage"
-          />
-          <label className="story-page-toggle" htmlFor="farmhouse-scroll-fade">
-            <Checkbox
-              id="farmhouse-scroll-fade"
-              role="switch"
-              className="sr-only"
-              checked={value.scrollFade ?? false}
-              onChange={(e) => patch({ scrollFade: e.target.checked })}
+          <InspectorGroup title="Homepage layout" open>
+            <HomepageDesignEditor
+              value={value.homepageDesign}
+              onChange={(homepageDesign) => patch({ homepageDesign })}
+              id="farmhouse-homepage"
             />
-            <span className="story-switch-track" aria-hidden="true" />
-            <span>Fade in while scrolling</span>
-          </label>
-          <SelectField
-            id="farmhouse-palette"
-            label="Palette"
-            className="ui-palette-select"
-            value={value.palette}
-            onChange={(e) =>
-              patch({ palette: e.target.value as FarmhouseSettings['palette'] })
-            }
-          >
-            {Object.entries(farmhousePalettes).map(([key, palette]) => (
-              <option key={key} value={key}>
-                <span className="ui-palette-option">
-                  <span className="ui-palette-option-label">
-                    {palette.label}
+            <label
+              className="story-page-toggle"
+              htmlFor="farmhouse-scroll-fade"
+            >
+              <Checkbox
+                id="farmhouse-scroll-fade"
+                role="switch"
+                className="sr-only"
+                checked={value.scrollFade ?? false}
+                onChange={(e) => patch({ scrollFade: e.target.checked })}
+              />
+              <span className="story-switch-track" aria-hidden="true" />
+              <span>Fade in while scrolling</span>
+            </label>
+          </InspectorGroup>
+          <InspectorGroup title="Colors & fonts">
+            <SelectField
+              id="farmhouse-palette"
+              label="Palette"
+              className="ui-palette-select"
+              value={value.palette}
+              onChange={(e) =>
+                patch({
+                  palette: e.target.value as FarmhouseSettings['palette'],
+                })
+              }
+            >
+              {Object.entries(farmhousePalettes).map(([key, palette]) => (
+                <option key={key} value={key}>
+                  <span className="ui-palette-option">
+                    <span className="ui-palette-option-label">
+                      {palette.label}
+                    </span>
+                    <span className="ui-palette-swatches" aria-hidden="true">
+                      {(
+                        [
+                          'primary',
+                          'secondary',
+                          'background',
+                          'surface',
+                        ] as const
+                      ).map((token) => (
+                        <span
+                          key={token}
+                          className="ui-palette-swatch"
+                          style={{ backgroundColor: palette[token] }}
+                        />
+                      ))}
+                    </span>
                   </span>
-                  <span className="ui-palette-swatches" aria-hidden="true">
-                    {(
-                      ['primary', 'secondary', 'background', 'surface'] as const
-                    ).map((token) => (
-                      <span
-                        key={token}
-                        className="ui-palette-swatch"
-                        style={{ backgroundColor: palette[token] }}
-                      />
-                    ))}
-                  </span>
-                </span>
-              </option>
-            ))}
-          </SelectField>
-          <SelectField
-            id="farmhouse-type"
-            label="Typography"
-            value={value.typography}
-            onChange={(e) =>
-              patch({
-                typography: e.target.value as FarmhouseSettings['typography'],
-              })
-            }
-          >
-            {Object.entries(farmhouseFonts).map(([key, font]) => (
-              <option key={key} value={key}>
-                {font.label}
-              </option>
-            ))}
-          </SelectField>
-          <p
-            style={{
-              fontFamily: farmhouseFonts[value.typography].heading,
-              fontSize: '1.8rem',
-            }}
-          >
-            Good things, thoughtfully made.
-          </p>
-          <SelectField
-            id="farmhouse-button-shape"
-            label="Button shape"
-            value={appearance?.buttonShape ?? 'pill'}
-            onChange={(e) =>
-              onAppearanceChange?.({
-                buttonShape: e.target
-                  .value as StorefrontAppearance['buttonShape'],
-              })
-            }
-          >
-            <option value="square">Square / minimal</option>
-            <option value="soft">Softly rounded</option>
-            <option value="pill">Pill-shaped</option>
-          </SelectField>
-          <SelectField
-            id="farmhouse-button-hover"
-            label="Button hover effect"
-            value={appearance?.buttonHover ?? 'lift'}
-            onChange={(e) =>
-              onAppearanceChange?.({
-                buttonHover: e.target
-                  .value as StorefrontAppearance['buttonHover'],
-              })
-            }
-          >
-            <option value="lift">Subtle lift</option>
-            <option value="darken">Darken</option>
-            <option value="outline">Outline transition</option>
-          </SelectField>
+                </option>
+              ))}
+            </SelectField>
+            <SelectField
+              id="farmhouse-type"
+              label="Typography"
+              value={value.typography}
+              onChange={(e) =>
+                patch({
+                  typography: e.target.value as FarmhouseSettings['typography'],
+                })
+              }
+            >
+              {Object.entries(farmhouseFonts).map(([key, font]) => (
+                <option key={key} value={key}>
+                  {font.label}
+                </option>
+              ))}
+            </SelectField>
+            <p
+              style={{
+                fontFamily: farmhouseFonts[value.typography].heading,
+                fontSize: '1.8rem',
+              }}
+            >
+              Good things, thoughtfully made.
+            </p>
+          </InspectorGroup>
+          <InspectorGroup title="Buttons">
+            <SelectField
+              id="farmhouse-button-shape"
+              label="Button shape"
+              value={appearance?.buttonShape ?? 'pill'}
+              onChange={(e) =>
+                onAppearanceChange?.({
+                  buttonShape: e.target
+                    .value as StorefrontAppearance['buttonShape'],
+                })
+              }
+            >
+              <option value="square">Square / minimal</option>
+              <option value="soft">Softly rounded</option>
+              <option value="pill">Pill-shaped</option>
+            </SelectField>
+            <SelectField
+              id="farmhouse-button-hover"
+              label="Button hover effect"
+              value={appearance?.buttonHover ?? 'lift'}
+              onChange={(e) =>
+                onAppearanceChange?.({
+                  buttonHover: e.target
+                    .value as StorefrontAppearance['buttonHover'],
+                })
+              }
+            >
+              <option value="lift">Subtle lift</option>
+              <option value="darken">Darken</option>
+              <option value="outline">Outline transition</option>
+            </SelectField>
+          </InspectorGroup>
         </>,
       )}
       {page === 'products' &&
@@ -354,7 +373,6 @@ export function FarmhouseEditor({
                 patch({ pages: { ...value.pages, shopIntroduction } }),
               true,
             )}
-            <p>The hero photograph is shared with the homepage opening.</p>
             {photo(
               'farmhouse-shop-photo',
               value.sections.find(
@@ -457,33 +475,39 @@ export function FarmhouseEditor({
           nativeActionLabel={(s) => s.heading || s.id}
           renderNative={(s) => (
             <>
-              {' '}
-              {text(s.id + '-heading', 'Heading', s.heading, 160, (heading) =>
-                section(s.id, { heading }),
+              <InspectorGroup title="Content" open>
+                {text(s.id + '-heading', 'Heading', s.heading, 160, (heading) =>
+                  section(s.id, { heading }),
+                )}
+                {text(
+                  s.id + '-body',
+                  'Supporting copy',
+                  s.body,
+                  1200,
+                  (body) => section(s.id, { body }),
+                  true,
+                )}
+              </InspectorGroup>
+              <InspectorGroup title="Link">
+                {text(s.id + '-label', 'Link label', s.label, 80, (label) =>
+                  section(s.id, { label }),
+                )}
+                <Destination
+                  categories={categories}
+                  id={s.id + '-destination'}
+                  value={s.destination}
+                  products={products}
+                  loadProducts={loadProducts}
+                  onChange={(destination) => section(s.id, { destination })}
+                />
+              </InspectorGroup>
+              {!['products', 'invitation'].includes(s.id) && (
+                <InspectorGroup title="Photograph">
+                  {photo(s.id, s.photo, (v) => section(s.id, { photo: v }))}
+                </InspectorGroup>
               )}
-              {text(
-                s.id + '-body',
-                'Supporting copy',
-                s.body,
-                1200,
-                (body) => section(s.id, { body }),
-                true,
-              )}
-              {text(s.id + '-label', 'Link label', s.label, 80, (label) =>
-                section(s.id, { label }),
-              )}
-              <Destination
-                categories={categories}
-                id={s.id + '-destination'}
-                value={s.destination}
-                products={products}
-                loadProducts={loadProducts}
-                onChange={(destination) => section(s.id, { destination })}
-              />
-              {!['products', 'invitation'].includes(s.id) &&
-                photo(s.id, s.photo, (v) => section(s.id, { photo: v }))}
               {['products', 'collection'].includes(s.id) && (
-                <>
+                <InspectorGroup title="Products">
                   <Button
                     variant="secondary"
                     onClick={() => {
@@ -502,10 +526,10 @@ export function FarmhouseEditor({
                       ? s.productIds.length + ' products selected'
                       : 'Using catalog selection'}
                   </p>
-                </>
+                </InspectorGroup>
               )}
               {s.id === 'discovery' && (
-                <>
+                <InspectorGroup title="Tiles">
                   {s.tiles.map((tile, i) => (
                     <div key={i}>
                       {text(
@@ -584,11 +608,7 @@ export function FarmhouseEditor({
                   >
                     Add editorial tile
                   </Button>
-                  <p>
-                    With no custom tiles, this section uses real catalog
-                    categories and product photographs.
-                  </p>
-                </>
+                </InspectorGroup>
               )}
             </>
           )}

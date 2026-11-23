@@ -36,6 +36,7 @@ import {
   SelectField,
   Spinner,
   Tooltip,
+  LoadingSkeleton,
 } from './index';
 import {
   FarmstandButton,
@@ -921,7 +922,11 @@ function NotificationWorkspace({
               <div className="notification-menu-body">
                 {feedback}
                 {!snapshot.page && !snapshot.error && (
-                  <Spinner label="Loading notifications" />
+                  <LoadingSkeleton
+                    variant="table"
+                    rows={3}
+                    label="Loading notifications"
+                  />
                 )}
                 {snapshot.page?.items.length === 0 && (
                   <p className="notification-menu-empty">
@@ -1013,7 +1018,11 @@ function NotificationWorkspace({
           <div className="notification-preview">
             {feedback}
             {!snapshot.page && !snapshot.error && (
-              <Spinner label="Loading notifications" />
+              <LoadingSkeleton
+                variant="table"
+                rows={3}
+                label="Loading notifications"
+              />
             )}
             {snapshot.page?.items.length === 0 && <p>No notifications yet.</p>}
             {snapshot.page?.items.map((n) => (
@@ -1124,7 +1133,10 @@ function NotificationWorkspace({
             }
           />
         ) : (
-          <Spinner label="Loading notification preferences" />
+          <LoadingSkeleton
+            variant="detail"
+            label="Loading notification preferences"
+          />
         )
       ) : (
         <div
@@ -1301,7 +1313,12 @@ function NotificationWorkspace({
                 </FarmstandButton>
               </div>
             </div>
-            {!page && !error && <Spinner label="Loading notification inbox" />}
+            {!page && !error && (
+              <LoadingSkeleton
+                variant="table"
+                label="Loading notification inbox"
+              />
+            )}
             {page && (
               <>
                 <div className="notification-bulk">

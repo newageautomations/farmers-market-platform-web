@@ -11,6 +11,8 @@ import {
   Input,
   SelectField,
   Dropdown,
+  InlineSkeleton,
+  LoadingSkeleton,
 } from '@market/ui';
 import { disclosureClassName } from '@market/ui/presentation';
 import { FarmstandButton as Button } from '@market/ui/farmstand';
@@ -206,7 +208,7 @@ export function QuickBooks({
   };
   return (
     <div className="quickbooks-workspace farmstand-controls">
-      <ReadState {...status} retry={status.refresh} />
+      <ReadState skeleton="detail" {...status} retry={status.refresh} />
       {error && <Alert severity="error">{error}</Alert>}
       {notice && <Alert severity="success">{notice}</Alert>}
       {syncOutcome && (
@@ -221,7 +223,7 @@ export function QuickBooks({
               {connected ? 'Connected' : 'Disconnected'}
             </Badge>
           ) : (
-            'Loading'
+            <InlineSkeleton label="Loading connection status" />
           )}
         </p>
         <p>
@@ -493,7 +495,13 @@ export function QuickBooks({
           >
             <summary>Company account connections</summary>
             <div className="ui-disclosure-content">
-              {accountsBusy && <p role="status">Loading company accounts...</p>}
+              {accountsBusy && (
+                <LoadingSkeleton
+                  variant="detail"
+                  rows={2}
+                  label="Loading company accounts"
+                />
+              )}
               {!accountsBusy && !accountsLoaded && (
                 <p>Close and reopen this card to retry loading accounts.</p>
               )}
@@ -654,7 +662,12 @@ export function QuickBooks({
                 Choose an end date on or after the start date.
               </Alert>
             )}
-            <ReadState {...previewRead} retry={previewRead.refresh} />
+            <ReadState
+              skeleton="table"
+              rows={3}
+              {...previewRead}
+              retry={previewRead.refresh}
+            />
             <div className="actions">
               <Button
                 disabled={

@@ -299,6 +299,13 @@ export const navigation: readonly NavItem[] = [
     permission: 'ManageMarketStorefront',
   },
   {
+    label: 'Website messages',
+    path: '/market/contact-submissions',
+    parent: '/market/storefront',
+    scopes: ['MARKET'],
+    permission: 'ReadOwnMarket',
+  },
+  {
     label: 'Settings',
     path: '/market/settings',
     scopes: ['MARKET'],
@@ -380,6 +387,7 @@ export function visibleNavigation(context: AdminContext) {
         'Team',
         'Settings',
         'Submitted applications',
+        'Website messages',
         'Add external business',
         'Generate occurrences',
         'Manual occurrence',

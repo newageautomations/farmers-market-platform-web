@@ -59,6 +59,7 @@ if (
     'invoice-refund-fixtures',
     'stripe-connect-fixtures',
     'vendor-managed',
+    'vendor-terms-fixtures',
   ].includes(action)
 )
   Object.assign(
@@ -124,6 +125,7 @@ if (['admin', 'storefront'].includes(action)) {
       'invoice-refund-fixtures',
       'stripe-connect-fixtures',
       'vendor-managed',
+      'vendor-terms-fixtures',
       'test',
     ].includes(action)
   )

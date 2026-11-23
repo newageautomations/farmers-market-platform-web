@@ -36,7 +36,7 @@ export function AccountTimezoneSettings({
   return (
     <Card spacing="contained" surface={embedded ? 'embedded' : 'card'}>
       {!embedded && <h2>Account time zone</h2>}
-      <ReadState {...saved} retry={saved.refresh} />
+      <ReadState skeleton="detail" {...saved} retry={saved.refresh} />
       {saved.data !== undefined && (
         <CommandForm
           title="Account time zone"

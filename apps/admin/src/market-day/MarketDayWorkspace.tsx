@@ -388,6 +388,7 @@ function DayWorkspace({
         </Alert>
       )}
       <ReadState
+        skeleton="detail"
         loading={query.loading}
         error={query.error}
         retry={query.refresh}
@@ -784,6 +785,8 @@ function VendorCheckIn({
       description="Check in when you arrive. Readiness is shared separately."
     >
       <ReadState
+        skeleton="detail"
+        rows={2}
         loading={query.loading}
         error={query.error}
         retry={query.refresh}

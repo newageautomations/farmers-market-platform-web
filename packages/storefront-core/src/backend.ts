@@ -27,8 +27,8 @@ const resolverFetch: typeof fetch = async (input, init) => {
         let size = 0;
         response.on('data', (chunk: Buffer) => {
           size += chunk.length;
-          // Published About/story text may contain three-byte UTF-8 characters.
-          if (size > 131072)
+          // The bounded appearance and separate terms text may contain three-byte UTF-8 characters.
+          if (size > 320 * 1024)
             request.destroy(new Error('Resolver response exceeds limit'));
           else chunks.push(chunk);
         });
@@ -50,15 +50,27 @@ const resolverFetch: typeof fetch = async (input, init) => {
 export function publicStorefrontResolver(
   shopEndpoint: string,
   requestFetch: typeof fetch = resolverFetch,
+  privateTransport?: { origin: string; headers: Headers },
 ): BackendStorefrontResolver {
-  const endpoint = new URL('/storefront-context/resolve', shopEndpoint);
+  const endpoint = new URL(
+    privateTransport
+      ? '/storefront-context/internal-resolve'
+      : '/storefront-context/resolve',
+    privateTransport?.origin ?? shopEndpoint,
+  );
   return {
     async resolve(authority) {
       let response: Response;
       try {
+        const headers = new Headers(privateTransport?.headers);
+        headers.set(
+          privateTransport ? 'x-market-storefront-host' : 'Host',
+          authority,
+        );
         response = await requestFetch(endpoint, {
-          headers: { Host: authority },
+          headers,
           cache: 'no-store',
+          redirect: 'error',
           signal: AbortSignal.timeout(8000),
         });
       } catch {
@@ -97,7 +109,8 @@ export function publicStorefrontResolver(
         origin.password ||
         origin.pathname !== '/' ||
         origin.search ||
-        origin.hash
+        origin.hash ||
+        (privateTransport && origin.origin !== 'https://' + authority)
       )
         throw new AppError('unavailable');
       const context: StorefrontContext = {
@@ -115,6 +128,10 @@ export function publicStorefrontResolver(
           typeof dto.appearancePublishedAt === 'string' &&
           Number.isFinite(Date.parse(dto.appearancePublishedAt))
             ? dto.appearancePublishedAt
+            : undefined,
+        defaultVendorTerms:
+          typeof dto.defaultVendorTerms === 'string'
+            ? dto.defaultVendorTerms
             : undefined,
         appearance: storefrontAppearanceSchema.parse(
           dto.appearance ?? defaultStorefrontAppearance,

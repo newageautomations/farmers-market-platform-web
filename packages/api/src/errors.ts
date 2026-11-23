@@ -1,6 +1,10 @@
 import { applicationErrorMessages } from './application-rules';
 
 const catalogMessages: Record<string, string> = {
+  VENDOR_TERMS_ACCEPTANCE_REQUIRED:
+    'Review and accept the seller terms before placing your order.',
+  VENDOR_TERMS_CHANGED:
+    'The sellers or purchase terms changed. Review the updated terms and check the box again.',
   INVOICE_FINANCIAL_OPERATION_PENDING:
     'A payment or refund is unresolved. Wait for reconciliation before changing this invoice.',
   REFUND_REQUIRED_BEFORE_REDUCTION:
@@ -214,6 +218,8 @@ export class AppError extends Error {
   }
 }
 const codes: Record<string, ErrorKind> = {
+  VENDOR_TERMS_ACCEPTANCE_REQUIRED: 'validation',
+  VENDOR_TERMS_CHANGED: 'conflict',
   PREORDER_FEE_REQUOTE_REQUIRED: 'conflict',
   ACCOUNT_NOT_READY: 'validation',
   OAUTH_RECONCILIATION_REQUIRED: 'conflict',
@@ -293,6 +299,7 @@ const codes: Record<string, ErrorKind> = {
   NOTIFICATION_INPUT_INVALID: 'validation',
   NOTIFICATION_VERSION_CONFLICT: 'conflict',
   DOCUMENT_INPUT_INVALID: 'validation',
+  DOCUMENT_EXPIRATION_REQUIRED: 'validation',
   COMPLIANCE_EXPORT_LIMIT: 'validation',
   DOCUMENT_FORMAT_INVALID: 'validation',
   DOCUMENT_TOO_LARGE: 'validation',

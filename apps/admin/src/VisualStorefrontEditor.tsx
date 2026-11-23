@@ -4,15 +4,18 @@ import { createPortal } from 'react-dom';
 import { WebsiteSectionManagement } from './WebsiteSectionManagement';
 import './market/phase14/designer.css';
 import './website-editor.css';
+import './website-library.css';
+import { WebsitePreviewSkeleton } from './WebsiteThumbnail';
 import { browserOrigin, browserUrl } from './remote-demo';
 import {
+  InspectorGroup,
   WebsiteEditorContext,
   WebsiteInspectorContent,
 } from './WebsiteEditorContext';
 import { StorefrontCategoriesEditor } from './StorefrontCategoriesEditor';
 import { FarmhouseEditor } from './FarmhouseEditor';
 import { EditorialMarketEditor } from './EditorialMarketEditor';
-import { PoliciesEditor } from './PoliciesEditor';
+import { PoliciesEditor, termsLabels } from './PoliciesEditor';
 import { FaqEditor } from './FaqEditor';
 import { ContactEditor } from './ContactEditor';
 import { TextSizeControls } from './TextSizeControls';
@@ -35,7 +38,6 @@ import {
   IconButton,
   UtilityIcon,
   SelectField,
-  Spinner,
   Textarea,
 } from '@market/ui';
 import { disclosureClassName, buttonClassName } from '@market/ui/presentation';
@@ -67,6 +69,12 @@ import {
   type HarvestHomepageSection,
   type HarvestOriginalSectionId,
   defaultPolicies,
+  defaultMarketTerms,
+  defaultMarketPolicies,
+  marketStarterText,
+  themePageStructure,
+  sectionBackgroundSwatches,
+  aboutStarterSections,
   storefrontAppearanceSchema,
   websiteSectionItems,
   effectiveWebsiteBlocks,
@@ -74,7 +82,6 @@ import {
   storefrontPalettes,
   bloomPalettes,
   themeOffersButtonHover,
-  storefrontThemes,
   storefrontPreviewPath,
   storefrontTextFields,
   aboutSections,
@@ -171,6 +178,12 @@ export function VisualStorefrontEditor({
     return record.draft;
   }, [valid, history.past, record.draft]);
   const template = draft.template;
+  const pageStructure = themePageStructure(draft.theme);
+  // Markets on themes with starter text begin with written policies.
+  const policiesStart =
+    market && pageStructure.marketStarterText
+      ? defaultMarketPolicies
+      : defaultPolicies;
   const homeNatives: readonly string[] = market
     ? marketOriginalSections
     : harvestOriginalSections;
@@ -402,19 +415,22 @@ export function VisualStorefrontEditor({
   const page =
     path === '/'
       ? 'home'
-      : path === '/policies'
-        ? 'policies'
-        : path === '/faq'
-          ? 'faq'
-          : path === '/contact'
-            ? 'contact'
-            : path === '/find-us'
-              ? 'find'
-              : path === '/about'
-                ? 'about'
-                : path === '/products' || path === '/shop'
-                  ? 'products'
-                  : (marketPageId ?? 'product');
+      : path === '/terms-and-conditions' &&
+          (!market || pageStructure.marketTermsPage)
+        ? 'terms-and-conditions'
+        : path === '/policies'
+          ? 'policies'
+          : path === '/faq'
+            ? 'faq'
+            : path === '/contact'
+              ? 'contact'
+              : path === '/find-us'
+                ? 'find'
+                : path === '/about'
+                  ? 'about'
+                  : path === '/products' || path === '/shop'
+                    ? 'products'
+                    : (marketPageId ?? 'product');
   const available = (
     Object.keys(storefrontEditorSections) as StorefrontEditorSection[]
   ).filter(
@@ -433,6 +449,7 @@ export function VisualStorefrontEditor({
       !id.startsWith('contact-') &&
       !id.startsWith('find-') &&
       id !== 'theme' &&
+      id !== 'terms-content' &&
       id !== 'story-settings' &&
       id !== 'story-cta' &&
       (['header', 'footer'].includes(id) ||
@@ -440,6 +457,100 @@ export function VisualStorefrontEditor({
           !['product', 'information', 'related'].includes(id)) ||
         (page === 'product' &&
           ['product', 'information', 'related'].includes(id))),
+  );
+  /** Enabled state of pages that can be switched off; undefined for always-on pages. */
+  const pageEnabled = (id: string): boolean | undefined =>
+    id === 'about'
+      ? draft.about.enabled
+      : id === 'contact'
+        ? !!draft.contact?.enabled
+        : id === 'faq'
+          ? !!draft.faq?.enabled
+          : id === 'policies'
+            ? !!draft.policies?.enabled
+            : id === 'find'
+              ? !!draft.findUs?.enabled
+              : id === 'terms-and-conditions' && market
+                ? !!draft.marketTerms?.enabled
+                : market &&
+                    (id === 'market-dates' ||
+                      id === 'vendors' ||
+                      id === 'applications')
+                  ? marketConfig.pages[id].enabled
+                  : undefined;
+  const setPageEnabled = (id: string, enabled: boolean) => {
+    const starter =
+      id === 'about' &&
+      enabled &&
+      market &&
+      pageStructure.aboutStarter &&
+      !draft.about.content &&
+      !draft.about.sections?.length &&
+      !draft.pageSections?.about
+        ? aboutStarterSections({
+            theme: draft.theme,
+            themeVersion: draft.template?.version ?? 1,
+            page: 'about',
+          })
+        : undefined;
+    if (starter)
+      update({
+        about: {
+          ...draft.about,
+          title: draft.about.title || 'Our story',
+          sections: [starter.story],
+          sectionsVersion: 1 as const,
+          enabled,
+        },
+        pageSections: {
+          ...draft.pageSections,
+          about: { after: starter.after },
+        },
+      });
+    else if (id === 'terms-and-conditions' && market)
+      update({
+        marketTerms: { ...(draft.marketTerms ?? defaultMarketTerms), enabled },
+      });
+    else if (id === 'about')
+      update({
+        about: {
+          ...draft.about,
+          title: draft.about.title || 'Our story',
+          ...(!draft.about.content && draft.about.sections === undefined
+            ? { sections: [], sectionsVersion: 1 as const }
+            : {}),
+          enabled,
+        },
+      });
+    else if (id === 'contact')
+      update({ contact: { ...(draft.contact ?? defaultContact), enabled } });
+    else if (id === 'faq')
+      update({ faq: { ...(draft.faq ?? defaultFaq), enabled } });
+    else if (id === 'policies')
+      update({ policies: { ...(draft.policies ?? policiesStart), enabled } });
+    else if (id === 'find')
+      update({ findUs: { ...(draft.findUs ?? defaultFindUs), enabled } });
+    else if (id === 'market-dates' || id === 'vendors' || id === 'applications')
+      updateMarketPage(id, { enabled });
+  };
+  const pageSwitchLabels: Record<string, string> = {
+    about: 'Enable the About page',
+    contact: 'Enable Contact page',
+    faq: 'Enable FAQ page',
+    policies: 'Enable Policies page',
+    find: 'Enable Find Us page',
+    'market-dates': 'Enable Market dates page',
+    vendors: 'Enable Vendors page',
+    applications: 'Enable Applications page',
+    'terms-and-conditions': 'Enable Terms & Conditions page',
+  };
+  const pageOption = (id: string, label: string) => (
+    <option value={id}>
+      {label}
+      <span className="visual-editor-page-state">
+        {pageEnabled(id) === false ? 'Disabled' : 'Enabled'}
+      </span>
+    </option>
   );
   const editable =
     page === 'home' ||
@@ -541,6 +652,10 @@ export function VisualStorefrontEditor({
         multiline
         onChange={(introduction) => updateHome({ introduction })}
       />
+    </>
+  );
+  const heroImageField = (
+    <>
       {market && api.media ? (
         <CategoryImageField
           api={api.media}
@@ -558,11 +673,7 @@ export function VisualStorefrontEditor({
         />
       ) : (
         <>
-          <Field
-            id="home-image"
-            label="Hero image URL"
-            info="Use an HTTPS image or a local development asset. Blank uses the existing product image or illustration."
-          >
+          <Field id="home-image" label="Hero image URL">
             <Input
               id="home-image"
               type="url"
@@ -603,37 +714,20 @@ export function VisualStorefrontEditor({
       pageId && Object.hasOwn(marketConfig.pages, pageId)
         ? marketConfig.pages[pageId]
         : undefined;
+    const marketContent = marketTextSettings(section, editorialTemplate);
     return (
       <>
-        {!editorialTemplate &&
-          [
-            'hero',
-            'markets',
-            'vendors',
-            'categories',
-            'closing',
-            'footer',
-          ].includes(section) && (
-            <TextSizeControls
-              value={draft.textSizes?.[section]}
-              heading={section !== 'footer'}
-              paragraph
-              onChange={(value) =>
-                update({ textSizes: { ...draft.textSizes, [section]: value } })
-              }
-            />
-          )}
         {section === 'theme' && (
           <>
-            <p>
-              Harvest. Create a separate website in your library to start
-              another design.
-            </p>
-            <VendorTypography
-              value={marketConfig}
-              onChange={(value) => updateMarket(value)}
-            />
-            {themeControls}
+            <InspectorGroup title="Fonts" open>
+              <VendorTypography
+                value={marketConfig}
+                onChange={(value) => updateMarket(value)}
+              />
+            </InspectorGroup>
+            <InspectorGroup title="Colors & buttons">
+              {themeControls}
+            </InspectorGroup>
             <Button
               variant="secondary"
               onClick={() => {
@@ -647,150 +741,121 @@ export function VisualStorefrontEditor({
         )}
         {section === 'hero' && (
           <>
-            {heroCopyFields}
-            <ImageShapeField
-              id="hero-shape"
-              label="Hero image shape"
-              value={marketConfig.heroShape}
-              onChange={(heroShape) => updateMarket({ heroShape })}
-            />
-            {(
-              ['heroPrimaryDestination', 'heroSecondaryDestination'] as const
-            ).map((key) => (
-              <Fragment key={key}>
-                <TextSetting
-                  id={`editor-market-text-${key === 'heroPrimaryDestination' ? 'heroPrimaryLabel' : 'heroSecondaryLabel'}`}
-                  label={
-                    key === 'heroPrimaryDestination'
-                      ? 'Primary button label'
-                      : 'Secondary button label'
-                  }
-                  value={
-                    marketConfig.text?.[
+            <InspectorGroup title="Content" open>
+              {heroCopyFields}
+            </InspectorGroup>
+            <InspectorGroup title="Image">
+              {heroImageField}
+              {/* Pasture always shows the photo in its wavy corner frame. */}
+              {draft.theme !== 'pasture' && (
+                <ImageShapeField
+                  id="hero-shape"
+                  label="Hero image shape"
+                  value={marketConfig.heroShape}
+                  onChange={(heroShape) => updateMarket({ heroShape })}
+                />
+              )}
+            </InspectorGroup>
+            <InspectorGroup title="Buttons">
+              {(
+                ['heroPrimaryDestination', 'heroSecondaryDestination'] as const
+              ).map((key) => (
+                <Fragment key={key}>
+                  <TextSetting
+                    id={`editor-market-text-${key === 'heroPrimaryDestination' ? 'heroPrimaryLabel' : 'heroSecondaryLabel'}`}
+                    label={
                       key === 'heroPrimaryDestination'
-                        ? 'heroPrimaryLabel'
-                        : 'heroSecondaryLabel'
-                    ] ?? ''
-                  }
-                  max={80}
-                  placeholder={
-                    marketTextFields[
-                      key === 'heroPrimaryDestination'
-                        ? 'heroPrimaryLabel'
-                        : 'heroSecondaryLabel'
-                    ].fallback
-                  }
-                  onChange={(value) =>
-                    updateMarket({
-                      text: {
-                        ...marketConfig.text,
-                        [key === 'heroPrimaryDestination'
+                        ? 'Primary button label'
+                        : 'Secondary button label'
+                    }
+                    value={
+                      marketConfig.text?.[
+                        key === 'heroPrimaryDestination'
                           ? 'heroPrimaryLabel'
-                          : 'heroSecondaryLabel']: value,
-                      },
-                    })
-                  }
-                />
-                <WebsiteSectionDestination
-                  id={`market-${key}`}
-                  label={
-                    key === 'heroPrimaryDestination'
-                      ? 'Primary button destination'
-                      : 'Secondary button destination'
-                  }
-                  destinations={marketHeroDestinations}
-                  categories={[]}
-                  products={[]}
-                  loadProducts={() => {}}
-                  value={
-                    marketConfig[key] ??
-                    (key === 'heroPrimaryDestination'
-                      ? '/market-dates'
-                      : '/vendors')
-                  }
-                  onChange={(value) => updateMarket({ [key]: value })}
-                />
-              </Fragment>
-            ))}
+                          : 'heroSecondaryLabel'
+                      ] ?? ''
+                    }
+                    max={80}
+                    placeholder={
+                      marketTextFields[
+                        key === 'heroPrimaryDestination'
+                          ? 'heroPrimaryLabel'
+                          : 'heroSecondaryLabel'
+                      ].fallback
+                    }
+                    onChange={(value) =>
+                      updateMarket({
+                        text: {
+                          ...marketConfig.text,
+                          [key === 'heroPrimaryDestination'
+                            ? 'heroPrimaryLabel'
+                            : 'heroSecondaryLabel']: value,
+                        },
+                      })
+                    }
+                  />
+                  <WebsiteSectionDestination
+                    id={`market-${key}`}
+                    label={
+                      key === 'heroPrimaryDestination'
+                        ? 'Primary button destination'
+                        : 'Secondary button destination'
+                    }
+                    destinations={marketHeroDestinations}
+                    categories={[]}
+                    products={[]}
+                    loadProducts={() => {}}
+                    value={
+                      marketConfig[key] ??
+                      (key === 'heroPrimaryDestination'
+                        ? '/market-dates'
+                        : '/vendors')
+                    }
+                    onChange={(value) => updateMarket({ [key]: value })}
+                  />
+                </Fragment>
+              ))}
+            </InspectorGroup>
           </>
         )}
+        {marketContent.length > 0 && (
+          <InspectorGroup title="Content" open>
+            {marketContent}
+          </InspectorGroup>
+        )}
+        {section === 'header' && !marketContent.length && (
+          <p className="website-inspector-empty">
+            No settings for this section.
+          </p>
+        )}
         {(section === 'markets' || section === 'vendors') && (
-          <SelectField
-            id={`market-${section}-card-theme`}
-            label="Card color theme"
-            value={
-              marketConfig[
-                section === 'markets' ? 'marketsCardTheme' : 'vendorsCardTheme'
-              ] ?? 'standard'
-            }
-            onChange={(event) =>
-              updateMarket({
-                [section === 'markets'
-                  ? 'marketsCardTheme'
-                  : 'vendorsCardTheme']: event.target.value,
-              })
-            }
-          >
-            <option value="standard">Original</option>
-            <option value="inverse">Inverted</option>
-            <option value="soft">Soft tint</option>
-          </SelectField>
-        )}
-        {section === 'markets' && (
-          <p>
-            Shows your next scheduled market dates. Manage dates in Occurrences.
-          </p>
-        )}
-        {section === 'vendors' && (
-          <p>
-            Shows vendors confirmed for your next market date. Each card links
-            to that vendor&apos;s storefront.
-          </p>
-        )}
-        {section === 'categories' && (
-          <p>
-            {editorialTemplate
-              ? 'Shows the product categories offered at the market date a shopper has chosen, or across all upcoming market dates when none is chosen. Each category opens that date’s products, filtered.'
-              : 'Shows the product categories offered at your next market date. Each category opens that date’s products, filtered.'}
-          </p>
-        )}
-        {(
-          Object.entries(marketTextFields) as Array<
-            [MarketTextKey, (typeof marketTextFields)[MarketTextKey]]
-          >
-        )
-          .filter(
-            ([key, field]) =>
-              field.section === section &&
-              section !== 'hero' &&
-              !(editorialTemplate && editorialMarketHiddenText.includes(key)) &&
-              !headingOnlyMarketText(draft.theme).includes(key),
-          )
-          .map(([key, field]) => (
-            <TextSetting
-              key={key}
-              id={`editor-market-text-${key}`}
-              label={field.label}
-              value={marketConfig.text?.[key] ?? ''}
-              max={field.max}
-              placeholder={field.fallback}
-              multiline={key === 'closingHeading' || field.max >= 600}
-              onChange={(value) =>
-                updateMarket({ text: { ...marketConfig.text, [key]: value } })
+          <InspectorGroup title="Style">
+            <SelectField
+              id={`market-${section}-card-theme`}
+              label="Card color theme"
+              value={
+                marketConfig[
+                  section === 'markets'
+                    ? 'marketsCardTheme'
+                    : 'vendorsCardTheme'
+                ] ?? 'standard'
               }
-            />
-          ))}
+              onChange={(event) =>
+                updateMarket({
+                  [section === 'markets'
+                    ? 'marketsCardTheme'
+                    : 'vendorsCardTheme']: event.target.value,
+                })
+              }
+            >
+              <option value="standard">Original</option>
+              <option value="inverse">Inverted</option>
+              <option value="soft">Soft tint</option>
+            </SelectField>
+          </InspectorGroup>
+        )}
         {pageId && marketPage && (
-          <>
-            <Field id={`market-page-${pageId}-enabled`} label="Show page">
-              <Checkbox
-                id={`market-page-${pageId}-enabled`}
-                checked={marketPage.enabled}
-                onChange={(e) =>
-                  updateMarketPage(pageId, { enabled: e.target.checked })
-                }
-              />
-            </Field>
+          <InspectorGroup title="Page" open>
             <TextSetting
               id={`market-page-${pageId}-title`}
               label="Page title"
@@ -808,24 +873,94 @@ export function VisualStorefrontEditor({
                 updateMarketPage(pageId, { description })
               }
             />
-            <p>
-              {pageId === 'market-dates'
-                ? 'Lists every scheduled market date with its time and location. Manage dates in Occurrences.'
-                : pageId === 'vendors'
-                  ? 'Visitors choose a market date, then visit a vendor storefront or browse what that vendor offers on the date.'
-                  : 'Lists your public applications with their open dates. Manage applications in Applications.'}
-            </p>
-          </>
+          </InspectorGroup>
         )}
-        {section === 'header' && (
-          <p>
-            Branding comes from your market identity. Navigation lists your
-            enabled pages. Account and cart links remain protected.
-          </p>
-        )}
+        {!editorialTemplate &&
+          [
+            'hero',
+            'markets',
+            'vendors',
+            'categories',
+            'closing',
+            'footer',
+          ].includes(section) && (
+            <InspectorGroup title="Text size">
+              <TextSizeControls
+                value={draft.textSizes?.[section]}
+                heading={section !== 'footer'}
+                paragraph
+                onChange={(value) =>
+                  update({
+                    textSizes: { ...draft.textSizes, [section]: value },
+                  })
+                }
+              />
+            </InspectorGroup>
+          )}
       </>
     );
   };
+  const marketTextSettings = (
+    section: StorefrontEditorSection,
+    editorialTemplate: boolean,
+  ) =>
+    (
+      Object.entries(marketTextFields) as Array<
+        [MarketTextKey, (typeof marketTextFields)[MarketTextKey]]
+      >
+    )
+      .filter(
+        ([key, field]) =>
+          field.section === section &&
+          section !== 'hero' &&
+          !(editorialTemplate && editorialMarketHiddenText.includes(key)) &&
+          !headingOnlyMarketText(draft.theme).includes(key),
+      )
+      .map(([key, field]) => (
+        <TextSetting
+          key={key}
+          id={`editor-market-text-${key}`}
+          label={field.label}
+          value={marketConfig.text?.[key] ?? ''}
+          max={field.max}
+          placeholder={field.fallback}
+          multiline={key === 'closingHeading' || field.max >= 600}
+          onChange={(value) =>
+            updateMarket({ text: { ...marketConfig.text, [key]: value } })
+          }
+        />
+      ));
+  const storefrontTextSettings = (section: StorefrontEditorSection) =>
+    (
+      Object.entries(storefrontTextFields) as Array<
+        [StorefrontTextKey, (typeof storefrontTextFields)[StorefrontTextKey]]
+      >
+    )
+      .filter(([, field]) => field.section === section && section !== 'hero')
+      .map(([key, field]) => (
+        <TextSetting
+          key={key}
+          id={`editor-text-${key}`}
+          label={field.label}
+          value={vendor.text?.[key] ?? ''}
+          max={field.max}
+          placeholder={
+            key === 'aboutHeading' ? `Meet ${record.name}` : field.fallback
+          }
+          multiline={key === 'closingText' || key === 'closingHeading'}
+          onChange={(value) =>
+            update({
+              vendor: {
+                ...vendor,
+                text: {
+                  ...vendor.text,
+                  [key]: value,
+                },
+              },
+            })
+          }
+        />
+      ));
   const appearanceFields = (section: StorefrontEditorSection) => (
     <form
       onSubmit={(event) => {
@@ -843,39 +978,17 @@ export function VisualStorefrontEditor({
           marketAppearanceFields(section)
         ) : (
           <>
-            {[
-              'hero',
-              'featured',
-              'about',
-              'closing',
-              'footer',
-              'related',
-            ].includes(section) && (
-              <TextSizeControls
-                value={draft.textSizes?.[section]}
-                heading={section !== 'footer'}
-                paragraph={!['featured', 'related'].includes(section)}
-                onChange={(value) =>
-                  update({
-                    textSizes: {
-                      ...draft.textSizes,
-                      [section]: value,
-                    },
-                  })
-                }
-              />
-            )}
             {section === 'theme' && (
               <>
-                <p>
-                  {storefrontThemes[draft.theme].label}. Create a separate
-                  website in your library to use another template.
-                </p>
-                <VendorTypography
-                  value={vendor}
-                  onChange={(value) => update({ vendor: value })}
-                />
-                {themeControls}
+                <InspectorGroup title="Fonts" open>
+                  <VendorTypography
+                    value={vendor}
+                    onChange={(value) => update({ vendor: value })}
+                  />
+                </InspectorGroup>
+                <InspectorGroup title="Colors & buttons">
+                  {themeControls}
+                </InspectorGroup>
                 <Button
                   variant="secondary"
                   onClick={() => {
@@ -889,60 +1002,36 @@ export function VisualStorefrontEditor({
             )}
             {section === 'hero' && (
               <>
-                {heroCopyFields}
-                <ImageShapeField
-                  id="hero-shape"
-                  label="Hero image shape"
-                  value={vendor.heroShape}
-                  onChange={(heroShape) =>
-                    update({
-                      vendor: { ...vendor, heroShape },
-                    })
-                  }
-                />
-                <p>
-                  Buttons keep their existing Shop and About destinations. The
-                  secondary button appears when the About page is enabled.
-                </p>
+                <InspectorGroup title="Content" open>
+                  {heroCopyFields}
+                </InspectorGroup>
+                <InspectorGroup title="Image">
+                  {heroImageField}
+                  <ImageShapeField
+                    id="hero-shape"
+                    label="Hero image shape"
+                    value={vendor.heroShape}
+                    onChange={(heroShape) =>
+                      update({
+                        vendor: { ...vendor, heroShape },
+                      })
+                    }
+                  />
+                </InspectorGroup>
               </>
             )}
-            {(
-              Object.entries(storefrontTextFields) as Array<
-                [
-                  StorefrontTextKey,
-                  (typeof storefrontTextFields)[StorefrontTextKey],
-                ]
-              >
-            )
-              .filter(
-                ([, field]) => field.section === section && section !== 'hero',
-              )
-              .map(([key, field]) => (
-                <TextSetting
-                  key={key}
-                  id={`editor-text-${key}`}
-                  label={field.label}
-                  value={vendor.text?.[key] ?? ''}
-                  max={field.max}
-                  placeholder={
-                    key === 'aboutHeading'
-                      ? `Meet ${record.name}`
-                      : field.fallback
-                  }
-                  multiline={key === 'closingText' || key === 'closingHeading'}
-                  onChange={(value) =>
-                    update({
-                      vendor: {
-                        ...vendor,
-                        text: {
-                          ...vendor.text,
-                          [key]: value,
-                        },
-                      },
-                    })
-                  }
-                />
-              ))}
+            {section !== 'hero' &&
+              storefrontTextSettings(section).length > 0 && (
+                <InspectorGroup title="Content" open>
+                  {storefrontTextSettings(section)}
+                </InspectorGroup>
+              )}
+            {section === 'header' &&
+              !storefrontTextSettings(section).length && (
+                <p className="website-inspector-empty">
+                  No settings for this section.
+                </p>
+              )}
             {section === 'related' && (
               <Field id="related-enabled" label="Show related products">
                 <Checkbox
@@ -987,17 +1076,29 @@ export function VisualStorefrontEditor({
                   onChange={(story) => updateHome({ story })}
                 />
               )}
-            {section === 'header' && (
-              <p>
-                Branding comes from your business identity. Account, cart and
-                platform navigation remain protected.
-              </p>
-            )}
-            {section === 'footer' && (
-              <p>
-                Your business name, account link and platform attribution are
-                shared across all vendor pages.
-              </p>
+            {[
+              'hero',
+              'featured',
+              'about',
+              'closing',
+              'footer',
+              'related',
+            ].includes(section) && (
+              <InspectorGroup title="Text size">
+                <TextSizeControls
+                  value={draft.textSizes?.[section]}
+                  heading={section !== 'footer'}
+                  paragraph={!['featured', 'related'].includes(section)}
+                  onChange={(value) =>
+                    update({
+                      textSizes: {
+                        ...draft.textSizes,
+                        [section]: value,
+                      },
+                    })
+                  }
+                />
+              </InspectorGroup>
             )}
           </>
         )}
@@ -1018,8 +1119,14 @@ export function VisualStorefrontEditor({
   const pageAfter = effectiveWebsitePageSections(draft, editorialPage, 'after');
   const pageCount = pageBefore.length + pageAfter.length;
   const pageHeroEnabled = supportsWebsitePageHero(draft, editorialPage);
+  // Pages whose native content must open the page take nothing above it.
+  // Sections saved there earlier stay listed so they can be moved or removed.
+  const lockedTop = (region: WebsitePageRegion) =>
+    region === 'before' &&
+    (pageStructure.lockedTopPages as readonly string[]).includes(editorialPage);
   const pageSectionEditor = (region: WebsitePageRegion) =>
-    pageRegions.some((r) => r === region) ? (
+    pageRegions.some((r) => r === region) &&
+    !(lockedTop(region) && !pageBefore.length) ? (
       <WebsiteSectionManagement<{ id: string; visible: boolean }>
         key={`${editorialPage}:${region}`}
         sections={effectiveWebsitePageSections(draft, editorialPage, region)}
@@ -1030,14 +1137,15 @@ export function VisualStorefrontEditor({
         }}
         prefix={`page:${editorialPage}:${region}`}
         allowAdd={
-          region !== 'before' ||
-          [
-            'about',
-            'products',
-            'market-dates',
-            'vendors',
-            'applications',
-          ].includes(editorialPage)
+          !lockedTop(region) &&
+          (region !== 'before' ||
+            [
+              'about',
+              'products',
+              'market-dates',
+              'vendors',
+              'applications',
+            ].includes(editorialPage))
         }
         allowSection={allowSection}
         totalCount={pageCount}
@@ -1083,10 +1191,20 @@ export function VisualStorefrontEditor({
     return id === 'policies-settings' ? (
       <PoliciesEditor
         onlyClosing={closingOnly}
-        hideClosing={!closingOnly && pageHeroEnabled}
+        hideClosing={
+          (!closingOnly && pageHeroEnabled) ||
+          (pageStructure.noClosingPages as readonly string[]).includes(
+            'policies',
+          )
+        }
         sectionHero={pageHeroEnabled}
         key={id}
-        value={draft.policies ?? defaultPolicies}
+        value={draft.policies ?? policiesStart}
+        starterText={
+          market && pageStructure.marketStarterText
+            ? marketStarterText
+            : undefined
+        }
         selected={section}
         selectionRequest={scrollRequest}
         collapsed={structure}
@@ -1118,7 +1236,8 @@ export function VisualStorefrontEditor({
       />
     ) : id === 'contact-settings' ? (
       <ContactEditor
-        formAvailable={!market}
+        formAvailable={!market || pageStructure.marketContactForm}
+        editableForm={market && pageStructure.marketContactForm}
         onlyClosing={closingOnly}
         hideClosing={!closingOnly && pageHeroEnabled}
         sectionHero={pageHeroEnabled}
@@ -1279,6 +1398,12 @@ export function VisualStorefrontEditor({
     <WebsiteEditorContext.Provider
       value={{
         inspector,
+        theme: draft.theme,
+        backgrounds: sectionBackgroundSwatches(
+          draft.theme,
+          storefrontPalettes[draft.palette],
+          draft.palette,
+        ),
         block,
         selectBlock: (sectionId, blockId) => {
           const parent = composition.find((s) => s.id === sectionId);
@@ -1442,7 +1567,6 @@ export function VisualStorefrontEditor({
             aria-label="Storefront settings"
           >
             <div className="visual-editor-page-selector">
-              {' '}
               <SelectField
                 id="editor-page"
                 label="Preview page"
@@ -1475,9 +1599,9 @@ export function VisualStorefrontEditor({
                     {page === 'product' && (
                       <option value="product">Product detail</option>
                     )}
-                    <option value="market-dates">Market dates page</option>
-                    <option value="vendors">Vendors page</option>
-                    <option value="applications">Applications page</option>
+                    {pageOption('market-dates', 'Market dates page')}
+                    {pageOption('vendors', 'Vendors page')}
+                    {pageOption('applications', 'Applications page')}
                   </>
                 ) : (
                   <>
@@ -1490,16 +1614,21 @@ export function VisualStorefrontEditor({
                     </option>
                   </>
                 )}
-                <option value="about">About page</option>
-                {!market && <option value="find">Find Us page</option>}
-                <option value="contact">Contact page</option>
-                <option value="faq">FAQ page</option>
-                <option value="policies">Policies page</option>
+                {pageOption('about', 'About page')}
+                {!market && pageOption('find', 'Find Us page')}
+                {pageOption('contact', 'Contact page')}
+                {pageOption('faq', 'FAQ page')}
+                {pageOption('policies', 'Policies page')}
+                {!market && (
+                  <option value="terms-and-conditions">
+                    Terms &amp; Conditions
+                  </option>
+                )}
+                {market &&
+                  pageStructure.marketTermsPage &&
+                  pageOption('terms-and-conditions', 'Terms & Conditions page')}
               </SelectField>
-            </div>
-
-            <nav aria-label="Page sections" className="visual-editor-sections">
-              {pageHeroEnabled && (
+              {pageEnabled(page) !== undefined && (
                 <label
                   className="story-page-toggle"
                   htmlFor="editor-page-enabled"
@@ -1508,73 +1637,88 @@ export function VisualStorefrontEditor({
                     id="editor-page-enabled"
                     role="switch"
                     className="sr-only"
-                    aria-label="Enable page"
-                    checked={
-                      editorialPage === 'about'
-                        ? draft.about.enabled
-                        : editorialPage === 'contact'
-                          ? !!draft.contact?.enabled
-                          : editorialPage === 'faq'
-                            ? !!draft.faq?.enabled
-                            : editorialPage === 'policies'
-                              ? !!draft.policies?.enabled
-                              : !!draft.findUs?.enabled
-                    }
+                    aria-label={pageSwitchLabels[page] ?? 'Enable page'}
+                    checked={!!pageEnabled(page)}
                     disabled={busy}
-                    onChange={(e) => {
-                      const enabled = e.target.checked;
-                      if (editorialPage === 'about')
-                        update({
-                          about: {
-                            ...draft.about,
-                            title: draft.about.title || 'Our story',
-                            ...(!draft.about.content &&
-                            draft.about.sections === undefined
-                              ? { sections: [], sectionsVersion: 1 as const }
-                              : {}),
-                            enabled,
-                          },
-                        });
-                      else if (editorialPage === 'contact')
-                        update({
-                          contact: {
-                            ...(draft.contact ?? defaultContact),
-                            enabled,
-                          },
-                        });
-                      else if (editorialPage === 'faq')
-                        update({
-                          faq: { ...(draft.faq ?? defaultFaq), enabled },
-                        });
-                      else if (editorialPage === 'policies')
-                        update({
-                          policies: {
-                            ...(draft.policies ?? defaultPolicies),
-                            enabled,
-                          },
-                        });
-                      else
-                        update({
-                          findUs: {
-                            ...(draft.findUs ?? defaultFindUs),
-                            enabled,
-                          },
-                        });
-                    }}
+                    onChange={(e) => setPageEnabled(page, e.target.checked)}
                   />
                   <span className="story-switch-track" aria-hidden="true" />
                   <span>Enable page</span>
                 </label>
               )}
+            </div>
+
+            <nav aria-label="Page sections" className="visual-editor-sections">
+              {page === 'terms-and-conditions' && market && (
+                <PoliciesEditor
+                  key="market-terms"
+                  labels={termsLabels}
+                  hideClosing
+                  value={draft.marketTerms ?? defaultMarketTerms}
+                  starterText={marketStarterText}
+                  selected={section}
+                  selectionRequest={scrollRequest}
+                  collapsed={structure}
+                  collapse={() => setStructure(true)}
+                  choose={choose}
+                  onChange={(marketTerms) => update({ marketTerms })}
+                  busy={busy}
+                />
+              )}
+              {page === 'terms-and-conditions' && !market && (
+                <details
+                  className={disclosureClassName('dropdown')}
+                  open={!structure && section === 'terms-content'}
+                >
+                  <summary
+                    role="button"
+                    aria-expanded={!structure && section === 'terms-content'}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      if (!structure && section === 'terms-content')
+                        setStructure(true);
+                      else choose('terms-content');
+                    }}
+                  >
+                    Terms &amp; Conditions
+                  </summary>
+                  {!structure && section === 'terms-content' && (
+                    <WebsiteInspectorContent>
+                      <Field id="vendor-terms-content" label="Terms text">
+                        <Textarea
+                          id="vendor-terms-content"
+                          rows={14}
+                          maxLength={12000}
+                          disabled={busy}
+                          value={draft.terms ?? ''}
+                          aria-describedby="vendor-terms-help"
+                          onChange={(event) =>
+                            update({ terms: event.target.value })
+                          }
+                        />
+                      </Field>
+                      <p id="vendor-terms-help">
+                        Leave blank to use the default terms. Start a line with
+                        ## for a section heading and separate paragraphs with a
+                        blank line.
+                      </p>
+                    </WebsiteInspectorContent>
+                  )}
+                </details>
+              )}
               <details
                 className={disclosureClassName('dropdown')}
+                data-expandable
                 open={globalSettingsOpen}
                 onToggle={(event) =>
                   setGlobalSettingsOpen(event.currentTarget.open)
                 }
               >
                 <summary role="button">Theme settings</summary>
-                <div ref={setGlobalContainer} />
+                <div
+                  ref={setGlobalContainer}
+                  className="website-sidebar-children"
+                />
               </details>
               {pageHeroEnabled
                 ? unifiedPageEditor
@@ -1650,69 +1794,73 @@ export function VisualStorefrontEditor({
                   />,
                   globalContainer,
                 )}
-              {draft.template?.id === 'modern-farmhouse' && (
-                <FarmhouseEditor
-                  globalContainer={globalContainer}
-                  appearance={draft}
-                  onAppearanceChange={update}
-                  page={page as Exclude<typeof page, MarketPageId>}
-                  collapsed={structure}
-                  collapse={() => setStructure(true)}
-                  selected={section}
-                  choose={choose}
-                  value={draft.template.settings}
-                  onChange={(settings) =>
-                    update({
-                      template: {
-                        id: 'modern-farmhouse',
-                        version: 2,
-                        settings,
-                      },
-                    })
-                  }
-                  api={api}
-                  busy={busy}
-                  products={products}
-                  loadProducts={() => setLoadProducts(true)}
-                />
-              )}
-              {draft.template?.id === 'editorial-market' && (
-                <EditorialMarketEditor
-                  market={market}
-                  marketAppearance={draft.market}
-                  allowSection={allowSection}
-                  marketHeroFields={market ? marketHeroDestination : undefined}
-                  renderMarketNative={(id) => (
-                    <fieldset disabled={busy}>
-                      {marketAppearanceFields(id, true)}
-                    </fieldset>
-                  )}
-                  categoryPresentation={draft.categoryPresentation}
-                  onCategoryPresentationChange={(categoryPresentation) =>
-                    update({ categoryPresentation })
-                  }
-                  globalContainer={globalContainer}
-                  page={page}
-                  collapsed={structure}
-                  collapse={() => setStructure(true)}
-                  selected={section}
-                  choose={choose}
-                  value={draft.template.settings}
-                  onChange={(settings) =>
-                    update({
-                      template: {
-                        id: 'editorial-market',
-                        version: 1,
-                        settings,
-                      },
-                    })
-                  }
-                  api={api}
-                  busy={busy}
-                  products={products}
-                  loadProducts={() => setLoadProducts(true)}
-                />
-              )}
+              {page !== 'terms-and-conditions' &&
+                draft.template?.id === 'modern-farmhouse' && (
+                  <FarmhouseEditor
+                    globalContainer={globalContainer}
+                    appearance={draft}
+                    onAppearanceChange={update}
+                    page={page as Exclude<typeof page, MarketPageId>}
+                    collapsed={structure}
+                    collapse={() => setStructure(true)}
+                    selected={section}
+                    choose={choose}
+                    value={draft.template.settings}
+                    onChange={(settings) =>
+                      update({
+                        template: {
+                          id: 'modern-farmhouse',
+                          version: 2,
+                          settings,
+                        },
+                      })
+                    }
+                    api={api}
+                    busy={busy}
+                    products={products}
+                    loadProducts={() => setLoadProducts(true)}
+                  />
+                )}
+              {page !== 'terms-and-conditions' &&
+                draft.template?.id === 'editorial-market' && (
+                  <EditorialMarketEditor
+                    market={market}
+                    marketAppearance={draft.market}
+                    allowSection={allowSection}
+                    marketHeroFields={
+                      market ? marketHeroDestination : undefined
+                    }
+                    renderMarketNative={(id) => (
+                      <fieldset disabled={busy}>
+                        {marketAppearanceFields(id, true)}
+                      </fieldset>
+                    )}
+                    categoryPresentation={draft.categoryPresentation}
+                    onCategoryPresentationChange={(categoryPresentation) =>
+                      update({ categoryPresentation })
+                    }
+                    globalContainer={globalContainer}
+                    page={page}
+                    collapsed={structure}
+                    collapse={() => setStructure(true)}
+                    selected={section}
+                    choose={choose}
+                    value={draft.template.settings}
+                    onChange={(settings) =>
+                      update({
+                        template: {
+                          id: 'editorial-market',
+                          version: 1,
+                          settings,
+                        },
+                      })
+                    }
+                    api={api}
+                    busy={busy}
+                    products={products}
+                    loadProducts={() => setLoadProducts(true)}
+                  />
+                )}
               {[
                 ...(page === 'policies'
                   ? ([
@@ -1920,13 +2068,7 @@ function TextSetting({
       onChange(e.target.value),
   };
   return (
-    <Field
-      id={id}
-      label={label}
-      info={
-        placeholder ? 'Leave blank to use the template default.' : undefined
-      }
-    >
+    <Field id={id} label={label}>
       {multiline ? <Textarea {...props} rows={3} /> : <Input {...props} />}
     </Field>
   );
@@ -2135,7 +2277,14 @@ function PreviewFrame(props: {
         />
       </div>
       {props.api.preview && !grant && !failed && (
-        <Spinner label="Loading actual storefront" />
+        <div
+          className="website-thumbnail visual-editor-preview-loading"
+          data-state="loading"
+          role="status"
+        >
+          <span className="sr-only">Loading actual storefront</span>
+          <WebsitePreviewSkeleton />
+        </div>
       )}
       {grant && (
         <div className="visual-editor-viewport" data-viewport={props.viewport}>

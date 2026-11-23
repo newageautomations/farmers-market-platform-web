@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type RefObject } from 'react';
+import { useCallback, useLayoutEffect, useRef, type RefObject } from 'react';
 import { UtilityIcon } from '@market/ui';
 import './vendor/loyalty-reward-wizard.css';
 
@@ -45,6 +45,10 @@ export function WizardProgress({
   );
 }
 
+function findHeightEasingDialog(root: RefObject<HTMLElement | null>) {
+  return root.current?.closest<HTMLElement>('dialog, [data-height-ease]');
+}
+
 /**
  * Animates the enclosing dialog's size between wizard stages. Call
  * `capture()` immediately before changing stage; the effect then eases from
@@ -56,17 +60,9 @@ export function useWizardDialogHeight(
   stage: unknown,
 ) {
   const size = useRef<{ height: number; width: number } | null>(null);
-  const measure = () => {
-    const box = root.current
-      ?.closest('dialog, [data-height-ease]')
-      ?.getBoundingClientRect();
-    return box ? { height: box.height, width: box.width } : null;
-  };
   useLayoutEffect(() => {
     // Dialogs, or an inline container that opts in (a side panel).
-    const dialog = root.current?.closest<HTMLElement>(
-      'dialog, [data-height-ease]',
-    );
+    const dialog = findHeightEasingDialog(root);
     if (!dialog) return;
     const box = dialog.getBoundingClientRect();
     const target = { height: box.height, width: box.width };
@@ -92,7 +88,8 @@ export function useWizardDialogHeight(
       animation?.cancel();
     };
   }, [root, stage]);
-  return () => {
-    size.current = measure();
-  };
+  return useCallback(() => {
+    const box = findHeightEasingDialog(root)?.getBoundingClientRect();
+    size.current = box ? { height: box.height, width: box.width } : null;
+  }, [root]);
 }

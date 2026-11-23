@@ -24,7 +24,7 @@ export function ComplianceOverview({
             ? 'Documentation readiness for this Market.'
             : 'Your outstanding document work across Markets.'}
         </p>
-        <ReadState {...state} retry={state.refresh} />
+        <ReadState skeleton="stats" {...state} retry={state.refresh} />
         {data && (
           <>
             <dl className="ui-kpi-grid">

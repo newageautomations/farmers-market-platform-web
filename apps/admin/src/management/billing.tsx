@@ -30,7 +30,7 @@ export function Billing({ service }: { service: ManagementService }) {
       onChange={() => {}}
       className="management-billing farmstand-controls"
     >
-      <ReadState {...result} retry={result.refresh} />
+      <ReadState skeleton="detail" {...result} retry={result.refresh} />
       {data && (
         <>
           <SettingsPanel

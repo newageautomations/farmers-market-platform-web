@@ -81,7 +81,7 @@ describe('Find Us editor', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Find Us page' }));
     fireEvent.click(
-      screen.getByRole('checkbox', { name: 'Enable Find Us page' }),
+      screen.getByRole('switch', { name: 'Enable Find Us page' }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Introduction' }));
     fireEvent.change(screen.getByLabelText('Heading'), {

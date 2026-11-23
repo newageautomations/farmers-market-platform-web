@@ -180,7 +180,7 @@ export function ProductClassificationFields({
   }
   return (
     <div className="stack">
-      <ReadState {...query} retry={query.refresh} />
+      <ReadState skeleton="detail" rows={2} {...query} retry={query.refresh} />
       {!readOnly && (
         <>
           {query.data && (
@@ -246,7 +246,12 @@ export function ProductClassificationFields({
           {!productId && !valid && (
             <p>Cannot select tags until a category is chosen</p>
           )}
-          <ReadState {...tags} retry={tags.refresh} />
+          <ReadState
+            skeleton="detail"
+            rows={1}
+            {...tags}
+            retry={tags.refresh}
+          />
           {[...new Set((tags.data ?? []).map((tag) => tag.group))].map(
             (group) => (
               <SearchableMultiSelect

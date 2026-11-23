@@ -14,6 +14,7 @@ import {
   Field,
   Input,
   Spinner,
+  LoadingSkeleton,
 } from '@market/ui';
 import type { VendorService } from './service';
 import { RouteLink } from './common';
@@ -160,7 +161,7 @@ export function CloverPaymentIntegration({
     <div className="pos-payment-sections clover-integration">
       {error && <Alert severity="error">{error}</Alert>}
       {!data && !error ? (
-        <Spinner label="Loading Clover integration" />
+        <LoadingSkeleton variant="detail" label="Loading Clover integration" />
       ) : (
         <Card spacing="contained" surface={embedded ? 'embedded' : 'card'}>
           <div className="pos-payment-sections">

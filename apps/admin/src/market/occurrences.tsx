@@ -2,7 +2,14 @@ import { OccurrenceCreationActions } from './OccurrenceCreationActions';
 import { useCallback, useId, useMemo, useState, type MouseEvent } from 'react';
 import { type MarketOccurrence } from '@market/api';
 import { mayMarketCommand } from '@market/admin-core';
-import { Alert, Dialog, EmptyState, Field, UtilityIcon } from '@market/ui';
+import {
+  Alert,
+  Dialog,
+  EmptyState,
+  Field,
+  UtilityIcon,
+  InlineSkeleton,
+} from '@market/ui';
 import {
   FarmstandIcon,
   FarmstandLink,
@@ -121,7 +128,7 @@ export function BoothCell({
   available: boolean;
 }) {
   if (!available) return <span className="markets-muted">Unavailable</span>;
-  if (!booths) return <span className="markets-muted">Checking…</span>;
+  if (!booths) return <InlineSkeleton label="Checking booths" />;
   if (!booths.layout || !booths.total)
     return <span className="markets-muted">No layout</span>;
   return (
@@ -690,7 +697,7 @@ function OccurrenceList({
           <p className="markets-list-note occurrence-panel-lead">
             Market dates coming up this week.
           </p>
-          <ReadState {...week} retry={week.refresh} />
+          <ReadState skeleton="table" rows={3} {...week} retry={week.refresh} />
           {week.data &&
             (week.data.items.length ? (
               <ul className="occurrence-week-list">
@@ -749,6 +756,7 @@ function OccurrenceList({
           ) : (
             <>
               <ReadState
+                skeleton="stats"
                 loading={!booths.data && booths.loading}
                 error={booths.error}
                 retry={booths.refresh}
@@ -831,6 +839,7 @@ function OccurrenceList({
         onClose={closeModal}
       >
         <ReadState
+          skeleton="spinner"
           loading={!config.data && config.loading}
           error={config.error}
           retry={config.refresh}
@@ -862,6 +871,7 @@ function OccurrenceList({
         onClose={closeModal}
       >
         <ReadState
+          skeleton="spinner"
           loading={!config.data && config.loading}
           error={config.error}
           retry={config.refresh}

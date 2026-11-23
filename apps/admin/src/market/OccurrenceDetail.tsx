@@ -97,6 +97,7 @@ export function MarketOccurrenceDetail({
         Back to occurrences
       </FarmstandLink>
       <ReadState
+        skeleton="detail"
         loading={!occurrence && detail.loading}
         error={detail.error}
         retry={detail.refresh}

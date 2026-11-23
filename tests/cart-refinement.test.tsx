@@ -176,9 +176,8 @@ describe('vendor cart commerce presentation', () => {
       expect(screen.getByLabelText('Quantity for Large bag')).toHaveValue(
         quantity,
       );
-      expect(screen.getByRole('status')).toHaveTextContent(
-        'Quantity and order totals updated.',
-      );
+      // A successful change shows only in the cart, with no status message.
+      expect(screen.queryByRole('status')).toBeNull();
     },
   );
   it.each(['-1', '0', '1.5', '2147483648'])(
@@ -217,11 +216,7 @@ describe('vendor cart commerce presentation', () => {
       await waitFor(() =>
         expect(screen.getByLabelText('Quantity for Large bag')).toHaveValue(4),
       );
-      await waitFor(() =>
-        expect(screen.getByRole('status')).toHaveTextContent(
-          'Quantity and order totals updated.',
-        ),
-      );
+      expect(screen.queryByRole('status')).toBeNull();
     },
   );
   it('does not send unchanged quantities when the input loses focus', () => {

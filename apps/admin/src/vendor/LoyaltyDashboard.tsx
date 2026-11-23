@@ -17,6 +17,7 @@ import {
   Field,
   scrollToPaginatedTable,
   UtilityIcon,
+  InlineSkeleton,
 } from '@market/ui';
 import { formatMoney } from '@market/config';
 import {
@@ -468,17 +469,19 @@ export function LoyaltyDashboard({
   const discountedOrders = [
     ...new Set(completedRedemptions.map((row) => row.vendor_order_id)),
   ];
-  const totalSpent = spending.loading
-    ? 'Loading...'
-    : discountedOrders.every((id) => id && spending.data?.has(id))
-      ? formatMoney(
-          discountedOrders.reduce(
-            (sum, id) => sum + (spending.data?.get(id!) ?? 0),
-            0,
-          ),
-          'USD',
-        )
-      : 'Unavailable';
+  const totalSpent = spending.loading ? (
+    <InlineSkeleton />
+  ) : discountedOrders.every((id) => id && spending.data?.has(id)) ? (
+    formatMoney(
+      discountedOrders.reduce(
+        (sum, id) => sum + (spending.data?.get(id!) ?? 0),
+        0,
+      ),
+      'USD',
+    )
+  ) : (
+    'Unavailable'
+  );
   function changeRedemptions(next: Partial<RedemptionFilters>) {
     setRedemptionFilters((current) => ({ ...current, ...next }));
     setRedemptionPage(0);
@@ -914,6 +917,8 @@ export function LoyaltyDashboard({
                           </div>
                         </div>
                         <ReadState
+                          skeleton="detail"
+                          rows={2}
                           {...redemptionOrder}
                           retry={redemptionOrder.refresh}
                         />
@@ -943,10 +948,12 @@ export function LoyaltyDashboard({
                               Redeemed at
                             </dt>
                             <dd>
-                              {redemptionOrder.loading
-                                ? 'Loading...'
-                                : (redemptionOrder.data?.location ??
-                                  'Unavailable')}
+                              {redemptionOrder.loading ? (
+                                <InlineSkeleton />
+                              ) : (
+                                (redemptionOrder.data?.location ??
+                                'Unavailable')
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -1052,7 +1059,9 @@ export function LoyaltyDashboard({
             )}
           </section>
         )}
-        {view === 'overview' && <ReadState {...query} retry={query.refresh} />}
+        {view === 'overview' && (
+          <ReadState skeleton="stats" {...query} retry={query.refresh} />
+        )}
         {view === 'overview' && error && (
           <Alert severity="error">{error}</Alert>
         )}

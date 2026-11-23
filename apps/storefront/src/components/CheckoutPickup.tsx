@@ -1,4 +1,5 @@
 import type { CheckoutView } from '@market/api';
+import { formatMoney } from '@market/config';
 import type { VendorPreorderState } from '../lib/vendor-preorder';
 
 /** Compact order facts. Occurrence times describe the market schedule. */
@@ -7,11 +8,13 @@ export function CheckoutPickup({
   preorder,
   compact = false,
   timezone,
+  showSelections = false,
 }: {
   view: CheckoutView;
   preorder?: VendorPreorderState;
   compact?: boolean;
   timezone?: string;
+  showSelections?: boolean;
 }) {
   const occurrence = preorder?.selected ?? preorder?.orderOccurrence;
   const pickup = view.pickupPromise;
@@ -21,6 +24,15 @@ export function CheckoutPickup({
   const timeZone = occurrence?.timezone ?? timezone;
   const instructions =
     pickup.instructions || preorder?.selected?.pickupInstructions;
+  const selections = showSelections
+    ? view.groups.flatMap((group) =>
+        group.pickup.map((option) => ({
+          vendorId: group.vendorId,
+          vendorName: group.vendorName,
+          ...option,
+        })),
+      )
+    : [];
   const time = (value: string) =>
     new Date(value).toLocaleTimeString('en-US', {
       timeZone,
@@ -54,6 +66,19 @@ export function CheckoutPickup({
       )}
       {venue && <p>{venue}</p>}
       {instructions && <p>{instructions}</p>}
+      {selections.length > 0 && (
+        <ul aria-label="Selected pickup options">
+          {selections.map((option, index) => (
+            <li key={`${option.vendorId}-${index}`}>
+              <strong>{option.vendorName}</strong>
+              {' · '}
+              {option.name}
+              {option.fee !== 0 &&
+                ` · ${formatMoney(option.fee, view.currency)}`}
+            </li>
+          ))}
+        </ul>
+      )}
       {venue && (
         <p>
           <a

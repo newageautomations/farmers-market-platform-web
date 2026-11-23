@@ -196,10 +196,21 @@ it('opens the linked booth date first when it is outside the upcoming date list'
       invoices: [],
     })),
   );
-  const { container } = render(<VendorBooths service={service} />);
-  await screen.findByText('Booth A102');
-  const disclosures = container.querySelectorAll('details');
-  expect(disclosures[0]).toHaveTextContent('Booth A102');
-  expect(disclosures[0]).toHaveAttribute('open');
-  expect(disclosures[1]).not.toHaveAttribute('open');
+  render(<VendorBooths service={service} />);
+  const details = await screen.findByRole('region', { name: 'Booth details' });
+  expect(
+    within(details).getByRole('heading', { name: 'Booth A102' }),
+  ).toBeInTheDocument();
+  // Without a published map there is nothing to scroll to.
+  expect(
+    within(details).queryByRole('button', { name: 'View market map' }),
+  ).not.toBeInTheDocument();
+  // A linked booth is never hidden by the default Awaiting payment filter.
+  expect(screen.getByLabelText('Payment status')).toHaveValue('all');
+  expect(screen.getByRole('row', { name: /A102/ })).toHaveClass(
+    'market-application-selected',
+  );
+  expect(screen.getByRole('row', { name: /A101/ })).not.toHaveClass(
+    'market-application-selected',
+  );
 });

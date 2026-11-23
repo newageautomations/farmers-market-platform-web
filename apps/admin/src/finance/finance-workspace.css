@@ -259,8 +259,8 @@
 }
 
 /* Loading indicators stay invisible for their first 500ms, so quick tab and
-   filter changes never flash a spinner. Slow reads still announce progress. */
-.finance-workspace :is(.progress, .finance-updating) {
+   filter changes never flash a spinner or skeleton. Slow reads still announce progress. */
+.finance-workspace :is(.progress, .finance-updating, .ui-skeleton-layout) {
   animation: finance-delayed-status 0s linear 500ms both;
 }
 @keyframes finance-delayed-status {
