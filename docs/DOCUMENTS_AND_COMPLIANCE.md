@@ -152,7 +152,7 @@ Start the frontend separately with its existing live-mode account configuration:
 npm run dev
 ```
 
-Open the Admin at `http://localhost:4322`, use the existing Administrator sign-in method, and select the intended native workspace. The disposable fixture uses synthetic accounts `identity-owner-0@test.invalid`, `identity-owner-1@test.invalid`, `documents-owner-c@test.invalid`, `market-a@test.invalid`, and `market-b@test.invalid`, with password `local-identity-regression-only-password`. These are test-only accounts, not production credentials. The current model has two independent Market management tenants, not a shared management organization.
+Open the Admin at `http://localhost:4322`, use the existing Administrator sign-in method, and select the intended native workspace. The disposable fixture uses synthetic accounts `identity-owner-0@test.invalid`, `identity-owner-1@test.invalid`, `documents-owner-c@test.invalid`, `market-a@test.invalid`, and `market-b@test.invalid`, with password `LOCAL_DEMO_PASSWORD`. These are test-only accounts, not production credentials. The current model has two independent Market management tenants, not a shared management organization.
 
 Manual acceptance scenarios:
 

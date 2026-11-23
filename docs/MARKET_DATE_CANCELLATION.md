@@ -57,3 +57,5 @@ Validation passed: 30 focused vendor UI tests, 15 backend invoice lifecycle grou
 Broader checks remain limited by existing web TypeScript errors, four market workspace/authority tests, and pre-existing lint findings in the invoice controller and test fixtures. These were left outside this change.
 
 Restart the affected local processes with `demo:market-operations:serve`, `demo:market-operations:worker`, and `demo:market-operations:admin`. No database migration is required.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

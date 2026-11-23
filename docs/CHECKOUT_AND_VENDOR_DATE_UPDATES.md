@@ -45,3 +45,5 @@ npm run demo:market-operations:worker
 npm run demo:market-operations:admin
 npm run demo:market-operations:storefront
 ```
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

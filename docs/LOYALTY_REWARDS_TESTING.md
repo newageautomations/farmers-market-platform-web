@@ -25,7 +25,7 @@ The current occurrence ID is printed at startup and stored in the manifest; on a
 
 ## Fictional accounts and starting data
 
-All passwords are `local-identity-regression-only-password`. These identities and credential setup exist only in this freshly generated disposable database; no existing account password is changed.
+All passwords are `LOCAL_DEMO_PASSWORD`. These identities and credential setup exist only in this freshly generated disposable database; no existing account password is changed.
 
 | Account               | Email                              | Purpose                                               |
 | --------------------- | ---------------------------------- | ----------------------------------------------------- |

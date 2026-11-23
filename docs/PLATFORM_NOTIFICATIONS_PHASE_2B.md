@@ -120,7 +120,7 @@ npm run demo:market-operations:admin
 npm run demo:market-operations:storefront
 ```
 
-The demo prints its database name and application URLs. Use the new URLs each session. All synthetic accounts use `local-identity-regression-only-password`:
+The demo prints its database name and application URLs. Use the new URLs each session. All synthetic accounts use `LOCAL_DEMO_PASSWORD`:
 
 | Account                            | Scope             |
 | ---------------------------------- | ----------------- |

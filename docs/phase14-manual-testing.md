@@ -1,5 +1,7 @@
 # Phase 14 local manual testing
 
+`LOCAL_DEMO_PASSWORD` in this guide refers to the password for the existing demo account. Use the local account information or the private generated manifests from the seed tooling.
+
 ## Manna Roots POS in the populated demo, October 21, 2026
 
 This correction concerns the existing populated `vendure_demo_market_ops`, not the isolated finance/POS fixtures. **The developer approved the one-permission correction. Follow-up verification found `OperateOwnPos` already present on the exact exclusive Manna Roots role, with no remaining permission additions proposed.** The attempted apply rejected the stale original fingerprint before writing and rolled back. This run cannot attribute the intervening permission addition to a particular process. A fresh PostgreSQL read-only transaction verified the actual database name, loopback server, original grants plus only `OperateOwnPos`, and unchanged owner/channel associations. This follow-up made no database writes, applied no migration, and used no browser automation or screenshots. The current browser's selected business was not inspected; select the business explicitly during manual verification.
@@ -54,7 +56,7 @@ To qualify an event through existing UI, use Vendor Markets to record the owner'
 ### Manual verification after approval and apply
 
 1. Restart the persistent demo API with `npm run demo:market-operations:serve`. In separate terminals use `npm run demo:market-operations:worker`, `npm run demo:market-operations:admin`, and `npm run demo:market-operations:storefront`. Do not substitute ordinary backend commands. If startup reports pending migrations, inspect them and obtain separate authorization before using `npm run demo:market-operations:migrate`; this role correction itself requires no migration.
-2. Sign out, then sign in at `http://auth.platform.localhost:4321/account/login` as `manna-roots@example.test`, password `local-identity-regression-only-password`. Select Vendor mode and **Manna Roots**. Its workspace is `http://localhost:4322/vendor?channel=9&account=1`. A URL alone never grants a business membership.
+2. Sign out, then sign in at `http://auth.platform.localhost:4321/account/login` as `manna-roots@example.test`, password `LOCAL_DEMO_PASSWORD`. Select Vendor mode and **Manna Roots**. Its workspace is `http://localhost:4322/vendor?channel=9&account=1`. A URL alone never grants a business membership.
 3. Confirm **In-Person Checkout** appears in the existing sidebar and open `http://localhost:4322/vendor/pos`. If denied, recheck the selected channel and a fresh dry-run; do not expose the navigation by bypassing permissions.
 4. Open existing Settings > Taxes (`/vendor/settings/taxes`) and confirm the saved 8.25% default and market 1's 6.5% rate. Use existing product tax controls to inspect collection and overrides. Configure any desired test override through the normal UI. The fixture does not pre-change those values.
 5. Start an **Independent Sale**, add an in-stock product, review the backend totals and verify the default rate or that product's existing override/collection rule. Choose Cash, enter exact amount, attest receipt of the fictional cash, and confirm. Do not choose a processor or create a real payment. Keep the receipt/order code.
@@ -173,10 +175,10 @@ At [Admin](http://localhost:4322/market/applications), enter:
 
 | Account                 | Email or username                 | Password                                  |
 | ----------------------- | --------------------------------- | ----------------------------------------- |
-| Market Manager          | `market.manager@example.test`     | `local-identity-regression-only-password` |
-| Texas Wild Seafood Demo | `texas.wild@example.test`         | `local-identity-regression-only-password` |
-| Hill Country Honey Demo | `hill.country.honey@example.test` | `local-identity-regression-only-password` |
-| Canyon Bakery Demo      | `canyon.bakery@example.test`      | `local-identity-regression-only-password` |
+| Market Manager          | `market.manager@example.test`     | `LOCAL_DEMO_PASSWORD` |
+| Texas Wild Seafood Demo | `texas.wild@example.test`         | `LOCAL_DEMO_PASSWORD` |
+| Hill Country Honey Demo | `hill.country.honey@example.test` | `LOCAL_DEMO_PASSWORD` |
+| Canyon Bakery Demo      | `canyon.bakery@example.test`      | `LOCAL_DEMO_PASSWORD` |
 
 Click **Sign in**. Use the Market Manager for steps 1 through 35. If the Admin asks for a Channel, choose the Market's Channel. Each Vendor owner uses their own Vendor Channel. These are local development credentials, restricted to the demo command and database.
 
@@ -441,3 +443,5 @@ Verify starts a temporary loopback API, logs in all four test accounts, checks t
 - **Seed does not undo your changes:** That is intentional. Reset is the command that restores the empty baseline.
 
 There is no Stripe configuration or deployment step in this guide. Online invoice sending remains unavailable; manual issuance and offline recording are the supported demo payment paths.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

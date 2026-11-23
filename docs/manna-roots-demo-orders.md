@@ -1,10 +1,10 @@
 # Manna Roots demo orders
 
-The local `vendure_demo_market_ops` database contains 24 fictional direct storefront orders for Manna Roots, purchased by `demo.customer@example.test`. The orders use the ten additional juices and shots, with one to three different products per order and one or two units per product.
+The local `vendure_demo_market_ops` database contains 24 fictional direct storefront orders for Manna Roots. The demo customer is identified in the local `docs/demo-customer-account.json` manifest. The orders use the ten additional juices and shots, with one to three products per order and one or two units per product.
 
 All 24 orders have simulated settled payments and await pickup. Normal checkout services create the order context, payment evidence, financial records, inventory allocation and vendor order links. No external provider is contacted. The script enables the local payment simulator only in its own temporary process; the running demo server configuration stays unchanged.
 
-Sign into the admin at `http://localhost:4322` as `manna-roots@example.test`, using `local-identity-regression-only-password`, then open Orders. Select All or Direct vendor to see these orders.
+Sign in at `http://localhost:4322` with the Manna Roots owner credentials from the local `docs/testing-vendor-manna-roots.json` manifest. Open Orders and select All or Direct vendor.
 
 Saved order IDs, codes, product quantities and totals are in `manna-roots-demo-orders.json`. Fixture codes are `DEMO-MANNA-ROOTS-1` through `DEMO-MANNA-ROOTS-24`.
 

@@ -4,6 +4,8 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.staging.frontend-build.example
+!.env.staging.frontend-runtime.example
 coverage/
 test-results/
 playwright-report/
@@ -31,3 +33,57 @@ docs/financial-reporting/local-fixture.json
 
 # Remote-demo Quick Tunnel origin handoff (temporary, per run)
 .remote-demo/
+
+# Generated local diagnostics and demo account manifests
+/.vendure/
+/.tmp/
+/docs/demo-customer-account.json
+/docs/testing-vendors.json
+/docs/testing-vendor-manna-roots.json
+# The vendor seed also writes a manifest for each other requested slug.
+/docs/testing-vendor-*.json
+
+# Generated evidence from browser and qualification runs
+/docs/evidence/
+/docs/UI_COMPONENTS/evidence/
+/docs/financial-reporting/browser-*.json
+/docs/financial-reporting/browser-*.csv
+/docs/financial-reporting/browser-*.png
+/docs/financial-reporting/vendor-desktop.png
+/docs/financial-reporting/vendor-mobile.png
+/docs/financial-reporting/automated-results.json
+/docs/financial-reporting/fixture-verification.json
+/docs/financial-reporting/full-suite-results.json
+/docs/financial-reporting/**/unit-results.json
+/docs/financial-reporting/regression/
+
+# Local credentials and private data
+/.cloudflared/
+/.railway/
+/.aws/
+/.ssh/
+/.certs/
+/.netrc
+/.git-credentials
+/backups/
+/db-dumps/
+/uploads/
+**/playwright/.auth/
+*.dump
+*.dump.gz
+*.backup
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.jks
+*.har
+
+# Local tooling caches and filesystem metadata
+.vite/
+*.tsbuildinfo
+*.tmp
+.DS_Store
+Thumbs.db

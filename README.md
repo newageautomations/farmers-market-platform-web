@@ -105,3 +105,5 @@ MARKET-B1 through MARKET-B6 are now CLOSED through safe backend organizer projec
 Run `npm run test:live:market` for the dedicated real local Market suite. It owns a fresh guarded disposable `vendure_test_frontend_*` PostgreSQL database, real Vendure, fixture-disabled Admin and Chromium; successful databases are dropped, and KEEP_TEST_DB=1 preserves the existing diagnostic behavior. Existing `test:live` and `test:live:unbound` retain Vendor coverage. New evidence is under `docs/evidence/phase13c5/`. Run `node scripts/audit-phase13c5.mjs` to compare both local repositories against the captured phase baselines. No deployment or remote Git action is part of this workflow.
 
 Unit, browser, live and bundle checks now default to the Phase 13C.5 evidence directory. FRONTEND_EVIDENCE_DIR can explicitly select another run folder; historical Phase 13C/B.5 evidence is preserved by ordinary current commands.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

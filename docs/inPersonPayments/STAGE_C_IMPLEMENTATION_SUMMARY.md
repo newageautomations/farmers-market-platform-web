@@ -47,3 +47,5 @@ The fresh fixture-only review instance left running after qualification uses dat
 The [setup guide](STAGE_C_SQUARE_SETUP.md) contains exact commands, accounts, URLs, reset steps, Developer Console prerequisites and the make/refund walkthrough. The existing disposable Stage B demo is extended, with Stage C defaults on account port 4370 and admin port 4588 to preserve existing sessions. Cash, simulator, customers, stock, contexts and native history remain available. Fixture mode is explicitly labelled. Valid server-side Sandbox credentials can be supplied to npm run demo:pos for actual virtual-device qualification.
 
 Follow [hardware qualification](STAGE_C_HARDWARE_QUALIFICATION.md) before any authorized physical pilot. Clover Stage D remains separate: research current supported Clover merchant authorization, regional/device APIs and secure credential handling, then add an adapter to the same coordinator, immutable evidence/refund contracts and guarded qualification layers. Native reader SDKs and in-person loyalty are outside Stage C.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

@@ -262,3 +262,5 @@ Review the same invoice in manager billing while payment completes. Its automati
 Genuine sandbox card/3DS and connected/platform Dashboard verification remain manual qualification steps. The persistent migration and dedicated fixture preparation await the separate migration approval boundary.
 
 Before any production activation, approve an invoice-specific production percentage and bases, legal/network fee treatment, tax jurisdiction/model, issuer/receipt requirements, invoice credit/refund authority and allocation rules, bookkeeping/export mappings, and operational resolution procedures for retained reservations/discrepancies. Resolve account availability and reconciliation under historical disconnection. Qualify supported currencies/countries and actual processing-cost reporting. No live switch, arbitrary online partial amount, new refund business workflow, accounting integration or Phase H feature was added.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

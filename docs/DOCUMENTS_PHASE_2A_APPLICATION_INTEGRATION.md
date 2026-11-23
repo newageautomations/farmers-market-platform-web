@@ -138,7 +138,7 @@ The existing ignored local account environment must contain `PLATFORM_ACCOUNT_OR
 
 Use these commands when port 3000 is free; do not stop an unrelated backend. The demo creates a fresh `vendure_test_documents_*` database, runs security checks and serves until Ctrl+C. Its encryption key is process-local, and the dataset is disposable. Normal exit cleans it up. No protected database is reset.
 
-All synthetic accounts use `local-identity-regression-only-password`:
+All synthetic accounts use `LOCAL_DEMO_PASSWORD`:
 
 | Account                                                                                            | Role                                                                                                                        |
 | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |

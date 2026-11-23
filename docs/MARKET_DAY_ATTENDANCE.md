@@ -139,3 +139,5 @@ npm run demo:market-operations:attendance-today
 The second command prints occurrence **22** and `/market/day/22`. Restart the existing guarded demo serve/worker processes to load the updated API. Use the existing demo admin/storefront startup commands above.
 
 Manual testing: log in as an existing Attendance V1 vendor with `Attendance-Local-Only!2026`, open `/vendor/day`, locate the October 30 appearance and click **Check In** between 1 and 4 PM Central. It becomes **Self Check-In** with its actual timestamp. As `attendance-v1.manager@example.test`, select Attendance V1 Test Market and open `/market/day/22`. The row shows **Self Check-In**, the Checked In total increases, and the existing details show the source, account and time. Manager corrections retain the original audit. Self-check-in outside this fixed window is unavailable; there is no clock override, GPS, QR, new notification or billing behavior.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

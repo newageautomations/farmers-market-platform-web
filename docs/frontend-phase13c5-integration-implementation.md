@@ -149,3 +149,5 @@ See backend-before.json, frontend-before.json, backend-status-before.txt, fronte
 `docs/evidence/phase13c5/acceptance.json` retains every gate A through FT with requirement, PASS/FAIL/INCONCLUSIVE status, concrete evidence and limitations. Final result is 176 PASS, 0 FAIL, 0 INCONCLUSIVE. Limitations such as count-based queue retention, offset concurrency and transient RUNNING observability are recorded without inventing guarantees.
 
 Phase13A-B1 hostname/theme/discovery, Phase13A-B3 production many-domain cookie/CORS/CSRF policy and Phase13A-B4 Market communications remain OPEN. VENDOR-B1 through VENDOR-B6 and Phase13A-B2 remain CLOSED. No deployment, provider calls, remote Git, public Storefront implementation, checkout, customer account, communications UI, Platform Admin implementation or Phase 13D work occurred. Work stops at Phase 13C.5.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

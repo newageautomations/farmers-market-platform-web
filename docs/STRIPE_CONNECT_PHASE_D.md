@@ -225,3 +225,5 @@ The additive `PreorderFeePercentage1796700000000` migration introduces `customPe
 Updated files include the fee calculator, configuration entity/service/API, new migration, generated API contracts, vendor fixture adapter, existing settings form, and focused tests. Qualification passed 7 backend database groups including percentage configuration and original-unit snapshots, 29 frontend tests, and the full backend build. Scoped frontend typechecking still reports only the existing shared `table-navigation.ts:29` error.
 
 The percentage migration was subsequently applied successfully through the guarded web demo migration command to local vendure_demo_market_ops. Migration verification passed; no reset, seed, or account replacement occurred.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

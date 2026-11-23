@@ -120,3 +120,5 @@ No Finish Market Day/Finish Market command, use of `CLOSE_DAY`, lifecycle state 
 There is no new occurrence sales-total calculation. Pickup counts are shown; detailed finances open the existing finance workspace, whose date/market filtering remains authoritative. No occurrence filter is implied on that general finance link. A live countdown was optional and is omitted. Phase selection persists in its direct link, not in a remembered per-user preference.
 
 The default selector uses the existing upcoming preparation range; older dates require a direct link or existing occurrence/history navigation. Payment details and complex booth/rental workflows remain in their existing authorized specialist interfaces. Existing generic typecheck failures and manual visual/live database verification remain outstanding as described above.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

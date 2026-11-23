@@ -79,7 +79,7 @@ A Direct Vendor order retains `DIRECT_VENDOR`, its origin storefront/channel, ca
 
 ## Manual purchase walkthrough
 
-Existing customer credentials are in [demo-customer-account.json](../demo-customer-account.json): `demo.customer@example.test`, password `local-identity-regression-only-password`. Sign in at `http://auth.platform.localhost:4321/account/login`; use the existing **Sign in** entry on each storefront to complete the normal account handoff. Keep the same customer throughout the walkthrough.
+Existing customer credentials are in [demo-customer-account.json](../demo-customer-account.json): `demo.customer@example.test`, password `LOCAL_DEMO_PASSWORD`. Sign in at `http://auth.platform.localhost:4321/account/login`; use the existing **Sign in** entry on each storefront to complete the normal account handoff. Keep the same customer throughout the walkthrough.
 
 For a working Direct Vendor purchase now:
 

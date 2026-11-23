@@ -410,3 +410,5 @@ npm run test:live:market
 The real integration commands require the existing local PostgreSQL test credentials/configuration and adjacent backend checkout. The new Storefront command owns its local services and successful disposable DB cleanup. For a manually started production storefront, configure `SHOP_API_URL` and keep `FRONTEND_FIXTURE_MODE=false`; configure a canonical persisted public hostname through trusted backend routing administration, not a frontend hostname-to-Channel map.
 
 Implementation stops at Phase 13D.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

@@ -62,3 +62,5 @@ npm run demo:market-operations:admin
 - Backend types and dashboard/server/worker build passed. The build used `APP_ENV=dev` and `NODE_ENV=development`.
 
 The running demo backend exposes the new commands and has both migrations applied. All code and data changes remain local.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

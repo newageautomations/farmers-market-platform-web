@@ -1,8 +1,0 @@
-{
-  "expectedDiffOnly": true,
-  "unexpectedCount": 0,
-  "backendChanges": 29,
-  "frontendChanges": 88,
-  "existingMigrationsUnchanged": true,
-  "headsUnchanged": true
-}

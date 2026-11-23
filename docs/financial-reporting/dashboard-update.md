@@ -26,6 +26,8 @@ Backend: `platform-identity/account-timezone.ts`, settings-field registration in
 - Screenshot-free browser: all checks passed, including 1280/768/390 geometry, left alignment, real point/arc hover, mounted graph updates, both business roles, expense/receipt/CSV flows, and saving Asia/Tokyo then restoring America/Chicago through Settings.
 - Both repositories built successfully, including storefront/admin and backend dashboard/server/worker. Root/Astro and strict backend typechecks, schema extraction/codegen, targeted lint and boundary checks passed. Existing bundle-size warnings remain.
 
-Evidence: [backend](dashboard-backend.log), [DOM](dashboard-update/unit-results.json), [compatibility](dashboard-compatibility/unit-results.json), [browser](dashboard-browser.log), [builds](dashboard-build.log), [typecheck](dashboard-typecheck.log). No screenshots, recordings, or visual review were used.
+Evidence: [backend](dashboard-backend.log), DOM (local output `dashboard-update/unit-results.json`), compatibility (local output `dashboard-compatibility/unit-results.json`), [browser](dashboard-browser.log), [builds](dashboard-build.log), [typecheck](dashboard-typecheck.log). No screenshots, recordings, or visual review were used.
 
 The retained manual fixture is unchanged in scope: `vendure_test_pos_demo_1792526989882_c5c1fa`. Browser expenses were voided and the vendor timezone was restored to America/Chicago. `vendure_demo_market_ops` and `vendure` were not migrated, seeded, or modified. Nothing was committed, pushed, or deployed.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

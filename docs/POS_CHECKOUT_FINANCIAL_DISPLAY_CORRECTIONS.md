@@ -92,7 +92,7 @@ Relevant routes use `http://localhost:4322`:
 | `/vendor/finances/transactions` | Order rows and financial details                                   |
 | `/vendor/finances`              | Financial summary and CSV                                          |
 
-For read-only inspection of existing records, the existing documented Manna Roots login is `manna-roots@example.test` / `local-identity-regression-only-password` at `http://auth.platform.localhost:4321/account/login`. Select Manna Roots Vendor mode/channel through the normal account switcher. These credentials were not created or reset by this correction.
+For read-only inspection of existing records, the existing documented Manna Roots login is `manna-roots@example.test` / `LOCAL_DEMO_PASSWORD` at `http://auth.platform.localhost:4321/account/login`. Select Manna Roots Vendor mode/channel through the normal account switcher. These credentials were not created or reset by this correction.
 
 For the deterministic price/tax scenarios below, use a **separate test vendor** provisioned through the ordinary account/business setup and permission workflows, rather than curating Manna Roots or the manager accounts. This run did not provision that account. It needs USD tax-exclusive pricing, sellable in-stock variants, cashier/catalog/inventory/finance authority and an active vendor membership. Missing permissions or market eligibility must be resolved through existing authorization workflows. Do not copy roles or bypass guards. Independent sale is sufficient for the main scenarios.
 

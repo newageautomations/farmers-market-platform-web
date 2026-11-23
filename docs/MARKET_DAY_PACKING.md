@@ -53,7 +53,7 @@ The actual loopback target was verified as `vendure_demo_market_ops`. Migration 
 
 Start the environment from `E:\coding\farmers-market-platform-web` in separate terminals with the existing `demo:market-operations:serve`, `demo:market-operations:worker`, `demo:market-operations:admin` and `demo:market-operations:storefront` npm scripts. No restart of the backend is needed for the newly inserted orders if it is already serving this database. Admin Vite reloads the frontend changes. After updating the backend packing code for numeric quantities/images, restart the existing demo serve process through the same guarded script; no migration is needed.
 
-Sign into the admin as **`homepage.vendor@example.test`**, password **`local-identity-regression-only-password`**, and select **Willow & Grain Farmstead**, vendor **26**, channel **29**.
+Sign into the admin as **`homepage.vendor@example.test`**, password **`LOCAL_DEMO_PASSWORD`**, and select **Willow & Grain Farmstead**, vendor **26**, channel **29**.
 
 - Packing: **http://localhost:4322/vendor/orders/packing?occurrence=12**
 - Vendor Market Day: **http://localhost:4322/vendor/day**

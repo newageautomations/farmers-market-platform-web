@@ -93,7 +93,7 @@ npm run demo:market-operations:storefront
 
 The serve script also starts the existing document scanner needed for uploads. No additional fixture seeding is required for the inspected dataset. If a future read-only audit confirms a partial dedicated Shop fixture, the guarded, idempotent repair/setup command is `npm run demo:market-operations:storefront-shop-fixtures`; run it only intentionally, after reviewing the audit and pending migrations. It adds/restores dedicated fixture relationships and does not reset or reseed established accounts.
 
-1. Sign in at `http://localhost:4322` as `homepage.vendor@example.test`. Existing dedicated-account password: `local-identity-regression-only-password` (the backend `demoPassword` constant).
+1. Sign in at `http://localhost:4322` as `homepage.vendor@example.test`. Existing dedicated-account password: `LOCAL_DEMO_PASSWORD` (the backend `demoPassword` constant).
 2. Open `http://localhost:4322/vendor/categories`. Confirm Produce, Bakery and Pantry counts/images, then create an empty category without an image.
 3. Edit that category, select greens and honey, save and reopen. Upload a PNG/JPEG, select an existing vendor image, replace it, then clear it. Check that an invalid image or unavailable scanner leaves the category unchanged.
 4. Open `http://localhost:4322/vendor/products/109`. Assign several categories, save and verify the same memberships from Categories.

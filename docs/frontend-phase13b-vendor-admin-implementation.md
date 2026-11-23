@@ -76,7 +76,7 @@ All seven modules were checked at 390/768/1280, with no page overflow or axe vio
 
 ## Responsive evidence
 
-21 module screenshots are in [phase13b evidence](evidence/phase13b/). Each module uses overview/products/inventory/orders/customers/markets/analytics plus -390.png, -768.png and -1280.png. Representative [Products mobile](evidence/phase13b/products-390.png), [Inventory desktop](evidence/phase13b/inventory-1280.png), [Customers tablet](evidence/phase13b/customers-768.png) and [Analytics desktop](evidence/phase13b/analytics-1280.png). The production revocation screenshot is separate.
+21 module screenshots are in phase13b evidence (local output `evidence/phase13b/`). Each module uses overview/products/inventory/orders/customers/markets/analytics plus -390.png, -768.png and -1280.png. Representative Products mobile (local output `evidence/phase13b/products-390.png`), Inventory desktop (local output `evidence/phase13b/inventory-1280.png`), Customers tablet (local output `evidence/phase13b/customers-768.png`) and Analytics desktop (local output `evidence/phase13b/analytics-1280.png`). The production revocation screenshot is separate.
 
 ## Live integration
 
@@ -84,7 +84,7 @@ INCONCLUSIVE. No actual backend login, database or business mutation was perform
 
 ## Repository isolation
 
-Backend baseline and final exact porcelain status match; all 356 tracked/dirty/nonignored untracked paths and SHA-256 hashes match. [Backend verification](evidence/phase13b/backend-verification.json), baseline files/status and final status are saved. The user's pre-existing backend changes were preserved. No recursive cleanup/reset, remote Git action or deployment occurred. [Frontend final Git status](evidence/phase13b/frontend-status.txt) shows README modified and the existing uncommitted app/package/docs/test foundation tree untracked. No commit was created.
+Backend baseline and final exact porcelain status match; all 356 tracked/dirty/nonignored untracked paths and SHA-256 hashes match. Backend verification (local output `evidence/phase13b/backend-verification.json`), baseline files/status and final status are saved. The user's pre-existing backend changes were preserved. No recursive cleanup/reset, remote Git action or deployment occurred. Frontend final Git status (local output `evidence/phase13b/frontend-status.txt`) shows README modified and the existing uncommitted app/package/docs/test foundation tree untracked. No commit was created.
 
 The Storefront development server already occupied port 4321 and was verified as the existing MARKET fixture. It was reused explicitly, preserving user processes. New Admin and built-preview tests ran on ports 4422-4424. Sandbox loopback tests required reviewed local execution outside the restricted network; no approval was rejected. Earlier sandbox-only module/Temp failures are not production regressions: the original Storefront configuration was restored and final regressions pass. Root dev commands remain available.
 
@@ -94,7 +94,7 @@ Backend extensions above, real disposable integration, Market Admin13C, storefro
 
 ## Acceptance
 
-All 108 required A through DD gates are retained. Totals: 95 PASS, 0 FAIL, 13 INCONCLUSIVE. PASS means the described frontend source/mock evidence passed; it never means untested live integration passed. The 13 inconclusive gates correspond to missing live capabilities. [Machine-readable gates](evidence/phase13b/acceptance.json).
+All 108 required A through DD gates are retained. Totals: 95 PASS, 0 FAIL, 13 INCONCLUSIVE. PASS means the described frontend source/mock evidence passed; it never means untested live integration passed. The 13 inconclusive gates correspond to missing live capabilities. Machine-readable gates (local output `evidence/phase13b/acceptance.json`).
 
 | Gate | Requirement                                   | Status       | Evidence / limitation                                                                                                                                          |
 | ---- | --------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -211,6 +211,8 @@ All 108 required A through DD gates are retained. Totals: 95 PASS, 0 FAIL, 13 IN
 
 The preceding content records the historical phase and remains historical evidence. Phase 13B.5 adds later backend and real integration proof in [the new implementation report](frontend-phase13b5-integration-implementation.md). VENDOR-B1 through VENDOR-B6 and Phase13A-B2 are CLOSED: owned catalog list/detail/canonical currency/options, independent operational inventory, owned operational orders, current Market display names, native publication state, exact optional boundary availability and current own Market identity. Phase13A-B1 public hostname/discovery, B3 production many-domain cookie/CORS/CSRF and B4 Market communications remain OPEN.
 
-The production adapters use named generated contracts. Inventory requires ManageOwnInventory under the existing owner policy and remains usable when analytics is denied or unconfigured. Market uses ownMarketIdentity for shared bootstrap only. Publication state is reread from actual native/domain facts. ownEntitlements stays separate from ownFeatureAvailability. Eight bound and one unbound real browser tests, ten backend contract groups per profile, full recursive Phase1-11 plus Phase12 backend regressions, eighty frontend unit tests, twenty-one frontend browser regressions and both builds pass. The protected vendure DB was untouched; no real provider, remote Git or deployment operation occurred. [Evidence](evidence/phase13b5/acceptance.json) contains the full A through DC list.
+The production adapters use named generated contracts. Inventory requires ManageOwnInventory under the existing owner policy and remains usable when analytics is denied or unconfigured. Market uses ownMarketIdentity for shared bootstrap only. Publication state is reread from actual native/domain facts. ownEntitlements stays separate from ownFeatureAvailability. Eight bound and one unbound real browser tests, ten backend contract groups per profile, full recursive Phase1-11 plus Phase12 backend regressions, eighty frontend unit tests, twenty-one frontend browser regressions and both builds pass. The protected vendure DB was untouched; no real provider, remote Git or deployment operation occurred. Evidence (local output `evidence/phase13b5/acceptance.json`) contains the full A through DC list.
 
 Historical Phase13B gates K, M, N, O, P, T, AC, AU, AZ, BA, BB, BC and BD now have PASS evidence for the later implemented contracts and real fixture-disabled integration, including every analytics view. No one of those thirteen Vendor gaps remains INCONCLUSIVE in Phase13B.5. The original table and its mock-only classification were not rewritten. The initial Phase13B.5 unit probe regenerated the older raw docs/evidence/unit-results.json before the reporter was redirected; final acceptance uses the new Phase13B.5 unit results.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

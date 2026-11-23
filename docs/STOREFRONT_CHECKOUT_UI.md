@@ -71,3 +71,5 @@ Local source changes: checkout routes (`index.astro`, `success.astro`); `VendorC
 ## Deferred integration
 
 Before Stripe activation: implement the separately reviewed server authorization, Connect routing, hosted Payment Element, authoritative final totals/eligibility checks, idempotent payment operations, confirmation and webhook reconciliation. Connect draft contact and bounded notes to an approved order workflow; do not overwrite profiles. Add distinct authoritative pickup-window/address presentation when those fields exist. No migration or deployment is needed for this UI change.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

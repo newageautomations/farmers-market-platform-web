@@ -28,8 +28,8 @@ The owning process creates only a fresh vendure_test_pos_demo_<timestamp>_<rando
 
 | Vendor account                             | Email                         | Password                                |
 | ------------------------------------------ | ----------------------------- | --------------------------------------- |
-| Hill Country Honey owner                   | identity-owner-0@test.invalid | local-identity-regression-only-password |
-| Green Acres Farm / Wildflower Bakery owner | identity-owner-1@test.invalid | local-identity-regression-only-password |
+| Hill Country Honey owner                   | identity-owner-0@test.invalid | LOCAL_DEMO_PASSWORD |
+| Green Acres Farm / Wildflower Bakery owner | identity-owner-1@test.invalid | LOCAL_DEMO_PASSWORD |
 
 The second account owns two vendors; use the existing account selector. Actual channel IDs and dynamic API endpoints appear in startup output and the ignored .pos-stage-c-demo/ready.json. That file contains local application runtime metadata, never Square tokens. A fixture-only connection is seeded for the first vendor; it is not a Square-authorized account. Other vendors remain isolated. No real customer email is sent.
 

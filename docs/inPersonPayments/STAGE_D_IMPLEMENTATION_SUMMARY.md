@@ -58,4 +58,6 @@ The [setup guide](STAGE_D_CLOVER_SETUP.md) supplies exact one-line Windows Power
 
 Stage E remains Clover Go/native phone-reader work through supported SDKs, without another commerce coordinator. Stage F remains hardware/provider/production qualification. Stage G remains final in-person vendor/market loyalty integration. No deployment, Production Clover call, real card charge, production credential change, commit, push, remote branch/PR, screenshot, recording or trace occurred. Neither protected database was modified.
 
-A controlled manual instance is left running on ports 4372/4590. Its current database is `vendure_test_pos_demo_1792389881053_7da6ee`; the ignored Stage D manifest remains authoritative. Login is `identity-owner-0@test.invalid`, with fictional password `local-identity-regression-only-password`. The [testing report](STAGE_D_TESTING.md#current-manual-instance) records its current status and logs.
+A controlled manual instance is left running on ports 4372/4590. Its current database is `vendure_test_pos_demo_1792389881053_7da6ee`; the ignored Stage D manifest remains authoritative. Login is `identity-owner-0@test.invalid`, with fictional password `LOCAL_DEMO_PASSWORD`. The [testing report](STAGE_D_TESTING.md#current-manual-instance) records its current status and logs.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

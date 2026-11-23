@@ -86,7 +86,7 @@ npm run demo:market-operations:storefront
 
 These existing launchers require the ignored local account-origin/bridge configuration. Do not substitute ordinary backend development commands.
 
-Existing documented password for both accounts below: `local-identity-regression-only-password`. Their identifiers, active memberships and verified phones were confirmed read-only; passwords were neither changed nor tested against the persistent database.
+Existing documented password for both accounts below: `LOCAL_DEMO_PASSWORD`. Their identifiers, active memberships and verified phones were confirmed read-only; passwords were neither changed nor tested against the persistent database.
 
 | Account                       | Existing membership                                     | Direct entry                                        |
 | ----------------------------- | ------------------------------------------------------- | --------------------------------------------------- |

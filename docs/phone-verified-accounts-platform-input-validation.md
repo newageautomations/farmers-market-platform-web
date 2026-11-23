@@ -366,7 +366,7 @@ Legacy/multi-role enrollment:
 
 1. The automated browser test explicitly removes only a synthetic actor's fixture phone and exercises mandatory enrollment before showing its two Vendor and two Market choices.
 2. In interactive mode, an additional synthetic reset can be requested through the existing parent IPC only if editing the harness for another test; there is no production reset endpoint. Prefer rerunning the automated test rather than altering data manually.
-3. The verified multi-role fixture email is `identity-owner-0@test.invalid`, password `local-identity-regression-only-password`. Its legacy enrollment is already completed by the browser suite when interactive mode starts.
+3. The verified multi-role fixture email is `identity-owner-0@test.invalid`, password `LOCAL_DEMO_PASSWORD`. Its legacy enrollment is already completed by the browser suite when interactive mode starts.
 4. Native Admin fixture login is `identity-regression-superadmin` with the same password. A legitimate unverified native administrator would use **Administrator identifier**, **Current password**, personal phone and SMS on `/account/admin-phone`. The backend acceptance test exercises this path with its fixture phone removed.
 
 Phone replacement:
@@ -522,3 +522,5 @@ Further presentation work can map each backend error to an individual Astro fiel
 Resolve the unrelated Prettier warning in the existing application-identity audit report separately. Bundle size and existing test-infrastructure warnings remain observable limitations.
 
 Recommended next stage: review the local code and this report, complete the targeted UX/operational items above, and then perform a separately authorized rollout rehearsal and real SMS verification. No deployment is included in this task.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

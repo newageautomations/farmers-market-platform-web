@@ -307,3 +307,5 @@ Use owned Product IDs and native category/tag IDs returned by those reads. For a
 Phase B owns single-leaf/tag form controls, removal of category-management controls, hierarchical vendor navigation, market browsing/counts/filter labels, storefront images/order/visibility and POS taxonomy migration. Current forms still display a plural selector and reject multiple leaves. Existing storefront readers can show parent and leaf values; generic market facet summaries can include declared tags. The old category API no longer edits presentation overrides. No new shared UI design was introduced or approved.
 
 The occurrence catalog still narrows approved listings/offerings with all existing ownership, channel, market, price and time gates. Ancestor FacetValues support exact parent filtering without a replacement catalog. New classification operations are Admin API operations; public storefront-specific typed projections and navigation remain Phase B. Collections remain the POS category source until that dependent behavior is migrated.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

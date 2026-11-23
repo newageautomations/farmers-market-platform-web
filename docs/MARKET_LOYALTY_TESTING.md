@@ -27,7 +27,7 @@ Sign in centrally first. For the manager, open `http://localhost:4575/market?cha
 
 ## Fictional accounts
 
-Every password is `local-identity-regression-only-password`.
+Every password is `LOCAL_DEMO_PASSWORD`.
 
 | Role                   | Email                                 | Initial market state                                                                                |
 | ---------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------- |

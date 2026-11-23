@@ -42,7 +42,7 @@ node node_modules/ts-node/dist/bin.js --project test/in-person/tsconfig.json tes
 ## Manual testing with existing data
 
 1. From `E:\coding\farmers-market-platform-web`, run the existing `demo:market-operations:serve`, `demo:market-operations:worker`, `demo:market-operations:admin`, and `demo:market-operations:storefront` npm scripts in separate terminals. Restart the backend to load the additive read model. No migration or seed command is required.
-2. Sign in at `http://localhost:4322` using `refund.accounting@example.test` / `local-identity-regression-only-password`. Select **FMP Refund & Accounting Test Vendor**. The existing manually approved phone remains unchanged.
+2. Sign in at `http://localhost:4322` using `refund.accounting@example.test` / `LOCAL_DEMO_PASSWORD`. Select **FMP Refund & Accounting Test Vendor**. The existing manually approved phone remains unchanged.
 3. Open `/vendor/finances/expenses` and select October 21, 2026 if necessary. Open **Equipment repair** and expand **Expense history**: Created $100.00, then Reduced -$20.00, oldest first; current Amount remains $80.00. There is no Recorded change JSON disclosure.
 4. In the same expense log, open **Canceled stall supplies**, which retains its existing Voided status. Its history should show Created $30.00 and Voided -$30.00. The saved original amount is retained by the native expense record, while the void excludes it from expense-report totals. No JSON or technical event details are displayed.
 5. Open `/vendor/orders/63`, or use Orders' existing lookup for 63. **Refund Details** is visible; **Record Refund** is absent. Open the dialog: Gift Basket × 1, merchandise $20.00, tax $1.65, total $21.65, fully refunded, remaining $0.00.
@@ -54,3 +54,5 @@ node node_modules/ts-node/dist/bin.js --project test/in-person/tsconfig.json tes
 ## Limits
 
 No requested change within the existing POS order-refund surface was deferred. The interface does not introduce a new online-order refund workflow, alter provider restrictions, unlock reserved units, change permissions, or reconstruct missing legacy financial evidence. Old records with no sufficient item/tax allocation show the actual recorded total and an unavailable-breakdown explanation. Manual visual acceptance remains with the developer.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

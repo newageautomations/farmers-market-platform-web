@@ -99,3 +99,5 @@ node node_modules/ts-node/dist/bin.js --project test/farmers-market/tsconfig.jso
 ```
 
 The browser qualification closes its own loopback-only server. Database integration checks use the project's disposable test database guard. No remote Git operation, hosting operation, or deployment was performed.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

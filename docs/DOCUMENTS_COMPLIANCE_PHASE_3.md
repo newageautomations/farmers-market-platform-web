@@ -152,7 +152,7 @@ npm run demo:market-operations:admin
 npm run demo:market-operations:storefront
 ```
 
-Open [Admin](http://localhost:4322). Use Administrator username sign-in. Synthetic password for all demo accounts: `local-identity-regression-only-password`.
+Open [Admin](http://localhost:4322). Use Administrator username sign-in. Synthetic password for all demo accounts: `LOCAL_DEMO_PASSWORD`.
 
 | Account                            | Purpose                                                                        |
 | ---------------------------------- | ------------------------------------------------------------------------------ |

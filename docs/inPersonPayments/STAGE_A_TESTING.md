@@ -15,8 +15,8 @@ Open [central sign-in](http://auth.platform.localhost:4367/account/login), then 
 
 | Actor                                  | Fictional login                 | Password                                  |
 | -------------------------------------- | ------------------------------- | ----------------------------------------- |
-| Hill Country Honey                     | `identity-owner-0@test.invalid` | `local-identity-regression-only-password` |
-| Green Acres Farm and Wildflower Bakery | `identity-owner-1@test.invalid` | `local-identity-regression-only-password` |
+| Hill Country Honey                     | `identity-owner-0@test.invalid` | `LOCAL_DEMO_PASSWORD` |
+| Green Acres Farm and Wildflower Bakery | `identity-owner-1@test.invalid` | `LOCAL_DEMO_PASSWORD` |
 
 The second login owns two independent vendors. Use the existing account-mode/business selector to choose the explicitly authorized vendor. Their channel IDs are printed in the manifest, normally 3 and the generated third-vendor channel. Never infer a channel ID as authority.
 

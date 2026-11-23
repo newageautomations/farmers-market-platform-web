@@ -4,8 +4,8 @@ Created in the persistent local `vendure_demo_market_ops` database.
 
 - Admin: http://localhost:4322
 - Storefront: http://boerne-farmers-market.localhost:4321
-- Manager email: `boerne.manager@example.test`
-- Password: `local-identity-regression-only-password`
+- Manager email: `<local-market-manager-email>`
+- Password: `LOCAL_DEMO_PASSWORD`. Use the credentials for the existing local market manager account.
 - Workspace/channel: `market:boerne-farmers-market`
 - Time zone: `America/Chicago`
 
@@ -19,11 +19,11 @@ Create and publish an application while signed in as the Boerne manager at
 `http://localhost:4322/market/applications`. The application displays its actual
 `/apply/<slug>` path. Open that path on `http://boerne-farmers-market.localhost:4321`.
 The existing published application, **Boerne Market v1**, is available at:
-http://boerne-farmers-market.localhost:4321/apply/4ce9824a-6053-4a15-bfcc-0258e7e90884
+`http://boerne-farmers-market.localhost:4321/apply/<locally-published-application-slug>`
 It is a private direct-link application. Share its link explicitly.
 
 If the normal demo servers are not running, start these commands in separate
-terminals from `E:\coding\farmers-market-platform-web`:
+terminals from the frontend repository root:
 
 ```powershell
 npm run demo:market-operations:serve

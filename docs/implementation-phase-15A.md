@@ -139,3 +139,5 @@ npx.cmd tsx scripts/test-phase15.ts
 ```
 
 On this computer the installed Playwright browser was selected with `PLAYWRIGHT_BROWSERS_PATH=C:/Users/jake_/AppData/Local/ms-playwright`. The browser qualification starts and closes its own loopback-only server.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

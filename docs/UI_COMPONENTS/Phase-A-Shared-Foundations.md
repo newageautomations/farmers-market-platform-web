@@ -1572,3 +1572,5 @@ Backend: `scripts/market-operations-demo/environment.ts` preserves/validates loc
 The Stripe configuration blocker now has a narrowly scoped development payment implementation. A real Manna Roots order (52) completed through Vendure with one settled local Payment, and the existing customer order-history/follow projections were verified. The feature remains disabled by default and requires explicit opt-in against the approved loopback demo database.
 
 See [Local test checkout](Local-Test-Checkout.md) for architecture, enable/disable/startup instructions, manual Vendor/Market walkthroughs and focused results. Two-Vendor Market acceptance remains pending: the existing additional Vendors have stale offering window provenance and lack pickup methods. Favorite-Vendor upcoming appearances additionally require the existing verified-consent flow. No dashboard or Phase B migration was begun, and the historical Phase A records above are preserved.
+
+Generated evidence referenced here is retained locally with the relevant qualification run.

@@ -14,7 +14,7 @@ This reuses the existing POS demo supervisor, generates a randomized `vendure_te
 ## Sign in and use a reward
 
 1. Open `http://auth.platform.localhost:4376/account/login`.
-2. Sign in as `identity-owner-0@test.invalid`, password `local-identity-regression-only-password`.
+2. Sign in as `identity-owner-0@test.invalid`, password `LOCAL_DEMO_PASSWORD`.
 3. Open the vendor dashboard and In-Person Checkout. The printed direct register URL includes the correct vendor channel.
 4. Select today's Cedar Meadow market occurrence. Its active window is created for the current run; the second occurrence is tomorrow and has not opened.
 5. Add Raw Honey, choose the ordinary small variant, and set quantity to 5. The Stage G small fixture unit costs $1 before tax.

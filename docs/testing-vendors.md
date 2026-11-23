@@ -2,7 +2,7 @@
 
 The local seed adds the 17 supplied businesses to `vendure_demo_market_ops` on loopback PostgreSQL. It uses the sibling backend's existing application services without editing that project. All seed code, catalog data, output files and temporary assets stay in this frontend project.
 
-Run from `E:\coding\farmers-market-platform-web`:
+Run from the frontend repository root:
 
 ```powershell
 # Preview the target and requested records without writes.
@@ -23,7 +23,7 @@ The existing persistent demo baseline must already exist. The script refuses oth
 
 The data includes 78 products with USD prices, package sizes, descriptions and stock; 14 shared category facet values; one owner account and native commerce channel per business; protected product and stock ownership; directory profiles; local storefront records; approved market memberships and listings; and attendance, directory approvals and offerings for upcoming market occurrences. Manna Roots has its original four products plus ten additional juices and shots. Booth assignments are left for the existing layout workflow.
 
-Each fictional owner email is `<vendor-slug>@example.test`. The account password is `local-identity-regression-only-password`, matching the existing local demo accounts. Naomi Williams and Steve Smith retain the supplied names. Other owner names, phone numbers and addresses are fictional.
+Use the owner email and `loginPassword` from the generated local vendor manifest. Keep generated logins and contact information local.
 
 Category membership overlaps through normal product facets. For example, Bakery includes Showbread Catering, Mummy’s Macarons, Grammies Crackers, Jake n Bake, Twice Baked Cafe and Sunflour & Crumb. Coffee & Drinks includes Manna Roots, Last Watch Coffee and Twice Baked Cafe. Produce includes Norma Jean’s Greens and 9-1 Produce Farm, while Fermented & Pickled Foods includes Pucker Up! and Anna’s Kimchi. Individual products can have multiple categories.
 
@@ -39,4 +39,4 @@ npm run demo:market-operations:storefront
 
 Existing preorder windows determine when products appear in the market occurrence catalog. The seed preserves those windows. Vendor storefront catalogs can be browsed independently of market preorder windows.
 
-The original 68-product import passed independent database verification and native API checks for all 17 owner logins, admin catalogs, inventory projections, storefront host resolution and public product catalogs. At that time, each of the four upcoming occurrences had 17 participating vendors and 68 offerings, totaling 272 offerings. A second seed run created zero duplicate vendors or products. These historical checks predate the ten additional Manna Roots products. Vendor-scoped seed reports are written to `docs/testing-vendor-<slug>.json` and leave the original full-import report intact.
+The original 68-product import passed independent database verification and native API checks for all 17 owner logins, admin catalogs, inventory projections, storefront host resolution and public product catalogs. At that time, each of the four upcoming occurrences had 17 participating vendors and 68 offerings, totaling 272 offerings. A second seed run created zero duplicate vendors or products. These historical checks predate the ten additional Manna Roots products. Vendor-scoped seed reports are written to `docs/testing-vendor-<slug>.json` and leave the original full-import report intact. Treat each generated report as local credential material and check its ignore status before adding files to Git.

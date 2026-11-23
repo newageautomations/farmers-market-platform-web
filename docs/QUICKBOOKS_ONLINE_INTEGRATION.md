@@ -57,7 +57,7 @@ Automatic synchronization remains opt-in, uses the saved owner/channel and exact
 
 Use only the populated `vendure_demo_market_ops` environment for the integrated manual walkthrough. This implementation does not alter it. No schema migration is introduced. Do not reset, seed, regenerate fixtures, change established managers/Manna Roots, replace the connected sandbox company, or fabricate provider settlement or successful history.
 
-Primary vendor: **FMP Automatic Sync Test Vendor**, `automatic.sync@example.test`, password `local-identity-regression-only-password`, verified synthetic phone `+12025550173`. Reuse **FMP Refund & Accounting Test Vendor**, `refund.accounting@example.test`, with the same existing fixture password when its existing refund allocations are useful. Use the ordinary owner login and existing vendor channel.
+Primary vendor: **FMP Automatic Sync Test Vendor**, `automatic.sync@example.test`, password `LOCAL_DEMO_PASSWORD`, verified synthetic phone `+12025550173`. Reuse **FMP Refund & Accounting Test Vendor**, `refund.accounting@example.test`, with the same existing fixture password when its existing refund allocations are useful. Use the ordinary owner login and existing vendor channel.
 
 Start each process in a separate PowerShell terminal from `E:\coding\farmers-market-platform-web`:
 

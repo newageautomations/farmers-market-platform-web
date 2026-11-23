@@ -23,8 +23,8 @@ This creates and migrates only its own randomized `vendure_test_pos_demo_<timest
 
 | Vendor                                 | Login                           | Password                                  |
 | -------------------------------------- | ------------------------------- | ----------------------------------------- |
-| Hill Country Honey                     | `identity-owner-0@test.invalid` | `local-identity-regression-only-password` |
-| Green Acres Farm and Wildflower Bakery | `identity-owner-1@test.invalid` | `local-identity-regression-only-password` |
+| Hill Country Honey                     | `identity-owner-0@test.invalid` | `LOCAL_DEMO_PASSWORD` |
+| Green Acres Farm and Wildflower Bakery | `identity-owner-1@test.invalid` | `LOCAL_DEMO_PASSWORD` |
 
 The second login owns two vendors; select the intended business in the existing account selector. The ignored `.pos-stage-b-demo/ready.json` and startup output supply the actual dynamic API endpoints/channel IDs. Channels normally include 2, 3 and 8, but IDs are references, never authority. The manifest includes seeded completed sale references for all three vendors. Those sales are created through the actual coordinator, Payment, inventory and original financial allocation paths, not arbitrary paid-order inserts.
 

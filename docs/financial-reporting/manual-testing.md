@@ -47,9 +47,9 @@ Use these existing local test credentials:
 
 | Business role                     | Email                           | Password                                  |
 | --------------------------------- | ------------------------------- | ----------------------------------------- |
-| Manna Roots vendor                | `manna-roots@example.test`      | `local-identity-regression-only-password` |
-| Boerne market manager             | `market.manager@example.test`   | `local-identity-regression-only-password` |
-| Other vendor for isolation checks | `identity-owner-1@test.invalid` | `local-identity-regression-only-password` |
+| Manna Roots vendor                | `manna-roots@example.test`      | `LOCAL_DEMO_PASSWORD` |
+| Boerne market manager             | `market.manager@example.test`   | `LOCAL_DEMO_PASSWORD` |
+| Other vendor for isolation checks | `identity-owner-1@test.invalid` | `LOCAL_DEMO_PASSWORD` |
 
 Select Vendor mode and the Manna Roots business if a business/mode picker appears. Open Finances in the existing sidebar. The direct link is:
 

@@ -261,3 +261,5 @@ PASS means implemented and qualified at the stated local scope. The documented s
 | G9  | live operations                | PASS, 21 backend + 14 browser                         |
 | G10 | Phase15B regression            | PASS                                                  |
 | G11 | production-local build         | PASS, both repositories                               |
+
+Generated evidence referenced here is retained locally with the relevant qualification run.
