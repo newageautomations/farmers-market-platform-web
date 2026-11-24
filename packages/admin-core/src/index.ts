@@ -16,6 +16,7 @@ export interface AdminContext {
   source: 'fixture' | 'backend';
   membershipRole?: 'owner' | 'administrator' | 'lead' | 'staff';
   marketStatus?: 'active' | 'suspended';
+  testAccountsAvailable?: boolean;
 }
 export interface NavItem {
   label: string;
@@ -214,6 +215,12 @@ export const navigation: readonly NavItem[] = [
     permission: 'SuperAdmin',
   },
   {
+    label: 'Test Accounts',
+    path: '/platform/test-accounts',
+    scopes: ['PLATFORM'],
+    permission: 'SuperAdmin',
+  },
+  {
     label: 'Billing catalog',
     path: '/platform/billing',
     scopes: ['PLATFORM'],
@@ -325,6 +332,8 @@ export function visibleNavigation(context: AdminContext) {
           ))) &&
       (item.path !== '/vendor/applications' ||
         context.permissions.includes('ManageOwnMarketParticipation')) &&
+      (item.path !== '/platform/test-accounts' ||
+        context.testAccountsAvailable === true) &&
       item.scopes.includes(context.scope) &&
       (!item.permission ||
         hasPermission(context.permissions, item.permission) ||
@@ -779,6 +788,7 @@ export async function resolveAdminContext(
     return {
       scope: 'PLATFORM',
       name: 'Platform administration',
+      testAccountsAvailable: scope.testAccountsAvailable,
       permissions,
       source: 'backend',
     };

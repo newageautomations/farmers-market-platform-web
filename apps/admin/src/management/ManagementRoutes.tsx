@@ -4,6 +4,7 @@ import { PlatformOverview, TenantDirectory, TenantDetail } from './platform';
 import { Catalog } from './catalog';
 import { Billing } from './billing';
 import { AccountOnboardingReview } from './AccountOnboardingReview';
+import { PlatformTestAccounts } from './PlatformTestAccounts';
 import type { ReactNode } from 'react';
 import type { FarmstandIconName } from '@market/ui/farmstand';
 import { WorkspaceFrame } from '../WorkspaceFrame';
@@ -44,6 +45,19 @@ export function ManagementRoutes({
   vendor?: VendorService;
 }) {
   if (service.context.scope === 'PLATFORM') {
+    if (
+      path === '/platform/test-accounts' &&
+      service.context.testAccountsAvailable
+    )
+      return (
+        <PlatformFrame
+          icon="user-round"
+          title="Test Accounts"
+          description="Create test logins for customers, vendor owners, and market managers."
+        >
+          <PlatformTestAccounts service={service} />
+        </PlatformFrame>
+      );
     if (path === '/platform/tenants')
       return (
         <PlatformFrame

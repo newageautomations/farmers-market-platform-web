@@ -6,6 +6,16 @@ export type CatalogSection = g.PlatformCatalogSection;
 export type CatalogRecord =
   g.PlatformCatalogQuery['platformBillingCatalog']['items'][number];
 export type TenantKind = g.PlatformTenantKind;
+export type CreateTestAccountInput = Omit<
+  g.PlatformCreateTestAccountInput,
+  'personalPhone'
+> & {
+  phone: string | null;
+  password: string;
+  confirmPassword: string;
+};
+export type TestAccountProblem = g.PlatformTestAccountProblem;
+export type TestAccountSummary = g.TestAccountSummaryFragment;
 export interface RoleOnboardingRequest {
   id: number;
   principalId: number;
@@ -185,6 +195,29 @@ export function createManagementApi(options: TransportOptions) {
     platformScope: async () =>
       (await execute({ api: 'admin', document: g.PlatformScopeDocument }, {}))
         .platformAdminScope,
+    testAccounts: async (skip: number, take: number) =>
+      (
+        await execute(
+          { api: 'admin', document: g.PlatformTestAccountsDocument },
+          { options: { skip, take } },
+        )
+      ).platformTestAccounts,
+    createTestAccount: async ({
+      password,
+      confirmPassword,
+      phone,
+      ...input
+    }: CreateTestAccountInput) =>
+      (
+        await execute(
+          { api: 'admin', document: g.PlatformCreateTestAccountDocument },
+          {
+            input: { ...input, personalPhone: phone },
+            password,
+            confirmPassword,
+          },
+        )
+      ).platformCreateTestAccount,
     tenants: async (options: Partial<g.PlatformTenantOptions>) =>
       (
         await execute(

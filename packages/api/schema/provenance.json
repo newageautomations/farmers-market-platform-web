@@ -126,7 +126,7 @@
     "src/plugins/farmers-market/api/admin-api.ts": "4575a8fe55d6fbe9cfbf44add7676dbde11ffb91c415b227a82d551b6e705566",
     "src/plugins/pos-integration/api.ts": "e9c72a0501fbe1937c0ac30c7cbbfd4daf92d735a28377dd5e449f8b3a7f5bb4",
     "src/plugins/billing-entitlements/api.ts": "7f0de4c2e49e74cc1ea2f0ca9832f5fa3fb1f9335a5cbead5784d767dcddf6bc",
-    "src/plugins/platform-admin/api.ts": "356d57099fab8c3429e02afbbebd393cdc6538e886bdaf52c8bca4b92880aa36",
+    "src/plugins/platform-admin/api.ts": "0d31de71dbfe3510d169ce159f2ea71a5a634a9e80eb7a67676c8a6173216a4f",
     "src/plugins/platform-notifications/api.ts": "3d3eb943e02f0974f75b1faeee39f0bd1b4a1ccea3e69bd7f497d1308a2a30f7",
     "src/plugins/marketplace-commerce/owned-admin-reads.ts": "b41388dba142755a9b43abda13eab87f24b7924c5daaa3cb97c558450919d99c",
     "node_modules/@vendure/core/package.json": "fc35f0f951c64650e4a20658dd20f74a151f5fd15ff3e749319e9d0a982dedd4"

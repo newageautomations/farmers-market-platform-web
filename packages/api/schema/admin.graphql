@@ -227,6 +227,7 @@ type Query {
   platformAnalyticsSubscriptions(range: AnalyticsRangeInput!): AnalyticsSubscriptionPage!
   platformAnalyticsUsage(range: AnalyticsRangeInput!): AnalyticsUsagePage!
   platformAdminScope: PlatformAdminScope!
+  platformTestAccounts(options: PlatformTestAccountPageOptions): PlatformTestAccountPage!
   platformTenants(options: PlatformTenantOptions): PlatformTenantPage!
   platformTenant(kind: PlatformTenantKind!, id: ID!): PlatformTenantDetail!
   platformIntegrationReadiness: [IntegrationModuleStatus!]!
@@ -916,6 +917,7 @@ type Mutation {
   revokeSaasEntitlementOverride(id: ID!): SaasDefinitionResult!
   rebuildAnalytics: AnalyticsRebuildResult!
   reconcileAnalytics: AnalyticsReconciliationResult!
+  platformCreateTestAccount(input: PlatformCreateTestAccountInput!, password: String!, confirmPassword: String!): PlatformCreateTestAccountResult!
   platformProvisionVendor(input: PlatformProvisionVendorInput!): PlatformTenantSummary!
   platformProvisionMarket(input: PlatformProvisionMarketInput!): PlatformTenantSummary!
   uploadComplianceDocument(input: JSON!, file: Upload!): JSON!
@@ -8776,6 +8778,66 @@ input PlatformTenantOptions {
 
 type PlatformAdminScope {
   permissions: [String!]!
+  testAccountsAvailable: Boolean!
+}
+
+enum PlatformTestAccountType {
+  customer
+  vendor
+  market_manager
+}
+
+enum PlatformTestAccountProblem {
+  NAME_INVALID
+  EMAIL_INVALID
+  EMAIL_IN_USE
+  PHONE_INVALID
+  PHONE_IN_USE
+  PHONE_POOL_EXHAUSTED
+  PASSWORD_INVALID
+  PASSWORD_MISMATCH
+  WORKSPACE_INVALID
+  WORKSPACE_IN_USE
+  BUSY
+  CREATE_FAILED
+}
+
+input PlatformTestAccountPageOptions {
+  skip: Int
+  take: Int
+}
+
+input PlatformCreateTestAccountInput {
+  type: PlatformTestAccountType!
+  firstName: String!
+  lastName: String!
+  email: String!
+  personalPhone: String
+  workspaceName: String
+}
+
+type PlatformTestAccount {
+  id: ID!
+  firstName: String!
+  lastName: String!
+  email: String!
+  phone: String
+  type: PlatformTestAccountType!
+  workspaceName: String
+  emailVerified: Boolean!
+  phoneVerified: Boolean!
+  createdAt: DateTime!
+}
+
+type PlatformTestAccountPage {
+  items: [PlatformTestAccount!]!
+  totalItems: Int!
+}
+
+type PlatformCreateTestAccountResult {
+  account: PlatformTestAccount
+  destination: String
+  problem: PlatformTestAccountProblem
 }
 
 type PlatformTenantSummary {

@@ -1,6 +1,47 @@
 query PlatformScope {
   platformAdminScope {
     permissions
+    testAccountsAvailable
+  }
+}
+
+fragment TestAccountSummary on PlatformTestAccount {
+  id
+  firstName
+  lastName
+  email
+  phone
+  type
+  workspaceName
+  emailVerified
+  phoneVerified
+  createdAt
+}
+
+query PlatformTestAccounts($options: PlatformTestAccountPageOptions!) {
+  platformTestAccounts(options: $options) {
+    totalItems
+    items {
+      ...TestAccountSummary
+    }
+  }
+}
+
+mutation PlatformCreateTestAccount(
+  $input: PlatformCreateTestAccountInput!
+  $password: String!
+  $confirmPassword: String!
+) {
+  platformCreateTestAccount(
+    input: $input
+    password: $password
+    confirmPassword: $confirmPassword
+  ) {
+    account {
+      ...TestAccountSummary
+    }
+    destination
+    problem
   }
 }
 fragment TenantSummary on PlatformTenantSummary {

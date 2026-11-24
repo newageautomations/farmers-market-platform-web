@@ -48,7 +48,7 @@ export function NavigationIcon({ path }: { path: string }) {
         ? 'applications'
         : name === 'booth-billing' || name === 'payments'
           ? 'billing'
-          : name === 'customers' || name === 'tenants'
+          : ['customers', 'tenants', 'test-accounts'].includes(name)
             ? 'vendors'
             : name;
   return (
