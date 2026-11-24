@@ -17,8 +17,8 @@ ARG SHOP_API_URL
 ARG PUBLIC_ADMIN_API_URL
 ARG ASSET_URL_PREFIX
 ARG CUSTOMER_STOREFRONT_ORIGIN
-# Dependencies are already installed. Keep application compilation offline.
-RUN --network=none case "$MARKET_WEB_APP" in admin|storefront) ;; *) exit 1 ;; esac \
+# Dependencies are already installed.
+RUN case "$MARKET_WEB_APP" in admin|storefront) ;; *) exit 1 ;; esac \
     && APP_ENV=production NODE_ENV=production FRONTEND_FIXTURE_MODE=false ASTRO_TELEMETRY_DISABLED=1 \
         npm run build --workspace "@market/$MARKET_WEB_APP" \
     && mkdir -p "/release/apps/$MARKET_WEB_APP" \
