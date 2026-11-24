@@ -2,6 +2,10 @@ FROM caddy:2.11.7-alpine AS caddy
 FROM cloudflare/cloudflared:2026.10.1 AS cloudflared
 FROM node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY --from=caddy /usr/bin/caddy /usr/local/bin/caddy
 COPY --from=cloudflared /usr/local/bin/cloudflared /usr/local/bin/cloudflared
