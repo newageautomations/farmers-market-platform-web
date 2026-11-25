@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.stripe-connect-phase-f.json",
   "include": [
+    "apps/admin/src/env.d.ts",
     "apps/storefront/src/env.d.ts",
     "apps/admin/src/vendor/BoothInvoicePayment.tsx",
     "apps/admin/src/vendor/booths.tsx",

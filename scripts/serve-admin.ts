@@ -11,6 +11,8 @@ import {
   restrictiveRobots,
   validateDeploymentHost,
   storefrontEditorDocument,
+  stripeElementsCsp,
+  stripeInvoiceDocument,
 } from '@market/config';
 import { readFrontendBuild } from './frontend-build-manifest';
 import { frontendListener, hostedFrontend } from '@market/config/hosted';
@@ -83,9 +85,8 @@ const ready = frontendServer(listener, (request, response) => {
     )
   )
     return;
-  const editorRoute = storefrontEditorDocument(
-    new URL(request.url!, config.adminOrigin).pathname,
-  );
+  const documentPath = new URL(request.url!, config.adminOrigin).pathname;
+  const editorRoute = storefrontEditorDocument(documentPath);
   response.setHeader(
     'Content-Security-Policy',
     editorRoute && previewOrigins.length
@@ -93,7 +94,9 @@ const ready = frontendServer(listener, (request, response) => {
           "frame-src 'none'",
           `frame-src ${previewOrigins.join(' ')}`,
         )
-      : policy,
+      : config.deployment === 'staging' && stripeInvoiceDocument(documentPath)
+        ? stripeElementsCsp(policy)
+        : policy,
   );
   if (!['GET', 'HEAD'].includes(request.method ?? '')) {
     response.writeHead(405);

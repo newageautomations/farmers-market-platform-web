@@ -13,6 +13,7 @@ import {
   responseSecurityHeaders,
   cspDirectives,
   storefrontPreviewDocument,
+  stripeElementsCsp,
 } from '@market/config';
 import { isCentral } from './lib/account';
 import {
@@ -173,6 +174,21 @@ const renderRequest = defineMiddleware(async (context, next) => {
       !response.headers.has('Content-Security-Policy')
     )
       response.headers.set('Content-Security-Policy', hardenedFallbackCsp);
+    if (
+      deployment === 'staging' &&
+      /^\/checkout\/?$/.test(context.url.pathname) &&
+      context.locals.storefront?.published &&
+      !context.locals.editorPreview &&
+      response.ok &&
+      response.headers.get('Content-Type')?.includes('text/html')
+    ) {
+      const policy = response.headers.get('Content-Security-Policy');
+      if (policy)
+        response.headers.set(
+          'Content-Security-Policy',
+          stripeElementsCsp(policy),
+        );
+    }
     return response;
   }
   try {

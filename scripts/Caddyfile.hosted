@@ -63,6 +63,10 @@ http://:{$GATEWAY_PORT:8080} {
 			respond `{"status":"ready"}`
 		}
 		handle @tunnel {
+			@stripe_wrong_host expression `"{$DEPLOYMENT_ENV:staging}" == "staging" && {http.request.hostport} != "{$MARKET_API_HOST}" && ({http.request.uri}.startsWith('/payments/stripe/') || {http.request.uri} == '/payments/stripe')`
+			handle @stripe_wrong_host {
+				respond 404
+			}
 			@admin expression `{http.request.hostport} == "{$MARKET_ADMIN_HOST}"`
 			handle @admin {
 				import market_upstream {$MARKET_ADMIN_UPSTREAM} {$MARKET_ADMIN_INGRESS_KEY}
@@ -76,6 +80,14 @@ http://:{$GATEWAY_PORT:8080} {
 				@assets {
 					method GET HEAD
 					path /assets/*
+				}
+				@stripe_oauth expression `"{$DEPLOYMENT_ENV:staging}" == "staging" && method('GET') && ({http.request.uri} == '/payments/stripe/oauth/callback' || {http.request.uri}.startsWith('/payments/stripe/oauth/callback?'))`
+				@stripe_webhook expression `"{$DEPLOYMENT_ENV:staging}" == "staging" && method('POST') && {http.request.uri} in ['/payments/stripe/platform', '/payments/stripe/connected']`
+				handle @stripe_oauth {
+					import market_upstream {$MARKET_API_UPSTREAM} {$MARKET_API_INGRESS_KEY}
+				}
+				handle @stripe_webhook {
+					import market_upstream {$MARKET_API_UPSTREAM} {$MARKET_API_INGRESS_KEY}
 				}
 				handle @graphql {
 					import market_upstream {$MARKET_API_UPSTREAM} {$MARKET_API_INGRESS_KEY}

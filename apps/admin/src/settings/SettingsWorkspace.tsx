@@ -213,7 +213,7 @@ export function SettingsWorkspace({
                 icon="credit-card"
                 media={<ProviderLogo code="stripe" />}
                 title="Marketplace Stripe Connect"
-                description="Connect your organization to Stripe in test mode. Payment collection remains disabled."
+                description="Connect your organization to Stripe in test mode."
                 module="management-workspace"
               >
                 <Payments service={management!} embedded />

@@ -284,7 +284,7 @@ describe('Stripe Phase C settings', () => {
     ).toBeEnabled();
     expect(
       screen.getByText(
-        /Payment collection, checkout capture and booth invoice collection remain disabled/,
+        /Stripe test mode\. Live payment collection is disabled/,
       ),
     ).toBeVisible();
     expect(screen.queryByText('Live')).not.toBeInTheDocument();

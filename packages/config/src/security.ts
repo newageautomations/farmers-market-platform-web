@@ -108,6 +108,32 @@ export function storefrontPreviewDocument(path: string) {
   );
 }
 
+/** These Admin entry points share the booth invoice payment composition. */
+export function stripeInvoiceDocument(path: string) {
+  const pathname = documentPath(path);
+  return (
+    pathname === '/vendor/booths' ||
+    pathname === '/vendor/markets' ||
+    pathname === '/vendor/applications' ||
+    pathname === '/markets'
+  );
+}
+
+/** Stripe.js hosted card entry and 3D Secure for the existing Elements forms. */
+export function stripeElementsCsp(policy: string) {
+  return policy
+    .split(';')
+    .map((directive) => {
+      const name = directive.trim().split(/\s+/, 1)[0];
+      if (name === 'script-src') return `${directive} https://js.stripe.com`;
+      if (name === 'connect-src') return `${directive} https://api.stripe.com`;
+      if (name === 'frame-src')
+        return ' frame-src https://js.stripe.com https://hooks.stripe.com';
+      return directive;
+    })
+    .join(';');
+}
+
 function documentPath(path: string) {
   return path.split(/[?#]/, 1)[0]?.replace(/\/$/, '');
 }

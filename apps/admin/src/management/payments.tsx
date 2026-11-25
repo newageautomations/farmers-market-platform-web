@@ -166,10 +166,7 @@ export function Payments({
     <>
       <ReadState skeleton="detail" {...result} retry={result.refresh} />
       {error && <ErrorState error={error} />}
-      <Alert>
-        Stripe test mode. Payment collection, checkout capture and booth invoice
-        collection remain disabled.
-      </Alert>
+      <Alert>Stripe test mode. Live payment collection is disabled.</Alert>
       {params?.get('stripe_oauth_error') && (
         <Alert>
           Stripe authorization was not completed. Start authorization again when

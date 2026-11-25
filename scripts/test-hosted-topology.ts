@@ -67,6 +67,16 @@ const mock = createServer(async (req, res) => {
           name,
         ),
       );
+    if (req.url?.startsWith('/payments/stripe/')) {
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) chunks.push(chunk);
+      return json(clean ? 200 : 403, {
+        target: req.url,
+        method: req.method,
+        signature: req.headers['stripe-signature'],
+        body: Buffer.concat(chunks).toString('utf8'),
+      });
+    }
     return json(clean ? 200 : 403, { clean });
   }
   if (
@@ -163,6 +173,9 @@ const mock = createServer(async (req, res) => {
     shopCalls++;
     return json(200, {
       data: {
+        currentCheckoutStatus: null,
+        me: null,
+        activeOrder: null,
         products: { items: [], totalItems: 0 },
         marketStorefrontOccurrences: { items: [], totalItems: 0 },
         publicMarketDayState: {
@@ -567,6 +580,22 @@ try {
     String((await hit(admin, '/market')).headers['content-security-policy']),
     /frame-src 'none'/,
   );
+  for (const path of [
+    '/vendor/booths',
+    '/vendor/markets',
+    '/vendor/applications',
+  ]) {
+    const result = await hit(admin, path);
+    assert.equal(result.status, 200);
+    const policy = String(result.headers['content-security-policy']);
+    assert.match(policy, /script-src 'self' https:\/\/js\.stripe\.com/);
+    assert.match(policy, /connect-src [^;]*https:\/\/api\.stripe\.com/);
+    assert.match(
+      policy,
+      /frame-src https:\/\/js\.stripe\.com https:\/\/hooks\.stripe\.com/,
+    );
+    assertImagePolicy(result.cspHeaders);
+  }
   const login = await hit(auth, '/account/login', {
     'X-Market-Ingress': 'forged',
     'X-Forwarded-Host': vendor,
@@ -784,7 +813,28 @@ try {
       assert.ok(result.body.includes(name));
       assert.ok(result.body.includes('https://' + host + '/'));
       assert.match(result.headers['cache-control']!, /private, no-store/);
+      assert.doesNotMatch(
+        String(result.headers['content-security-policy']),
+        /stripe\.com/,
+      );
     }
+    assert.equal(
+      (await hit(cedar, '/checkout?payment-order=42&payment_intent=fixture'))
+        .headers.location,
+      '/checkout?payment-order=42',
+    );
+    const checkout = await hit(cedar, '/checkout?payment-order=42');
+    assert.equal(checkout.status, 200);
+    assertImagePolicy(checkout.cspHeaders);
+    assert.match(
+      String(checkout.headers['content-security-policy']),
+      /script-src [^;]*https:\/\/js\.stripe\.com/,
+    );
+    assert.match(
+      String(checkout.headers['content-security-policy']),
+      /frame-src https:\/\/js\.stripe\.com https:\/\/hooks\.stripe\.com/,
+    );
+    assert.doesNotMatch(checkout.body, /http-equiv="content-security-policy"/i);
     const account = await hit(cedar, '/account/login');
     assert.equal(account.status, 302);
     assert.match(account.headers['cache-control']!, /private, no-store/);
@@ -816,6 +866,7 @@ try {
     assert.ok((await hit(vendor, '/')).body.includes('Pilot 11'));
     drafts.add(cedar);
     assert.equal((await hit(cedar, '/')).status, 404);
+    assert.equal((await hit(cedar, '/checkout?payment-order=42')).status, 404);
     tenants.delete(cedar);
     assert.equal((await hit(cedar, '/assets/vendor-mark.svg')).status, 404);
   } else {
@@ -861,7 +912,6 @@ try {
     '/customer-account-bridge',
     '/storefront-context/internal-resolve',
     '/health/live',
-    '/payments/stripe/oauth/callback',
   ])
     assert.equal((await hit(api, path)).status, 404);
   for (const [path, method] of [
@@ -872,7 +922,64 @@ try {
       (await wire(gatewayPort, api, path!, { method, headers: edge })).status,
       404,
     );
-  assert.equal(publicApiCalls, 2);
+  const callback = '/payments/stripe/oauth/callback?state=fixture&code=fixture';
+  assert.deepEqual(JSON.parse((await hit(api, callback)).body), {
+    target: callback,
+    method: 'GET',
+    body: '',
+  });
+  const body = '{ "object": "event", "fixture": "é" }\n';
+  for (const scope of ['platform', 'connected']) {
+    const path = `/payments/stripe/${scope}`;
+    const headers = {
+      ...edge,
+      'Content-Type': 'application/json',
+      'Stripe-Signature': 'test-signature-fixture',
+    };
+    assert.deepEqual(
+      JSON.parse(
+        (await wire(gatewayPort, api, path, { headers, method: 'POST', body }))
+          .body,
+      ),
+      {
+        target: path,
+        method: 'POST',
+        signature: 'test-signature-fixture',
+        body,
+      },
+    );
+    assert.equal((await hit(api, path)).status, 404);
+    assert.equal(
+      (
+        await wire(gatewayPort, api, `${path}?fixture=1`, {
+          headers,
+          method: 'POST',
+          body,
+        })
+      ).status,
+      404,
+    );
+    assert.equal(
+      (await wire(gatewayPort, vendor, path, { headers, method: 'POST', body }))
+        .status,
+      404,
+    );
+  }
+  for (const path of [
+    '/payments/stripe/oauth/callback/',
+    '/payments/stripe/oauth/%63allback',
+    '/payments/stripe/oauth//callback',
+    '/payments/stripe/other',
+  ])
+    assert.equal((await hit(api, path)).status, 404);
+  assert.equal((await hit(vendor, callback)).status, 404);
+  assert.equal((await hit(api + ':443', callback)).status, 404);
+  assert.equal(
+    (await wire(gatewayPort, api, callback, { headers: edge, method: 'POST' }))
+      .status,
+    404,
+  );
+  assert.equal(publicApiCalls, 5);
   for (const result of [login, adminApi]) {
     assert.ok(!result.body.includes(privateHost));
     assert.ok(

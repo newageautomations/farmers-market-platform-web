@@ -22,7 +22,10 @@ import {
   type AdminScope,
 } from '@market/admin-core';
 import { AppError, createMarketContactApi } from '@market/api';
-import { storefrontEditorDocument } from '@market/config';
+import {
+  storefrontEditorDocument,
+  stripeInvoiceDocument,
+} from '@market/config';
 import { ContactSubmissions } from './vendor/contact-submissions';
 import {
   Button,
@@ -254,11 +257,18 @@ function Shell({
   }
   /** In-app navigation: keeps the current workspace scope and channel. */
   function visit(next: string) {
-    if (storefrontEditorDocument(next) || storefrontEditorDocument(path)) {
+    if (
+      storefrontEditorDocument(next) ||
+      storefrontEditorDocument(path) ||
+      (typeof __STAGING_BUILD__ !== 'undefined' &&
+        __STAGING_BUILD__ &&
+        stripeInvoiceDocument(next) !== stripeInvoiceDocument(path))
+    ) {
       const destination = new URL(next, window.location.origin);
+      if (destination.origin !== window.location.origin) return;
       if (documentConnection?.channelId)
         destination.searchParams.set('channel', documentConnection.channelId);
-      window.location.assign(destination.pathname + destination.search);
+      window.location.assign(destination.href);
       return;
     }
     window.history.pushState(null, '', next);

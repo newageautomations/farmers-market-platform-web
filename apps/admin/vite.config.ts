@@ -58,6 +58,7 @@ export default defineConfig(({ mode, command }) => {
       ),
       __REMOTE_DEMO__: JSON.stringify(remoteDemo),
       __FIXTURE_MODE__: JSON.stringify(config.fixtureMode),
+      __STAGING_BUILD__: JSON.stringify(config.deployment === 'staging'),
       __PLATFORM_ACCOUNT_ORIGIN__: JSON.stringify(config.accountOrigin),
       __CUSTOMER_STOREFRONT_ORIGIN__: JSON.stringify(config.customerOrigin),
     },

@@ -26,7 +26,7 @@ import {
   type SkeletonVariant,
 } from '@market/ui';
 export { DataTable } from '@market/ui';
-import { formatDate } from '@market/config';
+import { formatDate, stripeInvoiceDocument } from '@market/config';
 
 export function go(path: string) {
   if (
@@ -35,6 +35,20 @@ export function go(path: string) {
     )
   )
     return;
+  if (
+    typeof __STAGING_BUILD__ !== 'undefined' &&
+    __STAGING_BUILD__ &&
+    stripeInvoiceDocument(path) !==
+      stripeInvoiceDocument(window.location.pathname)
+  ) {
+    const destination = new URL(path, window.location.origin);
+    if (destination.origin !== window.location.origin) return;
+    const channel = new URLSearchParams(window.location.search).get('channel');
+    if (channel && !destination.searchParams.has('channel'))
+      destination.searchParams.set('channel', channel);
+    window.location.assign(destination.href);
+    return;
+  }
   window.history.pushState(null, '', path);
   window.dispatchEvent(new PopStateEvent('popstate'));
   document.querySelector<HTMLElement>('#main')?.focus();
