@@ -11,6 +11,7 @@ import {
   authorizeUnifiedAccount,
   defaultAccountDestination,
   safeAccountReturn,
+  stagingBlocksAccountAction,
 } from '../../lib/account';
 import { validPassword } from '@market/ui';
 import { requestCheckout } from '../../lib/shop';
@@ -62,6 +63,11 @@ export const POST: APIRoute = async (context) => {
     // aligned with the bridge without rejecting valid international names.
     if (JSON.stringify(Object.fromEntries(form)).length > 4096)
       throw new Error('Denied');
+    if (stagingBlocksAccountAction(action))
+      return new Response('Account operation unavailable.', {
+        status: 403,
+        headers,
+      });
     const boundary = createHash('sha256')
       .update(apiRequestAddress.getStore() ?? context.clientAddress)
       .digest('hex');

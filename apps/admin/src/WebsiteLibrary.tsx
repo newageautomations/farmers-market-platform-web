@@ -4,6 +4,7 @@ import {
   createWebsiteLibraryApi,
   safeError,
   safeStorefrontUrl,
+  type StorefrontAddressAvailability,
   type StorefrontAppearanceApi,
   type StorefrontLink,
   type StorefrontWebsitePage,
@@ -81,6 +82,149 @@ export function websiteEditorHref(
   if (websiteId) url.searchParams.set('website', websiteId);
   if (preview) url.searchParams.set('preview', '1');
   return url.pathname + url.search;
+}
+
+const addressReasons = {
+  invalid:
+    'Use lowercase letters, numbers and single hyphens, up to 63 characters.',
+  reserved: 'That address is reserved by the platform.',
+  taken: 'That address is already in use.',
+} as const;
+
+/**
+ * First-run storefront setup: claims a platform address (`<prefix><suffix>`).
+ * Composes the shared EmptyState/Field/Input/Button; no input-suffix primitive
+ * exists, so the full address is previewed as text beneath the field.
+ */
+function EnableStorefront({
+  appearance,
+  onEnabled,
+}: {
+  appearance: StorefrontAppearanceApi;
+  onEnabled: () => void;
+}) {
+  const [prefix, setPrefix] = useState('');
+  const [check, setCheck] = useState<StorefrontAddressAvailability>();
+  const [checked, setChecked] = useState('');
+  const [error, setError] = useState<unknown>();
+  const [busy, setBusy] = useState(false);
+  const value = prefix.trim();
+  useEffect(() => {
+    if (!appearance.addressAvailability) return;
+    let active = true;
+    const timer = window.setTimeout(
+      () =>
+        void appearance.addressAvailability!(value)
+          .then((result) => {
+            if (active) {
+              setCheck(result);
+              setChecked(value);
+            }
+          })
+          .catch((reason) => {
+            if (active) setError(reason);
+          }),
+      value ? 350 : 0,
+    );
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [appearance, value]);
+  const current = checked === value ? check : undefined;
+  const suffix = check?.suffix ?? '';
+  const fieldError =
+    value && current?.reason ? addressReasons[current.reason] : undefined;
+  if (!appearance.enable)
+    return <EmptyState title="No storefront is configured" />;
+  return (
+    <EmptyState title="Enable your storefront">
+      <p>
+        Choose the web address customers will use to visit your storefront. The
+        address cannot be changed after it is enabled.
+      </p>
+      {error ? <ErrorState error={safeError(error)} /> : null}
+      <form
+        className="website-library-enable"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (busy) return;
+          setBusy(true);
+          setError(undefined);
+          void appearance.enable!(value)
+            .then(onEnabled)
+            .catch((reason) => {
+              setError(reason);
+              // Re-check so a lost race shows as "already in use" on the field.
+              setChecked('');
+              void appearance.addressAvailability?.(value).then((result) => {
+                setCheck(result);
+                setChecked(value);
+              });
+            })
+            .finally(() => setBusy(false));
+        }}
+      >
+        <Field
+          label="Storefront address"
+          id="storefront-prefix"
+          error={fieldError}
+        >
+          <Input
+            id="storefront-prefix"
+            value={prefix}
+            maxLength={63}
+            required
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="your-farm-name"
+            aria-invalid={fieldError ? true : undefined}
+            aria-describedby={[
+              fieldError ? 'storefront-prefix-error' : '',
+              'storefront-prefix-url',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            // Spaces become hyphens and other characters a DNS label cannot hold are dropped;
+            // the server still validates, so a bypassed filter only shows the field error.
+            onChange={(event) =>
+              setPrefix(
+                event.target.value
+                  .toLowerCase()
+                  .replace(/\s/g, '-')
+                  .replace(/[^a-z0-9-]/g, ''),
+              )
+            }
+          />
+        </Field>
+        <p id="storefront-prefix-url" className="website-library-enable-url">
+          {current?.available && current.url ? (
+            <>
+              Available: <strong>{current.url}</strong>
+            </>
+          ) : (
+            <>
+              Your address:{' '}
+              <strong>
+                {value || 'your-farm-name'}
+                {suffix}
+              </strong>
+            </>
+          )}
+        </p>
+        <div className="ui-actions">
+          <Button
+            type="submit"
+            loading={busy}
+            disabled={busy || !value || !current?.available}
+          >
+            <FarmstandIcon name="store" />
+            Enable storefront
+          </Button>
+        </div>
+      </form>
+    </EmptyState>
+  );
 }
 
 /** Feature composition over shared cards/dialogs; no independent UI primitives. */
@@ -386,7 +530,10 @@ export function WebsiteLibrary({
       )}
       {!dialog && feedback}
       {links?.length === 0 && (
-        <EmptyState title="No storefront is configured" />
+        <EnableStorefront
+          appearance={appearance}
+          onEnabled={() => setGeneration((value) => value + 1)}
+        />
       )}
       {!page && storefrontId && !error && (
         <LoadingSkeleton variant="cards" label="Loading Website Library" />

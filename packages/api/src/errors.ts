@@ -1,6 +1,16 @@
 import { applicationErrorMessages } from './application-rules';
 
 const catalogMessages: Record<string, string> = {
+  STOREFRONT_ADDRESS_IN_USE:
+    'That storefront address is already in use. Choose a different address.',
+  STOREFRONT_ADDRESS_INVALID:
+    'Use lowercase letters, numbers and single hyphens, up to 63 characters.',
+  STOREFRONT_ADDRESS_RESERVED:
+    'That address is reserved by the platform. Choose a different address.',
+  STOREFRONT_ALREADY_CONFIGURED:
+    'A storefront is already enabled for this business. Reload the page.',
+  STOREFRONT_ADDRESSES_UNAVAILABLE:
+    'Storefront addresses are not available in this environment.',
   VENDOR_TERMS_ACCEPTANCE_REQUIRED:
     'Review and accept the seller terms before placing your order.',
   VENDOR_TERMS_CHANGED:
@@ -218,6 +228,11 @@ export class AppError extends Error {
   }
 }
 const codes: Record<string, ErrorKind> = {
+  STOREFRONT_ADDRESS_IN_USE: 'conflict',
+  STOREFRONT_ADDRESS_INVALID: 'validation',
+  STOREFRONT_ADDRESS_RESERVED: 'validation',
+  STOREFRONT_ALREADY_CONFIGURED: 'conflict',
+  STOREFRONT_ADDRESSES_UNAVAILABLE: 'unavailable',
   VENDOR_TERMS_ACCEPTANCE_REQUIRED: 'validation',
   VENDOR_TERMS_CHANGED: 'conflict',
   PREORDER_FEE_REQUOTE_REQUIRED: 'conflict',

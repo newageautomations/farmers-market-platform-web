@@ -195,6 +195,7 @@ const renderRequest = defineMiddleware(async (context, next) => {
         import.meta.env.DEV ? 'development' : 'production',
       );
     context.locals.shopApiUrl = shopTransportEndpoint(config.shopApiUrl);
+    context.locals.stagingPublicAdmission = config.stagingPublicAdmission;
     // Astro allowedDomains is empty. Security decisions never consume forwarded headers.
     if (production && context.url.protocol !== 'https:')
       return finish(new Response('HTTPS is required.', { status: 400 }));
@@ -209,6 +210,17 @@ const renderRequest = defineMiddleware(async (context, next) => {
     const central = isCentral(context.url);
     if (hosted && central && !centralAccountPath(context.url.pathname))
       return finish(new Response('Page unavailable.', { status: 404 }));
+    if (config.stagingPublicAdmission) {
+      headers.set('Cache-Control', 'private, no-store');
+      if (
+        /^\/account\/(?:signup|application-signup|verify|onboarding)(?:\/|$)/.test(
+          context.url.pathname,
+        )
+      )
+        return finish(
+          new Response('Use an existing staging account.', { status: 403 }),
+        );
+    }
     if (
       context.url.pathname.startsWith('/api/') &&
       !allowed(
@@ -251,7 +263,10 @@ const renderRequest = defineMiddleware(async (context, next) => {
             requestId,
           }),
         );
-        if (hosted && context.url.pathname !== '/') {
+        if (
+          hosted &&
+          (config.stagingPublicAdmission || context.url.pathname !== '/')
+        ) {
           const unavailable =
             context.locals.storefrontError.kind !== 'not-found';
           return finish(
@@ -275,6 +290,13 @@ const renderRequest = defineMiddleware(async (context, next) => {
         ...context.locals.storefront,
         appearance: context.locals.editorPreview.config,
       };
+    } else if (
+      config.stagingPublicAdmission &&
+      !central &&
+      !context.locals.storefront?.published &&
+      !storefrontPreviewDocument(context.url.pathname)
+    ) {
+      return finish(new Response('Page unavailable.', { status: 404 }));
     }
     return finish(await next());
   } catch {

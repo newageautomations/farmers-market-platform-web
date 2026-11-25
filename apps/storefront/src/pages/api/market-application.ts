@@ -59,6 +59,8 @@ export const POST: APIRoute = async (context) => {
       !Array.isArray(input.rentals)
     )
       throw new AppError('validation');
+    if (context.locals.stagingPublicAdmission && input.accountAnswer === 'NO')
+      return new Response(null, { status: 403, headers });
     let claimSecret: string | undefined;
     if (input.accountAnswer === 'NO') {
       // Keep one submission attempt's proof stable across transport retries.

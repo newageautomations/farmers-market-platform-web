@@ -1,4 +1,4 @@
-import { safeAdminDestination } from '@market/config';
+import { safeAdminDestination, validateStagingAdmission } from '@market/config';
 import type { APIContext } from 'astro';
 import { randomBytes } from 'node:crypto';
 import { AppError } from '@market/api';
@@ -75,6 +75,24 @@ const accountErrors: Record<string, string> = {
   ACCOUNT_LINK_INVALID_OR_UNAVAILABLE:
     'Verification could not be completed. Check the current code or restart signup if it has expired.',
 };
+// Keep in sync with the backend account bridge admission checks.
+const stagingBlockedAccountActions = new Set<unknown>([
+  'register',
+  'verifyRegistration',
+  'verifyPhoneRegistration',
+  'phoneRegistrationStatus',
+  'resendPhoneRegistration',
+  'requestRecovery',
+  'requestRecoveryPhone',
+  'saveOnboarding',
+]);
+export function stagingBlocksAccountAction(action: unknown) {
+  return (
+    stagingBlockedAccountActions.has(action) &&
+    process.env.DEPLOYMENT_ENV === 'staging' &&
+    validateStagingAdmission(process.env, 'staging')
+  );
+}
 export class AccountBridgeError extends Error {
   constructor(
     readonly code: string,
@@ -104,6 +122,8 @@ export class AccountBridgeError extends Error {
 export async function accountBridge<T>(
   input: Record<string, unknown>,
 ): Promise<T> {
+  if (stagingBlocksAccountAction(input.action))
+    throw new AccountBridgeError('ACCOUNT_UNAVAILABLE', 403);
   const endpoint = process.env.SHOP_API_URL,
     key = process.env.PLATFORM_ACCOUNT_BRIDGE_KEY;
   if (!endpoint || !key || key.length < 32) throw new AppError('unavailable');

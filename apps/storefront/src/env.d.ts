@@ -2,6 +2,7 @@
 declare namespace App {
   interface Locals {
     deployment?: import('@market/config').DeploymentEnvironment;
+    stagingPublicAdmission?: boolean;
     editorPreview?: {
       config: import('@market/theme/storefront').StorefrontAppearance;
       path: string;

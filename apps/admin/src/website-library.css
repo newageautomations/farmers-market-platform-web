@@ -176,3 +176,17 @@
 .website-thumbnail[data-state='unavailable'] .skeleton {
   animation: none;
 }
+/* First-run storefront address form inside the shared empty state. */
+.website-library-enable {
+  display: grid;
+  gap: 12px;
+  max-width: 32rem;
+}
+.website-library-enable .field {
+  margin: 0;
+}
+.website-library-enable p.website-library-enable-url {
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}

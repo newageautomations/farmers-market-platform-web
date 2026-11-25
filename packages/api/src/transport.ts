@@ -120,6 +120,11 @@ export function transport<K extends ApiKind>(
                       'INVALID_REWARD_CONFIGURATION',
                       'REWARD_PRODUCT_UNAVAILABLE',
                       'REWARD_NOT_EDITABLE',
+                      'STOREFRONT_ADDRESS_IN_USE',
+                      'STOREFRONT_ADDRESS_INVALID',
+                      'STOREFRONT_ADDRESS_RESERVED',
+                      'STOREFRONT_ALREADY_CONFIGURED',
+                      'STOREFRONT_ADDRESSES_UNAVAILABLE',
                     ].includes(first.message)
                   ? first.message
                   : code,

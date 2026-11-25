@@ -40,6 +40,13 @@ export function validateEnvironment(
     input.NODE_ENV === 'test' || mode === 'test' ? 'test' : 'dev',
   );
   const { deployment } = identity;
+  const stagingPublicAdmission = validateStagingAdmission(input, deployment);
+  if (
+    stagingPublicAdmission &&
+    use !== 'build' &&
+    input.HOSTED_TRANSPORT !== 'railway-private'
+  )
+    throw new Error('Public staging requires the hosted frontend transport');
   const production = identity.mode === 'production';
   if (production && mode !== 'production')
     throw new Error('Hardened frontend requires a production build');
@@ -90,7 +97,6 @@ export function validateEnvironment(
         input.PLATFORM_ACCOUNT_BRIDGE_KEY,
         'PLATFORM_ACCOUNT_BRIDGE_KEY',
       );
-    if (deployment === 'staging') validateStagingAdmission(input);
     if (
       deployment === 'local-qualification' &&
       input.HOST &&
@@ -123,6 +129,7 @@ export function validateEnvironment(
     throw new Error('Fixture mode is forbidden in production');
   return Object.freeze({
     deployment,
+    stagingPublicAdmission,
     production,
     shopApiUrl: parsed.SHOP_API_URL,
     adminApiUrl: parsed.PUBLIC_ADMIN_API_URL,

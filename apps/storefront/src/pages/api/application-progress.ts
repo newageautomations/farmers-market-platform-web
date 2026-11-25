@@ -47,6 +47,7 @@ export const POST: APIRoute = async (context) => {
       }
     }
     if (
+      (context.locals.stagingPublicAdmission && !principalId) ||
       body.action !== 'save' ||
       typeof body.path !== 'string' ||
       !body.progress ||

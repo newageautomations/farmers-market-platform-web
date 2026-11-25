@@ -53,7 +53,9 @@ http://:{$GATEWAY_PORT:8080} {
 	@tunnel {
 		header X-Forwarded-Proto https
 		header CF-Connecting-IP *
-		header Cf-Access-Jwt-Assertion *
+		# Only the colocated, named Tunnel connects to this loopback listener.
+		# In Access mode cloudflared validates the assertion before forwarding.
+		expression `"{$STAGING_INGRESS_MODE:access}" == "application" || ("{$STAGING_INGRESS_MODE:access}" == "access" && header({'Cf-Access-Jwt-Assertion': '*'}))`
 	}
 	route {
 		handle @probe {

@@ -75,6 +75,71 @@ function fixture() {
   return { library, appearance, live, draft };
 }
 
+it('enables a first storefront only at an available platform address, then loads its library', async () => {
+  const f = fixture();
+  const enabled = {
+    id: '24',
+    name: 'Vendor',
+    url: 'http://cedar-bend.localhost:4321',
+  };
+  f.appearance.links.mockResolvedValueOnce([]);
+  const appearance = {
+    ...f.appearance,
+    addressAvailability: vi.fn(async (prefix: string) =>
+      prefix === 'manna-roots'
+        ? {
+            suffix: '.localhost',
+            available: false,
+            reason: 'taken' as const,
+            url: null,
+          }
+        : prefix
+          ? {
+              suffix: '.localhost',
+              available: true,
+              reason: null,
+              url: `http://${prefix}.localhost:4321`,
+            }
+          : {
+              suffix: '.localhost',
+              available: false,
+              reason: 'invalid' as const,
+              url: null,
+            },
+    ),
+    enable: vi.fn(async () => enabled),
+  };
+  render(
+    <WebsiteLibrary
+      connection={connection}
+      library={f.library}
+      appearance={appearance}
+    />,
+  );
+  const input = await screen.findByLabelText('Storefront address');
+  const submit = screen.getByRole('button', { name: /Enable storefront/ });
+  expect(await screen.findByText('your-farm-name.localhost')).toBeTruthy();
+  fireEvent.change(input, { target: { value: 'Manna-Roots' } });
+  expect(
+    await screen.findByText('That address is already in use.'),
+  ).toBeTruthy();
+  expect((submit as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.change(input, { target: { value: 'Cedar Bend!.' } });
+  expect((input as HTMLInputElement).value).toBe('cedar-bend');
+  expect(
+    await screen.findByText('http://cedar-bend.localhost:4321'),
+  ).toBeTruthy();
+  await waitFor(() =>
+    expect((submit as HTMLButtonElement).disabled).toBe(false),
+  );
+  fireEvent.click(submit);
+  await waitFor(() =>
+    expect(appearance.enable).toHaveBeenCalledWith('cedar-bend'),
+  );
+  await waitFor(() => expect(f.library.list).toHaveBeenCalled());
+  expect(appearance.links).toHaveBeenCalledTimes(2);
+});
+
 it('shows live and drafts separately, preserves channel selection, and bounds library pages', async () => {
   const f = fixture();
   render(<WebsiteLibrary connection={connection} {...f} />);

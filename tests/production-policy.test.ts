@@ -77,6 +77,8 @@ describe('deployment configuration', () => {
       { TRUSTED_PROXY_CIDRS: '127.0.0.1/32' },
       { STAGING_TESTER_ACCESS: 'enabled' },
       { STAGING_ANONYMOUS_STOREFRONTS: 'enabled' },
+      { STAGING_TESTER_ACCESS: 'provisioned' },
+      { STAGING_ANONYMOUS_STOREFRONTS: 'published' },
       { DEPLOYMENT_ENV: 'local-qualification' },
     ]) {
       const run = () =>
@@ -84,6 +86,28 @@ describe('deployment configuration', () => {
       expect(run).toThrow();
       expect(run).not.toThrow(marker);
     }
+  });
+
+  it('opts in to provisioned testing and published storefronts only on hosted staging', () => {
+    const settings = {
+      STAGING_TESTER_ACCESS: 'provisioned',
+      STAGING_ANONYMOUS_STOREFRONTS: 'published',
+    };
+    expect(
+      validateEnvironment(staging, 'production').stagingPublicAdmission,
+    ).toBe(false);
+    expect(
+      validateEnvironment(
+        { ...staging, ...settings, HOSTED_TRANSPORT: 'railway-private' },
+        'production',
+      ).stagingPublicAdmission,
+    ).toBe(true);
+    expect(() =>
+      validateEnvironment({ ...staging, ...settings }, 'production'),
+    ).toThrow(/hosted frontend transport/);
+    expect(() =>
+      validateEnvironment({ ...production, ...settings }, 'production'),
+    ).toThrow(/STAGING_ADMISSION_NOT_QUALIFIED/);
   });
 
   it('binds the public build settings to the hardened runtime, with secrets supplied only to SSR', () => {

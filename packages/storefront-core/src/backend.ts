@@ -129,6 +129,7 @@ export function publicStorefrontResolver(
           Number.isFinite(Date.parse(dto.appearancePublishedAt))
             ? dto.appearancePublishedAt
             : undefined,
+        published: dto.published === true,
         defaultVendorTerms:
           typeof dto.defaultVendorTerms === 'string'
             ? dto.defaultVendorTerms

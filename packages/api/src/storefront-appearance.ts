@@ -809,16 +809,52 @@ export function createStorefrontAppearanceApi(options: TransportOptions) {
     publish: async (id: string, version: number) =>
       (await execute({ api: 'admin', document: publish }, { id, version }))
         .publishOwnStorefrontAppearance,
+    addressAvailability: async (prefix: string) =>
+      (await execute({ api: 'admin', document: availability }, { prefix }))
+        .ownStorefrontAddressAvailability,
+    enable: async (prefix: string) =>
+      (await execute({ api: 'admin', document: enable }, { prefix }))
+        .enableOwnStorefront,
   };
 }
+/** Platform-hosted address check: `<prefix><suffix>`; custom domains are not self-service. */
+export interface StorefrontAddressAvailability {
+  suffix: string;
+  available: boolean;
+  reason: 'invalid' | 'reserved' | 'taken' | null;
+  url: string | null;
+}
+const availability = parse(
+  'query StorefrontAddressAvailability($prefix: String!) { ownStorefrontAddressAvailability(prefix: $prefix) }',
+) as TypedDocumentNode<
+  { ownStorefrontAddressAvailability: StorefrontAddressAvailability },
+  { prefix: string }
+>;
+const enable = parse(
+  'mutation EnableOwnStorefront($prefix: String!) { enableOwnStorefront(prefix: $prefix) }',
+) as TypedDocumentNode<
+  { enableOwnStorefront: StorefrontLink },
+  { prefix: string }
+>;
 export type StorefrontAppearanceApi = Omit<
   ReturnType<typeof createStorefrontAppearanceApi>,
-  'products' | 'preview' | 'media' | 'hierarchy' | 'showcaseCategories'
+  | 'products'
+  | 'preview'
+  | 'media'
+  | 'hierarchy'
+  | 'showcaseCategories'
+  | 'addressAvailability'
+  | 'enable'
 > &
   Partial<
     Pick<
       ReturnType<typeof createStorefrontAppearanceApi>,
-      'products' | 'preview' | 'hierarchy' | 'showcaseCategories'
+      | 'products'
+      | 'preview'
+      | 'hierarchy'
+      | 'showcaseCategories'
+      | 'addressAvailability'
+      | 'enable'
     >
   > & {
     media?: Omit<

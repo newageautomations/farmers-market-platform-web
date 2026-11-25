@@ -163,6 +163,7 @@ type Query {
   ownStorefrontShowcaseCategories: JSON!
   ownStorefrontThemeAssets(themeId: String!): JSON!
   ownStorefrontLinks: JSON!
+  ownStorefrontAddressAvailability(prefix: String!): JSON!
   ownStorefrontAppearance: JSON!
   ownFinanceOptions(timezone: String): JSON!
   ownFinanceReport(input: JSON!): JSON!
@@ -826,6 +827,7 @@ type Mutation {
   deleteOwnVendorCategory(id: ID!): Boolean!
   uploadOwnVendorCategoryImage(input: JSON!, file: Upload!): JSON!
   uploadOwnStorefrontImage(input: JSON!, file: Upload!): JSON!
+  enableOwnStorefront(prefix: String!): JSON!
   createStorefrontWebsite(storefrontId: ID!, name: String!, templateId: String!, sourceId: ID): JSON!
   changeStorefrontWebsite(storefrontId: ID!, id: ID!, version: Int!, action: String!, input: JSON, publicationVersion: Int, templateConfig: JSON): JSON!
   startStorefrontPreview(id: ID!, websiteId: ID): JSON!

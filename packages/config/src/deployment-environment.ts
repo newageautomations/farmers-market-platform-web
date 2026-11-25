@@ -72,11 +72,18 @@ export function validateDeploymentHost(
     throw new Error(`${name}_PUBLIC_HOST_REQUIRED`);
 }
 
-// Phase D must enforce admission before any tester or anonymous traffic is allowed.
-export function validateStagingAdmission(env: Environment) {
+export function validateStagingAdmission(
+  env: Environment,
+  deployment: DeploymentEnvironment,
+) {
+  const testers = env.STAGING_TESTER_ACCESS ?? 'closed';
+  const storefronts = env.STAGING_ANONYMOUS_STOREFRONTS ?? 'disabled';
+  if (testers === 'closed' && storefronts === 'disabled') return false;
   if (
-    (env.STAGING_TESTER_ACCESS ?? 'closed') !== 'closed' ||
-    (env.STAGING_ANONYMOUS_STOREFRONTS ?? 'disabled') !== 'disabled'
+    deployment === 'staging' &&
+    testers === 'provisioned' &&
+    storefronts === 'published'
   )
-    throw new Error('STAGING_ADMISSION_NOT_QUALIFIED');
+    return true;
+  throw new Error('STAGING_ADMISSION_NOT_QUALIFIED');
 }

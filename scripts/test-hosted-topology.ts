@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { once } from 'node:events';
@@ -21,6 +21,8 @@ const api = 'api.example.com';
 const vendor = 'vendor-pilot.example.com';
 const market = 'market-pilot.example.com';
 const inactive = 'inactive-pilot.example.com';
+const unpublished = 'draft-pilot.example.com';
+const application = process.argv.includes('--application');
 const privateHost = 'api.railway.internal';
 const browserIp = '203.0.113.15';
 const credentials = Array.from({ length: 5 }, () =>
@@ -31,6 +33,7 @@ const children: ChildProcess[] = [];
 const tenants = new Map([
   [vendor, '11'],
   [market, '12'],
+  [unpublished, '13'],
 ]);
 const resolved: string[] = [];
 let previews = 0;
@@ -70,12 +73,13 @@ const mock = createServer(async (req, res) => {
     return json(200, {
       storefrontId: id,
       storefrontKey: 'pilot-' + id,
-      kind: host === vendor ? 'VENDOR' : 'MARKET',
+      kind: host === market ? 'MARKET' : 'VENDOR',
       displayName: 'Pilot ' + id,
       canonicalHostname: host,
       canonicalOrigin: 'https://' + host,
       subject: { id },
       shopContext: { channelToken: 'channel-' + id },
+      published: host !== unpublished,
     });
   }
   if (req.url === '/admin-api') {
@@ -86,9 +90,11 @@ const mock = createServer(async (req, res) => {
     return json(200, {
       data: {
         authorizeStorefrontPreview: {
-          id: variables.token.startsWith('V')
-            ? tenants.get(vendor)
-            : tenants.get(market),
+          id: tenants.get(
+            { V: vendor, M: market, U: unpublished }[
+              variables.token[0] as 'V' | 'M' | 'U'
+            ] ?? '',
+          ),
         },
       },
     });
@@ -224,9 +230,9 @@ try {
     ASSET_URL_PREFIX: 'https://' + api + '/assets/',
     FRONTEND_FIXTURE_MODE: 'false',
     STOREFRONT_PARENT_DOMAIN: 'example.com',
-    STOREFRONT_PILOT_HOSTS: [vendor, market, inactive].join(' '),
-    STAGING_TESTER_ACCESS: 'closed',
-    STAGING_ANONYMOUS_STOREFRONTS: 'disabled',
+    STOREFRONT_PILOT_HOSTS: [vendor, market, inactive, unpublished].join(' '),
+    STAGING_TESTER_ACCESS: application ? 'provisioned' : 'closed',
+    STAGING_ANONYMOUS_STOREFRONTS: application ? 'published' : 'disabled',
     SERVER_CERT_PATH: undefined,
     SERVER_KEY_PATH: undefined,
     ADMIN_PORT: undefined,
@@ -297,28 +303,55 @@ try {
       INTERNAL_API_ORIGIN: 'http://' + privateHost + ':' + apiPort,
     },
   );
+  const gatewayEnv = {
+    ...env,
+    XDG_DATA_HOME: caddyStorage,
+    XDG_CONFIG_HOME: caddyStorage,
+    APPDATA: caddyStorage,
+    GATEWAY_PORT: String(gatewayPort),
+    MARKET_ADMIN_HOST: admin,
+    MARKET_ACCOUNT_HOST: auth,
+    MARKET_API_HOST: api,
+    MARKET_ADMIN_UPSTREAM: 'http://127.0.0.1:' + adminPort,
+    MARKET_ADMIN_INGRESS_KEY: adminKey,
+    MARKET_STOREFRONT_UPSTREAM: 'http://127.0.0.1:' + storePort,
+    MARKET_STOREFRONT_INGRESS_KEY: storeKey,
+    MARKET_API_UPSTREAM: 'http://127.0.0.1:' + apiPort,
+    MARKET_API_INGRESS_KEY: apiKey,
+    STAGING_INGRESS_MODE: application ? 'application' : undefined,
+  };
+  const validateGateway = (overrides: NodeJS.ProcessEnv = {}) =>
+    spawnSync(process.execPath, ['scripts/hosted-gateway.mjs'], {
+      env: {
+        ...gatewayEnv,
+        TUNNEL_TOKEN: 'synthetic-connector-token',
+        MARKET_ADMIN_UPSTREAM: 'http://admin.railway.internal:4322',
+        MARKET_STOREFRONT_UPSTREAM: 'http://storefront.railway.internal:4321',
+        MARKET_API_UPSTREAM: 'http://api.railway.internal:3000',
+        ...overrides,
+      },
+    });
+  assert.equal(validateGateway().status, 0);
+  assert.equal(validateGateway({ STAGING_INGRESS_MODE: 'open' }).status, 1);
+  assert.equal(validateGateway({ STAGING_INGRESS_MODE: '' }).status, 1);
+  assert.equal(
+    validateGateway({
+      DEPLOYMENT_ENV: 'production',
+      STAGING_INGRESS_MODE: 'application',
+    }).status,
+    1,
+  );
   launch(
     'caddy',
     ['run', '--config', 'scripts/Caddyfile.hosted', '--adapter', 'caddyfile'],
-    {
-      ...env,
-      XDG_DATA_HOME: caddyStorage,
-      XDG_CONFIG_HOME: caddyStorage,
-      APPDATA: caddyStorage,
-      GATEWAY_PORT: String(gatewayPort),
-      MARKET_ADMIN_HOST: admin,
-      MARKET_ACCOUNT_HOST: auth,
-      MARKET_API_HOST: api,
-      MARKET_ADMIN_UPSTREAM: 'http://127.0.0.1:' + adminPort,
-      MARKET_ADMIN_INGRESS_KEY: adminKey,
-      MARKET_STOREFRONT_UPSTREAM: 'http://127.0.0.1:' + storePort,
-      MARKET_STOREFRONT_INGRESS_KEY: storeKey,
-      MARKET_API_UPSTREAM: 'http://127.0.0.1:' + apiPort,
-      MARKET_API_INGRESS_KEY: apiKey,
-    },
+    gatewayEnv,
   );
   const healthHost = 'healthcheck.railway.app';
-  for (const port of [adminPort, storePort, gatewayPort]) {
+  for (const [name, port] of [
+    ['Admin', adminPort],
+    ['Astro', storePort],
+    ['gateway', gatewayPort],
+  ] as const) {
     let ready = false;
     for (let attempt = 0; attempt < 60 && !ready; attempt++) {
       ready = await wire(port, healthHost, '/health/ready').then(
@@ -327,7 +360,7 @@ try {
       );
       if (!ready) await delay(100);
     }
-    assert.ok(ready, 'Listener readiness');
+    assert.ok(ready, `${name} listener readiness`);
     assert.equal(
       (await wire(port, healthHost, '/health/live', { method: 'HEAD' })).body,
       '',
@@ -344,10 +377,35 @@ try {
   const edge = {
     'X-Forwarded-Proto': 'https',
     'CF-Connecting-IP': browserIp,
-    'Cf-Access-Jwt-Assertion': 'synthetic-connector-verified',
+    ...(!application && {
+      'Cf-Access-Jwt-Assertion': 'synthetic-connector-verified',
+    }),
   };
   assert.equal(
     (await wire(gatewayPort, admin, '/vendor/storefront')).status,
+    403,
+  );
+  assert.equal(
+    (
+      await wire(gatewayPort, auth, '/account/login', {
+        headers: {
+          'X-Forwarded-Proto': 'https',
+          'CF-Connecting-IP': browserIp,
+        },
+      })
+    ).status,
+    application ? 200 : 403,
+  );
+  assert.equal(
+    (
+      await wire(gatewayPort, auth, '/account/login', {
+        headers: {
+          'X-Forwarded-Proto': 'https',
+          'X-Forwarded-For': browserIp,
+          'X-Market-Client-IP': browserIp,
+        },
+      })
+    ).status,
     403,
   );
   assert.equal(
@@ -396,11 +454,68 @@ try {
   assert.equal((await hit('www.example.com', '/')).status, 421);
   assert.equal((await hit('unknown.example.com', '/')).status, 421);
   assert.equal((await hit(inactive, '/shop')).status, 404);
-  for (const host of [vendor, market]) {
+  if (application) {
+    assert.equal((await hit(inactive, '/')).status, 404);
+    assert.equal((await hit(unpublished, '/shop')).status, 404);
+    assert.equal((await hit(auth, '/account/signup')).status, 403);
+    assert.equal((await hit(auth, '/account/onboarding/vendor')).status, 403);
+    const before = bridgeCalls;
+    for (const action of [
+      'register',
+      'resendPhoneRegistration',
+      'verifyPhoneRegistration',
+      'requestRecovery',
+      'requestRecoveryPhone',
+      'saveOnboarding',
+    ]) {
+      assert.equal(
+        (
+          await wire(gatewayPort, auth, '/api/account', {
+            method: 'POST',
+            headers: {
+              ...edge,
+              Origin: 'https://' + auth,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({ action }).toString(),
+          })
+        ).status,
+        403,
+      );
+    }
+    assert.equal(bridgeCalls, before);
+    assert.equal(
+      (
+        await wire(gatewayPort, market, '/api/market-application', {
+          method: 'POST',
+          headers: {
+            ...edge,
+            Origin: 'https://' + market,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            accountAnswer: 'NO',
+            slug: 'test',
+            versionId: 1,
+            idempotencyKey: 'test',
+            answers: {},
+            occurrenceIds: [],
+            rentals: [],
+          }),
+        })
+      ).status,
+      403,
+    );
+  }
+  for (const host of [vendor, market, ...(application ? [unpublished] : [])]) {
     const published = await hit(host, '/');
-    assert.equal(published.status, 200);
-    assert.ok(published.body.includes('https://' + host + '/'));
+    assert.equal(published.status, host === unpublished ? 404 : 200);
+    assert.equal(
+      published.body.includes('https://' + host + '/'),
+      host !== unpublished,
+    );
     assert.equal(published.headers['x-robots-tag'], 'noindex, nofollow');
+    assert.match(published.headers['cache-control']!, /no-store/);
     const frame = await hit(host, '/storefront-editor-preview/');
     assert.equal(frame.status, 200);
     assert.equal(frame.headers['x-frame-options'], undefined);
@@ -428,7 +543,7 @@ try {
           }),
         }).toString(),
       });
-    const correct = host === vendor ? 'V' : 'M';
+    const correct = host === vendor ? 'V' : host === market ? 'M' : 'U';
     const draft = await render(correct.repeat(43), 'https://' + host);
     assert.equal(draft.status, 200);
     assert.match(draft.headers['cache-control']!, /no-store/);
@@ -447,7 +562,7 @@ try {
       403,
     );
   }
-  assert.equal(previews, 4);
+  assert.equal(previews, application ? 6 : 4);
   assert.ok(
     resolved.includes(vendor) &&
       resolved.includes(market) &&
@@ -474,6 +589,9 @@ try {
   );
   assert.ok(bridgeCalls > 0);
   const adminApi = await hit(api, '/admin-api?query=%7Bme%7Bid%7D%7D', {
+    'X-Market-Client-IP': '198.51.100.7',
+    Forwarded: 'for=198.51.100.8;proto=http',
+    'X-Real-IP': '198.51.100.9',
     'X-Market-SSR': 'forged',
     'X-Forwarded-For': '198.51.100.2',
     'X-Storefront-Bridge': 'forged',
@@ -488,6 +606,14 @@ try {
     '/payments/stripe/oauth/callback',
   ])
     assert.equal((await hit(api, path)).status, 404);
+  for (const [path, method] of [
+    ['/admin-api', 'PUT'],
+    ['/assets/synthetic.svg', 'POST'],
+  ])
+    assert.equal(
+      (await wire(gatewayPort, api, path!, { method, headers: edge })).status,
+      404,
+    );
   assert.equal(publicApiCalls, 2);
   for (const result of [login, adminApi]) {
     assert.ok(!result.body.includes(privateHost));
@@ -496,7 +622,7 @@ try {
     );
   }
   console.log(
-    'Hosted gateway, Admin, Astro and synthetic private API checks passed.',
+    `Hosted gateway, Admin, Astro and synthetic private API checks passed in ${application ? 'application' : 'Access'} mode.`,
   );
 } finally {
   await Promise.all(

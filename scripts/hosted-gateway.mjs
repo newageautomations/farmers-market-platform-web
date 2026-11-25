@@ -6,6 +6,8 @@ const dnsLabel = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const services = ['ADMIN', 'STOREFRONT', 'API'];
 
 function validate() {
+  if (!['access', 'application'].includes(env.STAGING_INGRESS_MODE ?? 'access'))
+    throw new Error('STAGING_INGRESS_MODE must be access or application');
   const hosts = [
     env.MARKET_ADMIN_HOST,
     env.MARKET_ACCOUNT_HOST,
