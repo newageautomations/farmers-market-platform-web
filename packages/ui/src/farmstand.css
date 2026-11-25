@@ -74,6 +74,25 @@
   box-shadow: none;
   overflow: hidden;
 }
+/* The panel has no padding of its own (headers, tables and footers inset
+   themselves), so an EMP-02 empty state placed directly in it takes the same
+   inline inset instead of sitting flush against the border. Kept at low
+   specificity so feature-level placements can still tune it. */
+.farmstand-panel > .empty-state {
+  padding-inline: 22px;
+}
+/* Same for the pagination footers ("Showing X to Y of Z"): FarmstandPagination
+   (.markets-pagination-footer) and the core Pagination (.ui-pagination). The
+   card zeroes its last child's bottom margin, so the bottom gap is padding. */
+.farmstand-panel > :is(.markets-pagination-footer, .ui-pagination) {
+  padding: 16px 22px;
+}
+@media (max-width: 600px) {
+  .farmstand-panel
+    > :is(.empty-state, .markets-pagination-footer, .ui-pagination) {
+    padding-inline: 16px;
+  }
+}
 .farmstand-button.button.ui-button,
 .farmstand-controls .button.ui-button {
   --ui-control-height: 42px;

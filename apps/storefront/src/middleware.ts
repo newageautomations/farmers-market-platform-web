@@ -22,11 +22,8 @@ import {
 import { createHash } from 'node:crypto';
 import { isIP } from 'node:net';
 import { centralAccountPath } from '@market/config/hosted';
-import {
-  apiRequestAddress,
-  resolverTransport,
-  shopTransportEndpoint,
-} from './lib/private-api';
+import { hostedStorefrontRequest } from '@market/storefront-core/hosted-request';
+import { apiRequestAddress, shopTransportEndpoint } from './lib/private-api';
 
 // The built SSR module also fails closed when started without the convenience wrapper.
 declare const __STOREFRONT_HARDENED_BUILD__: boolean;
@@ -232,7 +229,11 @@ const renderRequest = defineMiddleware(async (context, next) => {
       headers.set('Retry-After', '60');
       return finish(new Response('Please try again later.', { status: 429 }));
     }
-    if (!central) {
+    if (hosted && !central) {
+      context.locals.storefront = hostedStorefrontRequest.getStore();
+      if (!context.locals.storefront)
+        return finish(new Response('Page unavailable.', { status: 404 }));
+    } else if (!central) {
       try {
         const fixtures =
           import.meta.env.DEV && config.fixtureMode
@@ -245,11 +246,7 @@ const renderRequest = defineMiddleware(async (context, next) => {
             fixtureMode: config.fixtureMode,
             production,
           },
-          publicStorefrontResolver(
-            config.shopApiUrl,
-            undefined,
-            resolverTransport(),
-          ),
+          publicStorefrontResolver(config.shopApiUrl),
           fixtures?.resolveFixture,
         );
       } catch (error) {
@@ -263,21 +260,6 @@ const renderRequest = defineMiddleware(async (context, next) => {
             requestId,
           }),
         );
-        if (
-          hosted &&
-          (config.stagingPublicAdmission || context.url.pathname !== '/')
-        ) {
-          const unavailable =
-            context.locals.storefrontError.kind !== 'not-found';
-          return finish(
-            new Response(
-              unavailable ? 'Storefront unavailable.' : 'Page unavailable.',
-              {
-                status: unavailable ? 503 : 404,
-              },
-            ),
-          );
-        }
       }
     }
     if (context.locals.editorPreview) {
@@ -291,7 +273,7 @@ const renderRequest = defineMiddleware(async (context, next) => {
         appearance: context.locals.editorPreview.config,
       };
     } else if (
-      config.stagingPublicAdmission &&
+      hosted &&
       !central &&
       !context.locals.storefront?.published &&
       !storefrontPreviewDocument(context.url.pathname)

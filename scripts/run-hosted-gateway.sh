@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-node scripts/hosted-gateway.mjs
+STOREFRONT_HOST_EXPRESSION=$(node scripts/hosted-gateway.mjs storefront-expression)
+export STOREFRONT_HOST_EXPRESSION
 env -u TUNNEL_TOKEN caddy validate --config scripts/Caddyfile.hosted --adapter caddyfile
 
 # Docker's wrapper-script supervision pattern. Treat either child exiting as a failure.

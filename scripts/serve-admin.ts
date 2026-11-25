@@ -37,15 +37,19 @@ const policy = [
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
 ].join('; ');
-// Frame only exact configured storefronts, including newly admitted pilots.
-const previewOrigins = listener.ingressKey
-  ? [
-      ...hostedFrontend(process.env, [
-        config.adminOrigin,
-        config.accountOrigin,
-        new URL(config.adminApiUrl).origin,
-      ]),
-    ].map((host) => 'https://' + host)
+const routing = listener.ingressKey
+  ? hostedFrontend(process.env, [
+      config.adminOrigin,
+      config.accountOrigin,
+      new URL(config.adminApiUrl).origin,
+    ])
+  : undefined;
+// Static Admin documents have no tenant context. Only editor documents get a
+// frame source. Astro and Vendure still authorize every draft render.
+const previewOrigins = routing
+  ? routing.mode === 'dynamic'
+    ? [`https://*.${routing.parent}`]
+    : routing.pilots.map((host) => 'https://' + host)
   : (process.env.STOREFRONT_PREVIEW_ORIGINS ?? '')
       .split(',')
       .filter(Boolean)

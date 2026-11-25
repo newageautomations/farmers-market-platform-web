@@ -42,7 +42,7 @@
       "name": "layout-designer-fixture",
       "runtimeExecutable": "node",
       "runtimeArgs": [
-        "C:/Users/jake_/AppData/Local/Temp/claude/d9ae8648cf82d27b/9d4faa22-3a4d-4b10-b68f-a8bcde6687b1/scratchpad/serve-layout-designer.mjs"
+        "C:/Users/jake_/AppData/Local/Temp/claude/8d5be40ce432727c/2d15c103-bf99-4fcc-b887-d8fdadf598b6/scratchpad/serve-layout-designer.mjs"
       ],
       "port": 4338
     },

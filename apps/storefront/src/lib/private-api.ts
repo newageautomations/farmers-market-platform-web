@@ -1,6 +1,9 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { AppError } from '@market/api';
-import { storefrontPrivateApi } from '@market/config/hosted';
+import {
+  storefrontPrivateApi,
+  storefrontPrivateHeaders,
+} from '@market/config/hosted';
 
 export const apiRequestAddress = new AsyncLocalStorage<string>();
 
@@ -26,21 +29,7 @@ export const backendFetch: typeof fetch = (input, init) => {
     throw new AppError('unavailable');
   return fetch(endpoint, {
     ...init,
-    headers: privateHeaders(address, init?.headers),
+    headers: storefrontPrivateHeaders(privateApi.key, address, init?.headers),
     redirect: 'error',
   });
 };
-
-function privateHeaders(address: string, initial?: HeadersInit) {
-  const headers = new Headers(initial);
-  headers.set('x-market-ssr', privateApi!.key);
-  headers.set('x-market-client-ip', address);
-  return headers;
-}
-
-export function resolverTransport() {
-  if (!privateApi) return;
-  const address = apiRequestAddress.getStore();
-  if (!address) throw new AppError('unavailable');
-  return { origin: privateApi.origin, headers: privateHeaders(address) };
-}

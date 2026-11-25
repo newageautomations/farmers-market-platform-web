@@ -22,7 +22,11 @@ const vendor = 'vendor-pilot.example.com';
 const market = 'market-pilot.example.com';
 const inactive = 'inactive-pilot.example.com';
 const unpublished = 'draft-pilot.example.com';
-const application = process.argv.includes('--application');
+const dynamic = process.argv.includes('--dynamic');
+const application = dynamic || process.argv.includes('--application');
+const cedar = 'cedar-bend.example.com';
+const legacyVendor = 'staging-vendor.example.com';
+const legacyMarket = 'staging-market.example.com';
 const privateHost = 'api.railway.internal';
 const browserIp = '203.0.113.15';
 const credentials = Array.from({ length: 5 }, () =>
@@ -34,7 +38,11 @@ const tenants = new Map([
   [vendor, '11'],
   [market, '12'],
   [unpublished, '13'],
+  [legacyVendor, '15'],
+  [legacyMarket, '16'],
 ]);
+const drafts = new Set([unpublished]);
+const snapshots = new Map<string, string>();
 const resolved: string[] = [];
 let previews = 0;
 let shopCalls = 0;
@@ -74,12 +82,12 @@ const mock = createServer(async (req, res) => {
       storefrontId: id,
       storefrontKey: 'pilot-' + id,
       kind: host === market ? 'MARKET' : 'VENDOR',
-      displayName: 'Pilot ' + id,
+      displayName: snapshots.get(host) ?? 'Pilot ' + id,
       canonicalHostname: host,
       canonicalOrigin: 'https://' + host,
       subject: { id },
       shopContext: { channelToken: 'channel-' + id },
-      published: host !== unpublished,
+      published: !drafts.has(host),
     });
   }
   if (req.url === '/admin-api') {
@@ -230,7 +238,11 @@ try {
     ASSET_URL_PREFIX: 'https://' + api + '/assets/',
     FRONTEND_FIXTURE_MODE: 'false',
     STOREFRONT_PARENT_DOMAIN: 'example.com',
-    STOREFRONT_PILOT_HOSTS: [vendor, market, inactive, unpublished].join(' '),
+    STOREFRONT_ROUTING_MODE: dynamic ? 'dynamic' : 'explicit',
+    STOREFRONT_PILOT_HOSTS: (dynamic
+      ? [legacyVendor, legacyMarket]
+      : [vendor, market, inactive, unpublished]
+    ).join(' '),
     STAGING_TESTER_ACCESS: application ? 'provisioned' : 'closed',
     STAGING_ANONYMOUS_STOREFRONTS: application ? 'published' : 'disabled',
     SERVER_CERT_PATH: undefined,
@@ -280,6 +292,19 @@ try {
       'https://' + api,
     ]),
   );
+  assert.throws(
+    () =>
+      hostedFrontend(
+        {
+          ...env,
+          STOREFRONT_ROUTING_MODE: 'dynamic',
+          STAGING_TESTER_ACCESS: 'closed',
+          STAGING_ANONYMOUS_STOREFRONTS: 'disabled',
+        },
+        [env.ADMIN_ORIGIN, env.PLATFORM_ACCOUNT_ORIGIN, 'https://' + api],
+      ),
+    /provisioned staging admission/,
+  );
   launch(process.execPath, ['--import', 'tsx', 'scripts/serve-admin.ts'], {
     ...env,
     PORT: String(adminPort),
@@ -321,17 +346,40 @@ try {
     STAGING_INGRESS_MODE: application ? 'application' : undefined,
   };
   const validateGateway = (overrides: NodeJS.ProcessEnv = {}) =>
-    spawnSync(process.execPath, ['scripts/hosted-gateway.mjs'], {
-      env: {
-        ...gatewayEnv,
-        TUNNEL_TOKEN: 'synthetic-connector-token',
-        MARKET_ADMIN_UPSTREAM: 'http://admin.railway.internal:4322',
-        MARKET_STOREFRONT_UPSTREAM: 'http://storefront.railway.internal:4321',
-        MARKET_API_UPSTREAM: 'http://api.railway.internal:3000',
-        ...overrides,
+    spawnSync(
+      process.execPath,
+      ['scripts/hosted-gateway.mjs', 'storefront-expression'],
+      {
+        encoding: 'utf8',
+        env: {
+          ...gatewayEnv,
+          TUNNEL_TOKEN: 'synthetic-connector-token',
+          MARKET_ADMIN_UPSTREAM: 'http://admin.railway.internal:4322',
+          MARKET_STOREFRONT_UPSTREAM: 'http://storefront.railway.internal:4321',
+          MARKET_API_UPSTREAM: 'http://api.railway.internal:3000',
+          ...overrides,
+        },
       },
-    });
-  assert.equal(validateGateway().status, 0);
+    );
+  const validation = validateGateway();
+  assert.equal(validation.status, 0, validation.stderr);
+  assert.equal(validateGateway({ STOREFRONT_ROUTING_MODE: 'all' }).status, 1);
+  assert.equal(
+    validateGateway({ STOREFRONT_PILOT_HOSTS: 'staging-db.example.com' })
+      .status,
+    1,
+  );
+  assert.equal(
+    validateGateway({ STOREFRONT_PILOT_HOSTS: undefined }).status,
+    dynamic ? 0 : 1,
+  );
+  if (dynamic) {
+    assert.equal(
+      validateGateway({ STOREFRONT_PARENT_DOMAIN: undefined }).status,
+      1,
+    );
+    assert.equal(validateGateway({ STAGING_INGRESS_MODE: 'access' }).status, 1);
+  }
   assert.equal(validateGateway({ STAGING_INGRESS_MODE: 'open' }).status, 1);
   assert.equal(validateGateway({ STAGING_INGRESS_MODE: '' }).status, 1);
   assert.equal(
@@ -344,7 +392,7 @@ try {
   launch(
     'caddy',
     ['run', '--config', 'scripts/Caddyfile.hosted', '--adapter', 'caddyfile'],
-    gatewayEnv,
+    { ...gatewayEnv, STOREFRONT_HOST_EXPRESSION: validation.stdout.trim() },
   );
   const healthHost = 'healthcheck.railway.app';
   for (const [name, port] of [
@@ -435,7 +483,9 @@ try {
     assert.equal(result.status, 200);
     assert.match(
       String(result.headers['content-security-policy']),
-      /frame-src https:\/\/vendor-pilot\.example\.com https:\/\/market-pilot\.example\.com/,
+      dynamic
+        ? /frame-src https:\/\/\*\.example\.com;/
+        : /frame-src https:\/\/vendor-pilot\.example\.com https:\/\/market-pilot\.example\.com/,
     );
   }
   assert.match(
@@ -452,7 +502,10 @@ try {
   assert.ok(login.headers['strict-transport-security']);
   assert.equal((await hit(auth, '/shop')).status, 404);
   assert.equal((await hit('www.example.com', '/')).status, 421);
-  assert.equal((await hit('unknown.example.com', '/')).status, 421);
+  assert.equal(
+    (await hit('unknown.example.com', '/')).status,
+    dynamic ? 404 : 421,
+  );
   assert.equal((await hit(inactive, '/shop')).status, 404);
   if (application) {
     assert.equal((await hit(inactive, '/')).status, 404);
@@ -563,6 +616,98 @@ try {
     );
   }
   assert.equal(previews, application ? 6 : 4);
+  if (dynamic) {
+    const before = resolved.length;
+    for (const host of [
+      'a.b.example.com',
+      'example.com',
+      'other.test',
+      'bad_.example.com',
+      'xn--market.example.com',
+      'staging-db.example.com',
+      'production-app.example.com',
+      'media.example.com',
+      'account.example.com',
+      `${vendor}:8443`,
+      `${admin}:443`,
+      `${api}:65536`,
+      `${vendor}.`,
+      `${'x'.repeat(64)}.example.com`,
+    ])
+      assert.equal((await hit(host, '/')).status, 421, host);
+    assert.equal(resolved.length, before);
+    for (const host of [legacyVendor, legacyMarket])
+      assert.equal((await hit(host, '/')).status, 200);
+    for (const path of [
+      '/',
+      '/robots.txt',
+      '/assets/vendor-mark.svg',
+      '/storefront-editor-preview/',
+    ])
+      assert.equal((await hit(cedar, path)).status, 404, path);
+
+    // The running topology picks up registry and publication changes without restarting any service.
+    tenants.set(cedar, '14');
+    drafts.add(cedar);
+    assert.equal((await hit(cedar, '/account/login')).status, 404);
+    assert.equal((await hit(cedar, '/')).status, 404);
+    assert.equal((await hit(cedar, '/storefront-editor-preview/')).status, 200);
+    snapshots.set(cedar, 'Cedar Bend Published');
+    drafts.delete(cedar);
+    const [farm, otherVendor, marketSite] = await Promise.all([
+      hit(cedar, '/', {
+        'X-Forwarded-Host': market,
+        'X-Market-Storefront-Host': vendor,
+      }),
+      hit(vendor, '/'),
+      hit(market, '/'),
+    ]);
+    for (const [result, name, host] of [
+      [farm, 'Cedar Bend Published', cedar],
+      [otherVendor, 'Pilot 11', vendor],
+      [marketSite, 'Pilot 12', market],
+    ] as const) {
+      assert.equal(result.status, 200);
+      assert.ok(result.body.includes(name));
+      assert.ok(result.body.includes('https://' + host + '/'));
+      assert.match(result.headers['cache-control']!, /private, no-store/);
+    }
+    const account = await hit(cedar, '/account/login');
+    assert.equal(account.status, 302);
+    assert.match(account.headers['cache-control']!, /private, no-store/);
+    const signIn = new URL(account.headers.location!);
+    assert.equal(signIn.origin, 'https://' + auth);
+    assert.equal(signIn.pathname, '/account/login');
+    assert.equal(signIn.searchParams.get('origin'), 'https://' + cedar);
+    assert.ok(
+      account.headers['set-cookie']?.some((cookie) =>
+        cookie.startsWith('account-correlation='),
+      ),
+    );
+    assert.ok(
+      account.headers['set-cookie']?.every(
+        (cookie) => !/;\s*domain=/i.test(cookie),
+      ),
+    );
+    for (const path of [
+      '/shop-api',
+      '/admin-api',
+      '/customer-account-bridge',
+      '/storefront-context/internal-resolve',
+      '/health/ready',
+      '/@vite/client',
+    ])
+      assert.equal((await hit(cedar, path)).status, 404, path);
+    snapshots.set(cedar, 'Cedar Bend Republished');
+    assert.ok((await hit(cedar, '/')).body.includes('Cedar Bend Republished'));
+    assert.ok((await hit(vendor, '/')).body.includes('Pilot 11'));
+    drafts.add(cedar);
+    assert.equal((await hit(cedar, '/')).status, 404);
+    tenants.delete(cedar);
+    assert.equal((await hit(cedar, '/assets/vendor-mark.svg')).status, 404);
+  } else {
+    assert.equal((await hit(cedar, '/')).status, 421);
+  }
   assert.ok(
     resolved.includes(vendor) &&
       resolved.includes(market) &&
@@ -622,7 +767,7 @@ try {
     );
   }
   console.log(
-    `Hosted gateway, Admin, Astro and synthetic private API checks passed in ${application ? 'application' : 'Access'} mode.`,
+    `Hosted gateway, Admin, Astro and synthetic private API checks passed in ${dynamic ? 'dynamic application' : application ? 'explicit application' : 'explicit Access'} mode.`,
   );
 } finally {
   await Promise.all(

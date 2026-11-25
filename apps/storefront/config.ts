@@ -76,7 +76,11 @@ export default defineConfig({
     server: { strictPort: true },
     envDir,
     plugins: [tailwind()],
-    build: { sourcemap: false },
+    build: {
+      sourcemap: false,
+      // Load the same request-local registry context as the hosted launcher.
+      rolldownOptions: { external: ['@market/storefront-core/hosted-request'] },
+    },
     define: {
       __STOREFRONT_HARDENED_BUILD__: JSON.stringify(config.production),
       __STOREFRONT_BUILD_SETTINGS__: JSON.stringify(build),

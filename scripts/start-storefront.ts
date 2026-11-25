@@ -1,5 +1,11 @@
 import type { RequestListener } from 'node:http';
 import { statSync } from 'node:fs';
+import { safeError } from '@market/api';
+import {
+  publicStorefrontResolver,
+  resolveStorefront,
+} from '@market/storefront-core';
+import { hostedStorefrontRequest } from '@market/storefront-core/hosted-request';
 import {
   validateEnvironment,
   assertFrontendBuild,
@@ -15,6 +21,7 @@ import {
   frontendListener,
   hostedFrontend,
   storefrontPrivateApi,
+  storefrontPrivateHeaders,
 } from '@market/config/hosted';
 import {
   authorizeFrontendRequest,
@@ -34,9 +41,9 @@ assertFrontendBuild(
   'storefront',
 );
 const listener = frontendListener(process.env, config.deployment, 'storefront');
-storefrontPrivateApi(process.env);
+const privateApi = storefrontPrivateApi(process.env);
 const accountHost = new URL(config.accountOrigin).host;
-const pilots =
+const routing =
   listener.ingressKey &&
   hostedFrontend(process.env, [
     config.adminOrigin,
@@ -59,7 +66,7 @@ if (
   throw new Error('Missing Astro client build');
 // Also protect adapter-level errors and static responses which precede Astro middleware.
 // Rendered pages replace this fallback with Astro's framework-generated script hashes.
-const ready = frontendServer(listener, (request, response) => {
+const ready = frontendServer(listener, async (request, response) => {
   for (const [name, value] of Object.entries(responseSecurityHeaders(true)))
     response.setHeader(name, value);
   if (blocksIndexing(config.deployment))
@@ -80,20 +87,52 @@ const ready = frontendServer(listener, (request, response) => {
     });
     response.end(message);
   };
-  if (
-    !authorizeFrontendRequest(
-      request,
-      response,
-      listener,
-      ready(),
-      (host) => !pilots || host === accountHost || pilots.has(host),
-    )
-  )
-    return;
+  const host = authorizeFrontendRequest(
+    request,
+    response,
+    listener,
+    ready(),
+    (host) => !routing || host === accountHost || routing.allows(host),
+  );
+  if (!host) return;
+  let storefront;
+  if (privateApi && host !== accountHost) {
+    try {
+      storefront = await resolveStorefront(
+        {
+          url: new URL(`https://${host}`),
+          authority: host,
+          fixtureMode: false,
+          production: true,
+        },
+        publicStorefrontResolver(config.shopApiUrl, undefined, {
+          origin: privateApi.origin,
+          headers: storefrontPrivateHeaders(
+            privateApi.key,
+            request.socket.remoteAddress!,
+          ),
+        }),
+      );
+    } catch (error) {
+      if (safeError(error).kind === 'not-found')
+        return fail(404, 'Page unavailable.');
+      console.info(
+        JSON.stringify({
+          event: 'storefront_resolution',
+          kind: 'unavailable',
+          timestamp: new Date().toISOString(),
+          requestId: response.getHeader('X-Request-Id'),
+        }),
+      );
+      return fail(503, 'Storefront unavailable.');
+    }
+  }
   if (storefrontPreviewDocument(request.url!))
     response.removeHeader('X-Frame-Options');
   try {
-    entry.handler(request, response);
+    if (storefront)
+      hostedStorefrontRequest.run(storefront, entry.handler, request, response);
+    else entry.handler(request, response);
   } catch {
     console.error(
       JSON.stringify({

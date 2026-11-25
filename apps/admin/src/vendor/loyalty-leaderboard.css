@@ -171,9 +171,6 @@
 .leaderboard-table-panel .farmstand-data-table tbody .leaderboard-selected {
   background: var(--loyalty-soft);
 }
-.leaderboard-table-panel nav {
-  padding: 16px 18px;
-}
 .leaderboard-rank {
   display: inline-block;
   font-variant-numeric: tabular-nums;

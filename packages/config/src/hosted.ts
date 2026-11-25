@@ -1,46 +1,15 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage } from 'node:http';
 import { isIP, SocketAddress } from 'node:net';
-import { isLoopbackHost } from './deployment-environment.ts';
+import {
+  isLoopbackHost,
+  validateStagingAdmission,
+} from './deployment-environment.ts';
 import type { DeploymentEnvironment } from './deployment-environment.ts';
 import { requireStrongSecret } from './security.ts';
+import { dnsLabel, hostedRouting } from './hosted-routing.mts';
 
 type Environment = Record<string, string | undefined>;
-const dnsLabel = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-const reserved = new Set([
-  'admin',
-  'auth',
-  'api',
-  'assets',
-  'www',
-  'healthcheck',
-  'ingress',
-  'gateway',
-]);
-
-export function publicPlatformDomain(host: string) {
-  return (
-    host.length <= 253 &&
-    host.split('.').length >= 2 &&
-    host.split('.').every((label) => dnsLabel.test(label)) &&
-    /\.[a-z]{2,63}$/.test(host) &&
-    !/\.(?:localhost|localdomain|local|internal|railway\.app|up\.railway\.app|pages\.dev|workers\.dev|trycloudflare\.com|railway\.internal)$/.test(
-      '.' + host,
-    )
-  );
-}
-
-export function hostedTenantHost(host: string, parent: string) {
-  const suffix = '.' + parent;
-  const label = host.slice(0, -suffix.length);
-  return (
-    host.length <= 253 &&
-    host.endsWith(suffix) &&
-    dnsLabel.test(label) &&
-    !label.startsWith('xn--') &&
-    !reserved.has(label)
-  );
-}
 
 export function privateApiOrigin(value: string | undefined) {
   const url = value && URL.parse(value);
@@ -82,6 +51,17 @@ export function storefrontPrivateApi(env: Environment) {
   if (key === env.PLATFORM_ACCOUNT_BRIDGE_KEY || key === env.MARKET_INGRESS_KEY)
     throw new Error('SSR transport requires a separate credential');
   return { origin, key };
+}
+
+export function storefrontPrivateHeaders(
+  key: string,
+  address: string,
+  initial?: HeadersInit,
+) {
+  const headers = new Headers(initial);
+  headers.set('x-market-ssr', key);
+  headers.set('x-market-client-ip', address);
+  return headers;
 }
 
 export function frontendListener(
@@ -144,37 +124,19 @@ export function hostedFrontend(
   env: Environment,
   publicOrigins: readonly string[],
 ) {
-  const parent = env.STOREFRONT_PARENT_DOMAIN ?? '';
-  const infrastructure = publicOrigins.map((origin) => new URL(origin).host);
+  const routing = hostedRouting(
+    env,
+    publicOrigins.map((origin) => new URL(origin).host),
+  );
   if (
-    !publicPlatformDomain(parent) ||
-    new Set(infrastructure).size !== infrastructure.length ||
-    !infrastructure.every((host) => {
-      const suffix = '.' + parent;
-      return (
-        host.endsWith(suffix) && dnsLabel.test(host.slice(0, -suffix.length))
-      );
-    })
+    routing.mode === 'dynamic' &&
+    env.DEPLOYMENT_ENV === 'staging' &&
+    !validateStagingAdmission(env, 'staging')
   )
     throw new Error(
-      'Hosted origins must use distinct first-level platform hostnames',
+      'Dynamic storefront routing requires provisioned staging admission',
     );
-  const pilots = (env.STOREFRONT_PILOT_HOSTS ?? '')
-    .trim()
-    .split(/ +/)
-    .filter(Boolean);
-  if (
-    !pilots.length ||
-    new Set(pilots).size !== pilots.length ||
-    !pilots.every(
-      (host) =>
-        hostedTenantHost(host, parent) && !infrastructure.includes(host),
-    )
-  )
-    throw new Error(
-      'STOREFRONT_PILOT_HOSTS requires exact platform storefront hostnames',
-    );
-  return new Set(pilots);
+  return routing;
 }
 
 const centralApis = new Set([

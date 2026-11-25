@@ -273,7 +273,8 @@
 }
 .vendor-detail .application-detail-panel > .empty-state,
 .vendor-detail .application-detail-panel > .ui-empty-state {
-  margin: 0 24px 22px;
+  margin: 0 0 22px;
+  padding-inline: 24px;
 }
 .vendor-detail .vendor-detail-table {
   padding: 0;

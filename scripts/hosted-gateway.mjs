@@ -1,8 +1,11 @@
 import { get } from 'node:http';
+import {
+  dnsLabel,
+  hostedRouting,
+} from '../packages/config/src/hosted-routing.mts';
 
 const env = process.env;
 const port = Number(env.GATEWAY_PORT ?? 8080);
-const dnsLabel = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const services = ['ADMIN', 'STOREFRONT', 'API'];
 
 function validate() {
@@ -12,27 +15,24 @@ function validate() {
     env.MARKET_ADMIN_HOST,
     env.MARKET_ACCOUNT_HOST,
     env.MARKET_API_HOST,
-    ...(env.STOREFRONT_PILOT_HOSTS ?? '').split(' '),
   ];
-  const parent = env.MARKET_ADMIN_HOST?.split('.').slice(1).join('.');
   if (
     env.DEPLOYMENT_ENV !== 'staging' ||
     !Number.isInteger(port) ||
     port < 1024 ||
     port > 65535 ||
     (env.GATEWAY_PORT !== undefined && String(port) !== env.GATEWAY_PORT) ||
-    hosts.some(
-      (host) =>
-        !host ||
-        host.length > 253 ||
-        !parent?.includes('.') ||
-        !host.split('.').every((label) => dnsLabel.test(label)) ||
-        host.split('.').slice(1).join('.') !== parent,
-    ) ||
-    new Set(hosts).size !== hosts.length
+    hosts.some((host) => !host)
   ) {
     throw new Error('Check gateway stage, loopback port, and exact hostnames');
   }
+  const routing = hostedRouting(
+    env,
+    hosts,
+    hosts[0].split('.').slice(1).join('.'),
+  );
+  if (routing.mode === 'dynamic' && env.STAGING_INGRESS_MODE !== 'application')
+    throw new Error('Dynamic storefront routing requires application ingress');
   const keys = services.map((service) => env[`MARKET_${service}_INGRESS_KEY`]);
   if (
     keys.some(
@@ -57,6 +57,19 @@ function validate() {
       throw new Error(`Check the private HTTP origin for ${service}`);
     }
   }
+  return routing;
+}
+
+function storefrontExpression({
+  mode,
+  pilots,
+  tenantPattern,
+  reservedPattern,
+}) {
+  const host = '{http.request.hostport}';
+  const exact = `${host} in ${JSON.stringify(pilots)}`;
+  if (mode === 'explicit') return exact;
+  return `${exact} || (size(${host}) <= 253 && ${host}.matches(${JSON.stringify(tenantPattern)}) && !${host}.matches(${JSON.stringify(reservedPattern)}))`;
 }
 
 function probe() {
@@ -83,7 +96,9 @@ if (process.argv[2] === 'probe') {
   probe();
 } else {
   try {
-    validate();
+    const routing = validate();
+    if (process.argv[2] === 'storefront-expression')
+      console.log(storefrontExpression(routing));
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

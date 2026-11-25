@@ -222,7 +222,8 @@
 }
 .market-detail-preordering .empty-state,
 .market-detail-preordering .ui-empty-state {
-  margin: 0 24px 18px;
+  margin: 0 0 18px;
+  padding-inline: 24px;
 }
 .market-detail .market-detail-switch-note {
   display: block;
