@@ -265,4 +265,51 @@ describe('production policy', () => {
       'strict-origin',
     );
   });
+  it('uses the configured media origin and falls back to the public API for Admin', () => {
+    const configured = {
+      ...staging,
+      ASSET_URL_PREFIX: 'https://media.example.com/files/',
+    };
+    for (const use of [
+      'build',
+      'storefront-runtime',
+      'admin-runtime',
+    ] as const) {
+      expect(
+        validateEnvironment(configured, 'production', use).assetOrigin,
+      ).toBe('https://media.example.com');
+    }
+    const admin = validateEnvironment(
+      { ...staging, ASSET_URL_PREFIX: undefined },
+      'production',
+      'admin-runtime',
+    );
+    expect(admin.assetOrigin).toBe('https://api.example.com');
+    const options = { adminApiOrigin: new URL(admin.adminApiUrl).origin };
+    expect(
+      cspDirectives({ ...options, assetOrigin: admin.assetOrigin }),
+    ).toEqual(
+      cspDirectives(options).map((directive) =>
+        directive.startsWith('img-src ')
+          ? `${directive} https://api.example.com`
+          : directive,
+      ),
+    );
+    expect(() =>
+      cspDirectives({ assetOrigin: 'http://localhost:3000' }),
+    ).toThrow(/HTTPS/);
+  });
+  it('leaves local development on its existing media configuration', () => {
+    const config = validateEnvironment(
+      {
+        SHOP_API_URL: 'http://localhost:3000/shop-api',
+        PUBLIC_ADMIN_API_URL: 'http://localhost:3000/admin-api',
+        ASSET_URL_PREFIX: 'http://localhost:3000/assets/',
+      },
+      'development',
+    );
+    expect(config.production).toBe(false);
+    expect(config.assetUrl).toBe('http://localhost:3000/assets/');
+    expect(config.assetOrigin).toBeUndefined();
+  });
 });

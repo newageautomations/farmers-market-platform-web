@@ -1,5 +1,6 @@
 ---
 import { buttonClassName, statusBadgeClassName } from '@market/ui/presentation';
+import { IdentityIcon } from '@market/ui/workspace';
 import type { CustomerFollow } from '@market/api';
 import CustomerLayout from '../../layouts/CustomerLayout.astro';
 import EmptyState from '../../components/ui/EmptyState.astro';
@@ -550,9 +551,10 @@ const noun = market ? 'market' : 'vendor';
                 >
                   <th scope="row">
                     <div class="markets-identity">
-                      <span class="markets-identity-icon">
-                        <FarmstandIcon name={market ? 'store' : 'user-round'} />
-                      </span>
+                      <IdentityIcon
+                        icon={market ? 'store' : 'user-round'}
+                        image={item.image}
+                      />
                       <a
                         class="market-application-name"
                         href={discoverUrl(item) + '#discover'}
@@ -638,18 +640,11 @@ const noun = market ? 'market' : 'vendor';
             data-select-label={item.name}
             hidden={subjectKey(item) !== discoverSelected}
           >
-            <div class="markets-next-art customer-subject-art">
-              <FarmstandIcon name={market ? 'store' : 'user-round'} />
-              {item.image && (
-                <img
-                  src={item.image}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  referrerpolicy="no-referrer"
-                />
-              )}
-            </div>
+            <IdentityIcon
+              className="markets-next-art"
+              icon={market ? 'store' : 'user-round'}
+              image={item.image}
+            />
             <div class="markets-next-content">
               <h3>{item.name}</h3>
               <p class="markets-venue">

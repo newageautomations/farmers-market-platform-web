@@ -75,7 +75,7 @@ const ready = frontendServer(listener, async (request, response) => {
   response.setHeader(
     'Content-Security-Policy',
     [
-      ...cspDirectives(),
+      ...cspDirectives({ assetOrigin: config.assetOrigin }),
       "script-src 'self'",
       "style-src 'self' 'unsafe-inline'",
     ].join('; '),

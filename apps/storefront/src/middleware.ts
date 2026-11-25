@@ -41,6 +41,13 @@ if (hardenedConfig)
     hardenedConfig,
     'storefront',
   );
+const hardenedFallbackCsp = hardenedConfig
+  ? [
+      ...cspDirectives({ assetOrigin: hardenedConfig.assetOrigin }),
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+    ].join('; ')
+  : undefined;
 
 // Supplementary, bounded process-local limit. Backend durable account limits remain authoritative.
 const requests = new Map<string, { expires: number; count: number }>();
@@ -110,6 +117,7 @@ const renderRequest = defineMiddleware(async (context, next) => {
       // This exception is restricted to preview responses. All public pages retain DENY.
       let policy =
         response.headers.get('Content-Security-Policy') ??
+        hardenedFallbackCsp ??
         "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http://localhost:* http://*.localhost:*; font-src 'self'; object-src 'none'; base-uri 'none'";
       if (
         !response.headers.has('Content-Security-Policy') &&
@@ -160,18 +168,11 @@ const renderRequest = defineMiddleware(async (context, next) => {
     if (response.status >= 400)
       response.headers.set('X-Robots-Tag', noIndexHeader);
     if (
-      production &&
+      hardenedFallbackCsp &&
       !import.meta.env.DEV &&
       !response.headers.has('Content-Security-Policy')
     )
-      response.headers.set(
-        'Content-Security-Policy',
-        [
-          ...cspDirectives(),
-          "script-src 'self'",
-          "style-src 'self' 'unsafe-inline'",
-        ].join('; '),
-      );
+      response.headers.set('Content-Security-Policy', hardenedFallbackCsp);
     return response;
   }
   try {

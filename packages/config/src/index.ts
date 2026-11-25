@@ -55,6 +55,7 @@ export function validateEnvironment(
   const accountOrigin = input.PLATFORM_ACCOUNT_ORIGIN ?? '';
   const customerOrigin = input.CUSTOMER_STOREFRONT_ORIGIN ?? '';
   const assetUrl = input.ASSET_URL_PREFIX ?? '';
+  let assetOrigin: string | undefined;
   const origin = (value: string, name: string) => {
     if (value !== normalizeOrigin(value) || !value.startsWith('https://'))
       throw new Error(`${name} requires a canonical HTTPS origin`);
@@ -91,6 +92,10 @@ export function validateEnvironment(
           'ASSET_URL_PREFIX requires a canonical HTTPS media URL',
         );
       origin(url.origin, 'ASSET_URL_PREFIX');
+      assetOrigin = url.origin;
+    } else if (use === 'admin-runtime') {
+      // Hosted Admin can omit the prefix when the public API serves its assets.
+      assetOrigin = new URL(parsed.PUBLIC_ADMIN_API_URL).origin;
     }
     if (use === 'storefront-runtime')
       requireStrongSecret(
@@ -137,6 +142,7 @@ export function validateEnvironment(
     accountOrigin,
     customerOrigin,
     assetUrl,
+    assetOrigin,
     fixtureMode: parsed.FRONTEND_FIXTURE_MODE === 'true',
   });
 }

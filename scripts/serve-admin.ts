@@ -33,7 +33,10 @@ if (!statSync(resolve(root, 'index.html')).isFile())
 const listener = frontendListener(process.env, config.deployment, 'admin');
 const adminHost = new URL(config.adminOrigin).host;
 const policy = [
-  ...cspDirectives({ adminApiOrigin: new URL(config.adminApiUrl).origin }),
+  ...cspDirectives({
+    adminApiOrigin: new URL(config.adminApiUrl).origin,
+    assetOrigin: config.assetOrigin,
+  }),
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
 ].join('; ');

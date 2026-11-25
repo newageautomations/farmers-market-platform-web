@@ -1,0 +1,72 @@
+# Hosted storage corrections
+
+## Findings and changes
+
+- **Vendor and Market Manager profile images.** The hosted Admin launcher allowed the public API in `connect-src` and left `img-src` at `'self' data:`. Both profile settings pages and their **My Images** pickers use absolute asset URLs from Vendure, so the browser blocked the saved image and library previews. The shared frontend configuration now supplies the exact validated HTTPS origin from `ASSET_URL_PREFIX`, with the validated `PUBLIC_ADMIN_API_URL` origin as the Admin fallback for the current same-host media layout. Admin uses it in its shared policy.
+- **Astro storefront and account policy.** Astro's build-time policy already included the configured media origin, which explains why the published storefront could display its uploaded images. The HTTP launcher and middleware now use the same origin in their fallback policies. Loopback tests through Caddy found a single enforcing policy on the tested Admin, storefront and account documents. Admin's second header assignment replaces the first and Caddy forwards the app policy as emitted. Live edge headers still need manual acceptance.
+- **Customer discovery images.** On both account pages, the selected business's detail panel used `CustomerFollowSubjects.items[].image`, while the result row always showed a glyph. Vendure reads the saved business profile image for each discovery request. The two locations now render that same URL through the existing `IdentityIcon`, server-rendered in Astro, with the existing market or vendor glyph when an image is absent.
+
+## Products & Inventory investigation
+
+The workspace loads `VendorCatalog` and `VendorInventory` independently. The product detail uses `VendorProduct`. Once catalog data is available, the workspace can also request `ProductCategoryHierarchy`, `OwnProductClassification` and `OwnVendorCategoryAssets`. The catalog and inventory queries read owned products and stock under the vendor channel. Catalog responses carry asset IDs. The separate category asset query returns preview URLs through the asset strategy.
+
+Phase C adds a storage grant to four Admin upload mutations. Existing session and channel checks govern catalog and inventory reads. The shared transport sends the session cookie and `vendure-token`, and converts failed HTTP and GraphQL responses to user-safe errors. The displayed workspace error alone cannot identify the failed request. The additive scan-disposition migration affects private document and receipt metadata.
+
+**Reproduced locally.** A newly provisioned vendor in the Phase C staging fixture received `USER_INPUT_ERROR` with message `UNSUPPORTED_PUBLICATION_CONFIGURATION` at GraphQL path `ownVendorCatalog`. The vendor's primary channel and the platform default channel both had a single USD currency, tax-exclusive prices and no default tax zone. Vendor provisioning copies the platform channel's defaults. The existing catalog configuration check requires a default tax zone even for an empty catalog. The guard predates Phase C.
+
+**Confirmed in the same fixture.** Inventory returned a valid empty page and both saved profile images and library previews resolved through mocked R2. After assigning only a default tax zone to the disposable vendor channel through Vendure, the same catalog query passed. With a synthetic product, variant and tax category added to that fixture, catalog, product detail, populated inventory, taxonomy, classification and category asset reads passed. Catalog and inventory requests using a foreign channel or no session were denied.
+
+**Live staging status.** The reproduced configuration error is a candidate for the reported catalog failure. The failing staging response and the staging vendor channel's configuration have yet to be captured. The web correction does not alter commerce configuration.
+
+## Security and release
+
+The policies add a single configured HTTPS origin to `img-src` and preserve the existing self, data and local preview sources. The existing script policy still blocks the Cloudflare analytics beacon. Frame and connection directives retain their existing scope. Assets continue through the public `/assets/` route using the saved URLs. This web-only correction preserves private networking and bucket access, tenant and channel isolation, document encryption, staging scanning exceptions, production upload safeguards and storefront publication and caching.
+
+**Railway variables.** No changes are required for the current staging topology. Keep the existing Astro build and runtime `ASSET_URL_PREFIX` and Admin `PUBLIC_ADMIN_API_URL`. An explicitly configured Admin media prefix takes precedence if present.
+
+**Redeployment.** When authorized, redeploy only the web **Admin** and **Astro Storefront** services from the corrected revision. The central account runs on Astro. This correction requires no API, worker, gateway or database release.
+
+## Changed files
+
+| Files                                                                                                    | Change                                                                                |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `packages/config/src/index.ts`                                                                           | Resolve the trusted media origin from validated deployment settings.                  |
+| `scripts/serve-admin.ts`, `scripts/start-storefront.ts`                                                  | Use that origin for Admin and Astro launcher policies.                                |
+| `apps/storefront/config.ts`, `apps/storefront/src/middleware.ts`                                         | Use the same origin for Astro's build and middleware policies.                        |
+| `apps/storefront/src/pages/account/[section].astro`, `apps/storefront/src/styles/customer-dashboard.css` | Reuse the shared identity tile and its stylesheet for the discovery row and detail.   |
+| `scripts/test-hosted-topology.ts`, `tests/production-policy.test.ts`                                     | Cover hosted policy, configured origins, local settings and customer image rendering. |
+| `docs/HOSTED_STORAGE_CORRECTIONS.md`                                                                     | Record results and hosted acceptance.                                                 |
+
+## Automated verification
+
+| Check                                                                                                                                    | Result                                                                                                                                                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hardened staging build of Admin and Astro with synthetic public origins                                                                  | Passed. Vite reported its existing Admin bundle-size warning.                                                                                                                                                                                                                                     |
+| `node --import tsx scripts/test-hosted-topology.ts` with `--dynamic`, with `--application` and without a flag                            | Passed through local Caddy, compiled Admin and Astro, and a synthetic private API. Verified exact image origin, CSP header count, no competing document policy, editor frame rules, both account discovery image locations, the fallback glyphs and existing hosted routing and admission checks. |
+| Focused Vitest runs for production policy, customer dashboard, storefront preview security and bridge, product setup and website library | Passed, 38 tests.                                                                                                                                                                                                                                                                                 |
+| Focused ESLint and `npm run typecheck --workspace @market/storefront`                                                                    | Passed.                                                                                                                                                                                                                                                                                           |
+| Existing Phase C `test:test-data` and hosted API HTTP checks                                                                             | Passed with mocked R2 and guarded disposable PostgreSQL for the fixture suite. Verified native and custom media, configured preview URLs, scoped reads, admission, CORS and private ingress. The full Phase C migration ledger applied and was verified.                                          |
+
+Root TypeScript checking still reports errors in existing files including `LoyaltyDashboard.tsx`, `table-navigation.ts` and existing test fixtures. The repository boundary check stops at existing `DashboardWidgets.tsx`. Two existing `product-details.test.tsx` assertions look for UI text that differs from the current product form. These unrelated failures were left outside the correction.
+
+The older backend `test:frontend-integration` fixture stopped at startup on missing `administrator.avatarId` and `seller_translation` structures. The current Phase C fixture passed and removed its successful test database. The test guard retained failed disposable runs for diagnosis. The demo database was accessed only to verify its name in a read-only session.
+
+## Hosted manual acceptance
+
+Use the existing named staging accounts and already saved images. Reload each document after the corrected services are running so the tab receives the new response policy.
+
+1. Sign in as the staging vendor and select its existing workspace. Open **Settings → Profile** at `/vendor/settings/profile` on staging Admin. Verify the saved profile picture is visible.
+2. In a separate session, sign in as the staging market manager and select its existing workspace. Open **Settings → Profile** at `/market/settings/profile`. Verify the saved market picture is visible.
+3. In each workspace, open **Replace picture → My Images**. Verify the saved image and existing library thumbnails render. Close the picker without making changes. In DevTools **Network**, verify the Admin document's `img-src` includes the configured media origin and the image requests resolve through the existing public `/assets/` route.
+4. Sign in as an existing staging customer on the central account. Open **Favorite Vendors** at `/account/vendors` and **Followed Markets** at `/account/markets`. In **Find vendors** and **Find markets**, search for the tested businesses and select each matching row. Verify the same saved image appears beside the name in the result row and in the selected detail panel. If a fixture without a profile image is available, verify the matching glyph appears in both locations.
+5. In the vendor workspace open **Products & Inventory** at `/vendor/products`. Verify the product list, stock counts and category labels. Check a product with a saved gallery image if one exists, and open its detail and variant. Verify `VendorCatalog`, `VendorInventory` and `VendorProduct` return usable data and that the related category and image requests complete when triggered.
+6. Open the existing published vendor and market storefronts. Verify their published images and the existing market storefront editor preview. Use an existing saved asset and confirm its public URL still returns the expected image.
+
+Use the guarded `demo:market-operations:serve`, `demo:market-operations:worker`, `demo:market-operations:admin` and `demo:market-operations:storefront` npm scripts for manual local testing on `vendure_demo_market_ops`. Use dedicated test fixtures if a local image or product is needed. [Guarded fixture workflow](TEST_DATA_MANAGER_PHASE_A.md#local-demo-accounts)
+
+## Data to capture if the API failure persists
+
+1. In DevTools **Network**, enable **Preserve log**, reload Products & Inventory and filter for `admin-api`. Repeat on one other affected page. Capture the first failed `POST` and its preceding `OPTIONS` preflight if it failed or the POST never went out.
+2. Record the page path, selected workspace role, timestamp with timezone, full request URL, HTTP status and timing. Copy the named GraphQL query from the start of the request payload and include the relevant redacted variables. A GraphQL failure can return HTTP 200. Copy the response's `errors[].message`, `errors[].path` and `errors[].extensions.code`, along with which `data` field is null. For HTML, an empty response or a blocked request, capture its content type, redirect destination or browser network error. Record whether the browser sent its session and a channel header. Redact cookie, authorization, channel token and other credential values.
+3. Capture the response `X-Request-Id` if present and the matching Railway API `http_request` log entry with route, status and duration. Include nearby error events and the Admin and API release revisions. If there is no API log, check the gateway logs at the same timestamp for the request or rejection.
+4. If `VendorCatalog` returns `UNSUPPORTED_PUBLICATION_CONFIGURATION`, have the authorized operator check the selected vendor's primary channel and the platform default channel. Record whether each has a default tax zone, its default and available currencies, and whether prices include tax. For a publication-related failure, also compare those values with the target market channel. These checks can be read-only and do not require copying channel tokens.

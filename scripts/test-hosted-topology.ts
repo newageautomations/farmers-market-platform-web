@@ -29,6 +29,8 @@ const legacyVendor = 'staging-vendor.example.com';
 const legacyMarket = 'staging-market.example.com';
 const privateHost = 'api.railway.internal';
 const browserIp = '203.0.113.15';
+const imageOrigin = 'https://' + api;
+const customerSession = 'synthetic-customer-session';
 const credentials = Array.from({ length: 5 }, () =>
   randomBytes(32).toString('hex'),
 );
@@ -114,6 +116,44 @@ const mock = createServer(async (req, res) => {
     )
       return json(403, {});
     bridgeCalls++;
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const { action, central, kind } = JSON.parse(
+      Buffer.concat(chunks).toString(),
+    );
+    if (central === customerSession) {
+      if (action === 'centralProfile')
+        return json(200, {
+          profile: { phoneVerified: true },
+          contexts: { affiliations: [] },
+        });
+      if (action === 'customerDashboard')
+        return json(200, {
+          markets: [],
+          vendors: [],
+          events: [],
+          marketCount: 0,
+          vendorCount: 0,
+        });
+      if (action === 'customerSubjects')
+        return json(200, {
+          hasMore: false,
+          items: [
+            {
+              id: '1',
+              name: `With image ${kind}`,
+              image: profileImage(kind),
+              following: false,
+            },
+            {
+              id: '2',
+              name: `Without image ${kind}`,
+              image: null,
+              following: false,
+            },
+          ],
+        });
+    }
     return json(400, { code: 'ACCOUNT_LINK_INVALID_OR_UNAVAILABLE' });
   }
   if (
@@ -134,6 +174,23 @@ const mock = createServer(async (req, res) => {
   }
   return json(404, {});
 });
+
+function profileImage(kind: string) {
+  return `${imageOrigin}/assets/preview/a6/${kind.toLowerCase()}-profile__preview.png`;
+}
+
+function assertImagePolicy(policies: string[] | undefined) {
+  assert.equal(policies?.length, 1, 'a single enforcing CSP response header');
+  const directives = policies![0]!.split(';').map((entry) => entry.trim());
+  assert.deepEqual(
+    directives.filter((entry) => entry.startsWith('img-src ')),
+    [`img-src 'self' data: ${imageOrigin}`],
+  );
+  assert.doesNotMatch(
+    directives.find((entry) => entry.startsWith('script-src '))!,
+    /unsafe-inline|unsafe-eval|cloudflareinsights/,
+  );
+}
 
 function localPort(server: ReturnType<typeof createServer>) {
   const address = server.address();
@@ -172,6 +229,7 @@ function wire(
   return new Promise<{
     status: number;
     headers: IncomingHttpHeaders;
+    cspHeaders: string[] | undefined;
     body: string;
   }>((resolve, reject) => {
     const headers = Array.isArray(options.headers)
@@ -193,6 +251,7 @@ function wire(
           resolve({
             status: response.statusCode!,
             headers: response.headers,
+            cspHeaders: response.headersDistinct['content-security-policy'],
             body: Buffer.concat(chunks).toString(),
           }),
         );
@@ -307,6 +366,7 @@ try {
   );
   launch(process.execPath, ['--import', 'tsx', 'scripts/serve-admin.ts'], {
     ...env,
+    ASSET_URL_PREFIX: undefined,
     PORT: String(adminPort),
     MARKET_INGRESS_KEY: adminKey,
   });
@@ -481,12 +541,27 @@ try {
   for (const path of ['/vendor/storefront', '/market/storefront/?channel=2']) {
     const result = await hit(admin, path);
     assert.equal(result.status, 200);
+    assertImagePolicy(result.cspHeaders);
     assert.match(
       String(result.headers['content-security-policy']),
       dynamic
         ? /frame-src https:\/\/\*\.example\.com;/
         : /frame-src https:\/\/vendor-pilot\.example\.com https:\/\/market-pilot\.example\.com/,
     );
+  }
+  for (const path of [
+    '/vendor/settings/profile',
+    '/market/settings/profile',
+    '/vendor/products',
+  ]) {
+    const result = await hit(admin, path);
+    assert.equal(result.status, 200);
+    assertImagePolicy(result.cspHeaders);
+    assert.match(
+      String(result.headers['content-security-policy']),
+      /frame-src 'none'/,
+    );
+    assert.doesNotMatch(result.body, /http-equiv="content-security-policy"/i);
   }
   assert.match(
     String((await hit(admin, '/market')).headers['content-security-policy']),
@@ -498,6 +573,37 @@ try {
   });
   assert.equal(login.status, 200);
   assert.match(login.body, /<form/);
+  assertImagePolicy(login.cspHeaders);
+  assert.doesNotMatch(login.body, /http-equiv="content-security-policy"/i);
+  for (const [section, kind, icon] of [
+    ['markets', 'MARKET', 'store'],
+    ['vendors', 'VENDOR', 'user-round'],
+  ] as const) {
+    const page = await hit(auth, '/account/' + section, {
+      Cookie: 'platform-unified-account=' + customerSession,
+    });
+    assert.equal(page.status, 200);
+    assertImagePolicy(page.cspHeaders);
+    assert.match(page.headers['cache-control']!, /no-store/);
+    assert.doesNotMatch(page.body, /http-equiv="content-security-policy"/i);
+    for (const tile of ['markets-identity-icon', 'markets-next-art']) {
+      const tiles = [
+        ...page.body.matchAll(
+          new RegExp(
+            `<span class="${tile}(?: markets-identity-photo)?"[^>]*>\\s*` +
+              `<span[^>]*class="farmstand-icon farmstand-icon-${icon}"[^>]*></span>(.*?)</span>`,
+            'gs',
+          ),
+        ),
+      ];
+      assert.ok(
+        tiles.some((match) =>
+          match[1]?.includes(`src="${profileImage(kind)}"`),
+        ),
+      );
+      assert.ok(tiles.some((match) => !match[1]?.includes('<img')));
+    }
+  }
   assert.equal(login.headers['x-robots-tag'], 'noindex, nofollow');
   assert.ok(login.headers['strict-transport-security']);
   assert.equal((await hit(auth, '/shop')).status, 404);
@@ -563,6 +669,11 @@ try {
   for (const host of [vendor, market, ...(application ? [unpublished] : [])]) {
     const published = await hit(host, '/');
     assert.equal(published.status, host === unpublished ? 404 : 200);
+    assertImagePolicy(published.cspHeaders);
+    assert.doesNotMatch(
+      published.body,
+      /http-equiv="content-security-policy"/i,
+    );
     assert.equal(
       published.body.includes('https://' + host + '/'),
       host !== unpublished,
@@ -571,6 +682,7 @@ try {
     assert.match(published.headers['cache-control']!, /no-store/);
     const frame = await hit(host, '/storefront-editor-preview/');
     assert.equal(frame.status, 200);
+    assertImagePolicy(frame.cspHeaders);
     assert.equal(frame.headers['x-frame-options'], undefined);
     assert.match(
       String(frame.headers['content-security-policy']),
@@ -599,6 +711,7 @@ try {
     const correct = host === vendor ? 'V' : host === market ? 'M' : 'U';
     const draft = await render(correct.repeat(43), 'https://' + host);
     assert.equal(draft.status, 200);
+    assertImagePolicy(draft.cspHeaders);
     assert.match(draft.headers['cache-control']!, /no-store/);
     assert.equal(draft.headers['x-frame-options'], undefined);
     assert.equal(

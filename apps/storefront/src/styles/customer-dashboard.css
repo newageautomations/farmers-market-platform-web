@@ -590,9 +590,7 @@ a.markets-stat.customer-stat-link:is(:hover, :focus-visible) {
   white-space: nowrap;
 }
 
-/* Discovery: rows select a storefront; its details, Follow and Visit sit in
-   the side panel. The storefront image covers the icon tile, which shows
-   through when there is no image or it cannot load. */
+/* Discovery rows select the details and actions in the side panel. */
 .customer-workspace .market-applications-main .customer-discovery-table {
   min-width: 640px;
 }
@@ -601,17 +599,6 @@ a.markets-stat.customer-stat-link:is(:hover, :focus-visible) {
   .customer-discovery-table
   th:first-child {
   width: 32%;
-}
-.customer-subject-art.markets-next-art {
-  position: relative;
-  overflow: hidden;
-}
-.customer-subject-art > img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 .customer-workspace .markets-next-content > form {
   margin: 0;

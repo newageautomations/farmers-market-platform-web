@@ -44,9 +44,7 @@ export default defineConfig({
           directives: [
             ...cspDirectives({
               accountOrigin: config.accountOrigin,
-              assetOrigin: config.assetUrl
-                ? new URL(config.assetUrl).origin
-                : undefined,
+              assetOrigin: config.assetOrigin,
             }),
           ],
           scriptDirective: { resources: ["'self'"] },
