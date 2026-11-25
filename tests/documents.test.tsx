@@ -142,11 +142,14 @@ describe('Documents dashboard', () => {
   });
   it('opens the exact library document from an overview alert', async () => {
     window.history.replaceState(null, '', '/vendor/documents?document=doc');
-    const service = api();
+    const library = data();
+    library.documents[0]!.files[0]!.staging_scan_bypassed = true;
+    const service = api(library);
     render(<Workspace api={service} manager={false} canWrite />);
     const dialog = await screen.findByRole('dialog', {
       name: 'Insurance certificate',
     });
+    expect(within(dialog).getByText('Available · Unscanned')).toBeVisible();
     expect(
       within(dialog).getByRole('button', { name: 'Replace' }),
     ).toBeEnabled();

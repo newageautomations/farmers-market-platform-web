@@ -15,6 +15,7 @@ export interface DocumentMetadata {
 export interface ComplianceFile {
   id: string;
   status: 'Scanning' | 'Available' | 'Rejected' | 'Scan Failed';
+  staging_scan_bypassed?: boolean;
   mime: string;
   filename: string;
   size: number;
@@ -151,8 +152,7 @@ export const documentErrorMessages: Record<string, string> = {
   DOCUMENT_RATE_LIMIT: 'Too many document requests. Wait before trying again.',
   DOCUMENT_VERSION_CONFLICT:
     'This document or request changed. Refresh before trying again.',
-  DOCUMENT_FILE_UNAVAILABLE:
-    'This file has not passed scanning and cannot be shared.',
+  DOCUMENT_FILE_UNAVAILABLE: 'This file is unavailable and cannot be shared.',
   DOCUMENT_SERVICE_UNAVAILABLE:
     'Document storage or scanning is unavailable. The file has not been made available.',
   DOCUMENT_EXPIRED:

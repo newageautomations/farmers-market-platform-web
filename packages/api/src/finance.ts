@@ -162,6 +162,7 @@ export interface ExpenseDetails {
     filename: string;
     mime: string;
     status: string;
+    staging_scan_bypassed?: boolean;
   }>;
 }
 export interface ProductionCost {

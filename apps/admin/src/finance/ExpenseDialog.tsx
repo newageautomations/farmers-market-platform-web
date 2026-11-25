@@ -379,7 +379,10 @@ export function ExpenseDialog({
                   {query.data.receipts.map((r) => (
                     <li key={r.id}>
                       <FarmstandIcon name="receipt-text" />
-                      <span className="finance-receipt-name">{r.filename}</span>
+                      <span className="finance-receipt-name">
+                        {r.filename}
+                        {r.staging_scan_bypassed && ' (unscanned)'}
+                      </span>
                       {r.status === 'AVAILABLE' ? (
                         <FarmstandButton
                           variant="tertiary"

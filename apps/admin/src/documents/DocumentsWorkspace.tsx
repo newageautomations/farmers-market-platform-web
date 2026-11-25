@@ -1038,6 +1038,9 @@ export function Workspace({
           {ready.documents.map((doc) => {
             const current = doc.files.find((f) => f.status === 'Available'),
               latest = doc.files[0],
+              status = latest?.staging_scan_bypassed
+                ? 'Available · Unscanned'
+                : (latest?.status ?? 'Scanning'),
               kind = fileKind(doc);
             return (
               <DocumentCard
@@ -1048,7 +1051,7 @@ export function Workspace({
                 subtitle={`${kind} · ${doc.metadata.category}`}
                 statuses={
                   <>
-                    <Status value={latest?.status ?? 'Scanning'} />
+                    <Status value={status} />
                     <Status value={doc.expiration} />
                   </>
                 }
@@ -1066,7 +1069,7 @@ export function Workspace({
                       [
                         'Status',
                         <span className="document-card-statuses">
-                          <Status value={latest?.status ?? 'Scanning'} />
+                          <Status value={status} />
                           <Status value={doc.expiration} />
                         </span>,
                       ],
@@ -1087,8 +1090,9 @@ export function Workspace({
                   />
                   {latest?.status !== 'Available' && current && (
                     <Alert severity="info">
-                      The replacement is unavailable. The previous scanned
-                      version can still be downloaded.
+                      The replacement is unavailable. The previous
+                      {current.staging_scan_bypassed ? ' unscanned' : ''} version
+                      can still be downloaded.
                     </Alert>
                   )}
                   <div className="documents-actions">
