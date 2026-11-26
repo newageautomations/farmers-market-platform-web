@@ -123,7 +123,7 @@
     "src/plugins/marketplace-commerce/in-person/square/api.ts": "1703833e6e2cb13a3c5aa1216ffab6596ac4e1f333b0ab90ab69168256c5b84c",
     "src/plugins/marketplace-commerce/in-person/clover/api.ts": "62367bcbe44a31fbc2b8156213c946d77f3faeac67ca0abe50d683f538e8adc5",
     "src/plugins/marketplace-commerce/in-person/mobile/api.ts": "6eab4960af83b212fd8300307b314b4cdf15e257de966888527fe104159ff2a3",
-    "src/plugins/farmers-market/api/admin-api.ts": "4575a8fe55d6fbe9cfbf44add7676dbde11ffb91c415b227a82d551b6e705566",
+    "src/plugins/farmers-market/api/admin-api.ts": "6919cffaa0e128e040889b1aa4ccf5c5d64b6d522857f64911b2ccb116907fef",
     "src/plugins/pos-integration/api.ts": "e9c72a0501fbe1937c0ac30c7cbbfd4daf92d735a28377dd5e449f8b3a7f5bb4",
     "src/plugins/billing-entitlements/api.ts": "7f0de4c2e49e74cc1ea2f0ca9832f5fa3fb1f9335a5cbead5784d767dcddf6bc",
     "src/plugins/platform-admin/api.ts": "0d31de71dbfe3510d169ce159f2ea71a5a634a9e80eb7a67676c8a6173216a4f",

@@ -870,8 +870,8 @@ type Mutation {
   configureOwnMarket(input: ConfigureMarketInput!): MarketDomain!
   reviseMarketRecurrence(marketId: ID!, expectedVersion: Int!, recurrence: WeeklyRecurrenceInput): MarketDomain!
   saveMarketSchedule(marketId: ID!, expectedVersion: Int!, schedule: MarketScheduleInput!): MarketDomain!
-  deleteMarketSchedule(marketId: ID!, expectedVersion: Int!, scheduleId: ID!): MarketDomain!
-  generateMarketOccurrences(marketId: ID!, from: String!, through: String!, scheduleIds: [ID!]): [MarketSession!]!
+  deleteMarketSchedule(marketId: ID!, expectedVersion: Int!, scheduleId: String!): MarketDomain!
+  generateMarketOccurrences(marketId: ID!, from: String!, through: String!, scheduleIds: [String!]): [MarketSession!]!
   enqueueMarketOccurrenceGeneration(marketId: ID!, from: String!, through: String!): MarketGenerationJob!
   createManualMarketOccurrence(marketId: ID!, scheduleDate: String!, generationKey: String!, input: MarketSessionInput!): MarketSession!
   reviseMarketOccurrence(id: ID!, expectedVersion: Int!, input: MarketSessionInput!): MarketSession!
@@ -7828,7 +7828,7 @@ type WeeklyRecurrence {
 }
 
 type MarketSchedule {
-  id: ID!
+  id: String!
   venue: String!
   frequency: String
   weekInterval: Int
@@ -8154,7 +8154,7 @@ input WeeklyRecurrenceInput {
 }
 
 input MarketScheduleInput {
-  id: ID
+  id: String
   venue: String!
   frequency: String
   weekInterval: Int

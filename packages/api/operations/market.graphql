@@ -133,7 +133,7 @@ mutation MarketSaveSchedule(
 mutation MarketDeleteSchedule(
   $marketId: ID!
   $expectedVersion: Int!
-  $scheduleId: ID!
+  $scheduleId: String!
 ) {
   deleteMarketSchedule(
     marketId: $marketId
@@ -149,7 +149,7 @@ mutation MarketGenerate(
   $marketId: ID!
   $from: String!
   $through: String!
-  $scheduleIds: [ID!]
+  $scheduleIds: [String!]
 ) {
   generateMarketOccurrences(
     marketId: $marketId

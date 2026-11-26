@@ -1,6 +1,10 @@
 import { print, type DocumentNode } from 'graphql';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import { AppError, backendError } from './errors';
+import {
+  AppError,
+  backendError,
+  marketGenerationValidationCodes,
+} from './errors';
 import { RequestTimeoutError, withRequestTimeout } from './request-timeout';
 
 // Internal only. Public feature code receives named application APIs, never raw execute().
@@ -125,6 +129,7 @@ export function transport<K extends ApiKind>(
                       'STOREFRONT_ADDRESS_RESERVED',
                       'STOREFRONT_ALREADY_CONFIGURED',
                       'STOREFRONT_ADDRESSES_UNAVAILABLE',
+                      ...marketGenerationValidationCodes,
                     ].includes(first.message)
                   ? first.message
                   : code,

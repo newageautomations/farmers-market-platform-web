@@ -1,6 +1,33 @@
 import { applicationErrorMessages } from './application-rules';
 
+const marketGenerationMessages: Record<string, string> = {
+  MARKET_GENERATION_INVALID_DATE: 'Enter valid start and end dates.',
+  MARKET_GENERATION_INVALID_SELECTION:
+    'Choose between one and 20 repeating schedules.',
+  MARKET_GENERATION_REVERSED_RANGE:
+    'Choose an end date on or after the start date.',
+  MARKET_GENERATION_RANGE_TOO_LONG:
+    'Choose a shorter date range and try again.',
+  MARKET_GENERATION_OUTSIDE_HORIZON:
+    'Choose dates closer to today and try again.',
+  MARKET_GENERATION_INACTIVE:
+    'The market must be active before dates can be generated.',
+  MARKET_GENERATION_SCHEDULE_UNAVAILABLE:
+    'A selected repeating schedule is no longer available. Reopen Generate occurrences and select the current schedules.',
+  MARKET_GENERATION_LOCAL_TIME_EXCEPTION:
+    'A schedule time is skipped or repeated during a clock change. Adjust the hours or leave that date out of this run.',
+  MARKET_GENERATION_INVALID_SAVED_SCHEDULE:
+    'Review the saved schedule dates, hours and market time zone, then try again.',
+  MARKET_GENERATION_INVALID_HOURS:
+    'Review the schedule hours and make sure the market ends after it starts.',
+};
+
+export const marketGenerationValidationCodes = Object.keys(
+  marketGenerationMessages,
+);
+
 const catalogMessages: Record<string, string> = {
+  ...marketGenerationMessages,
   STOREFRONT_ADDRESS_IN_USE:
     'That storefront address is already in use. Choose a different address.',
   STOREFRONT_ADDRESS_INVALID:
@@ -390,6 +417,8 @@ const codes: Record<string, ErrorKind> = {
   CONFLICT: 'conflict',
 };
 export function backendError(code: unknown, status?: number): AppError {
+  if (typeof code === 'string' && Object.hasOwn(marketGenerationMessages, code))
+    return new AppError('validation', code);
   if (typeof code === 'string' && codes[code])
     return new AppError(codes[code], code);
   if (status === 401) return new AppError('authentication');

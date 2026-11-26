@@ -499,6 +499,51 @@ describe('Market occurrences', () => {
     );
     expect(enqueue).not.toHaveBeenCalled();
   });
+  it('shows safe feedback for a stale repeating schedule and leaves generation available', async () => {
+    const service = createFixtureMarketService(marketFixtureContext());
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: null,
+          errors: [
+            {
+              message: 'MARKET_GENERATION_SCHEDULE_UNAVAILABLE',
+              extensions: {
+                code: 'USER_INPUT_ERROR',
+                requestId: 'fixture-request',
+              },
+            },
+          ],
+        }),
+      ),
+    );
+    const api = createMarketApi({
+      endpoint,
+      channelToken: 'market-1',
+      fetch: fetcher,
+    });
+    vi.spyOn(service, 'generate').mockImplementation(api.generate);
+    render(<MarketOccurrences service={service} view="generate" />);
+    const dialog = within(await screen.findByRole('dialog'));
+    await dialog.findByText('Synthetic Market A fixture venue');
+    fireEvent.click(dialog.getByRole('button', { name: 'Next' }));
+    fireEvent.click(await dialog.findByRole('button', { name: 'Next' }));
+    fireEvent.click(
+      await dialog.findByRole('button', { name: 'Generate occurrences' }),
+    );
+
+    expect(
+      await dialog.findByText(
+        /A selected repeating schedule is no longer available/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      dialog.getByRole('button', { name: 'Generate occurrences' }),
+    ).toBeEnabled();
+    const request = JSON.parse(fetcher.mock.calls[0]![1]!.body as string);
+    expect(request.query).toContain('$scheduleIds: [String!]');
+    expect(request.variables.scheduleIds).toHaveLength(1);
+  });
   it('deletes a schedule after an in-place confirmation', async () => {
     const service = createFixtureMarketService(marketFixtureContext()),
       remove = vi.spyOn(service, 'deleteSchedule');
