@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, type SubmitEvent } from 'react';
 import {
-  cartMessage,
   type PublicProduct,
   type VendorPreorderAvailability,
   type MarketCart,
 } from '@market/api';
 import { formatMoney } from '@market/config';
+import { stockMessage } from '@market/storefront-core/stock';
 import { shopCall } from '../components/shop-client';
+import { addFailureMessage } from './add-failure-message';
 import { useCartFeedback } from './use-cart-feedback';
 export function useProductPurchase({
   storefrontId,
@@ -143,10 +144,9 @@ export function useProductPurchase({
         Number(quantity) > (status.quantity ?? 2147483647)
       ) {
         setError(
-          status?.available
-            ? `Only ${status.quantity} are available. Reduce the quantity and try again.`
-            : (status?.reason ??
-                'Availability changed. Check your selection and quantity.'),
+          stockMessage(status, Number(quantity)) ??
+            status?.reason ??
+            'Availability changed. Check your selection and quantity.',
         );
         return;
       }
@@ -173,7 +173,14 @@ export function useProductPurchase({
         ),
       );
     } catch (e) {
-      setError(cartMessage(e as { code?: string; kind?: string }));
+      setError(
+        await addFailureMessage(e as { code?: string; kind?: string }, {
+          storefrontId,
+          occurrenceId,
+          variantId,
+          quantity: Number(quantity),
+        }),
+      );
     } finally {
       lock.current = false;
       setPending(false);

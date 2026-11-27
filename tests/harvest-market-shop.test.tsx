@@ -5,6 +5,7 @@ import type { MarketItem, MarketCatalog } from '@market/api';
 import {
   marketProduct,
   marketCatalogAvailability,
+  marketStockAvailability,
   marketShopCatalog,
   marketShopQuery,
 } from '../apps/storefront/src/lib/market-catalog';
@@ -175,6 +176,33 @@ describe('Harvest market shop', () => {
         quantity: null,
       },
     ]);
+  });
+  it('reads stock only for eligible variants and falls back to eligibility', async () => {
+    const read = vi.fn(async (_occurrence: string, ids: string[]) =>
+      ids.map((variantId) => ({
+        variantId,
+        available: variantId === '21',
+        reason:
+          variantId === '21' ? 'Available at this market' : 'Out of stock',
+        quantity: variantId === '21' ? 4 : 0,
+      })),
+    );
+    const facts = await marketStockAvailability(
+      read,
+      '7',
+      [item],
+      ['21', '22', '999'],
+    );
+    expect(read).toHaveBeenCalledWith('7', ['21', '22']);
+    expect(facts.map((f) => [f.variantId, f.available, f.quantity])).toEqual([
+      ['21', true, 4],
+      ['22', false, 0],
+      ['999', false, null],
+    ]);
+    const failing = vi.fn().mockRejectedValue(new Error('offline'));
+    expect(await marketStockAvailability(failing, '7', [item])).toEqual(
+      marketCatalogAvailability([item]),
+    );
   });
   it('uses explicit dates, then the populated cart, then the saved preference', async () => {
     expect((await marketPreorder(context('', false, '8'))).selected?.id).toBe(

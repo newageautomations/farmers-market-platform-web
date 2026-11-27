@@ -37,6 +37,8 @@ export type MarketOrganizerRelationshipState = {
   listings: MarketRelationshipDetail['listings']['items'];
   offerings: MarketRelationshipDetail['offerings']['items'];
 };
+export type MarketListingApproval =
+  g.MarketListingApprovalsQuery['ownMarketListings']['items'][number];
 export type MarketGenerationJobStatus =
   g.MarketGenerationStatusQuery['ownMarketOccurrenceGenerationStatus'];
 
@@ -238,6 +240,24 @@ export function createMarketApi(
         { api: 'admin', document: g.MarketListingPreviewDocument },
         { id },
       ).then((r) => r.ownMarketListingPreview),
+    /** Every Vendor's listings at this Market, optionally by approval status. */
+    listingApprovals: (
+      options: Partial<
+        NonNullable<g.MarketListingApprovalsQueryVariables['options']>
+      > = {},
+    ) =>
+      run(
+        { api: 'admin', document: g.MarketListingApprovalsDocument },
+        {
+          options: {
+            take: 100,
+            skip: 0,
+            search: null,
+            status: null,
+            ...options,
+          },
+        },
+      ).then((r) => r.ownMarketListings),
     approveListing: (
       id: string,
       expectedVersion: number,

@@ -97,7 +97,8 @@ export function createMarketStorefrontApi(
     return snapshot();
   }
   function accepted(result: { __typename?: string; errorCode?: string }) {
-    if (result.__typename !== 'Order') throw new AppError('validation');
+    if (result.__typename !== 'Order')
+      throw new AppError('validation', result.errorCode);
   }
   return {
     occurrences: (
@@ -136,6 +137,14 @@ export function createMarketStorefrontApi(
       ).marketOccurrenceCatalog;
       return catalog.items.find((item) => item.variantId === variantId) ?? null;
     },
+    /** Advisory stock facts for at most 20 variants; add-time checks stay authoritative. */
+    availability: async (occurrenceId: string, variantIds: string[]) =>
+      (
+        await execute(
+          { api: 'shop', document: shop.MarketOccurrenceAvailabilityDocument },
+          { occurrenceId, variantIds },
+        )
+      ).marketOccurrenceAvailability,
     vendors: async (occurrenceId: string) =>
       (
         await execute(

@@ -68,7 +68,8 @@ export function createMarketFixtureData(marketId: string, now = Date.now()) {
     closesTime: '18:00',
   };
   // The legacy single rule appears as the first schedule, as the backend reports it.
-  const configuration: MarketConfiguration = { ownerVendorId: null,
+  const configuration: MarketConfiguration = {
+    ownerVendorId: null,
     id: marketId,
     name,
     slug: `synthetic-market-${prefix}`,
@@ -153,7 +154,12 @@ export function createMarketFixtureData(marketId: string, now = Date.now()) {
     version: 1,
     preorderDefault: null,
     autoEnroll: false,
-    market: { ownerVendorId: null, id: marketId, name, slug: configuration.slug },
+    market: {
+      ownerVendorId: null,
+      id: marketId,
+      name,
+      slug: configuration.slug,
+    },
   }));
   const states: Record<string, MarketRelationshipState> = {};
   for (const [index, member] of memberships.entries()) {
@@ -563,9 +569,26 @@ export function createFixtureMarketService(
         withdrawnVendorRelationships: data.memberships.filter(
           (r) => r.status === 'withdrawn',
         ).length,
+        pendingListings: Object.values(data.states)
+          .flatMap((s) => s.listings)
+          .filter((l) => l.status === 'pending').length,
         upcomingScheduledOccurrences: upcoming.length,
         nextOccurrence: upcoming[0] ?? null,
       };
+    },
+    listingApprovals: async (options = {}) => {
+      check();
+      const term = options.search?.trim().toLocaleLowerCase() ?? '';
+      const rows = data.memberships.flatMap((member) => {
+        const membership = memberDisplay(member);
+        return (data.states[member.id]?.listings ?? [])
+          .filter((l) => options.status == null || l.status === options.status)
+          .filter(() =>
+            membership.vendor.name.toLocaleLowerCase().includes(term),
+          )
+          .map((l) => ({ listing: listingDisplay(l), membership }));
+      });
+      return page(rows, options);
     },
     listingPublication: async (id) => {
       check();
@@ -751,7 +774,8 @@ export function createFixtureMarketService(
           version: 1,
           preorderDefault: null,
           autoEnroll: false,
-          market: { ownerVendorId: null,
+          market: {
+            ownerVendorId: null,
             id: marketId,
             name: data.configuration.name,
             slug: data.configuration.slug,

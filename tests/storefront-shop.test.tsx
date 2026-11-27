@@ -93,6 +93,32 @@ it('keeps mixed-availability products purchasable through explicit option select
     reason: 'Availability could not be confirmed',
   });
 });
+it('reports out of stock, low stock at 5 or fewer, and keeps ineligible products unavailable', () => {
+  const single = [items[0]!.variants[0]!];
+  const fact = (quantity: number, reason = 'Available at this market') => [
+    { variantId: single[0]!.id, available: quantity > 0, quantity, reason },
+  ];
+  expect(productPreorder(single, fact(0, 'Out of stock'))).toMatchObject({
+    available: false,
+    outOfStock: true,
+    reason: 'Out of stock',
+  });
+  expect(
+    productPreorder(single, fact(0, 'Sold out for this market')),
+  ).toMatchObject({ outOfStock: true, reason: 'Out of stock' });
+  expect(productPreorder(single, fact(5))).toMatchObject({
+    available: true,
+    lowStock: 5,
+    reason: '5 left in stock',
+  });
+  expect(productPreorder(single, fact(6))).toMatchObject({
+    lowStock: null,
+    reason: 'Available at this market',
+  });
+  expect(
+    productPreorder(single, fact(0, 'Unavailable at this market')),
+  ).toMatchObject({ outOfStock: false, reason: 'Unavailable at this market' });
+});
 it('requires confirmed availability, selects the exact occurrence, then adds through the native cart', async () => {
   const calls: string[] = [];
   const fetcher = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
@@ -186,12 +212,45 @@ it('includes occurrence in add requests and reports a late inventory rejection w
   await waitFor(() =>
     expect(screen.getByText(/no longer available/)).toBeInTheDocument(),
   );
-  expect(fetcher).toHaveBeenCalledTimes(1);
-  expect(JSON.parse(fetcher.mock.calls[0]![1]!.body as string)).toMatchObject({
+  const adds = fetcher.mock.calls.filter(
+    (call) => JSON.parse(call[1]!.body as string).action === 'add',
+  );
+  expect(adds).toHaveLength(1);
+  expect(JSON.parse(adds[0]![1]!.body as string)).toMatchObject({
     occurrenceId: '7',
     variantId: '22',
     quantity: 1,
   });
+  vi.unstubAllGlobals();
+});
+it('says out of stock when a card add is rejected and the variant has none left', async () => {
+  const fetcher = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) =>
+    JSON.parse(init!.body as string).action === 'product-availability'
+      ? new Response(
+          JSON.stringify({
+            result: [
+              {
+                variantId: '22',
+                available: false,
+                reason: 'Out of stock',
+                quantity: 0,
+              },
+            ],
+          }),
+        )
+      : new Response(
+          JSON.stringify({
+            error: { kind: 'validation', code: 'PREORDER_UNAVAILABLE' },
+          }),
+          { status: 400 },
+        ),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  render(<FeaturedAdd storefrontId="1" variantId="22" occurrenceId="7" />);
+  fireEvent.click(screen.getByRole('button', { name: 'Add to cart' }));
+  expect(
+    await screen.findByText('This item is out of stock.'),
+  ).toBeInTheDocument();
   vi.unstubAllGlobals();
 });
 it('blocks preview mutations and keeps the existing dropdown presentation', async () => {

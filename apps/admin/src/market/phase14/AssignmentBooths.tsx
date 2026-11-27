@@ -19,6 +19,7 @@ import {
 import { MarketDialog, StatusBadge } from '../presentation';
 import { boothStatus } from './booth-status';
 import { moneyLabel } from './common';
+import { amenityText, requiredAmenities } from './booth-amenities';
 import '@market/ui/workspace-records.css';
 const PAGE_SIZE = 8;
 const statusBadge = {
@@ -499,6 +500,25 @@ export function AssignmentVendors({
                   {current.vendor.contact.phone}
                 </a>
               )}
+              {(() => {
+                const required = requiredAmenities(
+                  current.approval?.requirements ??
+                    data.submissions?.find(
+                      (s) => s.directoryId === current.vendor.id,
+                    )?.requirements,
+                  current.rentals.map((r) => r.snapshot),
+                );
+                return (
+                  <div className="assignment-rentals-summary">
+                    <span>Required amenities:</span>
+                    {required.length ? (
+                      <span>{amenityText(required)}</span>
+                    ) : (
+                      <span className="markets-muted">None</span>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="assignment-rentals-summary">
                 <span>Rentals:</span>
                 {current.rentals.length ? (

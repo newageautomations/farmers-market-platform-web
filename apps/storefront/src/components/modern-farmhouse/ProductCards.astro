@@ -119,7 +119,11 @@ const {
                       : status.reason
                 }
               >
-                {preview && status.available ? 'Preview only' : 'Unavailable'}
+                {preview && status.available
+                  ? 'Preview only'
+                  : status.outOfStock && occurrenceId
+                    ? 'Out of Stock'
+                    : 'Unavailable'}
               </Button>
             )}
           </div>

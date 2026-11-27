@@ -629,14 +629,14 @@ function BusinessDetails({
             <AccountBadge state={accountState(row)} />
           </div>
           <dl className="market-application-facts">
-            {row.membership && (
-              <div>
-                <dt>Membership</dt>
-                <dd>
-                  <StatusBadge>{row.membership.status}</StatusBadge>
-                </dd>
-              </div>
-            )}
+            <div>
+              <dt>Membership</dt>
+              <dd>
+                {/* A linked or external business without a membership row
+                    cannot attend dates; say so rather than hiding the row. */}
+                <StatusBadge>{row.membership?.status ?? 'none'}</StatusBadge>
+              </dd>
+            </div>
             {contact ? (
               <>
                 <div>

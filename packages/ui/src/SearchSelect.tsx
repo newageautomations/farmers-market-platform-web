@@ -12,6 +12,8 @@ export type SearchOption = {
 type SharedProps = {
   readOnly?: boolean;
   label: string;
+  /** Keep the label for assistive technology only; defaults to visible. */
+  hideLabel?: boolean;
   options: readonly SearchOption[];
   placeholder?: string;
   disabled?: boolean;
@@ -81,6 +83,7 @@ export function sortSearchOptions(
 }
 function SearchChoices({
   label,
+  hideLabel = false,
   values,
   onSelection,
   options,
@@ -193,7 +196,9 @@ function SearchChoices({
         if (!e.currentTarget.contains(e.relatedTarget)) close();
       }}
     >
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id} className={hideLabel ? 'sr-only' : undefined}>
+        {label}
+      </label>
       <div className="market-search-select-control">
         <Input
           ref={input}

@@ -115,5 +115,33 @@ export function marketCatalogAvailability(
   }));
 }
 
+/**
+ * Catalog eligibility refined with advisory stock facts, 20 variants per read.
+ * If the stock read fails, eligibility alone is returned and add-time checks decide.
+ */
+export async function marketStockAvailability(
+  read: (
+    occurrenceId: string,
+    variantIds: string[],
+  ) => Promise<VendorPreorderAvailability>,
+  occurrenceId: string,
+  items: readonly MarketItem[],
+  variantIds?: string[],
+): Promise<VendorPreorderAvailability> {
+  const eligibility = marketCatalogAvailability(items, variantIds);
+  const ids = eligibility.filter((a) => a.available).map((a) => a.variantId);
+  try {
+    const batches = [];
+    for (let skip = 0; skip < ids.length; skip += 20)
+      batches.push(read(occurrenceId, ids.slice(skip, skip + 20)));
+    const facts = (await Promise.all(batches)).flat();
+    return eligibility.map(
+      (entry) => facts.find((f) => f.variantId === entry.variantId) ?? entry,
+    );
+  } catch {
+    return eligibility;
+  }
+}
+
 export const marketProductLink = (variantId: string, occurrenceId?: string) =>
   `/shop/products/${encodeURIComponent(variantId)}${occurrenceId ? `?occurrence=${encodeURIComponent(occurrenceId)}` : ''}`;

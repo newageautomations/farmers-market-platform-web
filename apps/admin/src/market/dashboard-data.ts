@@ -12,7 +12,11 @@ import {
 } from '../vendor/dashboard-data';
 import { boothStatus } from './phase14/booth-status';
 import { occurrenceBooths } from './phase14/Assignments';
-import { plural, type DateOperations } from './operations-data';
+import {
+  PENDING_LISTINGS_PATH,
+  plural,
+  type DateOperations,
+} from './operations-data';
 
 export { daysUntil, sortUrgent, type UrgentItem };
 
@@ -134,6 +138,7 @@ export function managerUrgencies({
   compliance,
   applications,
   vendorRequests,
+  listings,
   now,
 }: {
   next?: MarketOccurrence | null;
@@ -142,6 +147,8 @@ export function managerUrgencies({
   compliance?: ComplianceSummaryData;
   applications?: number;
   vendorRequests?: number;
+  /** Market-wide listings waiting for approval; omit without approval rights. */
+  listings?: number;
   now: number;
 }): UrgentItem[] {
   const items: UrgentItem[] = [];
@@ -206,6 +213,15 @@ export function managerUrgencies({
       title: `${plural(compliance.totals.pending, 'document')} to review`,
       detail: 'Vendors submitted documents for your approval.',
       href: `${DOCUMENTS_PATH}?view=reports&status=Pending+review`,
+    });
+  if (listings)
+    items.push({
+      id: 'listings:pending',
+      tone: 'warning',
+      icon: 'package',
+      title: `${plural(listings, 'item')} ${listings === 1 ? 'needs' : 'need'} approval to list on your storefront`,
+      detail: 'Products vendors submitted to sell at your market.',
+      href: PENDING_LISTINGS_PATH,
     });
   if (applications)
     items.push({

@@ -154,9 +154,18 @@ const productLink = (slug: string) =>
         )}
         {shop && (
           <>
-            {(availabilityNote || !status.available || !occurrenceId) && (
+            {(availabilityNote ||
+              !status.available ||
+              status.lowStock != null ||
+              !occurrenceId) && (
               <p class="shop-availability">
-                {!occurrenceId ? 'No upcoming pickup market' : status.reason}
+                {!occurrenceId ? (
+                  'No upcoming pickup market'
+                ) : status.lowStock != null ? (
+                  <span class="stock-low">{status.reason}</span>
+                ) : (
+                  status.reason
+                )}
               </p>
             )}
             {status.available && occurrenceId && !preview ? (
@@ -175,7 +184,11 @@ const productLink = (slug: string) =>
               )
             ) : (
               <Button disabled>
-                {preview && status.available ? 'Preview only' : 'Unavailable'}
+                {preview && status.available
+                  ? 'Preview only'
+                  : status.outOfStock && occurrenceId
+                    ? 'Out of Stock'
+                    : 'Unavailable'}
               </Button>
             )}
           </>

@@ -36,6 +36,10 @@ export interface AttentionItem {
   icon: FarmstandIconName;
 }
 
+/** The Market-wide listing approval queue, and its pending view. */
+export const LISTING_APPROVALS_PATH = '/market/listing-approvals';
+export const PENDING_LISTINGS_PATH = `${LISTING_APPROVALS_PATH}?status=pending`;
+
 /** Where a date is in its lifecycle, from the manager's point of view. */
 export type DatePhase = 'upcoming' | 'today' | 'ended' | 'cancelled';
 
@@ -177,6 +181,33 @@ export function boothItems(
 }
 
 /**
+ * Vendor products waiting for listing approval, for an active date. The
+ * count is Market-wide: a listing is approved for the Market, not one date.
+ * Omit `pending` when the manager cannot approve listings.
+ */
+export function listingItems(
+  phase: DatePhase,
+  pending: number | undefined,
+): AttentionItem[] {
+  if (pending === undefined || phase === 'ended' || phase === 'cancelled')
+    return [];
+  return [
+    {
+      id: 'listings:pending',
+      title: 'Listing approvals',
+      status: pending ? 'Needs approval' : 'All reviewed',
+      count: pending,
+      detail: pending
+        ? `${plural(pending, 'vendor product')} ${pending === 1 ? 'needs' : 'need'} approval before ${pending === 1 ? 'it' : 'they'} can be listed on your storefront.`
+        : 'Every product vendors submitted has a decision.',
+      href: PENDING_LISTINGS_PATH,
+      action: 'Review listings',
+      icon: 'package',
+    },
+  ];
+}
+
+/**
  * Readiness for one date. `known` is false when the checklist could not be
  * read or its sources are unavailable, so the date is never shown as ready.
  */
@@ -186,10 +217,13 @@ export function dateReadiness(
   checklist: MarketDayChecklist | undefined,
   facts: DateOperations | undefined,
   canOperateDay: boolean,
+  /** Market-wide pending listings; omit when the manager cannot approve them. */
+  pendingListings?: number,
 ) {
   const sourced = !!checklist && ['today', 'future'].includes(checklist.status);
   const items = [
     ...boothItems(occurrenceId, phase, facts, canOperateDay),
+    ...listingItems(phase, pendingListings),
     ...(sourced ? checklistItems(checklist) : []),
   ];
   return {

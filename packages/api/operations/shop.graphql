@@ -222,6 +222,17 @@ query VendorPreorderAvailability($occurrenceId: ID!, $variantIds: [ID!]!) {
     quantity
   }
 }
+query MarketOccurrenceAvailability($occurrenceId: ID!, $variantIds: [ID!]!) {
+  marketOccurrenceAvailability(
+    occurrenceId: $occurrenceId
+    variantIds: $variantIds
+  ) {
+    variantId
+    available
+    reason
+    quantity
+  }
+}
 fragment StorefrontCart on Order {
   id
   code

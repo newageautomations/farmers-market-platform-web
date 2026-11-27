@@ -1,5 +1,6 @@
 import { useCallback, useId, useMemo, useState, type MouseEvent } from 'react';
 import { type MarketOccurrence } from '@market/api';
+import { mayMarketCommand } from '@market/admin-core';
 import { Alert, Badge, EmptyState, Field, InlineSkeleton } from '@market/ui';
 import {
   FarmstandIcon,
@@ -30,6 +31,8 @@ import {
   boothItems,
   datePhase,
   dateReadiness,
+  LISTING_APPROVALS_PATH,
+  listingItems,
   plural,
   readChecklists,
   readDateOperations,
@@ -71,6 +74,7 @@ function access(service: MarketService) {
       !!service.phase14 && permissions.includes('ReadOwnMarketAssignments'),
     day: permissions.includes('OperateOwnMarketDay'),
     checklist: !!service.checklist,
+    listings: mayMarketCommand(service.context, 'ManageOwnMarketListings'),
   };
 }
 function phaseStatus(occurrence: MarketOccurrence, phase: DatePhase) {
@@ -248,6 +252,9 @@ function OperationsList({ service }: { service: MarketService }) {
   );
   const checking = summaryDates.some((o) => checkingDate(o.id));
 
+  const pendingListings = allowed.listings
+    ? overview.data?.pendingListings
+    : undefined;
   const readiness = useCallback(
     (o: MarketOccurrence) => {
       const phase = datePhase(o, observedAt);
@@ -259,10 +266,11 @@ function OperationsList({ service }: { service: MarketService }) {
           checklists.data?.get(o.id),
           facts.data?.get(o.id),
           allowed.day,
+          pendingListings,
         ),
       };
     },
-    [observedAt, checklists.data, facts.data, allowed.day],
+    [observedAt, checklists.data, facts.data, allowed.day, pendingListings],
   );
   const summary = useMemo(() => {
     const rows = summaryDates.map(readiness);
@@ -738,11 +746,33 @@ function OperationsDetail({
     factsRead,
     allowed.booths && !!occurrence,
   );
+  const summaryRead = useCallback(() => service.overview(), [service]);
+  const summary = useRead(
+    `${service.readKey}:operations-summary`,
+    summaryRead,
+    allowed.listings,
+  );
+  const pendingListings = allowed.listings
+    ? summary.data?.pendingListings
+    : undefined;
   const phase = occurrence && datePhase(occurrence, observedAt);
   const booths = facts.data;
-  const extra = phase ? boothItems(id, phase, booths, allowed.day) : [];
+  const extra = phase
+    ? [
+        ...boothItems(id, phase, booths, allowed.day),
+        ...listingItems(phase, pendingListings),
+      ]
+    : [];
   const readiness =
-    phase && dateReadiness(id, phase, checklist.data, booths, allowed.day);
+    phase &&
+    dateReadiness(
+      id,
+      phase,
+      checklist.data,
+      booths,
+      allowed.day,
+      pendingListings,
+    );
   const back = '/market/operations';
   const manage = `/market/occurrences/${id}`;
   const assignments = `/market/assignments/${id}`;
@@ -753,7 +783,8 @@ function OperationsDetail({
     !phase || phase === 'cancelled' || phase === 'ended'
       ? '—'
       : (allowed.checklist && !checklist.data && !checklist.error) ||
-          checkingFacts
+          checkingFacts ||
+          (allowed.listings && !summary.data && !summary.error)
         ? '—'
         : readiness!.attention.length;
 
@@ -987,6 +1018,17 @@ function OperationsDetail({
                   >
                     <FarmstandIcon name="file-check" />
                     Vendor documents
+                    <FarmstandIcon name="arrow-right" />
+                  </FarmstandLink>
+                  <FarmstandLink
+                    href={LISTING_APPROVALS_PATH}
+                    variant="secondary"
+                    className="application-detail-arrow"
+                    onClick={(event) => inApp(event, LISTING_APPROVALS_PATH)}
+                  >
+                    <FarmstandIcon name="package" />
+                    Listing approvals
+                    {pendingListings ? ` (${pendingListings})` : ''}
                     <FarmstandIcon name="arrow-right" />
                   </FarmstandLink>
                   <FarmstandLink

@@ -8,23 +8,23 @@ Pasture is the reference implementation. Where this document says "the theme", r
 
 `themePageStructure(theme)` returns one object that the editor, the storefront pages and the starter content all read. A theme sets:
 
-| Setting                | Meaning                                                                                    | Pasture                           |
-| ---------------------- | ------------------------------------------------------------------------------------------ | --------------------------------- |
-| `lockedTopPages`       | Pages whose own content must open the page. Nothing can be added above it.                 | Vendors, Applications             |
-| `headingOnlyPages`     | Pages that open with their own editable heading instead of a hero section.                 | Policies, Terms & Conditions      |
-| `noClosingPages`       | Pages that never show the closing invitation.                                              | Policies, Terms & Conditions      |
-| `footerOnlyPages`      | Pages linked from the footer only, never the header.                                       | FAQ, Policies, Terms & Conditions |
-| `shortHeroPages`       | Pages whose starting hero image is short. `shortHeroHeight` sets the pixels.               | Contact, FAQ at 220px             |
-| `marketTermsPage`      | The market has a Terms & Conditions page.                                                  | Yes                               |
-| `marketContactForm`    | The market Contact page has an inquiry form the manager can edit.                          | Yes                               |
-| `aboutStarter`         | Switching on About fills it with an example page.                                          | Yes                               |
-| `shopPagination`       | `numbered` paging or the older `summary` paging.                                           | Numbered                          |
-| `sectionImageShape`    | Image with Text offers an image shape.                                                     | Yes                               |
-| `ctaButtonStyle`       | The Call-to-Action Banner offers a button style.                                           | Yes                               |
-| `sectionSpaceDefault`  | Default space above and below every custom section, in pixels. `null` turns the rule off.  | 32                                |
-| `shopAvailabilityNote` | Shop cards say "Available at this market". When off, only unavailable products get a note. | Off                               |
-| `marketStarterText`    | Market Policies and Terms & Conditions start with written example text.                    | Yes                               |
-| `marketDayBoothCards`  | Pointing at a booth on the Market Day map shows that vendor's card.                        | Yes                               |
+| Setting                | Meaning                                                                                                                                               | Pasture                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `lockedTopPages`       | Pages whose own content must open the page. Nothing can be added above it.                                                                            | Vendors, Applications             |
+| `headingOnlyPages`     | Pages that open with their own editable heading instead of a hero section.                                                                            | Policies, Terms & Conditions      |
+| `noClosingPages`       | Pages that never show the closing invitation.                                                                                                         | Policies, Terms & Conditions      |
+| `footerOnlyPages`      | Pages linked from the footer only, never the header.                                                                                                  | FAQ, Policies, Terms & Conditions |
+| `shortHeroPages`       | Pages whose starting hero image is short. `shortHeroHeight` sets the pixels.                                                                          | Contact, FAQ at 220px             |
+| `marketTermsPage`      | The market has a Terms & Conditions page.                                                                                                             | Yes                               |
+| `marketContactForm`    | The market Contact page has an inquiry form the manager can edit.                                                                                     | Yes                               |
+| `aboutStarter`         | Switching on About fills it with an example page.                                                                                                     | Yes                               |
+| `shopPagination`       | `numbered` paging or the older `summary` paging.                                                                                                      | Numbered                          |
+| `sectionImageShape`    | Image with Text offers an image shape.                                                                                                                | Yes                               |
+| `ctaButtonStyle`       | The Call-to-Action Banner offers a button style.                                                                                                      | Yes                               |
+| `sectionSpaceDefault`  | Default space above and below every custom section, in pixels. `null` turns the rule off.                                                             | 32                                |
+| `shopAvailabilityNote` | Shop cards say "Available at this market". When off, only unavailable products get a note. Either way, 5 or fewer left shows a red "N left in stock". | Off                               |
+| `marketStarterText`    | Market Policies and Terms & Conditions start with written example text.                                                                               | Yes                               |
+| `marketDayBoothCards`  | Pointing at a booth on the Market Day map shows that vendor's card.                                                                                   | Yes                               |
 
 The backend repeats one of these rules: `StorefrontContactService.submit` lists the themes whose market Contact page accepts messages. Add the new theme there too.
 

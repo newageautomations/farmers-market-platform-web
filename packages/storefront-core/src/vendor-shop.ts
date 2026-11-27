@@ -1,4 +1,5 @@
 import type { PublicCatalog, VendorPreorderAvailability } from '@market/api';
+import { isOutOfStock, lowStock, lowStockLabel } from './stock';
 
 /** Input is the channel-authorized public catalog, never an Admin catalog. */
 export function relatedProducts(
@@ -60,20 +61,30 @@ export function productPreorder(
   variants: PublicCatalog['items'][number]['variants'],
   availability: VendorPreorderAvailability,
 ) {
-  const eligible = variants.filter((v) =>
-    availability.some((a) => a.variantId === v.id && a.available),
-  );
+  const fact = (id: string) => availability.find((a) => a.variantId === id);
+  const eligible = variants.filter((v) => fact(v.id)?.available);
+  // Multiple product variants always require the existing explicit option workflow.
+  const variantId =
+    variants.length === 1 && eligible.length === 1
+      ? eligible[0]!.id
+      : undefined;
+  const outOfStock =
+    !eligible.length &&
+    variants.length > 0 &&
+    variants.every((v) => isOutOfStock(fact(v.id)));
+  const remaining = variantId ? lowStock(fact(variantId)) : null;
   return {
     available: eligible.length > 0,
-    // Multiple product variants always require the existing explicit option workflow.
-    variantId:
-      variants.length === 1 && eligible.length === 1
-        ? eligible[0]!.id
-        : undefined,
+    variantId,
+    outOfStock,
+    lowStock: remaining,
     reason: eligible.length
-      ? 'Available at this market'
-      : (variants
-          .map((v) => availability.find((a) => a.variantId === v.id)?.reason)
-          .find(Boolean) ?? 'Availability could not be confirmed'),
+      ? remaining != null
+        ? lowStockLabel(remaining)
+        : 'Available at this market'
+      : outOfStock
+        ? 'Out of stock'
+        : (variants.map((v) => fact(v.id)?.reason).find(Boolean) ??
+          'Availability could not be confirmed'),
   };
 }

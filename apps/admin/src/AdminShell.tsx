@@ -664,11 +664,11 @@ function Shell({
                         ) &&
                         !(
                           context.scope === 'MARKET' &&
-                          // Overview, Team, Occurrences, Operations and Applications render their own heading.
+                          // Overview, Team, Occurrences, Operations, Listing approvals and Applications render their own heading.
                           (marketPath(path) === '/market' ||
                             path === '/market/team' ||
                             path === '/market/contact-submissions' ||
-                            /^\/market\/(occurrences|preparation|day|operations|applications|application-submissions|rentals|directory|vendors)(\/|$)/.test(
+                            /^\/market\/(occurrences|preparation|day|operations|listing-approvals|applications|application-submissions|rentals|directory|vendors)(\/|$)/.test(
                               path,
                             ) ||
                             // Assignments too; its layout editor keeps the page heading.

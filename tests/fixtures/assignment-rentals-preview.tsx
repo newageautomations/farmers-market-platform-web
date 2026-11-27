@@ -70,6 +70,21 @@ data.invoices = data.invoices!.map((i) => ({
   paidMinor: 0,
 })) as unknown as MarketOperationsData['invoices'];
 
+// The vendor asked for electricity, so booths without it prompt before assigning.
+data.approvals = data.approvals!.map((a) => ({
+  ...a,
+  requirements: {
+    widthFeet: 1,
+    depthFeet: 1,
+    electricity: true,
+    vehicle: false,
+    foodTruck: false,
+  },
+}));
+/** Commands received, for inspecting the fixture from the browser console. */
+const commands: unknown[] = [];
+(window as unknown as { assignmentCommands: unknown[] }).assignmentCommands =
+  commands;
 const context = marketFixtureContext();
 context.permissions = [
   ...context.permissions,
@@ -83,10 +98,13 @@ const service = createFixtureMarketService(context);
 service.phase14 = {
   vendorAssignments: async () => [],
   read: async () => structuredClone(data),
-  command: async () => {
-    throw new Error(
-      'Command is outside this explicit browser qualification fixture.',
-    );
+  command: async (command) => {
+    commands.push(structuredClone(command));
+    if (command.action !== 'ASSIGN')
+      throw new Error(
+        'Command is outside this explicit browser qualification fixture.',
+      );
+    return {};
   },
 };
 createRoot(document.getElementById('root')!).render(

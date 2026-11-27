@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from 'react';
 import { Button, Dialog, SelectField } from '@market/ui';
-import { cartMessage } from '@market/api';
 import type { MarketCart } from '@market/api';
+import { addFailureMessage } from '../lib/add-failure-message';
 import { shopCall } from './shop-client';
 import { AnimatedCartButton } from './AnimatedCartButton';
 import { useCartFeedback } from '../lib/use-cart-feedback';
@@ -63,7 +63,14 @@ export function FeaturedAdd({
         ),
       );
     } catch (error) {
-      setMessage(cartMessage(error as { code?: string; kind?: string }));
+      setMessage(
+        await addFailureMessage(error as { code?: string; kind?: string }, {
+          storefrontId,
+          occurrenceId,
+          variantId: selectedId,
+          quantity: 1,
+        }),
+      );
     } finally {
       lock.current = false;
       setPending(false);

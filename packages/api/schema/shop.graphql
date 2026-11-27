@@ -87,6 +87,7 @@ type Query {
   vendorPreorderOccurrences: [VendorPreorderOccurrence!]!
   vendorPreorderAvailability(occurrenceId: ID!, variantIds: [ID!]!): [VendorPreorderAvailability!]!
   marketOccurrenceCatalog(occurrenceId: ID!, options: OccurrenceCatalogOptions): OccurrenceCatalog!
+  marketOccurrenceAvailability(occurrenceId: ID!, variantIds: [ID!]!): [VendorPreorderAvailability!]!
   marketStorefrontOccurrences(options: MarketPublicOccurrenceOptions): MarketPublicOccurrencePage!
   marketStorefrontOccurrence(id: ID!): MarketPublicOccurrence
   marketOccurrenceVendors(occurrenceId: ID!): [MarketOccurrenceVendor!]!

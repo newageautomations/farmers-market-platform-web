@@ -1,5 +1,10 @@
 import { useProductPurchase } from '../../lib/use-product-purchase';
 import { Select } from '@market/ui';
+import {
+  isOutOfStock,
+  lowStock,
+  lowStockLabel,
+} from '@market/storefront-core/stock';
 export function Purchase(props: Parameters<typeof useProductPurchase>[0]) {
   const c = useProductPurchase(props);
   const blocked =
@@ -9,6 +14,9 @@ export function Purchase(props: Parameters<typeof useProductPurchase>[0]) {
     props.preview ||
     !c.eligible ||
     !c.validQuantity;
+  const fact = c.availability.find((a) => a.variantId === c.variantId);
+  const outOfStock = !!props.occurrenceId && isOutOfStock(fact);
+  const remaining = c.eligible ? lowStock(fact) : null;
   return (
     <form
       className="farmhouse-form farmhouse-purchase"
@@ -32,9 +40,11 @@ export function Purchase(props: Parameters<typeof useProductPurchase>[0]) {
               {v.options.length
                 ? ` (${v.options.map((o) => o.name).join(', ')})`
                 : ''}
-              {!c.availability.some((a) => a.variantId === v.id && a.available)
-                ? ' (unavailable at this market)'
-                : ''}
+              {c.availability.some((a) => a.variantId === v.id && a.available)
+                ? ''
+                : isOutOfStock(c.availability.find((a) => a.variantId === v.id))
+                  ? ' (out of stock)'
+                  : ' (unavailable at this market)'}
             </option>
           ))}
         </Select>
@@ -79,7 +89,9 @@ export function Purchase(props: Parameters<typeof useProductPurchase>[0]) {
               : !c.selected
                 ? 'Choose an option'
                 : !c.eligible
-                  ? 'Unavailable'
+                  ? outOfStock
+                    ? 'Out of Stock'
+                    : 'Unavailable'
                   : 'Add to cart ↗'}
         </button>
       </div>
@@ -102,7 +114,12 @@ export function Purchase(props: Parameters<typeof useProductPurchase>[0]) {
           </a>
         </p>
       )}
-      {c.eligible && (
+      {remaining != null && (
+        <p role="status">
+          <span className="stock-low">{lowStockLabel(remaining)}</span>
+        </p>
+      )}
+      {c.eligible && remaining == null && (
         <p role="status">
           Available for this market
           {c.maximum < 2147483647 ? `, up to ${c.maximum} available` : ''}.

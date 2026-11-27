@@ -135,7 +135,8 @@ it('shows booth availability, invoices owed and new applications for the next ma
     name: 'Market day checklist',
   });
   await within(checklist).findByText('Vendors without a booth');
-  expect(checklist).toHaveTextContent('2 of 4 done');
+  expect(checklist).toHaveTextContent('2 of 5 done');
+  expect(checklist).toHaveTextContent('Listing approvals');
 });
 
 it('leaves out sections behind missing grants and never reads them', async () => {

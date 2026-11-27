@@ -361,8 +361,12 @@ function WithdrawButton({
 
 export function SubmittedInformation({
   detail,
+  lead,
 }: {
   detail: Pick<Detail, 'definition' | 'answers'>;
+  /** Optional facts shown above the answers, such as the Market's view of
+   * the applicant's account. Defaults to none. */
+  lead?: ReactNode;
 }) {
   const visible = detail.definition.questions.filter(
     (q) =>
@@ -382,6 +386,11 @@ export function SubmittedInformation({
   );
   return (
     <Panel icon={{ farmstand: 'receipt-text' }} title="Submitted information">
+      {lead && (
+        <div className="application-detail-answers application-detail-lead">
+          <dl>{lead}</dl>
+        </div>
+      )}
       {visible.length ? (
         sections.map((section) => (
           <div className="application-detail-answers" key={section}>

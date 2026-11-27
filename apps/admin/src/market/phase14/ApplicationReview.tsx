@@ -6,6 +6,7 @@ import {
 import { ApplicationInformationReview } from './ApplicationInformationReview';
 import { buttonClassName } from '@market/ui/presentation';
 import { useEffect, useRef, useState } from 'react';
+import { RequestedDates } from './RequestedDates';
 import type {
   ApplicationSubmission,
   MarketOperationsData,
@@ -13,33 +14,29 @@ import type {
 } from '@market/api';
 import {
   Button,
-  Card,
-  Select,
-  SelectField,
   Tabs,
   Dropdown,
   ApplicationFields,
   ApplicationOnboarding,
   UtilityIcon,
+  Badge,
 } from '@market/ui';
+import { platformName } from '@market/config';
 import { date } from '../common';
 import {
   friendlyLabel,
   SearchSelect,
   StatusBadge,
-  statusTone,
   MarketDialog,
 } from '../presentation';
 import { Entry, Check } from './common';
 import { DocumentStatus } from '@market/ui/documents';
 
-function statusColors(value: string) {
-  const tone = statusTone(value);
-  return {
-    backgroundColor: `var(--status-${tone}-bg)`,
-    color: `var(--status-${tone}-fg)`,
-  };
-}
+const decisionTitles: Record<string, string> = {
+  ACCEPTED: 'Accept application',
+  WAITLISTED: 'Waitlist application',
+  DECLINED: 'Deny application',
+};
 
 export function ApplicationReview({
   submission: s,
@@ -53,6 +50,7 @@ export function ApplicationReview({
   onBusy,
   onRefresh,
   onDirty,
+  runBatch,
   page = false,
 }: {
   submission: ApplicationSubmission;
@@ -66,6 +64,8 @@ export function ApplicationReview({
   onSaved: () => void;
   onBusy: (busy: boolean) => void;
   onDirty?: (dirty: boolean) => void;
+  /** Runs several commands with one refresh at the end (date decisions). */
+  runBatch?: (commands: OperationsCommand[]) => Promise<boolean[]>;
   page?: boolean;
 }) {
   const [status, setStatus] = useState(s.status),
@@ -128,6 +128,25 @@ export function ApplicationReview({
       setConfirming(false);
     }
   }
+  async function batch(commands: OperationsCommand[]) {
+    setBusy(true);
+    onBusy(true);
+    try {
+      if (runBatch) return await runBatch(commands);
+      const results: boolean[] = [];
+      for (const command of commands) {
+        try {
+          results.push((await run(command)) != null);
+        } catch {
+          results.push(false);
+        }
+      }
+      return results;
+    } finally {
+      setBusy(false);
+      onBusy(false);
+    }
+  }
   const notesOnly = useRef(false);
   const [confirming, setConfirming] = useState(false);
   async function save(onlyNotes = false) {
@@ -168,22 +187,47 @@ export function ApplicationReview({
       setConfirming(false);
     }
   }
+  /** The three manager decisions; other statuses come from the applicant
+   * (Withdrawn) or from information requests (Needs info, Under review). */
+  function choose(next: 'ACCEPTED' | 'WAITLISTED' | 'DECLINED') {
+    setStatus(next);
+    setReviewed(false);
+    setConditional(false);
+    setConfirming(true);
+  }
+  // Required documents not yet approved, waived or excepted.
+  const outstandingDocuments = s.documentation?.outstanding ?? [];
+  function closeDecision() {
+    setConfirming(false);
+    setStatus(s.status);
+    setReviewed(false);
+    setConditional(s.conditionalAcceptance ?? false);
+    setDirectory(String(s.directoryId ?? ''));
+  }
+  // Page: the applicant, the dates table and the answers in the main
+  // column; decisions and other actions in the side panel.
   if (page)
     return (
       <div className="application-detail-columns submission-review-columns">
-        <div
-          className="application-detail-main"
-          aria-label="Original submitted answers"
-        >
-          <SubmittedInformation
-            detail={{ definition: s.definitionSnapshot, answers: s.answers }}
-          />
+        <div className="application-detail-main">
+          <div aria-label="Original submitted answers">
+            <SubmittedInformation
+              detail={{ definition: s.definitionSnapshot, answers: s.answers }}
+              lead={accountFact()}
+            />
+          </div>
+          {datesPanel()}
+          {historyDropdown()}
         </div>
         <aside
-          className="application-detail-sidebar"
-          aria-label="Application details and actions"
+          className="application-detail-sidebar application-review-inspector"
+          aria-label="Application actions"
         >
-          {detailsPanel()}
+          {decisionPanel()}
+          {notesPanel()}
+          {documentsPanel()}
+          {requestsDropdown()}
+          {onboardingDropdown()}
         </aside>
       </div>
     );
@@ -198,9 +242,28 @@ export function ApplicationReview({
       />
     </div>
   );
+  /** Whether the applicant applied signed in to a platform account. */
+  function accountFact() {
+    const verified = ['ACCOUNT_ONLY', 'AUTHORIZED_VENDOR'].includes(
+      s.identityMode ?? '',
+    );
+    return (
+      <Fact icon={{ utility: 'user' }} label={`${platformName} account`}>
+        {verified ? (
+          <Badge tone="success" className="submission-account-badge">
+            <UtilityIcon name="check" />
+            Verified user
+          </Badge>
+        ) : (
+          'No'
+        )}
+      </Fact>
+    );
+  }
   function answersPanel() {
     return (
       <section aria-label="Original submitted answers">
+        <dl className="application-detail-summary">{accountFact()}</dl>
         <ApplicationFields
           definition={s.definitionSnapshot}
           answers={s.answers}
@@ -213,115 +276,42 @@ export function ApplicationReview({
   function detailsPanel() {
     return (
       <div className="application-review-inspector">
-        <Panel icon={{ utility: 'user' }} title="Applicant information">
-          <div className="submission-review-panel-body">
-            <dl className="application-detail-summary submission-applicant-facts">
-              <Fact icon={{ utility: 'user' }} label="Contact">
-                {[s.applicant.firstName, s.applicant.lastName]
-                  .filter(Boolean)
-                  .join(' ') || 'Not provided'}
-              </Fact>
-              <Fact icon={{ utility: 'email' }} label="Email">
-                {s.applicant.email || 'Not provided'}
-              </Fact>
-              {s.applicant.phone && (
-                <Fact icon={{ utility: 'phone' }} label="Phone">
-                  {s.applicant.phone}
-                </Fact>
-              )}
-              <Fact icon={{ farmstand: 'tag' }} label="Category">
-                {s.applicant.category || 'Not provided'}
-              </Fact>
-              <Fact icon={{ utility: 'user' }} label="Identity">
-                {friendlyLabel(s.identityMode ?? 'LEGACY_UNKNOWN')}
-              </Fact>
-              <Fact icon={{ farmstand: 'store' }} label="Platform vendor">
-                {s.applicantVendorId ?? 'Not linked'}
-              </Fact>
-              {s.onboarding?.platformVendorId && (
-                <Fact
-                  icon={{ farmstand: 'circle-check' }}
-                  label="Verified vendor"
-                >
-                  {s.onboarding.platformVendorId}
-                </Fact>
-              )}
-              {s.directoryId && (
-                <Fact icon={{ farmstand: 'store' }} label="Market business">
-                  {data.directory?.find((d) => d.id === s.directoryId)?.contact
-                    .businessName ?? `Directory record ${s.directoryId}`}
-                </Fact>
-              )}
-            </dl>
-          </div>
-        </Panel>
-        <Panel
-          icon={{ utility: 'calendar' }}
-          title="Requested dates and rentals"
-        >
-          <div className="submission-review-panel-body">
-            <section>
-              {s.requestedOccurrenceIds.length ? (
-                <ul>
-                  {s.requestedOccurrenceIds.map((id) => (
-                    <li key={id}>
-                      {date(
-                        data.occurrences.find((o) => o.id === id)?.startsAt,
-                        data.timeZone,
-                      )}{' '}
-                      ·{' '}
-                      <StatusBadge>
-                        {decisions.find((d) => d.occurrenceId === id)
-                          ?.decision ?? 'PENDING'}
-                      </StatusBadge>
-                      <p>
-                        {s.rentalRequests
-                          .filter((r) => r.quantity > 0)
-                          .map((r) => `${r.name}: ${r.quantity}`)
-                          .join(', ') || 'No rentals requested.'}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No dates requested.</p>
-              )}
-            </section>
-            {s.status === 'ACCEPTED' && (
-              <>
-                <fieldset disabled={!canConfirmDates || busy || requestDirty}>
-                  <legend>Requested dates</legend>
-                  <p>
-                    Date confirmation records attendance approval without
-                    reserving or guaranteeing a booth. Booth compatibility and
-                    availability are checked when assigning.
-                  </p>
-                  {s.requestedOccurrenceIds.map((id) => (
-                    <DateDecision
-                      key={id}
-                      submission={s}
-                      occurrenceId={id}
-                      data={data}
-                      run={relatedCommand}
-                      canBilling={canBilling}
-                    />
-                  ))}
-                </fieldset>
-                {canConfirmDates && (
-                  <a
-                    className={buttonClassName({
-                      variant: 'secondary',
-                      className: 'button secondary',
-                    })}
-                    href={`/market/assignments?directory=${s.directoryId}&channel=${new URLSearchParams(window.location.search).get('channel') ?? ''}`}
-                  >
-                    Assign confirmed dates
-                  </a>
-                )}
-              </>
-            )}
-          </div>
-        </Panel>
+        {datesPanel()}
+        {documentsPanel()}
+        {requestsDropdown()}
+        {historyDropdown()}
+        {notesPanel()}
+        {onboardingDropdown()}
+        {decisionPanel()}
+      </div>
+    );
+  }
+  function datesPanel() {
+    return (
+      <Panel
+        icon={{ utility: 'calendar' }}
+        title="Requested dates and rentals"
+        className="requested-dates-panel"
+      >
+        {s.status !== 'ACCEPTED' && s.requestedOccurrenceIds.length > 0 && (
+          <p className="application-detail-note requested-dates-gate">
+            Accept the application to confirm, waitlist or decline these dates.
+          </p>
+        )}
+        <RequestedDates
+          submission={s}
+          data={data}
+          canDecide={canConfirmDates && s.status === 'ACCEPTED'}
+          canBilling={canBilling}
+          busy={busy || requestDirty}
+          runBatch={batch}
+        />
+      </Panel>
+    );
+  }
+  function documentsPanel() {
+    return (
+      <>
         <Panel
           icon={{ utility: 'document-check' }}
           title="Documents and compliance"
@@ -347,25 +337,33 @@ export function ApplicationReview({
                   Documentation readiness is separate from acceptance and does
                   not change attendance.
                 </p>
-                <a
-                  className={buttonClassName({ variant: 'secondary' })}
-                  href={`/market/documents?vendor=${documentVendorId ?? ''}&channel=${new URLSearchParams(window.location.search).get('channel') ?? ''}`}
-                >
-                  Review document readiness
-                </a>
-                {canRequestDocuments && s.applicantVendorId && (
+                <div className="submission-document-actions">
                   <a
                     className={buttonClassName({ variant: 'secondary' })}
-                    href={`/market/documents?vendor=${s.applicantVendorId}&request=1`}
+                    href={`/market/documents?vendor=${documentVendorId ?? ''}&channel=${new URLSearchParams(window.location.search).get('channel') ?? ''}`}
                   >
-                    Request an additional document
+                    Review compliance
                   </a>
-                )}
+                  {canRequestDocuments && s.applicantVendorId && (
+                    <a
+                      className={buttonClassName({ variant: 'primary' })}
+                      href={`/market/documents?vendor=${s.applicantVendorId}&request=1`}
+                    >
+                      Request documents
+                    </a>
+                  )}
+                </div>
               </>
             )}
             {!s.documentation && <p>Document readiness unavailable.</p>}
           </div>
         </Panel>
+      </>
+    );
+  }
+  function requestsDropdown() {
+    return (
+      <>
         <Dropdown
           label={
             <span className="application-review-card-heading">
@@ -390,6 +388,12 @@ export function ApplicationReview({
             }}
           />
         </Dropdown>
+      </>
+    );
+  }
+  function historyDropdown() {
+    return (
+      <>
         <Dropdown
           label={
             <span className="application-review-card-heading">
@@ -417,6 +421,12 @@ export function ApplicationReview({
             </ul>
           </section>
         </Dropdown>
+      </>
+    );
+  }
+  function notesPanel() {
+    return (
+      <>
         <Panel icon={{ utility: 'notebook' }} title="Private manager notes">
           <div className="submission-review-panel-body">
             <p>
@@ -453,6 +463,12 @@ export function ApplicationReview({
             )}
           </div>
         </Panel>
+      </>
+    );
+  }
+  function onboardingDropdown() {
+    return (
+      <>
         {s.onboarding && (
           <Dropdown
             label={
@@ -465,127 +481,131 @@ export function ApplicationReview({
             <ApplicationOnboarding summary={s.onboarding} />
           </Dropdown>
         )}
+      </>
+    );
+  }
+  function decisionPanel() {
+    return (
+      <>
         <Panel icon={{ utility: 'check' }} title="Application decision">
           <div className="submission-review-panel-body">
             {canManage && !terminal ? (
               <fieldset disabled={busy || activeRequest || requestDirty}>
                 <p>
-                  Acceptance approves the business for consideration. Confirm
-                  dates separately, then assign compatible booths and review
-                  billing.
+                  {s.applicantVendorId
+                    ? 'Accepting approves the business and makes this vendor an approved member of your market.'
+                    : 'This applicant has no platform vendor account, so accepting adds the business to your market directory only.'}{' '}
+                  Then confirm dates in Requested dates and assign compatible
+                  booths.
                 </p>
-                {status === 'ACCEPTED' && (
-                  <Check
-                    label="Accept conditionally while required documentation remains outstanding"
-                    checked={conditional}
-                    onChange={setConditional}
-                  />
-                )}
-                {status === 'ACCEPTED' && s.status !== 'ACCEPTED' && (
-                  <SearchSelect
-                    label="Existing Market Business"
-                    value={directory}
-                    onChange={setDirectory}
-                    placeholder="Create a directory business"
-                    allowClear
-                    clearLabel="Create a directory business instead"
-                    options={(data.directory ?? [])
-                      .filter((d) =>
-                        s.applicantVendorId
-                          ? d.linkedVendorId === s.applicantVendorId &&
-                            d.linkState === 'LINK_VERIFIED'
-                          : !d.linkedVendorId,
-                      )
-                      .map((d) => ({
-                        value: String(d.id),
-                        label: `${d.contact.businessName} (${d.linkState === 'LINK_VERIFIED' ? 'Verified platform Vendor' : 'External directory record'})`,
-                      }))}
-                  />
-                )}
-                {status === 'ACCEPTED' && s.status !== 'ACCEPTED' && (
-                  <p>
-                    Choose an existing market business record if this applicant
-                    is already in your market directory. Otherwise, a new record
-                    can be created during acceptance.
-                  </p>
-                )}
-                <SelectField
-                  label="Application status"
-                  value={status}
-                  style={statusColors(status)}
-                  onChange={(e) => {
-                    setStatus(e.target.value as typeof status);
-                    setConfirming(false);
-                  }}
-                >
-                  <option value={s.status} style={statusColors(s.status)}>
-                    {friendlyLabel(s.status)}
-                  </option>
-                  {[
-                    'UNDER_REVIEW',
-                    'WAITLISTED',
-                    'ACCEPTED',
-                    'DECLINED',
-                    'WITHDRAWN',
-                  ]
-                    .filter((value) => value !== s.status)
-                    .map((value) => (
-                      <option
-                        key={value}
-                        value={value}
-                        style={statusColors(value)}
-                      >
-                        {friendlyLabel(value)}
-                      </option>
-                    ))}
-                </SelectField>
-                {s.status === 'ACCEPTED' && decisions.length > 0 && (
-                  <Check
-                    label="I reviewed the affected dates and their obligations. Historical records must stay intact."
-                    checked={reviewed}
-                    onChange={setReviewed}
-                  />
-                )}
-                <Button
-                  type="button"
-                  disabled={
-                    busy ||
-                    status === s.status ||
-                    (s.status === 'ACCEPTED' &&
-                      decisions.length > 0 &&
-                      !reviewed)
-                  }
-                  onClick={() => setConfirming(true)}
-                >
-                  Review decision
-                </Button>
+                <p className="submission-decision-current">
+                  Current status <StatusBadge>{s.status}</StatusBadge>
+                </p>
+                <div className="submission-decision-actions">
+                  <Button
+                    type="button"
+                    className="submission-decision-accept"
+                    disabled={busy || s.status === 'ACCEPTED'}
+                    onClick={() => choose('ACCEPTED')}
+                  >
+                    Accept application
+                  </Button>
+                  <div className="submission-decision-secondary">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={busy || s.status === 'WAITLISTED'}
+                      onClick={() => choose('WAITLISTED')}
+                    >
+                      Waitlist
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive-outline"
+                      onClick={() => choose('DECLINED')}
+                      disabled={busy}
+                    >
+                      Deny
+                    </Button>
+                  </div>
+                </div>
                 <MarketDialog
                   open={confirming}
                   busy={busy}
-                  title="Confirm application decision"
-                  onClose={() => setConfirming(false)}
+                  title={
+                    decisionTitles[status] ?? 'Confirm application decision'
+                  }
+                  onClose={closeDecision}
                 >
                   {() => (
                     <>
                       <p>
-                        Change {s.applicant.businessName} to{' '}
-                        {friendlyLabel(status)}? The private decision reason
-                        uses the manager notes above.
+                        {status === 'ACCEPTED'
+                          ? `Accept ${s.applicant.businessName}?`
+                          : status === 'WAITLISTED'
+                            ? `Move ${s.applicant.businessName} to the waitlist?`
+                            : `Deny ${s.applicant.businessName}? A denied application cannot be reopened.`}
                       </p>
+                      {status === 'ACCEPTED' && (
+                        <>
+                          {/* Only offered while required documents are
+                              outstanding, naming them. */}
+                          {outstandingDocuments.length > 0 && (
+                            <Check
+                              label={`Accept conditionally while required documents are outstanding (${outstandingDocuments.join(', ')})`}
+                              checked={conditional}
+                              onChange={setConditional}
+                            />
+                          )}
+                          <p>
+                            Choose an existing market business record if this
+                            applicant is already in your market directory.
+                            Otherwise, a new record is created.
+                          </p>
+                          <SearchSelect
+                            label="Existing Market Business"
+                            hideLabel
+                            value={directory}
+                            onChange={setDirectory}
+                            placeholder="Existing Market Business"
+                            allowClear
+                            clearLabel="Create a directory business instead"
+                            options={(data.directory ?? [])
+                              .filter((d) =>
+                                s.applicantVendorId
+                                  ? d.linkedVendorId === s.applicantVendorId &&
+                                    d.linkState === 'LINK_VERIFIED'
+                                  : !d.linkedVendorId,
+                              )
+                              .map((d) => ({
+                                value: String(d.id),
+                                label: `${d.contact.businessName} (${d.linkState === 'LINK_VERIFIED' ? 'Verified platform Vendor' : 'External directory record'})`,
+                              }))}
+                          />
+                        </>
+                      )}
+                      {s.status === 'ACCEPTED' && decisions.length > 0 && (
+                        <Check
+                          label="I reviewed the affected dates and their obligations. Historical records must stay intact."
+                          checked={reviewed}
+                          onChange={setReviewed}
+                        />
+                      )}
                       <div className="ui-actions">
                         <Button
                           type="button"
-                          disabled={busy}
+                          variant={
+                            status === 'DECLINED' ? 'destructive' : 'primary'
+                          }
+                          disabled={
+                            busy ||
+                            (s.status === 'ACCEPTED' &&
+                              decisions.length > 0 &&
+                              !reviewed)
+                          }
                           onClick={() => void save()}
                         >
-                          Confirm decision
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => setConfirming(false)}
-                        >
-                          Keep reviewing
+                          {decisionTitles[status] ?? 'Confirm decision'}
                         </Button>
                       </div>
                     </>
@@ -613,187 +633,7 @@ export function ApplicationReview({
             )}
           </div>
         </Panel>
-      </div>
+      </>
     );
   }
-}
-function DateDecision({
-  submission,
-  occurrenceId,
-  data,
-  run,
-  canBilling,
-}: {
-  submission: ApplicationSubmission;
-  occurrenceId: number;
-  data: MarketOperationsData;
-  run: (c: OperationsCommand) => Promise<unknown>;
-  canBilling: boolean;
-}) {
-  const [reviewStartedAt] = useState(() => Date.now());
-  const approval = data.approvals?.find(
-    (a) => a.submissionId === submission.id && a.occurrenceId === occurrenceId,
-  );
-  const [decision, setDecision] = useState(approval?.decision ?? 'PENDING'),
-    [reason, setReason] = useState(''),
-    [release, setRelease] = useState(false),
-    [voidDraft, setVoidDraft] = useState(false),
-    [busy, setBusy] = useState(false),
-    [failed, setFailed] = useState(false);
-  const occurrence = data.occurrences.find((o) => o.id === occurrenceId);
-  const plan = data.plans?.find((p) => p.occurrenceId === occurrenceId);
-  const directory = data.directory?.find(
-    (d) => d.id === submission.directoryId,
-  );
-  const compatible = data.spaces?.filter(
-    (space) =>
-      space.layoutVersionId === plan?.layoutVersionId &&
-      space.details.widthFeet >= submission.requirements.widthFeet &&
-      space.details.depthFeet >= submission.requirements.depthFeet &&
-      (!submission.requirements.electricity ||
-        space.details.amenities.includes('ELECTRICITY')) &&
-      (!submission.requirements.vehicle ||
-        space.details.amenities.includes('VEHICLE')) &&
-      (!submission.requirements.foodTruck ||
-        space.details.amenities.includes('FOOD_TRUCK')) &&
-      !data.assignments?.some(
-        (a) => a.occurrenceId === occurrenceId && a.spaceId === space.id,
-      ),
-  );
-  return (
-    <Card as="div" className="ops-section">
-      <p>
-        {date(occurrence?.startsAt, data.timeZone)} ·{' '}
-        {friendlyLabel(approval?.decision ?? 'PENDING')}
-      </p>
-      <p>
-        {submission.requirements.widthFeet <= 0 ||
-        submission.requirements.depthFeet <= 0
-          ? 'Booth dimensions are incomplete. Review requirements before assignment.'
-          : !plan || !data.spaces
-            ? 'Booth availability has not been checked.'
-            : compatible?.length
-              ? 'Compatible space is currently available. It has not been reserved.'
-              : 'No compatible space is currently available.'}
-      </p>
-      <label className="ops-field">
-        Date decision
-        <Select
-          value={decision}
-          onChange={(e) => setDecision(e.target.value as typeof decision)}
-          disabled={
-            busy ||
-            (!!occurrence && Date.parse(occurrence.startsAt) <= reviewStartedAt)
-          }
-        >
-          {['PENDING', 'CONFIRMED', 'WAITLISTED', 'DECLINED', 'CANCELLED'].map(
-            (d) => (
-              <option key={d} value={d}>
-                {friendlyLabel(d)}
-              </option>
-            ),
-          )}
-        </Select>
-      </label>
-      <Entry
-        label="Date decision reason"
-        required={false}
-        value={reason}
-        onChange={setReason}
-      />
-      {directory?.linkState === 'LINK_VERIFIED' &&
-        approval &&
-        !approval.participationId && (
-          <>
-            <p>
-              This date was originally external. A verified Market membership
-              and an existing confirmed canonical participation are required
-              before explicitly associating this future date.
-            </p>
-            <Button
-              variant="secondary"
-              size="compact"
-              type="button"
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                setFailed(false);
-                try {
-                  const result = await run({
-                    action: 'CONVERT_OCCURRENCE_IDENTITY',
-                    id: approval.id,
-                    expectedRevision: approval.revision,
-                    data: {},
-                  });
-                  setFailed(result === null || result === undefined);
-                } catch {
-                  setFailed(true);
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              Associate existing canonical participation
-            </Button>
-          </>
-        )}
-      {decision === 'CANCELLED' && (
-        <>
-          <Check
-            label="Release active booth assignments and retain their history"
-            checked={release}
-            onChange={setRelease}
-          />
-          {canBilling && (
-            <Check
-              label="Void draft invoices and retain their snapshots"
-              checked={voidDraft}
-              onChange={setVoidDraft}
-            />
-          )}
-          <p>
-            Issued or paid invoices must be resolved through billing before
-            cancellation.
-          </p>
-        </>
-      )}
-      <Button
-        variant="secondary"
-        size="compact"
-        type="button"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          setFailed(false);
-          try {
-            const result = await run({
-              action: 'REVIEW_OCCURRENCE',
-              expectedRevision: approval?.revision,
-              data: {
-                submissionId: submission.id,
-                occurrenceId,
-                decision,
-                reason,
-                releaseAssignments: release,
-                voidDraftInvoices: voidDraft,
-              },
-            });
-            setFailed(result === null || result === undefined);
-          } catch {
-            setFailed(true);
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        {busy ? 'Saving date' : 'Save date decision'}
-      </Button>
-      {failed && (
-        <p className="alert ui-alert ui-alert-error" role="alert">
-          This date decision could not be saved. Check canonical participation
-          and any assignment or billing obligations.
-        </p>
-      )}
-    </Card>
-  );
 }

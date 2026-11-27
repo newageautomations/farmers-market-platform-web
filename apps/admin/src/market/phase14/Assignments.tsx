@@ -27,6 +27,11 @@ import { BoothDetailsFields } from './BoothDetailsFields';
 import { useWizardDialogHeight } from '../../WizardProgress';
 import { MinorPriceInput } from '../../PriceInput';
 import { FarmstandIcon } from '@market/ui/farmstand';
+import {
+  amenityText,
+  missingAmenities,
+  requiredAmenities,
+} from './booth-amenities';
 export { boothStatus } from './booth-status';
 
 type Run = (c: OperationsCommand) => Promise<unknown>;
@@ -728,6 +733,9 @@ export function AssignmentCard({
     ),
     [notes, setNotes] = useState(a.managerNotes),
     [confirmAssignment, setConfirmAssignment] = useState(false),
+    // Amenities the chosen booth lacks, awaiting the manager's choice.
+    [amenityGap, setAmenityGap] = useState<string[] | null>(null),
+    [allowMissing, setAllowMissing] = useState(false),
     [savingAssignment, setSavingAssignment] = useState(false),
     [keep, setKeep] = useState(false);
   const assignment = assignments.find((x) => x.id === selected),
@@ -813,7 +821,20 @@ export function AssignmentCard({
   const otherAssignments = assignments.filter(
     (x) => x.spaceId !== Number(space),
   );
-  async function saveAssignment(additional = false) {
+  const required = requiredAmenities(
+    a.requirements ?? submission?.requirements,
+    rentals,
+  );
+  /** After any amenity gap is accepted: ask about an existing booth, or save. */
+  function proceed(allow: boolean) {
+    setAllowMissing(allow);
+    if (otherAssignments.length && assignment?.spaceId !== Number(space)) {
+      setConfirmAssignment(true);
+      return;
+    }
+    return saveAssignment(false, allow);
+  }
+  async function saveAssignment(additional = false, allow = allowMissing) {
     if (savingAssignment) return;
     setSavingAssignment(true);
     try {
@@ -828,6 +849,7 @@ export function AssignmentCard({
           rentals,
           allowMultipleSpaces: additional,
           billingAction: keep ? 'KEEP' : null,
+          allowMissingAmenities: allow,
         },
       });
     } finally {
@@ -916,14 +938,16 @@ export function AssignmentCard({
           className="ops-assignment"
           onSubmit={(e) => {
             e.preventDefault();
-            if (
-              otherAssignments.length &&
-              assignment?.spaceId !== Number(space)
-            ) {
-              setConfirmAssignment(true);
+            const missing = missingAmenities(
+              required,
+              booths.find((s) => s.id === Number(space))?.details.amenities ??
+                [],
+            );
+            if (missing.length) {
+              setAmenityGap(missing);
               return;
             }
-            return saveAssignment();
+            return proceed(false);
           }}
         >
           {assignments.length > 1 && (
@@ -1071,6 +1095,52 @@ export function AssignmentCard({
           their existing booth and add this one.
         </p>
       </Dialog>
+      <Dialog
+        open={!!amenityGap}
+        title="Booth is missing requested amenities"
+        size="standard"
+        className="farmstand-controls"
+        busy={savingAssignment}
+        onClose={() => setAmenityGap(null)}
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={savingAssignment}
+              onClick={() => setAmenityGap(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={savingAssignment}
+              onClick={() => {
+                setAmenityGap(null);
+                void proceed(true);
+              }}
+            >
+              Assign booth
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Booth {booths.find((s) => s.id === Number(space))?.details.label}{' '}
+          doesn&apos;t have the requested amenities:{' '}
+          <strong>{amenityText(amenityGap ?? [])}</strong>. Would you still like
+          to assign this vendor to it?
+        </p>
+      </Dialog>
+      <div className="assignment-rentals-summary">
+        <span>Required amenities:</span>
+        {required.length ? (
+          <span>{amenityText(required)}</span>
+        ) : (
+          <span className="assignment-rentals-summary-none">None</span>
+        )}
+      </div>
       <div className="assignment-rentals-summary">
         <span>Rentals:</span>
         {prior.length ? (

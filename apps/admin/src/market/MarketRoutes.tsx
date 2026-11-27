@@ -10,6 +10,7 @@ import type { MarketService } from './service';
 import { MarketAnalytics } from './analytics';
 import { MarketOccurrences } from './occurrences';
 import { MarketOperations } from './operations';
+import { ListingApprovals } from './ListingApprovals';
 import { MarketOverview } from './overview';
 import { MarketSettings } from './settings';
 import { MarketVendors } from './vendors';
@@ -143,6 +144,8 @@ export function MarketRoutes({
         }
       />
     );
+  if (canonical === '/market/listing-approvals')
+    return <ListingApprovals key={service.readKey} service={service} />;
   if (canonical.startsWith('/market/operations'))
     return <MarketOperations key={service.readKey} service={service} id={id} />;
   return <MarketSettings key={service.readKey} service={service} />;

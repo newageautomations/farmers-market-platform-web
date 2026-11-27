@@ -190,6 +190,7 @@ type Query {
   ownMarketMembershipParticipations(membershipId: ID!, options: OwnMarketPageOptions): OwnMarketParticipationPage!
   ownMarketMembershipListings(membershipId: ID!, options: OwnMarketPageOptions): OwnMarketListingPage!
   ownMarketListingPreview(id: ID!): MarketListingPreview!
+  ownMarketListings(options: OwnMarketListingOptions): OwnMarketListingApprovalPage!
   ownMarketMembershipOfferings(membershipId: ID!, options: OwnMarketPageOptions): OwnMarketOfferingPage!
   ownMarketOverviewSummary(options: OwnMarketOverviewOptions): OwnMarketOverviewSummary!
   ownMarketOccurrenceGenerationStatus(jobId: ID!): OwnMarketGenerationStatus!
@@ -7988,6 +7989,14 @@ input OwnMarketVendorOptions {
   status: MarketBusinessMembershipStatus
 }
 
+"""Listing approval status: pending, approved or withdrawn (shown as denied)."""
+input OwnMarketListingOptions {
+  take: Int
+  skip: Int
+  search: String
+  status: String
+}
+
 input OwnMarketOccurrenceOptions {
   take: Int
   skip: Int
@@ -8056,6 +8065,16 @@ type OwnMarketListingPage {
   totalItems: Int!
 }
 
+type MarketListingApproval {
+  listing: MarketOrganizerListing!
+  membership: MarketOrganizerMembership!
+}
+
+type OwnMarketListingApprovalPage {
+  items: [MarketListingApproval!]!
+  totalItems: Int!
+}
+
 """Read-only preview of a listed variant for the Market reviewing it."""
 type MarketListingPreview {
   listingId: ID!
@@ -8091,6 +8110,9 @@ type OwnMarketOverviewSummary {
   pendingVendorRelationships: Int!
   suspendedVendorRelationships: Int!
   withdrawnVendorRelationships: Int!
+
+  """Vendor listings at this Market waiting for approval."""
+  pendingListings: Int!
   upcomingScheduledOccurrences: Int!
   nextOccurrence: MarketSession
 }

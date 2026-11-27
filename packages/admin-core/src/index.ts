@@ -300,6 +300,13 @@ export const navigation: readonly NavItem[] = [
     permission: 'ReadOwnMarketOrders',
   },
   {
+    label: 'Listing approvals',
+    path: '/market/listing-approvals',
+    scopes: ['MARKET'],
+    permission: 'ReadOwnMarket',
+    parent: '/market/operations',
+  },
+  {
     label: 'Website',
     path: '/market/storefront',
     scopes: ['MARKET'],

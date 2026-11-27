@@ -172,9 +172,14 @@ it('separates private notes from submitted answers, date requests and informatio
   ).toBeTruthy();
   expect(screen.getByLabelText('Original submitted answers')).toBeTruthy();
   expect(screen.getByLabelText('Requested dates and rentals')).toBeTruthy();
-  fireEvent.change(screen.getByLabelText('Application status'), {
-    target: { value: 'ACCEPTED' },
-  });
+  // Decisions are three buttons; Accept asks for the business record.
+  expect(screen.getByRole('button', { name: 'Waitlist' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Deny' })).toBeTruthy();
+  expect(screen.queryByLabelText('Application status')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Accept application' }));
+  // No required documents are outstanding, so no conditional acceptance.
+  expect(screen.queryByLabelText(/Accept conditionally/)).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Keep reviewing' })).toBeNull();
   expect(
     screen.getByRole('combobox', { name: 'Existing Market Business' }),
   ).toBeTruthy();

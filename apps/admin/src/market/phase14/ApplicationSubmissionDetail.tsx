@@ -41,7 +41,11 @@ export function ApplicationSubmissionDetail({
       api.read('APPLICATIONS', undefined, { mode: 'DETAIL', submissionId: id }),
     [api, id],
   );
-  const query = useRead(`submission-page:${id}`, load);
+  // Keep the page mounted while it refreshes after an action, so results
+  // such as date decisions stay on screen.
+  const query = useRead(`submission-page:${id}`, load, true, {
+    retainPreviousData: true,
+  });
   const detail = query.data;
   const submission = detail?.submissionDetail;
   useEffect(() => {
@@ -72,6 +76,32 @@ export function ApplicationSubmissionDetail({
     }
     return result;
   }
+  /** Date decisions: one command per date, then a single refresh. */
+  async function batch(inputs: OperationsCommand[]) {
+    const results: boolean[] = [];
+    try {
+      for (const input of inputs) {
+        try {
+          results.push((await run(input)) != null);
+        } catch {
+          results.push(false);
+        }
+      }
+    } finally {
+      query.refresh();
+    }
+    return results;
+  }
+  const pendingDates = submission
+    ? submission.requestedOccurrenceIds.filter(
+        (occurrenceId) =>
+          (detail?.approvals?.find(
+            (a) =>
+              a.submissionId === submission.id &&
+              a.occurrenceId === occurrenceId,
+          )?.decision ?? 'PENDING') === 'PENDING',
+      ).length
+    : 0;
   return (
     <div className="application-detail submission-detail farmstand-controls">
       <FarmstandLink
@@ -119,6 +149,9 @@ export function ApplicationSubmissionDetail({
                 label="Requested dates"
               >
                 {submission.requestedOccurrenceIds.length}
+                {pendingDates > 0 &&
+                  pendingDates < submission.requestedOccurrenceIds.length &&
+                  ` (${pendingDates} pending)`}
               </Fact>
             </dl>
           </FarmstandPanel>
@@ -132,6 +165,7 @@ export function ApplicationSubmissionDetail({
             canConfirmDates={canConfirmDates}
             canBilling={canBilling}
             canRequestDocuments={canRequestDocuments}
+            runBatch={batch}
             onBusy={setBusy}
             onDirty={setDirty}
             onSaved={query.refresh}

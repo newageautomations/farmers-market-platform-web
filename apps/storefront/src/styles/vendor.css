@@ -124,3 +124,9 @@
     margin-inline-start: 0;
   }
 }
+/* Low remaining stock on shop cards and the product purchase form. It colors its own
+   span so theme rules for the surrounding availability line cannot recolor it. */
+.stock-low {
+  color: var(--status-danger-fg);
+  font-weight: 600;
+}

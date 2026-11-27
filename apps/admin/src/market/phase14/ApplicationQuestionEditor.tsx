@@ -23,8 +23,12 @@ export const questionTypeLabels: Record<ApplicationQuestion['type'], string> = {
   INFO: 'Description',
 };
 const choiceTypes = ['SINGLE_SELECT', 'MULTI_SELECT', 'DROPDOWN'];
+/** Always asked and always required. Primary category is required because
+ * the market shop sorts vendors and products by it (the backend enforces it). */
 export const protectedField = (q: ApplicationQuestion) =>
-  ['businessName', 'firstName', 'lastName', 'email'].includes(q.semantic ?? '');
+  ['businessName', 'firstName', 'lastName', 'email', 'category'].includes(
+    q.semantic ?? '',
+  );
 
 /** Expanded editor for one question card. The builder owns the definition. */
 export function ApplicationQuestionEditor({
@@ -218,9 +222,11 @@ export function ApplicationQuestionEditor({
       </div>
       {q.semantic && (
         <p className="field-help">
-          {protectedField(q)
-            ? 'The system needs this identity field. Its type and required status are fixed.'
-            : 'This field supplies business or booth details. Its type is fixed; you can remove it or make it optional.'}
+          {q.semantic === 'category'
+            ? 'The shop sorts vendors and products by primary category, so it is always required.'
+            : protectedField(q)
+              ? 'The system needs this identity field. Its type and required status are fixed.'
+              : 'This field supplies business or booth details. Its type is fixed; you can remove it or make it optional.'}
         </p>
       )}
       {q.condition && (

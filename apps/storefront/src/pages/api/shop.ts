@@ -5,7 +5,7 @@ import { preorderCookie, vendorPreorder } from '../../lib/vendor-preorder';
 import { restartCheckout } from '../../lib/restart-checkout';
 import { recoverEditableCart } from '../../lib/recover-editable-cart';
 import { readCheckoutStatus } from '../../lib/checkout-status';
-import { marketCatalogAvailability } from '../../lib/market-catalog';
+import { marketStockAvailability } from '../../lib/market-catalog';
 import {
   requestShop,
   requestMarketShop,
@@ -121,7 +121,12 @@ export const POST: APIRoute = async (context) => {
             });
             items.push(...catalog.items);
           }
-          result = marketCatalogAvailability(items, ids);
+          result = await marketStockAvailability(
+            market.availability,
+            occurrenceId,
+            items,
+            ids,
+          );
           break;
         }
         const facts = [];

@@ -34,7 +34,7 @@
       "name": "applications-fixture",
       "runtimeExecutable": "node",
       "runtimeArgs": [
-        "C:/Users/jake_/AppData/Local/Temp/claude/d406fdb2e6b6e571/ea74a138-7fc2-49fc-8d25-059625adfa00/scratchpad/serve-applications.mjs"
+        "C:/Users/jake_/AppData/Local/Temp/claude/5e317c4bea9ecfee/658003f6-856a-402b-adf1-823d7df7c6a9/scratchpad/serve-applications.mjs"
       ],
       "port": 4336
     },

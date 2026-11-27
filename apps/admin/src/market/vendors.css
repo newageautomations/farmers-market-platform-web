@@ -102,7 +102,11 @@
   padding: 8px 12px;
   border-radius: 9px;
   border-left: 3px solid var(--gap-color);
-  background: color-mix(in srgb, var(--gap-background) 60%, var(--brand-surface));
+  background: color-mix(
+    in srgb,
+    var(--gap-background) 60%,
+    var(--brand-surface)
+  );
   font-size: 12px;
 }
 .vendor-gaps li[data-tone='warning'] {
@@ -207,8 +211,16 @@
 }
 /* Vendor detail page: same market tokens as the list workspace. */
 .vendor-detail {
-  --markets-border: color-mix(in srgb, var(--brand-primary) 14%, var(--brand-surface));
-  --markets-soft: color-mix(in srgb, var(--brand-primary) 7%, var(--brand-surface));
+  --markets-border: color-mix(
+    in srgb,
+    var(--brand-primary) 14%,
+    var(--brand-surface)
+  );
+  --markets-soft: color-mix(
+    in srgb,
+    var(--brand-primary) 7%,
+    var(--brand-surface)
+  );
   /* Listing thumbnails use the Catalog photo cell, which reads this token. */
   --catalog-soft: var(--markets-soft);
 }
@@ -364,6 +376,13 @@
   gap: 10px;
   width: 100%;
 }
+/* Market-wide Listing approvals page: Approve and Review side by side. */
+.listing-approvals-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
 /* In the review dialog the preview uses the dialog width and a smaller title. */
 .listing-review .product-harvest-preview.vendor-product {
   width: 100%;
@@ -386,14 +405,20 @@
 .vendor-detail .vendor-detail-filters .farmstand-select {
   width: 100%;
 }
-.vendor-detail .vendor-detail-filters .farmstand-select-with-icon .farmstand-select {
+.vendor-detail
+  .vendor-detail-filters
+  .farmstand-select-with-icon
+  .farmstand-select {
   min-width: 240px;
 }
 @media (max-width: 600px) {
   .vendor-detail .markets-filters.vendor-detail-filters {
     grid-template-columns: minmax(0, 1fr);
   }
-  .vendor-detail .vendor-detail-filters .farmstand-select-with-icon .farmstand-select {
+  .vendor-detail
+    .vendor-detail-filters
+    .farmstand-select-with-icon
+    .farmstand-select {
     min-width: 0;
   }
 }

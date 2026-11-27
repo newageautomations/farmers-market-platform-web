@@ -113,9 +113,12 @@
   font-size: 18px;
   font-weight: 600;
 }
+/* Long date and rental lists scroll; rows keep their own height instead of
+ * shrinking to fit the box (the rows opt out of their minimum height). */
 .application-builder-choices {
   max-height: 320px;
   overflow: auto;
+  grid-auto-rows: max-content;
 }
 .application-builder-page
   .application-builder-fieldset.application-builder-choices {
@@ -648,7 +651,7 @@ body.application-dragging * {
   gap: 18px;
 }
 .submission-detail .submission-review-columns {
-  grid-template-columns: minmax(0, 1.35fr) minmax(340px, 1fr);
+  grid-template-columns: minmax(0, 1.75fr) minmax(320px, 1fr);
 }
 .submission-detail .application-detail-overview dd {
   margin: 0;
@@ -660,8 +663,15 @@ body.application-dragging * {
   }
 }
 
-.submission-review-panel-body .submission-applicant-facts {
-  padding: 0;
+/* Platform account fact above the submitted answers. */
+.submission-account-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.submission-account-badge > svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* Live link: published applications on the Market storefront. */
@@ -710,4 +720,182 @@ body.application-dragging * {
 .application-published .application-live-link {
   width: 100%;
   text-align: left;
+}
+
+/* Requested dates (RequestedDates): summary and bulk decision above a
+ * full-width, scrollable table whose header stays in view. */
+.requested-dates-panel .requested-dates-gate,
+.requested-dates > :not(.requested-dates-scroll) {
+  margin-inline: 24px;
+}
+.requested-dates-panel .requested-dates-gate {
+  margin-block: 4px 0;
+}
+.requested-dates {
+  display: grid;
+  gap: 12px;
+  padding-top: 6px;
+  min-width: 0;
+  font-size: 14px;
+}
+.requested-dates p {
+  margin: 0;
+}
+.requested-dates-summary {
+  display: grid;
+  gap: 4px;
+  color: var(--brand-muted);
+}
+.requested-dates-rentals strong {
+  color: var(--brand-foreground);
+  font-weight: 600;
+}
+.requested-dates-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.requested-dates-filter > label {
+  font-weight: 600;
+}
+.requested-dates-filter .farmstand-select-wrap {
+  flex: 0 1 220px;
+}
+.requested-dates-bulk {
+  display: grid;
+  gap: 10px;
+}
+.requested-dates-bulk fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.requested-dates-bulk > fieldset:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.requested-dates-count {
+  min-width: 6.5em;
+  font-weight: 600;
+}
+.requested-dates-bulk .farmstand-select-wrap {
+  flex: 0 1 220px;
+}
+.requested-dates-bulk .requested-dates-reason {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+.requested-dates-cancel {
+  display: grid;
+  gap: 4px;
+}
+.requested-dates-scroll {
+  min-width: 0;
+}
+.requested-dates-scroll > .table-scroll {
+  max-height: 440px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+/* The detail panel keeps table cells on one line; here only the date does. */
+.application-detail-panel
+  .requested-dates-table.farmstand-data-table
+  :is(thead th, tbody td) {
+  white-space: normal;
+  /* Wrap between words only; the panel otherwise breaks inside words. */
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.requested-dates-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--catalog-soft);
+}
+.application-detail-panel .requested-dates-table.farmstand-data-table {
+  /* Auto layout so the selection column keeps its checkbox width; cells
+   * wrap instead of the panel's minimum table width. */
+  table-layout: auto;
+  min-width: 0;
+}
+.requested-dates-table.farmstand-data-table tbody tr {
+  height: 56px;
+}
+.requested-dates-table tbody th {
+  white-space: nowrap;
+}
+.requested-dates-table tbody th > span {
+  display: block;
+}
+.requested-dates-table .requested-dates-day {
+  color: var(--brand-foreground);
+  font-weight: 600;
+}
+.requested-dates-table .markets-muted {
+  font-size: 13px;
+  font-weight: 400;
+}
+.requested-dates-table tbody tr[data-past] {
+  opacity: 0.7;
+}
+.requested-dates-table .requested-dates-note {
+  max-width: 16rem;
+  overflow-wrap: anywhere;
+}
+.requested-dates-table .requested-dates-sort.ui-button,
+.requested-dates-table
+  .requested-dates-sort.ui-button:is(:hover, :focus-visible) {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.requested-dates-table .requested-dates-sort:is(:hover, :focus-visible),
+.requested-dates-table .requested-dates-sort[aria-pressed='true'] {
+  color: var(--brand-foreground);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.requested-dates-table .requested-dates-sort:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+.requested-dates-panel > .requested-dates:last-child {
+  padding-bottom: 18px;
+}
+
+/* Documents and compliance actions: one centered row that wraps with a gap. */
+.submission-document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* Application decision: a full-width Accept, then Waitlist and Deny. */
+.submission-decision-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.submission-decision-actions {
+  display: grid;
+  gap: 10px;
+}
+.submission-decision-actions .submission-decision-accept {
+  width: 100%;
+  min-height: 48px;
+  font-size: 16px;
+}
+.submission-decision-secondary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }

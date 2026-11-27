@@ -5,6 +5,7 @@ import {
   type MarketItem,
   type MarketOccurrenceVendor,
   type PublicProduct,
+  type VendorPreorderAvailability,
   readProductInformation,
 } from '@market/api';
 import {
@@ -27,7 +28,7 @@ import { requestMarketShop } from '../../../lib/shop';
 import { marketPreorder } from '../../../lib/market-preorder';
 import {
   marketProduct,
-  marketCatalogAvailability,
+  marketStockAvailability,
   marketProductLink,
 } from '../../../lib/market-catalog';
 import { vendorInitial } from '../../../lib/market-website';
@@ -52,6 +53,7 @@ let item: MarketItem | undefined;
 let details: PublicProduct | undefined;
 let vendor: MarketOccurrenceVendor | undefined;
 let related: readonly MarketItem[] = [];
+let relatedAvailability: VendorPreorderAvailability = [];
 try {
   if (storefront?.kind !== 'MARKET' || !/^[1-9][0-9]{0,9}$/.test(variantId))
     throw new AppError('not-found');
@@ -96,7 +98,11 @@ try {
   } catch {
     /* A channel without a native product uses its public offering facts. */
   }
-  preorder.availability = marketCatalogAvailability([item]);
+  preorder.availability = await marketStockAvailability(
+    api.availability,
+    preorder.selected.id,
+    [item],
+  );
   // Recommendations and portraits cannot erase a valid product page.
   try {
     vendor = (await api.vendors(preorder.selected.id)).find(
@@ -116,6 +122,11 @@ try {
       related = catalog.items
         .filter((entry) => entry.productId !== item!.productId)
         .slice(0, 4);
+      relatedAvailability = await marketStockAvailability(
+        api.availability,
+        preorder.selected.id,
+        related,
+      );
     } catch {
       /* Optional recommendations. */
     }
@@ -268,7 +279,7 @@ const structured =
               market
               storefrontId={storefront?.storefrontId}
               occurrenceId={preorder.selected?.id}
-              availability={marketCatalogAvailability(related)}
+              availability={relatedAvailability}
               preview={!!Astro.locals.editorPreview}
               sellerNames={Object.fromEntries(
                 related.map((entry) => [entry.productId, entry.vendorName]),

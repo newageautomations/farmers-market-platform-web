@@ -18,7 +18,7 @@ import { requestMarketShop } from '../../lib/shop';
 import { marketPreorder } from '../../lib/market-preorder';
 import {
   marketProduct,
-  marketCatalogAvailability,
+  marketStockAvailability,
   marketProductLink,
   marketShopQuery,
   marketShopCatalog,
@@ -70,7 +70,11 @@ try {
     catalog = results;
     vendors = directory;
     taxonomy = (categoryOptions ?? catalog).taxonomy;
-    preorder.availability = marketCatalogAvailability(catalog.items);
+    preorder.availability = await marketStockAvailability(
+      api.availability,
+      occurrence,
+      catalog.items,
+    );
   }
 } catch (value) {
   error = safeError(value);

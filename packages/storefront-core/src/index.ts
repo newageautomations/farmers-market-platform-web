@@ -101,6 +101,7 @@ export const unavailableStorefrontResolver: BackendStorefrontResolver = {
 export * from './backend';
 export * from './catalog';
 export * from './vendor-shop';
+export * from './stock';
 export * from './market';
 
 export * from './taxonomy';

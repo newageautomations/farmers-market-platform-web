@@ -387,6 +387,8 @@ export interface OccurrenceApproval extends OperationsRecord {
   occurrenceId: number;
   directoryId: number;
   submissionId: number | null;
+  /** Booth needs copied from the application (size and amenities). */
+  requirements?: ApplicationSubmission['requirements'];
   checkIn: 'CHECKED_IN' | 'NOT_CHECKED_IN';
   attendance:
     | 'ATTENDED'
@@ -618,10 +620,11 @@ export interface PublicOccurrenceMap {
     widthFeet: number;
     depthFeet: number;
     amenities: string[];
-    vendor: Pick<
-      ApplicantContact,
-      'businessName' | 'description' | 'category'
-    > & { vendorId?: string | null } | null;
+    vendor:
+      | (Pick<ApplicantContact, 'businessName' | 'description' | 'category'> & {
+          vendorId?: string | null;
+        })
+      | null;
   }>;
 }
 /** An open public application listed on the market website. */

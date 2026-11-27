@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { mayMarketCommand } from '@market/admin-core';
 import { hasPermission } from '@market/auth';
 import { formatMoney } from '@market/config';
 import type {
@@ -103,6 +104,10 @@ export function MarketOverview({ service }: { service: MarketService }) {
   const canBilling = !!operations && can('ReadOwnMarketBilling');
   const canApplications = !!operations && can('ReadOwnMarketApplications');
   const canDocuments = !!service.notifications && can('ReadOwnDocuments');
+  const canListings = mayMarketCommand(
+    service.context,
+    'ManageOwnMarketListings',
+  );
 
   const readOverview = useCallback(() => service.overview(), [service]);
   const overview = useRead(`${key}:overview-summary`, readOverview);
@@ -192,6 +197,9 @@ export function MarketOverview({ service }: { service: MarketService }) {
   );
   const nextFacts = next ? facts.data?.get(String(next.id)) : undefined;
   const pendingApplications = applications.data?.applicationPage?.totalItems;
+  const pendingListings = canListings
+    ? overview.data?.pendingListings
+    : undefined;
   const urgent = useMemo(
     () =>
       managerUrgencies({
@@ -201,6 +209,7 @@ export function MarketOverview({ service }: { service: MarketService }) {
         compliance: compliance.data,
         applications: pendingApplications,
         vendorRequests: requests.data?.totalItems,
+        listings: pendingListings,
         now,
       }),
     [
@@ -211,6 +220,7 @@ export function MarketOverview({ service }: { service: MarketService }) {
       compliance.data,
       pendingApplications,
       requests.data,
+      pendingListings,
       now,
     ],
   );
@@ -261,6 +271,7 @@ export function MarketOverview({ service }: { service: MarketService }) {
         checklist={service.checklist ? checklist : undefined}
         facts={nextFacts}
         canOperateDay={can('OperateOwnMarketDay')}
+        pendingListings={pendingListings}
         now={now}
       />
     ),
@@ -667,6 +678,7 @@ function MarketChecklist({
   checklist,
   facts,
   canOperateDay,
+  pendingListings,
   now,
 }: {
   id: string;
@@ -674,6 +686,7 @@ function MarketChecklist({
   checklist?: Read<MarketDayChecklist>;
   facts?: DateOperations;
   canOperateDay: boolean;
+  pendingListings?: number;
   now: number;
 }) {
   const readiness = next
@@ -683,6 +696,7 @@ function MarketChecklist({
         checklist?.data,
         facts,
         canOperateDay,
+        pendingListings,
       )
     : undefined;
   const tasks = readiness

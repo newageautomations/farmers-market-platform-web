@@ -25,6 +25,7 @@ import '@market/ui/farmstand.css';
 import '@market/ui/workspace.css';
 import './market-occurrences.css';
 import { MarketDayStorefrontSetting } from './MarketDayStorefrontSetting';
+import { LISTING_APPROVALS_PATH } from './operations-data';
 import { CompactLabel } from './mobile';
 
 function inApp(event: MouseEvent<HTMLAnchorElement>, href: string) {
@@ -63,6 +64,17 @@ export function MarketOccurrenceDetail({
     service.context,
     'ManageOwnMarketOccurrences',
   );
+  const listingsAllowed = mayMarketCommand(
+    service.context,
+    'ManageOwnMarketListings',
+  );
+  const summaryRead = useCallback(() => service.overview(), [service]);
+  const summary = useRead(
+    `${service.readKey}:operations-summary`,
+    summaryRead,
+    listingsAllowed,
+  );
+  const pendingListings = summary.data?.pendingListings;
   const boothsAllowed =
     !!service.phase14 &&
     service.context.permissions.includes('ReadOwnMarketAssignments');
@@ -264,6 +276,19 @@ export function MarketOccurrenceDetail({
                         <FarmstandIcon name="arrow-right" />
                       </FarmstandLink>
                     )}
+                  {listingsAllowed && (
+                    <FarmstandLink
+                      href={LISTING_APPROVALS_PATH}
+                      variant="secondary"
+                      className="application-detail-arrow"
+                      onClick={(event) => inApp(event, LISTING_APPROVALS_PATH)}
+                    >
+                      <FarmstandIcon name="package" />
+                      Listing approvals
+                      {pendingListings ? ` (${pendingListings})` : ''}
+                      <FarmstandIcon name="arrow-right" />
+                    </FarmstandLink>
+                  )}
                   <FarmstandLink
                     href={operations}
                     variant="secondary"

@@ -210,15 +210,23 @@ it('renders snapshot sections, supported answer values, conditional visibility, 
       .getAllByRole('heading')
       .map((h) => h.textContent),
   ).toEqual(['Business', 'Products']);
-  expect(within(original).getByText('No')).toBeTruthy();
+  // One "No" answers the Yes/No question; the other is the account field.
+  expect(within(original).getAllByText('No')).toHaveLength(2);
+  expect(within(original).getByText(/ account$/)).toBeTruthy();
   expect(within(original).getByText('Fruit, Honey')).toBeTruthy();
   expect(within(original).getByText('2027-05-14')).toBeTruthy();
   expect(within(original).queryByText('Food details')).toBeNull();
   expect(within(original).queryByText('Empty optional')).toBeNull();
   expect(within(original).queryByRole('textbox')).toBeNull();
-  expect(screen.getAllByText('Folding table: 2')).toHaveLength(2);
+  // Rentals apply to every requested date, so they are listed once.
+  expect(screen.getAllByText('Folding table × 2')).toHaveLength(1);
   expect(
-    screen.getByRole('link', { name: 'Review document readiness' }),
+    within(
+      screen.getByRole('table', { name: 'Requested market dates' }),
+    ).getAllByRole('row'),
+  ).toHaveLength(3);
+  expect(
+    screen.getByRole('link', { name: 'Review compliance' }),
   ).toHaveAttribute('href', '/market/documents?vendor=&channel=');
   expect(screen.getByText('Outstanding: Insurance')).toBeTruthy();
 });
@@ -283,15 +291,14 @@ it('uses mobile tabs by default and retains edits when switching tabs and resizi
     'Private Manager Notes and decision reason',
   );
   fireEvent.change(notes, { target: { value: 'Retained across panels' } });
-  fireEvent.change(screen.getByLabelText('Application status'), {
-    target: { value: 'WAITLISTED' },
-  });
   fireEvent.click(screen.getByRole('tab', { name: 'Submitted Answers' }));
   fireEvent.keyDown(screen.getByRole('tab', { name: 'Submitted Answers' }), {
     key: 'ArrowRight',
   });
   expect(notes).toHaveValue('Retained across panels');
-  expect(screen.getByLabelText('Application status')).toHaveValue('WAITLISTED');
+  expect(
+    screen.getByRole('button', { name: 'Accept application' }),
+  ).toBeTruthy();
   act(() => {
     query.matches = true;
     change?.();

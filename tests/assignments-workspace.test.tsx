@@ -569,3 +569,59 @@ test.each([
     ).toBeNull();
   },
 );
+
+test('a booth without a requested amenity can still be assigned after confirming', async () => {
+  const user = userEvent.setup();
+  const data = structuredClone(boothData);
+  data.assignments = [];
+  data.invoices = [];
+  const approval = {
+    ...data.approvals![0]!,
+    requirements: {
+      widthFeet: 1,
+      depthFeet: 1,
+      electricity: true,
+      vehicle: false,
+      foodTruck: false,
+    },
+  };
+  const run = vi.fn(async (_c: OperationsCommand) => ({}));
+  render(
+    <AssignmentCard
+      data={data}
+      approval={approval}
+      assignments={[]}
+      run={run}
+      canAssign
+      canDay={false}
+      canBill={false}
+    />,
+  );
+  expect(screen.getAllByText('Electricity').length).toBeGreaterThan(0);
+  const booth = data.spaces!.find(
+    (s) => !s.details.amenities.includes('ELECTRICITY'),
+  )!;
+  await user.selectOptions(
+    screen.getByLabelText('Booth assignment'),
+    String(booth.id),
+  );
+  await user.click(
+    screen.getByRole('button', { name: 'Confirm booth and accepted rentals' }),
+  );
+  expect(screen.getByText(/doesn.t have the requested amenities/)).toBeTruthy();
+  await user.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(run).not.toHaveBeenCalled();
+  await user.click(
+    screen.getByRole('button', { name: 'Confirm booth and accepted rentals' }),
+  );
+  await user.click(screen.getByRole('button', { name: 'Assign booth' }));
+  expect(run).toHaveBeenCalledWith(
+    expect.objectContaining({
+      action: 'ASSIGN',
+      data: expect.objectContaining({
+        spaceId: booth.id,
+        allowMissingAmenities: true,
+      }),
+    }),
+  );
+});

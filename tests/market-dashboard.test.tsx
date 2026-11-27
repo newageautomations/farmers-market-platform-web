@@ -177,8 +177,13 @@ it('lists platform Vendors and external businesses together; platform details ar
   expect(within(details).queryByRole('button', { name: /Edit business/ })).toBeNull();
   expect(within(details).getByRole('button', { name: 'Edit private notes' })).toBeInTheDocument();
   expect(within(details).getByText('Managed by the Vendor')).toBeInTheDocument();
+  const membership = () =>
+    within(details).getByText('Membership').nextElementSibling?.textContent;
+  expect(membership()).toBe('Approved');
   fireEvent.click(within(table).getByRole('row', { name: /Orchard Farm/ }));
   expect(within(details).getByRole('button', { name: /Edit business/ })).toBeInTheDocument();
+  // A business with no membership row still shows its membership state.
+  expect(membership()).toBe('None');
 });
 
 it('saves private notes for a platform Vendor without changing its details', async () => {

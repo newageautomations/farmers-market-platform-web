@@ -7,6 +7,11 @@ import {
   type VendorPreorderAvailability,
 } from '@market/api';
 import { formatMoney } from '@market/config';
+import {
+  isOutOfStock,
+  lowStock,
+  lowStockLabel,
+} from '@market/storefront-core/stock';
 
 export function ProductPurchase({
   storefrontId,
@@ -66,6 +71,9 @@ export function ProductPurchase({
     market,
   });
   const editorial = presentation === 'editorial-market';
+  const fact = availability.find((a) => a.variantId === variantId);
+  const outOfStock = !!occurrenceId && isOutOfStock(fact);
+  const remaining = eligible ? lowStock(fact) : null;
   return (
     <form
       className={`purchase-form${editorial ? ' em-product-purchase' : ''}`}
@@ -97,9 +105,11 @@ export function ProductPurchase({
               {v.options.length
                 ? ` (${v.options.map((o) => o.name).join(', ')})`
                 : ''}
-              {!availability.some((a) => a.variantId === v.id && a.available)
-                ? ' (unavailable at this market)'
-                : ''}
+              {availability.some((a) => a.variantId === v.id && a.available)
+                ? ''
+                : isOutOfStock(availability.find((a) => a.variantId === v.id))
+                  ? ' (out of stock)'
+                  : ' (unavailable at this market)'}
             </option>
           ))}
         </Select>
@@ -179,7 +189,9 @@ export function ProductPurchase({
           : !selected
             ? 'Choose an option'
             : !eligible
-              ? 'Unavailable'
+              ? outOfStock
+                ? 'Out of Stock'
+                : 'Unavailable'
               : preview
                 ? 'Preview only'
                 : 'Add to cart'}
@@ -205,11 +217,18 @@ export function ProductPurchase({
           </a>
         </p>
       )}
-      {eligible && !editorial && (
+      {remaining != null ? (
         <p role="status">
-          Available for this market
-          {maximum < 2147483647 ? `, up to ${maximum} available` : ''}.
+          <span className="stock-low">{lowStockLabel(remaining)}</span>
         </p>
+      ) : (
+        eligible &&
+        !editorial && (
+          <p role="status">
+            Available for this market
+            {maximum < 2147483647 ? `, up to ${maximum} available` : ''}.
+          </p>
+        )
       )}
       {eligible && !validQuantity && (
         <p role="alert">

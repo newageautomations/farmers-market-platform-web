@@ -851,6 +851,7 @@ export function DataTable({
   wide = false,
   recordDetails,
   className,
+  renderHeading,
 }: {
   headings: readonly string[];
   children: ReactNode;
@@ -859,6 +860,11 @@ export function DataTable({
   wide?: boolean;
   recordDetails?: RecordDetailsColumns;
   className?: string;
+  /**
+   * Optional header cell content, such as a sort button or a select-all
+   * checkbox; defaults to the heading text. Not used with `recordDetails`.
+   */
+  renderHeading?: (heading: string) => ReactNode;
 }) {
   if (recordDetails)
     return (
@@ -893,7 +899,7 @@ export function DataTable({
               key={heading}
               aria-sort={sort?.heading === heading ? sort.direction : undefined}
             >
-              {heading}
+              {renderHeading ? renderHeading(heading) : heading}
             </th>
           ))}
         </tr>

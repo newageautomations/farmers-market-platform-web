@@ -240,8 +240,82 @@ describe('product purchasing', () => {
     });
     expect(screen.getByText('$9.00')).toBeInTheDocument();
     expect(image.mock.lastCall?.[0].detail).toBe('101');
-    expect(screen.getByRole('button', { name: 'Unavailable' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Out of Stock' })).toBeDisabled();
     window.removeEventListener('product-variant-image', image);
+  });
+  it('shows a red remaining count at 5 or fewer and keeps ineligible options Unavailable', () => {
+    const purchase = (fact: (typeof facts)[number]) =>
+      render(
+        <ProductPurchase
+          storefrontId="1"
+          variants={variants}
+          initialVariantId="10"
+          signedIn
+          fixture={false}
+          occurrenceId="7"
+          availability={[fact]}
+        />,
+      );
+    let view = purchase({ ...facts[0]!, quantity: 5 });
+    expect(screen.getByText('5 left in stock')).toHaveClass('stock-low');
+    view.unmount();
+    view = purchase({ ...facts[0]!, quantity: 6 });
+    expect(screen.queryByText(/left in stock/)).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Available for this market, up to 6 available.'),
+    ).toBeInTheDocument();
+    view.unmount();
+    purchase({
+      variantId: '10',
+      available: false,
+      reason: 'Unavailable at this market',
+      quantity: 0,
+    });
+    expect(screen.getByRole('button', { name: 'Unavailable' })).toBeDisabled();
+  });
+  it('says out of stock when the add itself is rejected for stock', async () => {
+    let checks = 0;
+    const fetcher = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(init?.body as string);
+      if (body.action === 'product-availability')
+        return new Response(
+          JSON.stringify({
+            result: [
+              checks++ === 0
+                ? facts[0]
+                : {
+                    variantId: '10',
+                    available: false,
+                    reason: 'Out of stock',
+                    quantity: 0,
+                  },
+            ],
+          }),
+        );
+      return new Response(
+        JSON.stringify({
+          error: { kind: 'validation', code: 'PREORDER_UNAVAILABLE' },
+        }),
+        { status: 400 },
+      );
+    });
+    vi.stubGlobal('fetch', fetcher);
+    render(
+      <ProductPurchase
+        storefrontId="1"
+        variants={variants}
+        initialVariantId="10"
+        signedIn
+        fixture={false}
+        occurrenceId="7"
+        availability={facts}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add to cart' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'This item is out of stock.',
+    );
+    vi.unstubAllGlobals();
   });
   it('rechecks late availability and submits exactly the selected variant, occurrence and quantity once', async () => {
     let resolveAdd: (value: Response) => void = () => {};
@@ -313,8 +387,11 @@ describe('product purchasing', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add to cart' }));
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: 'Unavailable' }),
+        screen.getByRole('button', { name: 'Out of Stock' }),
       ).toBeDisabled(),
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'This item is out of stock.',
     );
     expect(fetcher).toHaveBeenCalledTimes(1);
   });

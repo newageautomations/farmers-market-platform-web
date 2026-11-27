@@ -482,9 +482,23 @@ query MarketOverviewSummary($options: OwnMarketOverviewOptions) {
     pendingVendorRelationships
     suspendedVendorRelationships
     withdrawnVendorRelationships
+    pendingListings
     upcomingScheduledOccurrences
     nextOccurrence {
       ...MarketOccurrenceFields
+    }
+  }
+}
+query MarketListingApprovals($options: OwnMarketListingOptions) {
+  ownMarketListings(options: $options) {
+    totalItems
+    items {
+      listing {
+        ...MarketOrganizerListingFields
+      }
+      membership {
+        ...MarketOrganizerMembershipFields
+      }
     }
   }
 }
@@ -509,5 +523,13 @@ query MarketGenerationStatus($jobId: ID!) {
   }
 }
 
-query VendorManagedMarkets { ownVendorManagedMarkets { ...MarketConfiguration } }
-mutation CreateVendorManagedMarket($input: VendorManagedMarketInput!) { createVendorManagedMarket(input:$input) { ...MarketConfiguration } }
+query VendorManagedMarkets {
+  ownVendorManagedMarkets {
+    ...MarketConfiguration
+  }
+}
+mutation CreateVendorManagedMarket($input: VendorManagedMarketInput!) {
+  createVendorManagedMarket(input: $input) {
+    ...MarketConfiguration
+  }
+}
