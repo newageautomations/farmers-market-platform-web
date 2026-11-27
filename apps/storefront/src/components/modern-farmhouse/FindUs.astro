@@ -13,12 +13,15 @@ const {
   failed,
   preview,
   hideHero = false,
+  fixed = null,
 } = Astro.props as {
   context: StorefrontContext;
   rows: readonly VendorMarketAppearance[];
   failed: boolean;
   preview: boolean;
   hideHero?: boolean;
+  /** The vendor standard's fixed page: no introduction or invitation, paged dates. */
+  fixed?: { initial: number; more: number } | null;
 };
 const config = context.appearance!.findUs ?? defaultFindUs;
 const [next, ...upcoming] = rows;
@@ -50,8 +53,8 @@ const directions = (row: VendorMarketAppearance) =>
   class="farmhouse-content farmhouse-space farmhouse-find"
   data-farmhouse-component="find-us"
 >
-  {hideHero && <h1 class="sr-only">{config.title}</h1>}
-  {!hideHero && (
+  {(hideHero || fixed) && <h1 class="sr-only">{config.title}</h1>}
+  {!hideHero && !fixed && (
     <section
       class:list={[
         'farmhouse-find-introduction',
@@ -147,6 +150,7 @@ const directions = (row: VendorMarketAppearance) =>
           <MarketSchedule
             class="farmhouse-find-dates"
             heading="More days to gather"
+            paging={fixed}
             rows={upcoming}
             storefrontId={context.storefrontId ?? ''}
             preview={preview}
@@ -163,5 +167,5 @@ const directions = (row: VendorMarketAppearance) =>
       </div>
     )}
   </div>
-  <Invitation cta={config.cta} section="find-cta" />
+  {!fixed && <Invitation cta={config.cta} section="find-cta" />}
 </article>

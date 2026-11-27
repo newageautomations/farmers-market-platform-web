@@ -14,7 +14,8 @@ export const POST: APIRoute = async (context) => {
     !(
       storefront?.kind === 'VENDOR' ||
       (storefront?.kind === 'MARKET' &&
-        themePageStructure(storefront.appearance?.theme).marketContactForm)
+        themePageStructure(storefront.appearance?.theme, storefront.kind)
+          .marketContactForm)
     ) ||
     !storefront.appearance?.contact?.enabled ||
     context.request.headers.get('origin') !== storefront.canonicalOrigin

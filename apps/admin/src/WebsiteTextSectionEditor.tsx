@@ -123,7 +123,9 @@ function WebsiteSectionEditor({
   target = farmhouseHomepageTarget,
 }: SectionEditorProps) {
   // Homepage targets name the shared Harvest contract; the website's theme decides options.
-  const theme = useContext(WebsiteEditorContext)?.theme ?? target.theme;
+  const workspace = useContext(WebsiteEditorContext);
+  const theme = workspace?.theme ?? target.theme;
+  const kind = workspace?.kind;
   if (isHarvestExpandedSection(value))
     return (
       <HarvestSectionEditor
@@ -343,7 +345,7 @@ function WebsiteSectionEditor({
               )}
             </SelectField>
             {value.presentation.imageSide !== 'background' &&
-              themePageStructure(theme).sectionImageShape && (
+              themePageStructure(theme, kind).sectionImageShape && (
                 <ImageShapeField
                   id={`${value.id}-layout-image-shape`}
                   label="Image shape"
@@ -482,7 +484,7 @@ function WebsiteSectionEditor({
           }
         />
         {value.type === 'cta-banner' &&
-          themePageStructure(theme).ctaButtonStyle && (
+          themePageStructure(theme, kind).ctaButtonStyle && (
             <SelectField
               id={`${value.id}-button-style`}
               label="Button style"

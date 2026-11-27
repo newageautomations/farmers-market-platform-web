@@ -11,6 +11,7 @@ import type { StorefrontAppearanceApi } from '@market/api';
 import { ImageShapeField } from './StorefrontAppearance';
 import { CategoryImageField } from './vendor/categories';
 export function FindUsEditor({
+  fixed = false,
   onlyClosing = false,
   hideClosing = false,
   sectionHero = false,
@@ -26,6 +27,8 @@ export function FindUsEditor({
   onTextSizeChange,
   themeId,
 }: {
+  /** The vendor standard's fixed page: nothing to edit, only an explanation. */
+  fixed?: boolean;
   value?: StorefrontAppearance['findUs'];
   api: StorefrontAppearanceApi;
   selected: StorefrontEditorSection;
@@ -58,6 +61,7 @@ export function FindUsEditor({
         .filter(
           (id) => !sectionHero || !['find-intro', 'find-settings'].includes(id),
         )
+        .filter((id) => !fixed || id === 'find-markets')
         .map((id) => (
           <details
             key={id}
@@ -185,7 +189,9 @@ export function FindUsEditor({
                 )}
                 {id === 'find-markets' && (
                   <p className="website-inspector-empty">
-                    No settings for this section.
+                    {fixed
+                      ? 'Your next confirmed market and every upcoming market appear here automatically. Four upcoming markets show at first, and visitors can show more.'
+                      : 'No settings for this section.'}
                   </p>
                 )}
                 {id === 'find-cta' && (

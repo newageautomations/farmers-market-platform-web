@@ -70,8 +70,8 @@ const introduction =
         <Button href={href} class="mw-button-arrow">
           {override ? (
             <>
-              <FarmstandIcon name="map-pin" />
               {override.primaryLabel}
+              <FarmstandIcon name="arrow-right" />
             </>
           ) : (
             <>
@@ -123,7 +123,7 @@ const introduction =
           <Art name="sunflower" class="mw-sticker mw-sticker-sunflower" />
         </>
       ) : (
-        <Scene bunting={!!override} />
+        <Scene />
       )}
     </div>
   </div>

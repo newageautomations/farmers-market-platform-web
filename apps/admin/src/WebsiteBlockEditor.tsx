@@ -225,7 +225,8 @@ export function WebsiteBlockInspector({
       <p>{definition.label}</p>
       {block.type === 'image' ? (
         <>
-          {themePageStructure(workspace?.theme ?? themeId).sectionImageShape &&
+          {themePageStructure(workspace?.theme ?? themeId, workspace?.kind)
+            .sectionImageShape &&
             value.presentation.imageSide !== 'background' && (
               <ImageShapeField
                 id={`${value.id}-image-shape`}

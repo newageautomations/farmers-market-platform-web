@@ -36,7 +36,7 @@ const questions =
   ) ?? [];
 const sectionHero =
   !!storefront?.appearance &&
-  supportsWebsitePageHero(storefront.appearance, 'faq');
+  supportsWebsitePageHero(storefront.appearance, 'faq', storefront.kind);
 ---
 
 <SiteLayout

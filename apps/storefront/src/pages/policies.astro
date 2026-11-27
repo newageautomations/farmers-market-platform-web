@@ -18,7 +18,8 @@ const config =
   storefront?.appearance?.policies ??
   (editorPreview
     ? storefront?.kind === 'MARKET' &&
-      themePageStructure(storefront.appearance?.theme).marketStarterText
+      themePageStructure(storefront.appearance?.theme, storefront.kind)
+        .marketStarterText
       ? defaultMarketPolicies
       : defaultPolicies
     : undefined);
@@ -27,7 +28,7 @@ Astro.response.headers.set('Cache-Control', 'private, no-store');
 if (!enabled) Astro.response.status = storefront ? 404 : 503;
 const sectionHero =
   !!storefront?.appearance &&
-  supportsWebsitePageHero(storefront.appearance, 'policies');
+  supportsWebsitePageHero(storefront.appearance, 'policies', storefront.kind);
 ---
 
 <SiteLayout
@@ -59,7 +60,7 @@ const sectionHero =
       sectionHero={sectionHero}
       closing={
         !(
-          themePageStructure(storefront?.appearance?.theme)
+          themePageStructure(storefront?.appearance?.theme, storefront?.kind)
             .noClosingPages as readonly string[]
         ).includes('policies')
       }

@@ -1,6 +1,6 @@
 ---
 import type { StorefrontContext } from '@market/storefront-core';
-import { storefrontText } from '@market/theme/storefront';
+import { storefrontText, themePageStructure } from '@market/theme/storefront';
 import { buttonClassName } from '@market/ui/presentation';
 import { MarketCartLink } from '../MarketCartLink';
 import FarmstandIcon from '../ui/FarmstandIcon.astro';
@@ -23,7 +23,13 @@ const current = (href: string) =>
   path === href || (href === '/shop' && path.startsWith('/shop/'))
     ? ('page' as const)
     : undefined;
-const links = marketSiteNavigation(appearance, !!Astro.locals.editorPreview);
+// Footer-only pages (FAQ, Policies, Terms) never appear in the header.
+const footerOnly = themePageStructure(appearance?.theme, context.kind)
+  .footerOnlyPages as readonly string[];
+const links = marketSiteNavigation(
+  appearance,
+  !!Astro.locals.editorPreview,
+).filter((link) => !footerOnly.includes(link.href.slice(1)));
 const aboutLabel = storefrontText(appearance, 'headerAboutLabel');
 ---
 

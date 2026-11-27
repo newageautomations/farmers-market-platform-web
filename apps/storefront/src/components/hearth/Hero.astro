@@ -72,8 +72,8 @@ const introduction =
         <Button href={href} class="hw-button-arrow">
           {override ? (
             <>
-              <FarmstandIcon name="map-pin" />
               {override.primaryLabel}
+              <FarmstandIcon name="arrow-right" />
             </>
           ) : (
             <>
@@ -117,7 +117,7 @@ const introduction =
             fetchpriority="high"
           />
         ) : (
-          <Scene bunting={!!override} />
+          <Scene />
         )}
       </div>
       <Art name="stamp" class="hw-hero-stamp" />

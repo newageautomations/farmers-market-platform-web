@@ -26,7 +26,8 @@ const enabled = !!storefront && (config.enabled || !!editorPreview);
 // otherwise their page shows public contact information only.
 const marketForm =
   storefront?.kind === 'MARKET' &&
-  themePageStructure(storefront.appearance?.theme).marketContactForm;
+  themePageStructure(storefront.appearance?.theme, storefront.kind)
+    .marketContactForm;
 const formAvailable = storefront?.kind === 'VENDOR' || marketForm;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 if (!enabled) Astro.response.status = storefront ? 404 : 503;
@@ -56,7 +57,7 @@ const social = entries.filter(
 );
 const sectionHero =
   !!storefront?.appearance &&
-  supportsWebsitePageHero(storefront.appearance, 'contact');
+  supportsWebsitePageHero(storefront.appearance, 'contact', storefront.kind);
 ---
 
 <SiteLayout

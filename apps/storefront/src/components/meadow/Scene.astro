@@ -2,20 +2,10 @@
 import Art from './Art.astro';
 /**
  * Meadow's hero illustration: a market stall in a sunny field. Decorative
- * only. `bunting` strings festive flags across it for Market Day mode.
+ * only.
  */
-interface Props {
-  bunting?: boolean;
-}
-const { bunting = false } = Astro.props;
 const stripes = Array.from({ length: 7 }, (_, index) => 150 + index * 40);
 const slats = [212, 264, 316, 368];
-const flagColors = ['#E4492F', '#F5B82E', '#3E8E4B', '#4A9CC7', '#F28A2E'];
-// Points along the bunting string M0 30 Q280 110 560 30.
-const flags = Array.from({ length: 9 }, (_, index) => {
-  const t = (index + 1) / 10;
-  return { x: 560 * t, y: 30 + 160 * t * (1 - t) };
-});
 const daisies = [
   [36, 462],
   [128, 478],
@@ -152,21 +142,4 @@ const daisies = [
   <g class="mw-scene-bee mw-scene-bee-late">
     <Art name="bee" x={468} y={196} size={42} />
   </g>
-
-  {bunting && (
-    <g class="mw-scene-bunting">
-      <path
-        d="M0 30Q280 110 560 30"
-        stroke="#8A5A2B"
-        stroke-width="2.5"
-        fill="none"
-      />
-      {flags.map((flag, index) => (
-        <path
-          d={`M${flag.x - 17} ${flag.y - 1}h34l-17 32z`}
-          fill={flagColors[index % flagColors.length]}
-        />
-      ))}
-    </g>
-  )}
 </svg>

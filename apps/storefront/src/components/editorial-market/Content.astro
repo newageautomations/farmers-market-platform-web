@@ -12,6 +12,7 @@ import {
   isEditorialMarket,
   policyContentParts,
   publishedPolicyEntries,
+  themePageStructure,
 } from '@market/theme/storefront';
 import ClosingInvitation from '../ClosingInvitation.astro';
 
@@ -31,6 +32,11 @@ const about = appearance.about;
 const faq = appearance.faq ?? (preview ? defaultFaq : undefined);
 const policies = appearance.policies ?? (preview ? defaultPolicies : undefined);
 const contact = appearance.contact ?? (preview ? defaultContact : undefined);
+// Pages without a closing invitation on this theme's rules (vendor standard: Policies).
+const closing = !(
+  themePageStructure(appearance.theme, context.kind)
+    .noClosingPages as readonly string[]
+).includes(page);
 const storySections = aboutSections(about).filter((section) => section.visible);
 const questions =
   faq?.questions.filter(
@@ -263,7 +269,7 @@ const published =
           )}
         </div>
       </div>
-      {contact?.enabled && (
+      {closing && contact?.enabled && (
         <ClosingInvitation
           cta={{ ...policies.cta, destination: '/contact' }}
           section="policies-cta"

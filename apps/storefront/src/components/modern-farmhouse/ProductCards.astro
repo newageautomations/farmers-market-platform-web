@@ -87,6 +87,19 @@ const {
         </a>
         {shop && (
           <div class="farmhouse-card-purchase">
+            {/* Same rule as the shared cards: nothing to say while the product
+                can be added, except a low-stock warning. */}
+            {occurrenceId &&
+              !preview &&
+              (!status.available || status.lowStock != null) && (
+                <p class="shop-availability">
+                  {status.lowStock != null ? (
+                    <span class="stock-low">{status.reason}</span>
+                  ) : (
+                    status.reason
+                  )}
+                </p>
+              )}
             {status.available &&
             occurrenceId &&
             storefrontId &&

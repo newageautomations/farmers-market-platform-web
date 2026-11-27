@@ -2,6 +2,7 @@
 import type { VendorMarketAppearance } from '@market/api';
 import { buttonClassName, disclosureClassName } from '@market/ui/presentation';
 import { AppearancePreorder } from './AppearancePreorder';
+import Button from './ui/Button.astro';
 import '../styles/find-us.css';
 
 const {
@@ -10,13 +11,20 @@ const {
   preview = false,
   heading = 'Upcoming Markets',
   class: className,
+  paging,
 } = Astro.props as {
   rows: readonly VendorMarketAppearance[];
   storefrontId: string;
   preview?: boolean;
   heading?: string;
   class?: string;
+  /**
+   * Show the first `initial` rows and add `more` per "Show more markets"
+   * press. Every row is rendered, so visitors without scripts see them all.
+   */
+  paging?: { initial: number; more: number } | null;
 };
+const paged = !!paging && rows.length > paging.initial;
 
 const format = (
   row: VendorMarketAppearance,
@@ -45,16 +53,22 @@ for (const row of rows) {
 }
 ---
 
-<section class:list={['find-schedule', className]}>
+<section
+  class:list={['find-schedule', className]}
+  data-find-schedule={paged ? '' : undefined}
+  data-initial={paged ? paging!.initial : undefined}
+  data-more={paged ? paging!.more : undefined}
+>
   <h2>{heading}</h2>
   {[...groups].map(([month, appearances]) => (
-    <div class="find-month">
+    <div class="find-month" data-find-month>
       <h3>{month}</h3>
       <div class="find-month-entries">
         {appearances.map((row) => (
           <details
             class={disclosureClassName('find-row')}
             data-disclosure-icon="plus"
+            data-find-row
           >
             <summary>
               <time class="find-date" datetime={row.startsAt}>
@@ -112,4 +126,49 @@ for (const row of rows) {
       </div>
     </div>
   ))}
+  {paged && (
+    <div class="find-schedule-more" data-find-more hidden>
+      <Button variant="secondary" data-find-more-button>
+        Show more markets
+      </Button>
+    </div>
+  )}
 </section>
+
+<script>
+  // Progressive enhancement: rows past the first page are hidden only once
+  // this runs, and each press reveals the next batch.
+  for (const schedule of document.querySelectorAll<HTMLElement>(
+    '[data-find-schedule]',
+  )) {
+    const rows = [...schedule.querySelectorAll<HTMLElement>('[data-find-row]')];
+    const months = [
+      ...schedule.querySelectorAll<HTMLElement>('[data-find-month]'),
+    ];
+    const more = schedule.querySelector<HTMLElement>('[data-find-more]');
+    const button = more?.querySelector<HTMLButtonElement>(
+      '[data-find-more-button]',
+    );
+    const initial = Number(schedule.dataset.initial);
+    const step = Number(schedule.dataset.more);
+    if (!more || !button || !(initial > 0) || !(step > 0)) continue;
+    let shown = initial;
+    const render = () => {
+      rows.forEach((row, index) => (row.hidden = index >= shown));
+      // A month whose markets are all still hidden hides its heading too.
+      for (const month of months)
+        month.hidden = ![
+          ...month.querySelectorAll<HTMLElement>('[data-find-row]'),
+        ].some((row) => !row.hidden);
+      more.hidden = shown >= rows.length;
+    };
+    render();
+    button.addEventListener('click', () => {
+      const first = rows[shown];
+      shown += step;
+      render();
+      // Keep keyboard and screen reader users at the first new market.
+      first?.querySelector('summary')?.focus();
+    });
+  }
+</script>

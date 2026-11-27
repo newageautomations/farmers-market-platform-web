@@ -67,6 +67,7 @@ const themeHeroes = {
 // Themes with booth cards point today's vendors at their booths on the map.
 const boothCards = themePageStructure(
   context.appearance?.theme,
+  context.kind,
 ).marketDayBoothCards;
 const booths =
   boothCards && map ? vendorBoothDetails(vendors, map.spaces) : undefined;

@@ -226,6 +226,8 @@ const editorialMarketSelected = editorialMarketDates.some(
         !editorial && !farmhouse && !premium && harvestShell && 'harvest-home',
         farmhouse && 'mf-site',
         context?.kind === 'MARKET' && 'market-text-links',
+        // Vendor websites follow the vendor storefront standard on every theme.
+        sharedVendor && 'vendor-site',
       ]}
     >
       {context && premium && (

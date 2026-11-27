@@ -25,14 +25,17 @@ const sections =
   authored &&
   (websitePageRules[page].regions as readonly string[]).includes(region)
     ? appearance
-      ? effectiveWebsitePageSections(appearance, page, region)
+      ? effectiveWebsitePageSections(appearance, page, region, context?.kind)
       : []
     : [];
 const beforeCount = appearance
-  ? effectiveWebsitePageSections(appearance, page, 'before').length
+  ? effectiveWebsitePageSections(appearance, page, 'before', context?.kind)
+      .length
   : 0;
 const closing =
-  authored && appearance && supportsWebsitePageHero(appearance, page)
+  authored &&
+  appearance &&
+  supportsWebsitePageHero(appearance, page, context?.kind)
     ? (appearance.pageSections?.[page]?.closingPosition ?? beforeCount + 1)
     : -1;
 const localClosing =

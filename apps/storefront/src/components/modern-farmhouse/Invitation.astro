@@ -15,6 +15,7 @@ const managed =
   supportsWebsitePageHero(
     appearance,
     Astro.url.pathname.replace(/^\/+|\/+$/g, ''),
+    Astro.locals.storefront?.kind,
   );
 ---
 

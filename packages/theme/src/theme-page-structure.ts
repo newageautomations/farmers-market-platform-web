@@ -40,6 +40,13 @@ export type ThemePageStructure = {
   marketStarterText: boolean;
   /** Pointing at a booth on the Market Day map shows the vendor's card. */
   marketDayBoothCards: boolean;
+  /**
+   * Vendor Find Us is a fixed page: the next market, then the upcoming
+   * markets, with no hero, library sections or closing invitation. The
+   * upcoming list opens with `initial` rows and each "Show more markets"
+   * press adds `more`. `null` keeps the editable historical page.
+   */
+  fixedFindUs: { initial: number; more: number } | null;
 };
 
 const historical: ThemePageStructure = {
@@ -59,31 +66,83 @@ const historical: ThemePageStructure = {
   shopAvailabilityNote: true,
   marketStarterText: false,
   marketDayBoothCards: false,
+  fixedFindUs: null,
 };
 
+/**
+ * Pasture is the reference market theme. Meadow and Hearth follow the same
+ * market storefront standard (docs/market-storefronts/), so they share its
+ * rules; a theme that needs a different value gets its own entry.
+ */
+const marketStandard: ThemePageStructure = {
+  lockedTopPages: ['vendors', 'applications'],
+  headingOnlyPages: ['policies', 'terms-and-conditions'],
+  noClosingPages: ['policies', 'terms-and-conditions'],
+  footerOnlyPages: ['faq', 'policies', 'terms-and-conditions'],
+  shortHeroPages: ['contact', 'faq'],
+  shortHeroHeight: 220,
+  marketTermsPage: true,
+  marketContactForm: true,
+  aboutStarter: true,
+  shopPagination: 'numbered',
+  sectionImageShape: true,
+  ctaButtonStyle: true,
+  sectionSpaceDefault: 32,
+  shopAvailabilityNote: false,
+  marketStarterText: true,
+  marketDayBoothCards: true,
+  fixedFindUs: null,
+};
+
+/**
+ * Vendor websites follow the same page standard as markets
+ * (docs/vendor-storefronts/). Rules about market-only pages and features stay
+ * off, and Find Us is a fixed page.
+ */
+const vendorStandard: ThemePageStructure = {
+  ...marketStandard,
+  lockedTopPages: [],
+  marketTermsPage: false,
+  marketContactForm: false,
+  aboutStarter: false,
+  marketStarterText: false,
+  marketDayBoothCards: false,
+  fixedFindUs: { initial: 4, more: 8 },
+};
+
+/** Market website rules by theme. */
 export const themePageStructures: Partial<Record<string, ThemePageStructure>> =
   {
-    pasture: {
-      lockedTopPages: ['vendors', 'applications'],
-      headingOnlyPages: ['policies', 'terms-and-conditions'],
-      noClosingPages: ['policies', 'terms-and-conditions'],
-      footerOnlyPages: ['faq', 'policies', 'terms-and-conditions'],
-      shortHeroPages: ['contact', 'faq'],
-      shortHeroHeight: 220,
-      marketTermsPage: true,
-      marketContactForm: true,
-      aboutStarter: true,
-      shopPagination: 'numbered',
-      sectionImageShape: true,
-      ctaButtonStyle: true,
-      sectionSpaceDefault: 32,
-      shopAvailabilityNote: false,
-      marketStarterText: true,
-      marketDayBoothCards: true,
-    },
+    pasture: marketStandard,
+    meadow: marketStandard,
+    hearth: marketStandard,
   };
 
-export function themePageStructure(theme: unknown): ThemePageStructure {
+/** Every theme a vendor website can use follows the vendor standard. */
+export const vendorStandardThemes = [
+  'harvest',
+  'editorial-market',
+  'modern-farmhouse',
+  'bloom',
+] as const;
+
+/** Which kind of website the rules are for. Harvest and Editorial Market serve both. */
+export type StorefrontSiteKind = 'MARKET' | 'VENDOR';
+
+/**
+ * The page rules of a theme on a market or vendor website. The kind is
+ * required because Harvest and Editorial Market serve both, with different
+ * rules; pass `undefined` only where the kind is genuinely unknown, which
+ * reads the market rules.
+ */
+export function themePageStructure(
+  theme: unknown,
+  kind: StorefrontSiteKind | undefined,
+): ThemePageStructure {
+  if (kind === 'VENDOR')
+    return (vendorStandardThemes as readonly unknown[]).includes(theme)
+      ? vendorStandard
+      : historical;
   return (
     (typeof theme === 'string' ? themePageStructures[theme] : undefined) ??
     historical
@@ -96,6 +155,20 @@ const pastureLeading = {
   terracotta: '#b8432c',
   blue: '#2c6c9c',
   charcoal: '#3d4a3f',
+} as const;
+/* Copies of each theme's per-palette leading color (`--mw-primary` in
+   meadow.css, `--hw-primary` in hearth.css). Keep them identical. */
+const meadowLeading = {
+  sage: '#2f6b3a',
+  terracotta: '#b4412a',
+  blue: '#2f5597',
+  charcoal: '#3a3340',
+} as const;
+const hearthLeading = {
+  sage: '#5c3a21',
+  terracotta: '#8a3324',
+  blue: '#37476b',
+  charcoal: '#4a5330',
 } as const;
 export type SectionBackground = 'paper' | 'surface' | 'ink';
 export function sectionBackgroundSwatches(
@@ -111,6 +184,28 @@ export function sectionBackgroundSwatches(
         color:
           pastureLeading[paletteKey as keyof typeof pastureLeading] ??
           pastureLeading.sage,
+        label: 'Theme color',
+      },
+    };
+  if (theme === 'meadow')
+    return {
+      paper: { color: '#fff8ea', label: 'Page background' },
+      surface: { color: '#ffffff', label: 'Light card' },
+      ink: {
+        color:
+          meadowLeading[paletteKey as keyof typeof meadowLeading] ??
+          meadowLeading.sage,
+        label: 'Theme color',
+      },
+    };
+  if (theme === 'hearth')
+    return {
+      paper: { color: '#f4ead8', label: 'Page background' },
+      surface: { color: '#fcf7ec', label: 'Light card' },
+      ink: {
+        color:
+          hearthLeading[paletteKey as keyof typeof hearthLeading] ??
+          hearthLeading.sage,
         label: 'Theme color',
       },
     };

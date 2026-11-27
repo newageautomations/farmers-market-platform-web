@@ -8,7 +8,10 @@ import {
   type WebsiteSection,
   type SectionTarget,
 } from './website-section-contract';
-import { themePageStructure } from './theme-page-structure';
+import {
+  themePageStructure,
+  type StorefrontSiteKind,
+} from './theme-page-structure';
 export const websiteHeroPages = [
   'about',
   'contact',
@@ -19,12 +22,14 @@ export const websiteHeroPages = [
 export function supportsWebsitePageHero(
   appearance: StorefrontAppearance,
   page: string,
+  kind: StorefrontSiteKind | undefined,
 ): boolean {
+  const structure = themePageStructure(appearance.theme, kind);
   return (
     (websiteHeroPages as readonly string[]).includes(page) &&
-    !(
-      themePageStructure(appearance.theme).headingOnlyPages as readonly string[]
-    ).includes(page) &&
+    !(structure.headingOnlyPages as readonly string[]).includes(page) &&
+    // A fixed Find Us page has no hero.
+    !(page === 'find-us' && structure.fixedFindUs) &&
     permitsWebsiteSection('image-with-text', {
       theme: appearance.theme,
       themeVersion: appearance.template?.version ?? 1,
@@ -37,15 +42,18 @@ export function effectiveWebsitePageSections(
   appearance: StorefrontAppearance,
   page: WebsiteEditorialPage,
   region: WebsitePageRegion,
+  kind: StorefrontSiteKind | undefined,
 ): WebsiteSection[] {
-  const structure = themePageStructure(appearance.theme);
+  const structure = themePageStructure(appearance.theme, kind);
+  // A fixed Find Us page shows no library sections. Saved ones are kept, not shown.
+  if (page === 'find-us' && structure.fixedFindUs) return [];
   const saved = appearance.pageSections?.[page]?.[region];
   // Heading-only pages never show a page hero, including one saved earlier.
   if (saved !== undefined)
     return (structure.headingOnlyPages as readonly string[]).includes(page)
       ? saved.filter((s) => s.id !== `image-with-text-page-hero-${page}`)
       : saved;
-  if (region !== 'before' || !supportsWebsitePageHero(appearance, page))
+  if (region !== 'before' || !supportsWebsitePageHero(appearance, page, kind))
     return [];
   if (
     (appearance.pageSections?.[page]?.after?.length ?? 0) >= websiteSectionLimit

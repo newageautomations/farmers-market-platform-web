@@ -65,6 +65,10 @@ Before implementing or modifying frontend UI, read the root [COMPONENT_USAGE_GUI
 
 10. Keep feature work and migrations bounded. Do not perform unrelated UI refactoring, rewrite business controllers or expand the migration plan without task authorization. Use [UI_COMPONENT_MIGRATION_PLAN.md](docs/UI_COMPONENT_MIGRATION_PLAN.md) for the approved sequence; the plan itself is not implementation authorization.
 
+## Market storefront themes
+
+Before creating or changing a market storefront theme, read [docs/market-storefronts/README.md](docs/market-storefronts/README.md) and follow it. That folder is read-only: do not edit it unless the user explicitly asks, and if the code disagrees with it, ask the user which is right.
+
 ## Label/value alignment
 
 Inherited `dd` margins keep pushing values below their labels. Whenever you build label/value rows (`dl` > `div` > `dt` + `dd`):

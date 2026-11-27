@@ -54,7 +54,10 @@ const {
 const harvestCards = usesHarvestContract(theme);
 // Some themes let an enabled Add to cart speak for itself: the availability
 // line appears only when the product can't be added.
-const availabilityNote = themePageStructure(theme).shopAvailabilityNote;
+const availabilityNote = themePageStructure(
+  theme,
+  Astro.locals.storefront?.kind,
+).shopAvailabilityNote;
 const productLink = (slug: string) =>
   `/products/${encodeURIComponent(slug)}${occurrenceId && !preview ? `?occurrence=${encodeURIComponent(occurrenceId)}` : ''}`;
 ---

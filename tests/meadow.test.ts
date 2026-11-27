@@ -8,8 +8,10 @@ import {
   marketStorefrontThemes,
   meadowHiddenText,
   permitsWebsiteSection,
+  sectionBackgroundSwatches,
   storefrontAppearanceSchema,
   storefrontThemes,
+  themePageStructure,
   usesHarvestContract,
   websiteSectionManifest,
   type StorefrontAppearance,
@@ -113,5 +115,26 @@ describe('Meadow market theme', () => {
     expect(meadowCategoryArt('Farm Eggs', 1)).toBe('egg');
     expect(meadowCategoryArt('Vegetables', 2)).toBe('carrot');
     expect(meadowArt).toContain(meadowCategoryArt('Handmade soap', 3));
+  });
+  it('follows the market storefront standard', () => {
+    expect(themePageStructure('meadow', 'MARKET')).toEqual(
+      themePageStructure('pasture', 'MARKET'),
+    );
+  });
+
+  it('shows its own colors in the section background picker', () => {
+    const generic = { background: '#000', surface: '#000', primary: '#000' };
+    const leading = {
+      sage: '#2f6b3a',
+      terracotta: '#b4412a',
+      blue: '#2f5597',
+      charcoal: '#3a3340',
+    };
+    for (const [palette, color] of Object.entries(leading)) {
+      const swatches = sectionBackgroundSwatches('meadow', generic, palette);
+      expect(swatches.paper.color).toBe('#fff8ea');
+      expect(swatches.surface.color).toBe('#ffffff');
+      expect(swatches.ink.color).toBe(color);
+    }
   });
 });

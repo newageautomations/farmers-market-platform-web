@@ -1323,14 +1323,10 @@ it.each(['harvest', 'modern-farmhouse', 'editorial-market'] as const)(
       fireEvent.change(screen.getByLabelText('Preview page'), {
         target: { value },
       });
-    for (const page of [
-      'about',
-      'contact',
-      'faq',
-      'policies',
-      'find',
-      'products',
-    ]) {
+    // Find Us is fixed on vendor websites: no library sections.
+    switchPage('find');
+    expect(screen.queryByRole('button', { name: /Add Section/ })).toBeNull();
+    for (const page of ['about', 'contact', 'faq', 'policies', 'products']) {
       switchPage(page);
       const add = screen.getByRole('button', {
         name: 'Add Section',
@@ -2347,21 +2343,29 @@ it('derives editable informational heroes without mutations and respects explici
           : {}),
     });
     const original = JSON.stringify(appearance);
-    for (const page of [
-      'about',
-      'contact',
-      'find-us',
-      'faq',
-      'policies',
-    ] as const) {
-      expect(supportsWebsitePageHero(appearance, page)).toBe(true);
-      const sections = effectiveWebsitePageSections(appearance, page, 'before');
+    // On a vendor website the vendor standard keeps Policies heading-only
+    // and Find Us fixed, so neither derives a hero.
+    for (const [kind, page] of [
+      ...(['about', 'contact', 'find-us', 'faq', 'policies'] as const).map(
+        (page) => ['MARKET', page] as const,
+      ),
+      ...(['about', 'contact', 'faq'] as const).map(
+        (page) => ['VENDOR', page] as const,
+      ),
+    ]) {
+      expect(supportsWebsitePageHero(appearance, page, kind)).toBe(true);
+      const sections = effectiveWebsitePageSections(
+        appearance,
+        page,
+        'before',
+        kind,
+      );
       expect(sections).toHaveLength(1);
       expect(sections[0]!.type).toBe('image-with-text');
       expect(isWebsiteSection(sections[0])).toBe(true);
-      expect(effectiveWebsitePageSections(appearance, page, 'after')).toEqual(
-        [],
-      );
+      expect(
+        effectiveWebsitePageSections(appearance, page, 'after', kind),
+      ).toEqual([]);
       const deleted = {
         ...appearance,
         pageSections: { [page]: { before: [], after: [] } },
@@ -2371,6 +2375,7 @@ it('derives editable informational heroes without mutations and respects explici
           storefrontAppearanceSchema.parse(deleted),
           page,
           'before',
+          kind,
         ),
       ).toEqual([]);
       const after = Array.from({ length: 12 }, (_, i) =>
@@ -2385,12 +2390,20 @@ it('derives editable informational heroes without mutations and respects explici
           { ...appearance, pageSections: { [page]: { after } } },
           page,
           'before',
+          kind,
         ),
+      ).toEqual([]);
+    }
+    for (const page of ['find-us', 'policies'] as const) {
+      expect(supportsWebsitePageHero(appearance, page, 'VENDOR')).toBe(false);
+      expect(
+        effectiveWebsitePageSections(appearance, page, 'before', 'VENDOR'),
       ).toEqual([]);
     }
     expect(JSON.stringify(appearance)).toBe(original);
     for (const page of ['products', 'product', 'cart', 'checkout', 'account'])
-      expect(supportsWebsitePageHero(appearance, page)).toBe(false);
+      for (const kind of ['MARKET', 'VENDOR'] as const)
+        expect(supportsWebsitePageHero(appearance, page, kind)).toBe(false);
   }
 });
 
@@ -2542,7 +2555,12 @@ it('shows page enablement above Theme settings and removes page metadata dropdow
       'FAQ page',
       'Policies page',
     ])
-      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+      // Vendor Policies opens with its own heading (vendor standard), so it
+      // keeps its own settings row.
+      if (page === 'policies' && name === 'Policies page')
+        expect(screen.getByRole('button', { name })).toBeInTheDocument();
+      else
+        expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Page title')).not.toBeInTheDocument();
     fireEvent.click(toggle);
     expect(toggle).toBeChecked();
@@ -2550,7 +2568,36 @@ it('shows page enablement above Theme settings and removes page metadata dropdow
   }
 });
 
-it.each(['about', 'contact', 'find', 'faq', 'policies'])(
+it('shows no Closing invitation on vendor Find Us and Policies', () => {
+  render(
+    <VisualStorefrontEditor
+      record={{
+        id: 'closing-none',
+        name: 'Closing none',
+        version: 1,
+        draft: structuredClone(defaultStorefrontAppearance),
+        published: null,
+        publishedAt: null,
+      }}
+      api={{
+        read: vi.fn(),
+        links: vi.fn(async () => []),
+        save: vi.fn(),
+        publish: vi.fn(),
+      }}
+    />,
+  );
+  for (const page of ['find', 'policies']) {
+    fireEvent.change(screen.getByLabelText('Preview page'), {
+      target: { value: page },
+    });
+    expect(
+      screen.queryByRole('button', { name: 'Closing invitation' }),
+    ).toBeNull();
+  }
+});
+
+it.each(['about', 'contact', 'faq'])(
   'moves %s Closing invitation independently, edits it and saves its position',
   async (page) => {
     let snapshot: StorefrontAppearanceRecord = {

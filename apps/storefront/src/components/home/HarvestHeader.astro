@@ -4,7 +4,7 @@ import { MarketCartLink } from '../MarketCartLink';
 import FarmstandIcon from '../ui/FarmstandIcon.astro';
 import HeaderAccountMenu from './HeaderAccountMenu.astro';
 import { buttonClassName } from '@market/ui/presentation';
-import { storefrontText } from '@market/theme/storefront';
+import { storefrontText, themePageStructure } from '@market/theme/storefront';
 import { marketNavigation } from '../../lib/market-website';
 interface Props {
   context: StorefrontContext;
@@ -17,6 +17,11 @@ const active = (path: string) =>
     ? ('page' as const)
     : undefined;
 const market = context.kind === 'MARKET';
+// Footer-only pages (on the vendor standard: FAQ, Policies, Terms) stay out of the header.
+const footerOnly = themePageStructure(context.appearance?.theme, context.kind)
+  .footerOnlyPages as readonly string[];
+const faqInHeader =
+  !!context.appearance?.faq?.enabled && !footerOnly.includes('faq');
 const marketLinks = market
   ? marketNavigation(context.appearance, !!Astro.locals.editorPreview)
   : [];
@@ -43,9 +48,9 @@ const marketLinks = market
         </span>
       </a>
     )}
-    {context.appearance?.faq?.enabled && (
+    {faqInHeader && (
       <a href="/faq" aria-current={active('/faq')}>
-        {context.appearance.faq.title}
+        {context.appearance!.faq!.title}
       </a>
     )}
     {context.appearance?.contact?.enabled && (
@@ -88,9 +93,9 @@ const marketLinks = market
             </span>
           </a>
         )}
-        {context.appearance?.faq?.enabled && (
+        {faqInHeader && (
           <a href="/faq" aria-current={active('/faq')}>
-            {context.appearance.faq.title}
+            {context.appearance!.faq!.title}
           </a>
         )}
         {context.appearance?.contact?.enabled && (

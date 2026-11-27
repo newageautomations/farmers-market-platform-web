@@ -2,7 +2,10 @@
 import type { StorefrontContext } from '@market/storefront-core';
 import { safeAsset } from '@market/storefront-core';
 import Button from '../ui/Button.astro';
-import { isEditorialMarket } from '@market/theme/storefront';
+import {
+  isEditorialMarket,
+  themePageStructure,
+} from '@market/theme/storefront';
 
 interface Props {
   context: StorefrontContext;
@@ -35,7 +38,16 @@ const links = [
     label: context.appearance.faq?.title ?? 'FAQ',
     enabled: context.appearance.faq?.enabled,
   },
-].filter((link) => link.enabled);
+]
+  .filter((link) => link.enabled)
+  // Footer-only pages (on the vendor standard: FAQ) stay out of the header.
+  .filter(
+    (link) =>
+      !(
+        themePageStructure(context.appearance?.theme, context.kind)
+          .footerOnlyPages as readonly string[]
+      ).includes(link.href.slice(1)),
+  );
 const active = (path: string) =>
   Astro.url.pathname === path ||
   (path === '/products' && Astro.url.pathname.startsWith('/products/'))

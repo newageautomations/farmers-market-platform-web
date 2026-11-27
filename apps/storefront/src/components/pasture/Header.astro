@@ -24,7 +24,7 @@ const current = (href: string) =>
     ? ('page' as const)
     : undefined;
 // Footer-only pages (FAQ, Policies, Terms) never appear in the header.
-const footerOnly = themePageStructure(appearance?.theme)
+const footerOnly = themePageStructure(appearance?.theme, context.kind)
   .footerOnlyPages as readonly string[];
 const links = marketSiteNavigation(
   appearance,

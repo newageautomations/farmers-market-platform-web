@@ -25,6 +25,7 @@ const { content, presentation } = section;
   data-variant={presentation.variant ?? 'standard'}
   data-alignment={presentation.alignment}
   data-background={presentation.background}
+  data-button-style={presentation.buttonStyle}
 >
   <div class="em-callout-layout website-layout">
     <div class="em-callout-copy website-copy">
@@ -42,7 +43,7 @@ const { content, presentation } = section;
         <Button
           style={websiteObjectStyle(section, 'button')}
           href={content.destination}
-          variant="primary"
+          variant={presentation.buttonStyle ?? 'primary'}
         >
           {content.label}
           <span aria-hidden="true">→</span>

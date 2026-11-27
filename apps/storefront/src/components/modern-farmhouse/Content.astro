@@ -11,6 +11,7 @@ import {
   defaultFaq,
   defaultPolicies,
   defaultContact,
+  themePageStructure,
   type FarmhouseSettings,
 } from '@market/theme/storefront';
 import Invitation from './Invitation.astro';
@@ -32,6 +33,11 @@ const about = appearance.about;
 const faq = appearance.faq ?? (preview ? defaultFaq : undefined);
 const policies = appearance.policies ?? (preview ? defaultPolicies : undefined);
 const contact = appearance.contact ?? (preview ? defaultContact : undefined);
+// Pages without a closing invitation on this theme's rules (vendor standard: Policies).
+const closing = !(
+  themePageStructure(appearance.theme, context.kind)
+    .noClosingPages as readonly string[]
+).includes(page);
 const pieces = (value: string, policy = false) =>
   policy ? policyContentParts(value) : faqAnswerParts(value);
 const published =
@@ -175,7 +181,7 @@ const published =
           </section>
         ))}
       </div>
-      {contact?.enabled && (
+      {closing && contact?.enabled && (
         <Invitation
           cta={{ ...policies.cta, destination: '/contact' }}
           section="policies-cta"

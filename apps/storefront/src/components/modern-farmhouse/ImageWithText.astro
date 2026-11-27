@@ -21,6 +21,9 @@ const blocks = effectiveWebsiteBlocks(section).filter((b) => b.visible);
 const photo = blocks.flatMap((b) =>
   b.type === 'image' ? [b.content] : [],
 )[0]!;
+// A chosen frame applies to a side image only; a background image fills the section.
+const shape =
+  presentation.imageSide === 'background' ? undefined : presentation.imageShape;
 ---
 
 <section
@@ -39,6 +42,7 @@ const photo = blocks.flatMap((b) =>
   data-column-ratio={presentation.columnRatio}
   data-vertical-alignment={presentation.verticalAlignment}
   data-internal-spacing={presentation.spacing}
+  data-image-shape={shape}
 >
   <div
     class="farmhouse-space farmhouse-image-with-text website-layout"
@@ -51,6 +55,7 @@ const photo = blocks.flatMap((b) =>
     <Photo
       photo={{ ...photo, desktop: 'center', mobile: 'center' }}
       class="website-image"
+      shape={shape}
     />
     <div class="farmhouse-editorial-copy website-copy">
       {blocks.map((block) =>

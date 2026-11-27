@@ -155,6 +155,23 @@ html[data-template-version='2'] body {
     height: clamp(18rem, 70vw, 28rem);
   }
 }
+/* Image with Text frame shapes (vendor standard, rule sectionImageShape). The
+   shared [data-hero-shape] rules square the image, so a shaped photo sizes
+   itself instead of filling the fixed-height frame, and the frame's grey
+   backing does not show around the shape. */
+.farmhouse-editorial[data-image-shape]
+  .farmhouse-image-with-text
+  > .farmhouse-photo {
+  height: auto;
+  min-height: 0;
+  background: none;
+}
+.farmhouse-editorial[data-image-shape]
+  .farmhouse-photo
+  > :is(img, .farmhouse-photo-empty) {
+  height: auto;
+  min-height: 0;
+}
 .farmhouse-button {
   display: inline-flex;
   width: fit-content;

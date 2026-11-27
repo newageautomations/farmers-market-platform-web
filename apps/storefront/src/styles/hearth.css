@@ -896,7 +896,16 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
   border-top: 1.5px dashed var(--hw-line);
 }
 
-/* Vendor cards (shared MarketVendorCards), laid out like shelf labels. */
+/* Vendor cards (shared MarketVendorCards), laid out like shelf labels. The
+   whole card is the link, so neither the card edge nor the vendor name
+   carries the text underline. */
+.hearth-site .market-vendor-card .market-vendor-offerings::after,
+.hearth-site
+  .market-vendor-card
+  .market-vendor-offerings
+  .farmstand-text-link::after {
+  content: none;
+}
 .hearth-site .market-vendor-cards {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
   gap: 1.25rem;
@@ -1076,8 +1085,7 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
     .button-disclosure,
     .button-destructive-outline,
     .button-destructive
-  ),
-.hearth-site .hw-hero-day .hw-hero-actions .button.ui-button:not(.secondary) {
+  ) {
   --button-fill: var(--hw-caramel);
   --button-ink: var(--hw-ink);
   --button-edge: #fcf7ec;
@@ -1092,19 +1100,13 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
   .hw-closing
   .button.ui-button:not(.secondary):is(:hover, :focus-visible):not(
     :disabled
-  ):not([aria-disabled='true']),
-.hearth-site
-  .hw-hero-day
-  .hw-hero-actions
-  .button.ui-button:not(.secondary):is(:hover, :focus-visible) {
+  ):not([aria-disabled='true']) {
   box-shadow: 5px 5px 0 #fcf7ec;
 }
-.hearth-site .hw-closing .button.ui-button:active,
-.hearth-site .hw-hero-day .hw-hero-actions .button.ui-button:active {
+.hearth-site .hw-closing .button.ui-button:active {
   box-shadow: 0 0 0 #fcf7ec;
 }
 .hearth-site .hw-closing :focus-visible,
-.hearth-site .hw-hero-day :focus-visible,
 .hearth-site .hw-footer :focus-visible {
   outline-color: var(--hw-caramel);
 }
@@ -1640,6 +1642,18 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
     color 160ms ease,
     box-shadow 150ms ease,
     transform 150ms ease;
+}
+/* Optical centring: the body font's tall ascender leaves the line box's
+   middle above the letters. Trimming the text to its cap height centres the
+   name, the count and the selection icon on the same line, and a fixed
+   minimum height keeps every pill the same size. */
+.hearth-site .shop-categories .shop-category-option {
+  min-height: 2.6rem;
+  padding-block: 0.45rem;
+  box-sizing: border-box;
+}
+.hearth-site .shop-category-option > span:not(.sr-only) {
+  text-box: trim-both cap alphabetic;
 }
 .hearth-site .shop-category-option input {
   position: absolute;
@@ -2496,6 +2510,122 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
   color: var(--hw-muted);
 }
 
+/* ------------------------------------------------------------ contact form */
+/* The market form runs in two columns on wider screens; long answers (the
+   message and any long-answer field) span both. */
+.hearth-site .contact-fields-configured {
+  row-gap: 1.75rem;
+  column-gap: 1.25rem;
+}
+@media (min-width: 761px) {
+  .hearth-site .contact-fields-configured {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hearth-site .contact-fields-configured > [data-wide] {
+    grid-column: 1 / -1;
+  }
+}
+/* Long answers behave like the single-line fields: focusing one doesn't
+   repaint or outline it. */
+.hearth-site .contact-fields textarea:focus-visible {
+  outline: none;
+  background-color: var(--hw-flour);
+}
+/* Validation messages sit in the gap under their field, so showing one never
+   moves the fields below it. */
+.hearth-site .contact-form-item :is(.field, .phone-field) {
+  position: relative;
+}
+.hearth-site .contact-form-item :is(.form-error, .phone-field > small) {
+  position: absolute;
+  top: calc(100% + 0.2rem);
+  left: 0;
+  right: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Booth card on the Market Day map: the shelf-label vendor card, a little
+   smaller. */
+.hearth-site .booth-hover-card.booth-hover-card-custom {
+  width: 240px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.hearth-site .market-day-booth-card.ui-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem;
+  margin: 0;
+  box-shadow: var(--hw-stack-lift);
+}
+/* Booth name in the top-left corner. */
+.hearth-site .market-day-booth-card .market-day-booth-name {
+  margin: 0;
+  color: var(--hw-jam);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+/* The vendor's picture beside their name and category. */
+.hearth-site .market-day-booth-vendor {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.hearth-site
+  .market-day-booth-card
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0;
+  border: var(--hw-edge);
+  border-radius: 50%;
+  background: var(--hw-primary-soft);
+  object-fit: cover;
+  /* Same eased tilt as the "Vendors today" cards. */
+  transition: transform 320ms var(--hw-ease);
+}
+.hearth-site .market-day-booth-card .harvest-vendor-symbol {
+  background: var(--hw-primary);
+  color: #fcf7ec;
+  font: 800 1.5rem var(--font-heading);
+}
+.hearth-site .market-day-booth-text {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.hearth-site
+  .market-day-booth-card
+  :is(h3, .market-vendor-meta, .market-vendor-actions) {
+  grid-column: auto;
+}
+.hearth-site .market-day-booth-card h3 {
+  align-self: auto;
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+.hearth-site .market-day-booth-card .market-vendor-meta {
+  margin: 0;
+}
+.hearth-site .market-day-booth-card .market-vendor-actions {
+  margin: 0;
+}
+
 /* -------------------------------------------------------- section library */
 .hearth-site
   :is(.harvest-authored-copy, .story-copy, .story-cta, .harvest-library-heading)
@@ -2513,33 +2643,59 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
 .hearth-site .website-page-region {
   margin-block: clamp(1rem, 3vw, 2rem);
 }
+/* Carousels stay in the content column like every other section. The shared
+   carousel rule sets width: 100%, which outranks the column rule above. */
+.hearth-site
+  .hw-home
+  > section:is(.harvest-gallery, .harvest-showcase)[data-layout='carousel'] {
+  width: var(--hw-wrap);
+  margin-inline: auto;
+}
+.hearth-site
+  section:is(.harvest-gallery, .harvest-showcase)[data-layout='carousel'] {
+  padding-inline: clamp(1rem, 4vw, 3rem);
+}
+/* Every custom section has space above and below it: 32px by default (the
+   theme's sectionSpaceDefault), or the section's own "Space above and below"
+   setting. Framed sections are set apart by this space, not by an outline
+   that only spans the column. */
+.hearth-site :is(section.website-section, section.harvest-library) {
+  margin-block: var(--website-space-block, 32px);
+}
+.hearth-site .harvest-authored[data-variant='framed'] {
+  border: 0;
+}
+/* A background image (or its placeholder) fills the whole section; image
+   frames apply to side images only. */
+.hearth-site
+  .harvest-image-story[data-image-layout='overlay']
+  .harvest-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0;
+  /* The flower glyph would sit under the overlay copy. */
+  font-size: 0;
+}
+/* A side image keeps its chosen frame at the chosen image height. */
+.hearth-site .harvest-image-story[data-image-shape] .harvest-authored-image img,
+.hearth-site
+  .harvest-image-story[data-image-shape]
+  .harvest-authored-image
+  .harvest-photo-placeholder {
+  max-height: none;
+}
 
 /* -------------------------------------------------------------- market day */
-/* The hero becomes the chalkboard sign propped outside on market day. */
-.hw-hero-day {
-  background: #2b1d12 var(--hw-grain);
-  color: #fcf7ec;
-}
-.hearth-site .hw-hero-day h1 {
-  color: #fcf7ec;
-}
-.hw-hero-day h1::after {
-  background: repeating-linear-gradient(
-    90deg,
-    var(--hw-caramel) 0 12px,
-    transparent 12px 18px
-  );
-}
-.hw-hero-day .hw-hero-intro {
-  color: rgb(252 247 236 / 0.82);
-}
+/* Market day keeps the hero's everyday colors; only the stamped tag above
+   the title and the countdown below the buttons are added. */
 .hw-live-tag {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
   margin: 0 0 1.1rem;
   padding: 0.4rem 0.85rem;
-  border: 1.5px solid #fcf7ec;
+  border: var(--hw-edge);
   border-radius: 4px;
   background: var(--hw-jam);
   color: #fcf7ec;
@@ -2547,7 +2703,7 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  box-shadow: 3px 3px 0 #fcf7ec;
+  box-shadow: 3px 3px 0 var(--hw-ink);
   rotate: -2deg;
 }
 .hw-live-dot {
@@ -2571,50 +2727,89 @@ html[data-storefront-theme='hearth'][data-theme-palette='charcoal'] {
     transform: scale(3.2);
   }
 }
-.hearth-site .hw-hero-day .hw-hero-actions .button.ui-button.secondary {
-  --button-fill: transparent;
-  --button-ink: #fcf7ec;
-  --button-edge: #fcf7ec;
-  --button-hover-fill: #fcf7ec;
-  --button-hover-ink: var(--hw-ink);
-  --button-hover-edge: #fcf7ec;
-  box-shadow: 3px 3px 0 rgb(252 247 236 / 0.35);
-}
 .hw-day .hw-hero-inner {
   align-items: start;
-}
-.hw-hero-day .hw-hero-frame {
-  box-shadow:
-    inset 0 0 0 2px rgb(43 29 18 / 0.35),
-    0 0 0 1.5px #fcf7ec,
-    9px 9px 0 rgb(252 247 236 / 0.22);
 }
 .hearth-site .hw-day .market-day-hero-details {
   gap: 1rem;
   margin-top: 1.9rem;
   max-width: 34rem;
 }
+/* The countdown is chalked on the bakehouse board, like the closing
+   invitation: a wooden frame, a dashed chalk line inside it and cream
+   lettering, with the digits on flour cards. It is only as wide as what's
+   written on it. */
 .hearth-site .hw-day .market-day-countdown {
-  border: 1.5px solid #fcf7ec;
-  border-radius: var(--hw-radius);
-  background: var(--hw-flour);
-  color: var(--hw-ink);
-  box-shadow: 5px 5px 0 rgb(252 247 236 / 0.3);
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 1.2rem 1.5rem 1.35rem;
+  border: 6px solid var(--hw-wood);
+  border-radius: 8px;
+  outline: 1.5px dashed rgb(252 247 236 / 0.3);
+  outline-offset: -14px;
+  background: #2b1d12 var(--hw-grain);
+  box-shadow:
+    0 0 0 1.5px var(--hw-ink),
+    6px 6px 0 var(--hw-shade);
+  color: #fcf7ec;
+}
+.hearth-site
+  .hw-day
+  .market-day-countdown
+  :is(
+    .market-day-countdown-label,
+    .market-day-countdown-hours,
+    .market-day-clock-lead,
+    .market-day-unit,
+    .market-day-countdown-note
+  ) {
+  color: #fcf7ec;
+}
+.hearth-site
+  .hw-day
+  .market-day-countdown
+  :is(.market-day-countdown-hours, .market-day-unit) {
+  opacity: 0.85;
+}
+.hearth-site .hw-day .market-day-clock-lead {
+  color: var(--hw-caramel);
 }
 .hearth-site .hw-day .market-day-live {
-  background: var(--hw-jam);
+  background: var(--hw-caramel);
+}
+.hearth-site .hw-day .market-day-digit {
+  border: var(--hw-edge);
+  border-radius: 4px;
+  background: var(--hw-flour);
+  color: var(--hw-ink);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  box-shadow: 3px 3px 0 rgb(252 247 236 / 0.25);
+}
+.hearth-site .hw-day .market-day-digit::after {
+  background: color-mix(in srgb, var(--hw-ink) 14%, transparent);
+}
+.hearth-site .hw-day .market-day-separator {
+  color: var(--hw-caramel);
+}
+.hearth-site .hw-day .market-day-progress {
+  background: rgb(252 247 236 / 0.16);
+}
+.hearth-site .hw-day .market-day-progress > span {
+  background: var(--hw-caramel);
 }
 .hearth-site .hw-day .market-day-venue {
   gap: 0.5rem;
-  color: #fcf7ec;
-  font-weight: 600;
+  color: var(--hw-ink);
+  font-weight: 700;
 }
 .hearth-site .hw-day .market-day-venue .farmstand-icon {
-  color: var(--hw-caramel);
+  color: var(--hw-crust);
 }
 .hearth-site .hw-day .market-day-regular {
   justify-self: start;
-  color: var(--hw-caramel);
 }
 .hearth-site .hw-day .harvest-section {
   padding-block: clamp(2rem, 4.5vw, 3.5rem);

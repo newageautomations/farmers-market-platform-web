@@ -120,8 +120,8 @@ describe('Pasture market theme', () => {
 });
 
 describe('Pasture page structure', () => {
-  it('opts into the page structure rules; other themes keep the historical behaviour', () => {
-    const rules = themePageStructure('pasture');
+  it('opts into the page structure rules; Meadow and Hearth share them, other themes keep the historical behaviour', () => {
+    const rules = themePageStructure('pasture', 'MARKET');
     expect(rules.lockedTopPages).toEqual(['vendors', 'applications']);
     expect(rules.footerOnlyPages).toEqual([
       'faq',
@@ -129,20 +129,27 @@ describe('Pasture page structure', () => {
       'terms-and-conditions',
     ]);
     expect(rules.shopPagination).toBe('numbered');
-    expect(themePageStructure('meadow').headingOnlyPages).toEqual([]);
-    expect(themePageStructure('harvest').marketContactForm).toBe(false);
+    expect(themePageStructure('meadow', 'MARKET')).toEqual(rules);
+    expect(themePageStructure('hearth', 'MARKET')).toEqual(rules);
+    expect(themePageStructure('harvest', 'MARKET').headingOnlyPages).toEqual(
+      [],
+    );
+    expect(themePageStructure('harvest', 'MARKET').marketContactForm).toBe(
+      false,
+    );
   });
 
   it('opens Policies with its own heading, ignoring a saved page hero', () => {
     const value = pasture();
-    expect(supportsWebsitePageHero(value, 'policies')).toBe(false);
-    expect(effectiveWebsitePageSections(value, 'policies', 'before')).toEqual(
-      [],
-    );
+    expect(supportsWebsitePageHero(value, 'policies', 'MARKET')).toBe(false);
+    expect(
+      effectiveWebsitePageSections(value, 'policies', 'before', 'MARKET'),
+    ).toEqual([]);
     const saved = effectiveWebsitePageSections(
       { ...value, theme: 'meadow' },
       'faq',
       'before',
+      'MARKET',
     );
     expect(
       effectiveWebsitePageSections(
@@ -158,16 +165,27 @@ describe('Pasture page structure', () => {
         },
         'policies',
         'before',
+        'MARKET',
       ),
     ).toEqual([]);
   });
 
   it('derives short Contact and FAQ heroes', () => {
     for (const page of ['contact', 'faq'] as const) {
-      const [hero] = effectiveWebsitePageSections(pasture(), page, 'before');
+      const [hero] = effectiveWebsitePageSections(
+        pasture(),
+        page,
+        'before',
+        'MARKET',
+      );
       expect(hero?.presentation.sizing?.imageHeight).toBe(220);
     }
-    const [about] = effectiveWebsitePageSections(pasture(), 'about', 'before');
+    const [about] = effectiveWebsitePageSections(
+      pasture(),
+      'about',
+      'before',
+      'MARKET',
+    );
     expect(about?.presentation.sizing).toBeUndefined();
   });
 
@@ -294,10 +312,21 @@ describe('Pasture section spacing, shop and starter text', () => {
       expect(isWebsiteSection(spaced(161))).toBe(false);
       expect(isWebsiteSection(spaced(12.5))).toBe(false);
     }
-    expect(themePageStructure('pasture').sectionSpaceDefault).toBe(32);
-    expect(themePageStructure('pasture').marketDayBoothCards).toBe(true);
-    expect(themePageStructure('meadow').marketDayBoothCards).toBe(false);
-    expect(themePageStructure('harvest').sectionSpaceDefault).toBeNull();
+    expect(themePageStructure('pasture', 'MARKET').sectionSpaceDefault).toBe(
+      32,
+    );
+    expect(themePageStructure('pasture', 'MARKET').marketDayBoothCards).toBe(
+      true,
+    );
+    expect(themePageStructure('meadow', 'MARKET').marketDayBoothCards).toBe(
+      true,
+    );
+    expect(themePageStructure('harvest', 'MARKET').marketDayBoothCards).toBe(
+      false,
+    );
+    expect(
+      themePageStructure('harvest', 'MARKET').sectionSpaceDefault,
+    ).toBeNull();
   });
 
   it('starts market Policies and Terms with written text, free of em dashes', () => {

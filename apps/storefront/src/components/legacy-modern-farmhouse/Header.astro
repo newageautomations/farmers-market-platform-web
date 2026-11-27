@@ -1,6 +1,6 @@
 ---
 import type { StorefrontContext } from '@market/storefront-core';
-import { storefrontText } from '@market/theme/storefront';
+import { storefrontText, themePageStructure } from '@market/theme/storefront';
 import Button from '../ui/Button.astro';
 import { UtilityIcon } from '@market/ui';
 import { VendorCartLink } from './VendorCartLink';
@@ -82,7 +82,11 @@ const active = (href: string) =>
             <span data-storefront-text={link.binding}>{link.label}</span>
           </a>
         ))}
-        {appearance?.faq?.enabled && <a href="/faq">{appearance.faq.title}</a>}
+        {appearance?.faq?.enabled &&
+          !(
+            themePageStructure(appearance.theme, context.kind)
+              .footerOnlyPages as readonly string[]
+          ).includes('faq') && <a href="/faq">{appearance.faq.title}</a>}
         <a href="/account">Your account</a>
       </nav>
     </details>

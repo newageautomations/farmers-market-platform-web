@@ -388,8 +388,10 @@ const noneAvailable =
                 </div>
               )}
               {total > SHOP_PAGE_SIZE &&
-                themePageStructure(storefront?.appearance?.theme)
-                  .shopPagination === 'numbered' && (
+                themePageStructure(
+                  storefront?.appearance?.theme,
+                  storefront?.kind,
+                ).shopPagination === 'numbered' && (
                   <NumberedPagination
                     page={page}
                     pageCount={Math.ceil(total / SHOP_PAGE_SIZE)}
@@ -399,8 +401,10 @@ const noneAvailable =
                   />
                 )}
               {total > SHOP_PAGE_SIZE &&
-                themePageStructure(storefront?.appearance?.theme)
-                  .shopPagination !== 'numbered' && (
+                themePageStructure(
+                  storefront?.appearance?.theme,
+                  storefront?.kind,
+                ).shopPagination !== 'numbered' && (
                   <nav class="ui-pagination pagination" aria-label="Shop pages">
                     {page > 1 && (
                       <a

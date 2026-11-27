@@ -41,6 +41,16 @@
 .find-schedule {
   margin-top: 3rem;
 }
+/* Rows past the first page stay hidden whatever display a theme gives them. */
+.find-schedule[data-find-schedule]
+  :is([data-find-row], [data-find-month], [data-find-more])[hidden] {
+  display: none;
+}
+.find-schedule-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
 .find-month h3 {
   font-size: 1.2rem;
   margin-top: 2rem;

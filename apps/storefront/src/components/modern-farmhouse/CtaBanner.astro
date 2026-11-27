@@ -24,6 +24,7 @@ const { content, presentation } = section;
   data-editor-section={editorId ?? `farmhouse:${section.id}`}
   data-background={presentation.background}
   data-alignment={presentation.alignment}
+  data-button-style={presentation.buttonStyle}
 >
   <div class="farmhouse-space farmhouse-cta-banner website-layout">
     <div class="farmhouse-editorial-copy website-copy">
@@ -39,7 +40,8 @@ const { content, presentation } = section;
         <a
           class="farmhouse-button"
           data-website-button={
-            presentation.background === 'ink' ? 'secondary' : 'primary'
+            presentation.buttonStyle ??
+            (presentation.background === 'ink' ? 'secondary' : 'primary')
           }
           style={websiteObjectStyle(section, 'button')}
           href={content.destination}

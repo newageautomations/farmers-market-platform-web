@@ -3,6 +3,12 @@
 section.website-section[data-website-section] {
   --website-heading-base: clamp(2rem, 4vw, 3.6rem);
 }
+/* Vendor storefront standard (docs/vendor-storefronts/): every custom section
+   has space above and below it, 32px by default (sectionSpaceDefault) or the
+   section's own "Space above and below" setting. */
+.vendor-site :is(section.website-section, section.harvest-library) {
+  margin-block: var(--website-space-block, 32px);
+}
 section.website-section[data-variant='featured'] {
   --website-heading-base: clamp(2.75rem, 5vw, 4.5rem);
 }

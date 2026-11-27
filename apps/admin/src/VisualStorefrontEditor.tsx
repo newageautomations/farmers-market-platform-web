@@ -178,7 +178,8 @@ export function VisualStorefrontEditor({
     return record.draft;
   }, [valid, history.past, record.draft]);
   const template = draft.template;
-  const pageStructure = themePageStructure(draft.theme);
+  const siteKind = market ? 'MARKET' : 'VENDOR';
+  const pageStructure = themePageStructure(draft.theme, siteKind);
   // Markets on themes with starter text begin with written policies.
   const policiesStart =
     market && pageStructure.marketStarterText
@@ -210,8 +211,18 @@ export function VisualStorefrontEditor({
   const composition =
     path !== '/'
       ? Object.entries({
-          before: effectiveWebsitePageSections(draft, editorialPage, 'before'),
-          after: effectiveWebsitePageSections(draft, editorialPage, 'after'),
+          before: effectiveWebsitePageSections(
+            draft,
+            editorialPage,
+            'before',
+            siteKind,
+          ),
+          after: effectiveWebsitePageSections(
+            draft,
+            editorialPage,
+            'after',
+            siteKind,
+          ),
         }).flatMap(([region, sections]) =>
           (sections as WebsiteSection[]).map((item) => ({
             ...item,
@@ -1107,18 +1118,33 @@ export function VisualStorefrontEditor({
   );
   const supportedSections =
     usesHarvestContract(draft.theme) || !!draft.template;
+  // A fixed Find Us page takes no library sections.
+  const fixedFindUs =
+    editorialPage === 'find-us' && !!pageStructure.fixedFindUs;
   const pageRegions =
-    supportedSections && Object.hasOwn(websitePageRules, editorialPage)
+    supportedSections &&
+    !fixedFindUs &&
+    Object.hasOwn(websitePageRules, editorialPage)
       ? websitePageRules[editorialPage].regions
       : [];
   const pageBefore = effectiveWebsitePageSections(
     draft,
     editorialPage,
     'before',
+    siteKind,
   );
-  const pageAfter = effectiveWebsitePageSections(draft, editorialPage, 'after');
+  const pageAfter = effectiveWebsitePageSections(
+    draft,
+    editorialPage,
+    'after',
+    siteKind,
+  );
   const pageCount = pageBefore.length + pageAfter.length;
-  const pageHeroEnabled = supportsWebsitePageHero(draft, editorialPage);
+  const pageHeroEnabled = supportsWebsitePageHero(
+    draft,
+    editorialPage,
+    siteKind,
+  );
   // Pages whose native content must open the page take nothing above it.
   // Sections saved there earlier stay listed so they can be moved or removed.
   const lockedTop = (region: WebsitePageRegion) =>
@@ -1129,7 +1155,12 @@ export function VisualStorefrontEditor({
     !(lockedTop(region) && !pageBefore.length) ? (
       <WebsiteSectionManagement<{ id: string; visible: boolean }>
         key={`${editorialPage}:${region}`}
-        sections={effectiveWebsitePageSections(draft, editorialPage, region)}
+        sections={effectiveWebsitePageSections(
+          draft,
+          editorialPage,
+          region,
+          siteKind,
+        )}
         target={{
           theme: draft.theme,
           themeVersion: draft.template?.version ?? 1,
@@ -1252,6 +1283,7 @@ export function VisualStorefrontEditor({
       />
     ) : id === 'find-settings' ? (
       <FindUsEditor
+        fixed={fixedFindUs}
         onlyClosing={closingOnly}
         hideClosing={!closingOnly && pageHeroEnabled}
         sectionHero={pageHeroEnabled}
@@ -1399,6 +1431,7 @@ export function VisualStorefrontEditor({
       value={{
         inspector,
         theme: draft.theme,
+        kind: siteKind,
         backgrounds: sectionBackgroundSwatches(
           draft.theme,
           storefrontPalettes[draft.palette],

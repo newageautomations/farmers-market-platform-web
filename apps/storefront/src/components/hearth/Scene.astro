@@ -2,18 +2,8 @@
 import Art from './Art.astro';
 /**
  * Hearth's hero illustration: a bakehouse shelf under a warm lamp. Decorative
- * only. `bunting` strings flags across it for Market Day mode.
+ * only.
  */
-interface Props {
-  bunting?: boolean;
-}
-const { bunting = false } = Astro.props;
-const flagColors = ['#9B2F3A', '#D9A253', '#6C7A45', '#7B4B2A', '#F3DEAA'];
-// Points along the bunting string M0 26 Q280 96 560 26.
-const flags = Array.from({ length: 9 }, (_, index) => {
-  const t = (index + 1) / 10;
-  return { x: 560 * t, y: 26 + 140 * t * (1 - t) };
-});
 const boards = [70, 140, 210, 280, 350, 420, 490];
 ---
 
@@ -94,21 +84,4 @@ const boards = [70, 140, 210, 280, 350, 420, 490];
   </g>
   <Art name="cookie" x={366} y={374} size={56} />
   <Art name="cookie" x={404} y={370} size={60} />
-
-  {bunting && (
-    <g class="hw-scene-bunting">
-      <path
-        d="M0 26Q280 96 560 26"
-        stroke="#3D2616"
-        stroke-width="2.5"
-        fill="none"
-      />
-      {flags.map((flag, index) => (
-        <path
-          d={`M${flag.x - 17} ${flag.y - 1}h34l-17 32z`}
-          fill={flagColors[index % flagColors.length]}
-        />
-      ))}
-    </g>
-  )}
 </svg>

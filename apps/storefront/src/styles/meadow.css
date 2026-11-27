@@ -498,9 +498,6 @@ html[data-storefront-theme='meadow'][data-theme-palette='charcoal'] {
   background: linear-gradient(180deg, #c8e8f4, #e9f6ea 72%);
   box-shadow: var(--mw-shadow-lift);
 }
-.mw-hero-day .mw-hero-visual:not(.mw-hero-photo) {
-  border-radius: 36px;
-}
 .mw-scene {
   display: block;
   width: 100%;
@@ -800,7 +797,15 @@ html[data-storefront-theme='meadow'] {
   --mw-comb: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97' viewBox='0 0 56 97'%3E%3Cpath d='M28 1 55 16.5v32L28 64 1 48.5v-32zM28 65v32M1 48.5-26 64M55 48.5 82 64' fill='none' stroke='%23fff' stroke-opacity='.35' stroke-width='2'/%3E%3C/svg%3E");
 }
 
-/* Vendor cards (shared MarketVendorCards). */
+/* Vendor cards (shared MarketVendorCards). The whole card is the link, so
+   neither the card edge nor the vendor name carries the text underline. */
+.meadow-site .market-vendor-card .market-vendor-offerings::after,
+.meadow-site
+  .market-vendor-card
+  .market-vendor-offerings
+  .farmstand-text-link::after {
+  content: none;
+}
 .meadow-site .market-vendor-cards {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 14.5rem), 1fr));
   gap: 1.1rem;
@@ -1271,7 +1276,7 @@ html[data-storefront-theme='meadow'] {
     animation-delay: 240ms;
   }
   .mw-hero-visual {
-    animation: mw-rise 800ms 120ms var(--mw-ease) both;
+    animation: mw-rise 800ms 120ms var(--mw-ease) backwards;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1360,6 +1365,8 @@ html[data-storefront-theme='meadow'] {
   --mw-icon-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M8 3v4M16 3v4M3 10h18'/%3E%3C/svg%3E");
   --mw-icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3'/%3E%3C/svg%3E");
   --mw-icon-store: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 10v10h16V10M3 10l2-6h14l2 6a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0zM10 20v-5h4v5'/%3E%3C/svg%3E");
+  --mw-icon-x: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+  --mw-icon-dash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
 }
 .meadow-site .market-page,
 .meadow-site .vendor-shop,
@@ -1603,18 +1610,183 @@ html[data-storefront-theme='meadow'] {
   box-shadow: none;
   color: #fff;
 }
-.meadow-site .shop-category-option:has(input:checked)::before {
+/* Optical centring: the body font's tall ascender leaves the line box's
+   middle above the letters. Trimming the text to its cap height centres the
+   name, the count and the selection icon on the same line, and a fixed
+   minimum height keeps every pill the same size. */
+.meadow-site .shop-categories .shop-category-option {
+  gap: 0.45rem;
+  min-height: 2.6rem;
+  padding-block: 0.45rem;
+  padding-left: 0.7rem;
+  box-sizing: border-box;
+}
+.meadow-site .shop-category-option > span:not(.sr-only) {
+  text-box: trim-both cap alphabetic;
+}
+/* Every option keeps an icon slot so choosing one never re-wraps its text:
+   an X when off, a check when on, and a dash on a parent category with only
+   some of its subcategories chosen. */
+.meadow-site .shop-category-option::before {
   content: '';
   flex: none;
   width: 0.9rem;
   height: 0.9rem;
+  background: var(--mw-muted);
+  opacity: 0.55;
+  -webkit-mask: var(--mw-icon-x) center / 0.7rem no-repeat;
+  mask: var(--mw-icon-x) center / 0.7rem no-repeat;
+}
+.meadow-site .shop-category-option:has(input:checked)::before {
   background: currentColor;
+  opacity: 1;
   -webkit-mask: var(--mw-icon-check) center / contain no-repeat;
   mask: var(--mw-icon-check) center / contain no-repeat;
+}
+.meadow-site
+  .market-shop-category-group:has(.ui-disclosure-content input:checked)
+  > .market-shop-category-parent:not(:has(input:checked))::before {
+  background: var(--mw-primary);
+  opacity: 1;
+  -webkit-mask: var(--mw-icon-dash) center / contain no-repeat;
+  mask: var(--mw-icon-dash) center / contain no-repeat;
 }
 .meadow-site .shop-category-option:has(input:focus-visible) {
   outline: 3px solid var(--mw-honey-deep);
   outline-offset: 3px;
+}
+/* Market shop filters: Categories / Vendors switch between a white pill and
+   the leading-color pill for the active mode. */
+.meadow-site .market-shop-filters > .market-shop-filter-modes {
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 2px dashed var(--mw-line);
+}
+.meadow-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button {
+  --button-fill: var(--mw-paper);
+  --button-ink: var(--mw-ink);
+  --button-edge: var(--mw-line);
+  --button-hover-fill: var(--mw-honey-soft);
+  --button-hover-ink: var(--mw-ink);
+  --button-hover-edge: var(--mw-honey);
+  flex: 1 1 auto;
+  justify-content: center;
+  min-height: 40px;
+  padding-inline: 0.6rem;
+  font-size: 0.84rem;
+  white-space: nowrap;
+  box-shadow: var(--mw-shadow);
+}
+.meadow-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button[aria-current='page'] {
+  --button-fill: var(--mw-primary);
+  --button-ink: #fff;
+  --button-edge: var(--mw-primary);
+  --button-hover-fill: var(--mw-primary-deep);
+  --button-hover-ink: #fff;
+  --button-hover-edge: var(--mw-primary-deep);
+}
+.meadow-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button:is(:hover, :focus-visible) {
+  transform: translateY(-2px);
+  box-shadow: var(--mw-shadow-lift);
+}
+.meadow-site .market-shop-filter-form {
+  gap: 0.5rem;
+}
+/* Parent category dropdowns: the pill selects the whole category, the
+   round chevron button beside it opens the subcategory panel. */
+.meadow-site .market-shop-category-group {
+  --market-shop-row-height: 2.6rem;
+  --market-shop-toggle-width: 2.6rem;
+  column-gap: 0.4rem;
+}
+.meadow-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary {
+  border: 0;
+  border-radius: 999px;
+  background: var(--mw-paper);
+  box-shadow: inset 0 0 0 1.5px var(--mw-line);
+  color: var(--mw-ink);
+  cursor: pointer;
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 280ms var(--mw-spring);
+}
+.meadow-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary:hover {
+  background: var(--mw-honey-soft);
+  transform: translateY(-2px);
+}
+.meadow-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary:focus-visible {
+  outline: 3px solid var(--mw-honey-deep);
+  outline-offset: 3px;
+}
+.meadow-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure[open]
+  > summary {
+  background: var(--mw-honey-soft);
+  box-shadow: inset 0 0 0 1.5px var(--mw-honey);
+}
+.meadow-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > .ui-disclosure-content {
+  margin-block-start: 0.4rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+  border: 0;
+  border-left: 3px solid var(--mw-honey);
+  border-radius: 0 var(--mw-radius-sm) var(--mw-radius-sm) 0;
+  background: color-mix(in srgb, var(--mw-honey-soft) 45%, transparent);
+}
+.meadow-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  .shop-category-option {
+  padding-right: 0.7rem;
+  font-size: 0.84rem;
+}
+/* Clear wears the same white pill as the inactive filter mode. */
+.meadow-site .market-shop-filter-form .button.ui-button.button-tertiary {
+  --button-fill: var(--mw-paper);
+  --button-ink: var(--mw-ink);
+  --button-edge: var(--mw-line);
+  --button-hover-fill: var(--mw-honey-soft);
+  --button-hover-ink: var(--mw-ink);
+  --button-hover-edge: var(--mw-honey);
+  border: 1.5px solid var(--button-edge);
+  background: var(--button-fill);
+  color: var(--button-ink);
+  justify-self: start;
+  text-decoration: none;
+  box-shadow: var(--mw-shadow);
+}
+.meadow-site .market-shop-filter-form .button.ui-button[hidden] {
+  display: none;
+}
+.meadow-site
+  .market-shop-filter-form
+  .button.ui-button.button-tertiary:is(:hover, :focus-visible) {
+  background: var(--button-hover-fill);
+  transform: translateY(-2px);
+  box-shadow: var(--mw-shadow-lift);
 }
 .meadow-site .shop-catalog-controls {
   align-items: center;
@@ -1957,8 +2129,11 @@ html[data-storefront-theme='meadow'] {
 }
 /* Remove becomes an icon button; its accessible name is kept. */
 .meadow-site .vendor-cart-controls > .button-destructive-outline {
-  width: 40px;
-  min-width: 40px;
+  justify-content: center;
+  gap: 0;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
   padding: 0;
   border-radius: 50%;
   font-size: 0;
@@ -2079,6 +2254,147 @@ html[data-storefront-theme='meadow'] {
   padding-inline: 1.6rem;
   font-size: 1.05rem;
 }
+.meadow-site .checkout-stage-actions {
+  align-items: center;
+}
+.meadow-site nav[aria-label='Checkout progress'] {
+  margin-bottom: 1.4rem;
+}
+.meadow-site .checkout-order-summary > .ui-disclosure {
+  --ui-disclosure-border-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.meadow-site .vendor-checkout .checkout-order-summary {
+  overflow: hidden;
+}
+
+/* Completed steps are buttons back to that section. */
+.meadow-site .checkout-progress li:has(.checkout-progress-step) {
+  position: relative;
+  color: var(--mw-ink);
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 280ms var(--mw-spring);
+}
+.meadow-site .checkout-progress-step {
+  text-decoration: none;
+}
+.meadow-site .checkout-progress-step::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.meadow-site .checkout-progress li:has(.checkout-progress-step:hover) {
+  background: var(--mw-honey-soft);
+  transform: translateY(-2px);
+}
+.meadow-site .checkout-progress li:has(.checkout-progress-step:active) {
+  transform: scale(0.97);
+}
+.meadow-site .checkout-progress li:has(.checkout-progress-step:focus-visible) {
+  outline: 3px solid var(--mw-honey-deep);
+  outline-offset: 3px;
+}
+.meadow-site .checkout-progress-step:focus-visible {
+  outline: 0;
+}
+
+/* Each vendor's pickup choice is its own card, like Pickup details. */
+.meadow-site .market-checkout fieldset {
+  min-width: 0;
+  margin: 0 0 1.25rem;
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  border: 0;
+  border-radius: var(--mw-radius);
+  background: var(--mw-paper);
+  box-shadow: var(--mw-shadow);
+}
+.meadow-site .market-checkout fieldset > legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 0.85rem;
+  padding: 0 0 0.7rem;
+  border-bottom: 2px dashed var(--mw-line);
+  color: var(--mw-ink);
+  font: 700 1.4rem / 1.15 var(--font-heading);
+}
+.meadow-site .market-checkout fieldset > legend + * {
+  clear: both;
+}
+.meadow-site .market-checkout .pickup-choice {
+  position: relative;
+  gap: 0.7rem;
+  margin: 0 0 0.6rem;
+  padding: 0.8rem 1rem;
+  border: 0;
+  border-radius: var(--mw-radius-sm);
+  background: var(--mw-cream);
+  box-shadow: inset 0 0 0 1.5px var(--mw-line);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 280ms var(--mw-spring);
+}
+.meadow-site .market-checkout .pickup-choice:last-child {
+  margin-bottom: 0;
+}
+.meadow-site .market-checkout .pickup-choice input[type='radio'] {
+  accent-color: var(--mw-primary);
+  cursor: pointer;
+}
+.meadow-site .market-checkout .pickup-choice:hover {
+  background: var(--mw-honey-soft);
+  transform: translateY(-2px);
+}
+.meadow-site .market-checkout .pickup-choice:active {
+  transform: scale(0.99);
+}
+.meadow-site .market-checkout .pickup-choice:has(input:checked) {
+  background: var(--mw-primary-soft);
+  box-shadow: inset 0 0 0 2px var(--mw-primary);
+}
+.meadow-site .market-checkout .pickup-choice:has(input:focus-visible) {
+  outline: 3px solid var(--mw-honey-deep);
+  outline-offset: 3px;
+}
+
+/* Order summary: the quantity is its own chip, apart from the name. */
+.meadow-site .checkout-summary-product > span:not(:last-child) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+}
+.meadow-site .checkout-summary-quantity {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--mw-honey-soft);
+  color: var(--mw-ink);
+  font-size: 0.82rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .meadow-site .market-checkout .pickup-choice,
+  .meadow-site .checkout-progress li:has(.checkout-progress-step) {
+    transition: none;
+  }
+  .meadow-site .market-checkout .pickup-choice:is(:hover, :active),
+  .meadow-site
+    .checkout-progress
+    li:has(.checkout-progress-step:is(:hover, :active)) {
+    transform: none;
+  }
+}
 
 /* ------------------------------------------------------- vendors, applying */
 .meadow-site .market-date-selector {
@@ -2118,17 +2434,196 @@ html[data-storefront-theme='meadow'] {
   color: var(--mw-muted);
 }
 
+/* ------------------------------------------------------------ contact form */
+/* The market form runs in two columns on wider screens; long answers (the
+   message and any long-answer field) span both. */
+.meadow-site .contact-fields-configured {
+  row-gap: 1.75rem;
+  column-gap: 1.25rem;
+}
+@media (min-width: 761px) {
+  .meadow-site .contact-fields-configured {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .meadow-site .contact-fields-configured > [data-wide] {
+    grid-column: 1 / -1;
+  }
+}
+/* Long answers behave like the single-line fields: focusing one doesn't
+   repaint or outline it beyond the shared field focus ring. */
+.meadow-site .contact-fields textarea:focus-visible {
+  outline: none;
+  background-color: var(--ui-input-focus-background);
+}
+/* Validation messages sit in the gap under their field, so showing one never
+   moves the fields below it. */
+.meadow-site .contact-form-item :is(.field, .phone-field) {
+  position: relative;
+}
+.meadow-site .contact-form-item :is(.form-error, .phone-field > small) {
+  position: absolute;
+  top: calc(100% + 0.2rem);
+  left: 0;
+  right: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Booth card on the Market Day map: the vendor card look, a little smaller. */
+.meadow-site .booth-hover-card.booth-hover-card-custom {
+  width: 240px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.meadow-site .market-day-booth-card.ui-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 1.1rem;
+  text-align: left;
+  box-shadow: var(--mw-shadow-lift);
+}
+/* The vendor cards' coloured band stays on the Vendors today cards. */
+.meadow-site .market-day-booth-card::before {
+  content: none;
+}
+/* Booth name in the top-left corner. */
+.meadow-site .market-day-booth-card .market-day-booth-name {
+  margin: 0;
+  color: var(--mw-honey-deep);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+/* The vendor's picture beside their name and category. */
+.meadow-site .market-day-booth-vendor {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.meadow-site
+  .market-day-booth-card
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--mw-primary-soft);
+  object-fit: cover;
+  box-shadow: 0 6px 14px -6px rgb(34 48 31 / 0.4);
+  /* Same eased tilt as the "Vendors today" cards. */
+  transition: transform 420ms var(--mw-spring);
+}
+.meadow-site .market-day-booth-card .harvest-vendor-symbol {
+  background: var(--mw-primary);
+  color: #fff;
+  font: 700 1.5rem var(--font-heading);
+}
+.meadow-site
+  .market-day-booth-card:hover
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  transform: scale(1.08) rotate(-5deg);
+}
+.meadow-site .market-day-booth-text {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.meadow-site
+  .market-day-booth-card
+  :is(h3, .market-vendor-meta, .market-vendor-actions) {
+  grid-column: auto;
+}
+.meadow-site .market-day-booth-card h3 {
+  align-self: auto;
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+.meadow-site .market-day-booth-card .market-vendor-meta {
+  margin: 0;
+}
+.meadow-site .market-day-booth-card .market-vendor-actions {
+  justify-content: start;
+  margin: 0;
+  padding-top: 0;
+}
+
 /* -------------------------------------------------------- section library */
+.meadow-site
+  :is(.harvest-authored-copy, .story-copy, .story-cta, .harvest-library-heading)
+  :is(h1, h2),
 .meadow-site .harvest-library h2,
-.meadow-site .harvest-section .ui-section-heading-consumer > h2 {
+.meadow-site .harvest-section .ui-section-heading-consumer > h2,
+.meadow-site .product-related > h2 {
   font-weight: 700;
   letter-spacing: -0.025em;
 }
 .meadow-site .harvest-library :is(img, .harvest-library-media) {
   border-radius: var(--mw-radius);
 }
+.meadow-site .harvest-photo-placeholder {
+  background: var(--mw-honey-soft);
+  color: var(--mw-honey-deep);
+}
 .meadow-site .website-page-region {
   margin-block: clamp(1rem, 3vw, 2rem);
+}
+/* Carousels stay in the content column like every other section. The shared
+   carousel rule sets width: 100%, which outranks the column rule above. */
+.meadow-site
+  .mw-home
+  > section:is(.harvest-gallery, .harvest-showcase)[data-layout='carousel'] {
+  width: var(--mw-wrap);
+  margin-inline: auto;
+}
+.meadow-site
+  section:is(.harvest-gallery, .harvest-showcase)[data-layout='carousel'] {
+  padding-inline: clamp(1rem, 4vw, 3rem);
+}
+/* Every custom section has space above and below it: 32px by default (the
+   theme's sectionSpaceDefault), or the section's own "Space above and below"
+   setting. Framed sections are set apart by this space, not by an outline
+   that only spans the column. */
+.meadow-site :is(section.website-section, section.harvest-library) {
+  margin-block: var(--website-space-block, 32px);
+}
+.meadow-site .harvest-authored[data-variant='framed'] {
+  border: 0;
+}
+/* A background image (or its placeholder) fills the whole section; image
+   frames apply to side images only. */
+.meadow-site
+  .harvest-image-story[data-image-layout='overlay']
+  .harvest-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0;
+  /* The flower glyph would sit under the overlay copy. */
+  font-size: 0;
+}
+/* A side image keeps its chosen frame at the chosen image height. */
+.meadow-site .harvest-image-story[data-image-shape] .harvest-authored-image img,
+.meadow-site
+  .harvest-image-story[data-image-shape]
+  .harvest-authored-image
+  .harvest-photo-placeholder {
+  max-height: none;
 }
 
 /* -------------------------------------------------------------- market day */
@@ -2168,20 +2663,8 @@ html[data-storefront-theme='meadow'] {
     transform: scale(3.2);
   }
 }
-.mw-hero-day {
-  background:
-    radial-gradient(
-      60% 70% at 88% 8%,
-      color-mix(in srgb, var(--mw-honey) 55%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      45% 55% at 0% 100%,
-      color-mix(in srgb, var(--mw-blush) 90%, transparent),
-      transparent 70%
-    ),
-    linear-gradient(180deg, #ffeab0, var(--mw-cream));
-}
+/* Market day keeps the hero's everyday colors; only the live pill above the
+   title and the countdown below the buttons are added. */
 .mw-day .mw-hero-inner {
   align-items: start;
 }
@@ -2190,18 +2673,68 @@ html[data-storefront-theme='meadow'] {
   margin-top: 1.75rem;
   max-width: 34rem;
 }
+/* The countdown is a honeycomb label, like the date banner and the empty
+   cart: honey-soft comb, a honey edge, digits on white tiles. It is only as
+   wide as what's on it. */
 .meadow-site .mw-day .market-day-countdown {
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 1.1rem 1.4rem 1.3rem;
   border: 0;
   border-radius: var(--mw-radius);
-  background: var(--mw-paper);
-  box-shadow: var(--mw-shadow-lift);
+  background: var(--mw-honey-soft) var(--mw-comb) center / 42px;
+  box-shadow:
+    inset 0 0 0 1.5px color-mix(in srgb, var(--mw-honey) 70%, transparent),
+    var(--mw-shadow-lift);
+  color: var(--mw-ink);
+}
+.meadow-site
+  .mw-day
+  .market-day-countdown
+  :is(.market-day-countdown-label, .market-day-unit) {
+  color: var(--mw-ink);
+}
+.meadow-site
+  .mw-day
+  .market-day-countdown
+  :is(.market-day-countdown-hours, .market-day-countdown-note) {
+  color: var(--mw-muted);
+}
+.meadow-site .mw-day .market-day-clock-lead {
+  color: var(--mw-honey-deep);
+  font-weight: 800;
 }
 .meadow-site .mw-day .market-day-live {
   background: var(--mw-tomato);
 }
+.meadow-site .mw-day .market-day-digit {
+  border-radius: var(--mw-radius-sm);
+  background: var(--mw-paper);
+  color: var(--mw-ink);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  box-shadow:
+    inset 0 -3px 0 color-mix(in srgb, var(--mw-honey) 45%, transparent),
+    0 6px 14px -8px rgb(34 48 31 / 0.45);
+}
+.meadow-site .mw-day .market-day-digit::after {
+  background: color-mix(in srgb, var(--mw-ink) 10%, transparent);
+}
+.meadow-site .mw-day .market-day-separator {
+  color: var(--mw-honey-deep);
+}
+.meadow-site .mw-day .market-day-progress {
+  background: color-mix(in srgb, var(--mw-honey) 35%, var(--mw-paper));
+}
+.meadow-site .mw-day .market-day-progress > span {
+  background: var(--mw-primary);
+}
 .meadow-site .mw-day .market-day-venue {
   gap: 0.5rem;
-  font-weight: 600;
+  color: var(--mw-ink);
+  font-weight: 700;
 }
 .meadow-site .mw-day .market-day-venue .farmstand-icon {
   color: var(--mw-tomato);

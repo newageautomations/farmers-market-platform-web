@@ -2788,4 +2788,12 @@ function buildCatalog(audit) {
     };
   });
 }
-module.exports = { categories, buildCatalog };
+function buildFixtureProducts(family) {
+  const pool = pools[family];
+  assert(pool?.length >= 18, 'Unknown or incomplete catalog family');
+  const products = pool.slice(0, 18).map((item) => enrich(item, family));
+  assert.equal(new Set(products.map((item) => key(item.name))).size, 18);
+  return products;
+}
+
+module.exports = { categories, buildCatalog, buildFixtureProducts };

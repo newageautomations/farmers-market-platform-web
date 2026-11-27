@@ -4,6 +4,7 @@ import { SelectField } from '@market/ui';
 import {
   themePageStructure,
   websiteSpaceBlockLimits,
+  type StorefrontSiteKind,
   type SectionBackground,
   type WebsiteSection,
 } from '@market/theme/storefront';
@@ -17,6 +18,8 @@ export const WebsiteEditorContext = createContext<{
   selectBlock: (sectionId: string, blockId?: string) => void;
   /** The website's own theme. Section targets can name a shared contract (Harvest) instead. */
   theme?: string;
+  /** Market or vendor website: page rules differ on the themes both use. */
+  kind?: StorefrontSiteKind;
   /** What each section background choice looks like on the current theme and palette. */
   backgrounds?: Record<SectionBackground, { color: string; label: string }>;
 } | null>(null);
@@ -46,6 +49,7 @@ export function SectionSpaceField<T extends WebsiteSection>({
   const workspace = useContext(WebsiteEditorContext);
   const fallback = themePageStructure(
     workspace?.theme ?? theme,
+    workspace?.kind,
   ).sectionSpaceDefault;
   if (fallback === null) return null;
   return (

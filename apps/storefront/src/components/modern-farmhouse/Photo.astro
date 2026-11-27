@@ -6,11 +6,14 @@ const {
   fallback = '',
   eager = false,
   class: className = '',
+  shape,
 } = Astro.props as {
   photo: FarmhouseSection['photo'];
   fallback?: string;
   eager?: boolean;
   class?: string;
+  /** An Image with Text frame shape; the shared shape rules draw it. */
+  shape?: string;
 };
 const url = safeAsset(photo.url || fallback);
 ---
@@ -28,9 +31,14 @@ const url = safeAsset(photo.url || fallback);
       loading={eager ? 'eager' : 'lazy'}
       fetchpriority={eager ? 'high' : 'auto'}
       decoding="async"
+      data-hero-shape={shape}
     />
   ) : (
-    <div class="farmhouse-photo-empty" aria-hidden="true">
+    <div
+      class="farmhouse-photo-empty"
+      aria-hidden="true"
+      data-hero-shape={shape}
+    >
       <svg viewBox="0 0 400 240" fill="none">
         <path
           d="M-20 220Q120 90 420 180M-20 190Q150 80 420 140M-20 160Q160 50 420 100M-20 130Q170 20 420 60"

@@ -63,6 +63,9 @@ const visit = marketNavigation(appearance, !!Astro.locals.editorPreview);
           {appearance?.policies?.enabled && (
             <a href="/policies">{appearance.policies.title}</a>
           )}
+          {appearance?.marketTerms?.enabled && (
+            <a href="/terms-and-conditions">{appearance.marketTerms.title}</a>
+          )}
           {appearance?.contact?.enabled && (
             <a href="/contact">{appearance.contact.title}</a>
           )}

@@ -5,7 +5,10 @@ import type {
   VendorPreorderOccurrence,
 } from '@market/api';
 import type { StorefrontContext } from '@market/storefront-core';
-import { isEditorialMarket } from '@market/theme/storefront';
+import {
+  isEditorialMarket,
+  themePageStructure,
+} from '@market/theme/storefront';
 import {
   productPreorder,
   safeAsset,
@@ -13,6 +16,7 @@ import {
 } from '@market/storefront-core';
 import { selectClassName, buttonClassName } from '@market/ui/presentation';
 import ProductCards from '../ProductCards.astro';
+import NumberedPagination from '../ui/NumberedPagination.astro';
 import ShopHeader from './ShopHeader.astro';
 import ShopHero from './ShopHero.astro';
 import ShopCategories from './ShopCategories.astro';
@@ -271,34 +275,47 @@ const noneAvailable =
       </div>
     )}
 
-    {total > SHOP_PAGE_SIZE && (
-      <nav class="em-shop-pagination" aria-label="Shop pages">
-        {page > 1 ? (
-          <a
-            class={buttonClassName({ variant: 'secondary' })}
-            href={link({ page: page - 1 })}
-          >
-            Previous
-          </a>
-        ) : (
-          <span></span>
-        )}
-        <p>
-          Page {page} · {visible.length ? skip + 1 : 0} to{' '}
-          {visible.length ? skip + visible.length : 0} of {total}
-        </p>
-        {skip + SHOP_PAGE_SIZE < total ? (
-          <a
-            class={buttonClassName({ variant: 'secondary' })}
-            href={link({ page: page + 1 })}
-          >
-            Next
-          </a>
-        ) : (
-          <span></span>
-        )}
-      </nav>
-    )}
+    {total > SHOP_PAGE_SIZE &&
+      themePageStructure(context.appearance?.theme, context.kind)
+        .shopPagination === 'numbered' && (
+        <NumberedPagination
+          page={page}
+          pageCount={Math.ceil(total / SHOP_PAGE_SIZE)}
+          href={(target) => link({ page: target })}
+          label="Shop pages"
+          pageAttribute="data-em-shop-page"
+        />
+      )}
+    {total > SHOP_PAGE_SIZE &&
+      themePageStructure(context.appearance?.theme, context.kind)
+        .shopPagination !== 'numbered' && (
+        <nav class="em-shop-pagination" aria-label="Shop pages">
+          {page > 1 ? (
+            <a
+              class={buttonClassName({ variant: 'secondary' })}
+              href={link({ page: page - 1 })}
+            >
+              Previous
+            </a>
+          ) : (
+            <span></span>
+          )}
+          <p>
+            Page {page} · {visible.length ? skip + 1 : 0} to{' '}
+            {visible.length ? skip + visible.length : 0} of {total}
+          </p>
+          {skip + SHOP_PAGE_SIZE < total ? (
+            <a
+              class={buttonClassName({ variant: 'secondary' })}
+              href={link({ page: page + 1 })}
+            >
+              Next
+            </a>
+          ) : (
+            <span></span>
+          )}
+        </nav>
+      )}
   </section>
 
   {(desktopFooter || mobileFooter) && (
@@ -399,7 +416,7 @@ const noneAvailable =
       if (!select.contains(target)) select.blur();
     }
     const anchor = target.closest<HTMLAnchorElement>(
-      '.em-shop-categories a, .em-shop-filter-menu a, .em-shop-pagination a',
+      '.em-shop-categories a, .em-shop-filter-menu a, .em-shop-pagination a, a[data-em-shop-page]',
     );
     if (
       !anchor ||

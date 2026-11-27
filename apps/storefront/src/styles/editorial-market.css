@@ -3563,3 +3563,20 @@ html[data-storefront-theme='editorial-market']
     font-size: clamp(1.4rem, 6.5cqi, 3rem);
   }
 }
+
+/* Image with Text frame shapes (vendor standard, rule sectionImageShape): the
+   shape is drawn on the image, so the frame's backing must not show around it. */
+.em-image-story[data-image-shape] .em-story-image {
+  background: none;
+}
+
+/* Numbered shop paging (vendor standard, rule shopPagination). Editorial
+   paints every button orange, so the current page is filled green to read at
+   a glance. */
+.editorial-market-site
+  .numbered-pagination
+  .numbered-pagination-link[aria-current='page'] {
+  border-color: var(--em-green-deep);
+  background: var(--em-green-deep);
+  color: var(--em-cream);
+}

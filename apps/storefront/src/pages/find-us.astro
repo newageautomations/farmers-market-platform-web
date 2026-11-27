@@ -1,5 +1,8 @@
 ---
-import { supportsWebsitePageHero } from '@market/theme/storefront';
+import {
+  supportsWebsitePageHero,
+  themePageStructure,
+} from '@market/theme/storefront';
 import WebsitePageRegion from '../components/WebsitePageRegion.astro';
 import PremiumFindUs from '../components/modern-farmhouse/FindUs.astro';
 import { isFarmhouse } from '@market/theme/storefront';
@@ -67,9 +70,15 @@ const directions = (row: VendorMarketAppearance) =>
   /\d+\s+\S+/.test(row.venue) && !/fixture|test location/i.test(row.venue)
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.venue)}`
     : undefined;
+// The vendor standard's Find Us is fixed: the next market and the upcoming
+// markets, with no hero, library sections or closing invitation.
+const fixed = themePageStructure(
+  storefront?.appearance?.theme,
+  storefront?.kind,
+).fixedFindUs;
 const sectionHero =
   !!storefront?.appearance &&
-  supportsWebsitePageHero(storefront.appearance, 'find-us');
+  supportsWebsitePageHero(storefront.appearance, 'find-us', storefront.kind);
 ---
 
 <SiteLayout
@@ -78,20 +87,21 @@ const sectionHero =
   title={enabled ? config.title : 'Page unavailable'}
   noindex={!enabled}
 >
-  {enabled && (
+  {enabled && !fixed && (
     <WebsitePageRegion context={storefront} page="find-us" region="before" />
   )}
   {enabled && storefront && isFarmhouse(storefront.appearance) ? (
     <PremiumFindUs
       context={storefront}
       hideHero={sectionHero}
+      fixed={fixed}
       rows={rows}
       failed={failed}
       preview={!!editorPreview}
     />
   ) : enabled ? (
     <article class="find-page" aria-label={config.title}>
-      {!sectionHero && (
+      {!sectionHero && !fixed && (
         <section
           class:list={['story-section', intro.image && 'story-split']}
           data-editor-section="find-intro"
@@ -119,7 +129,7 @@ const sectionHero =
           )}
         </section>
       )}
-      {sectionHero && <h1 class="sr-only">{config.title}</h1>}
+      {(sectionHero || fixed) && <h1 class="sr-only">{config.title}</h1>}
 
       <div data-editor-section="find-markets">
         {failed ? (
@@ -196,6 +206,7 @@ const sectionHero =
 
             {remaining.length > 0 && (
               <MarketSchedule
+                paging={fixed}
                 rows={remaining}
                 storefrontId={storefront!.storefrontId ?? ''}
                 preview={!!editorPreview}
@@ -210,7 +221,7 @@ const sectionHero =
         )}
       </div>
 
-      <ClosingInvitation cta={config.cta} section="find-cta" />
+      {!fixed && <ClosingInvitation cta={config.cta} section="find-cta" />}
     </article>
   ) : (
     <section>
@@ -218,7 +229,7 @@ const sectionHero =
       <a href="/">Return to the storefront</a>
     </section>
   )}
-  {enabled && (
+  {enabled && !fixed && (
     <WebsitePageRegion context={storefront} page="find-us" region="after" />
   )}
 </SiteLayout>
