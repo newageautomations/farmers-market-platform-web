@@ -513,7 +513,7 @@ export function Checkout({
                             name={'pickup-' + group.vendorId}
                             value={option.methodId}
                             required
-                            defaultChecked={
+                            checked={
                               pickupSelections[group.vendorId] ===
                                 option.methodId ||
                               (!pickupSelections[group.vendorId] &&
@@ -530,6 +530,12 @@ export function Checkout({
                             {option.name}
                             {option.price !== 0 &&
                               ` · ${formatMoney(option.price, option.currencyCode)}`}
+                            {option.instructions && (
+                              <>
+                                <br />
+                                <small>{option.instructions}</small>
+                              </>
+                            )}
                           </span>
                         </label>
                       ))

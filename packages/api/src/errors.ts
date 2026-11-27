@@ -238,6 +238,7 @@ const taxMessages: Record<string, string> = {
   VENDOR_TAX_RATE_INVALID:
     'Enter a tax percentage from 0 to 100 with at most two decimal places.',
   VENDOR_TAX_VERSION_CONFLICT: 'Tax settings changed. Reload and try again.',
+  VENDOR_STRIPE_SETUP_REQUIRED: 'This vendor cannot accept online orders right now.',
 };
 export class AppError extends Error {
   constructor(
@@ -262,6 +263,7 @@ const codes: Record<string, ErrorKind> = {
   STOREFRONT_ADDRESSES_UNAVAILABLE: 'unavailable',
   VENDOR_TERMS_ACCEPTANCE_REQUIRED: 'validation',
   VENDOR_TERMS_CHANGED: 'conflict',
+  VENDOR_STRIPE_SETUP_REQUIRED: 'conflict',
   PREORDER_FEE_REQUOTE_REQUIRED: 'conflict',
   ACCOUNT_NOT_READY: 'validation',
   OAUTH_RECONCILIATION_REQUIRED: 'conflict',

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { StripeCheckout } from '../StripeCheckout';
 import { CheckoutTermsAcceptance } from '../CheckoutTermsAcceptance';
 import { CheckoutContactDetails } from '../CheckoutContactDetails';
-import { CheckoutPickup } from '../CheckoutPickup';
+import { CheckoutPickup, CheckoutPickupSelections } from '../CheckoutPickup';
 import {
   CheckoutReviewSummary,
   checkoutStageLabel,
@@ -121,9 +121,11 @@ export function Summary({
 export function Pickup({
   view,
   preorder,
+  showSelections = false,
 }: {
   view: CheckoutView;
   preorder?: VendorPreorderState;
+  showSelections?: boolean;
 }) {
   const occurrence = preorder?.selected ?? preorder?.orderOccurrence;
   const venue = view.pickupPromise.venue || occurrence?.venue;
@@ -157,6 +159,7 @@ export function Pickup({
         {view.pickupPromise.instructions ||
           preorder?.selected?.pickupInstructions}
       </p>
+      {showSelections && <CheckoutPickupSelections view={view} />}
     </section>
   );
 }
@@ -535,7 +538,7 @@ function CheckoutFlow(props: {
                           name={'pickup-' + group.vendorId}
                           value={option.methodId}
                           required
-                          defaultChecked={
+                          checked={
                             c.pickupSelections[group.vendorId] ===
                               option.methodId ||
                             (!c.pickupSelections[group.vendorId] &&
@@ -554,6 +557,12 @@ function CheckoutFlow(props: {
                           {option.name}
                           {option.price !== 0 &&
                             ` · ${formatMoney(option.price, option.currencyCode)}`}
+                          {option.instructions && (
+                            <>
+                              <br />
+                              <small>{option.instructions}</small>
+                            </>
+                          )}
                         </span>
                       </label>
                     ))}

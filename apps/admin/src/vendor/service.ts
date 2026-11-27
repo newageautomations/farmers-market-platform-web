@@ -32,6 +32,7 @@ import {
   type InPersonApi,
   AppError,
   createVendorApi,
+  createVendorMarketPickupApi,
   createLoyaltyApi,
   type LoyaltyApi,
   createNotificationsApi,
@@ -44,6 +45,7 @@ import {
   type VendorBoothAssignment,
   safeError,
   type VendorApi,
+  type VendorMarketPickupApi,
   type OwnedCatalogProduct,
   type OwnedCatalogPage,
   type Purchase,
@@ -75,6 +77,7 @@ export interface OrderPage {
 }
 export type Availability = 'allowed' | 'denied' | 'unknown' | 'unconfigured';
 export interface VendorService extends VendorApi {
+  marketPickup?: VendorMarketPickupApi;
   managedMarkets?: VendorManagedMarketsApi;
   preparation?: PreparationApi;
   marketDay?: MarketDayApi;
@@ -225,6 +228,7 @@ export function createLiveVendorService(
   });
   return {
     ...guarded,
+    marketPickup: createVendorMarketPickupApi({ endpoint, channelToken }),
     managedMarkets: createVendorManagedMarketsApi({ endpoint, channelToken }),
     marketAttendance: createAttendanceApi({ endpoint, channelToken }),
     preparation: createPreparationApi({ endpoint, channelToken }),

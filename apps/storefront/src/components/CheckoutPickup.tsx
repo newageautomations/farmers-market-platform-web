@@ -24,15 +24,6 @@ export function CheckoutPickup({
   const timeZone = occurrence?.timezone ?? timezone;
   const instructions =
     pickup.instructions || preorder?.selected?.pickupInstructions;
-  const selections = showSelections
-    ? view.groups.flatMap((group) =>
-        group.pickup.map((option) => ({
-          vendorId: group.vendorId,
-          vendorName: group.vendorName,
-          ...option,
-        })),
-      )
-    : [];
   const time = (value: string) =>
     new Date(value).toLocaleTimeString('en-US', {
       timeZone,
@@ -66,19 +57,7 @@ export function CheckoutPickup({
       )}
       {venue && <p>{venue}</p>}
       {instructions && <p>{instructions}</p>}
-      {selections.length > 0 && (
-        <ul aria-label="Selected pickup options">
-          {selections.map((option, index) => (
-            <li key={`${option.vendorId}-${index}`}>
-              <strong>{option.vendorName}</strong>
-              {' · '}
-              {option.name}
-              {option.fee !== 0 &&
-                ` · ${formatMoney(option.fee, view.currency)}`}
-            </li>
-          ))}
-        </ul>
-      )}
+      {showSelections && <CheckoutPickupSelections view={view} />}
       {venue && (
         <p>
           <a
@@ -91,5 +70,24 @@ export function CheckoutPickup({
         </p>
       )}
     </section>
+  );
+}
+
+export function CheckoutPickupSelections({ view }: { view: CheckoutView }) {
+  if (!view.groups.some((group) => group.pickup.length)) return null;
+  return (
+    <ul aria-label="Selected pickup options">
+      {view.groups.flatMap((group) =>
+        group.pickup.map((option, index) => (
+          <li key={`${group.vendorId}-${option.methodId ?? index}`}>
+            <strong>{group.vendorName}</strong>
+            {' · '}
+            {option.name}
+            {option.fee !== 0 && ` · ${formatMoney(option.fee, view.currency)}`}
+            {option.instructions && <p>{option.instructions}</p>}
+          </li>
+        )),
+      )}
+    </ul>
   );
 }

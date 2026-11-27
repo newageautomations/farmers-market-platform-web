@@ -67,6 +67,70 @@ async function setup() {
 }
 
 describe('vendor market page', () => {
+  it('adds, edits and removes named pickup options for this market', async () => {
+    const { service, membership } = await setup();
+    const curbside = {
+      id: '10',
+      name: 'Curbside pickup',
+      instructions: 'Wait beside the north gate',
+    };
+    const gate = {
+      id: '11',
+      name: 'Gate pickup',
+      instructions: curbside.instructions,
+    };
+    const save = vi
+      .fn()
+      .mockResolvedValueOnce([curbside])
+      .mockResolvedValueOnce([gate])
+      .mockResolvedValueOnce([]);
+    service.marketPickup = { options: vi.fn(async () => []), save };
+    render(<Markets service={service} id={membership.id} />);
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Pickup options' }),
+    );
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Pickup options' }),
+    );
+    fireEvent.change(await dialog.findByLabelText('Pickup name'), {
+      target: { value: curbside.name },
+    });
+    fireEvent.change(dialog.getByLabelText('Customer instructions'), {
+      target: { value: curbside.instructions },
+    });
+    fireEvent.click(dialog.getByRole('button', { name: 'Add pickup option' }));
+    fireEvent.click(
+      await dialog.findByRole('button', { name: 'Edit Curbside pickup' }),
+    );
+    expect(dialog.getByLabelText('Customer instructions')).toHaveValue(
+      curbside.instructions,
+    );
+    fireEvent.change(dialog.getByLabelText('Pickup name'), {
+      target: { value: gate.name },
+    });
+    fireEvent.click(dialog.getByRole('button', { name: 'Save changes' }));
+    fireEvent.click(
+      await dialog.findByRole('button', { name: 'Edit Gate pickup' }),
+    );
+    fireEvent.click(dialog.getByRole('button', { name: 'Remove option' }));
+    await dialog.findByText('Pickup option removed.');
+
+    expect(save.mock.calls).toEqual([
+      [
+        membership.id,
+        null,
+        { name: curbside.name, instructions: curbside.instructions },
+      ],
+      [
+        membership.id,
+        curbside.id,
+        { name: gate.name, instructions: gate.instructions },
+      ],
+      [membership.id, gate.id, null],
+    ]);
+  });
+
   it('summarizes the market, shows five dates and expands like market discovery', async () => {
     const { service, membership } = await setup();
     render(<Markets service={service} id={membership.id} />);
@@ -217,6 +281,38 @@ describe('vendor market page', () => {
       membership.id,
       listing.variantId,
     );
+  });
+
+  it('blocks listing requests and links to Stripe setup when online payments are not ready', async () => {
+    const { service, membership } = await setup();
+    const state = await service.membership(membership.id);
+    service.membership = vi.fn(async () => ({
+      ...state,
+      vendorSalesReady: false,
+    }));
+    service.context = {
+      ...service.context,
+      permissions: [...service.context.permissions, 'ReadOwnPaymentAccount'],
+    };
+    render(<Markets service={service} id={membership.id} />);
+
+    const table = await screen.findByRole('table', {
+      name: 'Items for preordering',
+    });
+    const unlisted = within(table)
+      .getAllByRole('row')
+      .find((row) => within(row).queryByText('Not listed'))!;
+    fireEvent.click(within(unlisted).getByRole('checkbox'));
+    const request = screen.getByRole('button', { name: 'Request listing (1)' });
+    expect(request).toBeDisabled();
+    fireEvent.click(request);
+    expect(service.requestListing).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(/complete setup before requesting preorder approval/i),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('link', { name: 'Go to Stripe setup' }),
+    ).toHaveAttribute('href', '/vendor/settings/payments');
   });
 
   it('saves the market preorder window as a labeled manual override', async () => {

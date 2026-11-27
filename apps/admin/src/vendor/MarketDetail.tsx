@@ -1,7 +1,13 @@
 import { VendorManagedMarkets } from './VendorManagedMarkets';
+import { MarketPickupOptions } from './MarketPickupOptions';
 import { useCallback, useId, useMemo, useState } from 'react';
-import { mayCommand } from '@market/admin-core';
-import type { PreorderInput, VendorBoothAssignment } from '@market/api';
+import { mayCommand, settingsHref } from '@market/admin-core';
+import { hasPermission } from '@market/auth';
+import {
+  AppError,
+  type PreorderInput,
+  type VendorBoothAssignment,
+} from '@market/api';
 import { formatMoney } from '@market/config';
 import { Alert, Badge, Checkbox, Dialog, EmptyState, Field } from '@market/ui';
 import {
@@ -670,6 +676,7 @@ export function PreorderingPanel({
   participations,
   scope,
   settings,
+  pickupOptions = false,
 }: {
   service: VendorService;
   detail: MarketDetail;
@@ -681,6 +688,7 @@ export function PreorderingPanel({
   scope: { lead: string; noDates: string };
   /** Omit when there is nothing to configure yet; the button explains why. */
   settings?: PreorderSettings;
+  pickupOptions?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -697,6 +705,7 @@ export function PreorderingPanel({
         participations={participations}
         scope={scope}
         onSettings={settings ? () => setOpen(true) : undefined}
+        pickupOptions={pickupOptions}
       />
       {settings && (
         <Dialog
@@ -744,6 +753,7 @@ function Preordering({
       refresh={refresh}
       can={can}
       participations={participations}
+      pickupOptions
       scope={{
         lead: `Choose which ${detail.state.membership.market.ownerVendorId ? '' : 'approved '}products customers can preorder at this market. Preorder applies to upcoming dates you haven't declined (${participations.length} ${participations.length === 1 ? 'date' : 'dates'}).`,
         noDates: 'RSVP to an upcoming date first',
@@ -780,6 +790,7 @@ function PreorderItems({
   participations,
   scope,
   onSettings,
+  pickupOptions,
 }: {
   service: VendorService;
   detail: MarketDetail;
@@ -788,6 +799,7 @@ function PreorderItems({
   participations: Participation[];
   scope: { lead: string; noDates: string };
   onSettings?: () => void;
+  pickupOptions: boolean;
 }) {
   const records = usePhoneRecords();
   const id = useId();
@@ -802,6 +814,8 @@ function PreorderItems({
     [status, setStatus] = useState<'all' | ItemStatus>('all'),
     [selected, setSelected] = useState<ReadonlySet<string>>(new Set()),
     [busy, setBusy] = useState<string>(),
+    [stripeRejectedState, setStripeRejectedState] =
+      useState<MarketDetail['state']>(),
     [result, setResult] = useState<{
       severity: 'warning' | 'error';
       text: string;
@@ -818,6 +832,14 @@ function PreorderItems({
   const requestable = items.filter(
     (i) => selected.has(i.key) && i.status === 'not-listed',
   );
+  const stripeSetupRequired =
+    state.vendorSalesReady === false || stripeRejectedState === state;
+  const paymentsSettings = hasPermission(
+    service.context.permissions,
+    'ReadOwnPaymentAccount',
+  )
+    ? settingsHref('VENDOR', 'payments')
+    : undefined;
   function toggleSelect(keys: string[], on: boolean) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -829,13 +851,23 @@ function PreorderItems({
     });
   }
   async function requestListings() {
+    if (stripeSetupRequired) return;
     setBusy('request');
     setResult(undefined);
     let failed = 0;
     for (const item of requestable) {
       try {
         await service.requestListing(state.membership.id, item.variantId);
-      } catch {
+      } catch (error) {
+        if (
+          error instanceof AppError &&
+          error.code === 'VENDOR_STRIPE_SETUP_REQUIRED'
+        ) {
+          setStripeRejectedState(state);
+          setBusy(undefined);
+          refresh();
+          return;
+        }
         failed++;
       }
     }
@@ -923,16 +955,28 @@ function PreorderItems({
             <FarmstandIcon name="shopping-cart" />
             Settings
           </FarmstandButton>
+          {pickupOptions &&
+            can &&
+            state.membership.status === 'approved' &&
+            service.marketPickup && (
+              <MarketPickupOptions
+                key={state.membership.id}
+                api={service.marketPickup}
+                membershipId={state.membership.id}
+              />
+            )}
           {can && (
             <FarmstandButton
               variant="secondary"
               size="compact"
               loading={busy === 'request'}
-              disabled={!!busy || !requestable.length}
+              disabled={stripeSetupRequired || !!busy || !requestable.length}
               title={
-                requestable.length
-                  ? undefined
-                  : 'Select items that are not listed at this market yet'
+                stripeSetupRequired
+                  ? 'Complete Stripe setup first'
+                  : requestable.length
+                    ? undefined
+                    : 'Select items that are not listed at this market yet'
               }
               onClick={() => void requestListings()}
             >
@@ -946,6 +990,25 @@ function PreorderItems({
         </div>
       </header>
       <p className="application-detail-note market-detail-lead">{scope.lead}</p>
+      {can && stripeSetupRequired && (
+        <Alert severity="warning">
+          {paymentsSettings ? (
+            <>
+              Connect Stripe and complete setup before requesting preorder
+              approval.{' '}
+              <FarmstandLink
+                href={paymentsSettings}
+                onClick={navigate}
+                variant="secondary"
+              >
+                Go to Stripe setup
+              </FarmstandLink>
+            </>
+          ) : (
+            'Stripe setup is required before requesting preorder approval. Ask a workspace owner to complete it in Settings.'
+          )}
+        </Alert>
+      )}
       <ReadState {...catalog} retry={catalog.refresh} />
       {catalog.data && (
         <>

@@ -175,6 +175,25 @@ describe('canceled checkout recovery', () => {
     expect(mocks.checkout.selectPickup).toHaveBeenCalledWith(['5']);
     expect(cookies.has('checkout-recovery')).toBe(false);
   });
+  it('restores the cart when one vendor replaced a previously selected pickup option', async () => {
+    const original = await mocks.checkout.status();
+    mocks.checkout.status.mockResolvedValue({
+      ...original,
+      groups: [
+        { vendorId: '1', pickup: [{ methodId: '5', name: 'Booth pickup' }] },
+        { vendorId: '2', pickup: [{ methodId: '6', name: 'Curbside pickup' }] },
+      ],
+    });
+    mocks.checkout.pickup.mockResolvedValue([
+      { vendorId: '1', methodId: '5', name: 'Booth pickup' },
+      { vendorId: '2', methodId: '7', name: 'Curbside pickup' },
+    ]);
+
+    await restartCheckout(context(), new Headers(), '9');
+    expect(mocks.vendor.add).toHaveBeenCalledWith('11', 2, '7');
+    expect(mocks.checkout.selectPickup).not.toHaveBeenCalled();
+    expect(cookies.has('checkout-recovery')).toBe(false);
+  });
   it('retains the recovery draft after an interrupted restore, and retries without doubling items', async () => {
     mocks.vendor.add.mockRejectedValueOnce(
       new Error('temporarily unavailable'),

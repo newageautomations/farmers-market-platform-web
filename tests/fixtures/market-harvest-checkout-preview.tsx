@@ -52,7 +52,9 @@ export const view: CheckoutView = {
       vendorId: '1',
       vendorName: 'Manna Roots',
       lines: [{ id: '10', name: 'Fresh sourdough', quantity: 2, total: 2400 }],
-      pickup: [{ name: 'Market pickup', fee: 0 }],
+      pickup: [
+        { methodId: null, name: 'Market pickup', instructions: null, fee: 0 },
+      ],
     },
   ],
 };
@@ -146,7 +148,14 @@ view.groups.push({
   vendorId: '2',
   vendorName: 'Garden Orchard',
   lines: [{ id: '11', name: 'Seasonal fruit box', quantity: 1, total: 800 }],
-  pickup: [{ name: 'Orchard booth pickup', fee: 0 }],
+  pickup: [
+    {
+      methodId: null,
+      name: 'Orchard booth pickup',
+      instructions: null,
+      fee: 0,
+    },
+  ],
 });
 view.total = view.subtotal = 3200;
 const mode = new URLSearchParams(window.location.search).get('mode');

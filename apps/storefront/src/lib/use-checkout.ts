@@ -76,7 +76,11 @@ export function useCheckout({
                 initial.groups.some(
                   (g) =>
                     g.vendorId === o.vendorId &&
-                    g.pickup.some((p) => p.name === o.name),
+                    g.pickup.some((p) =>
+                      p.methodId
+                        ? p.methodId === o.methodId
+                        : p.name === o.name,
+                    ),
                 ),
               )
               .map((o) => [o.vendorId, o.methodId]),
@@ -190,7 +194,8 @@ export function useCheckout({
     if (current.orderId !== initial.orderId)
       throw new Error('Checkout changed');
     if (
-      current.termsDisclosure?.token !== latestView.current.termsDisclosure?.token
+      current.termsDisclosure?.token !==
+      latestView.current.termsDisclosure?.token
     )
       setAcceptedTerms(undefined);
     latestView.current = current;
@@ -201,7 +206,8 @@ export function useCheckout({
     if (
       stage !== 'Payment' &&
       !(stage === 'Review' && (stripeEnabled || reviewIncludesPayment))
-    ) return;
+    )
+      return;
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const update = () => {
@@ -237,6 +243,19 @@ export function useCheckout({
     focusNextStage.current = true;
     setStage(next);
   }
+  function replacePickupOptions(items: PickupOption[]) {
+    setOptions(items);
+    setPickupSelections((selected) =>
+      Object.fromEntries(
+        Object.entries(selected).filter(([vendorId, methodId]) =>
+          items.some(
+            (option) =>
+              option.vendorId === vendorId && option.methodId === methodId,
+          ),
+        ),
+      ),
+    );
+  }
   async function submitContact(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setContactSubmitted(true);
@@ -265,7 +284,7 @@ export function useCheckout({
         Object.fromEntries(data),
       );
       await refresh();
-      setOptions(
+      replacePickupOptions(
         await shopCall<PickupOption[]>(storefrontId, 'checkout-pickup'),
       );
       go('Pickup');
@@ -275,11 +294,21 @@ export function useCheckout({
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     void run(async () => {
-      await shopCall(storefrontId, 'checkout-select-pickup', {
-        methodIds: view.groups.map((g) =>
-          String(data.get('pickup-' + g.vendorId)),
-        ),
-      });
+      try {
+        await shopCall(storefrontId, 'checkout-select-pickup', {
+          methodIds: view.groups.map((g) =>
+            String(data.get('pickup-' + g.vendorId)),
+          ),
+        });
+      } catch (error) {
+        // An option may have been edited or removed while the customer was choosing.
+        const currentOptions = await shopCall<PickupOption[]>(
+          storefrontId,
+          'checkout-pickup',
+        ).catch(() => null);
+        if (currentOptions) replacePickupOptions(currentOptions);
+        throw error;
+      }
       const current = await refresh();
       if (
         stripeEnabled &&
@@ -321,10 +350,12 @@ export function useCheckout({
       } catch (cause) {
         if (
           !(cause instanceof AppError) ||
-          !['VENDOR_TERMS_CHANGED', 'VENDOR_TERMS_ACCEPTANCE_REQUIRED'].includes(
-            cause.code ?? '',
-          )
-        ) throw cause;
+          ![
+            'VENDOR_TERMS_CHANGED',
+            'VENDOR_TERMS_ACCEPTANCE_REQUIRED',
+          ].includes(cause.code ?? '')
+        )
+          throw cause;
         setPaymentUncertain(false);
         setAcceptedTerms(undefined);
         await refresh();

@@ -290,6 +290,7 @@ query VendorMemberships {
 }
 query VendorMembership($membershipId: ID!) {
   marketMembershipState(membershipId: $membershipId) {
+    vendorSalesReady
     membership {
       ...BusinessMembership
     }
@@ -318,6 +319,29 @@ query VendorOccurrences(
     through: $through
   ) {
     ...Occurrence
+  }
+}
+fragment VendorMarketPickupOption on MarketPickupOption {
+  id
+  name
+  instructions
+}
+query VendorMarketPickupOptions($membershipId: ID!) {
+  ownMarketPickupOptions(membershipId: $membershipId) {
+    ...VendorMarketPickupOption
+  }
+}
+mutation SaveVendorMarketPickupOption(
+  $membershipId: ID!
+  $optionId: ID
+  $input: MarketPickupOptionInput
+) {
+  saveOwnMarketPickupOption(
+    membershipId: $membershipId
+    optionId: $optionId
+    input: $input
+  ) {
+    ...VendorMarketPickupOption
   }
 }
 mutation VendorMarketDefault(

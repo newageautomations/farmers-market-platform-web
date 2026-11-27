@@ -10,6 +10,8 @@ Theme page structure (November 21, 2026): market themes opt into one page-struct
 
 # Component usage guide
 
+Vendor market preorder settings include a Pickup options dialog. `MarketPickupOptions` composes the shared Dialog, Field, Input, Textarea, Alert, read state and FarmstandButton because the existing preorder settings only edit order windows. Storefront checkout and confirmation use the existing pickup details layout for the selected option and its instructions.
+
 Storefront Review & Pay uses the existing checkout grid and `CheckoutContactDetails`, `CheckoutPickup`, and `CheckoutSummary`. `CheckoutReviewSummary` shares the static sidebar wrapper and heading between market, vendor, and Modern Farmhouse checkout because the editable steps use storefront-specific summaries. It consumes the checkout view and stacks above the details on phones.
 
 Market vendor cards stretch their native link to the vendor's offerings for that market date. The market shop uses `MarketShopFilters` inside the shared Harvest shop to switch filter types and expand subcategories. It reuses the shop's checkbox presentation, the Astro Button adapter and the native DDN-03 disclosure. Switching between categories and vendors clears the previous selection. Checkbox, sort and page changes request fresh server-rendered results while the filters, market date and browser URL stay in place. Native forms and links support browsing without JavaScript.

@@ -42,6 +42,37 @@ export type OperationalInput = g.VendorFulfillMutationVariables['input'];
 export type AttendanceInput = g.VendorAttendanceMutationVariables['input'];
 export type OfferingInput = g.VendorOfferingMutationVariables['input'];
 export type PreorderInput = g.VendorMarketDefaultMutationVariables['rule'];
+export type VendorMarketPickupOption = g.VendorMarketPickupOptionFragment;
+
+export function createVendorMarketPickupApi(
+  options: TransportOptions & { channelToken: string },
+) {
+  const execute = transport('admin', options);
+  return {
+    options: async (membershipId: string) =>
+      (
+        await execute(
+          { api: 'admin', document: g.VendorMarketPickupOptionsDocument },
+          { membershipId },
+        )
+      ).ownMarketPickupOptions,
+    save: async (
+      membershipId: string,
+      optionId: string | null,
+      input: g.SaveVendorMarketPickupOptionMutationVariables['input'],
+    ) =>
+      (
+        await execute(
+          { api: 'admin', document: g.SaveVendorMarketPickupOptionDocument },
+          { membershipId, optionId, input },
+        )
+      ).saveOwnMarketPickupOption,
+  };
+}
+
+export type VendorMarketPickupApi = ReturnType<
+  typeof createVendorMarketPickupApi
+>;
 export type AnalyticsRange = g.VendorTotalsQueryVariables['range'];
 export type CustomerOptions = g.VendorCustomersQueryVariables['options'];
 export type Portion = g.PortionFragment;

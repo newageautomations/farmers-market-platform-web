@@ -211,6 +211,7 @@ export function createFixtureVendorService(
       return [
         id,
         {
+          vendorSalesReady: true,
           membership: {
             id,
             marketId,

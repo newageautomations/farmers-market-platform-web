@@ -4347,6 +4347,7 @@ type OwnedPickupOption {
   methodId: ID!
   vendorId: ID!
   name: String!
+  instructions: String
   price: Int!
   currencyCode: CurrencyCode!
 }
@@ -4660,7 +4661,9 @@ type CheckoutDisplayLine {
 }
 
 type CheckoutPickupView {
+  methodId: ID
   name: String!
+  instructions: String
   fee: Int!
 }
 

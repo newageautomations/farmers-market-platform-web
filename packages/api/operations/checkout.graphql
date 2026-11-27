@@ -95,7 +95,9 @@ fragment CheckoutView on CustomerCheckoutView {
       total
     }
     pickup {
+      methodId
       name
+      instructions
       fee
     }
   }
@@ -129,6 +131,7 @@ query CheckoutPickup {
     methodId
     vendorId
     name
+    instructions
     price
     currencyCode
   }

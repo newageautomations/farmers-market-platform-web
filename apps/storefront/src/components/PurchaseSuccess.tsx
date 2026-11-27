@@ -39,7 +39,7 @@ export function PurchaseSuccess({
             Order reference: <strong>{view.code}</strong>
           </p>
           <CheckoutContactDetails contact={contact} showMissingPhone />
-          <CheckoutPickup view={view} timezone={timezone} />
+          <CheckoutPickup view={view} timezone={timezone} showSelections />
         </div>
         <section
           className="checkout-order-summary"

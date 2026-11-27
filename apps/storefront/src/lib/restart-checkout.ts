@@ -70,7 +70,9 @@ export async function restartCheckout(
       occurrenceId: original.occurrenceId,
       contact: original.contact,
       pickup: original.groups.flatMap((g) =>
-        g.pickup.map((p) => `${g.vendorId}:${p.name}`),
+        g.pickup.map((p) =>
+          p.methodId ? `method:${p.methodId}` : `${g.vendorId}:${p.name}`,
+        ),
       ),
       lines,
       coupons: 'couponCodes' in cart ? cart.couponCodes : [],
@@ -130,11 +132,18 @@ export async function restartCheckout(
       phoneNumber: draft.contact.phoneNumber ?? undefined,
     });
   const options = await checkout.pickup();
-  const selected = options.filter((o) =>
-    draft.pickup.includes(`${o.vendorId}:${o.name}`),
+  const selected = original.groups.map(({ vendorId }) =>
+    options.filter(
+      (o) =>
+        o.vendorId === vendorId &&
+        (draft.pickup.includes(`method:${o.methodId}`) ||
+          draft.pickup.includes(`${o.vendorId}:${o.name}`)),
+    ),
   );
-  if (selected.length)
-    await checkout.selectPickup(selected.map((o) => o.methodId));
+  if (selected.length && selected.every((group) => group.length === 1))
+    await checkout.selectPickup(
+      selected.flatMap((group) => group.map((o) => o.methodId)),
+    );
   context.cookies.delete('checkout-recovery', { path: '/' });
   return checkout.status();
 }

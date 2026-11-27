@@ -41,7 +41,7 @@ export function Success({
         </p>
       </header>
       <div className="farmhouse-checkout-composition">
-        <Pickup view={view} />
+        <Pickup view={view} showSelections />
         <aside className="farmhouse-order-panel">
           <h2>Your order</h2>
           <Summary view={view} images={images} />

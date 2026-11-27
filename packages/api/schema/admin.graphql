@@ -124,6 +124,7 @@ type Query {
   ownVendorBoothAssignments: JSON!
   ownVendorLinkRequests: JSON!
   ownVendorTaxSettings: VendorTaxSettings!
+  ownMarketPickupOptions(membershipId: ID!): [MarketPickupOption!]!
   ownCommercePortion(orderId: ID!): CommercePortion!
   ownCommercePortions(options: OwnOperationalOrderOptions): OwnOperationalOrderPage!
   ownOccurrenceOperations(occurrenceId: ID!): [CommercePortion!]!
@@ -778,6 +779,7 @@ type Mutation {
   marketOperationsCommand(input: MarketOperationsCommand!): JSON!
   respondToVendorLink(id: Int!, expectedRevision: Int!, confirm: Boolean!): JSON!
   correctMarketVendorLink(marketId: Int!, directoryId: Int!, expectedRevision: Int!, vendorId: Int, reason: String!): JSON!
+  saveOwnMarketPickupOption(membershipId: ID!, optionId: ID, input: MarketPickupOptionInput): [MarketPickupOption!]!
   saveOwnVendorTaxSettings(input: VendorTaxSettingsInput!): VendorTaxSettings!
   createOwnCatalogProduct(input: OwnCatalogProductInput!): CatalogCommandResult!
   createOwnCatalogVariant(input: OwnCatalogVariantInput!): CatalogCommandResult!
@@ -7229,6 +7231,17 @@ type InventoryCommandReceipt {
   fulfillmentId: ID
 }
 
+type MarketPickupOption {
+  id: ID!
+  name: String!
+  instructions: String!
+}
+
+input MarketPickupOptionInput {
+  name: String!
+  instructions: String!
+}
+
 type VendorTaxMarket {
   id: ID!
   name: String!
@@ -7965,6 +7978,7 @@ type MarketMembershipState {
   participations: [MarketAttendance!]!
   listings: [MarketVariantListing!]!
   offerings: [MarketVariantOffering!]!
+  vendorSalesReady: Boolean!
 }
 
 type MarketGenerationJob {

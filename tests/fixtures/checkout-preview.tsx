@@ -48,7 +48,9 @@ export const view: CheckoutView = {
       vendorId: '1',
       vendorName: 'Manna Roots',
       lines: [{ id: '10', name: 'Fresh sourdough', quantity: 2, total: 2400 }],
-      pickup: [{ name: 'Market pickup', fee: 0 }],
+      pickup: [
+        { methodId: null, name: 'Market pickup', instructions: null, fee: 0 },
+      ],
     },
   ],
 };

@@ -119,7 +119,13 @@ describe('market checkout review', () => {
     };
     const choices = [
       { methodId: '20', vendorId: '2', name: 'Morning pickup', price: 0 },
-      { methodId: '21', vendorId: '2', name: 'Afternoon pickup', price: 0 },
+      {
+        methodId: '21',
+        vendorId: '2',
+        name: 'Afternoon pickup',
+        instructions: 'Wait beside the north market gate',
+        price: 0,
+      },
       { methodId: '30', vendorId: '3', name: 'Bakery counter', price: 100 },
     ];
     vi.mocked(shopCall)
@@ -138,18 +144,32 @@ describe('market checkout review', () => {
         groups: [
           {
             ...initial.groups[0],
-            pickup: [{ name: 'Afternoon pickup', fee: 0 }],
+            pickup: [
+              {
+                methodId: '21',
+                name: 'Afternoon pickup',
+                instructions: 'Wait beside the north market gate',
+                fee: 0,
+              },
+            ],
           },
           {
             ...initial.groups[1],
-            pickup: [{ name: 'Bakery counter', fee: 100 }],
+            pickup: [
+              {
+                methodId: null,
+                name: 'Bakery counter',
+                instructions: null,
+                fee: 100,
+              },
+            ],
           },
         ],
       });
 
     render(<Checkout storefrontId="5" initial={initial} marketLayout />);
     fireEvent.click(
-      await screen.findByRole('radio', { name: 'Afternoon pickup' }),
+      await screen.findByRole('radio', { name: /Afternoon pickup/ }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Review order' }));
 
@@ -167,6 +187,7 @@ describe('market checkout review', () => {
       name: 'Selected pickup options',
     });
     expect(summary).toHaveTextContent('Garden Vendor · Afternoon pickup');
+    expect(summary).toHaveTextContent('Wait beside the north market gate');
     expect(summary).toHaveTextContent('Bakery · Bakery counter · $1.00');
     expect(summary).not.toHaveTextContent('Morning pickup');
   });
@@ -198,12 +219,19 @@ it('shows the summary, contact and payment controls together in Market Review & 
       phoneNumber: '+12025550123',
     },
     groups: [
-      { ...view.groups[0], pickup: [{ name: 'Garden booth', fee: 0 }] },
+      {
+        ...view.groups[0],
+        pickup: [
+          { methodId: null, name: 'Garden booth', instructions: null, fee: 0 },
+        ],
+      },
       {
         ...view.groups[0],
         vendorId: '3',
         vendorName: 'Bakery',
-        pickup: [{ name: 'Bakery booth', fee: 0 }],
+        pickup: [
+          { methodId: null, name: 'Bakery booth', instructions: null, fee: 0 },
+        ],
       },
     ],
     total: 1799,
@@ -348,7 +376,17 @@ describe('vendor checkout UI', () => {
           phoneNumber: null,
         },
         groups: [
-          { ...view.groups[0], pickup: [{ name: 'Garden booth', fee: 0 }] },
+          {
+            ...view.groups[0],
+            pickup: [
+              {
+                methodId: null,
+                name: 'Garden booth',
+                instructions: null,
+                fee: 0,
+              },
+            ],
+          },
         ],
         availability: { state: 'AVAILABLE', mode: 'LOCAL' },
       };
