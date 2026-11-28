@@ -63,6 +63,13 @@ export function createMarketStorefrontApi(
         {},
       )
     ).marketActiveCart;
+  const occurrence = async (id: string) =>
+    (
+      await execute(
+        { api: 'shop', document: shop.MarketStorefrontOccurrenceDocument },
+        { id },
+      )
+    ).marketStorefrontOccurrence;
   async function bootstrap(): Promise<MarketBootstrap> {
     try {
       const session = await execute(
@@ -80,10 +87,14 @@ export function createMarketStorefrontApi(
     }
     return { signedIn: true, cart: await snapshot() };
   }
-  async function select(occurrenceId: string) {
+  async function cartForOccurrence(occurrenceId: string) {
     const cart = (await bootstrap()).cart;
     if (cart?.totalQuantity && cart.occurrence.id !== occurrenceId)
       throw new AppError('conflict', 'NONEMPTY_CONTEXT_SWITCH_DENIED');
+    return cart;
+  }
+  async function select(occurrenceId: string) {
+    await cartForOccurrence(occurrenceId);
     const { selectCommerceContext: context } = await execute(
       { api: 'shop', document: shop.MarketSelectContextDocument },
       { occurrenceId },
@@ -108,13 +119,7 @@ export function createMarketStorefrontApi(
         { api: 'shop', document: shop.MarketStorefrontOccurrencesDocument },
         variables,
       ),
-    occurrence: async (id: string) =>
-      (
-        await execute(
-          { api: 'shop', document: shop.MarketStorefrontOccurrenceDocument },
-          { id },
-        )
-      ).marketStorefrontOccurrence,
+    occurrence,
     catalog: async (
       occurrenceId: string,
       catalogOptions: MarketCatalogOptions,
@@ -156,6 +161,11 @@ export function createMarketStorefrontApi(
       (await execute({ api: 'shop', document: MarketProductDocument }, { id }))
         .product,
     bootstrap,
+    async chooseOccurrence(occurrenceId: string) {
+      const cart = await cartForOccurrence(occurrenceId);
+      if (!(await occurrence(occurrenceId))) throw new AppError('not-found');
+      return cart?.totalQuantity ? cart : null;
+    },
     select,
     async add(occurrenceId: string, variantId: string, quantity: number) {
       await select(occurrenceId);

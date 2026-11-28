@@ -55,6 +55,11 @@ interface Props {
    * and the header owns market date selection on desktop.
    */
   editorialChrome?: boolean;
+  /**
+   * The page draws the theme's own shop hero and heading above the shop
+   * (vendor Editorial Market and Modern Farmhouse), so the shop adds none.
+   */
+  themeHero?: boolean;
   sellerNames?: Record<string, string>;
   productLinks?: Record<string, string>;
   sortOptions?: { value: string; label: string }[];
@@ -78,6 +83,7 @@ const {
   resultsOnly = false,
   marketVendors = [],
   editorialChrome = false,
+  themeHero = false,
   sellerNames,
   productLinks,
   link,
@@ -88,7 +94,9 @@ const {
 } = Astro.props;
 const selected = preorder.selected;
 const Section = resultsOnly ? Fragment : 'section';
-const Results = market ? 'div' : Fragment;
+// Market and vendor shops both refresh this block in place when a filter,
+// the sort or the page changes (see ../market/shop-filters.ts).
+const Results = 'div';
 const sortedCategories = categories
   .map((c) => ({ ...c, label: `${c.pathNames.at(-1) ?? c.name} (${c.count})` }))
   .sort((a, b) =>
@@ -129,32 +137,33 @@ const noneAvailable =
     </>
   ) : (
     <>
-      {!resultsOnly && storefront?.appearance?.theme === 'modern-farmhouse' && (
-        <div class="mf-shop-intro">
-          <div>
-            <h1 data-market-shop-heading={market ? '' : undefined}>
-              {heading}
-            </h1>
-            <p>
-              Find your next market favorite. Choose a pickup market to see what
-              is available.
-            </p>
+      {!resultsOnly &&
+        !themeHero &&
+        storefront?.appearance?.theme === 'modern-farmhouse' && (
+          <div class="mf-shop-intro">
+            <div>
+              <h1 data-market-shop-heading>{heading}</h1>
+              <p>
+                Find your next market favorite. Choose a pickup market to see
+                what is available.
+              </p>
+            </div>
+            {safeAsset(visible[0]?.featuredAsset?.preview) && (
+              <img
+                class="product-media"
+                src={safeAsset(visible[0]?.featuredAsset?.preview)}
+                alt=""
+                width="960"
+                height="640"
+                fetchpriority="high"
+              />
+            )}
           </div>
-          {safeAsset(visible[0]?.featuredAsset?.preview) && (
-            <img
-              class="product-media"
-              src={safeAsset(visible[0]?.featuredAsset?.preview)}
-              alt=""
-              width="960"
-              height="640"
-              fetchpriority="high"
-            />
-          )}
-        </div>
-      )}
+        )}
       {storefront &&
         !resultsOnly &&
         !editorialChrome &&
+        !themeHero &&
         isEditorialMarket(storefront.appearance) && (
           <div
             class="em-shop-intro"
@@ -277,14 +286,9 @@ const noneAvailable =
                 <div class="shop-catalog-heading">
                   {storefront?.appearance?.theme !== 'modern-farmhouse' &&
                     !isEditorialMarket(storefront?.appearance) && (
-                      <h1 data-market-shop-heading={market ? '' : undefined}>
-                        {heading}
-                      </h1>
+                      <h1 data-market-shop-heading>{heading}</h1>
                     )}
-                  <span
-                    data-market-shop-count={market ? '' : undefined}
-                    tabindex={market ? -1 : undefined}
-                  >
+                  <span data-market-shop-count tabindex={-1}>
                     {total} {total === 1 ? 'product' : 'products'}
                   </span>
                 </div>
@@ -314,20 +318,16 @@ const noneAvailable =
                     ))}
                   </select>
                 </div>
-                {market ? (
-                  <noscript>
-                    <Button type="submit" variant="secondary">
-                      Apply sort
-                    </Button>
-                  </noscript>
-                ) : (
+                {/* Sorting applies as soon as it changes, as on the market
+                    shop; the button remains for browsers without scripts. */}
+                <noscript>
                   <Button type="submit" variant="secondary">
-                    Apply
+                    Apply sort
                   </Button>
-                )}
+                </noscript>
               </form>
             )}
-            {market && !resultsOnly && (
+            {!resultsOnly && (
               <p data-market-shop-status role="status" class="sr-only" />
             )}
             <Results
@@ -381,6 +381,7 @@ const noneAvailable =
                     <Button
                       href={link({ category: '', page: 1 })}
                       variant="secondary"
+                      data-shop-all-products
                     >
                       All Products
                     </Button>
@@ -397,7 +398,7 @@ const noneAvailable =
                     pageCount={Math.ceil(total / SHOP_PAGE_SIZE)}
                     href={(target) => link({ page: target })}
                     label="Shop pages"
-                    pageAttribute={market ? 'data-market-shop-page' : undefined}
+                    pageAttribute="data-market-shop-page"
                   />
                 )}
               {total > SHOP_PAGE_SIZE &&
@@ -410,9 +411,7 @@ const noneAvailable =
                       <a
                         class={buttonClassName({ variant: 'secondary' })}
                         href={link({ page: page - 1 })}
-                        data-market-shop-page={
-                          market ? String(page - 1) : undefined
-                        }
+                        data-market-shop-page={String(page - 1)}
                       >
                         Previous page
                       </a>
@@ -426,9 +425,7 @@ const noneAvailable =
                       <a
                         class={buttonClassName({ variant: 'secondary' })}
                         href={link({ page: page + 1 })}
-                        data-market-shop-page={
-                          market ? String(page + 1) : undefined
-                        }
+                        data-market-shop-page={String(page + 1)}
                       >
                         Next page
                       </a>
@@ -444,26 +441,19 @@ const noneAvailable =
 </Section>
 
 <script>
-  import { installMarketShopFilters } from '../market/shop-filters';
+  import {
+    installMarketShopFilters,
+    installVendorShopFilters,
+  } from '../market/shop-filters';
 
+  // Both shops change categories, sort and page in place, without loading
+  // a new page. The forms still submit normally without scripts.
   for (const shop of document.querySelectorAll<HTMLElement>(
     '.vendor-shop[data-composition="market"]',
   ))
     installMarketShopFilters(shop);
-
-  document.addEventListener('change', (event) => {
-    const input = event.target;
-    if (!(input instanceof HTMLInputElement) || input.type !== 'checkbox')
-      return;
-    const form = input.closest<HTMLFormElement>('.shop-category-filters');
-    if (!form) return;
-    if (input.hasAttribute('data-shop-all-categories')) {
-      form
-        .querySelectorAll<HTMLInputElement>('[name="category"]')
-        .forEach((category) => {
-          category.checked = false;
-        });
-    }
-    form.requestSubmit();
-  });
+  for (const shop of document.querySelectorAll<HTMLElement>(
+    '.vendor-shop[data-composition="vendor"]',
+  ))
+    installVendorShopFilters(shop);
 </script>

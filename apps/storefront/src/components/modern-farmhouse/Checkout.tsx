@@ -16,7 +16,7 @@ import type { VendorPreorderState } from '../../lib/vendor-preorder';
 import { useVendorCheckout } from '../../lib/use-vendor-checkout';
 import { useCheckout } from '../../lib/use-checkout';
 import { VendorPreorderBanner } from '../VendorPreorderBanner';
-import { CartTotals } from '../CartTotals';
+import { CartTotals, CheckoutTotals } from '../CartTotals';
 import CheckoutLoyalty from '../CheckoutLoyalty';
 import { shopCall } from '../shop-client';
 
@@ -47,73 +47,15 @@ export function Summary({
               <span>
                 {line.name} × {line.quantity}
               </span>
-              <span>{formatMoney(line.total, view.currency)}</span>
+              <span>{formatMoney(line.totalBeforeTax, view.currency)}</span>
             </p>
           ))}
-          {!unresolved &&
-            view.preorderFee?.vendors
-              .filter(
-                (v) => v.vendorId === group.vendorId && v.preorderFee !== 0,
-              )
-              .map((v) => (
-                <p key={v.vendorId}>
-                  Preorder fee: {formatMoney(v.preorderFee, view.currency)}
-                </p>
-              ))}
-          {group.pickup
-            .filter((pickup) => pickup.fee !== 0)
-            .map((pickup, i) => (
-              <p key={i}>
-                {pickup.name}
-                {pickup.fee !== 0 &&
-                  ` · ${formatMoney(pickup.fee, view.currency)}`}
-              </p>
-            ))}
         </section>
       ))}
       {unresolved ? (
         <p role="status">Updating order total…</p>
       ) : (
-        <dl>
-          <div>
-            <dt>Subtotal including tax</dt>
-            <dd>{formatMoney(view.subtotal, view.currency)}</dd>
-          </div>
-          {view.discounts
-            .filter((d) => d.total !== 0)
-            .map((d, i) => (
-              <div key={'d' + i}>
-                <dt>{d.name}</dt>
-                <dd>{formatMoney(d.total, view.currency)}</dd>
-              </div>
-            ))}
-          {view.taxes
-            .filter((t) => t.total !== 0)
-            .map((t, i) => (
-              <div key={'t' + i}>
-                <dt>{t.name} (included)</dt>
-                <dd>{formatMoney(t.total, view.currency)}</dd>
-              </div>
-            ))}
-          {view.shipping !== 0 && (
-            <div>
-              <dt>Pickup fees</dt>
-              <dd>{formatMoney(view.shipping, view.currency)}</dd>
-            </div>
-          )}
-          {!!view.preorderFee?.preorderFee && (
-            <div>
-              <dt>Preorder fee</dt>
-              <dd>
-                {formatMoney(view.preorderFee.preorderFee, view.currency)}
-              </dd>
-            </div>
-          )}
-          <div>
-            <dt>Total</dt>
-            <dd>{formatMoney(view.total, view.currency)}</dd>
-          </div>
-        </dl>
+        <CheckoutTotals view={view} />
       )}
     </div>
   );
@@ -273,10 +215,7 @@ function CheckoutViewContent(props: Parameters<typeof Checkout>[0]) {
                   {line.productVariant.name} × {line.quantity}
                 </span>
                 <span>
-                  {formatMoney(
-                    line.discountedLinePriceWithTax,
-                    cart.currencyCode,
-                  )}
+                  {formatMoney(line.discountedLinePrice, cart.currencyCode)}
                 </span>
               </li>
             ))}
@@ -300,10 +239,6 @@ function CheckoutViewContent(props: Parameters<typeof Checkout>[0]) {
           }
         />
       )}
-      <p>
-        Current amounts include tax. Final taxes and pickup fees are confirmed
-        during checkout.
-      </p>
       <a href="/cart">Edit your bag ↗</a>
     </aside>
   );

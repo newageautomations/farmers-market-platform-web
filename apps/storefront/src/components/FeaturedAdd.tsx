@@ -49,7 +49,8 @@ export function FeaturedAdd({
         },
       );
       setMessage('Added to your cart.');
-      if (market) showAdded();
+      // Market and vendor websites both confirm on the button itself.
+      showAdded();
       setChoosing(false);
       window.dispatchEvent(
         new CustomEvent(
@@ -77,7 +78,7 @@ export function FeaturedAdd({
     }
   }
   const feedback = (
-    <p role="status" hidden={market && message === 'Added to your cart.'}>
+    <p role="status" hidden={message === 'Added to your cart.'}>
       {message}
       {message === 'Added to your cart.' && (
         <>
@@ -90,7 +91,7 @@ export function FeaturedAdd({
   return (
     <div className="featured-purchase">
       <AnimatedCartButton
-        enabled={market && !!occurrenceId}
+        enabled={!!occurrenceId}
         feedback={cartFeedback}
         className={className}
         loading={pending}

@@ -55,7 +55,9 @@ const sectionHero =
       page="faq"
       preview={!!Astro.locals.editorPreview}
     />
-  ) : enabled && storefront && isEditorialMarket(storefront.appearance) ? (
+  ) : enabled &&
+    storefront?.kind === 'VENDOR' &&
+    isEditorialMarket(storefront.appearance) ? (
     <EditorialContent
       context={storefront}
       hideHero={sectionHero}

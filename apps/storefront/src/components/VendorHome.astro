@@ -4,6 +4,7 @@ import { safeAsset } from '@market/storefront-core';
 import type { PublicCatalog, AppError } from '@market/api';
 import { ErrorState, SectionHeader } from '@market/ui';
 import ProductCards from './ProductCards.astro';
+import FeaturedProducts from './FeaturedProducts.astro';
 import HarvestHero from './home/HarvestHero.astro';
 import EmptyState from './ui/EmptyState.astro';
 import Button from './ui/Button.astro';
@@ -57,6 +58,16 @@ const image = catalog?.items
         image={image}
         href="/products"
         action="Shop the collection"
+      />
+    ) : entry.id === 'featured' && !error && catalog?.items.length ? (
+      <FeaturedProducts
+        context={context}
+        items={catalog.items}
+        heading={storefrontText(context.appearance, 'featuredHeading')}
+        linkLabel={storefrontText(context.appearance, 'featuredLinkLabel')}
+        linkLabelKey="featuredLinkLabel"
+        editorSection="featured"
+        id="catalog"
       />
     ) : entry.id === 'featured' ? (
       <section

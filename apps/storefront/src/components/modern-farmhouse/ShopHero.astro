@@ -1,0 +1,43 @@
+---
+import type { PublicCatalog } from '@market/api';
+import type { StorefrontContext } from '@market/storefront-core';
+import { safeAsset } from '@market/storefront-core';
+import type {
+  FarmhouseSection,
+  FarmhouseSettings,
+} from '@market/theme/storefront';
+import Photo from './Photo.astro';
+
+/**
+ * Modern Farmhouse's shop heading over the homepage hero photo. It sits above
+ * the shared vendor shop and keeps the editor's shop settings
+ * row (`farmhouse:shop-settings`).
+ */
+interface Props {
+  context: StorefrontContext;
+  visible: PublicCatalog['items'];
+}
+const { context, visible } = Astro.props;
+const farmhouseSettings = context.appearance!.template!
+  .settings as FarmhouseSettings;
+const settings = farmhouseSettings.pages;
+const hero = farmhouseSettings.sections.find(
+  (section): section is FarmhouseSection =>
+    !('type' in section) && section.id === 'cinematic',
+)!;
+---
+
+<header
+  class="farmhouse-cinematic farmhouse-page-hero"
+  data-editor-section="farmhouse:shop-settings"
+>
+  <Photo
+    photo={hero.photo}
+    fallback={safeAsset(visible[0]?.featuredAsset?.preview) ?? ''}
+    eager
+  />
+  <div class="farmhouse-hero-copy">
+    <h1>{settings.shopHeading}</h1>
+    <p>{settings.shopIntroduction}</p>
+  </div>
+</header>

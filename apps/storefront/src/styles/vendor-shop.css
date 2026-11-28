@@ -279,3 +279,340 @@
   display: flex;
   justify-content: center;
 }
+
+/* ---------------------------------------------------------------------------
+   Vendor storefront standard (docs/vendor-storefronts/). Every vendor theme's
+   shop and product page use the market storefront's measurements: the same
+   content column, side panel, product cards, type sizes and purchase form as
+   the market themes. Colors come from each theme through the shared brand
+   tokens; a theme's own stylesheet still decorates (images, shadows, radius).
+   The selectors carry `.vendor-site .vendor-shop` so the standard's
+   measurements win over a theme's older shop rules.
+   ------------------------------------------------------------------------ */
+.vendor-site .vendor-shop,
+.vendor-site .vendor-product {
+  box-sizing: border-box;
+  width: var(--vs-wrap);
+  max-width: none;
+  margin-inline: auto;
+}
+.vendor-site .vendor-shop {
+  grid-template-columns: minmax(190px, 230px) minmax(0, 1fr);
+}
+/* Side panel: the market shop's category pills, without the vendor filter. */
+.vendor-site .vendor-shop .shop-categories.ui-card {
+  position: sticky;
+  top: 1.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.vendor-site .vendor-shop .shop-categories h2 {
+  margin: 0 0 0.8rem;
+  padding-bottom: 0.6rem;
+  border-bottom: var(--vs-edge);
+  color: var(--brand-muted);
+  font: 700 0.9rem / 1.2 var(--font-body);
+  letter-spacing: 0.01em;
+}
+.vendor-site .vendor-shop .shop-category-filters {
+  display: grid;
+  gap: 0.5rem;
+}
+.vendor-site .vendor-shop .shop-categories .shop-category-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  gap: 0.45rem;
+  min-height: 2.6rem;
+  margin: 0;
+  padding: 0.45rem 0.85rem 0.45rem 0.55rem;
+  border: var(--vs-edge);
+  border-radius: 12px;
+  background: var(--brand-surface);
+  color: var(--brand-foreground);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.vendor-site .vendor-shop .shop-category-option > span:not(.sr-only) {
+  text-box: trim-both cap alphabetic;
+}
+.vendor-site .vendor-shop .shop-category-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.vendor-site .vendor-shop .shop-category-option::before {
+  content: '';
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  background: var(--brand-muted);
+  opacity: 0.55;
+  -webkit-mask: var(--vs-icon-x) center / 0.7rem no-repeat;
+  mask: var(--vs-icon-x) center / 0.7rem no-repeat;
+}
+.vendor-site .vendor-shop .shop-category-option:hover {
+  background: var(--vs-soft);
+  box-shadow: 0 6px 12px -4px var(--vs-shade);
+  transform: translateY(-2px);
+}
+.vendor-site .vendor-shop .shop-category-option:active {
+  box-shadow: 0 0 0 transparent;
+  transform: translateY(1px);
+}
+.vendor-site .vendor-shop .shop-category-option:has(input:checked) {
+  background: var(--brand-primary);
+  color: var(--brand-on-primary, #fff);
+}
+.vendor-site .vendor-shop .shop-category-option:has(input:checked)::before {
+  background: currentColor;
+  opacity: 1;
+  -webkit-mask: var(--vs-icon-check) center / contain no-repeat;
+  mask: var(--vs-icon-check) center / contain no-repeat;
+}
+.vendor-site .vendor-shop .shop-category-option:has(input:focus-visible) {
+  outline: 3px solid var(--brand-primary);
+  outline-offset: 3px;
+}
+.vendor-site .vendor-shop .shop-catalog-controls {
+  align-items: center;
+  margin-bottom: 1.4rem;
+  padding-bottom: 1rem;
+  border-bottom: var(--vs-edge);
+}
+.vendor-site .vendor-shop .shop-catalog-heading {
+  align-items: center;
+}
+.vendor-site .vendor-shop .shop-catalog-heading h1 {
+  font-size: clamp(1.8rem, 3.4vw, 2.5rem);
+  letter-spacing: -0.02em;
+}
+.vendor-site .vendor-shop .shop-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: auto;
+}
+.vendor-site .vendor-shop .shop-sort label {
+  margin: 0;
+  white-space: nowrap;
+}
+/* Product cards: the market standard's measurements. */
+.vendor-site .vendor-shop .shop-products.catalog-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+.vendor-site .vendor-shop .shop-products.catalog-grid .product-card.ui-card,
+.vendor-site
+  .product-related
+  .shop-products.catalog-grid
+  .product-card.ui-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.7rem 0.7rem 0.95rem;
+}
+.vendor-site
+  :is(.vendor-shop, .product-related)
+  .shop-products.catalog-grid
+  .product-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.vendor-site
+  :is(.vendor-shop, .product-related)
+  .shop-products.catalog-grid
+  :is(.product-image-contents, .em-shop-image-frame) {
+  display: block;
+  aspect-ratio: 1;
+  margin: 0 0 0.75rem;
+  overflow: hidden;
+  border-radius: 12px;
+}
+.vendor-site
+  :is(.vendor-shop, .product-related)
+  .shop-products.catalog-grid
+  .product-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  aspect-ratio: 1;
+  border-radius: 0;
+  object-fit: cover;
+}
+.vendor-site
+  :is(.vendor-shop, .product-related)
+  .shop-products.catalog-grid
+  .product-card
+  :is(h2, h3) {
+  margin: 0;
+  padding-inline: 0.25rem;
+  font-size: 1.1rem;
+  line-height: 1.25;
+}
+.vendor-site
+  :is(.vendor-shop, .product-related)
+  .shop-products.catalog-grid
+  .product-card
+  > p {
+  margin: 0;
+  padding-inline: 0.25rem;
+}
+.vendor-site
+  :is(.vendor-shop, .product-related)
+  .shop-products.catalog-grid
+  .product-card
+  > p:not([class]) {
+  margin-top: 0.25rem;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.vendor-site
+  :is(.vendor-shop, .product-related)
+  .shop-products.catalog-grid
+  .shop-availability {
+  margin-bottom: 0.7rem;
+  font-size: 0.8rem;
+}
+.vendor-site
+  :is(.vendor-shop, .product-related)
+  .shop-products.catalog-grid
+  :is(.featured-purchase, .product-card > .button) {
+  width: 100%;
+  margin-top: auto;
+}
+.vendor-site
+  :is(.vendor-shop, .product-related)
+  .shop-products.catalog-grid
+  :is(.featured-purchase .ui-button, .product-card > .button) {
+  width: 100%;
+  min-height: 40px;
+  font-size: 0.92rem;
+}
+/* Related products (product page) and the cart's suggestions use the shop's
+   cards in the shop's four columns. The cart's block sits in the page's
+   content column: space above, no background and no extra side padding. */
+.vendor-site .product-related .shop-products.catalog-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+.vendor-site .product-related.cart-suggestions {
+  box-sizing: border-box;
+  width: var(--vs-wrap);
+  max-width: none;
+  margin: clamp(2.5rem, 5vw, 4rem) auto 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.vendor-site .product-related.cart-suggestions > h2 {
+  margin: 0 0 1.25rem;
+}
+/* One row of cards exactly the shop's size: the shop's results column
+   (content column less the 230px side panel and the shop's gap) split into
+   its four columns. Narrower screens drop cards as the shop drops columns. */
+.vendor-site .cart-suggestions .shop-products.catalog-grid {
+  --cart-suggestion-card: calc(
+    (100% - 230px - clamp(1.25rem, 3vw, 2.5rem) - 3 * 1.25rem) / 4
+  );
+  grid-template-columns: repeat(4, var(--cart-suggestion-card));
+  justify-content: start;
+}
+@media (max-width: 1000px) {
+  .vendor-site .cart-suggestions .shop-products.catalog-grid {
+    --cart-suggestion-card: calc(
+      (100% - 230px - clamp(1.25rem, 3vw, 2.5rem) - 2 * 1.25rem) / 3
+    );
+    grid-template-columns: repeat(3, var(--cart-suggestion-card));
+  }
+  .vendor-site .cart-suggestions .product-card:nth-child(n + 4) {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .vendor-site .cart-suggestions .shop-products.catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .vendor-site .cart-suggestions .product-card:nth-child(n + 3) {
+    display: none;
+  }
+}
+@media (max-width: 900px) {
+  .vendor-site
+    .product-related:not(.cart-suggestions)
+    .shop-products.catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* Product page: the market storefront's product layout and purchase form. */
+.vendor-site .vendor-product h1 {
+  margin: 0.9rem 0 1rem;
+  font-size: clamp(2.1rem, 4vw, 3.2rem);
+  letter-spacing: -0.02em;
+}
+.vendor-site .vendor-product .product-price {
+  color: var(--brand-primary);
+  font: 700 1.9rem / 1.2 var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+.vendor-site .vendor-product .purchase-form {
+  padding: 1.25rem;
+  border: var(--vs-edge);
+  border-radius: var(--storefront-card-radius, 16px);
+  background: var(--brand-surface);
+}
+.vendor-site .vendor-product .purchase-form > .button.ui-button {
+  width: 100%;
+  min-height: 54px;
+}
+.vendor-site .vendor-product .purchase-form > p:empty {
+  display: none;
+}
+@media (max-width: 1000px) {
+  .vendor-site .vendor-shop .shop-products.catalog-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .vendor-site .vendor-shop {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .vendor-site .vendor-shop .shop-categories.ui-card {
+    position: static;
+  }
+  .vendor-site .vendor-shop .shop-products.catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .vendor-site
+    :is(.vendor-shop, .product-related)
+    .shop-products.catalog-grid
+    .product-card.ui-card {
+    padding: 0.55rem 0.55rem 0.8rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vendor-site .vendor-shop .shop-category-option {
+    transition: none;
+  }
+  .vendor-site .vendor-shop .shop-category-option:is(:hover, :active) {
+    transform: none;
+  }
+}

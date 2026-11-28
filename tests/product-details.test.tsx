@@ -172,7 +172,7 @@ const variants: PublicProduct['variants'] = [
     name: 'Small',
     assets: [],
     sku: 's',
-    priceWithTax: 500,
+    price: 500,
     currencyCode: 'USD',
     options: [],
     featuredAsset: {
@@ -194,7 +194,7 @@ const variants: PublicProduct['variants'] = [
       },
     ],
     sku: 'l',
-    priceWithTax: 900,
+    price: 900,
     currencyCode: 'USD',
     options: [],
     featuredAsset: null,
@@ -261,9 +261,8 @@ describe('product purchasing', () => {
     view.unmount();
     view = purchase({ ...facts[0]!, quantity: 6 });
     expect(screen.queryByText(/left in stock/)).not.toBeInTheDocument();
-    expect(
-      screen.getByText('Available for this market, up to 6 available.'),
-    ).toBeInTheDocument();
+    // Only a low stock warning is shown while the product can be added.
+    expect(screen.queryByText(/Available for this market/)).toBeNull();
     view.unmount();
     purchase({
       variantId: '10',

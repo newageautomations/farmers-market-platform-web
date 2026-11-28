@@ -9,7 +9,6 @@ import {
 } from '@market/theme/storefront';
 import { websiteSectionRenderers } from './section-renderers';
 import Hero from './Hero.astro';
-import Impact from './Impact.astro';
 
 interface Props {
   context: StorefrontContext;
@@ -26,6 +25,9 @@ const categories = (await vendorCategoryNavigation(Astro)).slice(
   0,
   settings.categories.limit,
 );
+// The vendor homepage does not draw the community impact artwork (the
+// market homepage still does). Its slot stays in the saved order so saved
+// compositions remain valid.
 const composition = editorialHomepageComposition(settings, {
   productIds: (catalog?.items ?? []).map((product) => product.id),
   categoryIds: categories.map((category) => category.id),
@@ -53,8 +55,6 @@ const composition = editorialHomepageComposition(settings, {
         settings={settings}
         action={{ href: '/products', label: settings.hero.buttonLabel }}
       />
-    ) : section.id === 'impact' ? (
-      <Impact settings={settings} />
     ) : null;
   })}
 </div>

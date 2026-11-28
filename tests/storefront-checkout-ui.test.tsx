@@ -62,7 +62,15 @@ const view: CheckoutView = {
     {
       vendorId: '2',
       vendorName: 'Garden Vendor',
-      lines: [{ id: '10', name: 'Greens', quantity: 2, total: 1285 }],
+      lines: [
+        {
+          id: '10',
+          name: 'Greens',
+          quantity: 2,
+          total: 1285,
+          totalBeforeTax: 1285,
+        },
+      ],
       pickup: [],
     },
   ],
@@ -472,7 +480,11 @@ describe('vendor checkout UI', () => {
     expect(container.querySelector('[data-cart-total]')).toHaveTextContent(
       '$11.99',
     );
-    expect(screen.getByText('Sales tax (included)')).toBeInTheDocument();
+    // One Tax row; the breakdown stays with the backend.
+    expect(
+      container.querySelector('.checkout-order-summary .order-totals'),
+    ).toHaveTextContent('Tax$0.85');
+    expect(screen.queryByText('Sales tax (included)')).toBeNull();
     expect(
       container.querySelector('.vendor-checkout-layout'),
     ).toBeInTheDocument();
@@ -787,7 +799,9 @@ const cart: PublicCart = {
     {
       id: '10',
       quantity: 2,
+      unitPrice: 650,
       unitPriceWithTax: 650,
+      discountedLinePrice: 1285,
       discountedLinePriceWithTax: 1285,
       featuredAsset: { preview: '/assets/greens.jpg' },
       productVariant: {

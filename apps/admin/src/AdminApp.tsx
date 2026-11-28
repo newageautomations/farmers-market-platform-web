@@ -231,6 +231,7 @@ export function AdminApp({
     setSession({ status: 'loading' });
     try {
       await createAdminSession(endpoint).logout(everywhere);
+      window.history.replaceState(null, '', '/');
       setSignedOutEverywhere(everywhere);
       setSession({ status: 'anonymous' });
     } catch (error) {

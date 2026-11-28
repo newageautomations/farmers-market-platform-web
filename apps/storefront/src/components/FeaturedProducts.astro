@@ -1,0 +1,90 @@
+---
+import type { PublicCatalog } from '@market/api';
+import type { StorefrontContext } from '@market/storefront-core';
+import { SectionHeader } from '@market/ui';
+import {
+  createWebsiteSection,
+  editorialHomepageTarget,
+  isEditorialMarket,
+  isFarmhouse,
+} from '@market/theme/storefront';
+import ProductCards from './ProductCards.astro';
+import ProductShowcase from './home/ProductShowcase.astro';
+import FeaturedCarousel from './modern-farmhouse/FeaturedCarousel.astro';
+
+/**
+ * A vendor theme's featured-products block, as its homepage draws it: the
+ * Harvest featured section (Harvest, Bloom), Editorial's Product Showcase or
+ * Modern Farmhouse's carousel. The homepage and the cart's suggestions both
+ * use it, each with its own heading.
+ *
+ * Why a new component: the homepage block was inline markup in each theme's
+ * homepage, so the cart could not reuse it. This keeps one source per theme.
+ */
+interface Props {
+  context: StorefrontContext;
+  items: PublicCatalog['items'];
+  heading: string;
+  linkLabel: string;
+  /** Text key for the editor's live preview of the link label (homepage only). */
+  linkLabelKey?: string;
+  editorSection?: string;
+  id?: string;
+}
+const { context, items, heading, linkLabel, linkLabelKey, editorSection, id } =
+  Astro.props;
+const showcase = isEditorialMarket(context.appearance)
+  ? (() => {
+      const section = createWebsiteSection(
+        'product-showcase',
+        'product-showcase-suggestions',
+        editorialHomepageTarget,
+      );
+      section.content.heading = heading;
+      section.content.body = '';
+      section.content.productIds = items.map((item) => item.id).slice(0, 8);
+      section.presentation.columns = 4;
+      return section;
+    })()
+  : undefined;
+---
+
+{showcase ? (
+  <ProductShowcase
+    section={showcase}
+    context={context}
+    shopLinkLabel={linkLabel}
+  />
+) : isFarmhouse(context.appearance) ? (
+  <section class="farmhouse-featured" aria-label={heading} id={id}>
+    <div class="farmhouse-space">
+      <div class="farmhouse-section-intro">
+        <h2>{heading}</h2>
+        <a href="/products" class="farmhouse-text-link">
+          {linkLabel} ↗
+        </a>
+      </div>
+      <FeaturedCarousel items={items} />
+    </div>
+  </section>
+) : (
+  <section
+    id={id}
+    data-editor-section={editorSection}
+    class="harvest-section"
+    aria-label={heading}
+  >
+    <SectionHeader title={heading} variant="consumer">
+      <a href="/products">
+        <span data-storefront-text={linkLabelKey}>{linkLabel}</span> ↗
+      </a>
+    </SectionHeader>
+    <ProductCards
+      items={items}
+      featured
+      storefrontId={
+        context.source === 'backend' ? context.storefrontId : undefined
+      }
+    />
+  </section>
+)}

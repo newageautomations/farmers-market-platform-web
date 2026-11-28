@@ -1,4 +1,5 @@
 import { Button, Input } from '@market/ui';
+import { StepperGlyph } from './StepperGlyph';
 import type { PublicCart } from '@market/api';
 import { formatMoney } from '@market/config';
 import { safeAsset } from '@market/storefront-core/catalog';
@@ -19,8 +20,8 @@ export function HarvestCartLine({
     PublicCart['lines'][number],
     | 'id'
     | 'quantity'
-    | 'unitPriceWithTax'
-    | 'discountedLinePriceWithTax'
+    | 'unitPrice'
+    | 'discountedLinePrice'
     | 'featuredAsset'
     | 'productVariant'
   >;
@@ -65,9 +66,7 @@ export function HarvestCartLine({
           <a href={productHref}>{line.productVariant.product.name}</a>
         </h2>
         <p>{line.productVariant.name}</p>
-        <p>
-          {formatMoney(line.unitPriceWithTax, currency)} each, including tax
-        </p>
+        <p>{formatMoney(line.unitPrice, currency)} each</p>
         {warning && (
           <p
             id={`availability-${line.id}`}
@@ -107,7 +106,7 @@ export function HarvestCartLine({
                 );
               }}
             >
-              −
+              <StepperGlyph kind="minus" />
             </Button>
             <label className="sr-only" htmlFor={`quantity-${line.id}`}>
               Quantity for {line.productVariant.name}
@@ -166,7 +165,7 @@ export function HarvestCartLine({
                 );
               }}
             >
-              +
+              <StepperGlyph kind="plus" />
             </Button>
           </div>
           <Button
@@ -184,7 +183,7 @@ export function HarvestCartLine({
         className="vendor-cart-line-total"
         aria-label={`Subtotal for ${line.productVariant.name}`}
       >
-        {formatMoney(line.discountedLinePriceWithTax, currency)}
+        {formatMoney(line.discountedLinePrice, currency)}
       </strong>
     </li>
   );

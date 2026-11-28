@@ -19,6 +19,9 @@ import '@market/theme/storefront.css';
 import '../styles/homepage.css';
 import HarvestHeader from '../components/home/HarvestHeader.astro';
 import HarvestFooter from '../components/home/HarvestFooter.astro';
+import MarketHarvestHeader from '../components/market-harvest/Header.astro';
+import MarketHarvestFooter from '../components/market-harvest/Footer.astro';
+import marketHarvestStyles from '../styles/market-harvest.css?url';
 import VendorTermsLink from '../components/VendorTermsLink.astro';
 import EditorBridge from '../components/EditorBridge.astro';
 import PremiumHeader from '../components/modern-farmhouse/Header.astro';
@@ -33,6 +36,9 @@ import { requestMarketShop } from '../lib/shop';
 import { marketDateParts } from '../lib/market-website';
 import EditorialFooter from '../components/editorial-market/Footer.astro';
 import editorialStyles from '../styles/editorial-market.css?url';
+import MarketEditorialHeader from '../components/market-editorial/Header.astro';
+import MarketEditorialFooter from '../components/market-editorial/Footer.astro';
+import marketEditorialStyles from '../styles/market-editorial.css?url';
 import FarmhouseHeader from '../components/legacy-modern-farmhouse/Header.astro';
 import FarmhouseFooter from '../components/legacy-modern-farmhouse/Footer.astro';
 import '../styles/legacy-modern-farmhouse.css';
@@ -74,7 +80,9 @@ const premiumSettings = isFarmhouse(appearance)
   ? (appearance.template!.settings as FarmhouseSettings)
   : undefined;
 const premium = sharedVendor && !!premiumSettings;
-// Editorial Market serves vendor and market websites with one theme shell.
+// Editorial Market on a vendor website and on a market website are separate
+// themes that share the Editorial look: each has its own header, footer and
+// stylesheet (market: components/market-editorial/, market-editorial.css).
 const editorial =
   (sharedVendor || context?.kind === 'MARKET') && isEditorialMarket(appearance);
 const editorialMarket = editorial && context?.kind === 'MARKET';
@@ -87,6 +95,10 @@ const marketTheme =
 const meadow = marketTheme === 'meadow';
 const hearth = marketTheme === 'hearth';
 const pasture = marketTheme === 'pasture';
+// Market Harvest is its own theme: its own header, footer and stylesheet,
+// separate from the vendor Harvest shell.
+const marketHarvest =
+  context?.kind === 'MARKET' && appearance.theme === 'harvest';
 // Bloom is a vendor website theme: the shared Harvest vendor shell and pages with
 // its own stylesheet.
 const bloom = sharedVendor && isBloom(appearance);
@@ -107,12 +119,10 @@ const pageTitle = title
   : (metadata?.title ?? 'Storefront unavailable');
 const pageDescription =
   description ?? metadata?.description ?? 'Storefront service unavailable.';
-const editorialShop =
-  editorial && !editorialMarket && path.startsWith('/products');
+// The vendor Editorial header shows on every page, the shop and product pages
+// included: they use the shared shop and product markup.
 const editorialHeaderPreorder =
-  editorial && !editorialShop && !editorialMarket
-    ? await vendorPreorder(Astro, [])
-    : undefined;
+  editorial && !editorialMarket ? await vendorPreorder(Astro, []) : undefined;
 // Market headers choose a market date for the shop instead of a pickup market.
 let editorialMarketDates: { id: string; marketName: string }[] = [];
 if (editorialMarket && context?.source === 'backend') {
@@ -162,10 +172,14 @@ const editorialMarketSelected = editorialMarketDates.some(
   <head>
     <meta charset="UTF-8" />
     {premium && <link rel="stylesheet" href={farmhouseStyles} />}
-    {editorial && <link rel="stylesheet" href={editorialStyles} />}
+    {editorial && !editorialMarket && (
+      <link rel="stylesheet" href={editorialStyles} />
+    )}
+    {editorialMarket && <link rel="stylesheet" href={marketEditorialStyles} />}
     {meadow && <link rel="stylesheet" href={meadowStyles} />}
     {hearth && <link rel="stylesheet" href={hearthStyles} />}
     {pasture && <link rel="stylesheet" href={pastureStyles} />}
+    {marketHarvest && <link rel="stylesheet" href={marketHarvestStyles} />}
     {bloom && <link rel="stylesheet" href={bloomStyles} />}
     <style
       id="storefront-text-sizes"
@@ -219,10 +233,12 @@ const editorialMarketSelected = editorialMarketDates.some(
         meadow && 'meadow-site',
         hearth && 'hearth-site',
         pasture && 'pasture-site',
+        marketHarvest && 'market-harvest-site',
         premium && 'farmhouse-site',
         premium && homepage && 'farmhouse-homepage',
         premium && (homepage || path === '/products') && 'farmhouse-refined',
-        editorial && 'editorial-market-site',
+        editorial && !editorialMarket && 'editorial-market-site',
+        editorialMarket && 'market-editorial-site',
         !editorial && !farmhouse && !premium && harvestShell && 'harvest-home',
         farmhouse && 'mf-site',
         context?.kind === 'MARKET' && 'market-text-links',
@@ -233,30 +249,31 @@ const editorialMarketSelected = editorialMarketDates.some(
       {context && premium && (
         <PremiumHeader context={context} overlay={!!overlay} />
       )}
-      {context && editorial && !editorialShop && (
+      {context && editorialMarket && (
+        <MarketEditorialHeader
+          context={context}
+          occurrences={editorialMarketDates}
+          selectedId={editorialMarketSelected}
+        />
+      )}
+      {context && editorial && !editorialMarket && (
         <EditorialShopHeader
           context={context}
-          occurrences={
-            editorialMarket
-              ? editorialMarketDates
-              : (editorialHeaderPreorder?.occurrences ?? [])
-          }
-          selectedId={
-            editorialMarket
-              ? editorialMarketSelected
-              : editorialHeaderPreorder?.selected?.id
-          }
+          occurrences={editorialHeaderPreorder?.occurrences ?? []}
+          selectedId={editorialHeaderPreorder?.selected?.id}
         />
       )}
       {context && farmhouse && <FarmhouseHeader context={context} />}
       {context && meadow && <MeadowHeader context={context} />}
       {context && hearth && <HearthHeader context={context} />}
       {context && pasture && <PastureHeader context={context} />}
+      {context && marketHarvest && <MarketHarvestHeader context={context} />}
       {context &&
         !editorial &&
         !farmhouse &&
         !premium &&
         !marketTheme &&
+        !marketHarvest &&
         harvestShell && <HarvestHeader context={context} />}
       {context && !harvestShell && (
         <header class="site-header">
@@ -297,6 +314,8 @@ const editorialMarketSelected = editorialMarketDates.some(
       </main>
       {context && premium ? (
         <PremiumFooter context={context} />
+      ) : context && editorialMarket ? (
+        <MarketEditorialFooter context={context} />
       ) : context && editorial ? (
         <EditorialFooter context={context} />
       ) : context && meadow ? (
@@ -305,6 +324,8 @@ const editorialMarketSelected = editorialMarketDates.some(
         <HearthFooter context={context} />
       ) : context && pasture ? (
         <PastureFooter context={context} />
+      ) : context && marketHarvest ? (
+        <MarketHarvestFooter context={context} />
       ) : context && farmhouse ? (
         <FarmhouseFooter context={context} />
       ) : context && harvestShell ? (

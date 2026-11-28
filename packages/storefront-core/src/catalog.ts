@@ -55,12 +55,11 @@ export function priceLabel(
   const currency = variants[0]!.currencyCode;
   if (
     variants.some(
-      (v) =>
-        v.currencyCode !== currency || !Number.isSafeInteger(v.priceWithTax),
+      (v) => v.currencyCode !== currency || !Number.isSafeInteger(v.price),
     )
   )
     return 'View options for pricing';
-  const prices = variants.map((v) => BigInt(v.priceWithTax)),
+  const prices = variants.map((v) => BigInt(v.price)),
     min = prices.reduce((a, b) => (a < b ? a : b)),
     max = prices.reduce((a, b) => (a > b ? a : b));
   return min === max

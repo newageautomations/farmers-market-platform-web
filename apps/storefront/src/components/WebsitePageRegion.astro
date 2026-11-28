@@ -16,11 +16,14 @@ const { context, page, region } = Astro.props as {
   region: WebsitePageRegion;
 };
 const appearance = context?.appearance;
-// Vendor websites and market Harvest or Meadow websites author page sections.
+// Vendor websites and every market theme author page sections. Market
+// Editorial keeps its homepage in its template settings but its other pages
+// use the shared page regions like every market theme.
 const authored =
   context?.kind === 'VENDOR' ||
   (context?.kind === 'MARKET' &&
-    usesHarvestContract(context.appearance?.theme));
+    (usesHarvestContract(context.appearance?.theme) ||
+      context.appearance?.theme === 'editorial-market'));
 const sections =
   authored &&
   (websitePageRules[page].regions as readonly string[]).includes(region)

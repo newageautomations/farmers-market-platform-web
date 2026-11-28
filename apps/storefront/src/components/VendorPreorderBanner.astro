@@ -2,10 +2,14 @@
 import { VendorPreorderBanner } from './VendorPreorderBanner';
 import type { ComponentProps } from 'react';
 import '../styles/preorder-banner.css';
-import { marketOnlyTheme } from '@market/theme/storefront';
+import { themePageStructure } from '@market/theme/storefront';
 type Props = ComponentProps<typeof VendorPreorderBanner>;
-// Meadow and Hearth show the market's own details without the general guidance.
-const concise = !!marketOnlyTheme(Astro.locals.storefront?.appearance);
+// Market-standard websites show the market's own details without the general guidance.
+const storefront = Astro.locals.storefront;
+const concise = themePageStructure(
+  storefront?.appearance?.theme,
+  storefront?.kind,
+).conciseCommerce;
 ---
 
 <VendorPreorderBanner {...Astro.props} concise={concise} client:load />

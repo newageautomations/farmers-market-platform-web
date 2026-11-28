@@ -328,3 +328,51 @@
     transform: translateY(-4px);
   }
 }
+
+/* Vendor cards: the whole card is the link, so neither the card edge nor the
+   vendor name carries the text-link underline. "Shop offerings" (or "Find
+   their booth") underlines instead while the card is hovered or focused, like
+   any other text link, even though it leads where the card does. Every market
+   theme shares this. */
+.market-text-links .market-vendor-card .market-vendor-offerings::after,
+.market-text-links
+  .market-vendor-card
+  .market-vendor-offerings
+  .farmstand-text-link::after {
+  content: none;
+}
+.market-text-links .market-vendor-actions > span.harvest-text-link {
+  background: linear-gradient(currentColor, currentColor) left bottom / 0 1px
+    no-repeat;
+  padding-bottom: 2px;
+  transition: background-size 0.35s ease;
+}
+.market-text-links
+  .market-vendor-card:has(.market-vendor-offerings:is(:hover, :focus-visible))
+  .market-vendor-actions
+  > span.harvest-text-link {
+  background-size: 100% 1px;
+}
+
+/* Product page: the vendor card under the product name lifts on hover. It
+   never draws the text-link underline. */
+.market-text-links .market-product-vendor::after,
+.market-text-links .market-product-vendor .farmstand-text-link::after {
+  content: none;
+}
+.market-text-links .market-product-vendor {
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.market-text-links .market-product-vendor:is(:hover, :focus-visible) {
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-text-links .market-vendor-actions > span.harvest-text-link {
+    transition: none;
+  }
+  .market-text-links .market-product-vendor:is(:hover, :focus-visible) {
+    transform: none;
+  }
+}

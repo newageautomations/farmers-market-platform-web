@@ -139,3 +139,18 @@
     stroke-dashoffset: 0;
   }
 }
+
+/* Vendor storefront standard: the vendor form uses the market form's layout,
+   two columns on wider screens with the message spanning both. */
+.vendor-site .contact-fields-configured {
+  row-gap: 1.75rem;
+  column-gap: 1.25rem;
+}
+@media (min-width: 761px) {
+  .vendor-site .contact-fields-configured {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .vendor-site .contact-fields-configured > [data-wide] {
+    grid-column: 1 / -1;
+  }
+}

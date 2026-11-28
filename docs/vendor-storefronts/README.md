@@ -2,22 +2,24 @@
 
 > **READ-ONLY REFERENCE.** This set of documents is the fixed specification for vendor storefront themes. Do not edit, reformat, extend or "update" these files during feature work, and do not let an agent change them. If the code and these documents disagree, stop and ask the developer which one is right. Change these files only when the developer explicitly asks for it.
 >
-> Verified against `farmers-market-platform-web` (working tree based on commit `b8503ea`) on November 27, 2026. No backend change is part of the vendor standard.
+> Verified against `farmers-market-platform-web` (working tree based on commit `fb09982`) and `farmers-market-platform` (working tree based on commit `ea2c77a`) on November 27, 2026. The only backend part of the vendor standard is Modern Farmhouse's starter homepage order.
 
 Vendor websites follow the same page standard as market websites. The market standard in [`docs/market-storefronts/`](../market-storefronts/README.md) is the base, and Pasture is still its reference theme. **This folder only records where vendor websites differ.** Anything not mentioned here works exactly as the market documents describe.
+
+On every vendor theme the shop, product page, add-to-cart feedback, checkout, contact form and footer structure are the market storefront's (see [Pages](02_PAGES.md)). The differences are deliberate: no vendor filter or vendor names in the shop, no vendor card on the product page, the vendor's own payment methods at checkout, the vendor's fixed contact fields, and a footer "Site" column where markets have "Visit".
 
 ## Which websites this covers
 
 Every theme a vendor website can use, on vendor websites only:
 
-| Theme            | ID                 | Vendor shell                                                                            |
-| ---------------- | ------------------ | --------------------------------------------------------------------------------------- |
-| Harvest          | `harvest`          | Shared Harvest vendor header, footer and pages                                          |
-| Bloom            | `bloom`            | The Harvest vendor shell with `styles/bloom.css`                                        |
-| Editorial Market | `editorial-market` | Its own header, footer, shop and content pages (`components/editorial-market/`)         |
-| Modern Farmhouse | `modern-farmhouse` | Premium (template version 2, `components/modern-farmhouse/`) and the legacy `mf-` shell |
+| Theme            | ID                 | Vendor shell                                                                                                |
+| ---------------- | ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Harvest          | `harvest`          | Shared Harvest vendor header and footer (`home/HarvestHeader.astro`, `HarvestFooter.astro`)                 |
+| Bloom            | `bloom`            | The Harvest vendor shell with `styles/bloom.css`                                                            |
+| Editorial Market | `editorial-market` | Its own header, footer, homepage and content pages (`components/editorial-market/`, `editorial-market.css`) |
+| Modern Farmhouse | `modern-farmhouse` | Premium (template version 2, `components/modern-farmhouse/`) and the legacy `mf-` shell                     |
 
-Harvest and Editorial Market are also market themes. **On a market website they keep their historical rules.** The vendor standard never reaches a market website, and the market standard never reaches a vendor website.
+Harvest and Editorial Market are also market themes, but **the market and vendor versions are separate themes**. Market websites on them use `components/market-harvest/` and `components/market-editorial/` with their own stylesheets and follow the market standard. The vendor files above are vendor-only: a change to them never reaches a market website, and a market theme change never reaches a vendor website. The saved theme ID is shared, so the website's kind decides which code runs.
 
 ## Reading order
 

@@ -1,7 +1,6 @@
 ---
 import { Cart as PremiumCart } from '../components/modern-farmhouse/Cart';
-import PremiumCards from '../components/modern-farmhouse/ProductCards.astro';
-import { isFarmhouse, marketOnlyTheme } from '@market/theme/storefront';
+import { isFarmhouse, themePageStructure } from '@market/theme/storefront';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { VendorCart, MarketCart } from '../components/ResilientSurfaces';
 import ProductCards from '../components/ProductCards.astro';
@@ -23,7 +22,6 @@ import {
 import { ErrorState } from '@market/ui';
 const { storefront, storefrontError } = Astro.locals;
 const premium = isFarmhouse(storefront?.appearance);
-const Cards = premium ? PremiumCards : ProductCards;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 const preferredReward = Astro.url.searchParams.get('loyalty');
 if (
@@ -125,7 +123,10 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
             marketName={storefront.name}
             initialCart={marketBootstrap.cart}
             initialPreorder={preorder}
-            concise={!!marketOnlyTheme(storefront.appearance)}
+            concise={
+              themePageStructure(storefront.appearance?.theme, storefront.kind)
+                .conciseCommerce
+            }
             client:load
           />
         ) : premium ? (
@@ -143,19 +144,21 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
             client:load
           />
         )}
-        {related.length > 0 && (
+        {/* Suggestions are the shop's product cards for the cart's market,
+            so they can be added right here: one row of up to four, the
+            same block as the product page's related products. */}
+        {related.length > 0 && storefront && (
           <section
-            class="product-related"
-            aria-label={storefrontText(
-              storefront?.appearance,
-              'relatedHeading',
-            )}
+            class="product-related cart-suggestions"
+            aria-labelledby="cart-suggestions-heading"
           >
-            <h2>{storefrontText(storefront?.appearance, 'relatedHeading')}</h2>
-            <Cards
-              theme={storefront?.appearance?.theme}
-              items={related}
-              storefrontId={storefront?.storefrontId}
+            <h2 id="cart-suggestions-heading">
+              {storefrontText(storefront.appearance, 'relatedHeading')}
+            </h2>
+            <ProductCards
+              theme={storefront.appearance?.theme}
+              items={related.slice(0, 4)}
+              storefrontId={storefront.storefrontId}
               shop
               occurrenceId={preorder.selected?.id}
               availability={preorder.availability}

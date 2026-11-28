@@ -6,13 +6,15 @@ import type { SessionState } from '@market/auth';
 
 const mocks = vi.hoisted(() => ({
   restore: vi.fn(),
+  logout: vi.fn(),
+  signIn: vi.fn(),
   resolve: vi.fn(),
   service: vi.fn(),
   denied: undefined as undefined | (() => void),
 }));
 vi.mock('@market/auth', async (original) => ({
   ...(await original<typeof import('@market/auth')>()),
-  createAdminSession: () => ({ restore: mocks.restore }),
+  createAdminSession: () => ({ restore: mocks.restore, logout: mocks.logout }),
 }));
 vi.mock('@market/admin-core', async (original) => ({
   ...(await original<typeof import('@market/admin-core')>()),
@@ -24,14 +26,18 @@ vi.mock('../apps/admin/src/account-login', () => ({
     _endpoint: string,
     session: SessionState,
   ) => session,
-  platformAccountLogin: vi.fn(),
+  platformAccountLogin: mocks.signIn,
 }));
 vi.mock('../apps/admin/src/vendor/service', () => ({
   createLiveVendorService: mocks.service,
 }));
 vi.mock('../apps/admin/src/AdminShell', () => ({
-  AdminShell: () => (
-    <button onClick={() => mocks.denied?.()}>Exercise denied resource</button>
+  AdminShellSkeleton: () => null,
+  AdminShell: ({ onLogout }: { onLogout: () => void }) => (
+    <>
+      <button onClick={() => mocks.denied?.()}>Exercise denied resource</button>
+      <button onClick={onLogout}>Sign out</button>
+    </>
   ),
 }));
 import { AdminApp } from '../apps/admin/src/AdminApp';
@@ -60,17 +66,36 @@ const session: SessionState = {
   user: { id: '2', identifier: 'employee@test.invalid', channels: [channel] },
   channel,
 };
-function start() {
-  window.history.replaceState(null, '', '/vendor?channel=9');
+function start(path = '/vendor?channel=9', accountOrigin?: string) {
+  window.history.replaceState(null, '', path);
   mocks.restore.mockImplementation(async () => ({ ...session }));
   mocks.resolve.mockResolvedValue(context);
   mocks.service.mockImplementation((_context, _endpoint, _token, onDenied) => {
     mocks.denied = onDenied;
     return {};
   });
-  render(<AdminApp endpoint="http://localhost:3000/admin-api" />);
+  render(
+    <AdminApp
+      endpoint="http://localhost:3000/admin-api"
+      accountOrigin={accountOrigin}
+    />,
+  );
   return screen.findByRole('button', { name: 'Exercise denied resource' });
 }
+
+it('starts sign-in without the previous workspace or principal after sign-out', async () => {
+  const accountOrigin = 'http://auth.platform.localhost:4321';
+  mocks.logout.mockResolvedValueOnce(undefined);
+  await start('/vendor/orders?channel=9&principal=2#details', accountOrigin);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+  const signIn = await screen.findByRole('button', { name: 'Sign in' });
+
+  expect(mocks.logout).toHaveBeenCalledWith(true);
+  expect(window.location.href).toBe(`${window.location.origin}/`);
+  fireEvent.click(signIn);
+  expect(mocks.signIn).toHaveBeenCalledExactlyOnceWith(accountOrigin);
+});
 
 describe('workspace authority revalidation', () => {
   it('coalesces denials and keeps the workspace mounted when current authority is unchanged', async () => {

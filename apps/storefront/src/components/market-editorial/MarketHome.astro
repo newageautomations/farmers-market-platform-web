@@ -22,10 +22,11 @@ import {
   marketCategorySources,
   marketPageAvailable,
 } from '../../lib/market-website';
-import { websiteSectionRenderers } from './section-renderers';
-import { categoryArt } from './category-art';
-import Hero from './Hero.astro';
-import Impact from './Impact.astro';
+import { websiteSectionRenderers } from '../editorial-market/section-renderers';
+import CategoryIcon from '../ui/CategoryIcon.astro';
+import { categoryIconShapes } from '@market/ui/category-icons';
+import Hero from '../editorial-market/Hero.astro';
+import Impact from '../editorial-market/Impact.astro';
 import '../../styles/market-website.css';
 import '../../styles/website-sections.css';
 
@@ -227,24 +228,28 @@ const shopOccurrence = chosenOccurrenceId ?? next?.id;
               {categories
                 .slice(0, settings.categories.limit)
                 .map((category) => {
-                  const art = categoryArt(
-                    category.code,
-                    safeAsset(category.image),
-                  );
+                  // An uploaded photo shows as is. Without one, the category's
+                  // icon is drawn inline so it takes the theme color.
+                  const photo = safeAsset(category.image);
                   return (
                     <a
                       href={`/shop?occurrence=${categoryOccurrence(category.id)}&category=${encodeURIComponent(category.id)}`}
                     >
                       <span class="em-category-image">
-                        {art ? (
+                        {photo ? (
                           <img
-                            src={art}
+                            src={photo}
                             alt=""
                             width="240"
                             height="240"
                             loading="lazy"
                             decoding="async"
                           />
+                        ) : category.code &&
+                          categoryIconShapes(category.code) ? (
+                          <span class="em-category-icon">
+                            <CategoryIcon code={category.code} size={96} />
+                          </span>
                         ) : (
                           <span
                             class="em-category-placeholder"

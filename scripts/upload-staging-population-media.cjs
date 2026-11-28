@@ -274,6 +274,12 @@ async function main() {
   );
   if (plan.digest !== approved || plan.assetPrefix !== assetPrefix)
     throw new Error('MEDIA_APPROVAL_MISMATCH');
+  const uploads = plan.media.reduce(
+    (count, owner) => count + owner.keys.length,
+    0,
+  );
+  if (plan.manifestCounts?.uploads !== uploads)
+    throw new Error('MEDIA_MANIFEST_UPLOAD_COUNT_INVALID');
   const prepared = new Map();
   for (const photo of plan.photos)
     prepared.set(photo.key, await approvedBytes(photo));
@@ -297,7 +303,7 @@ async function main() {
         status: 'media-validated',
         digest: approved,
         photos: prepared.size,
-        uploads: plan.counts.uploads,
+        uploads,
       }),
     );
     return;
@@ -446,7 +452,20 @@ if (require.main === module)
     const safe = /^[A-Z_0-9]+(?::[a-z0-9/-]+)?$/.test(error.message)
       ? error.message
       : 'MEDIA_WORKSTATION_FAILED';
-    console.error(JSON.stringify({ status: 'failed', code: safe }));
+    const networkCode = error.cause?.code;
+    const reason = [
+      'ENOTFOUND',
+      'EAI_AGAIN',
+      'ECONNREFUSED',
+      'ECONNRESET',
+      'ETIMEDOUT',
+      'UND_ERR_CONNECT_TIMEOUT',
+    ].includes(networkCode)
+      ? networkCode
+      : error.name === 'TimeoutError'
+        ? 'TIMEOUT'
+        : undefined;
+    console.error(JSON.stringify({ status: 'failed', code: safe, reason }));
     process.exitCode = 1;
   });
 module.exports = { sourceFromPreview };

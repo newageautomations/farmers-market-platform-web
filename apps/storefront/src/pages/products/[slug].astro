@@ -1,16 +1,5 @@
 ---
 import { buttonClassName } from '@market/ui/presentation';
-import PremiumInformation from '../../components/modern-farmhouse/ProductInformation.astro';
-import PremiumLayout from '../../components/modern-farmhouse/ProductLayout.astro';
-import PremiumGallery from '../../components/modern-farmhouse/Gallery.astro';
-import PremiumCards from '../../components/modern-farmhouse/ProductCards.astro';
-import EditorialProduct from '../../components/editorial-market/Product.astro';
-import ShopHeader from '../../components/editorial-market/ShopHeader.astro';
-import {
-  isEditorialMarket,
-  isFarmhouse,
-  type FarmhouseSettings,
-} from '@market/theme/storefront';
 import ProductGallery from '../../components/ProductGallery.astro';
 import ProductLayout from '../../components/legacy-modern-farmhouse/ProductLayout.astro';
 import ProductCards from '../../components/ProductCards.astro';
@@ -25,8 +14,8 @@ import {
 } from '@market/storefront-core';
 import '../../styles/vendor-shop.css';
 import '../../styles/product-details.css';
+import '../../styles/vendor-cart.css';
 import SiteLayout from '../../layouts/SiteLayout.astro';
-import { Purchase as PremiumPurchase } from '../../components/modern-farmhouse/Purchase';
 import { ProductPurchase } from '../../components/ProductPurchase';
 import { requestShop } from '../../lib/shop';
 import { vendorPreorder } from '../../lib/vendor-preorder';
@@ -38,16 +27,10 @@ import {
   safeAsset,
   seo,
 } from '@market/storefront-core';
+// Every vendor theme shows the market storefront's product page: the shared
+// layout, gallery, purchase form and product information, without the vendor
+// card (the whole website is the vendor's).
 const { storefront, storefrontError } = Astro.locals;
-const premium = isFarmhouse(storefront?.appearance);
-const editorial = isEditorialMarket(storefront?.appearance);
-const premiumGallery = premium
-  ? (storefront!.appearance!.template!.settings as FarmhouseSettings).pages
-      .gallery
-  : undefined;
-const Layout = premium ? PremiumLayout : ProductLayout;
-const Gallery = premium ? PremiumGallery : ProductGallery;
-const Cards = premium ? PremiumCards : ProductCards;
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 let product: PublicProduct | null = null,
   error = storefrontError,
@@ -157,22 +140,7 @@ const structured =
       set:html={JSON.stringify(structured).replace(/</g, '\\u003c')}
     />
   )}
-  {editorial && storefront && (
-    <ShopHeader
-      context={storefront}
-      occurrences={preorder.occurrences}
-      selectedId={preorder.selected?.id}
-    />
-  )}
-  <section
-    class={
-      premium
-        ? 'farmhouse-product-route'
-        : editorial
-          ? 'em-product-route'
-          : 'vendor-product'
-    }
-  >
+  <section class="vendor-product">
     {error || !product ? (
       <>
         <h1>
@@ -185,26 +153,16 @@ const structured =
           Browse products
         </a>
       </>
-    ) : editorial && storefront ? (
-      <EditorialProduct
-        context={storefront}
-        product={product}
-        related={related}
-        info={info}
-        preorder={preorder}
-        signedIn={signedIn}
-        preview={!!Astro.locals.editorPreview}
-      />
     ) : (
       <>
-        <Layout theme={storefront?.appearance?.theme}>
+        <ProductLayout theme="harvest">
           <VendorPreorderBanner
             slot="market"
             preorder={preorder}
             storefrontId={storefront?.storefrontId ?? ''}
             preview={!!Astro.locals.editorPreview}
           />
-          <Gallery slot="gallery" product={product} layout={premiumGallery} />
+          <ProductGallery slot="gallery" product={product} />
           <Fragment slot="summary">
             {shopCategories([product]).length > 0 && (
               <p>
@@ -233,62 +191,37 @@ const structured =
               {plainDescription(product.description)}
             </p>
           </Fragment>
-          {premium ? (
-            <PremiumPurchase
-              slot="purchase"
-              priceTarget="product-current-price"
-              priceFallback={priceLabel(product.variants)}
-              initialVariantId={
-                Astro.url.searchParams.get('variant') ?? undefined
-              }
-              storefrontId={storefront?.storefrontId ?? ''}
-              variants={product.variants}
-              signedIn={signedIn}
-              fixture={storefront?.source === 'fixture'}
-              occurrenceId={preorder.selected?.id}
-              availability={preorder.availability}
-              preview={!!Astro.locals.editorPreview}
-              client:load
-            />
-          ) : (
-            <ProductPurchase
-              slot="purchase"
-              priceTarget="product-current-price"
-              priceFallback={priceLabel(product.variants)}
-              initialVariantId={
-                Astro.url.searchParams.get('variant') ?? undefined
-              }
-              storefrontId={storefront?.storefrontId ?? ''}
-              variants={product.variants}
-              signedIn={signedIn}
-              fixture={storefront?.source === 'fixture'}
-              occurrenceId={preorder.selected?.id}
-              availability={preorder.availability}
-              preview={!!Astro.locals.editorPreview}
-              client:load
-            />
-          )}
-          <Fragment slot="information">
-            {premium ? (
-              <PremiumInformation info={info} preorder={preorder} />
-            ) : (
-              <ProductInformation info={info} preorder={preorder} />
-            )}
-          </Fragment>
-        </Layout>
+          <ProductPurchase
+            slot="purchase"
+            priceTarget="product-current-price"
+            priceFallback={priceLabel(product.variants)}
+            initialVariantId={
+              Astro.url.searchParams.get('variant') ?? undefined
+            }
+            storefrontId={storefront?.storefrontId ?? ''}
+            variants={product.variants}
+            signedIn={signedIn}
+            fixture={storefront?.source === 'fixture'}
+            occurrenceId={preorder.selected?.id}
+            availability={preorder.availability}
+            preview={!!Astro.locals.editorPreview}
+            client:load
+          />
+          <ProductInformation
+            slot="information"
+            info={info}
+            preorder={preorder}
+          />
+        </ProductLayout>
         {related.length > 0 &&
           storefront?.appearance?.vendor?.relatedEnabled !== false && (
-            <section
-              class:list={['product-related', premium && 'farmhouse-refined']}
-              data-editor-section="related"
-            >
+            <section class="product-related" data-editor-section="related">
               <h2 data-storefront-text="relatedHeading">
                 {storefrontText(storefront?.appearance, 'relatedHeading')}
               </h2>
-              <Cards
+              <ProductCards
                 theme={storefront?.appearance?.theme}
                 items={related}
-                featured={premium}
                 storefrontId={storefront?.storefrontId}
                 shop
                 occurrenceId={preorder.selected?.id}

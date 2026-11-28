@@ -1,24 +1,11 @@
 ---
 import VendorTermsLink from '../VendorTermsLink.astro';
-import { vendorCategoryNavigation } from '../../lib/storefront-taxonomy';
 import type { StorefrontContext } from '@market/storefront-core';
 import { contactDetails, contactHref } from '@market/theme/storefront';
 import { farmhouseLinks } from './navigation';
 const { context } = Astro.props as { context: StorefrontContext };
 const links = farmhouseLinks(context);
-const site = [
-  { href: '/products', label: 'Shop' },
-  { href: '/about', label: 'Our Story' },
-  { href: '/find-us', label: 'Find Us' },
-  { href: '/contact', label: 'Contact' },
-  { href: '/faq', label: 'FAQ' },
-].filter((link) => links.some((enabled) => enabled.href === link.href));
-let categories: Array<{ id: string; name: string }> = [];
-try {
-  categories = await vendorCategoryNavigation(Astro);
-} catch {
-  /* Catalog failure must not hide page navigation. */
-}
+const has = (href: string) => links.some((enabled) => enabled.href === href);
 const details = context.appearance?.contact?.enabled
   ? contactDetails(context.appearance.contact)
   : undefined;
@@ -49,26 +36,20 @@ const details = context.appearance?.contact?.enabled
               ),
           )}
       </div>
+      {/* The market footer's columns: Site (Visit on a market) and About. */}
       <nav aria-label="Site">
         <h2>Site</h2>
-        {site.map((link) => (
-          <a href={link.href}>{link.label}</a>
-        ))}
+        <a href="/products">Shop</a>
+        {has('/find-us') && <a href="/find-us">Find Us</a>}
       </nav>
-      <nav aria-label="Products">
-        <h2>Products</h2>
-        {categories.map((category) => (
-          <a href={'/products?category=' + encodeURIComponent(category.id)}>
-            {category.name}
-          </a>
-        ))}
-      </nav>
-      <nav aria-label="Legal">
-        <h2>Legal</h2>
-        {links.some((link) => link.href === '/policies') && (
-          <a href="/policies">Policies</a>
-        )}
+      <nav aria-label="About">
+        <h2>About</h2>
+        {has('/about') && <a href="/about">Our Story</a>}
+        {has('/faq') && <a href="/faq">FAQ</a>}
         <VendorTermsLink context={context} />
+        {has('/policies') && <a href="/policies">Policies</a>}
+        {has('/contact') && <a href="/contact">Contact</a>}
+        <a href="/account">Your account</a>
       </nav>
     </div>
     <div class="farmhouse-colophon">
@@ -76,7 +57,6 @@ const details = context.appearance?.contact?.enabled
         © {new Date().getFullYear()} {context.name}
       </span>
       <span>Powered by Market platform</span>
-      <a href="/account">Your account</a>
     </div>
   </div>
 </footer>

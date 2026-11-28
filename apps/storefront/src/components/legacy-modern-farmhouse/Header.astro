@@ -53,6 +53,13 @@ const active = (href: string) =>
     ))}
   </nav>
   <div class="mf-header-actions">
+    {context.source === 'backend' && !Astro.locals.editorPreview ? (
+      <VendorCartLink storefrontId={context.storefrontId ?? ''} client:load />
+    ) : (
+      <Button href="/cart" variant="secondary">
+        Cart
+      </Button>
+    )}
     <Button
       href="/account"
       variant="tertiary"
@@ -61,13 +68,6 @@ const active = (href: string) =>
     >
       <UtilityIcon name="user" />
     </Button>
-    {context.source === 'backend' && !Astro.locals.editorPreview ? (
-      <VendorCartLink storefrontId={context.storefrontId ?? ''} client:load />
-    ) : (
-      <Button href="/cart" variant="secondary">
-        Cart
-      </Button>
-    )}
     <details class="mf-mobile-menu">
       <summary aria-label="Open navigation menu">
         <UtilityIcon name="menu" />

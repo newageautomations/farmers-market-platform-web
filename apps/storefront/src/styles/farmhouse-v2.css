@@ -2413,3 +2413,16 @@ html[data-scroll-fade='true'] [data-fade-pending] {
 .farmhouse-success .checkout-account-invitation p:first-child {
   font-size: 1.5rem;
 }
+
+/* Header bag: the item count sits on the bag's corner. */
+.farmhouse-site .farmhouse-tools .farmhouse-cart-link {
+  position: relative;
+}
+.farmhouse-site .farmhouse-cart-link .harvest-cart-count {
+  top: -0.25rem;
+  right: -0.45rem;
+  background: var(--farmhouse-ink);
+  color: var(--brand-surface);
+  font-size: 0.65rem;
+  font-weight: 700;
+}

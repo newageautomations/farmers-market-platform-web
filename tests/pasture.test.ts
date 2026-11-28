@@ -120,7 +120,7 @@ describe('Pasture market theme', () => {
 });
 
 describe('Pasture page structure', () => {
-  it('opts into the page structure rules; Meadow and Hearth share them, other themes keep the historical behaviour', () => {
+  it('opts into the page structure rules; every market theme shares them, other themes keep the historical behaviour', () => {
     const rules = themePageStructure('pasture', 'MARKET');
     expect(rules.lockedTopPages).toEqual(['vendors', 'applications']);
     expect(rules.footerOnlyPages).toEqual([
@@ -131,12 +131,20 @@ describe('Pasture page structure', () => {
     expect(rules.shopPagination).toBe('numbered');
     expect(themePageStructure('meadow', 'MARKET')).toEqual(rules);
     expect(themePageStructure('hearth', 'MARKET')).toEqual(rules);
-    expect(themePageStructure('harvest', 'MARKET').headingOnlyPages).toEqual(
-      [],
-    );
-    expect(themePageStructure('harvest', 'MARKET').marketContactForm).toBe(
-      false,
-    );
+    // Market Harvest and market Editorial Market are market themes of their
+    // own and follow the same market standard.
+    for (const theme of ['harvest', 'editorial-market'])
+      expect(themePageStructure(theme, 'MARKET')).toEqual({
+        ...rules,
+        marketDayBoothCards: false,
+      });
+    expect(rules.conciseCommerce).toBe(true);
+    expect(
+      themePageStructure('modern-farmhouse', 'MARKET').headingOnlyPages,
+    ).toEqual([]);
+    expect(
+      themePageStructure('modern-farmhouse', 'MARKET').marketContactForm,
+    ).toBe(false);
   });
 
   it('opens Policies with its own heading, ignoring a saved page hero', () => {
@@ -321,11 +329,15 @@ describe('Pasture section spacing, shop and starter text', () => {
     expect(themePageStructure('meadow', 'MARKET').marketDayBoothCards).toBe(
       true,
     );
+    // Booth cards need theme styling, which market Harvest does not have yet.
     expect(themePageStructure('harvest', 'MARKET').marketDayBoothCards).toBe(
       false,
     );
+    expect(themePageStructure('harvest', 'VENDOR').marketDayBoothCards).toBe(
+      false,
+    );
     expect(
-      themePageStructure('harvest', 'MARKET').sectionSpaceDefault,
+      themePageStructure('modern-farmhouse', 'MARKET').sectionSpaceDefault,
     ).toBeNull();
   });
 

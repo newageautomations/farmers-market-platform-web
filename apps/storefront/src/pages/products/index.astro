@@ -1,15 +1,14 @@
 ---
 import HarvestShop from '../../components/home/HarvestShop.astro';
 import WebsitePageRegion from '../../components/WebsitePageRegion.astro';
-import TaxonomyFilters from '../../components/TaxonomyFilters.astro';
 import { vendorTaxonomy } from '../../lib/storefront-taxonomy';
 import {
   availableTaxonomy,
   taxonomyFilters,
   taxonomyNavigation,
 } from '@market/storefront-core';
-import PremiumShop from '../../components/modern-farmhouse/Shop.astro';
-import EditorialShop from '../../components/editorial-market/Shop.astro';
+import FarmhouseShopHero from '../../components/modern-farmhouse/ShopHero.astro';
+import EditorialShopHero from '../../components/editorial-market/ShopHero.astro';
 import { isEditorialMarket, isFarmhouse } from '@market/theme/storefront';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { requestShop } from '../../lib/shop';
@@ -26,6 +25,9 @@ const { storefront, storefrontError } = Astro.locals;
 if (storefront?.kind === 'MARKET')
   return Astro.redirect('/shop' + Astro.url.search, 302);
 Astro.response.headers.set('Cache-Control', 'private, no-store');
+// The shop's filters ask for only the results block when a category, the
+// sort or the page changes, as the market shop does.
+const resultsOnly = Astro.request.headers.get('x-market-shop-results') === '1';
 let error = storefrontError,
   items: PublicCatalog['items'] = [],
   page = 1;
@@ -179,99 +181,68 @@ const link = (next: {
 if (error)
   Astro.response.status =
     error.kind === 'not-found' ? 404 : error.kind === 'validation' ? 400 : 503;
+const ShopLayout = resultsOnly ? Fragment : SiteLayout;
+const layoutProps = resultsOnly
+  ? {}
+  : {
+      context: storefront,
+      path: '/products',
+      title: 'Shop',
+      imageHero: !error && isFarmhouse(storefront?.appearance),
+      noindex: !!error || !items.length,
+    };
+const pageChrome = !resultsOnly;
 ---
 
-<SiteLayout
-  context={storefront}
-  path="/products"
-  title="Shop"
-  imageHero={!error && isFarmhouse(storefront?.appearance)}
-  noindex={!!error || !items.length}
->
-  {storefront?.kind === 'VENDOR' &&
+<ShopLayout {...layoutProps}>
+  {pageChrome &&
+    storefront?.kind === 'VENDOR' &&
     (error ||
       (!isFarmhouse(storefront.appearance) &&
         !isEditorialMarket(storefront.appearance))) && (
       <WebsitePageRegion context={storefront} page="products" region="before" />
     )}
-  {storefront && isFarmhouse(storefront.appearance) && !error ? (
-    <PremiumShop
-      context={storefront}
-      categories={categories}
-      category={category}
-      sort={sort}
-      page={page}
-      visible={visible}
-      total={filtered.length}
-      preorder={preorder}
-      link={link}
-      preview={!!Astro.locals.editorPreview}
-    >
-      <WebsitePageRegion
-        slot="editorial"
-        context={storefront}
-        page="products"
-        region="before"
-      />
-      {taxonomy && (
-        <TaxonomyFilters
-          taxonomy={taxonomy.taxonomy}
-          settings={storefront.appearance?.categoryPresentation}
-          query={Astro.url.searchParams}
-        />
-      )}
-    </PremiumShop>
-  ) : storefront && isEditorialMarket(storefront.appearance) && !error ? (
-    <EditorialShop
-      context={storefront}
-      categories={categories}
-      category={category}
-      search={search}
-      sort={sort}
-      availabilityFilter={availabilityFilter}
-      page={page}
-      visible={visible}
-      total={filtered.length}
-      skip={skip}
-      occurrences={preorder.occurrences}
-      selectedId={selected?.id}
-      storefrontId={storefront.storefrontId}
-      availability={preorder.availability}
-      unavailable={preorder.unavailable}
-      preview={!!Astro.locals.editorPreview}
-      link={link}
-    >
-      <WebsitePageRegion
-        slot="editorial"
-        context={storefront}
-        page="products"
-        region="before"
-      />
-      {taxonomy && (
-        <TaxonomyFilters
-          taxonomy={taxonomy.taxonomy}
-          settings={storefront.appearance?.categoryPresentation}
-          query={Astro.url.searchParams}
-        />
-      )}
-    </EditorialShop>
-  ) : (
-    <HarvestShop
-      context={storefront}
-      error={error}
-      items={items}
-      visible={visible}
-      total={filtered.length}
-      page={page}
-      sort={sort}
-      category={category}
-      search={search}
-      categories={categories}
-      taxonomy={taxonomy?.taxonomy}
-      query={Astro.url.searchParams}
-      preorder={preorder}
-      link={link}
-      preview={!!Astro.locals.editorPreview}
-    />
+  {/* Every vendor theme shows the market storefront's shop: the shared
+      HarvestShop. Editorial Market and Modern Farmhouse keep their own shop
+      hero and editable heading above it. */}
+  {pageChrome && storefront && isFarmhouse(storefront.appearance) && !error && (
+    <FarmhouseShopHero context={storefront} visible={visible} />
   )}
-</SiteLayout>
+  {pageChrome &&
+    storefront &&
+    isEditorialMarket(storefront.appearance) &&
+    !error && (
+      <EditorialShopHero settings={storefront.appearance.template.settings} />
+    )}
+  {pageChrome &&
+    storefront?.kind === 'VENDOR' &&
+    !error &&
+    (isFarmhouse(storefront.appearance) ||
+      isEditorialMarket(storefront.appearance)) && (
+      <WebsitePageRegion context={storefront} page="products" region="before" />
+    )}
+  <HarvestShop
+    context={storefront}
+    error={error}
+    items={items}
+    visible={visible}
+    total={filtered.length}
+    page={page}
+    sort={sort}
+    category={category}
+    search={search}
+    categories={categories}
+    taxonomy={taxonomy?.taxonomy}
+    query={Astro.url.searchParams}
+    preorder={preorder}
+    link={link}
+    preview={!!Astro.locals.editorPreview}
+    resultsOnly={resultsOnly}
+    themeHero={
+      !!storefront &&
+      !error &&
+      (isFarmhouse(storefront.appearance) ||
+        isEditorialMarket(storefront.appearance))
+    }
+  />
+</ShopLayout>

@@ -1,0 +1,756 @@
+/*
+ * Harvest on market websites. Market Harvest is its own theme, separate from
+ * the vendor Harvest theme: this file is linked only for a market website on
+ * Harvest (SiteLayout), everything is scoped under `.market-harvest-site`, and
+ * the theme's own markup uses the `mh-` prefix. The shared Harvest base
+ * (homepage.css, harvest-sections.css, market-website.css) still supplies the
+ * Harvest look; this file brings it to the market storefront standard
+ * (docs/market-storefronts/): the same content column, shop, product, cart and
+ * checkout measurements as Pasture, Meadow and Hearth, in Harvest's colors.
+ */
+
+/* ------------------------------------------------------------------ tokens */
+.market-harvest-site {
+  --mh-gutter: clamp(1rem, 4vw, 2.75rem);
+  --mh-max: 1220px;
+  --mh-wrap: min(100% - 2 * var(--mh-gutter), var(--mh-max));
+  --mh-primary: var(--brand-primary);
+  --mh-primary-deep: color-mix(in srgb, var(--brand-primary), black 22%);
+  --mh-primary-soft: color-mix(in srgb, var(--brand-primary) 12%, white);
+  --mh-surface: var(--brand-surface);
+  --mh-ink: var(--brand-foreground);
+  --mh-muted: var(--brand-muted);
+  --mh-accent-soft: color-mix(in srgb, var(--brand-accent) 22%, white);
+  --mh-line: color-mix(in srgb, var(--brand-primary) 18%, transparent);
+  --mh-edge: 1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent);
+  --mh-radius: 16px;
+  --mh-shade: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+  --mh-stack: 0 10px 24px -16px var(--mh-shade);
+  --mh-stack-lift: 0 20px 34px -18px var(--mh-shade);
+  --mh-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 4.5 4.5L19 7'/%3E%3C/svg%3E");
+  --mh-icon-x: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+  --mh-icon-dash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
+}
+
+/* ------------------------------------------------------------------- shell */
+/* The content column matches the other market themes (1220px between
+   gutters). Full-width section backgrounds still run edge to edge. */
+.market-harvest-site.harvest-home.container {
+  width: var(--mh-wrap);
+}
+.market-harvest-site :is(section.website-section, section.harvest-library) {
+  margin-block: var(--website-space-block, 32px);
+}
+
+/* ------------------------------------------------------------------ footer */
+.market-harvest-site .mh-footer {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+.market-harvest-site .mh-footer-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(9rem, auto));
+  gap: 2.5rem;
+}
+.market-harvest-site .mh-footer-nav > div {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+}
+.market-harvest-site .mh-footer-nav h2 {
+  margin: 0 0 0.25rem;
+  color: var(--mh-muted);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.market-harvest-site .mh-footer-nav a {
+  color: var(--mh-ink);
+  font-size: 0.95rem;
+}
+.market-harvest-site .mh-footer > .harvest-footer-bottom {
+  grid-column: 1 / -1;
+}
+@media (max-width: 700px) {
+  .market-harvest-site .mh-footer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .market-harvest-site .mh-footer-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+/* -------------------------------------------------------------------- shop */
+.market-harvest-site .vendor-shop {
+  grid-template-columns: minmax(190px, 230px) minmax(0, 1fr);
+}
+.market-harvest-site .shop-categories.ui-card {
+  position: sticky;
+  top: 1.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.market-harvest-site .shop-categories h2 {
+  margin: 0 0 0.8rem;
+  padding-bottom: 0.6rem;
+  border-bottom: var(--mh-edge);
+  color: var(--mh-muted);
+  font: 700 0.9rem / 1.2 var(--font-body);
+  letter-spacing: 0.01em;
+}
+.market-harvest-site .shop-category-filters {
+  gap: 0.5rem;
+}
+.market-harvest-site .shop-categories .shop-category-option {
+  position: relative;
+  box-sizing: border-box;
+  gap: 0.45rem;
+  min-height: 2.6rem;
+  padding: 0.45rem 0.85rem 0.45rem 0.55rem;
+  border: var(--mh-edge);
+  border-radius: 12px;
+  background: var(--mh-surface);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.market-harvest-site .shop-category-option > span:not(.sr-only) {
+  text-box: trim-both cap alphabetic;
+}
+.market-harvest-site .shop-category-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.market-harvest-site .shop-category-option:hover {
+  background: var(--mh-primary-soft);
+  box-shadow: 0 6px 12px -4px var(--mh-shade);
+  transform: translateY(-2px);
+}
+.market-harvest-site .shop-category-option:active {
+  box-shadow: 0 0 0 transparent;
+  transform: translateY(1px);
+}
+.market-harvest-site .shop-category-option:has(input:checked) {
+  background: var(--mh-primary);
+  color: var(--brand-on-primary, #fff);
+}
+/* Every option keeps an icon slot so choosing one never re-wraps its text. */
+.market-harvest-site .shop-category-option::before {
+  content: '';
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  background: var(--mh-muted);
+  opacity: 0.55;
+  -webkit-mask: var(--mh-icon-x) center / 0.7rem no-repeat;
+  mask: var(--mh-icon-x) center / 0.7rem no-repeat;
+}
+.market-harvest-site .shop-category-option:has(input:checked)::before {
+  background: currentColor;
+  opacity: 1;
+  -webkit-mask: var(--mh-icon-check) center / contain no-repeat;
+  mask: var(--mh-icon-check) center / contain no-repeat;
+}
+.market-harvest-site
+  .market-shop-category-group:has(.ui-disclosure-content input:checked)
+  > .market-shop-category-parent:not(:has(input:checked))::before {
+  background: var(--mh-primary);
+  opacity: 1;
+  -webkit-mask: var(--mh-icon-dash) center / contain no-repeat;
+  mask: var(--mh-icon-dash) center / contain no-repeat;
+}
+.market-harvest-site .shop-category-option:has(input:focus-visible) {
+  outline: 3px solid var(--mh-primary-deep);
+  outline-offset: 3px;
+}
+.market-harvest-site .market-shop-filters > .market-shop-filter-modes {
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.9rem;
+  border-bottom: var(--mh-edge);
+}
+.market-harvest-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button {
+  --button-fill: var(--mh-surface);
+  --button-ink: var(--mh-ink);
+  --button-edge: var(--mh-primary);
+  --button-hover-fill: var(--mh-primary-soft);
+  --button-hover-ink: var(--mh-ink);
+  --button-hover-edge: var(--mh-primary);
+  flex: 1 1 auto;
+  justify-content: center;
+  min-height: 40px;
+  padding-inline: 0.6rem;
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+.market-harvest-site
+  .market-shop-filters
+  > .market-shop-filter-modes
+  > .button.ui-button[aria-current='page'] {
+  --button-fill: var(--mh-primary);
+  --button-ink: var(--brand-on-primary, #fff);
+  --button-hover-fill: var(--mh-primary-deep);
+  --button-hover-ink: var(--brand-on-primary, #fff);
+}
+.market-harvest-site .market-shop-filter-form {
+  gap: 0.5rem;
+}
+.market-harvest-site .market-shop-category-group {
+  --market-shop-row-height: 2.4rem;
+  --market-shop-toggle-width: 2.4rem;
+  column-gap: 0.4rem;
+}
+.market-harvest-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary {
+  border: var(--mh-edge);
+  border-radius: 12px;
+  background: var(--mh-surface);
+  color: var(--mh-ink);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.market-harvest-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary:hover {
+  background: var(--mh-primary-soft);
+  box-shadow: 0 6px 12px -4px var(--mh-shade);
+  transform: translateY(-2px);
+}
+.market-harvest-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > summary:focus-visible {
+  outline: 3px solid var(--mh-primary-deep);
+  outline-offset: 3px;
+}
+.market-harvest-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure[open]
+  > summary {
+  background: var(--mh-primary-soft);
+}
+.market-harvest-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  > .ui-disclosure-content {
+  margin-block-start: 0.4rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+  border: 0;
+  border-left: 3px solid var(--mh-primary);
+  border-radius: 0 4px 4px 0;
+  background: color-mix(in srgb, var(--mh-primary-soft) 55%, transparent);
+}
+.market-harvest-site
+  .market-shop-category-group
+  > .market-shop-category-disclosure
+  .shop-category-option {
+  padding-right: 0.7rem;
+  font-size: 0.84rem;
+}
+.market-harvest-site .market-shop-filter-form .button.ui-button[hidden] {
+  display: none;
+}
+.market-harvest-site .shop-catalog-controls {
+  align-items: center;
+  margin-bottom: 1.4rem;
+  padding-bottom: 1rem;
+  border-bottom: var(--mh-edge);
+}
+.market-harvest-site .shop-catalog-heading {
+  align-items: center;
+}
+.market-harvest-site .shop-catalog-heading h1 {
+  font-size: clamp(1.8rem, 3.4vw, 2.5rem);
+  letter-spacing: -0.02em;
+}
+.market-harvest-site .shop-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: auto;
+}
+.market-harvest-site .shop-sort label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Product cards (shared ProductCards): the market standard's measurements. */
+.market-harvest-site .shop-products.catalog-grid {
+  gap: 1.25rem;
+}
+.market-harvest-site .harvest-products .product-card.ui-card {
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.7rem 0.7rem 0.95rem;
+  border: var(--mh-edge);
+  border-radius: var(--mh-radius);
+  background: var(--mh-surface);
+  box-shadow: var(--mh-stack);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.market-harvest-site .harvest-products .product-card.ui-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--mh-stack-lift);
+}
+.market-harvest-site .harvest-products .product-image-contents {
+  display: block;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--mh-primary-soft);
+}
+.market-harvest-site .harvest-products .product-media {
+  display: block;
+  width: 100%;
+  margin: 0;
+  aspect-ratio: 1;
+  border-radius: 0;
+  object-fit: cover;
+  transition: transform 500ms ease;
+}
+.market-harvest-site .harvest-products .product-card:hover .product-media {
+  transform: scale(1.05);
+}
+.market-harvest-site .harvest-products :is(h2, h3) {
+  margin: 0;
+  padding-inline: 0.25rem;
+  font: 600 1.1rem / 1.25 var(--font-heading);
+}
+.market-harvest-site .harvest-products .product-card > p {
+  margin: 0;
+  padding-inline: 0.25rem;
+}
+.market-harvest-site .harvest-products .product-card > .product-seller {
+  color: var(--mh-primary);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+.market-harvest-site .harvest-products .product-card > p:not([class]) {
+  margin-top: 0.25rem;
+  color: var(--mh-ink);
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.market-harvest-site .harvest-products .shop-availability {
+  margin-bottom: 0.7rem;
+  color: var(--mh-muted);
+  font-size: 0.8rem;
+}
+.market-harvest-site .harvest-products .featured-purchase .button.ui-button {
+  width: 100%;
+  min-height: 40px;
+}
+
+/* ----------------------------------------------------------------- product */
+.market-harvest-site .vendor-product .product-gallery > .product-media {
+  border-radius: var(--mh-radius);
+  background: var(--mh-primary-soft);
+  box-shadow: 0 14px 28px -12px var(--mh-shade);
+}
+.market-harvest-site .product-thumbnails .ui-button {
+  padding: 3px;
+  border-radius: 12px;
+}
+.market-harvest-site .product-thumbnails .ui-button img {
+  border-radius: 8px;
+}
+.market-harvest-site .product-thumbnails [aria-pressed='true'] {
+  outline: 3px solid var(--mh-primary-deep);
+  outline-offset: 2px;
+}
+.market-harvest-site .vendor-product h1 {
+  margin: 0.9rem 0 1rem;
+  font-size: clamp(2.1rem, 4vw, 3.2rem);
+  letter-spacing: -0.02em;
+}
+.market-harvest-site .market-product-vendor {
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  padding: 0.3rem 0.9rem 0.3rem 0.3rem;
+  border: var(--mh-edge);
+  border-radius: var(--mh-radius);
+  background: var(--mh-surface);
+  box-shadow: 0 6px 12px -6px var(--mh-shade);
+  color: var(--mh-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.market-harvest-site .market-product-vendor:is(:hover, :focus-visible) {
+  box-shadow: 0 10px 20px -8px var(--mh-shade);
+}
+.market-harvest-site
+  .market-product-vendor
+  :is(.market-vendor-image, .harvest-vendor-symbol) {
+  width: 2.4rem;
+  height: 2.4rem;
+  flex-basis: 2.4rem;
+  border-radius: 12px;
+}
+.market-harvest-site .vendor-product .product-price {
+  color: var(--mh-primary);
+  font: 700 1.9rem / 1.2 var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+.market-harvest-site .vendor-product .purchase-form {
+  padding: 1.25rem;
+  border: var(--mh-edge);
+  border-radius: var(--mh-radius);
+  background: var(--mh-surface);
+  box-shadow: var(--mh-stack);
+}
+.market-harvest-site .vendor-product .purchase-form > .button.ui-button {
+  width: 100%;
+  min-height: 54px;
+}
+.market-harvest-site .vendor-product .purchase-form > p:empty {
+  display: none;
+}
+.market-harvest-site .product-information .ui-disclosure {
+  --ui-disclosure-border-width: 0;
+  overflow: hidden;
+  border: var(--mh-edge);
+  border-radius: var(--mh-radius);
+  background: var(--mh-surface);
+}
+.market-harvest-site .product-information .ui-disclosure > summary {
+  transition:
+    background-color 160ms ease,
+    padding-left 220ms ease;
+}
+.market-harvest-site .product-information .ui-disclosure > summary:hover {
+  background: var(--mh-primary-soft);
+  padding-left: 1.35rem;
+}
+
+/* -------------------------------------------------------------------- cart */
+.market-harvest-site .vendor-cart-group {
+  margin-bottom: 1.25rem;
+  padding: 1.1rem 1.25rem 0.25rem;
+  border: var(--mh-edge);
+  border-radius: var(--mh-radius);
+  background: var(--mh-surface);
+  box-shadow: var(--mh-stack);
+}
+.market-harvest-site .vendor-cart-group > h2 {
+  margin: 0 0 0.25rem;
+  padding: 0 0 0.7rem;
+  border: 0;
+  border-bottom: var(--mh-edge);
+  font-size: 1.2rem;
+}
+.market-harvest-site .vendor-cart-line {
+  border-top: var(--mh-edge);
+  padding-block: 1.1rem;
+}
+.market-harvest-site .vendor-cart-line:first-child {
+  border-top: 0;
+}
+.market-harvest-site .vendor-cart-image {
+  border-radius: 12px;
+  background: var(--mh-primary-soft);
+}
+.market-harvest-site .vendor-cart-summary.ui-card {
+  position: sticky;
+  top: 1.5rem;
+  border: var(--mh-edge);
+  border-radius: var(--mh-radius);
+  background: var(--mh-surface);
+  box-shadow: var(--mh-stack);
+}
+.market-harvest-site .vendor-cart-summary dd,
+.market-harvest-site .checkout-totals dd {
+  margin: 0;
+  align-self: center;
+}
+.market-harvest-site .vendor-cart-summary .button.ui-button:not(.secondary) {
+  min-height: 54px;
+}
+
+/* ---------------------------------------------------------------- checkout */
+/* Numbered step chips: the current step is filled with the leading color, and
+   completed steps are buttons back to that stage that lift on hover. */
+.market-harvest-site nav[aria-label='Checkout progress'] {
+  margin-bottom: 1.4rem;
+}
+.market-harvest-site .checkout-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  border: 0;
+  counter-reset: mh-step;
+  list-style: none;
+}
+.market-harvest-site .checkout-progress li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.8rem 0.35rem 0.35rem;
+  border: var(--mh-edge);
+  border-radius: 12px;
+  background: var(--mh-surface);
+  color: var(--mh-muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  counter-increment: mh-step;
+}
+.market-harvest-site .checkout-progress li::before {
+  content: counter(mh-step);
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 8px;
+  background: var(--mh-primary-soft);
+  color: var(--mh-primary-deep);
+  font-size: 0.8rem;
+  letter-spacing: 0;
+}
+.market-harvest-site .checkout-progress li[aria-current='step'] {
+  border-color: var(--mh-primary);
+  background: var(--mh-primary);
+  color: var(--brand-on-primary, #fff);
+}
+.market-harvest-site .checkout-progress li[aria-current='step']::before {
+  background: var(--mh-surface);
+  color: var(--mh-primary-deep);
+}
+.market-harvest-site .checkout-progress li:has(.checkout-progress-step) {
+  position: relative;
+  color: var(--mh-ink);
+  transition:
+    background-color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.market-harvest-site .checkout-progress-step {
+  text-decoration: none;
+}
+.market-harvest-site .checkout-progress-step::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.market-harvest-site .checkout-progress li:has(.checkout-progress-step:hover) {
+  background: var(--mh-primary-soft);
+  box-shadow: 0 6px 12px -4px var(--mh-shade);
+  transform: translateY(-2px);
+}
+.market-harvest-site .checkout-progress li:has(.checkout-progress-step:active) {
+  box-shadow: 0 0 0 transparent;
+  transform: translateY(1px);
+}
+.market-harvest-site
+  .checkout-progress
+  li:has(.checkout-progress-step:focus-visible) {
+  outline: 3px solid var(--mh-primary-deep);
+  outline-offset: 3px;
+}
+.market-harvest-site .checkout-progress-step:focus-visible {
+  outline: 0;
+}
+.market-harvest-site .checkout-section {
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  border: var(--mh-edge);
+  border-radius: var(--mh-radius);
+  background: var(--mh-surface);
+  box-shadow: var(--mh-stack);
+}
+.market-harvest-site .checkout-section > h2 {
+  margin-top: 0;
+  font-size: 1.4rem;
+}
+.market-harvest-site .vendor-checkout .checkout-order-summary {
+  overflow: hidden;
+  border: var(--mh-edge);
+  border-radius: var(--mh-radius);
+  background: var(--mh-surface);
+  box-shadow: var(--mh-stack);
+}
+.market-harvest-site .checkout-order-summary > .ui-disclosure {
+  --ui-disclosure-border-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.market-harvest-site .checkout-stage-actions {
+  align-items: center;
+}
+.market-harvest-site .checkout-stage-actions .button.ui-button:not(.secondary),
+.market-harvest-site .checkout-section > .button.ui-button:not(.secondary) {
+  padding-inline: 1.6rem;
+}
+/* Each vendor's pickup choices are their own card. Each choice lifts on hover
+   and the chosen one is tinted with a bar in the leading color. */
+.market-harvest-site .market-checkout fieldset {
+  min-width: 0;
+  margin: 0 0 1.25rem;
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  border: var(--mh-edge);
+  border-radius: var(--mh-radius);
+  background: var(--mh-surface);
+  box-shadow: var(--mh-stack);
+}
+.market-harvest-site .market-checkout fieldset > legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 0.85rem;
+  padding: 0 0 0.7rem;
+  border-bottom: var(--mh-edge);
+  color: var(--mh-ink);
+  font: 600 1.4rem / 1.15 var(--font-heading);
+}
+.market-harvest-site .market-checkout fieldset > legend + * {
+  clear: both;
+}
+.market-harvest-site .market-checkout .pickup-choice {
+  position: relative;
+  gap: 0.7rem;
+  margin: 0 0 0.6rem;
+  padding: 0.8rem 1rem;
+  border: var(--mh-edge);
+  border-radius: 12px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.market-harvest-site .market-checkout .pickup-choice:last-child {
+  margin-bottom: 0;
+}
+.market-harvest-site .market-checkout .pickup-choice input[type='radio'] {
+  accent-color: var(--mh-primary);
+  cursor: pointer;
+}
+.market-harvest-site .market-checkout .pickup-choice:hover {
+  background: var(--mh-primary-soft);
+  box-shadow: 0 6px 12px -4px var(--mh-shade);
+  transform: translateY(-2px);
+}
+.market-harvest-site .market-checkout .pickup-choice:active {
+  box-shadow: 0 0 0 transparent;
+  transform: translateY(1px);
+}
+.market-harvest-site .market-checkout .pickup-choice:has(input:checked) {
+  background: var(--mh-primary-soft);
+  box-shadow: inset 4px 0 0 var(--mh-primary);
+}
+.market-harvest-site .market-checkout .pickup-choice:has(input:checked):hover {
+  box-shadow:
+    inset 4px 0 0 var(--mh-primary),
+    0 6px 12px -4px var(--mh-shade);
+}
+.market-harvest-site .market-checkout .pickup-choice:has(input:focus-visible) {
+  outline: 3px solid var(--mh-primary-deep);
+  outline-offset: 3px;
+}
+.market-harvest-site .checkout-summary-product > span:not(:last-child) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+}
+.market-harvest-site .checkout-summary-quantity {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border: var(--mh-edge);
+  border-radius: 8px;
+  background: var(--mh-primary-soft);
+  color: var(--mh-muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------- vendors, applying */
+.market-harvest-site .market-date-selector {
+  padding: 0.9rem 1.1rem;
+  border: var(--mh-edge);
+  border-radius: var(--mh-radius);
+  background: var(--mh-surface);
+  box-shadow: var(--mh-stack);
+}
+
+/* ------------------------------------------------------------ contact form */
+/* The market form runs in two columns on wider screens; long answers span both. */
+.market-harvest-site .contact-fields-configured {
+  row-gap: 1.75rem;
+  column-gap: 1.25rem;
+}
+@media (min-width: 761px) {
+  .market-harvest-site .contact-fields-configured {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .market-harvest-site .contact-fields-configured > [data-wide] {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ----------------------------------------------------------- small screens */
+@media (max-width: 760px) {
+  .market-harvest-site .vendor-shop {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .market-harvest-site .shop-categories.ui-card,
+  .market-harvest-site .vendor-cart-summary.ui-card {
+    position: static;
+  }
+  .market-harvest-site .harvest-products .product-card.ui-card {
+    padding: 0.55rem 0.55rem 0.8rem;
+  }
+  .market-harvest-site .harvest-products :is(h2, h3) {
+    font-size: 1rem;
+  }
+}
+
+/* ------------------------------------------------------------------ motion */
+@media (prefers-reduced-motion: reduce) {
+  .market-harvest-site *,
+  .market-harvest-site ::before,
+  .market-harvest-site ::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+  .market-harvest-site .market-checkout .pickup-choice:is(:hover, :active),
+  .market-harvest-site
+    .checkout-progress
+    li:has(.checkout-progress-step:is(:hover, :active)),
+  .market-harvest-site .shop-category-option:is(:hover, :active),
+  .market-harvest-site .harvest-products .product-card.ui-card:hover {
+    transform: none;
+  }
+}

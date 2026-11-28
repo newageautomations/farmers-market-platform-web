@@ -1,4 +1,5 @@
 import { HarvestCartLine } from './HarvestCartLine';
+import { MarketCartTotals } from './CartTotals';
 import { VendorPreorderBanner } from './VendorPreorderBanner';
 import type { VendorPreorderState } from '../lib/vendor-preorder';
 import { buttonClassName } from '@market/ui/presentation';
@@ -9,7 +10,6 @@ import {
   type MarketCart as Cart,
   type MarketBootstrap,
 } from '@market/api';
-import { formatMoney } from '@market/config';
 import { occurrenceLabel } from '@market/storefront-core/market';
 import { shopCall } from './shop-client';
 import CheckoutLoyalty from './CheckoutLoyalty';
@@ -207,46 +207,7 @@ export function MarketCart({
                 {cart.totalQuantity}{' '}
                 {cart.totalQuantity === 1 ? 'item' : 'items'} for market pickup
               </p>
-              <dl>
-                <div>
-                  <dt>Subtotal including tax</dt>
-                  <dd>
-                    {formatMoney(cart.subTotalWithTax, cart.currencyCode)}
-                  </dd>
-                </div>
-                {cart.discounts.map((discount, i) => (
-                  <div key={`discount-${i}`}>
-                    <dt>{discount.description}</dt>
-                    <dd>
-                      {formatMoney(discount.amountWithTax, cart.currencyCode)}
-                    </dd>
-                  </div>
-                ))}
-                {cart.taxSummary.map((tax, i) => (
-                  <div key={`tax-${i}`}>
-                    <dt>{tax.description}</dt>
-                    <dd>{formatMoney(tax.taxTotal, cart.currencyCode)}</dd>
-                  </div>
-                ))}
-                {!!cart.shippingWithTax && (
-                  <div>
-                    <dt>Pickup fees</dt>
-                    <dd>
-                      {formatMoney(cart.shippingWithTax, cart.currencyCode)}
-                    </dd>
-                  </div>
-                )}
-                <div className="vendor-cart-total">
-                  <dt>Current total</dt>
-                  <dd data-cart-total>
-                    {formatMoney(cart.totalWithTax, cart.currencyCode)}
-                  </dd>
-                </div>
-              </dl>
-              <p className="vendor-cart-total-note">
-                Current order amounts include tax. Final taxes and pickup fees
-                are confirmed during checkout.
-              </p>
+              <MarketCartTotals cart={cart} />
               <p className="vendor-cart-pickup" data-cart-occurrence>
                 Pickup at {marketName}
                 <br />

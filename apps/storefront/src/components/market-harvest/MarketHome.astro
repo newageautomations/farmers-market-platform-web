@@ -1,6 +1,6 @@
 ---
-import EmptyState from './ui/EmptyState.astro';
-import Button from './ui/Button.astro';
+import EmptyState from '../ui/EmptyState.astro';
+import Button from '../ui/Button.astro';
 import { SectionHeader, ErrorState } from '@market/ui';
 import type { StorefrontContext } from '@market/storefront-core';
 import {
@@ -19,14 +19,14 @@ import type {
   MarketOccurrenceVendor,
   AppError,
 } from '@market/api';
-import HarvestHero from './home/HarvestHero.astro';
-import HarvestArtwork from './home/HarvestArtwork.astro';
-import WebsiteSections from './WebsiteSections.astro';
-import MarketDateList from './market/MarketDateList.astro';
-import MarketVendorCards from './market/MarketVendorCards.astro';
-import { marketPageAvailable } from '../lib/market-website';
-import '../styles/harvest-sections.css';
-import '../styles/market-website.css';
+import HarvestHero from '../home/HarvestHero.astro';
+import HarvestArtwork from '../home/HarvestArtwork.astro';
+import WebsiteSections from '../WebsiteSections.astro';
+import MarketDateList from '../market/MarketDateList.astro';
+import MarketVendorCards from '../market/MarketVendorCards.astro';
+import { marketPageAvailable } from '../../lib/market-website';
+import '../../styles/harvest-sections.css';
+import '../../styles/market-website.css';
 interface Props {
   context: StorefrontContext;
   occurrences: readonly PublicMarketOccurrence[];

@@ -1,6 +1,7 @@
 ---
 import type { StorefrontContext } from '@market/storefront-core';
 import { farmhouseLinks } from './navigation';
+import { MarketCartLink } from '../MarketCartLink';
 const { context, overlay = false } = Astro.props as {
   context: StorefrontContext;
   overlay?: boolean;
@@ -109,6 +110,43 @@ const links = farmhouseLinks(context).filter(
       </svg>
     </a>
     <div class="farmhouse-tools">
+      {/* The bag shows how many items are in the cart. */}
+      {context.source === 'backend' && !Astro.locals.editorPreview ? (
+        <MarketCartLink
+          storefrontId={context.storefrontId ?? ''}
+          className="farmhouse-cart-link"
+          client:load
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.4"
+            aria-hidden="true"
+          >
+            <path d="M4 7h16l1 14H3L4 7ZM8 7V5a4 4 0 0 1 8 0v2" />
+          </svg>
+        </MarketCartLink>
+      ) : (
+        <a href="/cart" class="farmhouse-cart-link" aria-label="Cart, 0 items">
+          <svg
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.4"
+            aria-hidden="true"
+          >
+            <path d="M4 7h16l1 14H3L4 7ZM8 7V5a4 4 0 0 1 8 0v2" />
+          </svg>
+          <span class="harvest-cart-count" aria-hidden="true">
+            0
+          </span>
+        </a>
+      )}
       <a href="/account" aria-label="Your account">
         <svg
           viewBox="0 0 24 24"
@@ -121,19 +159,6 @@ const links = farmhouseLinks(context).filter(
         >
           <circle cx="12" cy="7" r="3.5" />
           <path d="M4 21v-3a8 8 0 0 1 16 0v3Z" />
-        </svg>
-      </a>
-      <a href="/cart" aria-label="Your shopping bag">
-        <svg
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.4"
-          aria-hidden="true"
-        >
-          <path d="M4 7h16l1 14H3L4 7ZM8 7V5a4 4 0 0 1 8 0v2" />
         </svg>
       </a>
     </div>

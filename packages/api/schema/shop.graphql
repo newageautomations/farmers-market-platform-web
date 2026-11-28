@@ -4205,7 +4205,9 @@ type MarketCartLine {
   name: String!
   productName: String!
   quantity: Int!
+  unitPrice: Money!
   unitPriceWithTax: Money!
+  discountedLinePrice: Money!
   discountedLinePriceWithTax: Money!
   featuredAsset: MarketPublicAsset
 }
@@ -4658,6 +4660,9 @@ type CheckoutDisplayLine {
   name: String!
   quantity: Int!
   total: Int!
+
+  """The line after discounts, before tax. The order summary adds tax once."""
+  totalBeforeTax: Int!
 }
 
 type CheckoutPickupView {

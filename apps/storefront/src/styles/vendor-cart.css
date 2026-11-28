@@ -98,7 +98,10 @@
 .vendor-cart-controls .ui-input {
   min-height: 44px;
 }
-.vendor-cart .vendor-cart-quantity .ui-input {
+/* The product page's purchase form reuses the cart's quantity stepper. */
+:is(.vendor-cart, .purchase-form, .farmhouse-cart)
+  .vendor-cart-quantity
+  .ui-input {
   width: 4.25rem;
   padding-inline: 0.4rem;
   text-align: center;
@@ -109,7 +112,9 @@
   appearance: none;
   margin: 0;
 }
-.vendor-cart .vendor-cart-quantity .button.ui-button.vendor-cart-stepper {
+:is(.vendor-cart, .purchase-form, .farmhouse-cart)
+  .vendor-cart-quantity
+  .button.ui-button.vendor-cart-stepper {
   --button-hover-fill: var(--brand-surface);
   --button-hover-ink: var(--brand-primary);
   --button-hover-edge: var(--brand-primary);
@@ -188,4 +193,28 @@
 .vendor-cart-group > h2 {
   margin-block: 1.5rem 0.75rem;
   font-size: clamp(1.4rem, 2vw, 1.8rem);
+}
+
+/* Vendor storefront standard: the cart's groups and summary are cards, as on
+   the market storefronts. Colors come from each theme's brand tokens. */
+.vendor-site .vendor-cart-group {
+  margin-bottom: 1.25rem;
+  padding: 1.1rem 1.25rem 0.25rem;
+  border: var(--vs-edge);
+  border-radius: var(--storefront-card-radius, 16px);
+  background: var(--brand-surface);
+}
+.vendor-site .vendor-cart-line {
+  border-top: var(--vs-edge);
+  padding-block: 1.1rem;
+}
+.vendor-site .vendor-cart-line:first-child {
+  border-top: 0;
+}
+.vendor-site .vendor-cart-summary dd {
+  margin: 0;
+  align-self: center;
+}
+.vendor-site .vendor-cart-summary .button.ui-button:not(.secondary) {
+  min-height: 54px;
 }

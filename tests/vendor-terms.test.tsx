@@ -20,6 +20,8 @@ describe('vendor terms', () => {
       'hearth/Footer',
       'meadow/Footer',
       'pasture/Footer',
+      'market-harvest/Footer',
+      'market-editorial/Footer',
     ];
     for (const footer of themeFooters)
       expect(source(resolve(root, `${footer}.astro`))).toContain(

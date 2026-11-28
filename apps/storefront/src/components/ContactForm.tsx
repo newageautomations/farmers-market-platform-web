@@ -200,7 +200,9 @@ export function ContactForm({
     <form noValidate aria-label={`Contact the ${recipient}`} onSubmit={submit}>
       <fieldset
         disabled={busy || preview}
-        className={`contact-fields${fields ? ' contact-fields-configured' : ''}`}
+        // Vendor and market forms share the market form's layout: two columns
+        // on wide screens, with long answers spanning both.
+        className="contact-fields contact-fields-configured"
       >
         {fields ? (
           fields.map((field) => (
@@ -219,95 +221,107 @@ export function ContactForm({
           ))
         ) : (
           <>
-            <Field
-              id="contact-name"
-              label="Full name (required)"
-              error={errors['contact-name']}
-            >
-              <Input
-                {...props('contact-name')}
-                name="fullName"
-                required
-                maxLength={100}
-                autoComplete="name"
-                defaultValue={
-                  initial
-                    ? `${initial.firstName} ${initial.lastName}`.trim()
-                    : ''
-                }
-              />
-            </Field>
-            <Field
-              id="contact-email"
-              label="Email address (required)"
-              error={errors['contact-email']}
-            >
-              <Input
-                {...props('contact-email')}
-                name="email"
-                type="email"
-                required
-                maxLength={254}
-                autoComplete="email"
-                defaultValue={initial?.emailAddress ?? ''}
-              />
-            </Field>
-            <PhoneInput
-              id="contact-phone"
-              name="phone"
-              label="Phone number (optional)"
-              value={phone}
-              onChange={setPhone}
-              validationMode="blur"
-              showValidation={attempted}
-            />
-            <SelectField
-              id="contact-subject"
-              name="subject"
-              label="Subject (required)"
-              required
-              value={subject}
-              error={errors['contact-subject']}
-              onChange={(e) => setSubject(e.target.value)}
-              onBlur={(e) =>
-                setErrors((v) => ({
-                  ...v,
-                  'contact-subject': contactFieldError(e.target),
-                }))
-              }
-            >
-              <option value="">Choose a subject</option>
-              {contactSubjects.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </SelectField>
-            {subject === 'Existing Order' && (
+            <div className="contact-form-item">
               <Field
-                id="contact-order"
-                label="Order number (optional)"
-                error={errors['contact-order']}
+                id="contact-name"
+                label="Full name (required)"
+                error={errors['contact-name']}
               >
                 <Input
-                  {...props('contact-order')}
-                  name="orderNumber"
-                  maxLength={80}
-                  autoComplete="off"
+                  {...props('contact-name')}
+                  name="fullName"
+                  required
+                  maxLength={100}
+                  autoComplete="name"
+                  defaultValue={
+                    initial
+                      ? `${initial.firstName} ${initial.lastName}`.trim()
+                      : ''
+                  }
                 />
               </Field>
-            )}
-            <Field
-              id="contact-message"
-              label="Message (required)"
-              error={errors['contact-message']}
-            >
-              <Textarea
-                {...props('contact-message')}
-                name="message"
-                required
-                maxLength={5000}
-                rows={8}
+            </div>
+            <div className="contact-form-item">
+              <Field
+                id="contact-email"
+                label="Email address (required)"
+                error={errors['contact-email']}
+              >
+                <Input
+                  {...props('contact-email')}
+                  name="email"
+                  type="email"
+                  required
+                  maxLength={254}
+                  autoComplete="email"
+                  defaultValue={initial?.emailAddress ?? ''}
+                />
+              </Field>
+            </div>
+            <div className="contact-form-item">
+              <PhoneInput
+                id="contact-phone"
+                name="phone"
+                label="Phone number (optional)"
+                value={phone}
+                onChange={setPhone}
+                validationMode="blur"
+                showValidation={attempted}
               />
-            </Field>
+            </div>
+            <div className="contact-form-item">
+              <SelectField
+                id="contact-subject"
+                name="subject"
+                label="Subject (required)"
+                required
+                value={subject}
+                error={errors['contact-subject']}
+                onChange={(e) => setSubject(e.target.value)}
+                onBlur={(e) =>
+                  setErrors((v) => ({
+                    ...v,
+                    'contact-subject': contactFieldError(e.target),
+                  }))
+                }
+              >
+                <option value="">Choose a subject</option>
+                {contactSubjects.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </SelectField>
+            </div>
+            {subject === 'Existing Order' && (
+              <div className="contact-form-item">
+                <Field
+                  id="contact-order"
+                  label="Order number (optional)"
+                  error={errors['contact-order']}
+                >
+                  <Input
+                    {...props('contact-order')}
+                    name="orderNumber"
+                    maxLength={80}
+                    autoComplete="off"
+                  />
+                </Field>
+              </div>
+            )}
+            <div className="contact-form-item" data-wide="">
+              <Field
+                id="contact-message"
+                label="Message (required)"
+                error={errors['contact-message']}
+              >
+                <Textarea
+                  {...props('contact-message')}
+                  name="message"
+                  required
+                  maxLength={5000}
+                  rows={8}
+                />
+              </Field>
+            </div>
           </>
         )}
       </fieldset>

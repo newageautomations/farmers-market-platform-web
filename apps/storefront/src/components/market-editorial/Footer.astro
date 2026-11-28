@@ -1,0 +1,101 @@
+---
+import VendorTermsLink from '../VendorTermsLink.astro';
+import type { StorefrontContext } from '@market/storefront-core';
+import {
+  contactDetails,
+  contactHref,
+  isEditorialMarket,
+  storefrontText,
+} from '@market/theme/storefront';
+import { marketNavigation } from '../../lib/market-website';
+
+/**
+ * Editorial Market's market website footer, separate from the vendor
+ * Editorial footer (`editorial-market/Footer.astro`).
+ */
+interface Props {
+  context: StorefrontContext;
+}
+const { context } = Astro.props;
+if (!isEditorialMarket(context.appearance))
+  throw new Error('Editorial Market footer requires its theme configuration.');
+const settings = context.appearance.template.settings;
+const details = context.appearance.contact?.enabled
+  ? contactDetails(context.appearance.contact)
+  : undefined;
+---
+
+<footer class="em-footer" data-editor-section="editorial:footer">
+  <div class="em-footer-art" aria-hidden="true"></div>
+  <div class="em-footer-content">
+    <div class="em-footer-identity">
+      <a class="em-brand em-footer-brand" href="/">
+        <span class="em-brand-mark" aria-hidden="true">
+          ❦
+        </span>
+        <span>{context.name}</span>
+      </a>
+      <p>{settings.footer.tagline}</p>
+      <div class="em-footer-socials">
+        {details?.email && contactHref('email', details.email) && (
+          <a href={contactHref('email', details.email)}>{details.email}</a>
+        )}
+        {details?.instagram && contactHref('instagram', details.instagram) && (
+          <a
+            href={contactHref('instagram', details.instagram)}
+            rel="noopener noreferrer"
+          >
+            Instagram
+          </a>
+        )}
+        {details?.facebook && contactHref('facebook', details.facebook) && (
+          <a
+            href={contactHref('facebook', details.facebook)}
+            rel="noopener noreferrer"
+          >
+            Facebook
+          </a>
+        )}
+      </div>
+    </div>
+    <nav aria-label="Footer navigation" class="em-footer-columns">
+      <div>
+        <h2>Visit</h2>
+        {marketNavigation(context.appearance, !!Astro.locals.editorPreview).map(
+          (link) => (
+            <a href={link.href}>{link.label}</a>
+          ),
+        )}
+      </div>
+      <div>
+        <h2>About</h2>
+        {context.appearance.about.enabled && (
+          <a href="/about">
+            <span data-storefront-text="footerAboutLabel">
+              {storefrontText(context.appearance, 'footerAboutLabel')}
+            </span>
+          </a>
+        )}
+        {context.appearance.faq?.enabled && (
+          <a href="/faq">{context.appearance.faq.title}</a>
+        )}
+        <VendorTermsLink context={context} />
+        {context.appearance.policies?.enabled && (
+          <a href="/policies">{context.appearance.policies.title}</a>
+        )}
+        {context.appearance.marketTerms?.enabled && (
+          <a href="/terms-and-conditions">
+            {context.appearance.marketTerms.title}
+          </a>
+        )}
+        {context.appearance.contact?.enabled && (
+          <a href="/contact">{context.appearance.contact.title}</a>
+        )}
+        <a href="/account">Your account</a>
+      </div>
+    </nav>
+    <p class="em-footer-meta">
+      © {new Date().getFullYear()} {context.name} · Powered by Market platform
+    </p>
+  </div>
+</footer>

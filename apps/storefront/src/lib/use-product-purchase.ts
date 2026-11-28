@@ -62,7 +62,7 @@ export function useProductPurchase({
     const target = priceTarget ? document.getElementById(priceTarget) : null;
     if (target)
       target.textContent = selected
-        ? formatMoney(selected.priceWithTax, selected.currencyCode)
+        ? formatMoney(selected.price, selected.currencyCode)
         : priceFallback;
   }, [priceTarget, priceFallback, selected]);
   useEffect(() => {
@@ -160,7 +160,8 @@ export function useProductPurchase({
         },
       );
       setMessage('Added to your cart.');
-      if (market) showAdded();
+      // Market and vendor websites both confirm on the button itself.
+      showAdded();
       window.dispatchEvent(
         new CustomEvent(
           market ? 'market-cart-updated' : 'vendor-cart-updated',

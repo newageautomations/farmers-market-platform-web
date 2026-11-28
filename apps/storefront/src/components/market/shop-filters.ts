@@ -1,3 +1,23 @@
+/**
+ * Ask the shop page for only its results block (the page answers the
+ * `x-market-shop-results` header with that block alone). Resolves to
+ * `undefined` when the request was superseded.
+ */
+async function fetchShopResults(url: URL, signal: AbortSignal) {
+  const response = await fetch(url, {
+    headers: { 'x-market-shop-results': '1' },
+    signal,
+  });
+  if (!response.ok) throw new Error('Shop request failed');
+  const html = await response.text();
+  if (signal.aborted) return undefined;
+  const rendered = new DOMParser()
+    .parseFromString(html, 'text/html')
+    .querySelector<HTMLElement>('[data-market-shop-results]');
+  if (!rendered) throw new Error('Shop results missing');
+  return document.importNode(rendered, true);
+}
+
 /** Keep the controls mounted while replacing the server-rendered market results. */
 export function installMarketShopFilters(shop: HTMLElement) {
   const form = shop.querySelector<HTMLFormElement>(
@@ -85,19 +105,8 @@ export function installMarketShopFilters(shop: HTMLElement) {
     try {
       const url = new URL(form.action);
       url.search = next.toString();
-      const response = await fetch(url, {
-        headers: { 'x-market-shop-results': '1' },
-        signal: controller.signal,
-      });
-      if (!response.ok) throw new Error('Market shop request failed');
-      const html = await response.text();
-      if (controller.signal.aborted) return;
-      const rendered = new DOMParser()
-        .parseFromString(html, 'text/html')
-        .querySelector<HTMLElement>('[data-market-shop-results]');
-      if (!rendered) throw new Error('Market shop results missing');
-
-      const replacement = document.importNode(rendered, true);
+      const replacement = await fetchShopResults(url, controller.signal);
+      if (!replacement) return;
       results.replaceWith(replacement);
       results = replacement;
       applied = next;
@@ -172,6 +181,141 @@ export function installMarketShopFilters(shop: HTMLElement) {
       void update(withoutSelections(requested, mode));
       if (returnFocus)
         links.find((item) => item.dataset.marketShopMode === mode)?.focus();
+    } else if (!pending && link.dataset.marketShopPage) {
+      const next = new URLSearchParams(requested);
+      next.set('page', link.dataset.marketShopPage);
+      void update(next, true);
+    }
+  });
+}
+
+/**
+ * A vendor shop filters the same way: choosing categories, sorting or paging
+ * replaces the results in place, without loading a new page. The address
+ * keeps the choice so reloading or returning shows the same products.
+ */
+export function installVendorShopFilters(shop: HTMLElement) {
+  const form = shop.querySelector<HTMLFormElement>('.shop-category-filters');
+  const sort = shop.querySelector<HTMLSelectElement>(
+    '.shop-catalog-controls select[name="sort"]',
+  );
+  const status = shop.querySelector<HTMLElement>('[data-market-shop-status]');
+  const count = shop.querySelector<HTMLElement>('[data-market-shop-count]');
+  const initialResults = shop.querySelector<HTMLElement>(
+    '[data-market-shop-results]',
+  );
+  if (!sort || !status || !count || !initialResults) return;
+  const path = window.location.pathname;
+  const all = form?.querySelector<HTMLInputElement>(
+    '[data-shop-all-categories]',
+  );
+  const choices = Array.from(
+    form?.querySelectorAll<HTMLInputElement>('input[name="category"]') ?? [],
+  );
+  let applied = new URLSearchParams(window.location.search);
+  let requested = applied;
+  let pending: AbortController | undefined;
+  let results = initialResults;
+
+  const renderControls = (query: URLSearchParams) => {
+    const selected = query.getAll('category');
+    for (const choice of choices)
+      choice.checked = selected.includes(choice.value);
+    if (all) all.checked = selected.length === 0;
+    const value = query.get('sort');
+    if (value) sort.value = value;
+  };
+
+  const update = async (next: URLSearchParams, paging = false) => {
+    pending?.abort();
+    const controller = new AbortController();
+    pending = controller;
+    requested = next;
+    renderControls(next);
+    results.setAttribute('aria-busy', 'true');
+    status.className = 'sr-only';
+    status.textContent = 'Updating products…';
+    try {
+      const url = new URL(path, window.location.origin);
+      url.search = next.toString();
+      const replacement = await fetchShopResults(url, controller.signal);
+      if (!replacement) return;
+      results.replaceWith(replacement);
+      results = replacement;
+      applied = next;
+      window.history.replaceState(null, '', `${path}?${next}`);
+      count.textContent = replacement.dataset.count ?? '';
+      for (const heading of shop.querySelectorAll('[data-market-shop-heading]'))
+        heading.textContent = replacement.dataset.heading ?? '';
+      if (paging) {
+        count.focus({ preventScroll: true });
+        count.scrollIntoView({ block: 'nearest' });
+        status.textContent = '';
+      } else {
+        status.textContent = count.textContent;
+      }
+    } catch {
+      if (controller.signal.aborted) return;
+      requested = applied;
+      renderControls(applied);
+      status.className = 'ui-alert ui-alert-error';
+      status.textContent = 'Products could not be updated. Please try again.';
+    } finally {
+      if (pending === controller) {
+        pending = undefined;
+        results.removeAttribute('aria-busy');
+      }
+    }
+  };
+
+  const withCategories = (categories: string[]) => {
+    const next = new URLSearchParams(requested);
+    next.delete('category');
+    next.delete('page');
+    for (const category of categories) next.append('category', category);
+    return next;
+  };
+
+  form?.addEventListener('change', (event) => {
+    if (!(event.target instanceof HTMLInputElement)) return;
+    if (event.target === all) {
+      void update(withCategories([]));
+      return;
+    }
+    void update(
+      withCategories(
+        choices.filter((choice) => choice.checked).map((c) => c.value),
+      ),
+    );
+  });
+  form?.addEventListener('submit', (event) => event.preventDefault());
+
+  sort.addEventListener('change', () => {
+    const next = new URLSearchParams(requested);
+    next.set('sort', sort.value);
+    next.delete('page');
+    void update(next);
+  });
+  sort.form?.addEventListener('submit', (event) => event.preventDefault());
+
+  shop.addEventListener('click', (event) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey ||
+      !(event.target instanceof Element)
+    )
+      return;
+    const link = event.target.closest<HTMLAnchorElement>(
+      '[data-market-shop-page], [data-shop-all-products]',
+    );
+    if (!link || !shop.contains(link)) return;
+    event.preventDefault();
+    if (link.hasAttribute('data-shop-all-products')) {
+      void update(withCategories([]));
     } else if (!pending && link.dataset.marketShopPage) {
       const next = new URLSearchParams(requested);
       next.set('page', link.dataset.marketShopPage);

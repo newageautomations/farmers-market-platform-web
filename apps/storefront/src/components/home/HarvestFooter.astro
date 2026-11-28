@@ -1,16 +1,13 @@
 ---
 import VendorTermsLink from '../VendorTermsLink.astro';
 import type { StorefrontContext } from '@market/storefront-core';
-import { storefrontText, marketText } from '@market/theme/storefront';
-import { marketNavigation } from '../../lib/market-website';
+import { storefrontText } from '@market/theme/storefront';
 interface Props {
   context: StorefrontContext;
 }
 const { context } = Astro.props;
-const market = context.kind === 'MARKET';
-const marketLinks = market
-  ? marketNavigation(context.appearance, !!Astro.locals.editorPreview)
-  : [];
+// The vendor Harvest and Bloom footer. Market Harvest has its own footer in
+// components/market-harvest/.
 ---
 
 <footer class="harvest-footer" data-editor-section="footer">
@@ -18,46 +15,42 @@ const marketLinks = market
     <a href="/" class="harvest-brand">
       {context.name}
     </a>
-    <p
-      data-storefront-text={market ? undefined : 'footerTagline'}
-      data-market-text={market ? 'footerTagline' : undefined}
-    >
-      {market
-        ? marketText(context.appearance, 'footerTagline')
-        : storefrontText(context.appearance, 'footerTagline')}
+    <p data-storefront-text="footerTagline">
+      {storefrontText(context.appearance, 'footerTagline')}
     </p>
   </div>
-  <nav aria-label="Footer navigation">
-    {market ? (
-      marketLinks.map((link) => <a href={link.href}>{link.label}</a>)
-    ) : (
+  {/* The market footer's columns: Site (Visit on a market) and About. */}
+  <nav aria-label="Footer navigation" class="harvest-footer-columns">
+    <div>
+      <h2>Site</h2>
       <a href="/products">
         <span data-storefront-text="footerShopLabel">
           {storefrontText(context.appearance, 'footerShopLabel')}
         </span>
       </a>
-    )}
-    {context.appearance?.faq?.enabled && (
-      <a href="/faq">{context.appearance.faq.title}</a>
-    )}
-    {context.appearance?.policies?.enabled && (
-      <a href="/policies">{context.appearance.policies.title}</a>
-    )}
-    {context.appearance?.contact?.enabled && (
-      <a href="/contact">{context.appearance.contact.title}</a>
-    )}
-    {!market && context.appearance?.findUs?.enabled && (
-      <a href="/find-us">Find Us</a>
-    )}
-    {context.appearance?.about.enabled && (
-      <a href="/about">
-        <span data-storefront-text="footerAboutLabel">
-          {storefrontText(context.appearance, 'footerAboutLabel')}
-        </span>
-      </a>
-    )}
-    <VendorTermsLink context={context} />
-    <a href="/account">Your account</a>
+      {context.appearance?.findUs?.enabled && <a href="/find-us">Find Us</a>}
+    </div>
+    <div>
+      <h2>About</h2>
+      {context.appearance?.about.enabled && (
+        <a href="/about">
+          <span data-storefront-text="footerAboutLabel">
+            {storefrontText(context.appearance, 'footerAboutLabel')}
+          </span>
+        </a>
+      )}
+      {context.appearance?.faq?.enabled && (
+        <a href="/faq">{context.appearance.faq.title}</a>
+      )}
+      <VendorTermsLink context={context} />
+      {context.appearance?.policies?.enabled && (
+        <a href="/policies">{context.appearance.policies.title}</a>
+      )}
+      {context.appearance?.contact?.enabled && (
+        <a href="/contact">{context.appearance.contact.title}</a>
+      )}
+      <a href="/account">Your account</a>
+    </div>
   </nav>
   <div class="harvest-footer-bottom">
     <span>

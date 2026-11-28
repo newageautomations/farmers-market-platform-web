@@ -53,7 +53,9 @@ const cart: PublicCart = {
     {
       id: '10',
       quantity: 2,
+      unitPrice: 650,
       unitPriceWithTax: 650,
+      discountedLinePrice: 1285,
       discountedLinePriceWithTax: 1285,
       featuredAsset: { preview: '/assets/greens.jpg' },
       productVariant: {
@@ -91,7 +93,7 @@ describe('vendor cart commerce presentation', () => {
         name: cart.lines[0]!.productVariant.product.name,
       }),
     ).toHaveAttribute('href', '/products/greens?variant=109&occurrence=7');
-    expect(screen.getByText('$6.50 each, including tax')).toBeVisible();
+    expect(screen.getByText('$6.50 each')).toBeVisible();
     expect(screen.getByLabelText('Subtotal for Large bag')).toHaveTextContent(
       '$12.85',
     );
@@ -146,7 +148,12 @@ describe('vendor cart commerce presentation', () => {
         ...cart,
         totalWithTax: 7777,
         lines: [
-          { ...cart.lines[0]!, quantity, discountedLinePriceWithTax: 7001 },
+          {
+            ...cart.lines[0]!,
+            quantity,
+            discountedLinePrice: 7001,
+            discountedLinePriceWithTax: 7001,
+          },
         ],
       };
       call.mockResolvedValueOnce({ cart: changed, preorder });

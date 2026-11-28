@@ -152,7 +152,15 @@ describe('customer authentication transport', () => {
     const fetcher = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response(JSON.stringify({ success: true })));
-    expect((await POST(ctx)).status).toBe(303);
+    const response = await POST(ctx);
+    expect(response.status).toBe(303);
+    expect(response.headers.get('Location')).toBe('/auth/signed-out');
+    expect(ctx.cookies.delete).toHaveBeenCalledWith(
+      'platform-unified-account',
+      {
+        path: '/',
+      },
+    );
     expect(JSON.parse(String(fetcher.mock.calls[0]![1]?.body))).toMatchObject({
       action: 'unifiedLogout',
       everywhere: true,

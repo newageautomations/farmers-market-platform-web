@@ -176,6 +176,8 @@ export const farmhousePhoto = {
 export function farmhouseDefaults(): Omit<FarmhouseSettings, 'sections'> & {
   sections: FarmhouseSection[];
 } {
+  // Hero, featured products, categories (discovery), then the closing
+  // invitation, like every vendor theme; story and collection sit before it.
   const content = [
     [
       'cinematic',
@@ -185,17 +187,17 @@ export function farmhouseDefaults(): Omit<FarmhouseSettings, 'sections'> & {
       '/products',
     ],
     [
-      'discovery',
-      'Make room for something good.',
-      'Explore the shop, one delicious discovery at a time.',
-      'Browse all products',
-      '/products',
-    ],
-    [
       'products',
       'From our market table',
       'A few things to bring home and make your own.',
       'Visit the shop',
+      '/products',
+    ],
+    [
+      'discovery',
+      'Make room for something good.',
+      'Explore the shop, one delicious discovery at a time.',
+      'Browse all products',
       '/products',
     ],
     [

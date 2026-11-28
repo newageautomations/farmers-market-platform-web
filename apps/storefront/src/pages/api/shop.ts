@@ -323,7 +323,8 @@ export const POST: APIRoute = async (context) => {
           break;
         }
         result = {
-          cart: await requestMarketShop(context, headers).select(
+          // Save a browsing choice here. Adding an item binds the cart date.
+          cart: await requestMarketShop(context, headers).chooseOccurrence(
             id(input.occurrenceId),
           ),
         };

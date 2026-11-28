@@ -130,3 +130,65 @@
   color: var(--status-danger-fg);
   font-weight: 600;
 }
+
+/* Vendor storefront standard tokens (docs/vendor-storefronts/), shared by the
+   vendor shop, product, cart and checkout rules. Colors come from the theme's
+   brand tokens. */
+.vendor-site {
+  --vs-gutter: clamp(1rem, 4vw, 2.75rem);
+  --vs-wrap: min(100%, 100vw - 2 * var(--vs-gutter), 1220px);
+  --vs-edge: 1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent);
+  --vs-soft: color-mix(in srgb, var(--brand-primary) 10%, var(--brand-surface));
+  --vs-shade: color-mix(in srgb, var(--brand-primary) 28%, transparent);
+  --vs-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 4.5 4.5L19 7'/%3E%3C/svg%3E");
+  --vs-icon-x: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+}
+
+/* Quantity stepper marks (StepperGlyph), shared by market and vendor
+   websites: two bars centred in the button, so plus and minus sit in the
+   exact middle whatever the theme's font or the button's padding. */
+:is(.vendor-cart-stepper, .em-product-quantity-button):has(.stepper-glyph) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 0;
+  line-height: 1;
+}
+.stepper-glyph {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 0.85rem;
+  height: 0.85rem;
+}
+.stepper-glyph::before,
+.stepper-glyph[data-glyph='plus']::after {
+  content: '';
+  position: absolute;
+  inset: calc(50% - 1px) 0 auto;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+.stepper-glyph[data-glyph='plus']::after {
+  transform: rotate(90deg);
+}
+
+/* Order summary totals (OrderTotals in CartTotals.tsx), shared by every
+   market and vendor cart and checkout: label left, amount right, centred. */
+.order-totals > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+.order-totals dt {
+  margin: 0;
+}
+.order-totals dd {
+  margin: 0;
+  align-self: center;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}

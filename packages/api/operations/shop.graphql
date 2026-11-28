@@ -133,7 +133,9 @@ query MarketActiveCartSnapshot {
         productName
         name
         quantity
+        unitPrice
         unitPriceWithTax
+        discountedLinePrice
         discountedLinePriceWithTax
         featuredAsset {
           id
@@ -192,7 +194,7 @@ query VendorProducts($options: ProductListOptions) {
       variants {
         id
         name
-        priceWithTax
+        price
         currencyCode
       }
     }
@@ -256,7 +258,9 @@ fragment StorefrontCart on Order {
   lines {
     id
     quantity
+    unitPrice
     unitPriceWithTax
+    discountedLinePrice
     discountedLinePriceWithTax
     featuredAsset {
       preview
@@ -339,7 +343,7 @@ query StorefrontProduct($slug: String!) {
         width
         height
       }
-      priceWithTax
+      price
       currencyCode
       options {
         id

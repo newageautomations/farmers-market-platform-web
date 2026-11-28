@@ -150,7 +150,7 @@ describe('Harvest market shop', () => {
     expect(
       marketProduct(item).variants.map((variant) => [
         variant.id,
-        variant.priceWithTax,
+        variant.price,
       ]),
     ).toEqual([
       ['21', 800],

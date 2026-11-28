@@ -23,9 +23,7 @@ const items: PublicCatalog['items'] = [
         facet: { code: 'farmstand-category', id: '1', name: 'Category' },
       },
     ],
-    variants: [
-      { id: '22', name: 'Jar', priceWithTax: 500, currencyCode: 'USD' },
-    ],
+    variants: [{ id: '22', name: 'Jar', price: 500, currencyCode: 'USD' }],
   },
   {
     id: '1',
@@ -50,8 +48,8 @@ const items: PublicCatalog['items'] = [
       },
     ],
     variants: [
-      { id: '21', name: 'Bag', priceWithTax: 600, currencyCode: 'USD' },
-      { id: '23', name: 'Box', priceWithTax: 1200, currencyCode: 'USD' },
+      { id: '21', name: 'Bag', price: 600, currencyCode: 'USD' },
+      { id: '23', name: 'Box', price: 1200, currencyCode: 'USD' },
     ],
   },
 ];

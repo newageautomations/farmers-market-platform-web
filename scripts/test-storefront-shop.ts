@@ -149,7 +149,7 @@ const backend = createServer(async (req, res) => {
               name: product.variants[0]!.name,
               productName: product.name,
               description: product.description,
-              price: product.variants[0]!.priceWithTax,
+              price: product.variants[0]!.price,
               currencyCode: 'USD',
               featuredAsset: product.featuredAsset
                 ? { ...product.featuredAsset, width: 640, height: 480 }
@@ -161,7 +161,7 @@ const backend = createServer(async (req, res) => {
               productVariants: product.variants.map((variant) => ({
                 variantId: variant.id,
                 name: variant.name,
-                price: variant.priceWithTax,
+                price: variant.price,
                 currencyCode: variant.currencyCode,
               })),
             }))

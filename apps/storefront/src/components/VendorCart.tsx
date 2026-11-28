@@ -144,10 +144,6 @@ export function VendorCart({
               {count} {count === 1 ? 'item' : 'items'} for market pickup
             </p>
             <CartTotals cart={cart} />
-            <p className="vendor-cart-total-note">
-              Current order amounts include tax. Final taxes and pickup fees are
-              confirmed during checkout.
-            </p>
             {preorder.selected && (
               <p className="vendor-cart-pickup">
                 Pickup at {preorder.selected.marketName}

@@ -36,6 +36,7 @@ import type { VendorPreorderState } from '../../../lib/vendor-preorder';
 import { marketOnlyTheme, storefrontText } from '@market/theme/storefront';
 import '../../../styles/vendor-shop.css';
 import '../../../styles/product-details.css';
+import '../../../styles/vendor-cart.css';
 import '../../../styles/market-website.css';
 
 const { storefront, storefrontError } = Astro.locals;
@@ -90,7 +91,7 @@ try {
         variants: eligible.map((variant) => ({
           ...variant,
           ...native.variants.find((entry) => entry.id === variant.id),
-          priceWithTax: variant.priceWithTax,
+          price: variant.price,
           currencyCode: variant.currencyCode,
         })),
       };
@@ -208,7 +209,7 @@ const structured =
               <p>
                 {shopCategories([product])
                   .map((category) => category.name)
-                  .join(' � ')}
+                  .join(' · ')}
               </p>
             )}
             <h1>{product.name}</h1>

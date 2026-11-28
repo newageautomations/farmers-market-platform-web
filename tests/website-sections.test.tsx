@@ -774,7 +774,8 @@ it.each(
   'keeps $theme $type in preview, undo/redo, save, reload and explicit publish',
   async ({ theme, type }) => {
     const editorial = theme === 'editorial-market';
-    const originalCount = editorial ? 4 : 6;
+    // Editorial: hero, products, categories, impact and the closing banner.
+    const originalCount = editorial ? 5 : 6;
     const compositionKey = editorial ? 'composition' : 'sections';
     let snapshot: StorefrontAppearanceRecord = {
       id: '42',
@@ -995,11 +996,14 @@ it('derives Editorial originals without mutating stored settings and strictly va
   expect(parse(old).data?.settings).toEqual(old);
   expect(old).not.toHaveProperty('composition');
   const defaults = editorialHomepageComposition(old);
+  // A vendor homepage without a saved order starts hero, products,
+  // categories, then the closing invitation (after Editorial's impact art).
   expect(defaults.map((s) => s.id)).toEqual([
     'hero',
-    'category-showcase-homepage',
     'product-showcase-homepage',
+    'category-showcase-homepage',
     'impact',
+    'cta-banner-homepage-closing',
   ]);
   const reusable = availableWebsiteSections(editorialHomepageTarget)
     .map((d) => d.type)
@@ -2344,11 +2348,18 @@ it('derives editable informational heroes without mutations and respects explici
     });
     const original = JSON.stringify(appearance);
     // On a vendor website the vendor standard keeps Policies heading-only
-    // and Find Us fixed, so neither derives a hero.
+    // and Find Us fixed, so neither derives a hero. Market Harvest and market
+    // Editorial Market follow the market standard: Policies is heading-only.
+    const marketHeroPages =
+      theme === 'modern-farmhouse'
+        ? (['about', 'contact', 'find-us', 'faq', 'policies'] as const)
+        : (['about', 'contact', 'faq'] as const);
+    if (theme !== 'modern-farmhouse')
+      expect(supportsWebsitePageHero(appearance, 'policies', 'MARKET')).toBe(
+        false,
+      );
     for (const [kind, page] of [
-      ...(['about', 'contact', 'find-us', 'faq', 'policies'] as const).map(
-        (page) => ['MARKET', page] as const,
-      ),
+      ...marketHeroPages.map((page) => ['MARKET', page] as const),
       ...(['about', 'contact', 'faq'] as const).map(
         (page) => ['VENDOR', page] as const,
       ),
@@ -2832,11 +2843,11 @@ it('keeps saved default showcases authoritative, including edits and deletion', 
     productIds: ['7'],
     categoryIds: ['42'],
   });
-  expect(composition[1]).toMatchObject({
+  expect(composition[2]).toMatchObject({
     type: 'category-showcase',
     content: { categoryIds: ['42'] },
   });
-  expect(composition[2]).toMatchObject({
+  expect(composition[1]).toMatchObject({
     type: 'product-showcase',
     content: { productIds: ['7'] },
   });

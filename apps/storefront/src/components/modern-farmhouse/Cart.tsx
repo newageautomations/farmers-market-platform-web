@@ -1,7 +1,8 @@
 import type { PublicCart } from '@market/api';
 import { formatMoney } from '@market/config';
 import { safeAsset } from '@market/storefront-core/catalog';
-import { ErrorBoundary } from '@market/ui';
+import { Button, ErrorBoundary, Input } from '@market/ui';
+import { StepperGlyph } from '../StepperGlyph';
 import type { VendorPreorderState } from '../../lib/vendor-preorder';
 import { useVendorCart } from '../../lib/use-vendor-cart';
 import { cartLineIssue } from '../../lib/vendor-cart';
@@ -82,8 +83,7 @@ function CartView(props: Parameters<typeof Cart>[0]) {
                       </h2>
                       <p>{line.productVariant.name}</p>
                       <p>
-                        {formatMoney(line.unitPriceWithTax, cart.currencyCode)}{' '}
-                        each, including tax
+                        {formatMoney(line.unitPrice, cart.currencyCode)} each
                       </p>
                       {warning && (
                         <p id={`farmhouse-line-${line.id}`} role="status">
@@ -102,8 +102,12 @@ function CartView(props: Parameters<typeof Cart>[0]) {
                           );
                         }}
                       >
-                        <div className="farmhouse-quantity">
-                          <button
+                        {/* The product page's quantity stepper, so the
+                            Farmhouse cart's plus and minus match it. */}
+                        <div className="vendor-cart-quantity">
+                          <Button
+                            variant="primary"
+                            className="vendor-cart-stepper"
                             type="button"
                             aria-label={`Decrease ${line.productVariant.name}`}
                             disabled={disabled || line.quantity <= 1}
@@ -115,19 +119,20 @@ function CartView(props: Parameters<typeof Cart>[0]) {
                               )
                             }
                           >
-                            −
-                          </button>
+                            <StepperGlyph kind="minus" />
+                          </Button>
                           <label
                             className="sr-only"
                             htmlFor={`farmhouse-quantity-${line.id}`}
                           >
                             Quantity for {line.productVariant.name}
                           </label>
-                          <input
+                          <Input
                             key={`${line.id}:${line.quantity}`}
                             id={`farmhouse-quantity-${line.id}`}
                             name="quantity"
                             type="number"
+                            inputMode="numeric"
                             min="1"
                             max={Math.max(1, fact?.quantity ?? 2147483647)}
                             step="1"
@@ -144,7 +149,9 @@ function CartView(props: Parameters<typeof Cart>[0]) {
                               )
                             }
                           />
-                          <button
+                          <Button
+                            variant="primary"
+                            className="vendor-cart-stepper"
                             type="button"
                             aria-label={`Increase ${line.productVariant.name}`}
                             disabled={
@@ -160,8 +167,8 @@ function CartView(props: Parameters<typeof Cart>[0]) {
                               )
                             }
                           >
-                            +
-                          </button>
+                            <StepperGlyph kind="plus" />
+                          </Button>
                         </div>
                         <button
                           className="farmhouse-text-link"
@@ -174,10 +181,7 @@ function CartView(props: Parameters<typeof Cart>[0]) {
                       </form>
                     </div>
                     <strong>
-                      {formatMoney(
-                        line.discountedLinePriceWithTax,
-                        cart.currencyCode,
-                      )}
+                      {formatMoney(line.discountedLinePrice, cart.currencyCode)}
                     </strong>
                   </li>
                 );

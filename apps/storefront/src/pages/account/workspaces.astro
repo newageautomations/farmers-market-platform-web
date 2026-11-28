@@ -53,6 +53,12 @@ Astro.response.headers.set('Referrer-Policy', 'no-referrer');
       Signed in as {account.profile.emailAddress}. Select where you want to
       continue.
     </p>
+    <form method="post" action="/api/account">
+      <input type="hidden" name="action" value="logout" />
+      <Button type="submit" variant="secondary">
+        Sign out
+      </Button>
+    </form>
     <div class="workspace-cards">
       {(
         [

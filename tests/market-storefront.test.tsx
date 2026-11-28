@@ -9,6 +9,7 @@ import {
 import { marketCatalogInputs } from '@market/storefront-core';
 import { MarketPurchase } from '../apps/storefront/src/components/MarketPurchase';
 import { MarketCart as MarketCartView } from '../apps/storefront/src/components/MarketCart';
+import { POST as shopPost } from '../apps/storefront/src/pages/api/shop';
 
 const occurrence = {
   id: '1',
@@ -42,7 +43,9 @@ const cart: MarketCart = {
           name: 'Harvest Standard',
           productName: 'Harvest',
           quantity: 1,
+          unitPrice: 1000,
           unitPriceWithTax: 1000,
+          discountedLinePrice: 900,
           discountedLinePriceWithTax: 900,
           featuredAsset: null,
         },
@@ -58,7 +61,9 @@ const cart: MarketCart = {
           name: 'Orchard Standard',
           productName: 'Orchard',
           quantity: 1,
+          unitPrice: 1000,
           unitPriceWithTax: 1000,
+          discountedLinePrice: 900,
           discountedLinePriceWithTax: 900,
           featuredAsset: null,
         },
@@ -169,9 +174,88 @@ describe('Market public contract boundaries', () => {
       );
   });
 });
+describe('Market date selection through /api/shop', () => {
+  it.each([
+    { name: 'no cart', marketCart: null, date: '2', status: 200 },
+    {
+      name: 'an empty cart for a previous date',
+      marketCart: { ...cart, totalQuantity: 0, groups: [] },
+      date: '2',
+      status: 200,
+    },
+    { name: 'an unavailable date', marketCart: null, date: '3', status: 404 },
+    { name: 'a populated cart', marketCart: cart, date: '2', status: 400 },
+  ])('checks the date with $name', async ({ marketCart, date, status }) => {
+    const origin = 'https://market.localhost';
+    const url = new URL('/api/shop', origin);
+    const set = vi.fn();
+    const fetcher = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (_input, init) => {
+        const { query, variables } = JSON.parse(String(init?.body));
+        expect(new Headers(init?.headers).get('vendure-token')).toBe('market');
+        if (query.includes('MarketActiveCartSnapshot'))
+          return wire({ marketActiveCart: marketCart });
+        if (query.includes('MarketStorefrontOccurrence'))
+          return wire({
+            marketStorefrontOccurrence:
+              variables.id === '2' ? { ...occurrence, id: '2' } : null,
+          });
+        return new Response(
+          JSON.stringify({ errors: [{ extensions: { code: 'FORBIDDEN' } }] }),
+        );
+      });
+    const response = await shopPost({
+      url,
+      request: new Request(url, {
+        method: 'POST',
+        headers: { origin, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storefrontId: '26',
+          action: 'select-occurrence',
+          occurrenceId: date,
+        }),
+      }),
+      cookies: { set },
+      locals: {
+        shopApiUrl: 'http://localhost/shop-api',
+        storefront: {
+          kind: 'MARKET',
+          source: 'backend',
+          canonicalOrigin: origin,
+          storefrontId: '26',
+          subjectId: '1',
+          channelToken: 'market',
+        },
+      },
+    } as unknown as Parameters<typeof shopPost>[0]);
+    expect(response.status).toBe(status);
+    expect(
+      fetcher.mock.calls.some(([, init]) =>
+        String(init?.body).includes('selectCommerceContext'),
+      ),
+    ).toBe(false);
+    if (status === 200) {
+      expect(await response.json()).toEqual({ result: { cart: null } });
+      expect(set).toHaveBeenCalledExactlyOnceWith(
+        'vendor-occurrence-26',
+        date,
+        expect.objectContaining({ path: '/', httpOnly: true, secure: true }),
+      );
+    } else {
+      expect(await response.json()).toMatchObject({
+        error:
+          status === 400
+            ? { kind: 'conflict', code: 'NONEMPTY_CONTEXT_SWITCH_DENIED' }
+            : { kind: 'not-found' },
+      });
+      expect(set).not.toHaveBeenCalled();
+    }
+  });
+});
 describe('Market cart controls', () => {
   it('renders authoritative Vendor groups and total independently of current catalog', () => {
-    render(
+    const { container } = render(
       <MarketCartView
         storefrontId="1"
         marketName="Market A"
@@ -180,7 +264,9 @@ describe('Market cart controls', () => {
     );
     expect(screen.getByRole('heading', { name: 'Vendor A' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Vendor B' })).toBeVisible();
-    expect(screen.getByText('$18.00')).toBeVisible();
+    expect(container.querySelector('[data-cart-total]')).toHaveTextContent(
+      '$18.00',
+    );
     expect(screen.getByText('A', { selector: 'li' })).toBeVisible();
     expect(screen.queryByRole('button', { name: /checkout/i })).toBeNull();
   });

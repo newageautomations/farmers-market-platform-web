@@ -1,3 +1,8 @@
+/*
+ * Editorial Market on vendor websites. Market websites on Editorial Market are
+ * a separate theme with their own stylesheet (market-editorial.css); changes
+ * here never reach markets.
+ */
 html[data-storefront-theme='editorial-market'] {
   --em-green: #214d2f;
   --em-green-deep: #153e27;
@@ -584,7 +589,10 @@ html[data-storefront-theme='editorial-market'] .button.ui-button-secondary {
   overflow: visible;
 }
 
-.editorial-market-site > .em-page:has(.em-shop) {
+/* The vendor shop draws the editorial shop artwork above the standard shop,
+   so the page runs edge to edge and the shop keeps its own column. */
+.editorial-market-site > .em-page:has(.em-shop),
+.editorial-market-site > .em-page:has(> .em-shop-hero) {
   width: 100%;
   max-width: none;
   margin: 0;
@@ -1519,7 +1527,7 @@ html[data-storefront-theme='editorial-market'] .button.ui-button-secondary {
   .em-shop-header-search,
   .em-shop-market-form,
   .em-shop-market-empty,
-  .em-shop-account-actions a:first-child {
+  .em-shop-account-actions a[href='/account'] {
     display: none;
   }
 
@@ -3315,255 +3323,6 @@ html[data-storefront-theme='editorial-market']
   font-weight: 700;
 }
 
-/* Market websites: the shared market date and vendor lists, market pages and
-   Market Day mode in the Editorial Market presentation. Theme tokens only. */
-.em-market-section .em-section-heading {
-  align-items: end;
-  flex-wrap: wrap;
-}
-
-.em-market-section .em-section-heading a {
-  flex-shrink: 0;
-}
-
-.em-market-section-intro {
-  max-width: 46ch;
-  margin: 0.85rem 0 0;
-  color: #3f5546;
-  font-size: 1.08rem;
-  line-height: 1.6;
-}
-
-.editorial-market-site :is(.harvest-dates, .market-vendor-cards) {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
-  gap: clamp(1rem, 2vw, 1.5rem);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.editorial-market-site :is(.harvest-date, .market-vendor-card) {
-  border: 1px solid var(--em-line);
-  border-radius: 1.75rem;
-  background: var(--em-cream);
-  box-shadow: 0.45rem 0.45rem 0 var(--em-paper);
-  color: var(--em-green-deep);
-}
-
-.editorial-market-site .harvest-date {
-  grid-template-columns: 4.5rem minmax(0, 1fr);
-  gap: 1.25rem;
-}
-
-.editorial-market-site .harvest-date-stamp {
-  padding: 0.75rem 0.25rem;
-  border-radius: 42% 58% 50% 45% / 54% 42% 58% 46%;
-  background: linear-gradient(135deg, #fee6a8, #fff4d6);
-  color: var(--em-orange);
-  transform: rotate(-4deg);
-}
-
-.editorial-market-site .harvest-date-stamp span {
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.editorial-market-site .harvest-date-stamp strong {
-  font-family: var(--em-playful-font);
-  font-size: 2.2rem;
-  font-weight: 700;
-}
-
-/* Inverted cards keep the date legible on its light stamp, like the vendor initial. */
-.editorial-market-site
-  .harvest-dates[data-card-theme='inverse']
-  .harvest-date-stamp {
-  color: var(--brand-primary);
-}
-
-.editorial-market-site :is(.harvest-date, .market-vendor-card) h3 {
-  margin: 0 0 0.35rem;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1.35rem;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
-}
-
-.editorial-market-site :is(.harvest-date, .market-vendor-card) h3 a {
-  color: inherit;
-}
-
-.editorial-market-site :is(.harvest-date p, .market-vendor-meta) {
-  color: #3f5546;
-}
-
-.editorial-market-site .harvest-text-link {
-  color: var(--em-orange);
-  font-weight: 800;
-}
-
-.editorial-market-site .harvest-vendor-symbol {
-  border-radius: 42% 58% 50% 45% / 54% 42% 58% 46%;
-  background: linear-gradient(135deg, #fee6a8, #fff4d6);
-  color: var(--em-orange);
-  font-family: var(--em-playful-font);
-  font-weight: 700;
-}
-
-.editorial-market-site
-  .harvest-dates[data-card-theme='inverse']
-  > .harvest-date,
-.editorial-market-site
-  .market-vendor-cards[data-card-theme='inverse']
-  > .market-vendor-card {
-  border-color: var(--em-green-deep);
-  background: var(--em-green-deep);
-  color: var(--em-cream);
-}
-
-.editorial-market-site
-  :is(
-    .harvest-dates[data-card-theme='inverse'] :is(h3 a, p, .harvest-text-link),
-    .market-vendor-cards[data-card-theme='inverse']
-      :is(h3 a, .market-vendor-meta, .harvest-text-link)
-  ) {
-  color: var(--em-cream);
-}
-
-.editorial-market-site
-  :is(
-    .harvest-dates[data-card-theme='soft'] > .harvest-date,
-    .market-vendor-cards[data-card-theme='soft'] > .market-vendor-card
-  ) {
-  background: var(--em-paper);
-}
-
-/* Market homepage sections flow into each other without separator rules. */
-.em-market-home .em-section + .em-section {
-  border-top: 0;
-}
-
-/* The market call-to-action banner keeps its two-line heading. */
-.em-market-home .em-callout h2 {
-  white-space: pre-line;
-}
-
-/* Market shop: editorial artwork above the shared filters and catalog.
-   The header owns market date selection wherever its selector is visible. */
-.em-market-shop > .vendor-shop {
-  width: min(100% - 3rem, 88rem);
-  margin-inline: auto;
-  padding-block: 1.3rem 4rem;
-  border-top: 1px solid rgb(77 91 57 / 12%);
-}
-
-.em-market-shop .shop-date-empty > h2 {
-  margin: 0;
-  color: var(--em-green-deep);
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1.5rem;
-  font-weight: 500;
-}
-
-.em-market-shop .shop-market-header-hint {
-  margin: 0;
-}
-
-@media (min-width: 821px) {
-  .em-market-shop .shop-market-header-owned {
-    display: none;
-  }
-}
-
-@media (max-width: 820px) {
-  .em-market-shop .shop-market-header-hint {
-    display: none;
-  }
-}
-
-/* Market Dates, Vendors and Become a Vendor reuse the content-page hero. */
-.em-market-page > :not(.em-content-hero) {
-  width: min(100% - 2rem, 76rem);
-  margin-inline: auto;
-}
-
-.em-market-page > :last-child {
-  margin-bottom: clamp(3rem, 7vw, 6rem);
-}
-
-.em-market-page .em-content-hero > p {
-  white-space: pre-line;
-}
-
-.em-market-page .market-vendors-summary {
-  border-bottom-color: var(--em-line);
-}
-
-.em-market-page .market-vendors-summary h2,
-.em-market-page .market-application h2 {
-  color: var(--em-green-deep);
-  font-family: Georgia, 'Times New Roman', serif;
-  font-weight: 500;
-  letter-spacing: -0.03em;
-}
-
-.em-market-page .market-application {
-  padding: clamp(1.25rem, 3vw, 2rem);
-  border: 1px solid var(--em-line);
-  border-radius: 1.75rem;
-  background: var(--em-cream);
-  box-shadow: 0.45rem 0.45rem 0 var(--em-paper);
-}
-
-.em-market-page .market-application-status {
-  background: #fee6a8;
-  color: var(--em-green-deep);
-}
-
-.em-market-page
-  .market-application[data-state='closed']
-  .market-application-status {
-  background: var(--em-paper);
-  color: #3f5546;
-}
-
-/* Market Day keeps the hero artwork in the section heading typeface. */
-.em-hero[data-market-day] h1 {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-weight: 500;
-  letter-spacing: -0.045em;
-}
-
-.em-market-day-details {
-  display: grid;
-  justify-items: center;
-  padding-top: 0;
-  text-align: center;
-}
-
-.em-market-day-details .market-day-hero-details {
-  justify-items: center;
-  margin-top: 0;
-}
-
-.em-market-day-details .market-day-venue span {
-  color: var(--em-orange);
-}
-
-.em-market-day-body {
-  padding-top: 0;
-}
-
-/* The market name makes the welcome heading longer than the hero copy it replaces. */
-@media (max-width: 960px) {
-  .em-hero[data-market-day] h1 {
-    font-size: clamp(1.4rem, 6.5cqi, 3rem);
-  }
-}
-
 /* Image with Text frame shapes (vendor standard, rule sectionImageShape): the
    shape is drawn on the image, so the frame's backing must not show around it. */
 .em-image-story[data-image-shape] .em-story-image {
@@ -3579,4 +3338,36 @@ html[data-storefront-theme='editorial-market']
   border-color: var(--em-green-deep);
   background: var(--em-green-deep);
   color: var(--em-cream);
+}
+
+/* Header cart: the Editorial cart drawing with the item count. */
+.editorial-market-site .em-shop-account-actions .em-cart-link {
+  position: relative;
+}
+.editorial-market-site .em-cart-link .harvest-cart-count {
+  top: 0.2rem;
+  right: 0.1rem;
+  background: var(--em-orange);
+  color: var(--em-cream);
+  font-weight: 800;
+}
+
+/* Footer: the market footer's Site and About columns. */
+.editorial-market-site .em-footer nav.em-footer-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(8rem, 1fr));
+  grid-column: span 2;
+  align-items: start;
+  gap: 2rem clamp(1.5rem, 4vw, 4rem);
+}
+.editorial-market-site .em-footer-columns > div {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 0.55rem;
+}
+.editorial-market-site .em-footer-columns h2 {
+  margin: 0 0 0.25rem;
+  font-family: var(--em-playful-font);
+  font-size: 1.05rem;
 }

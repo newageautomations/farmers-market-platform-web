@@ -398,3 +398,248 @@
 .vendor-checkout-layout > div > .checkout-section + .checkout-section {
   margin-top: 1.5rem;
 }
+
+/* ---------------------------------------------------------------------------
+   Vendor storefront standard: the checkout follows the market checkout's
+   presentation on every vendor theme (numbered step chips, stage cards,
+   pickup choices that lift on hover, the order summary card). Colors come
+   from each theme's brand tokens.
+   ------------------------------------------------------------------------ */
+.vendor-site .market-checkout nav[aria-label='Checkout progress'] {
+  margin-bottom: 1.4rem;
+}
+.vendor-site .market-checkout .checkout-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  border: 0;
+  counter-reset: vs-step;
+  list-style: none;
+}
+.vendor-site .market-checkout .checkout-progress li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.35rem 0.8rem 0.35rem 0.35rem;
+  border: var(--vs-edge);
+  border-radius: 12px;
+  background: var(--brand-surface);
+  color: var(--brand-muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  counter-increment: vs-step;
+}
+.vendor-site .market-checkout .checkout-progress li::before {
+  content: counter(vs-step);
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 8px;
+  background: var(--vs-soft);
+  color: var(--brand-primary);
+  font-size: 0.8rem;
+  letter-spacing: 0;
+}
+.vendor-site .market-checkout .checkout-progress li[aria-current='step'] {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+  color: var(--brand-on-primary, #fff);
+}
+.vendor-site
+  .market-checkout
+  .checkout-progress
+  li[aria-current='step']::before {
+  background: var(--brand-surface);
+  color: var(--brand-primary);
+}
+.vendor-site
+  .market-checkout
+  .checkout-progress
+  li:has(.checkout-progress-step) {
+  position: relative;
+  color: var(--brand-foreground);
+  transition:
+    background-color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.vendor-site .market-checkout .checkout-progress-step {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.vendor-site .market-checkout .checkout-progress-step::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.vendor-site
+  .market-checkout
+  .checkout-progress
+  li:has(.checkout-progress-step:hover) {
+  background: var(--vs-soft);
+  box-shadow: 0 6px 12px -4px var(--vs-shade);
+  transform: translateY(-2px);
+}
+.vendor-site
+  .market-checkout
+  .checkout-progress
+  li:has(.checkout-progress-step:active) {
+  box-shadow: 0 0 0 transparent;
+  transform: translateY(1px);
+}
+.vendor-site
+  .market-checkout
+  .checkout-progress
+  li:has(.checkout-progress-step:focus-visible) {
+  outline: 3px solid var(--brand-primary);
+  outline-offset: 3px;
+}
+.vendor-site .market-checkout .checkout-progress-step:focus-visible {
+  outline: 0;
+}
+.vendor-site .market-checkout .checkout-section,
+.vendor-site .market-checkout fieldset,
+.vendor-site .market-checkout .checkout-order-summary {
+  border: var(--vs-edge);
+  border-radius: var(--storefront-card-radius, 16px);
+  background: var(--brand-surface);
+  box-shadow: 0 10px 24px -16px var(--vs-shade);
+}
+.vendor-site .market-checkout .checkout-section,
+.vendor-site .market-checkout fieldset {
+  min-width: 0;
+  margin: 0 0 1.25rem;
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+}
+.vendor-site .market-checkout .checkout-order-summary {
+  overflow: hidden;
+}
+.vendor-site .market-checkout .checkout-order-summary > .ui-disclosure {
+  --ui-disclosure-border-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.vendor-site .market-checkout .checkout-section > h2 {
+  margin-top: 0;
+  font-size: 1.4rem;
+}
+.vendor-site .market-checkout fieldset > legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 0.85rem;
+  padding: 0 0 0.7rem;
+  border-bottom: var(--vs-edge);
+  color: var(--brand-foreground);
+  font: 600 1.4rem / 1.15 var(--font-heading);
+}
+.vendor-site .market-checkout fieldset > legend + * {
+  clear: both;
+}
+.vendor-site .market-checkout .pickup-choice {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0 0 0.6rem;
+  padding: 0.8rem 1rem;
+  border: var(--vs-edge);
+  border-radius: 12px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.vendor-site .market-checkout .pickup-choice:last-child {
+  margin-bottom: 0;
+}
+.vendor-site .market-checkout .pickup-choice input[type='radio'] {
+  accent-color: var(--brand-primary);
+  cursor: pointer;
+}
+.vendor-site .market-checkout .pickup-choice:hover {
+  background: var(--vs-soft);
+  box-shadow: 0 6px 12px -4px var(--vs-shade);
+  transform: translateY(-2px);
+}
+.vendor-site .market-checkout .pickup-choice:active {
+  box-shadow: 0 0 0 transparent;
+  transform: translateY(1px);
+}
+.vendor-site .market-checkout .pickup-choice:has(input:checked) {
+  background: var(--vs-soft);
+  box-shadow: inset 4px 0 0 var(--brand-primary);
+}
+.vendor-site .market-checkout .pickup-choice:has(input:checked):hover {
+  box-shadow:
+    inset 4px 0 0 var(--brand-primary),
+    0 6px 12px -4px var(--vs-shade);
+}
+.vendor-site .market-checkout .pickup-choice:has(input:focus-visible) {
+  outline: 3px solid var(--brand-primary);
+  outline-offset: 3px;
+}
+.vendor-site .market-checkout .checkout-stage-actions {
+  align-items: center;
+}
+.vendor-site
+  .market-checkout
+  .checkout-summary-product
+  > span:not(:last-child) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+}
+.vendor-site .market-checkout .checkout-summary-quantity {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border: var(--vs-edge);
+  border-radius: 8px;
+  background: var(--vs-soft);
+  color: var(--brand-muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.vendor-site .market-checkout .checkout-totals dd {
+  margin: 0;
+  align-self: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vendor-site .market-checkout .pickup-choice,
+  .vendor-site
+    .market-checkout
+    .checkout-progress
+    li:has(.checkout-progress-step) {
+    transition: none;
+  }
+  .vendor-site .market-checkout .pickup-choice:is(:hover, :active),
+  .vendor-site
+    .market-checkout
+    .checkout-progress
+    li:has(.checkout-progress-step:is(:hover, :active)) {
+    transform: none;
+  }
+}
+/* The checkout sits in the standard content column on every vendor theme. */
+.vendor-site .vendor-checkout-page {
+  box-sizing: border-box;
+  width: var(--vs-wrap);
+  margin-inline: auto;
+}

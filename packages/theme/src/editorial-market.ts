@@ -4,7 +4,6 @@ import {
   editorialHomepageTarget,
   homepageDesignSchema,
   isEditorialHomepageComposition,
-  editorialOriginalSections,
   editorialMarketOriginalSections,
   isEditorialMarketHomepageComposition,
   type EditorialHomepageSection,
@@ -228,6 +227,20 @@ export type EditorialMarketClosing = {
   destination: string;
 };
 export const editorialMarketClosingSectionId = 'cta-banner-market-closing';
+/** The closing invitation a vendor homepage starts with. */
+export const editorialVendorClosingSectionId = 'cta-banner-homepage-closing';
+/**
+ * A vendor homepage without a saved order starts like every vendor theme's:
+ * hero, featured products, categories, then the closing invitation to explore
+ * the collection. The impact slot stays in the order (a vendor composition
+ * requires it) but the vendor homepage no longer draws it.
+ */
+const editorialVendorDefaultOrder = [
+  'hero',
+  'products',
+  'categories',
+  'impact',
+] as const;
 
 /** Upgrade old homepage slots to the same editable instances used by Add Section.
  * An explicit composition is authoritative: deleted instances never regenerate. */
@@ -261,9 +274,27 @@ export function editorialHomepageComposition(
       };
       return banner;
     });
-  return (
-    settings.composition ?? editorialOriginalSections.map((id) => ({ id }))
-  ).map((section) => {
+  const saved = settings.composition;
+  const sections: EditorialHomepageSection[] = saved
+    ? saved
+    : [
+        ...editorialVendorDefaultOrder.map((id) => ({ id })),
+        (() => {
+          const banner = createWebsiteSection(
+            'cta-banner',
+            editorialVendorClosingSectionId,
+            editorialHomepageTarget,
+          );
+          banner.content = {
+            heading: 'Bring a little goodness home.',
+            body: 'Take a closer look at our collection and choose something for your table.',
+            label: 'Explore the collection',
+            destination: '/products',
+          };
+          return banner;
+        })(),
+      ];
+  return sections.map((section) => {
     if (
       'type' in section ||
       (section.id !== 'products' && section.id !== 'categories')

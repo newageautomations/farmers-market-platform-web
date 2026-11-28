@@ -96,10 +96,7 @@ export function VendorCheckout({
                       <p>Quantity: {line.quantity}</p>
                     </div>
                     <span>
-                      {formatMoney(
-                        line.discountedLinePriceWithTax,
-                        cart.currencyCode,
-                      )}
+                      {formatMoney(line.discountedLinePrice, cart.currencyCode)}
                     </span>
                   </li>
                 );
@@ -110,10 +107,6 @@ export function VendorCheckout({
             ) : (
               <CartTotals cart={cart} />
             )}
-            <p>
-              Current amounts include tax. Final taxes and pickup fees are
-              confirmed during checkout.
-            </p>
           </>
         ) : (
           <CheckoutSummary view={view} />
@@ -126,15 +119,21 @@ export function VendorCheckout({
   );
   return (
     <div className="vendor-checkout" aria-busy={pending}>
-      <VendorPreorderBanner
-        storefrontId={storefrontId}
-        preorder={preorder}
-        hasItems={!!cart?.lines.length}
-        disabled={pending || !!view.attempt || view.committed}
-      />
-      <header className="checkout-heading">
-        <h1>Checkout</h1>
-      </header>
+      {/* The live checkout uses the market checkout's staged layout, which
+          draws the date banner and heading itself. */}
+      {!legacy && (
+        <>
+          <VendorPreorderBanner
+            storefrontId={storefrontId}
+            preorder={preorder}
+            hasItems={!!cart?.lines.length}
+            disabled={pending || !!view.attempt || view.committed}
+          />
+          <header className="checkout-heading">
+            <h1>Checkout</h1>
+          </header>
+        </>
+      )}
       {issue && !view.committed && !view.frozen && (
         <p className="ui-alert ui-alert-warning" role="alert">
           {issue} <a href="/cart">Review your cart</a>
@@ -146,7 +145,7 @@ export function VendorCheckout({
           storefrontId={storefrontId}
           initial={view}
           onViewChange={setView}
-          orderSummary={orderSummary}
+          stagedLayout
           images={Object.fromEntries(
             (cart?.lines ?? []).map((line) => [
               line.id,

@@ -98,6 +98,34 @@ The workstation takes a reviewed digest, validates all paths, file types and has
 
 The workstation journal records upload intent before the mutation and records the asset after verifying the public source's bytes. A later run reconciles unfinished owners through their library and exact source hashes. For an owner whose entire journal is complete, the runner rechecks the public source bytes and reuses those receipts without another sign-in. Apply checks channel ownership for every receipt. The handoff contains only the reviewed digest and asset references. Existing storefront upload admission and scanner scope still apply.
 
+## Workstation verification for the December 8 approval
+
+The operator reported a corrected hosted dry run with zero conflicts. The approved digest is `f56260fec3f8f72e128ad1e366db4823871d96d4e1fe91f372c8566f637bbb48` for anchor `2026-12-08`.
+
+The original `--check` finished processing the photographs and then threw a `TypeError` while reading `plan.counts.uploads`. The corrected backend's compiled `--describe` output puts that value at `manifestCounts.uploads`. The uploader now counts the owner-to-photo mappings, checks the count against `manifestCounts.uploads` and reports `MEDIA_MANIFEST_UPLOAD_COUNT_INVALID` if they disagree. It also reports allowlisted network failure reasons without exposing raw exceptions. The backend and fixture contents required no changes.
+
+- Ran `npm.cmd run build:server` in the backend checkout. The server build passed. `node dist/test-data-population.js --describe --anchor 2026-12-08` reproduced the approved digest and reported 26 owners and 102 mappings.
+- Compared the two fixture JSON files byte for byte with their committed versions. Both had LF line endings. The catalog checksum uses raw file bytes, so this check ruled out Windows line-ending drift for the approved digest.
+- Ran `node scripts/build-staging-population-media.cjs --check` in the web checkout. All 58 source JPEGs matched the manifest. Node `v24.19.0`, npm `12.2.0`, Sharp `0.35.5` and libvips `8.18.7` were available.
+- Ran `node scripts/upload-staging-population-media.cjs --anchor $anchor --approve $approved --check` with the anchor and digest above. It returned `media-validated` for all 58 photos and 102 channel-specific mappings. `node --check` and the targeted ESLint check passed.
+- The first `--upload` attempt stopped before a media mutation. Direct HTTPS probes showed the restricted shell returned `ENOTFOUND` for both staging hosts. The same probes reached both hosts with network permission, and the upload resumed through the existing authenticated API with process-scoped credentials and the original journal.
+- Ran `node scripts/upload-staging-population-media.cjs --anchor $anchor --approve $approved --upload` with staging network access. It verified all 26 business owners and 102 hosted media mappings and returned `media-handoff-ready` with 2,114 base64url bytes. The journal contains 102 upload intents and 102 verified receipts. The uploader removed its lock and the workstation cleared the credential variable after the command ended.
+- Decoded the saved handoff and checked it with the compiled backend command and receipt parsers. The gzip payload was 1,585 bytes and decoded to 6,895 JSON bytes. All 102 asset IDs and source paths were unique and matched the journal, and the payload matched the approved digest. The verification used no database connection. No workstation failures remain open.
+
+The complete, password-free Railway configuration is saved at `E:\coding\farmers-market-platform-web\.runtime\staging-population\railway-handoff.txt`. Git ignores this path. Preserve the adjacent digest-named journal through acceptance. This workstation follow-up changed `scripts/upload-staging-population-media.cjs` and this runbook.
+
+### Remaining Railway steps
+
+1. In Railway staging, open only `staging-catalog-job` and use the same backend release that produced the successful dry run. Set `FARMERLANE_TEST_DATA_POPULATION_MEDIA` to the exact single-line value after the equals sign in `railway-handoff.txt`, without quotation marks.
+2. Set and seal `FARMERLANE_TEST_DATA_JOB_CREDENTIALS` as `{"bootstrapPassword":"<named SuperAdmin password from vault>"}` using the current credential for `SUPERADMIN_USERNAME`.
+3. Set the Custom Start Command to the following and deploy that job service. Expect exit 0, `status: applied`, 59 stage entries and `resolvedCounts.mediaMappings: 102`. Then complete [manual acceptance](#manual-acceptance).
+
+   ```sh
+   node dist/test-data-population.js --apply --anchor 2026-12-08 --approve f56260fec3f8f72e128ad1e366db4823871d96d4e1fe91f372c8566f637bbb48
+   ```
+
+No additional local build, validation or upload is needed for this approval. The Railway apply and manual acceptance are pending.
+
 ## Operator release instructions
 
 Use the two sibling checkouts. The correction deploys from a branch based on backend `ea2c77a`. These path-scoped commands leave unrelated staged work out of the commits. Pause automatic deploys on `staging-catalog-job` before pushing or selecting the correction branch.
@@ -232,7 +260,7 @@ The focused run used PostgreSQL 17.10 in a guarded disposable database. A source
 - The upload script passed syntax and ESLint checks. Its `--check` validated 58 reviewed photographs and all 102 mappings without contacting staging.
 - The measured full handoff for December 8 was **2,107 base64url bytes**, from 6,889 JSON bytes and 1,580 gzip bytes using the same encoding as the workstation uploader and the actual 102 local ID/path pairs. Hosted IDs and paths will change the exact byte count, which the uploader prints. The CLI allows 36,000 base64url characters and 64,000 decoded JSON bytes. Railway documents service variables at runtime. The measured payload was verified locally in a Linux container through the exact direct Node command and one scoped environment variable. Railway's service-specific variable capacity was not tested. [Railway service variables](https://docs.railway.com/variables)
 - The offline Linux command rejected a wrong approval digest and a malformed handoff with their respective safe codes before any database connection. The valid measured payload passed both validation gates and reached the expected DNS failure with container networking disabled. Command output contained neither the uploaded payload nor the synthetic database password.
-- Provider activity, real R2 uploads, the hosted correction dry run, the full completion apply and manual acceptance remain outside the local verification. PostgreSQL emitted an existing driver deprecation warning about overlapping client queries. No unrelated suites or browser checks ran.
+- This disposable database run covered local behavior. The later hosted verification is recorded above. PostgreSQL emitted an existing driver deprecation warning about overlapping client queries. No unrelated suites or browser checks ran.
 
 Run the focused regression from the backend with loopback PostgreSQL and the existing disposable-test `DB_HOST`, `DB_PORT`, `DB_USERNAME` and `DB_PASSWORD` settings. The harness creates and owns a new `vendure_test_population_*` database.
 

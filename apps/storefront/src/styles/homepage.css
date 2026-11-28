@@ -686,3 +686,24 @@
     grid-row: auto;
   }
 }
+
+/* Vendor Harvest and Bloom footer: the market footer's Site and About columns. */
+.vendor-site .harvest-footer nav.harvest-footer-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(9rem, auto));
+  gap: 2.5rem;
+}
+.vendor-site .harvest-footer-columns > div {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+}
+.vendor-site .harvest-footer-columns h2 {
+  margin: 0 0 0.25rem;
+  color: var(--brand-muted);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

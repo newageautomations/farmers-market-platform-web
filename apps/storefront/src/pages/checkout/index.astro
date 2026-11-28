@@ -1,7 +1,6 @@
 ---
 import { buttonClassName } from '@market/ui/presentation';
-import { Checkout as PremiumCheckout } from '../../components/modern-farmhouse/Checkout';
-import { isFarmhouse, marketOnlyTheme } from '@market/theme/storefront';
+import { themePageStructure } from '@market/theme/storefront';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { Checkout } from '../../components/ResilientSurfaces';
 import { readCheckoutStatus } from '../../lib/checkout-status';
@@ -89,13 +88,7 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
 ---
 
 <SiteLayout context={storefront} path="/checkout" title="Checkout" noindex>
-  <section
-    class={
-      isFarmhouse(storefront?.appearance)
-        ? 'farmhouse-checkout-route'
-        : 'vendor-checkout-page'
-    }
-  >
+  <section class="vendor-checkout-page">
     {(!preorder || !view?.groups.length) && <h1>Checkout</h1>}
     {Astro.locals.editorPreview ? (
       <p>Checkout preview is not available in the visual editor.</p>
@@ -109,18 +102,15 @@ Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
           preorder={preorder}
           images={images}
           marketLayout
-          concise={!!marketOnlyTheme(storefront.appearance)}
-          client:load
-        />
-      ) : preorder && isFarmhouse(storefront?.appearance) ? (
-        <PremiumCheckout
-          storefrontId={storefront?.storefrontId ?? ''}
-          initial={view}
-          initialCart={cart ?? null}
-          initialPreorder={preorder}
+          concise={
+            themePageStructure(storefront.appearance?.theme, storefront.kind)
+              .conciseCommerce
+          }
           client:load
         />
       ) : preorder ? (
+        /* Every vendor theme uses the shared vendor checkout, which follows
+           the market checkout's process and presentation. */
         <VendorCheckout
           storefrontId={storefront?.storefrontId ?? ''}
           initial={view}

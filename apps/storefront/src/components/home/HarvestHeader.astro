@@ -5,7 +5,6 @@ import FarmstandIcon from '../ui/FarmstandIcon.astro';
 import HeaderAccountMenu from './HeaderAccountMenu.astro';
 import { buttonClassName } from '@market/ui/presentation';
 import { storefrontText, themePageStructure } from '@market/theme/storefront';
-import { marketNavigation } from '../../lib/market-website';
 interface Props {
   context: StorefrontContext;
 }
@@ -16,15 +15,13 @@ const active = (path: string) =>
   (path === '/shop' && Astro.url.pathname.startsWith('/shop/'))
     ? ('page' as const)
     : undefined;
-const market = context.kind === 'MARKET';
+// The vendor Harvest and Bloom header. Market Harvest has its own header in
+// components/market-harvest/.
 // Footer-only pages (on the vendor standard: FAQ, Policies, Terms) stay out of the header.
 const footerOnly = themePageStructure(context.appearance?.theme, context.kind)
   .footerOnlyPages as readonly string[];
 const faqInHeader =
   !!context.appearance?.faq?.enabled && !footerOnly.includes('faq');
-const marketLinks = market
-  ? marketNavigation(context.appearance, !!Astro.locals.editorPreview)
-  : [];
 ---
 
 <header class="harvest-header" data-editor-section="header">
@@ -32,22 +29,14 @@ const marketLinks = market
     {context.theme.logo && (
       <img src={context.theme.logo} alt="" width="40" height="40" />
     )}
-    <span class:list={[market && 'farmstand-text-link']}>{context.name}</span>
+    <span>{context.name}</span>
   </a>
   <nav class="harvest-desktop-nav" aria-label="Main navigation">
-    {market ? (
-      marketLinks.map((link) => (
-        <a href={link.href} aria-current={active(link.href)}>
-          {link.label}
-        </a>
-      ))
-    ) : (
-      <a aria-current={active('/products')} href="/products">
-        <span data-storefront-text="headerShopLabel">
-          {storefrontText(context.appearance, 'headerShopLabel')}
-        </span>
-      </a>
-    )}
+    <a aria-current={active('/products')} href="/products">
+      <span data-storefront-text="headerShopLabel">
+        {storefrontText(context.appearance, 'headerShopLabel')}
+      </span>
+    </a>
     {faqInHeader && (
       <a href="/faq" aria-current={active('/faq')}>
         {context.appearance!.faq!.title}
@@ -58,7 +47,7 @@ const marketLinks = market
         {context.appearance.contact.title}
       </a>
     )}
-    {!market && context.appearance?.findUs?.enabled && (
+    {context.appearance?.findUs?.enabled && (
       <a href="/find-us" aria-current={active('/find-us')}>
         Find Us
       </a>
@@ -80,19 +69,11 @@ const marketLinks = market
         <a href="/" aria-current={active('/')}>
           Home
         </a>
-        {market ? (
-          marketLinks.map((link) => (
-            <a href={link.href} aria-current={active(link.href)}>
-              {link.label}
-            </a>
-          ))
-        ) : (
-          <a href="/products" aria-current={active('/products')}>
-            <span data-storefront-text="headerShopLabel">
-              {storefrontText(context.appearance, 'headerShopLabel')}
-            </span>
-          </a>
-        )}
+        <a href="/products" aria-current={active('/products')}>
+          <span data-storefront-text="headerShopLabel">
+            {storefrontText(context.appearance, 'headerShopLabel')}
+          </span>
+        </a>
         {faqInHeader && (
           <a href="/faq" aria-current={active('/faq')}>
             {context.appearance!.faq!.title}
@@ -103,7 +84,7 @@ const marketLinks = market
             {context.appearance.contact.title}
           </a>
         )}
-        {!market && context.appearance?.findUs?.enabled && (
+        {context.appearance?.findUs?.enabled && (
           <a href="/find-us" aria-current={active('/find-us')}>
             Find Us
           </a>

@@ -93,6 +93,7 @@ fragment CheckoutView on CustomerCheckoutView {
       name
       quantity
       total
+      totalBeforeTax
     }
     pickup {
       methodId

@@ -1,0 +1,267 @@
+---
+import type { StorefrontContext } from '@market/storefront-core';
+import type { VendorPreorderOccurrence } from '@market/api';
+import {
+  isEditorialMarket,
+  themePageStructure,
+} from '@market/theme/storefront';
+import { safeAsset } from '@market/storefront-core';
+import { selectClassName } from '@market/ui/presentation';
+import { marketNavigation } from '../../lib/market-website';
+import { MarketCartLink } from '../MarketCartLink';
+
+/**
+ * Editorial Market's market website header. Market Editorial is its own theme,
+ * separate from the vendor Editorial header (`editorial-market/ShopHeader.astro`):
+ * it shares the Editorial look and shops by market date at /shop.
+ */
+interface Props {
+  context: StorefrontContext;
+  /** The market website's upcoming dates. */
+  occurrences: readonly Pick<VendorPreorderOccurrence, 'id' | 'marketName'>[];
+  selectedId?: string;
+  search?: string;
+}
+
+const { context, occurrences, selectedId = '', search = '' } = Astro.props;
+if (!isEditorialMarket(context.appearance))
+  throw new Error('Editorial Market header requires its theme configuration.');
+const settings = context.appearance.template.settings;
+const logo = safeAsset(context.theme.logo);
+// Market websites shop by market date at /shop and list their market pages.
+const shopHref = '/shop';
+const links = [
+  ...marketNavigation(context.appearance, !!Astro.locals.editorPreview).map(
+    (link) => ({
+      ...link,
+      label: link.href === '/shop' ? settings.header.shopLabel : link.label,
+      enabled: true,
+    }),
+  ),
+  {
+    href: '/contact',
+    label: settings.header.contactLabel,
+    enabled: context.appearance.contact?.enabled,
+  },
+  {
+    href: '/faq',
+    label: context.appearance.faq?.title ?? 'FAQ',
+    enabled: context.appearance.faq?.enabled,
+  },
+  {
+    href: '/about',
+    label: settings.header.storyLabel,
+    enabled: context.appearance.about.enabled,
+  },
+]
+  .filter((link) => link.enabled)
+  // Footer-only pages (FAQ, Policies, Terms) stay out of the header.
+  .filter(
+    (link) =>
+      !(
+        themePageStructure(context.appearance?.theme, context.kind)
+          .footerOnlyPages as readonly string[]
+      ).includes(link.href.slice(1)),
+  );
+const active = (href: string) =>
+  Astro.url.pathname === href ||
+  (href === shopHref && Astro.url.pathname.startsWith(`${shopHref}/`))
+    ? ('page' as const)
+    : undefined;
+---
+
+<div class="em-shop-chrome" data-announcement={!!settings.header.announcement}>
+  {settings.header.announcement && (
+    <a class="em-shop-announcement" href={shopHref}>
+      <span>{settings.header.announcement}</span>
+      <span aria-hidden="true">→</span>
+    </a>
+  )}
+  <div class="em-shop-floating-shell">
+    <div class="em-shop-progressive-blur" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <header class="em-shop-header">
+      <details class="em-shop-menu">
+        <summary aria-label="Open navigation menu">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </summary>
+        <nav aria-label="Mobile navigation">
+          {links.map((link) => (
+            <a href={link.href} aria-current={active(link.href)}>
+              {link.label}
+            </a>
+          ))}
+          <a href="/account">Account</a>
+        </nav>
+      </details>
+
+      <a class="em-shop-brand" href="/" aria-label={`${context.name} home`}>
+        {logo ? (
+          <img src={logo} alt="" width="42" height="42" />
+        ) : (
+          <span class="em-shop-brand-mark" aria-hidden="true">
+            ❦
+          </span>
+        )}
+        <span>{context.name}</span>
+      </a>
+
+      <nav class="em-shop-desktop-nav" aria-label="Main navigation">
+        {links.map((link) => (
+          <a href={link.href} aria-current={active(link.href)}>
+            {link.label}
+          </a>
+        ))}
+      </nav>
+
+      <form
+        class="em-shop-header-search"
+        action={shopHref}
+        method="get"
+        role="search"
+      >
+        {selectedId && (
+          <input type="hidden" name="occurrence" value={selectedId} />
+        )}
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="m16 16 4 4"></path>
+        </svg>
+        <label class="sr-only" for="em-shop-header-search">
+          Search products
+        </label>
+        <input
+          id="em-shop-header-search"
+          name="search"
+          type="search"
+          value={search}
+          maxlength="100"
+          placeholder="Search fresh food..."
+        />
+      </form>
+
+      {occurrences.length ? (
+        <form class="em-shop-market-form" action={shopHref} method="get">
+          {search && <input type="hidden" name="search" value={search} />}
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path>
+            <circle cx="12" cy="10" r="2.5"></circle>
+          </svg>
+          <label class="sr-only" for="em-shop-market">
+            Market date
+          </label>
+          <select
+            class={selectClassName()}
+            id="em-shop-market"
+            name="occurrence"
+            data-shop-market-select
+          >
+            <button type="button">
+              <selectedcontent></selectedcontent>
+            </button>
+            {!selectedId && (
+              <option value="" selected disabled>
+                Choose a market date
+              </option>
+            )}
+            {occurrences.map((occurrence) => (
+              <option
+                value={occurrence.id}
+                selected={occurrence.id === selectedId}
+              >
+                {occurrence.marketName}
+              </option>
+            ))}
+          </select>
+          <noscript>
+            <button type="submit">Choose market</button>
+          </noscript>
+        </form>
+      ) : (
+        <span class="em-shop-market-empty">No upcoming market dates</span>
+      )}
+
+      <div class="em-shop-account-actions">
+        {context.source === 'backend' && !Astro.locals.editorPreview ? (
+          <MarketCartLink
+            storefrontId={context.storefrontId ?? ''}
+            className="em-cart-link"
+            client:load
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.6L20.5 8H6"></path>
+              <circle cx="10" cy="20" r="1"></circle>
+              <circle cx="18" cy="20" r="1"></circle>
+            </svg>
+          </MarketCartLink>
+        ) : (
+          <a href="/cart" class="em-cart-link" aria-label="Cart, 0 items">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.6L20.5 8H6"></path>
+              <circle cx="10" cy="20" r="1"></circle>
+              <circle cx="18" cy="20" r="1"></circle>
+            </svg>
+            <span class="harvest-cart-count" aria-hidden="true">
+              0
+            </span>
+          </a>
+        )}
+        <a href="/account" aria-label="Account">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M4 21c.7-5 3.3-7 8-7s7.3 2 8 7"></path>
+          </svg>
+        </a>
+      </div>
+    </header>
+  </div>
+</div>
+
+<script>
+  for (const chrome of document.querySelectorAll<HTMLElement>(
+    '.em-shop-chrome',
+  )) {
+    const update = () => {
+      chrome.toggleAttribute('data-scrolled', window.scrollY > 40);
+      const banner = chrome.querySelector<HTMLElement>('.em-shop-announcement');
+      chrome.style.setProperty(
+        '--announcement-offset',
+        `${Math.max(0, banner?.getBoundingClientRect().bottom ?? 0)}px`,
+      );
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    const menu = chrome.querySelector<HTMLDetailsElement>('.em-shop-menu');
+    const summary = menu?.querySelector('summary');
+    summary?.setAttribute('aria-expanded', String(!!menu?.open));
+    menu?.addEventListener('toggle', () => {
+      summary?.setAttribute('aria-expanded', String(menu.open));
+      summary?.setAttribute(
+        'aria-label',
+        menu.open ? 'Close navigation menu' : 'Open navigation menu',
+      );
+    });
+    chrome.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && menu?.open) {
+        menu.open = false;
+        summary?.focus();
+      }
+    });
+    window.addEventListener('resize', () => {
+      update();
+      if (window.innerWidth > 820 && menu) menu.open = false;
+    });
+  }
+  for (const select of document.querySelectorAll<HTMLSelectElement>(
+    '[data-shop-market-select]',
+  )) {
+    select.addEventListener('change', () => select.form?.requestSubmit());
+  }
+</script>

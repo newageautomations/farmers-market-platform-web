@@ -63,7 +63,11 @@ const products: PublicProduct[] = Array.from({ length: 15 }, (_, index) => ({
     {
       id: '1',
       name: index % 2 ? 'Orchard' : 'Garden',
-      facet: { code: 'development-fixture-category', id: '1', name: 'Category' },
+      facet: {
+        code: 'development-fixture-category',
+        id: '1',
+        name: 'Category',
+      },
     },
   ],
   optionGroups: [
@@ -83,7 +87,7 @@ const products: PublicProduct[] = Array.from({ length: 15 }, (_, index) => ({
       featuredAsset: null,
       assets: [],
       sku: `SYN-${index}-S`,
-      priceWithTax: 1000 + index * 100,
+      price: 1000 + index * 100,
       currencyCode: 'USD',
       options: [{ id: '1', name: 'Standard', groupId: '1' }],
     },
@@ -93,7 +97,7 @@ const products: PublicProduct[] = Array.from({ length: 15 }, (_, index) => ({
       featuredAsset: null,
       assets: [],
       sku: `SYN-${index}-L`,
-      priceWithTax: 1500 + index * 100,
+      price: 1500 + index * 100,
       currencyCode: 'USD',
       options: [{ id: '2', name: 'Large', groupId: '1' }],
     },

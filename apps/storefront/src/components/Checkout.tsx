@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { CheckoutTotals } from './CartTotals';
 import { VendorPreorderBanner } from './VendorPreorderBanner';
 import { safeAsset } from '@market/storefront-core/catalog';
 import { CheckoutPickup } from './CheckoutPickup';
@@ -68,74 +69,16 @@ export function CheckoutSummary({
                       × {line.quantity}
                     </span>
                   </span>
-                  <span>{formatMoney(line.total, view.currency)}</span>
+                  <span>{formatMoney(line.totalBeforeTax, view.currency)}</span>
                 </li>
               ))}
             </ul>
-            {!unresolved &&
-              view.preorderFee?.vendors
-                .filter(
-                  (v) => v.vendorId === group.vendorId && v.preorderFee !== 0,
-                )
-                .map((v) => (
-                  <p key={v.vendorId}>
-                    Preorder fee: {formatMoney(v.preorderFee, view.currency)}
-                  </p>
-                ))}
-            {group.pickup
-              .filter((pickup) => pickup.fee !== 0)
-              .map((pickup, i) => (
-                <p key={i}>
-                  {pickup.name}
-                  {pickup.fee !== 0 &&
-                    ` · ${formatMoney(pickup.fee, view.currency)}`}
-                </p>
-              ))}
           </section>
         ))}
       {unresolved ? (
         <p role="status">Updating order total…</p>
       ) : (
-        <dl className="checkout-totals">
-          <div>
-            <dt>Subtotal including tax</dt>
-            <dd>{formatMoney(view.subtotal, view.currency)}</dd>
-          </div>
-          {view.discounts
-            .filter((d) => d.total !== 0)
-            .map((item, i) => (
-              <div key={`discount-${i}`}>
-                <dt>{item.name}</dt>
-                <dd>{formatMoney(item.total, view.currency)}</dd>
-              </div>
-            ))}
-          {view.taxes
-            .filter((t) => t.total !== 0)
-            .map((item, i) => (
-              <div key={`tax-${i}`}>
-                <dt>{item.name} (included)</dt>
-                <dd>{formatMoney(item.total, view.currency)}</dd>
-              </div>
-            ))}
-          {view.shipping !== 0 && (
-            <div>
-              <dt>Pickup fees</dt>
-              <dd>{formatMoney(view.shipping, view.currency)}</dd>
-            </div>
-          )}
-          {!!view.preorderFee?.preorderFee && (
-            <div>
-              <dt>Preorder fee</dt>
-              <dd>
-                {formatMoney(view.preorderFee.preorderFee, view.currency)}
-              </dd>
-            </div>
-          )}
-          <div>
-            <dt>Total</dt>
-            <dd>{formatMoney(view.total, view.currency)}</dd>
-          </div>
-        </dl>
+        <CheckoutTotals view={view} className="checkout-totals" />
       )}
     </div>
   );
@@ -175,6 +118,7 @@ export function Checkout({
   onViewChange,
   preorder,
   marketLayout = false,
+  stagedLayout = false,
   orderSummary,
   images = {},
   concise = false,
@@ -184,6 +128,12 @@ export function Checkout({
   onViewChange?: (view: CheckoutView) => void;
   preorder?: VendorPreorderState;
   marketLayout?: boolean;
+  /**
+   * Vendor websites: the market checkout's presentation (heading, date
+   * banner, step chips, stage cards and the order summary dropdown). Payment
+   * methods, terms and loyalty keep the vendor behaviour.
+   */
+  stagedLayout?: boolean;
   /** Storefront-specific summary for the editable checkout steps. */
   orderSummary?: ReactNode;
   images?: Record<string, string>;
@@ -226,7 +176,8 @@ export function Checkout({
     reviewIncludesPayment: true,
   });
   const review = stage === 'Review' && !view.committed;
-  const showColumns = marketLayout || !!orderSummary || review;
+  const layout = marketLayout || stagedLayout;
+  const showColumns = layout || !!orderSummary || review;
   const awaitingPickupTotal =
     stripeEnabled &&
     !view.preorderFee &&
@@ -246,13 +197,13 @@ export function Checkout({
   return (
     <div
       className={
-        marketLayout
+        layout
           ? 'vendor-checkout market-checkout checkout-shell'
           : 'checkout-shell'
       }
       aria-busy={pending}
     >
-      {marketLayout && (
+      {layout && (
         <>
           {preorder && !review && (
             <VendorPreorderBanner
@@ -351,7 +302,7 @@ export function Checkout({
             </p>
           ) : stage === 'Contact' ? (
             <form
-              className={marketLayout ? 'checkout-section' : undefined}
+              className={layout ? 'checkout-section' : undefined}
               noValidate
               onBlurCapture={(event) => {
                 if (
@@ -370,7 +321,7 @@ export function Checkout({
               }}
               onSubmit={submitContact}
             >
-              {marketLayout && <h2>Contact information</h2>}
+              {layout && <h2>Contact information</h2>}
               {!concise && (
                 <p>
                   Enter your pickup contact. You can purchase without an
@@ -383,9 +334,7 @@ export function Checkout({
                 </span>{' '}
                 Required
               </p>
-              <div
-                className={marketLayout ? 'checkout-contact-grid' : undefined}
-              >
+              <div className={layout ? 'checkout-contact-grid' : undefined}>
                 <div className="field">
                   <label htmlFor="firstName">
                     First name{' '}
@@ -438,11 +387,7 @@ export function Checkout({
                     </FormError>
                   )}
                 </div>
-                <div
-                  className={
-                    marketLayout ? 'field checkout-full-field' : 'field'
-                  }
-                >
+                <div className={layout ? 'field checkout-full-field' : 'field'}>
                   <label htmlFor="emailAddress">
                     Email{' '}
                     <span className="required-mark" aria-hidden="true">
@@ -472,11 +417,7 @@ export function Checkout({
                     </FormError>
                   )}
                 </div>
-                <div
-                  className={
-                    marketLayout ? 'field checkout-full-field' : 'field'
-                  }
-                >
+                <div className={layout ? 'field checkout-full-field' : 'field'}>
                   <PhoneInput
                     id="phoneNumber"
                     name="phoneNumber"
@@ -496,7 +437,7 @@ export function Checkout({
               <CheckoutPickup
                 view={view}
                 preorder={preorder}
-                compact={!marketLayout}
+                compact={!layout}
               />
               {view.groups.map((group) => {
                 const own = options.filter(
@@ -743,7 +684,7 @@ export function Checkout({
         ) : (
           orderSummary
         )}
-        {marketLayout && !review && (
+        {layout && !review && (
           <aside className="checkout-order-summary" aria-label="Order summary">
             <Dropdown
               defaultOpen

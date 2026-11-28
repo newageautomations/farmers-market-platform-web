@@ -49,14 +49,24 @@ describe('vendor storefront standard', () => {
     }
   });
 
-  it('leaves market websites on Harvest and Editorial Market unchanged', () => {
+  it('puts market websites on Harvest and Editorial Market on the market standard', () => {
     for (const theme of ['harvest', 'editorial-market']) {
       const rules = themePageStructure(theme, 'MARKET');
+      expect(rules).toEqual({
+        ...themePageStructure('pasture', 'MARKET'),
+        marketDayBoothCards: false,
+      });
       expect(rules.fixedFindUs).toBeNull();
-      expect(rules.footerOnlyPages).toEqual([]);
-      expect(rules.sectionSpaceDefault).toBeNull();
-      expect(rules.shopPagination).toBe('summary');
+      expect(rules.footerOnlyPages).toEqual([
+        'faq',
+        'policies',
+        'terms-and-conditions',
+      ]);
+      expect(rules.marketContactForm).toBe(true);
       expect(themePageStructure(theme, undefined)).toEqual(rules);
+      // The vendor theme of the same name keeps the vendor standard.
+      expect(themePageStructure(theme, 'VENDOR').marketContactForm).toBe(false);
+      expect(themePageStructure(theme, 'VENDOR').fixedFindUs).not.toBeNull();
     }
     // Market-only themes keep the market standard.
     expect(themePageStructure('pasture', 'MARKET').fixedFindUs).toBeNull();

@@ -64,7 +64,7 @@ describe('market add button feedback', () => {
     expect(screen.queryByText('Added to your cart.')).not.toBeInTheDocument();
   });
 
-  it('does not animate option selection or install animation on vendor buttons', async () => {
+  it('does not animate option selection and animates vendor buttons like market ones', async () => {
     const { rerender } = render(
       <FeaturedAdd
         storefrontId="1"
@@ -83,6 +83,11 @@ describe('market add button feedback', () => {
         screen.getAllByRole('button', { name: 'Add to cart' })[0]!,
       ),
     );
-    expect(document.querySelector('.market-cart-button')).toBeNull();
+    // Vendor websites confirm on the button too, without the text message.
+    const vendorButton = document.querySelector('.market-cart-button');
+    expect(vendorButton).toHaveClass('is-added');
+    expect(document.querySelector('p[role="status"]')).toHaveAttribute(
+      'hidden',
+    );
   });
 });

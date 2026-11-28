@@ -1,22 +1,45 @@
-import { useEffect, useState } from 'react';
-import type { MarketBootstrap } from '@market/api';
+import { useEffect, useState, type ReactNode } from 'react';
+import type { CartBootstrap, MarketBootstrap } from '@market/api';
 import { shopCall } from './shop-client';
 import { FarmstandIcon } from '@market/ui/farmstand';
 import { buttonClassName } from '@market/ui/presentation';
+/**
+ * The header cart link with its item count. `icon` draws the shared bag
+ * button. A theme with its own cart drawing passes it as children with its
+ * own `className`; the count badge is added the same way.
+ */
 export function MarketCartLink({
   storefrontId,
   icon = false,
+  className,
+  children,
 }: {
   storefrontId: string;
   icon?: boolean;
+  className?: string;
+  children?: ReactNode;
 }) {
+  const badge = icon || children != null;
   const [quantity, setQuantity] = useState<number | null>(null);
   useEffect(() => {
     let active = true;
     const refresh = () =>
-      shopCall<MarketBootstrap>(storefrontId, 'cart')
+      shopCall<MarketBootstrap | CartBootstrap>(storefrontId, 'cart')
         .then((result) => {
-          if (active) setQuantity(result.cart?.totalQuantity ?? 0);
+          // A market cart reports its total; a vendor cart lists its lines.
+          const cart = result.cart as
+            | { totalQuantity?: number; lines?: { quantity: number }[] }
+            | null
+            | undefined;
+          if (active)
+            setQuantity(
+              cart?.totalQuantity ??
+                cart?.lines?.reduce(
+                  (total, line) => total + line.quantity,
+                  0,
+                ) ??
+                0,
+            );
         })
         .catch(() => {
           if (active) setQuantity(null);
@@ -42,23 +65,24 @@ export function MarketCartLink({
     <a
       href="/cart"
       className={
-        icon
+        className ??
+        (icon
           ? buttonClassName({
               variant: 'tertiary',
               iconOnly: true,
               className: 'harvest-cart-link harvest-header-icon',
             })
-          : undefined
+          : undefined)
       }
       aria-label={quantity === null ? 'Cart' : `Cart, ${quantity} items`}
     >
-      {icon ? <FarmstandIcon name="shopping-bag" /> : 'Cart'}
+      {children ?? (icon ? <FarmstandIcon name="shopping-bag" /> : 'Cart')}
       {quantity !== null && (
         <span
-          className={icon ? 'harvest-cart-count' : undefined}
+          className={badge ? 'harvest-cart-count' : undefined}
           aria-hidden="true"
         >
-          {icon ? quantity : ` (${quantity})`}
+          {badge ? quantity : ` (${quantity})`}
         </span>
       )}
     </a>

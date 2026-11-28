@@ -47,6 +47,12 @@ export type ThemePageStructure = {
    * press adds `more`. `null` keeps the editable historical page.
    */
   fixedFindUs: { initial: number; more: number } | null;
+  /**
+   * Cart, checkout and the date banner leave out general guidance (how
+   * preordering works, "Market hours:" prefixes, reassurance about payment).
+   * Statuses, warnings, disclosures and the market's own instructions stay.
+   */
+  conciseCommerce: boolean;
 };
 
 const historical: ThemePageStructure = {
@@ -67,6 +73,7 @@ const historical: ThemePageStructure = {
   marketStarterText: false,
   marketDayBoothCards: false,
   fixedFindUs: null,
+  conciseCommerce: false,
 };
 
 /**
@@ -92,6 +99,7 @@ const marketStandard: ThemePageStructure = {
   marketStarterText: true,
   marketDayBoothCards: true,
   fixedFindUs: null,
+  conciseCommerce: true,
 };
 
 /**
@@ -108,14 +116,28 @@ const vendorStandard: ThemePageStructure = {
   marketStarterText: false,
   marketDayBoothCards: false,
   fixedFindUs: { initial: 4, more: 8 },
+  conciseCommerce: false,
 };
 
-/** Market website rules by theme. */
+/**
+ * Market Harvest and market Editorial Market follow the market standard too:
+ * on a market website they are market themes of their own, separate from
+ * their vendor namesakes. Market Day booth cards stay off until each theme
+ * styles the booth card.
+ */
+const marketStandardWithoutBoothCards: ThemePageStructure = {
+  ...marketStandard,
+  marketDayBoothCards: false,
+};
+
+/** Market website rules by theme. Every market theme follows the market standard. */
 export const themePageStructures: Partial<Record<string, ThemePageStructure>> =
   {
     pasture: marketStandard,
     meadow: marketStandard,
     hearth: marketStandard,
+    harvest: marketStandardWithoutBoothCards,
+    'editorial-market': marketStandardWithoutBoothCards,
   };
 
 /** Every theme a vendor website can use follows the vendor standard. */
@@ -126,7 +148,7 @@ export const vendorStandardThemes = [
   'bloom',
 ] as const;
 
-/** Which kind of website the rules are for. Harvest and Editorial Market serve both. */
+/** Which kind of website the rules are for. Harvest and Editorial Market have a market and a vendor theme each. */
 export type StorefrontSiteKind = 'MARKET' | 'VENDOR';
 
 /**

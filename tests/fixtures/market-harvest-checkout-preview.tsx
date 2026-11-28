@@ -51,7 +51,15 @@ export const view: CheckoutView = {
     {
       vendorId: '1',
       vendorName: 'Manna Roots',
-      lines: [{ id: '10', name: 'Fresh sourdough', quantity: 2, total: 2400 }],
+      lines: [
+        {
+          id: '10',
+          name: 'Fresh sourdough',
+          quantity: 2,
+          total: 2400,
+          totalBeforeTax: 2400,
+        },
+      ],
       pickup: [
         { methodId: null, name: 'Market pickup', instructions: null, fee: 0 },
       ],
@@ -115,7 +123,9 @@ const cart: Cart = {
           name: 'Fresh sourdough loaf',
           productName: 'Fresh sourdough',
           quantity: 2,
+          unitPrice: 1200,
           unitPriceWithTax: 1200,
+          discountedLinePrice: 2400,
           discountedLinePriceWithTax: 2400,
           featuredAsset: {
             id: '1',
@@ -136,7 +146,9 @@ const cart: Cart = {
           name: 'Seasonal fruit box',
           productName: 'Seasonal fruit',
           quantity: 1,
+          unitPrice: 800,
           unitPriceWithTax: 800,
+          discountedLinePrice: 800,
           discountedLinePriceWithTax: 800,
           featuredAsset: null,
         },
@@ -147,7 +159,15 @@ const cart: Cart = {
 view.groups.push({
   vendorId: '2',
   vendorName: 'Garden Orchard',
-  lines: [{ id: '11', name: 'Seasonal fruit box', quantity: 1, total: 800 }],
+  lines: [
+    {
+      id: '11',
+      name: 'Seasonal fruit box',
+      quantity: 1,
+      total: 800,
+      totalBeforeTax: 800,
+    },
+  ],
   pickup: [
     {
       methodId: null,

@@ -153,8 +153,9 @@ it('shares section controls while preserving Editorial native panels, visibility
     );
   }
   render(<Editor />);
+  // The two showcases and the closing banner.
   expect(screen.getAllByRole('button', { name: /^Duplicate:/ })).toHaveLength(
-    2,
+    3,
   );
   expect(screen.queryByRole('switch', { name: 'Enable Hero' })).toBeNull();
   expect(current.composition).toBeUndefined();
@@ -169,14 +170,16 @@ it('shares section controls while preserving Editorial native panels, visibility
     typographyScale: 'expressive',
   });
   expect(current.composition).toBeUndefined();
+  // Products now start above categories; moving them down swaps the two.
   fireEvent.click(
-    screen.getByRole('button', { name: 'Move up: Featured Products' }),
+    screen.getByRole('button', { name: 'Move down: Featured Products' }),
   );
   expect(editorialHomepageComposition(current).map((s) => s.id)).toEqual([
     'hero',
-    'product-showcase-homepage',
     'category-showcase-homepage',
+    'product-showcase-homepage',
     'impact',
+    'cta-banner-homepage-closing',
   ]);
   fireEvent.click(
     screen.getByRole('button', { name: 'Product Showcase: Featured Products' }),

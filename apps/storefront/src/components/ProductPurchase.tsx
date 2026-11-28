@@ -1,5 +1,5 @@
-import { buttonClassName } from '@market/ui/presentation';
 import { Select, Button, Input } from '@market/ui';
+import { StepperGlyph } from './StepperGlyph';
 import { useProductPurchase } from '../lib/use-product-purchase';
 import { AnimatedCartButton } from './AnimatedCartButton';
 import {
@@ -116,45 +116,28 @@ export function ProductPurchase({
       </div>
       {selected && (
         <p className="product-price" data-variant-price hidden={!!priceTarget}>
-          {formatMoney(selected.priceWithTax, selected.currencyCode)}
+          {formatMoney(selected.price, selected.currencyCode)}
         </p>
       )}
       <div className="field em-product-quantity-field">
         <label htmlFor="product-quantity">Quantity</label>
-        {editorial ? (
-          <div className="em-product-quantity vendor-cart-quantity">
-            <Button
-              className="em-product-quantity-button"
-              variant="secondary"
-              aria-label="Decrease quantity"
-              disabled={pending || Number(quantity) <= 1}
-              onClick={() => setQuantity(String(Number(quantity) - 1))}
-            >
-              −
-            </Button>
-            <Input
-              id="product-quantity"
-              type="number"
-              inputMode="numeric"
-              min="1"
-              max={Math.max(1, maximum)}
-              step="1"
-              required
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              disabled={pending}
-            />
-            <Button
-              className="em-product-quantity-button"
-              variant="secondary"
-              aria-label="Increase quantity"
-              disabled={pending || Number(quantity) >= maximum}
-              onClick={() => setQuantity(String(Number(quantity) + 1))}
-            >
-              +
-            </Button>
-          </div>
-        ) : (
+        {/* The cart's quantity stepper, so choosing a quantity looks and works
+            the same here as in the cart. */}
+        <div
+          className={`vendor-cart-quantity${editorial ? ' em-product-quantity' : ''}`}
+        >
+          <Button
+            className={
+              editorial ? 'em-product-quantity-button' : 'vendor-cart-stepper'
+            }
+            variant={editorial ? 'secondary' : 'primary'}
+            type="button"
+            aria-label="Decrease quantity"
+            disabled={pending || Number(quantity) <= 1}
+            onClick={() => setQuantity(String(Number(quantity) - 1))}
+          >
+            <StepperGlyph kind="minus" />
+          </Button>
           <Input
             id="product-quantity"
             type="number"
@@ -167,10 +150,22 @@ export function ProductPurchase({
             onChange={(e) => setQuantity(e.target.value)}
             disabled={pending}
           />
-        )}
+          <Button
+            className={
+              editorial ? 'em-product-quantity-button' : 'vendor-cart-stepper'
+            }
+            variant={editorial ? 'secondary' : 'primary'}
+            type="button"
+            aria-label="Increase quantity"
+            disabled={pending || Number(quantity) >= maximum}
+            onClick={() => setQuantity(String(Number(quantity) + 1))}
+          >
+            <StepperGlyph kind="plus" />
+          </Button>
+        </div>
       </div>
       <AnimatedCartButton
-        enabled={market}
+        enabled
         feedback={cartFeedback}
         type="submit"
         variant="primary"
@@ -217,18 +212,11 @@ export function ProductPurchase({
           </a>
         </p>
       )}
-      {remaining != null ? (
+      {/* Only a low stock warning is shown while the product can be added. */}
+      {remaining != null && (
         <p role="status">
           <span className="stock-low">{lowStockLabel(remaining)}</span>
         </p>
-      ) : (
-        eligible &&
-        !editorial && (
-          <p role="status">
-            Available for this market
-            {maximum < 2147483647 ? `, up to ${maximum} available` : ''}.
-          </p>
-        )
       )}
       {eligible && !validQuantity && (
         <p role="alert">
@@ -239,29 +227,11 @@ export function ProductPurchase({
       {fixture && (
         <p>Fixture preview. Cart mutations require a connected Shop session.</p>
       )}
-      <p
-        className={
-          pending || message ? 'alert ui-alert ui-alert-info' : undefined
-        }
-        role="status"
-        aria-live="polite"
-        hidden={market && !pending && !!message}
-      >
-        {pending ? 'Updating your cart…' : message}
-        {message && (
-          <>
-            {' '}
-            <a
-              className={buttonClassName({
-                variant: 'secondary',
-                className: 'button secondary',
-              })}
-              href="/cart"
-            >
-              View cart
-            </a>
-          </>
-        )}
+      {/* The greyed-out button shows the add is in progress and its
+          animation confirms it, so no progress or success text is drawn.
+          Screen readers still hear the result. */}
+      <p className="sr-only" role="status" aria-live="polite">
+        {pending ? '' : message}
       </p>
       {error && (
         <p className="alert ui-alert ui-alert-error" role="alert">

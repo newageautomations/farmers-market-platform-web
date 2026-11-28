@@ -86,7 +86,7 @@ export function marketProduct(item: MarketItem): PublicProduct {
       id: variant.variantId,
       name: variant.name,
       sku: '',
-      priceWithTax: variant.price,
+      price: variant.price,
       currencyCode: variant.currencyCode,
       assets: [],
       featuredAsset: null,
