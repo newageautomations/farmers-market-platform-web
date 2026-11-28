@@ -30,6 +30,12 @@ const paths: Record<string, string> = {
   integrations: 'M8 3v5m8-5v5M5 8h14v3a7 7 0 0 1-7 7v3m0-3a7 7 0 0 1-7-7V8',
 };
 export function NavigationIcon({ path }: { path: string }) {
+  if (path === '/platform/stripe-connections')
+    return (
+      <span className="navigation-icon">
+        <FarmstandIcon name="credit-card" />
+      </span>
+    );
   if (path === '/vendor/orders/pickup')
     return (
       <span className="navigation-icon">

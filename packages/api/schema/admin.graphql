@@ -230,6 +230,7 @@ type Query {
   platformAnalyticsSubscriptions(range: AnalyticsRangeInput!): AnalyticsSubscriptionPage!
   platformAnalyticsUsage(range: AnalyticsRangeInput!): AnalyticsUsagePage!
   platformAdminScope: PlatformAdminScope!
+  platformStripeConnections(options: PlatformStripeConnectionOptions): PlatformStripeConnectionPage!
   platformTestAccounts(options: PlatformTestAccountPageOptions): PlatformTestAccountPage!
   platformTenants(options: PlatformTenantOptions): PlatformTenantPage!
   platformTenant(kind: PlatformTenantKind!, id: ID!): PlatformTenantDetail!
@@ -922,6 +923,9 @@ type Mutation {
   revokeSaasEntitlementOverride(id: ID!): SaasDefinitionResult!
   rebuildAnalytics: AnalyticsRebuildResult!
   reconcileAnalytics: AnalyticsReconciliationResult!
+  platformBeginStripeConnect(target: PlatformStripeBusinessInput!): PlatformStripeOAuthStart!
+  platformCompleteStripeConnect(state: String!, code: String, cancelled: Boolean!): PlatformStripeOAuthCompletion!
+  platformRefreshStripeConnection(target: PlatformStripeBusinessInput!): AdminPaymentAccount!
   platformCreateTestAccount(input: PlatformCreateTestAccountInput!, password: String!, confirmPassword: String!): PlatformCreateTestAccountResult!
   platformProvisionVendor(input: PlatformProvisionVendorInput!): PlatformTenantSummary!
   platformProvisionMarket(input: PlatformProvisionMarketInput!): PlatformTenantSummary!
@@ -8793,6 +8797,8 @@ type AdminPaymentAccount {
   pastDueCount: Int!
   disabledReason: String
   lastSyncAt: DateTime
+  pendingVerificationCount: Int!
+  currentDeadline: DateTime
   readiness: [AdminPaymentReadiness!]!
 }
 
@@ -8891,6 +8897,79 @@ type PlatformTenantSummary {
 type PlatformTenantPage {
   items: [PlatformTenantSummary!]!
   totalItems: Int!
+}
+
+enum PlatformStripeConnectionFilter {
+  CONNECTED
+  NOT_CONNECTED
+}
+
+enum PlatformStripeReadinessFilter {
+  READY
+  NOT_READY
+}
+
+enum PlatformStripeConnectionSort {
+  NAME_ASC
+  NAME_DESC
+}
+
+input PlatformStripeConnectionOptions {
+  skip: Int
+  take: Int
+  search: String
+  kind: PlatformTenantKind
+  connection: PlatformStripeConnectionFilter
+  readiness: PlatformStripeReadinessFilter
+  attention: Boolean
+  sort: PlatformStripeConnectionSort
+}
+
+input PlatformStripeBusinessInput {
+  kind: PlatformTenantKind!
+  id: ID!
+}
+
+type PlatformStripeOverview {
+  total: Int!
+  connected: Int!
+  ready: Int!
+  attention: Int!
+  unconnected: Int!
+}
+
+type PlatformStripeBusiness {
+  id: ID!
+  kind: PlatformTenantKind!
+  name: String!
+  status: String!
+  imageUrl: String
+  account: AdminPaymentAccount
+  ready: Boolean!
+  canConnect: Boolean!
+  canRefresh: Boolean!
+}
+
+type PlatformStripeConnectionPage {
+  mode: PlatformPaymentMode!
+  delegatedOAuthAllowed: Boolean!
+  collectionSuspended: Boolean!
+  overview: PlatformStripeOverview!
+  totalItems: Int!
+  items: [PlatformStripeBusiness!]!
+}
+
+type PlatformStripeOAuthStart {
+  authorizationUrl: String!
+  expiresAt: DateTime!
+}
+
+type PlatformStripeOAuthCompletion {
+  cancelled: Boolean!
+  targetKind: PlatformTenantKind
+  targetId: ID
+  businessName: String
+  account: AdminPaymentAccount
 }
 
 type PlatformSubscriptionSummary {

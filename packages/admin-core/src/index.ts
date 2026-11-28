@@ -215,6 +215,12 @@ export const navigation: readonly NavItem[] = [
     permission: 'SuperAdmin',
   },
   {
+    label: 'Stripe Connections',
+    path: '/platform/stripe-connections',
+    scopes: ['PLATFORM'],
+    permission: 'SuperAdmin',
+  },
+  {
     label: 'Test Accounts',
     path: '/platform/test-accounts',
     scopes: ['PLATFORM'],

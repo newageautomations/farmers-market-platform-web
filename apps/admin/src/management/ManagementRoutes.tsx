@@ -5,6 +5,7 @@ import { Catalog } from './catalog';
 import { Billing } from './billing';
 import { AccountOnboardingReview } from './AccountOnboardingReview';
 import { PlatformTestAccounts } from './PlatformTestAccounts';
+import { StripeConnections } from './StripeConnections';
 import type { ReactNode } from 'react';
 import type { FarmstandIconName } from '@market/ui/farmstand';
 import { WorkspaceFrame } from '../WorkspaceFrame';
@@ -56,6 +57,16 @@ export function ManagementRoutes({
           description="Create test logins for customers, vendor owners, and market managers."
         >
           <PlatformTestAccounts service={service} />
+        </PlatformFrame>
+      );
+    if (path === '/platform/stripe-connections')
+      return (
+        <PlatformFrame
+          icon="credit-card"
+          title="Stripe Connections"
+          description="Manage and monitor Stripe payment connections for vendors and markets."
+        >
+          <StripeConnections service={service} />
         </PlatformFrame>
       );
     if (path === '/platform/tenants')

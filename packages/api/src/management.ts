@@ -29,6 +29,13 @@ export interface RoleOnboardingRequest {
 export type TenantOptions = Partial<g.PlatformTenantOptions>;
 export type ManagementEntitlement = g.ManagementEntitlementFragment;
 export type ModuleReadiness = g.ModuleReadinessFragment;
+export type StripePaymentStatus = g.StripePaymentStatusFragment;
+export type StripeConnectionOptions =
+  Partial<g.PlatformStripeConnectionOptions>;
+export type StripeConnectionTarget = g.PlatformStripeBusinessInput;
+export type StripeConnectionPage =
+  g.PlatformStripeConnectionsQuery['platformStripeConnections'];
+export type StripeConnectionBusiness = StripeConnectionPage['items'][number];
 export type PaymentManagement = g.PaymentManagementQuery;
 export type TenantBilling = g.TenantBillingQuery;
 export type PosSupport =
@@ -248,6 +255,50 @@ export function createManagementApi(options: TransportOptions) {
           {},
         )
       ).platformIntegrationReadiness,
+    stripeConnections: async (options: StripeConnectionOptions) =>
+      (
+        await execute(
+          { api: 'admin', document: g.PlatformStripeConnectionsDocument },
+          {
+            options: {
+              skip: null,
+              take: null,
+              search: null,
+              kind: null,
+              connection: null,
+              readiness: null,
+              attention: null,
+              sort: null,
+              ...options,
+            },
+          },
+        )
+      ).platformStripeConnections,
+    beginPlatformStripeConnect: async (target: StripeConnectionTarget) =>
+      (
+        await execute(
+          { api: 'admin', document: g.PlatformBeginStripeConnectDocument },
+          { target },
+        )
+      ).platformBeginStripeConnect,
+    completePlatformStripeConnect: async (
+      state: string,
+      code: string | null,
+      cancelled: boolean,
+    ) =>
+      (
+        await execute(
+          { api: 'admin', document: g.PlatformCompleteStripeConnectDocument },
+          { state, code, cancelled },
+        )
+      ).platformCompleteStripeConnect,
+    refreshPlatformStripeConnection: async (target: StripeConnectionTarget) =>
+      (
+        await execute(
+          { api: 'admin', document: g.PlatformRefreshStripeConnectionDocument },
+          { target },
+        )
+      ).platformRefreshStripeConnection,
     payments: (mode: g.StripeAccountMode) =>
       execute(
         { api: 'admin', document: g.PaymentManagementDocument },

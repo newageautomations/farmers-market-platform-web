@@ -128,30 +128,101 @@ query PaymentManagement($mode: PlatformPaymentMode!) {
     fundsFlowPolicy
   }
   ownPaymentAccount: ownPaymentAdminAccount(mode: $mode) {
-    id
+    ...StripePaymentStatus
+  }
+}
+
+fragment StripePaymentStatus on AdminPaymentAccount {
+  id
+  mode
+  provider
+  accountReference
+  connectionMethod
+  connectionStatus
+  detailsSubmitted
+  chargesEnabled
+  payoutsEnabled
+  cardPayments
+  transfers
+  legacyPayments
+  currentlyDueCount
+  pastDueCount
+  pendingVerificationCount
+  currentDeadline
+  disabledReason
+  lastSyncAt
+  readiness {
+    state
+    purpose
+    ready
+    reasons
+  }
+}
+
+query PlatformStripeConnections($options: PlatformStripeConnectionOptions!) {
+  platformStripeConnections(options: $options) {
     mode
-    provider
-    accountReference
-    connectionMethod
-    connectionStatus
-    detailsSubmitted
-    chargesEnabled
-    payoutsEnabled
-    cardPayments
-    transfers
-    legacyPayments
-    currentlyDueCount
-    pastDueCount
-    disabledReason
-    lastSyncAt
-    readiness {
-      state
-      purpose
+    delegatedOAuthAllowed
+    collectionSuspended
+    totalItems
+    overview {
+      total
+      connected
       ready
-      reasons
+      attention
+      unconnected
+    }
+    items {
+      id
+      kind
+      name
+      status
+      imageUrl
+      ready
+      canConnect
+      canRefresh
+      account {
+        ...StripePaymentStatus
+      }
     }
   }
 }
+
+mutation PlatformBeginStripeConnect($target: PlatformStripeBusinessInput!) {
+  platformBeginStripeConnect(target: $target) {
+    authorizationUrl
+    expiresAt
+  }
+}
+
+mutation PlatformCompleteStripeConnect(
+  $state: String!
+  $code: String
+  $cancelled: Boolean!
+) {
+  platformCompleteStripeConnect(
+    state: $state
+    code: $code
+    cancelled: $cancelled
+  ) {
+    cancelled
+    targetKind
+    targetId
+    businessName
+    account {
+      ...StripePaymentStatus
+    }
+  }
+}
+
+mutation PlatformRefreshStripeConnection(
+  $target: PlatformStripeBusinessInput!
+) {
+  platformRefreshStripeConnection(target: $target) {
+    ...StripePaymentStatus
+  }
+}
+
 mutation ManagementConnectStripe($mode: StripeAccountMode!) {
   beginOwnStripeConnect(mode: $mode) {
     authorizationUrl

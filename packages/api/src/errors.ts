@@ -88,6 +88,20 @@ const catalogMessages: Record<string, string> = {
     'A vendor cannot accept online payments yet. The vendor must complete Stripe setup and refresh their payment account status before checkout can continue.',
   OAUTH_RECONCILIATION_REQUIRED:
     'Stripe authorization could not be confirmed. Start a fresh connection with Connect existing Stripe account. The previous authorization will not be submitted again.',
+  ORGANIZATION_ALREADY_CONNECTED:
+    'This business already has a Stripe connection. Refresh the list to see its current status.',
+  PLATFORM_STRIPE_ONBOARDING_DISABLED:
+    'Platform Stripe Sandbox onboarding is unavailable in this environment.',
+  STRIPE_BUSINESS_UNAVAILABLE:
+    'This business is unavailable for managed Stripe setup. Refresh the list to check its status.',
+  STRIPE_REFRESH_DISABLED:
+    'Stripe status refresh is unavailable in this environment.',
+  INVALID_OAUTH_STATE:
+    'This Stripe authorization is unavailable. Start a fresh connection for the intended business.',
+  PAYMENT_ACCOUNT_NOT_CONNECTED:
+    'This business has no active Stripe connection. Reload the list for its current status.',
+  ACCOUNT_REFRESH_UNAVAILABLE:
+    'Stripe status could not be refreshed. Check the connection and try again.',
   OAUTH_STATE_ALREADY_USED:
     'This Stripe authorization has already been checked. Refresh the account status or start a fresh connection.',
   OAUTH_STATE_EXPIRED:
@@ -238,7 +252,8 @@ const taxMessages: Record<string, string> = {
   VENDOR_TAX_RATE_INVALID:
     'Enter a tax percentage from 0 to 100 with at most two decimal places.',
   VENDOR_TAX_VERSION_CONFLICT: 'Tax settings changed. Reload and try again.',
-  VENDOR_STRIPE_SETUP_REQUIRED: 'This vendor cannot accept online orders right now.',
+  VENDOR_STRIPE_SETUP_REQUIRED:
+    'This vendor cannot accept online orders right now.',
 };
 export class AppError extends Error {
   constructor(
@@ -267,6 +282,13 @@ const codes: Record<string, ErrorKind> = {
   PREORDER_FEE_REQUOTE_REQUIRED: 'conflict',
   ACCOUNT_NOT_READY: 'validation',
   OAUTH_RECONCILIATION_REQUIRED: 'conflict',
+  ORGANIZATION_ALREADY_CONNECTED: 'conflict',
+  PLATFORM_STRIPE_ONBOARDING_DISABLED: 'unavailable',
+  STRIPE_BUSINESS_UNAVAILABLE: 'conflict',
+  STRIPE_REFRESH_DISABLED: 'unavailable',
+  INVALID_OAUTH_STATE: 'conflict',
+  PAYMENT_ACCOUNT_NOT_CONNECTED: 'conflict',
+  ACCOUNT_REFRESH_UNAVAILABLE: 'unavailable',
   OAUTH_STATE_ALREADY_USED: 'conflict',
   OAUTH_STATE_EXPIRED: 'conflict',
   VENDOR_PICKUP_COVERAGE_REQUIRED: 'validation',

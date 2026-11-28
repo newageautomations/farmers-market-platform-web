@@ -897,7 +897,10 @@ const marketSections: NavigationSection[] = [
 ];
 const platformSections: NavigationSection[] = [
   { title: null, pages: ['platform', 'notifications'] },
-  { title: 'Administration', pages: ['tenants', 'test-accounts', 'billing'] },
+  {
+    title: 'Administration',
+    pages: ['tenants', 'test-accounts', 'stripe-connections', 'billing'],
+  },
   { title: 'Workspace', pages: ['settings'] },
 ];
 const vendorSections: NavigationSection[] = [

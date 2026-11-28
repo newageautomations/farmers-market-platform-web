@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
-  Badge,
   Button,
   Card,
   Dialog,
@@ -11,27 +10,12 @@ import {
 import { FarmstandButton } from '@market/ui/farmstand';
 import { safeError, type AppError } from '@market/api';
 import type { ManagementService } from './service';
-import { ReadState, date, useRead } from '../vendor/common';
-import { codeLabel } from '../settings/providers';
-
-const remediation: Record<string, string> = {
-  ACCOUNT_DISCONNECTED: 'Connect Stripe to continue account setup.',
-  PLATFORM_IDENTITY_MISMATCH:
-    'Reconnect with the configured platform. Ask support to review historical connections.',
-  OWNERSHIP_UNKNOWN: 'Organization ownership needs review.',
-  LIVE_ACCOUNT_ACTIVATION_DISABLED:
-    'Live account activation is unavailable in this phase.',
-  CONFIGURATION_INCOMPATIBLE:
-    'This account must use the full Stripe Dashboard with Stripe collecting processing fees and payment losses. Ask support to review it.',
-  ACCOUNT_STALE: 'Refresh status to retrieve current verification information.',
-  ACCOUNT_RESTRICTED: 'Open Stripe to resolve the account restriction.',
-  INFORMATION_REQUIRED:
-    'Continue setup in Stripe to supply the required information.',
-  VERIFICATION_PENDING:
-    'Stripe is reviewing your information. Refresh status later.',
-  PAYMENT_CAPABILITY_NOT_READY: 'Stripe has not enabled card payments yet.',
-  PAYOUT_NOT_READY: 'Stripe has not enabled payouts yet.',
-};
+import { ReadState, useRead } from '../vendor/common';
+import {
+  stripeDestination,
+  StripeStatusDetails,
+  stripeReadiness,
+} from './stripe-presentation';
 
 /** Shared vendor/market composition. Account authority and financial readiness stay on the server. */
 export function Payments({
@@ -61,22 +45,6 @@ export function Payments({
   const oauthAttempts = useRef(new Set<string>());
   const current = useRef<ManagementService | undefined>(service);
   current.current = service;
-  const redirect = (url: string, tab?: Window | null) => {
-    const target = new URL(url);
-    if (
-      target.protocol !== 'https:' ||
-      ![
-        'connect.stripe.com',
-        'accounts.stripe.com',
-        'dashboard.stripe.com',
-      ].includes(target.hostname)
-    )
-      throw new Error('Unexpected Stripe destination');
-    if (tab === undefined) window.location.assign(target.href);
-    else if (tab) tab.location.href = target.href;
-    // The placeholder tab was blocked; open the validated destination directly.
-    else window.open(target.href, '_blank', 'noopener,noreferrer');
-  };
   /**
    * `tab` is a placeholder window opened synchronously in the click handler so
    * popup blockers allow it; it is closed when no destination is returned.
@@ -97,7 +65,10 @@ export function Payments({
       const url = await action();
       if (current.current !== owner) return;
       if (url) {
-        redirect(url, tab);
+        const destination = stripeDestination(url);
+        if (tab === undefined) window.location.assign(destination);
+        else if (tab) tab.location.href = destination;
+        else window.open(destination, '_blank', 'noopener,noreferrer');
         opened = true;
       } else result.refresh();
     } catch (e) {
@@ -158,10 +129,7 @@ export function Payments({
       }
     })();
   }, [allowed, busy, oauthState, oauthCode, oauthFinished, service, refresh]);
-  const charge = account?.readiness.find(
-    (r) => r.purpose === 'ACCEPT_DIRECT_CHARGE',
-  );
-  const payout = account?.readiness.find((r) => r.purpose === 'RECEIVE_PAYOUT');
+  const charge = stripeReadiness(account, 'ACCEPT_DIRECT_CHARGE');
   return (
     <>
       <ReadState skeleton="detail" {...result} retry={result.refresh} />
@@ -210,87 +178,7 @@ export function Payments({
       )}
       {config && (
         <Card surface={embedded ? 'embedded' : 'card'}>
-          <dl className="provider-facts">
-            <div>
-              <dt>Connection</dt>
-              <dd>
-                <Badge
-                  tone={
-                    account?.connectionStatus === 'CONNECTED'
-                      ? 'success'
-                      : 'neutral'
-                  }
-                >
-                  {account
-                    ? codeLabel(account.connectionStatus)
-                    : 'Not connected'}
-                </Badge>
-              </dd>
-            </div>
-            {account && (
-              <>
-                <div>
-                  <dt>Account</dt>
-                  <dd>{account.accountReference}</dd>
-                </div>
-                <div>
-                  <dt>Verification</dt>
-                  <dd>{codeLabel(charge?.state ?? 'UNKNOWN')}</dd>
-                </div>
-                <div>
-                  <dt>Details submitted</dt>
-                  <dd>{account.detailsSubmitted ? 'Yes' : 'No'}</dd>
-                </div>
-                <div>
-                  <dt>Card payments</dt>
-                  <dd>
-                    {account.chargesEnabled
-                      ? 'Enabled by Stripe'
-                      : 'Not enabled by Stripe'}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Direct charge readiness</dt>
-                  <dd>
-                    {charge?.ready ? 'Provider requirements met' : 'Not ready'}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Payout readiness</dt>
-                  <dd>{payout?.ready ? 'Ready' : 'Not ready'}</dd>
-                </div>
-                <div>
-                  <dt>Requirements</dt>
-                  <dd>
-                    {account.currentlyDueCount} currently due,{' '}
-                    {account.pastDueCount} past due
-                  </dd>
-                </div>
-              </>
-            )}
-          </dl>
-          {account && (
-            <>
-              <p>Last checked: {date(account.lastSyncAt)}</p>
-              {account.disabledReason && (
-                <Alert>
-                  Stripe restriction: {codeLabel(account.disabledReason)}
-                </Alert>
-              )}
-              <ul>
-                {[
-                  ...new Set([
-                    ...(charge?.reasons ?? []),
-                    ...(payout?.reasons ?? []),
-                  ]),
-                ].map((reason) => (
-                  <li key={reason}>
-                    {remediation[reason] ?? codeLabel(reason)}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
+          <StripeStatusDetails account={account} mode="TEST" />
           {!config.providerIOAllowed && (
             <p>
               Stripe test setup is not configured on this server. An
