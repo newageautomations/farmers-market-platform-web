@@ -421,15 +421,17 @@ async function main() {
           await signOut(scope).catch(() => undefined);
         }
       }
-      const handoff = gzipSync(
-        JSON.stringify({ digest: approved, media }),
-      ).toString('base64url');
-      const entry = demo
-        ? 'node node_modules/ts-node/dist/bin.js --project scripts/market-operations-demo/tsconfig.json scripts/test-data-population-demo.ts'
-        : 'node dist/test-data-population.js';
-      console.log(
-        `${entry} --apply --anchor ${anchor} --approve ${approved} --media ${handoff}`,
-      );
+      const handoff = gzipSync(JSON.stringify({ digest: approved, media })).toString('base64url');
+      const apply = `--apply --anchor ${anchor} --approve ${approved}`;
+      if (demo) {
+        console.log(
+          `node node_modules/ts-node/dist/bin.js --project scripts/market-operations-demo/tsconfig.json scripts/test-data-population-demo.ts ${apply} --media ${handoff}`,
+        );
+      } else {
+        console.log(JSON.stringify({ status: 'media-handoff-ready', bytes: handoff.length }));
+        console.log(`FARMERLANE_TEST_DATA_POPULATION_MEDIA=${handoff}`);
+        console.log(`node dist/test-data-population.js ${apply}`);
+      }
     } finally {
       fs.closeSync(journal);
     }

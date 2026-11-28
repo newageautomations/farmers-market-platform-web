@@ -1,8 +1,29 @@
 # Farmerlane demo population completion
 
-The completion job extends the Phase B cohort `farmerlane-fictional-trial` and catalog revision `2026-11-r1` with public media, storefronts, market operations and offline financial examples. The completion revision is `completion-r1`. It is an operator-run staging release. The local implementation does not deploy or apply it to hosted staging.
+The completion job extends the Phase B fixture namespace `farmerlane-fictional-trial` and catalog revision `2026-11-r1` with public media, storefronts, market operations and offline financial examples. The completion revision is `completion-r1`. It is an operator-run staging release.
 
-**Railway deployments required: one.** Deploy the reviewed backend commit to the temporary `staging-catalog-job` service once. Use Railway SSH to run the dry run and apply inside that same deployment. The existing API handles uploads. The existing API, worker, Admin, storefront and gateway need zero deployments when the documented storage and dynamic routing prerequisites are already active. This release adds no migrations. [Phase A audit](DEMO_DATA_PORTABILITY_PHASE_A.md) · [Phase B foundation and catalog](DEMO_DATA_PORTABILITY_PHASE_B.md) · [Dynamic storefront routing](DYNAMIC_STOREFRONT_ROUTING.md)
+Use two deployments of the existing temporary Railway service `staging-catalog-job`. Run the corrected dry run first, upload media once through the existing staging API, then deploy the apply command with the reviewed handoff. Both deployments run a direct Node start command without SSH. The API, worker, Admin, storefront, gateway and PostgreSQL require zero deployments. This correction adds no migrations. [Phase A audit](DEMO_DATA_PORTABILITY_PHASE_A.md) · [Phase B foundation and catalog](DEMO_DATA_PORTABILITY_PHASE_B.md) · [Dynamic storefront routing](DYNAMIC_STOREFRONT_ROUTING.md)
+
+## Catalog receipt correction
+
+Backend release `ea2c77a` flattened every vendor's catalog receipt into one set of numeric strings. Product and variant IDs come from separate PostgreSQL tables and sequences. A product ID can equal a variant ID, including the ID for one of its own variants. The completion planner treated those valid overlaps as duplicates and returned `PHASE_B_CATALOG_RECEIPT_INVALID` after the Phase B checks had already passed.
+
+Phase B writes one atomic vendor receipt under the fixture namespace, logical vendor ID, definition hash and catalog revision `2026-11-r1`. Its mapping is a JSON string of rows, each containing one product ID followed by its variant IDs in fixture order. Phase B replay checked that the sizes, product-to-variant relationships, owner and channel matched. The receipt lookup had no pagination or result limit. Cohort-selection approval digests gate each apply independently. They are distinct from the fixture revision and are absent from the catalog receipt.
+
+Disposable PostgreSQL reproduced the exact hosted discrepancy using the released Phase B writer and audit service. The complete receipts were 471 bytes for Morning Hearth's 18 products and 18 variants and 492 bytes for Lark & Grain's 18 products and 19 variants. Both had IDs shared across tables. Briarstone's 215-byte one-product, one-variant receipt had different IDs and passed the released check. The audit writer rejects metadata over 4,096 bytes and stores accepted metadata intact. The hosted pattern is consistent with the same overlap. Local verification did not inspect hosted receipt contents.
+
+The original `PHASE_B_CATALOG_REQUIRED` conflicts had a separate cause. The initial curated import stopped before six vendor catalog transactions committed. Wildgrain was visibly empty, and the reviewed curated replay showed six catalogs to create and 16 to skip. The operator completed those six through Phase B. The second hosted completion dry run found all receipts and reported the duplicate-ID error on all 22 curated vendors. No further catalog recovery is required for the reported state.
+
+Completion now resolves each vendor through the shared Phase B receipt lookup. It verifies the definition hash, revision, audit vendor and provisioned workspace, checks uniqueness separately for product IDs and variant IDs, and verifies each current product, variant, parent and owner-channel relationship. It consumes the stored mapping in fixture order. Original accounts, passwords, IDs, stock, tester edits and receipts stay in place. No identity is inferred from a name, slug or SKU.
+
+| Conflict | Diagnostic `reason` and counts |
+| --- | --- |
+| `PHASE_B_CATALOG_REQUIRED` | `RECEIPT_NOT_FOUND`. No receipt matched the fixture namespace and vendor logical ID. Existing catalog contents alone cannot establish provenance. |
+| `PHASE_B_CATALOG_RECEIPT_INVALID` | `RECEIPT_AMBIGUOUS`, `RECEIPT_DEFINITION_MISMATCH`, `RECEIPT_REVISION_MISMATCH`, `RECEIPT_VENDOR_MISMATCH` or `RECEIPT_PAYLOAD_MALFORMED`. The payload code covers invalid JSON, truncation and unsupported ID encoding. |
+| `PHASE_B_CATALOG_RECEIPT_INVALID` | `PRODUCT_COUNT_MISMATCH`, `VARIANT_COUNT_MISMATCH`, `DUPLICATE_PRODUCT_ID` or `DUPLICATE_VARIANT_ID`. The output gives expected counts and, when decoded, receipt counts. |
+| `PHASE_B_CATALOG_RECEIPT_INVALID` | `DESTINATION_RECORD_MISSING` for absent or deleted rows, or `DESTINATION_OWNERSHIP_MISMATCH` for a wrong parent, owner or channel. The output also gives the number of mappings that passed destination checks. |
+
+Catalog conflicts identify the fictional logical vendor and counts without disclosing receipt contents or destination IDs. If any catalog still conflicts, stop before uploading media. Compare the result with the recorded Phase B import and preserve the existing data and audit history while investigating.
 
 ## Fixture scope
 
@@ -79,115 +100,105 @@ The workstation journal records upload intent before the mutation and records th
 
 ## Operator release instructions
 
-Use the two sibling checkouts already named in the project. Scope Git commands to these files because either checkout may have other staged changes. In the backend, stage and commit this explicit set. Use the reviewed release branch for the temporary Railway service and push once after review.
+Use the two sibling checkouts. The correction deploys from a branch based on backend `ea2c77a`. These path-scoped commands leave unrelated staged work out of the commits. Pause automatic deploys on `staging-catalog-job` before pushing or selecting the correction branch.
 
 ```powershell
 Set-Location E:\coding\farmers-market-platform
 $backendFiles = @(
-  '.dockerignore', 'Dockerfile',
-  'fixtures/staging-population-media-v1.json',
-  'scripts/test-data-catalog-demo.ts', 'scripts/test-data-population-demo.ts',
-  'src/test-data-catalog.ts', 'src/test-data-population.ts', 'src/test-data/accounts.ts',
-  'src/test-data/population-apply.ts', 'src/test-data/population-fixture.ts',
-  'src/test-data/population-markets.ts', 'src/test-data/population-plan.ts',
-  'src/test-data/population-websites.ts', 'test/market-operations/test-data.ts'
+  'src/test-data-population.ts',
+  'src/test-data/catalog-plan.ts',
+  'src/test-data/population-apply.ts',
+  'src/test-data/population-fixture.ts',
+  'src/test-data/population-plan.ts',
+  'test/market-operations/population-catalog.ts'
 )
-git switch -c codex/demo-population-completion
+git switch -c codex/fix-population-catalog-receipts ea2c77a
 git add -- $backendFiles
 git diff --cached -- $backendFiles
-git commit --only -m "Complete Farmerlane trial population" -- $backendFiles
-git push -u origin codex/demo-population-completion
+git commit --only -m "Fix population catalog receipt validation" -- $backendFiles
+git show --stat --oneline HEAD
+git push -u origin codex/fix-population-catalog-receipts
 ```
 
-Commit the runbook and workstation scripts in the web checkout. Push the documentation branch when reviewed. It does not need a hosted build.
+Commit the runbook and workstation changes locally in the web checkout. The workstation uses these files directly and Railway builds only the backend correction branch.
 
 ```powershell
 Set-Location E:\coding\farmers-market-platform-web
 $webFiles = @(
   'docs/DEMO_DATA_PORTABILITY_COMPLETION.md',
-  'scripts/build-staging-population-media.cjs',
   'scripts/upload-staging-population-media.cjs'
 )
-git switch -c codex/demo-population-completion
 git add -- $webFiles
 git diff --cached -- $webFiles
-git commit --only -m "Document Farmerlane trial population and media handoff" -- $webFiles
-git push -u origin codex/demo-population-completion
+git commit --only -m "Document the non-SSH population workflow" -- $webFiles
 ```
 
-Confirm the staging Phase B import is complete, the foundational commerce check is healthy, wildcard dynamic routing is active, and the storage runbook's existing fixture-owner public uploads are qualified. Keep Resend, Twilio, QuickBooks network activity and other unrelated providers disabled. Keep the existing API and worker online. The job emits native search and in-app fixture events and creates offline invoice/expense records. The job launches no HTTP listener, scheduler or queue consumer. The existing worker can process native indexing and in-app events. Existing background work, Stripe collectors, and unrelated connector settings remain under their current release configuration. [Foundation](FOUNDATIONAL_COMMERCE_CONFIGURATION.md) · [Hosted media prerequisite](HOSTED_FILE_STORAGE_PHASE_C.md) · [Routing prerequisite](DYNAMIC_STOREFRONT_ROUTING.md)
+Confirm the Phase B import has completed, foundational commerce is healthy, wildcard dynamic routing is active and the existing fixture-owner uploads are qualified. The job opens no listener, scheduler or queue consumer. The existing worker can process native indexing and in-app events. [Commerce foundation](FOUNDATIONAL_COMMERCE_CONFIGURATION.md) · [Hosted media](HOSTED_FILE_STORAGE_PHASE_C.md) · [Dynamic routing](DYNAMIC_STOREFRONT_ROUTING.md)
 
-Reuse the temporary service `staging-catalog-job` in Railway's **staging** environment. Set the backend repository root as the source and use its existing Dockerfile, the reviewed backend branch and one replica. Disable automatic deploys. Use **Never** for restart policy and leave public networking, health checks, volumes, cron and pre-deploy commands unset. For this single deployment, set the start command below. The process keeps an SSH target available without opening a listener.
+Reuse `staging-catalog-job` in Railway's **staging** environment. Use the backend repository root, its existing Dockerfile and the correction commit. Use one replica and the **Never** restart policy. Keep the service private with health checks, volumes, cron and pre-deploy commands unset. Review staged changes before each deployment and include only this service. [Railway staged changes](https://docs.railway.com/deployments/staged-changes) · [Restart policy](https://docs.railway.com/deployments/restart-policy)
+
+| Setting | Job value |
+| --- | --- |
+| Environment identity | `APP_ENV=production`, `NODE_ENV=production`, `DEPLOYMENT_ENV=staging`, `HOSTED_TRANSPORT=railway-private`. Railway supplies `RAILWAY_ENVIRONMENT_NAME` and `RAILWAY_SERVICE_ID`. |
+| Opt-ins | `FARMERLANE_TEST_DATA_STAGING=true`, `FARMERLANE_TEST_DATA_CATALOG=true`, `FARMERLANE_TEST_DATA_POPULATION=true`. |
+| Database | `DB_NAME=market_staging`, `DB_SCHEMA=public`, `DB_USERNAME=market_staging_runtime`, `DB_SYNCHRONIZE=false`. Set `DB_HOST` to the staging PostgreSQL private `*.railway.internal` reference and `DB_PORT` to its private port. Seal or reference the existing runtime `DB_PASSWORD`. Match the database's `DB_TRANSPORT_POLICY` and provide its existing `DB_TLS_CA` for `verify-full` only. |
+| Private composition | `PORT=3000`, `HOST=::`, `INTERNAL_API_ORIGIN=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:3000`, `TRUSTED_PROXY_CIDRS=disabled`, `STOREFRONT_PARENT_DOMAIN=farmerlane.com`. |
+| Public composition | `API_ORIGIN=https://staging-api.farmerlane.com`, `ADMIN_ORIGIN=https://staging-admin.farmerlane.com`, `PLATFORM_ACCOUNT_ORIGIN=https://staging-auth.farmerlane.com`, `ASSET_URL_PREFIX=https://staging-api.farmerlane.com/assets/`, `CORS_ORIGINS=https://staging-admin.farmerlane.com`, `STAGING_TESTER_ACCESS=provisioned`, `STAGING_ANONYMOUS_STOREFRONTS=published`. |
+| Provider isolation | `STRIPE_ENABLED=false`, `STRIPE_COLLECTION_SUSPENDED=true`, `ENABLE_PAID_ATTRIBUTION=true`, `REFUND_POLICY_VERSION=staging-collection-disabled-v1`. Keep test collection, recovery, refund, billing, POS, account email and SMS, contact delivery, uploads and QuickBooks network flags unset or false. Omit R2 and other provider credentials, scanner bypass and live ingress, bridge and cookie secrets. The job generates ephemeral composition keys for apply. |
+| Named principal | Set `SUPERADMIN_USERNAME` to the exact existing named SuperAdmin who authorized Phase B. The previously tried `farmerlane_staging_admin` does not identify a hosted user. Leave `SUPERADMIN_PASSWORD` unset. |
+| Apply inputs | Leave `FARMERLANE_TEST_DATA_JOB_CREDENTIALS` and `FARMERLANE_TEST_DATA_POPULATION_MEDIA` unset for the first deployment. Add both to this service for apply as described below. |
+
+### First deployment
+
+Set the Railway **Custom Start Command** to the command below and deploy the correction commit. If the example's first market date has already passed, choose a later anchor before deploying. Save the commit and anchor with the dry-run output.
 
 ```sh
-node -e "setInterval(() => {}, 60000)"
-```
-
-| Setting                             | Job value                                                                                                                                                                                                                                                                                                                                                                |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Environment identity                | `APP_ENV=production`, `NODE_ENV=production`, `DEPLOYMENT_ENV=staging`, `HOSTED_TRANSPORT=railway-private`. Railway supplies `RAILWAY_ENVIRONMENT_NAME` and `RAILWAY_SERVICE_ID`.                                                                                                                                                                                         |
-| Opt-ins                             | `FARMERLANE_TEST_DATA_STAGING=true`, `FARMERLANE_TEST_DATA_CATALOG=true`, `FARMERLANE_TEST_DATA_POPULATION=true`.                                                                                                                                                                                                                                                        |
-| Database                            | `DB_NAME=market_staging`, `DB_SCHEMA=public`, `DB_USERNAME=market_staging_runtime`, `DB_SYNCHRONIZE=false`. Set `DB_HOST` to the staging PostgreSQL private `*.railway.internal` reference and `DB_PORT` to its private port. Seal/reference the existing runtime `DB_PASSWORD`. Match `DB_TRANSPORT_POLICY`; include the existing `DB_TLS_CA` for `verify-full` only.   |
-| Private composition                 | `PORT=3000`, `HOST=::`, `INTERNAL_API_ORIGIN=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:3000`, `TRUSTED_PROXY_CIDRS=disabled`, `STOREFRONT_PARENT_DOMAIN=farmerlane.com`.                                                                                                                                                                                                    |
-| Public composition                  | `API_ORIGIN=https://staging-api.farmerlane.com`, `ADMIN_ORIGIN=https://staging-admin.farmerlane.com`, `PLATFORM_ACCOUNT_ORIGIN=https://staging-auth.farmerlane.com`, `ASSET_URL_PREFIX=https://staging-api.farmerlane.com/assets/`, `CORS_ORIGINS=https://staging-admin.farmerlane.com`, `STAGING_TESTER_ACCESS=provisioned`, `STAGING_ANONYMOUS_STOREFRONTS=published`. |
-| Payments and notification isolation | `STRIPE_ENABLED=false`, `STRIPE_COLLECTION_SUSPENDED=true`, `ENABLE_PAID_ATTRIBUTION=true`, `REFUND_POLICY_VERSION=staging-collection-disabled-v1`. Leave test collection, recovery, refund, billing, POS, contact delivery, file uploads and QuickBooks network flags unset or false. Omit R2, live ingress/bridge/cookie, scanner-bypass and provider credentials.     |
-| Named principal                     | `SUPERADMIN_USERNAME` is the exact existing named SuperAdmin used for the successful Phase B apply. Leave `SUPERADMIN_PASSWORD` and `FARMERLANE_TEST_DATA_JOB_CREDENTIALS` unset on the service. The job generates ephemeral composition keys.                                                                                                                           |
-
-Deploy the temporary service once. From the linked Railway project, use the existing authorized staging SSH path. For the first inspection, run exactly one connected dry run. It uses the database marker, private connection check, runtime role and migration ledger, and then a read-only repeatable-read plan. It never bootstraps Vendure.
-
-```sh
-railway ssh --service staging-catalog-job --environment staging
-cd /usr/src/app
 node dist/test-data-population.js --dry-run --anchor 2026-12-08
 ```
 
-Review the exit-0 `status: dry-run` record, counts, dates, planned URLs, stages and `digest`. Exit 2 reports `status: conflicts` with a logical account and code, for example `PHASE_B_CATALOG_REQUIRED`, `STOREFRONT_ALREADY_CONFIGURED_OR_ROUTE_OCCUPIED`, `MARKET_ALREADY_CONFIGURED`, `MARKET_DATES_OUTSIDE_HORIZON` or `FIXTURE_PAYMENT_ACCOUNT_PRESENT`. Exit 1 reports a startup or check failure. Resolve a prerequisite through its established workflow and rerun inspection before approving. Preserve the reviewed release commit and digest together.
+Expect exit 0 with `status: dry-run`, an empty `conflicts` array, 59 pending stages on the untouched completion dataset and the approval `digest`. The manifest should show 29 accounts, 397 products, 398 variants, 102 upload mappings and 26 websites. The destination `resolvedCounts` should show `accounts: 29`, `products: 397`, `variants: 398`, `websitePlans: 26` and `mediaMappings: 0`. The first run has no uploaded asset handoff. Review the planned market dates, URLs, owners and photo sources. Exit 2 means a conflict prevented approval. Exit 1 indicates a startup or validation failure. The dry run uses the guarded connection and release ledger and runs in a read-only transaction.
 
-### Upload and apply
+### Workstation media upload
 
-Build locally first so the workstation script uses the same compiled fixture. Use the existing local `.runtime/vendor-catalog/photos` and `.runtime/willow-photos` directories. `--check` validates the media without network or credentials. The upload command needs the current fixture owner passwords. Prepare a vault value of the shape `{"sharedPassword":"<vault value>","passwords":{"logical-id":"<current per-owner password if changed>"}}` and paste it at the masked prompt. The override map is optional. Use one workstation and wait for successful completion before applying.
+Build the correction locally. The web script reads the compiled backend fixture and checks the reviewed digest. `--check` verifies the 58 originals and their 102 mappings without calling staging. The upload uses the current fixture-owner passwords from the vault. Paste a bundle of the form `{"sharedPassword":"<vault value>","passwords":{"logical-id":"<current per-owner password>"}}` at the masked prompt. The override map is optional. Use a single workstation and keep its journal until acceptance.
 
 ```powershell
 Set-Location E:\coding\farmers-market-platform
 npm.cmd run build:server
 Set-Location E:\coding\farmers-market-platform-web
+$anchor = '2026-12-08'
 $approved = 'REVIEWED_DRY_RUN_DIGEST'
-node scripts/upload-staging-population-media.cjs --anchor 2026-12-08 --approve $approved --check
-$env:FARMERLANE_FIXTURE_MEDIA_CREDENTIALS = Read-Host -MaskInput 'Paste the sealed fixture owner credential JSON'
+node scripts/upload-staging-population-media.cjs --anchor $anchor --approve $approved --check
+if ($LASTEXITCODE -ne 0) { throw 'Media check failed' }
+$env:FARMERLANE_FIXTURE_MEDIA_CREDENTIALS = Read-Host -MaskInput 'Paste the fixture owner credential JSON'
 try {
-  node scripts/upload-staging-population-media.cjs --anchor 2026-12-08 --approve $approved --upload
+  node scripts/upload-staging-population-media.cjs --anchor $anchor --approve $approved --upload
+  if ($LASTEXITCODE -ne 0) { throw 'Media upload failed' }
 } finally {
   Remove-Item Env:FARMERLANE_FIXTURE_MEDIA_CREDENTIALS -ErrorAction SilentlyContinue
 }
 ```
 
-The command emits one `media-owner-verified` message for each owner and prints a ready-to-paste apply command with the complete compressed handoff. On the same Railway SSH deployment, enter the named operator password bundle from the vault in the masked shell prompt. The bundle is `{"bootstrapPassword":"<named SuperAdmin's current password>"}`.
+Expect 26 `media-owner-verified` records, followed by `media-handoff-ready` with the measured byte count, the `FARMERLANE_TEST_DATA_POPULATION_MEDIA=...` line and the exact apply command. The handoff carries the approval digest and the 102 ID/path pairs. If an upload outcome is uncertain, rerun the same upload command so it can reconcile the owner library by source hash. If the photo remains absent after verified reads and the original request ended without a commit, wait at least two minutes and repeat with `--retry-uncommitted logical-id/asset-key`. For `MEDIA_CONTENT_CONFLICT` or `MEDIA_RECEIPT_DRIFT`, inspect the asset and storage references before retrying. Remove a stale journal `upload.lock` only after confirming the runner has exited.
+
+### Second deployment
+
+Stage these two variables on `staging-catalog-job` only, together with the new start command. Use the same correction commit and anchor as the successful dry run.
+
+| Service variable | Value |
+| --- | --- |
+| `FARMERLANE_TEST_DATA_POPULATION_MEDIA` | Paste only the base64url value to the right of the equals sign. Use one line without quotation marks. |
+| `FARMERLANE_TEST_DATA_JOB_CREDENTIALS` | Add and seal the exact JSON `{"bootstrapPassword":"<named SuperAdmin's current password>"}` from the vault. The completion job needs only the named SuperAdmin password. |
+
+Set **Custom Start Command** to the exact command the uploader printed. Its form is below. Node reads the staged variables directly, so Dockerfile exec form needs no shell, quoting or variable expansion. Apply uses the handoff and password without printing either value. [Railway start command](https://docs.railway.com/deployments/start-command) · [Railway service and sealed variables](https://docs.railway.com/variables)
 
 ```sh
-old_tty=$(stty -g)
-trap 'stty "$old_tty"; unset FARMERLANE_TEST_DATA_JOB_CREDENTIALS' EXIT HUP INT TERM
-printf 'Paste the sealed named SuperAdmin credential JSON: '
-stty -echo
-IFS= read -r FARMERLANE_TEST_DATA_JOB_CREDENTIALS
-stty "$old_tty"
-printf '\n'
-export FARMERLANE_TEST_DATA_JOB_CREDENTIALS
+node dist/test-data-population.js --apply --anchor 2026-12-08 --approve REVIEWED_DRY_RUN_DIGEST
 ```
 
-Paste the exact command printed by the uploader into that SSH shell. Its form is below.
+Apply repeats connected preflight, verifies all 102 media mappings by exact source and channel, and authorizes the named SuperAdmin. It serializes jobs with an advisory lock and commits each stage together with its receipt. It waits for deferred Vendure queue writes before closing. Expect exit 0 with `status: applied`, 59 stage entries and `resolvedCounts.mediaMappings: 102`. Each stage reports `created` or `skip`. The service exits after writing its result. An exit 1 record includes a safe code and the logical ID and stage when available.
 
-```sh
-node dist/test-data-population.js --apply --anchor 2026-12-08 --approve REVIEWED_DRY_RUN_DIGEST --media GENERATED_HANDOFF
-unset FARMERLANE_TEST_DATA_JOB_CREDENTIALS
-```
-
-Apply repeats the connected preflight, checks bootstrap eligibility and verifies the named SuperAdmin password. It serializes jobs with a PostgreSQL advisory lock. Per-owner media, per-market operations, per-site publication and per-vendor expenses each commit with a receipt in the existing platform audit. The receipt binds the fixture revision, approval digest and destination business. Market work and its receipt are atomic across occurrences, applications, rentals, assignments and offerings. Apply rechecks committed state and waits for deferred Vendure queue writes before the offline context closes.
-
-Expect `status: applied` and 59 stage receipts on an untouched import. Each stage has `created` or `skip` and a scoped results summary. An error logs `status: failed`, a code and, when available, the logical ID and stage. An interrupt can leave earlier stages committed. Review the affected stage and repeat with the same release, anchor, approved digest and media handoff. Completed stages are skipped and tester edits are preserved. A new digest on a partially applied release reports a receipt conflict. Correct non-fixture business state through the existing workflows.
-
-If an upload outcome is uncertain, rerun the same upload command first. It reconciles the owner library with the expected source hash without sending that photo again. If the photo is absent after verified reads and the operator has confirmed the original request has ended without an asset commit, wait at least two minutes and repeat the upload with `--retry-uncommitted logical-id/asset-key`. It reconciles again before retrying that one key. For `MEDIA_CONTENT_CONFLICT` or `MEDIA_RECEIPT_DRIFT`, review the owner's actual asset rows and storage with the existing media runbook. Preserve existing objects. Keep the workstation journal in `.runtime/staging-population` until acceptance. If a process is killed and leaves an `upload.lock`, confirm the old runner has exited before removing that lock file and resuming.
-
-On acceptance, save the non-secret result, approval digest, and deployment ID in the operator record, exit SSH, and remove the temporary service and its scoped secrets. Retain the released fixture and secure tester account inventory. No API or worker restart is required for the fixture because the website registry and published snapshots are loaded on request.
+If apply was interrupted, identify the failing stage from the logs. After correcting the cause, redeploy the same commit, command, anchor, digest and handoff. Committed stages are skipped and one incomplete stage can be retried safely. Keep the original handoff and journal so a retry can reuse the same assets. A different digest on a partial apply conflicts. After manual acceptance, save the non-secret result, digest and deployment IDs. Remove the temporary service and its scoped variables. Keep the reviewed release and secure tester inventory.
 
 ## Manual acceptance
 
@@ -197,7 +208,7 @@ On acceptance, save the non-secret result, approval digest, and deployment ID in
 4. Check Foxglove's $44 cash-paid Fern & Furrow invoice and Lark & Grain's open invoice. Compare Stonebrook's and Orchard Lantern's open invoices and one draft. Check the two manual expenses in each designated vendor's Finances view. The demo paid invoice should show cash.
 5. Sign in as Rowan. Check that the four preset vendor and market follows appear. Browse the market directory and vendor shops. Check the expected hosted eligibility state while Sandbox is disconnected. To test the full checkout, an authorized operator connects one of the 17 approved market vendors through the ordinary Stripe Sandbox flow, then checks stock, preorder availability, add to cart, market pickup and payment using the Sandbox acceptance runbook. A vendor with a pending application or no approved date also needs a fulfilled pickup context before shopping. Use a supported merchant and a synthetic test purchase.
 6. Sign in as Silver Meadow and Iris. Confirm Silver Meadow has no storefront, catalog or market relationship and Iris has no order history. Confirm an unrelated working staging business retains its storefront, Stripe connection and saved data.
-7. Before any deliberate Sandbox connection or tenant edits, repeat the generated apply command with the same digest if explicit repeat acceptance is required. It should report `skip` for every stage and preserve counts. Verify a single invoice/payment, occurrence and set of asset references for each tested fixture operation.
+7. Verify a single invoice/payment, occurrence and set of asset references for each tested fixture operation. If explicit replay acceptance is required, redeploy the same apply command and variables before any Sandbox connection or tenant edits. Expect `skip` for every stage and unchanged counts.
 
 ### Local manual acceptance
 
@@ -209,20 +220,34 @@ From the backend, run the guarded dry run below. Use its local digest with the s
 node node_modules/ts-node/dist/bin.js --project scripts/market-operations-demo/tsconfig.json scripts/test-data-population-demo.ts --dry-run --anchor 2026-12-08
 ```
 
-## Verification and files
+## Verification and changed files
 
-- `npm.cmd run build:server` passed. The compiled CLI accepted the full hosted and demo definitions and rejected a mismatched approval digest before any database connection.
-- `npm.cmd run test:test-data` passed in a guarded disposable PostgreSQL database. The sample reused a Phase B catalog and exercised read-only planning, the named SuperAdmin, host collisions, cross-tenant media rejection, image association, committed publication, occurrences, verified membership and application decisions, layouts, booth assignments, pickup, offerings, cash settlement, expenses, follows, interruption and replay. Order, provider, financial allocation, catalog, inventory and user counts stayed stable. The harness dropped the successful database. Earlier failed iterations were retained by its normal diagnostic policy.
-- The two web scripts passed ESLint. Both fixture generators matched their bundled manifests. The workstation `--check` decoded and sanitized all 58 reviewed originals and validated all 102 channel/photo mappings without contacting staging.
-- An offline workstation mock interrupted the first upload after it committed, then recovered the same asset by its source hash. The full run created exactly 102 mock assets across 26 channels. A repeat produced the identical compressed handoff without new uploads or sign-ins.
-- The existing Linux catalog release smoke passed its read-only database dump comparison, named SuperAdmin apply and clean shutdown after deferred native queue work persisted. It exercised the same worker composition and shutdown functions used by completion.
-- The compiled entry returned the same plan in the cached Linux runtime with the two fixtures at their release paths. The Dockerfile admits and copies only the new media manifest in addition to the existing catalog fixture. The full offline Docker build stopped at `npm ci` because the registry dependency was absent from the local cache. The Docker smoke used cached Linux dependencies and mounted the current build and manifests.
-- Hosted dry run, real R2 uploads, real hosted application, and browser acceptance remain operator steps. No browser launched during qualification.
+The focused run used PostgreSQL 17.10 in a guarded disposable database. A source snapshot of `ea2c77a` supplied the release dependencies and original Phase B code. Verification reused the same database for the released and corrected planners. No unrelated local changes entered the build or test.
 
-| Checkout | Paths                                                                                                              | Change                                                                                          |
-| -------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| Backend  | `src/test-data-population.ts`; `src/test-data/population-{fixture,plan,apply,markets,websites}.ts`                 | Guarded command, full plan, provenance, staging, market and storefront domain calls.            |
-| Backend  | `src/test-data-catalog.ts`; `src/test-data/accounts.ts`                                                            | Reuse the isolated job composition, deferred queue shutdown and named SuperAdmin authorization. |
-| Backend  | `fixtures/staging-population-media-v1.json`; `Dockerfile`; `.dockerignore`                                         | Pin public photo definitions and include the fixture in the deny-by-default release.            |
-| Backend  | `scripts/test-data-catalog-demo.ts`; `scripts/test-data-population-demo.ts`; `test/market-operations/test-data.ts` | Guarded local entry and focused disposable test.                                                |
-| Web      | `scripts/build-staging-population-media.cjs`; `scripts/upload-staging-population-media.cjs`; this report           | Check original photos, perform owner uploads, and generate the reviewed apply handoff.          |
+- Ran Phase B in the hosted cohort order: `trial`, `curated`, `scenario`, `markets`, `onboarding`. Interrupted the first curated pass inside the Gathered Table catalog transaction. The first completion plan found the same six missing catalogs. The ordinary curated replay created only those six. The released completion planner then reported exactly 22 invalid catalogs and accepted Briarstone.
+- The corrected plan returned zero conflicts. It resolved all 29 accounts and checked every one of the 397 product and 398 variant IDs against the fixture relationships and both owner-channel associations. It produced 26 storefront plans. A second plan resolved 102 media mappings using locally created Vendure assets. A cross-tenant asset substitution resolved 101 and raised the expected conflict.
+- Rejected missing, duplicate, malformed, revision-mismatched and definition-mismatched catalog receipts, wrong product or variant counts, duplicate IDs within a table, missing destination records, cross-tenant product and variant mappings, and a missing variant-channel association. The negative receipt cases used transaction-local copies of the audit table. The actual append-only audit table was preserved.
+- Table fingerprints matched before and after the read-only plans and a complete Phase B replay with a different supplied fixture password. Existing account IDs, password hashes, product and variant rows, audit receipts, inventory operations and stock were preserved. A product title edited to a test value and its changed stock quantity survived replay.
+- `npm.cmd run build:server` passed. The compiled definition reproduced the hosted December 8 completion digest `f56260fec3f8f72e128ad1e366db4823871d96d4e1fe91f372c8566f637bbb48`. The released fixture bytes also reproduced the curated Phase B digest `c4335aa51fcadcbd3deee6979d50db264700b5dc58404dfedcd107155c1422d7`. Keep the committed fixture's LF bytes when comparing digests on Windows because the definition hashes raw catalog fixture bytes.
+- The upload script passed syntax and ESLint checks. Its `--check` validated 58 reviewed photographs and all 102 mappings without contacting staging.
+- The measured full handoff for December 8 was **2,107 base64url bytes**, from 6,889 JSON bytes and 1,580 gzip bytes using the same encoding as the workstation uploader and the actual 102 local ID/path pairs. Hosted IDs and paths will change the exact byte count, which the uploader prints. The CLI allows 36,000 base64url characters and 64,000 decoded JSON bytes. Railway documents service variables at runtime. The measured payload was verified locally in a Linux container through the exact direct Node command and one scoped environment variable. Railway's service-specific variable capacity was not tested. [Railway service variables](https://docs.railway.com/variables)
+- The offline Linux command rejected a wrong approval digest and a malformed handoff with their respective safe codes before any database connection. The valid measured payload passed both validation gates and reached the expected DNS failure with container networking disabled. Command output contained neither the uploaded payload nor the synthetic database password.
+- Provider activity, real R2 uploads, the hosted correction dry run, the full completion apply and manual acceptance remain outside the local verification. PostgreSQL emitted an existing driver deprecation warning about overlapping client queries. No unrelated suites or browser checks ran.
+
+Run the focused regression from the backend with loopback PostgreSQL and the existing disposable-test `DB_HOST`, `DB_PORT`, `DB_USERNAME` and `DB_PASSWORD` settings. The harness creates and owns a new `vendure_test_population_*` database.
+
+```powershell
+npm.cmd run build:server
+node node_modules/ts-node/dist/bin.js --project test/market-operations/tsconfig.json test/market-operations/population-catalog.ts
+```
+
+| Checkout | Changed file | Change |
+| --- | --- | --- |
+| Backend | `src/test-data/catalog-plan.ts` | Shares catalog receipt resolution, separates product and variant ID uniqueness, and reports verified destination counts and failure conditions. |
+| Backend | `src/test-data/population-plan.ts` | Uses the shared mapping directly and reports sanitized reasons, manifest counts and verified destination counts. |
+| Backend | `src/test-data/population-fixture.ts` | Supplies the pinned Phase B revision for completion receipt validation. |
+| Backend | `src/test-data/population-apply.ts` | Checks re-resolved actors for catalog conflicts and returns verified totals after apply. |
+| Backend | `src/test-data-population.ts` | Accepts the staged media environment variable for hosted apply. The existing inline media option remains available. |
+| Backend | `test/market-operations/population-catalog.ts` | Qualifies released receipts, realistic multi-cohort import and replay, ownership, read-only planning and full media resolution. |
+| Web | `scripts/upload-staging-population-media.cjs` | Prints the handoff byte count, scoped variable value and direct hosted apply command. |
+| Web | `docs/DEMO_DATA_PORTABILITY_COMPLETION.md` | Records the diagnosis, qualification, exact non-SSH release procedure and acceptance steps. |
